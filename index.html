@@ -784,6 +784,14 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     justify-content: space-between;
     gap: 10px;
 }
+
+.dropdown-local {
+    display: none;
+}
+
+.dropdown-local.active {
+    display: block !important;
+}
 </style>
 </head>
 <body>
@@ -805,18 +813,20 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         <span style="font-weight:400;">
             | A MÁQUINA DE MOER
         </span>
-
-        
     </h1>
-
-</div>
+    </div>
     
         <div id="user-auth-zone" style="display: flex; align-items: center; gap: 16px;">
             
             <div style="display: flex; gap: 6px; align-items: center;">
+                
                 <button onclick="window.SALINHA_BACKUP.exportar()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Exportar Ecossistema">📤 BACKUP</button>
-                <button onclick="document.getElementById('salinha-backup-input').click()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Restaurar Ecossistema">📥 RESTAURAR</button>
+                <button onclick="document.getElementById('salinha-backup-input').click()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Restaurar (Apaga atual)">📥 RESTAURAR</button>
                 <input type="file" id="salinha-backup-input" accept=".json" style="display:none;" onchange="window.SALINHA_BACKUP.importar(event)">
+                
+                <button onclick="document.getElementById('import-incremental').click()" class="b1" style="height:26px; font-size:9.5px; background: var(--app-primary); border: 1px solid var(--app-primary); color: white; font-weight: 700;" title="Importar mantendo dados locais">📥 MERGE (MANTER)</button>
+                <input type="file" id="import-incremental" accept=".json" style="display:none;">
+
             </div>
 
             <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
@@ -832,8 +842,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             </div>
         </div>
 
-    </div>
-</header>
+    </div> </header>
 
 
 
@@ -918,19 +927,22 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
                     <div class="v-acc-title"><div class="v-acc-icon" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1); width: 28px; height: 28px; font-size: 14px;">🎬</div> Playlists de V/F</div>
                     <div style="position: relative;">
-    <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
-    
-    <div class="kebab-dropdown">
-        <div class="kebab-item" onclick="window.importarGrupoJson('ce');">
-            📥 Importar JSON
-        </div>
-        <div class="kebab-item" onclick="window.exportarGrupoJson('ce');">
-            📤 Exportar Grupo
-        </div>
-        <div class="kebab-item" onclick="window.excluirGrupoTotal('ce');" style="color:var(--danger);">
-            ✕ Excluir Grupo
-        </div>
-    </div>
+                        
+                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
+                            ⋮
+                        </div>
+                        
+                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
+                            <div class="kebab-item" onclick="window.PlaylistsEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📥 Importar JSON
+                            </div>
+                            <div class="kebab-item" onclick="window.PlaylistsEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📤 Exportar Grupo
+                            </div>
+                            <div class="kebab-item" onclick="window.PlaylistsEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
+                                ✕ Excluir Grupo
+                            </div>
+                        </div>
 </div>
                 </div>
                 <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
@@ -947,19 +959,22 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
                     <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--danger); background: rgba(239, 68, 68, 0.1); width: 28px; height: 28px; font-size: 14px;">🏛️</div> Simulados</div>
                     <div style="position: relative;">
-    <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
-    
-    <div class="kebab-dropdown">
-        <div class="kebab-item" onclick="window.importarGrupoJson('ce');">
-            📥 Importar JSON
-        </div>
-        <div class="kebab-item" onclick="window.exportarGrupoJson('ce');">
-            📤 Exportar Grupo
-        </div>
-        <div class="kebab-item" onclick="window.excluirGrupoTotal('ce');" style="color:var(--danger);">
-            ✕ Excluir Grupo
-        </div>
-    </div>
+                        
+                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
+                            ⋮
+                        </div>
+                        
+                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
+                            <div class="kebab-item" onclick="window.SimuladosEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📥 Importar JSON
+                            </div>
+                            <div class="kebab-item" onclick="window.SimuladosEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📤 Exportar Grupo
+                            </div>
+                            <div class="kebab-item" onclick="window.SimuladosEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
+                                ✕ Excluir Grupo
+                            </div>
+                        </div>
 </div>
                 </div>
                 <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
@@ -982,19 +997,22 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
                     <div class="v-acc-title"><div class="v-acc-icon" style="color: #059669; background: rgba(5, 150, 105, 0.1); width: 28px; height: 28px; font-size: 14px;">🏛️</div> Provas Anteriores</div>
                     <div style="position: relative;">
-    <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
-    
-    <div class="kebab-dropdown">
-        <div class="kebab-item" onclick="window.importarGrupoJson('ce');">
-            📥 Importar JSON
-        </div>
-        <div class="kebab-item" onclick="window.exportarGrupoJson('ce');">
-            📤 Exportar Grupo
-        </div>
-        <div class="kebab-item" onclick="window.excluirGrupoTotal('ce');" style="color:var(--danger);">
-            ✕ Excluir Grupo
-        </div>
-    </div>
+                        
+                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
+                            ⋮
+                        </div>
+                        
+                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
+                            <div class="kebab-item" onclick="window.ProvasEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📥 Importar JSON
+                            </div>
+                            <div class="kebab-item" onclick="window.ProvasEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
+                                📤 Exportar Grupo
+                            </div>
+                            <div class="kebab-item" onclick="window.ProvasEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
+                                ✕ Excluir Grupo
+                            </div>
+                        </div>
 </div>
                 </div>
                 <div class="v-acc-body" id="bloco-provas-anteriores" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
@@ -1186,98 +1204,406 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 <div id="tjce-floating-popover" class="bat-popover" onmouseleave="window.MAPA_TJCE_RUNTIME.closePopover()"></div>
 
-<script>    
+<script> 
+
+// ===================== DATE HELPERS =====================
+function getFormattedDate(weekNum, dayName) {
+  // Base date: Monday, 25/05/2026. Month is 0-indexed (4 = May)
+  const baseDate = new Date(2026, 4, 25);
+  const dayIndex = DAYS_ORDER.indexOf(dayName);
+  
+  // Offset in days
+  const offsetDays = (weekNum - 1) * 7 + dayIndex;
+  baseDate.setDate(baseDate.getDate() + offsetDays);
+  
+  const d = String(baseDate.getDate()).padStart(2, '0');
+  const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+  return `${d}/${m}`;
+}
+// =========================================================
+// PIPELINE DE REIDRATAÇÃO E COMUNICAÇÃO DE STORAGE (INDEX.HTML)
+// Força o dashboard (iframe) a re-executar loadFactualDatabase()
+// =========================================================
+function notificarMutacaoAoDashboard() {
+    // 1. Reidrata variáveis locais do index, se aplicável
+    if (typeof window.loadFactualDatabase === 'function') window.loadFactualDatabase();
+    if (typeof window.getDadosGlobaisETL === 'function') window.getDadosGlobaisETL();
+    
+    // 2. Interroga o DOM do index à procura do iframe do dashboard
+    // Ajuste o ID do seletor conforme o ID real da sua tag <iframe> no index.html
+    const iframeDashboard = document.getElementById('iframe-dashboard') || document.querySelector('iframe[src*="dashboard"]');
+    if (iframeDashboard && iframeDashboard.contentWindow) {
+        // Envia pulso procedural simulando a finalização para disparar o gatilho nativo do dashboard
+        iframeDashboard.contentWindow.postMessage('SIMULADO_FINALIZADO', '*');
+    }
+}
+
+// =========================================================
+// EXPORTADOR SOBERANO DO ECOSSISTEMA (INDEX.HTML)
+// Gera um snapshot bruto do localStorage + injeção factual
+// =========================================================
+if (!window.SALINHA_BACKUP) window.SALINHA_BACKUP = {};
+
+window.SALINHA_BACKUP.exportar = function() {
+    // 1. Resolução dinâmica de soberania das constantes de armazenamento
+    const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'monstrinho_factual_db';
+    const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'cordeiro_factual_db';
+
+    // 2. Captura física de todas as partições do localStorage host
+    let snapshotBruto = {};
+    for (let i = 0; i < localStorage.length; i++) {
+        let k = localStorage.key(i);
+        snapshotBruto[k] = localStorage.getItem(k);
+    }
+
+    // 3. Salvaguarda de Factualidade: Garante a inclusão do banco analítico do dashboard
+    if (typeof db !== 'undefined' && db !== null) {
+        const dbStringificado = JSON.stringify(db);
+        if (!snapshotBruto[STORAGE_KEY_ATIVO]) snapshotBruto[STORAGE_KEY_ATIVO] = dbStringificado;
+        if (!snapshotBruto[LEGACY_KEY_ATIVO]) snapshotBruto[LEGACY_KEY_ATIVO] = dbStringificado;
+    } else {
+        // Fallback: Se o index não mantiver o 'db' em memória ativa, extrai direto do storage físico
+        let rawFactual = localStorage.getItem(STORAGE_KEY_ATIVO) || localStorage.getItem(LEGACY_KEY_ATIVO);
+        if (rawFactual) {
+            snapshotBruto[STORAGE_KEY_ATIVO] = rawFactual;
+            snapshotBruto[LEGACY_KEY_ATIVO] = rawFactual;
+        }
+    }
+
+    // 4. Encapsulamento no Envelope Estrutural Histórico
+    const backupFinal = {
+        version: 'SALINHA_BACKUP_V1',
+        schema: 1,
+        created_at: new Date().toISOString(),
+        data: snapshotBruto
+    };
+
+    // 5. Descarregamento do artefato portátil (.json)
+    const blob = new Blob([JSON.stringify(backupFinal, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); 
+    a.href = URL.createObjectURL(blob); 
+    a.download = `Backup_Ecossistema_Consolidado_${Date.now()}.json`; 
+    a.click();
+};
+
+// =========================================================
+// RESTAURAÇÃO COMPLETA HISTÓRICA (RESTORE TOTAL ADAPTADO NO INDEX.HTML)
+// =========================================================
+window.SALINHA_BACKUP.importar = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importado = JSON.parse(e.target.result);
+            const raizImportacao = importado.data || importado;
+
+            if (!raizImportacao || typeof raizImportacao !== 'object') {
+                throw new Error('Formato inválido');
+            }
+
+            if (confirm("ATENÇÃO: A restauração vai sobrescrever os dados atuais. Deseja continuar?")) {
+                // Executa a purga soberana e reescreve o storage bruto
+                localStorage.clear();
+                Object.keys(raizImportacao).forEach(k => {
+                    localStorage.setItem(k, raizImportacao[k]);
+                });
+
+                alert("Ecosistema restaurado com sucesso!");
+                notificarMutacaoAoDashboard(); // Acorda o dashboard passivo
+                window.location.reload(); // Força o re-boot completo do orquestrador
+            }
+        } catch (err) {
+            alert("[ERRO CRÍTICO] Falha ao processar arquivo de restore total.");
+        }
+    };
+    reader.readAsText(file);
+};
+
+// =========================================================
+// IMPORTAÇÃO INCREMENTAL (MERGE ESTRUTURAL NO INDEX.HTML)
+// =========================================================
+const inputIncremental = document.getElementById('import-incremental');
+
+if (inputIncremental) {
+    inputIncremental.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(f) {
+            try {
+                const importado = JSON.parse(f.target.result);
+                
+                const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'monstrinho_factual_db';
+                const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'cordeiro_factual_db';
+
+                if (!importado || typeof importado !== 'object' || Array.isArray(importado)) {
+                    throw new Error('Payload incompatível.');
+                }
+
+                const raizImportacao = importado.data || importado;
+                if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
+                    throw new Error('Envelope de dados inválido.');
+                }
+
+                let chavesMutadas = 0;
+                let entidadesInjetadas = 0;
+
+                Object.keys(raizImportacao).forEach(chave => {
+                    const valorImportadoBruto = raizImportacao[chave];
+                    let chaveDestinoLocal = chave;
+
+                    // Ajuste 1: Convergência imediata de namespaces para a chave moderna ativa
+                    if (chave === STORAGE_KEY_ATIVO || chave === LEGACY_KEY_ATIVO) {
+                        chaveDestinoLocal = STORAGE_KEY_ATIVO;
+                    }
+
+                    const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
+                    let objImportado = null;
+                    let objLocal = null;
+
+                    try {
+                        objImportado = (typeof valorImportadoBruto === 'string') ? JSON.parse(valorImportadoBruto) : valorImportadoBruto;
+                    } catch (err) {
+                        return;
+                    }
+
+                    if (valorLocalBruto !== null) {
+                        try { objLocal = JSON.parse(valorLocalBruto); } catch (err) { objLocal = null; }
+                    }
+
+                    if (objLocal === null || objLocal === undefined) {
+                        if (Array.isArray(objImportado)) objLocal = [];
+                        else if (typeof objImportado === 'object') objLocal = {};
+                        else return;
+                    }
+
+                    let persistirChave = false;
+
+                    // ── ESTRATÉGIA A: ARRAYS (Acervos, Baterias, Históricos de Prova) ──
+                    if (Array.isArray(objImportado) && Array.isArray(objLocal)) {
+                        objImportado.forEach(item => {
+                            if (!item) return;
+                            const itemId = item.id || item.uid || item.hash || item.codigo;
+                            if (!itemId) return;
+
+                            if (!objLocal.some(local => {
+                                const localId = local.id || local.uid || local.hash || local.codigo;
+                                return localId === itemId;
+                            })) {
+                                objLocal.push(item);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                    } 
+                    // ── ESTRATÉGIA B: DICIONÁRIOS / MAPAS (Base Factual 'db' do Dashboard) ──
+                    else if (
+                        objImportado !== null && typeof objImportado === 'object' && !Array.isArray(objImportado) &&
+                        objLocal !== null && typeof objLocal === 'object' && !Array.isArray(objLocal)
+                    ) {
+                        Object.keys(objImportado).forEach(subChave => {
+                            if (!subChave || objImportado[subChave] === null || objImportado[subChave] === undefined) return;
+
+                            // Ajuste 2: Inicialização estrutural defensiva para evitar o descarte de novos arrays analíticos
+                            if (Array.isArray(objImportado[subChave]) && !Array.isArray(objLocal[subChave])) {
+                                objLocal[subChave] = [];
+                            }
+
+                            if (Array.isArray(objImportado[subChave]) && Array.isArray(objLocal[subChave])) {
+                                objImportado[subChave].forEach(itemInterno => {
+                                    if (!itemInterno) return;
+                                    const itemId = itemInterno.id || itemInterno.uid || itemInterno.hash || itemInterno.codigo;
+                                    if (!itemId) return;
+
+                                    if (!objLocal[subChave].some(lInterno => {
+                                        const localId = lInterno.id || lInterno.uid || lInterno.hash || lInterno.codigo;
+                                        return localId === itemId;
+                                    })) {
+                                        objLocal[subChave].push(itemInterno);
+                                        entidadesInjetadas++;
+                                        persistirChave = true;
+                                    }
+                                });
+                            } else if (objLocal[subChave] === undefined) {
+                                objLocal[subChave] = objImportado[subChave];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                    }
+
+                    if (persistirChave) {
+                        localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                        chavesMutadas++;
+                    }
+                });
+
+                // Executa o pulso de reidratação e sinaliza as alterações para o dashboard passivo
+                if (chavesMutadas > 0) {
+                    notificarMutacaoAoDashboard();
+                }
+
+                alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${chavesMutadas}\nNovas entidades injetadas: ${entidadesInjetadas}`);
+
+            } catch (error) {
+                console.error("Erro na fusão incremental:", error);
+                alert("[ERRO CRÍTICO] Falha no processamento do merge estrutural.");
+            } finally {
+                e.target.value = '';
+            }
+        };
+        reader.readAsText(file);
+    });
+}
+
+// =========================================================================
+// CONSTANTES SOBERANAS DE ARMAZENAMENTO (RESOLUÇÃO DINÂMICA)
+// =========================================================================
+const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'monstrinho_factual_db';
+const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'cordeiro_factual_db';
+
+// =========================================================================
+// MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
+// =========================================================================
 window.SALINHA_BACKUP = {
-    // Chaves soberanas do ecossistema
     STORAGE_KEYS: [
+
+        // EXECUTOR / ACERVO
         'cordeiro_acervo_provas',
         'cordeiro_auditoria_historica',
+        'clube_simulado_auto',
+
+        // DASHBOARD FACTUAL
+        'salinha_longitudinal_runtime',
+        'etl_planner_db',
+
+        // PLAYLISTS / LINKS
+        'cordeiro_playlists_soberanas',
+        'cordeiro_links_uteis',
+
+        // UI / VIEW
+        'cordeiro_config_view',
+        'cordeiro_view_ativa',
+        'salinha_active_module',
+
+        // TJCE / PAINEL DOCUMENTAL
         'tjce_factual_l3_checks',
-        'tjce_user_links',      
-        'tjce_card_links',      
-        'tjce_card_materials',  
-        'salinha_active_module'
+        'tjce_user_links',
+        'tjce_card_links',
+        'tjce_card_materials'
     ],
 
     exportar: function() {
-        const payload = {
-            version: 'SALINHA_BACKUP_V1',
-            schema: 1, // Controle de evolução estrutural futura
-            created_at: new Date().toISOString(),
-            data: {}
-        };
+        try {
+            // Preservação estrita do envelope histórico do Monstrinho
+            let payload = {
+                version: 'SALINHA_BACKUP_V1',
+                schema: 1,
+                created_at: new Date().toISOString(),
+                data: {}
+            };
 
-        this.STORAGE_KEYS.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) {
-                payload.data[key] = value;
+            // Varredura física das chaves declaradas na whitelist
+            this.STORAGE_KEYS.forEach(chave => {
+                let valor = localStorage.getItem(chave);
+                if (valor !== null) {
+                    payload.data[chave] = valor;
+                }
+            });
+
+            // -----------------------------------------------------------------
+            // AJUSTE 2: PATCH CIRÚRGICO EM exportar() - GARANTIA FACTUAL DEFENSIVA
+            // -----------------------------------------------------------------
+            let rawFactual =
+                localStorage.getItem(STORAGE_KEY_ATIVO) ||
+                localStorage.getItem(LEGACY_KEY_ATIVO);
+
+            // Força a captura a partir da memória viva (db) se o storage físico estiver dessincronizado
+            if (!rawFactual && typeof db !== 'undefined' && db !== null) {
+                rawFactual = JSON.stringify(db);
             }
-        });
 
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `salinha_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
+            if (rawFactual) {
+                payload.data[STORAGE_KEY_ATIVO] = rawFactual;
+            }
 
-        // Ajuste 1: Liberação imediata de memória após o ciclo de download
-        setTimeout(() => {
-            URL.revokeObjectURL(a.href);
-        }, 1000);
+            // Geração e descarregamento do artefato portátil (.json)
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Backup_Ecossistema_Consolidado_${Date.now()}.json`;
+            a.click();
+        } catch (err) {
+            console.error("Falha na geração do snapshot de backup:", err);
+            alert("[ERRO] Não foi possível compilar o arquivo de exportação.");
+        }
     },
 
-    importar: async function(event) {
+    importar: function(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        const text = await file.text();
-        let parsed;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importado = JSON.parse(e.target.result);
+                
+                // Validação de segurança estrutural contra payloads corrompidos
+                const raizImportacao = importado.data || importado;
+                if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
+                    throw new Error('Payload estruturalmente incompatível.');
+                }
 
-        try {
-            parsed = JSON.parse(text);
-        } catch(e) {
-            alert('Backup inválido. Ficheiro corrompido.');
-            event.target.value = ''; 
-            return;
-        }
+                if (confirm("ATENÇÃO SOBERANA:\n\nA restauração completa apagará todo o progresso local atual para injetar o snapshot selecionado. Deseja continuar?")) {
+                    
+                    // Purga o storage host para evitar colisões de estados remanescentes
+                    localStorage.clear();
 
-        if (!parsed || parsed.version !== 'SALINHA_BACKUP_V1') {
-            alert('Versão incompatível.');
-            event.target.value = '';
-            return;
-        }
+                    // Injeção física direta na camada de storage bruto
+                    Object.keys(raizImportacao).forEach(chave => {
+                        let chaveDestino = chave;
+                        
+                        // Convergência imediata de namespaces factuais para o padrão moderno ativo
+                        if (chave === STORAGE_KEY_ATIVO || chave === LEGACY_KEY_ATIVO) {
+                            chaveDestino = STORAGE_KEY_ATIVO;
+                        }
+                        
+                        localStorage.setItem(chaveDestino, raizImportacao[chave]);
+                    });
 
-        if (!parsed.data) {
-            alert('Estrutura de dados inválida.');
-            event.target.value = '';
-            return;
-        }
+                    // -----------------------------------------------------------------
+                    // AJUSTE 3: PATCH CIRÚRGICO EM importar() - REIDRATAÇÃO IMEDIATA
+                    // -----------------------------------------------------------------
+                    if (typeof window.loadFactualDatabase === 'function') {
+                        window.loadFactualDatabase();
+                    }
 
-        if (!confirm('ATENÇÃO: A importação deste backup substituirá integralmente todos os dados, histórico e baterias atuais. Deseja continuar?')) {
-            event.target.value = '';
-            return;
-        }
+                    if (typeof window.renderAll === 'function') {
+                        window.renderAll();
+                    }
 
-        // Substituição integral com blindagem ativa por whitelist
-        Object.entries(parsed.data).forEach(([key, value]) => {
-            // Ajuste 2: Ignora qualquer chave estranha ao ecossistema definido
-            if (!this.STORAGE_KEYS.includes(key)) {
-                return;
+                    alert("Ecossistema restaurado com sucesso!");
+                    
+                    // Executa o reboot do ciclo de vida do orquestrador
+                    location.reload();
+                }
+            } catch (err) {
+                console.error("Erro crítico no processamento do restore:", err);
+                alert("[ERRO CRÍTICO] O arquivo JSON submetido é inválido, inconsistente ou está corrompido.");
+            } finally {
+                // Purga o buffer do input de arquivos
+                event.target.value = '';
             }
-
-            if (value === null || value === undefined) {
-                localStorage.removeItem(key);
-            } else {
-                localStorage.setItem(key, value);
-            }
-        });
-
-        alert('Backup restaurado com sucesso. O sistema será reiniciado.');
-        location.reload();
+        };
+        reader.readAsText(file);
     }
 };
 </script>
 <script>
+    
 window.MAPA_TJCE_RUNTIME = {
   jsonEdital: [],
   DOMAIN_FLAT: {}, 
@@ -1813,6 +2139,369 @@ if(ri) {
 <button id="top-toggle" onclick="toggleTop()" title="Menu Superior">⚙</button>
 
 <script>
+window.SimuladosEngine = {
+    importar: function() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    var parsed = JSON.parse(event.target.result);
+                    
+                    // Validação estrita: rejeita arrays cruzando como objetos
+                    if (parsed.type !== 'simulados' || parsed.version !== 1 || !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
+                        throw new Error("Arquivo incompatível. O envelope estrutural não corresponde à coluna de Simulados.");
+                    }
+                    
+                    var novosSims = Array.isArray(parsed.data.sims) ? parsed.data.sims : [];
+                    
+                    var runtimeAtual;
+                    try {
+                        runtimeAtual = JSON.parse(localStorage.getItem('clube_simulado_auto') || '{}');
+                    } catch (errParse) {
+                        runtimeAtual = {};
+                    }
+                    var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+                    if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+                    runtimeAtual.sims = acervoSoberano.filter(function(item) {
+                        return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Simulado');
+                    });
+                    
+                    var mapaAtual = new Map();
+                    runtimeAtual.sims.forEach(function(item) { if (item && item.id) mapaAtual.set(item.id, item); });
+                    
+                    // Hardening contra duplicatas internas no payload
+                    novosSims.forEach(function(item) {
+                        if (item && item.id && !mapaAtual.has(item.id)) {
+                            runtimeAtual.sims.push(item);
+                            mapaAtual.set(item.id, item); // Atualiza o mapa em tempo real
+                        }
+                    });
+                    
+                    if (runtimeAtual.sims.length > 0 && typeof runtimeAtual.si !== 'number') {
+                        runtimeAtual.si = 0;
+                    }
+                    
+                    localStorage.setItem('clube_simulado_auto', JSON.stringify(runtimeAtual));
+                    var acervoFinal = acervoSoberano.filter(function(item) {
+                        return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Simulado'));
+                    });
+                    runtimeAtual.sims.forEach(function(item) {
+                        if (!acervoFinal.some(function(existing) {
+                            return existing && existing.id === item.id;
+                        })) {
+                            acervoFinal.push(item);
+                        }
+                    });
+                    localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+                    alert('Simulados importados com sucesso!');
+                    
+                    if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+                } catch (err) {
+                    alert('Erro na importação: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    },
+    exportar: function() {
+        var runtime;
+        try {
+            runtime = JSON.parse(localStorage.getItem('clube_simulado_auto') || '{}');
+        } catch (e) {
+            runtime = {};
+        }
+        var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+        if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+        runtime.sims = acervoSoberano.filter(function(item) {
+            return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Simulado');
+        });
+        
+        var payload = {
+            type: 'simulados',
+            version: 1,
+            data: runtime
+        };
+        
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'simulados_soberanos_backup.json';
+        a.click();
+        
+        setTimeout(function() {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    },
+    excluir: function() {
+        if (confirm('Atenção: Isso apagará os simulados desta coluna. O runtime factual não será afetado. Deseja continuar?')) {
+            var runtimeAtual;
+            try {
+                runtimeAtual = JSON.parse(localStorage.getItem('clube_simulado_auto') || '{}');
+            } catch (e) {
+                runtimeAtual = {};
+            }
+            
+            runtimeAtual.sims = [];
+            runtimeAtual.si = 0;
+            
+            localStorage.setItem('clube_simulado_auto', JSON.stringify(runtimeAtual));
+            
+            var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+            if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+            var acervoFinal = acervoSoberano.filter(function(item) {
+                return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Simulado'));
+            });
+            localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+            
+            if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+        }
+    }
+};
+
+window.PlaylistsEngine = {
+    importar: function() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    var parsed = JSON.parse(event.target.result);
+                    
+                    if (parsed.type !== 'playlists' || parsed.version !== 1 || !Array.isArray(parsed.data)) {
+                        throw new Error("Arquivo incompatível. O envelope estrutural não corresponde à coluna de Playlists.");
+                    }
+                    
+                    var novosDados = parsed.data;
+                    
+                    var dadosAtuais;
+                    try {
+                        dadosAtuais = JSON.parse(localStorage.getItem('cordeiro_playlists_soberanas') || '[]');
+                    } catch (errParse) {
+                        dadosAtuais = [];
+                    }
+                    var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+                    if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+                    dadosAtuais = acervoSoberano.filter(function(item) {
+                        return item.tipo === 'pl';
+                    });
+                    
+                    var mapaAtual = new Map();
+                    dadosAtuais.forEach(function(item) { if (item && item.id) mapaAtual.set(item.id, item); });
+                    
+                    // Hardening contra duplicatas internas no payload
+                    novosDados.forEach(function(item) {
+                        if (item && item.id && !mapaAtual.has(item.id)) {
+                            dadosAtuais.push(item);
+                            mapaAtual.set(item.id, item); // Atualiza o mapa em tempo real
+                        }
+                    });
+                    
+                    localStorage.setItem('cordeiro_playlists_soberanas', JSON.stringify(dadosAtuais));
+                    var acervoFinal = acervoSoberano.filter(function(item) {
+                        return item.tipo !== 'pl';
+                    });
+                    dadosAtuais.forEach(function(item) {
+                        if (!acervoFinal.some(function(existing) {
+                            return existing && existing.id === item.id;
+                        })) {
+                            acervoFinal.push(item);
+                        }
+                    });
+                    localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+                    alert('Playlists importadas com sucesso!');
+                    
+                    if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+                } catch (err) {
+                    alert('Erro na importação: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    },
+    exportar: function() {
+        var dados;
+        try {
+            dados = JSON.parse(localStorage.getItem('cordeiro_playlists_soberanas') || '[]');
+        } catch (e) {
+            dados = [];
+        }
+        var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+        if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+        dados = acervoSoberano.filter(function(item) {
+            return item.tipo === 'pl';
+        });
+        
+        var payload = {
+            type: 'playlists',
+            version: 1,
+            data: dados
+        };
+        
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'playlists_soberanas_backup.json';
+        a.click();
+        
+        setTimeout(function() {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    },
+    excluir: function() {
+        if (confirm('Atenção: Isso apagará as playlists desta coluna. O runtime factual não será afetado. Deseja continuar?')) {
+            localStorage.setItem('cordeiro_playlists_soberanas', '[]');
+            
+            var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+            if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+            var acervoFinal = acervoSoberano.filter(function(item) {
+                return item.tipo !== 'pl';
+            });
+            localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+            
+            if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+        }
+    }
+};
+
+window.ProvasEngine = {
+    importar: function() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    var parsed = JSON.parse(event.target.result);
+                    
+                    if (parsed.type !== 'provas' || parsed.version !== 1 || !Array.isArray(parsed.data)) {
+                        throw new Error("Arquivo incompatível. O envelope estrutural não corresponde à coluna de Provas Anteriores.");
+                    }
+                    
+                    var novosDados = parsed.data;
+                    
+                    var db;
+                    try {
+                        var dbRaw = localStorage.getItem('salinha_longitudinal_runtime');
+                        db = dbRaw ? JSON.parse(dbRaw) : {};
+                    } catch (errParse) {
+                        db = {};
+                    }
+                    var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+                    if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+                    db.historico_provas_anteriores = acervoSoberano.filter(function(item) {
+                        return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Prova');
+                    });
+                    
+                    var mapaAtual = new Map();
+                    db.historico_provas_anteriores.forEach(function(item) { if (item && item.id) mapaAtual.set(item.id, item); });
+                    
+                    // Hardening contra duplicatas internas no payload
+                    novosDados.forEach(function(item) {
+                        if (item && item.id && !mapaAtual.has(item.id)) {
+                            db.historico_provas_anteriores.push(item);
+                            mapaAtual.set(item.id, item); // Atualiza o mapa em tempo real
+                        }
+                    });
+                    
+                    localStorage.setItem('salinha_longitudinal_runtime', JSON.stringify(db));
+                    var acervoFinal = acervoSoberano.filter(function(item) {
+                        return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Prova'));
+                    });
+                    db.historico_provas_anteriores.forEach(function(item) {
+                        if (!acervoFinal.some(function(existing) {
+                            return existing && existing.id === item.id;
+                        })) {
+                            acervoFinal.push(item);
+                        }
+                    });
+                    localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+                    alert('Provas Anteriores importadas com sucesso!');
+                    
+                    if (typeof window.renderProvasAnteriores === 'function') window.renderProvasAnteriores();
+                    if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+                } catch (err) {
+                    alert('Erro na importação: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    },
+    exportar: function() {
+        var db;
+        try {
+            var dbRaw = localStorage.getItem('salinha_longitudinal_runtime');
+            db = dbRaw ? JSON.parse(dbRaw) : {};
+        } catch (e) {
+            db = {};
+        }
+        var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+        if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+        db.historico_provas_anteriores = acervoSoberano.filter(function(item) {
+            return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Prova');
+        });
+        
+        var dados = Array.isArray(db.historico_provas_anteriores) ? db.historico_provas_anteriores : [];
+        
+        var payload = {
+            type: 'provas',
+            version: 1,
+            data: dados
+        };
+        
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'historico_provas_anteriores_backup.json';
+        a.click();
+        
+        setTimeout(function() {
+            URL.revokeObjectURL(url);
+        }, 1000);
+    },
+    excluir: function() {
+        if (confirm('Atenção: Isso apagará EXCLUSIVAMENTE o histórico de provas anteriores. Deseja continuar?')) {
+            var db;
+            try {
+                var dbRaw = localStorage.getItem('salinha_longitudinal_runtime');
+                db = dbRaw ? JSON.parse(dbRaw) : {};
+            } catch (e) {
+                db = {};
+            }
+            
+            db.historico_provas_anteriores = [];
+            localStorage.setItem('salinha_longitudinal_runtime', JSON.stringify(db));
+            
+            var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+            if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
+            var acervoFinal = acervoSoberano.filter(function(item) {
+                return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.includes('Prova'));
+            });
+            localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
+            
+            if (typeof window.renderProvasAnteriores === 'function') window.renderProvasAnteriores();
+            if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+        }
+    }
+};
+
 var tempoInicioQuestao = null;
 const IS_ADMIN = true;
 
@@ -3465,7 +4154,9 @@ function renderTabs(){
 
 // Renderiza as abas (Modo Somente Leitura)
   SIMS.forEach(function(s,i){    
-    var conc = s.stats !== null, p = conc ? s.stats.pct : pct(s.dados);
+    if (!s) return; // Failsafe: ignora slots vazios ou corrompidos no array
+    var conc = (s.stats !== null && s.stats !== undefined); 
+    var p = conc ? (s.stats.pct || 0) : (s.dados ? pct(s.dados) : 0);
     // A aba só recebe o estilo 'ativa' se for o índice atual E o usuário NÃO estiver na Vitrine
     var isAtiva = (i === SI && !isHome); 
     var wrap = document.createElement('div');
