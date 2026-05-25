@@ -7390,10 +7390,14 @@ window.processarImportacaoAcervo = function(
         
 
         let novosItens = Array.isArray(dadosImportados)
-            ? dadosImportados
-            : [dadosImportados];
+    ? dadosImportados
+    : [dadosImportados];
 
-        novosItens.forEach(item => {
+let mapa = new Map(
+    acervoLocal.map(item => [item.id, item])
+);
+
+novosItens.forEach(item => {
     if (item && item.id) {
         mapa.set(item.id, item);
     }
