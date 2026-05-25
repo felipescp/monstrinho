@@ -7342,6 +7342,9 @@ window.processarImportacaoAcervo = function(
         let acervoLocal = JSON.parse(
             localStorage.getItem('cordeiro_acervo_provas') || '[]'
         );
+        if (opcoes.oficial) {
+    acervoLocal = [];
+}
 
         let novosItens = Array.isArray(dadosImportados)
             ? dadosImportados
@@ -7355,11 +7358,7 @@ window.processarImportacaoAcervo = function(
             if (item && item.id) mapa.set(item.id, item);
         });
 
-        if (opcoes.oficial) {
-
-    window.ACERVO_OFICIAL = Array.from(mapa.values());
-
-} else {
+        if (!opcoes.oficial) {
 
     localStorage.setItem(
        'cordeiro_acervo_provas',
