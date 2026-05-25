@@ -884,13 +884,6 @@ body{
 
 }
 
-#tela-home{
-
-    height:auto !important;
-
-    overflow:visible !important;
-
-}
 }
 </style>
 </head>
@@ -2988,19 +2981,106 @@ function autoSave(){
   }
 }
 
-function autoLoad(cb){
+window.ACERVO_OFICIAL_IDS = new Set(
+   JSON.parse(
+      localStorage.getItem(
+         'cordeiro_acervo_provas'
+      ) || '[]'
+   ).map(x => x.id)
+);
+
+let auto = JSON.parse(
+   localStorage.getItem('clube_simulado_auto')
+   || '{}'
+);
+
+if (Array.isArray(auto.sims)) {
+
+   auto.sims = auto.sims.filter(sim => {
+
+      return (
+         sim &&
+         sim.id &&
+         window.ACERVO_OFICIAL_IDS.has(sim.id)
+      );
+
+   });
+
+   localStorage.setItem(
+      'clube_simulado_auto',
+      JSON.stringify(auto)
+   );
+}
+
+function autoLoad(cb){ 
+
   wsGet('clube_simulado_auto').then(function(val){
-    if(!val){ cb(false); return; }
+
+    if(!val){
+      cb(false);
+      return;
+    }
+
     try {
+
       var saved = JSON.parse(val);
-      if(!saved.sims || !saved.sims.length){ cb(false); return; }
-      
+
+      // ======================================
+      // FILTRO SOBERANO DE ENTIDADES OFICIAIS
+      // ======================================
+
+      let oficiais = new Set(
+
+         JSON.parse(
+            localStorage.getItem(
+               'cordeiro_acervo_provas'
+            ) || '[]'
+         ).map(x => x.id)
+
+      );
+
+      if (Array.isArray(saved.sims)) {
+
+         saved.sims = saved.sims.filter(sim => {
+
+            return (
+               sim &&
+               sim.id &&
+               oficiais.has(sim.id)
+            );
+
+         });
+
+      }
+
+      // ======================================
+
+      if(!saved.sims || !saved.sims.length){
+         cb(false);
+         return;
+      }
+
       // Validação Estrita de Integridade Estrutural
-      var ul = saved.sims[Math.min(saved.si || 0, saved.sims.length - 1)];
-      if (!ul || !ul.cfg || !ul.dados || !ul.dados.blocos) { throw new Error("Sessão corrompida"); }
-      
+      var ul = saved.sims[
+         Math.min(saved.si || 0, saved.sims.length - 1)
+      ];
+
+      if (
+         !ul ||
+         !ul.cfg ||
+         !ul.dados ||
+         !ul.dados.blocos
+      ) {
+         throw new Error("Sessão corrompida");
+      }
+
       SIMS = saved.sims;
-      SI = Math.min(saved.si || 0, SIMS.length - 1);
+
+      SI = Math.min(
+         saved.si || 0,
+         SIMS.length - 1
+      );
+
       if(SI < 0) SI = 0;
       
       C = JSON.parse(JSON.stringify(ul.cfg));
@@ -7437,6 +7517,18 @@ window.importarAcervoOficial = async function(url) {
 };
 
 window.carregarAcervosOficiais = async function() {
+
+    // ======================================
+// CATÁLOGO OFICIAL SOBERANO
+// ======================================
+
+window.ACERVO_OFICIAL_IDS = new Set(
+   JSON.parse(
+      localStorage.getItem(
+         'cordeiro_acervo_provas'
+      ) || '[]'
+   ).map(x => x.id)
+);
 
    await window.importarAcervoOficial(
       '/monstrinho/dados/bateriasvf/grupo-ce-1779411807594.json'
