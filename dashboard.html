@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.ico" type="image/ico">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="tjce_analises.js"></script>
     <style>
 /* ==========================================
    [FOUNDATION & COMMON UI]
@@ -76,7 +75,7 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
     gap: 10px;
     padding: 12px;
     background: #ffffff;
-    width: 320px;
+    width: 100%; /* <--- FLUIDEZ TOTAL */
     min-height: 140px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
@@ -288,10 +287,10 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
     initializeLongitudinalRuntime();
 });
 
-        /**
-         * 1. STORAGE SOBERANO
-         */
-        const STORAGE_KEY = 'salinha_longitudinal_runtime';
+/**
+* 1. STORAGE SOBERANO
+*/
+const STORAGE_KEY = 'salinha_longitudinal_runtime';
 const LEGACY_STORAGE_KEY = 'etl_planner_db';
 
 const DEFAULT_DB = { historico_provas_anteriores: [], simulados_avulsos: [], cadernos_perenes: {}, caderno_erros: {}, caderno_axiomas: {}, materiais: {}, hues: {} };
@@ -404,6 +403,8 @@ function loadFactualDatabase() {
 
         function renderProgressoCheck() { 
             const simulados = getDadosGlobaisETL();
+
+            
             const stats = {}; 
             simulados.forEach(sim => {
                 if(!sim.granulares) return;
@@ -640,6 +641,197 @@ histHTML.push(`
             if (typeof atualizarSidebarDireitaCP === 'function') atualizarSidebarDireitaCP();
         }
 
+let chartRadarProvasInstance = null;
+ window.renderProvasAnteriores = function() {
+            const fCarreira = document.getElementById('filtro-carreira') ? document.getElementById('filtro-carreira').value : "";
+            const fBanca = document.getElementById('filtro-banca') ? document.getElementById('filtro-banca').value : "";
+            const fTipo = document.getElementById('filtro-tipo') ? document.getElementById('filtro-tipo').value : "";
+
+            let filtrados = db.historico_provas_anteriores.filter(p => {
+                return (fCarreira === "" || p.carreira === fCarreira) && 
+                       (fBanca === "" || p.banca === fBanca) &&
+                       (fTipo === "" || p.tipo === fTipo);
+            });
+
+            if (filtrados.length === 0) {
+                document.getElementById('historico-provas-list').innerHTML = '<div style="grid-column: 1/-1; padding: 20px; color: var(--text-muted); text-align: center; border: 1px dashed var(--border-color); border-radius: 8px;">Nenhuma prova encontrada para os filtros selecionados.</div>';
+                if (chartRadarProvasInstance) chartRadarProvasInstance.destroy();
+                document.getElementById('matriz-vies-container').innerHTML = '';
+                document.getElementById('provas-detalhes-materias').innerHTML = '';
+                return;
+            }
+
+            // 1. ATUALIZA KPIs (MÉDIA E GAP)
+            let totalAcertos = 0, totalFeitas = 0, somaGaps = 0, qtdGaps = 0;
+            filtrados.forEach(p => {
+                totalAcertos += p.global.acertos; totalFeitas += p.global.feitas;
+                if (p.corte && p.global.feitas > 0) {
+                    somaGaps += ((p.global.acertos / p.global.feitas) * 100 - (p.corte / p.global.feitas) * 100);
+                    qtdGaps++;
+                }
+            });
+            const pctGeral = totalFeitas > 0 ? Math.round((totalAcertos / totalFeitas) * 100) : 0;
+            document.getElementById('kpi-media-geral').innerText = `${pctGeral}%`;
+            document.getElementById('kpi-vol-geral').innerText = `${totalFeitas} questões resolvidas no total`;
+
+            const elGap = document.getElementById('kpi-gap-corte');
+            const elGapIcon = document.getElementById('kpi-gap-icon');
+            if (qtdGaps > 0) {
+                let mediaGap = somaGaps / qtdGaps;
+                elGap.innerText = `${mediaGap > 0 ? '+' : ''}${mediaGap.toFixed(1)} pts`;
+                elGap.style.color = mediaGap >= 0 ? 'var(--success)' : 'var(--danger)';
+                elGapIcon.innerText = mediaGap >= 0 ? '🔥' : '🧊';
+            } else {
+                elGap.innerText = '--'; elGap.style.color = 'var(--text-main)'; elGapIcon.innerText = '⚖️';
+            }
+
+            // 2. PROCESSAMENTO E AGREGAÇÃO
+            let analiseRadar = {};
+            let errosPorBanca = {};
+            let memMaterias = {};
+
+            filtrados.forEach(prova => {
+                const bancaStr = prova.banca || "Indefinida";
+                if (!errosPorBanca[bancaStr]) errosPorBanca[bancaStr] = { lei: 0, juris: 0, dout: 0, totalErros: 0 };
+
+                if (prova.granulares) {
+                    prova.granulares.forEach(g => {
+                        if (!analiseRadar[g.materia]) analiseRadar[g.materia] = { acertos: 0, feitas: 0 };
+                        analiseRadar[g.materia].acertos += g.acertos;
+                        analiseRadar[g.materia].feitas += g.feitas;
+
+                        let eL = (g.fontes?.lei?.tot || 0) - (g.fontes?.lei?.ac || 0);
+                        let eJ = (g.fontes?.juris?.tot || 0) - (g.fontes?.juris?.ac || 0);
+                        let eD = (g.fontes?.doutrina?.tot || 0) - (g.fontes?.doutrina?.ac || 0);
+                        errosPorBanca[bancaStr].lei += eL; errosPorBanca[bancaStr].juris += eJ; errosPorBanca[bancaStr].dout += eD;
+                        errosPorBanca[bancaStr].totalErros += (eL + eJ + eD);
+
+                        if(!memMaterias[g.materia]) memMaterias[g.materia] = {};
+                        if(!memMaterias[g.materia][g.topico]) memMaterias[g.materia][g.topico] = {feitas:0, acertos:0, lei:{ac:0, tot:0}, juris:{ac:0, tot:0}, doutrina:{ac:0, tot:0}};
+                        let base = memMaterias[g.materia][g.topico];
+                        base.feitas += g.feitas; base.acertos += g.acertos;
+                        base.lei.ac += (g.fontes?.lei?.ac || 0); base.lei.tot += (g.fontes?.lei?.tot || 0);
+                        base.juris.ac += (g.fontes?.juris?.ac || 0); base.juris.tot += (g.fontes?.juris?.tot || 0);
+                        base.doutrina.ac += (g.fontes?.doutrina?.ac || 0); base.doutrina.tot += (g.fontes?.doutrina?.tot || 0);
+                    });
+                }
+            });
+
+            // 3. RENDERIZA RADAR
+            const ctxRadar = document.getElementById('chartRadarProvas');
+            if (chartRadarProvasInstance) chartRadarProvasInstance.destroy();
+            const radarLabels = Object.keys(analiseRadar);
+            if (radarLabels.length >= 3 && ctxRadar) {
+                chartRadarProvasInstance = new Chart(ctxRadar, {
+                    type: 'radar',
+                    data: {
+                        labels: radarLabels.map(l => l.replace('DIREITO ', '')),
+                        datasets: [{ data: radarLabels.map(m => Math.round((analiseRadar[m].acertos / analiseRadar[m].feitas) * 100)), backgroundColor: 'rgba(79, 70, 229, 0.2)', borderColor: '#4f46e5', borderWidth: 2, pointRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            // 4. RENDERIZA MATRIZ DE VIÉS
+            const bancasValidas = Object.keys(errosPorBanca).filter(b => errosPorBanca[b].totalErros > 0).sort((a,b) => errosPorBanca[b].totalErros - errosPorBanca[a].totalErros);
+            document.getElementById('matriz-vies-container').innerHTML = bancasValidas.map(banca => {
+                const eb = errosPorBanca[banca];
+                const pL = Math.round((eb.lei / eb.totalErros) * 100) || 0;
+                const pJ = Math.round((eb.juris / eb.totalErros) * 100) || 0;
+                const pD = Math.round((eb.dout / eb.totalErros) * 100) || 0;
+                return `<div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 6px; padding: 10px;">
+                            <strong style="font-size: 11px; color: var(--danger); text-transform: uppercase;">${banca} (${eb.totalErros} erros)</strong>
+                            <div style="display: flex; gap: 2px; height: 10px; width: 100%; border-radius: 4px; overflow: hidden; margin: 6px 0;">
+                                <div style="background: #3b82f6; width: ${pL}%;"></div><div style="background: #8b5cf6; width: ${pJ}%;"></div><div style="background: #10b981; width: ${pD}%;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: bold;">
+                                <span style="color: #3b82f6;">Lei: ${pL}%</span><span style="color: #8b5cf6;">Juris: ${pJ}%</span><span style="color: #10b981;">Dout: ${pD}%</span>
+                            </div>
+                        </div>`;
+            }).join('') || '<div style="font-size:11px; color:var(--text-muted); text-align:center; padding: 20px;">Sem dados de erros para análise.</div>';
+
+            // 5. RENDERIZA ANÁLISE AGREGADA
+            let matHTML = [];
+            Object.entries(memMaterias).sort().forEach(([materia, topicos]) => {
+                let tF = 0, tA = 0;
+                let topicosHTML = Object.entries(topicos).map(([nome, s]) => {
+                    const pct = Math.round((s.acertos/s.feitas)*100) || 0;
+                    tF += s.feitas; tA += s.acertos;
+                    let micro = '';
+                    [{l:'Doutrina', d:s.doutrina}, {l:'Lei Seca', d:s.lei}, {l:'Jurisprudência', d:s.juris}].forEach(f => {
+                        if(f.d && f.d.tot > 0) {
+                            const pctF = Math.round((f.d.ac/f.d.tot)*100);
+                            micro += `<div class="hm-ext-micro"><span>${pctF < 50 ? '⚠️ ' : ''}${f.l}</span><strong>${pctF}%</strong></div>`;
+                        }
+                    });
+                    return `<div class="hm-ext-card ${getBgClass(pct)}">
+                                <div class="hm-ext-head"><span class="hm-ext-title">${nome}</span><div style="text-align: right;"><div class="hm-ext-score">${pct}%</div><div style="font-size: 8.5px; opacity: 0.9;">${s.acertos}/${s.feitas}</div></div></div>
+                                ${micro ? `<div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">${micro}</div>` : ''}
+                            </div>`;
+                }).join('');
+
+                const totalPct = Math.round((tA/tF)*100);
+                matHTML.push(`<div class="prog-subject-card">
+                                <div class="prog-subject-header" onclick="this.parentElement.classList.toggle('active')">
+                                    <div class="prog-subject-title"><span><span style="color:${getMateriaColor(materia)}; margin-right:5px;">■</span> ${materia}</span><span style="color:${getHeatmapColor(totalPct)};">${totalPct}% Global</span></div>
+                                    <div class="barra-bg"><div class="barra-fill" style="width:${totalPct}%; background:${getHeatmapColor(totalPct)}"></div></div>
+                                </div>
+                                <div class="prog-grid-container" style="grid-template-columns: 1fr; background: #f8fafc; padding: 10px;">${topicosHTML}</div>
+                            </div>`);
+            });
+            distributeToColumns('provas-detalhes-materias', matHTML, "Dados insuficientes.");
+
+// 6. RENDERIZA LISTA DE PROVAS
+            document.getElementById('historico-provas-list').innerHTML = [...filtrados].sort((a,b) => parseDateBr(a.data_execucao) - parseDateBr(b.data_execucao)).reverse().map(prova => {
+const pct = Math.round((prova.global.acertos / prova.global.feitas) * 100) || 0;
+                
+                let htmlCortes = '';
+                let corteAmpla = prova.corte_ampla || prova.corte || null; // Herda 'corte' antigo se houver
+                let corteCota = prova.corte_cota || null;
+
+                if (corteAmpla) {
+                    let gapA = prova.global.acertos - corteAmpla;
+                    htmlCortes += `<div style="font-size: 9.5px; font-weight: 700; color: ${gapA >= 0 ? 'var(--success)' : 'var(--danger)'}; margin-top: 4px;">Corte (Ampla): ${corteAmpla} (${gapA >= 0 ? '+' : ''}${gapA} pts)</div>`;
+                }
+                if (corteCota) {
+                    let gapC = prova.global.acertos - corteCota;
+                    htmlCortes += `<div style="font-size: 9.5px; font-weight: 700; color: ${gapC >= 0 ? 'var(--success)' : 'var(--danger)'}; margin-top: 2px;">Corte (Cota): ${corteCota} (${gapC >= 0 ? '+' : ''}${gapC} pts)</div>`;
+                }
+                
+                // Formatação do tempo de prova
+                let tempoFmt = '';
+                if (prova.tempo_segundos && Number(prova.tempo_segundos) > 0) {
+                    let seg = Number(prova.tempo_segundos);
+                    let h = Math.floor(seg / 3600);
+                    let m = Math.floor((seg % 3600) / 60);
+                    let s = Math.floor(seg % 60);
+                    let tStr = '';
+                    if (h > 0) tStr += h + 'h';
+                    if (m > 0 || h > 0) tStr += (m < 10 && h > 0 ? '0' : '') + m + 'min';
+                    tStr += (s < 10 && (m > 0 || h > 0) ? '0' : '') + s + 's';
+                    tempoFmt = `<div style="font-size:10px; color:var(--app-primary); font-weight:700; margin-top:6px;">⏱️ Prova realizada em [${tStr}]</div>`;
+                }
+
+                return `<div class="sim-hist-card" style="margin-bottom: 10px; background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                            <div style="display:flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 6px;"><div style="font-size: 10px; color: var(--text-muted); font-weight: 700;">📅 ${prova.data_execucao}</div><span style="background: ${prova.tipo==='Simulação Real'?'#1e293b':'#f1f5f9'}; color: ${prova.tipo==='Simulação Real'?'white':'#475569'}; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 800;">${prova.tipo.toUpperCase()}</span></div>
+                                    <div style="font-size: 15px; font-weight: 800; color: var(--text-main);">${prova.orgao} <span style="color: var(--app-primary)">(${prova.banca})</span></div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">${prova.carreira}</div>
+                                    ${tempoFmt}
+                                </div>
+                               <div style="text-align: right; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s;" onclick="window.abrirModalResultadoEstatico('${prova.id_original || prova.id}')" onmouseover="this.style.borderColor='var(--app-primary)'; this.style.backgroundColor='#ffffff';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#f8fafc';" title="Ver Resultado Detalhado">
+                                    <div style="font-size: 24px; font-weight: 800; color: ${getHeatmapColor(pct)}; font-family: var(--font-display);">${pct}%</div>
+                                    <div style="font-size: 10px; font-weight: 800; display:flex; justify-content:flex-end; align-items:center; gap:4px;">${prova.global.acertos}/${prova.global.feitas} Acertos <span style="font-size: 12px;">📔</span></div>
+                                    ${htmlCortes}
+                                </div>
+                            </div>
+                        </div>`;
+            }).join('');
+        };
+
+        window.aplicarFiltrosProvas = function() { window.renderProvasAnteriores(); };
+
 // ── BIBLIOTECA DE SIMULADOS (NUVEM AUTOMATIZADA) ──
 window.abrirBiblioteca = function() {
   if (typeof fecharSb === 'function') fecharSb(); // Esconde sidebar caso tenha sido acionado pelo mobile
@@ -809,6 +1001,54 @@ window.resetarETLGlobal = function () {
     alert("ETL factual resetado com sucesso.");
 };
 
+window.hidratarFiltrosMC = function() {
+    if (!db || !Array.isArray(db.historico_provas_anteriores)) return;
+
+    const carreiras = new Set();
+    const bancas = new Set();
+    const tipos = new Set();
+
+    db.historico_provas_anteriores.forEach(p => {
+        // Normalização semântica forçada
+        const tipoStr = (p.tipo || '').toUpperCase();
+        
+        // Regras de Classificação que o Dashboard espera
+        const isSimulado = tipoStr.includes('SIMULADO');
+        const isProva = tipoStr.includes('PROVA');
+        const isBateria = tipoStr.includes('BATERIA');
+
+        // Só hidrata o que for "Soberano" (Prova ou Simulado)
+        if (isSimulado || isProva) {
+            // Normaliza os nomes para garantir que o filtro funcione visualmente
+            const tipoLabel = isSimulado ? "Simulado" : "Prova Real";
+            
+            if (p.carreira) carreiras.add(p.carreira.trim());
+            if (p.banca) bancas.add(p.banca.trim());
+            tipos.add(tipoLabel); // Força a categorização limpa
+        }
+    });
+
+    const preencherSelect = (id, valores, textoDefault) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        
+        const valorAtual = select.value;
+        select.innerHTML = `<option value="">${textoDefault}</option>`;
+        
+        Array.from(valores).sort().forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+        });
+        select.value = valorAtual;
+    };
+
+    preencherSelect('filtro-carreira', carreiras, 'Todas');
+    preencherSelect('filtro-banca', bancas, 'Todas');
+    preencherSelect('filtro-tipo', tipos, 'Todos os Tipos');
+};
+
 /**
  * MOTOR DA SANFONA FACTUAL
  * Controle estritamente declarativo via classes CSS.
@@ -829,7 +1069,11 @@ window.alternarSanfonaFactual = function(elemento) {
          * 6. ENTRYPOINT E ORQUESTRAÇÃO SOBERANA
          */
         window.initializeLongitudinalRuntime = function() {
-    renderAnalyticsRuntime();
+    // Hidrata os selects dinamicamente ANTES de renderizar a interface
+    if (typeof window.hidratarFiltrosMC === 'function') window.hidratarFiltrosMC();
+    
+    // Mantém o comportamento original
+    if (typeof window.renderAnalyticsRuntime === 'function') window.renderAnalyticsRuntime();
 };
 
         window.setupNavigation = function() {
