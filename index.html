@@ -7271,8 +7271,7 @@ window.importarAcervoJson = function() {
     window.triggerFileUpload(function(dadosImportados) {
 
         window.processarImportacaoAcervo(
-    dadosImportados,
-    { oficial: true }
+    dadosImportados
 );
 
     });
@@ -7333,6 +7332,52 @@ window.carregarAcervosOficiais = async function() {
 
 };
 
+window.enxertarSimuladosMC = function(novosItens) {
+
+    novosItens.forEach(item => {
+
+        let m = item.metadados_mc || {};
+
+        let isSimulado =
+            m.classificacao?.toUpperCase().includes('SIMULADO');
+
+        if (!isSimulado) return;
+
+        if (document.getElementById(`card-${item.id}`)) return;
+
+        let container =
+            document.getElementById('lista-provas-mc');
+
+        if (!container) return;
+
+        let qtdQ =
+            item.dados?.blocos.reduce(
+                (acc, b) => acc + b.questoes.length,
+                0
+            ) || 0;
+
+        let disciplinasHtml =
+            item.dados?.blocos
+                .map(b => `• ${b.nome} (${b.questoes.length})`)
+                .join(' ');
+
+        let htmlCard = window.buildCardSimulado(
+            item,
+            false,
+            qtdQ,
+            disciplinasHtml,
+            m
+        );
+
+        container.insertAdjacentHTML(
+            'beforeend',
+            htmlCard
+        );
+
+    });
+
+};
+
 window.processarImportacaoAcervo = function(
     dadosImportados,
     opcoes = {}
@@ -7354,9 +7399,9 @@ window.processarImportacaoAcervo = function(
             acervoLocal.map(item => [item.id, item])
         );
 
-        novosItens.forEach(item => {
-            if (item && item.id) mapa.set(item.id, item);
-        });
+        window.enxertarSimuladosMC(
+    novosItens
+);
 
         if (!opcoes.oficial) {
 
