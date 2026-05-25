@@ -7416,6 +7416,29 @@ novosItens.forEach(item => {
    JSON.stringify(Array.from(mapa.values()))
 );
 
+novosItens.forEach(function(item){
+
+    if (!item || item.tipo !== 'ce') return;
+
+    var jaExiste = SIMS.some(function(s){
+        return s &&
+               s.cfg &&
+               s.cfg.id === item.id;
+    });
+
+    if (jaExiste) return;
+
+    SIMS.push({
+        cfg: item,
+        dados: item.dados || {},
+        stats: null
+    });
+
+});
+
+if (typeof renderTabs === 'function') {
+    renderTabs();
+}
         // ENXERTO PASSIVO EXISTENTE
         novosItens.forEach(item => {
 
