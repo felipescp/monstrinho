@@ -7438,6 +7438,34 @@ window.processarImportacaoAcervo = function(
             localStorage.getItem('cordeiro_acervo_provas') || '[]'
         );
         
+    // ======================================
+    // NORMALIZAÇÃO DE ENVELOPES
+    // ======================================
+
+if (
+   dadosImportados &&
+   dadosImportados.type === 'playlists'
+) {
+   dadosImportados =
+      dadosImportados.data || [];
+}
+
+if (
+   dadosImportados &&
+   dadosImportados.type === 'provas'
+) {
+   dadosImportados =
+      dadosImportados.data || [];
+}
+
+if (
+   dadosImportados &&
+   dadosImportados.type === 'simulados'
+) {
+
+   dadosImportados =
+      dadosImportados.data?.sims || [];
+}
 
         let novosItens = Array.isArray(dadosImportados)
     ? dadosImportados
@@ -7543,11 +7571,11 @@ if (typeof renderSim === 'function' && SIMS.length > 0) {
             );
         });
 
-        console.log('[SIMS ANTES]', SIMS.length);
+        
 
 novosItens.forEach(function(item){
 
-    console.log('[ITEM]', item);
+
 
     if (!item || item.tipo !== 'ce') return;
 
@@ -7555,7 +7583,7 @@ novosItens.forEach(function(item){
         return s && s.id === item.id;
     });
 
-    console.log('[JA EXISTE]', jaExiste);
+    
 
     if (jaExiste) return;
 
@@ -7565,7 +7593,7 @@ novosItens.forEach(function(item){
 
 });
 
-console.log('[SIMS DEPOIS]', SIMS.length);
+
 
         console.log(
    '[BOOT OFICIAL]',
