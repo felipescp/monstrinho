@@ -7497,11 +7497,29 @@ if (typeof renderSim === 'function' && SIMS.length > 0) {
             );
         });
 
-        console.log(
-   '[BOOT OFICIAL]',
-   novosItens.length,
-   'itens carregados'
-);
+        console.log('[SIMS ANTES]', SIMS.length);
+
+novosItens.forEach(function(item){
+
+    console.log('[ITEM]', item);
+
+    if (!item || item.tipo !== 'ce') return;
+
+    var jaExiste = SIMS.some(function(s){
+        return s && s.id === item.id;
+    });
+
+    console.log('[JA EXISTE]', jaExiste);
+
+    if (jaExiste) return;
+
+    SIMS.push(item);
+
+    console.log('[PUSH]', item.id);
+
+});
+
+console.log('[SIMS DEPOIS]', SIMS.length);
 
     } catch(e) {
 
