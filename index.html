@@ -2910,6 +2910,7 @@ if (typeof window.renderizarSimuladosIneditos === 'function') {
 if (typeof renderSessoes === 'function') {
     renderSessoes();
 }
+window.ACERVO_OFICIAL = [];
 window.SI = -1;
 window.HIST = [];
 window.HI = -1;
@@ -7270,8 +7271,9 @@ window.importarAcervoJson = function() {
     window.triggerFileUpload(function(dadosImportados) {
 
         window.processarImportacaoAcervo(
-            dadosImportados
-        );
+    dadosImportados,
+    { oficial: true }
+);
 
     });
 
@@ -7331,7 +7333,10 @@ window.carregarAcervosOficiais = async function() {
 
 };
 
-window.processarImportacaoAcervo = function(dadosImportados) {
+window.processarImportacaoAcervo = function(
+    dadosImportados,
+    opcoes = {}
+) {
     try {
 
         let acervoLocal = JSON.parse(
@@ -7350,10 +7355,18 @@ window.processarImportacaoAcervo = function(dadosImportados) {
             if (item && item.id) mapa.set(item.id, item);
         });
 
-        localStorage.setItem(
-            'cordeiro_acervo_provas',
-            JSON.stringify(Array.from(mapa.values()))
-        );
+        if (opcoes.oficial) {
+
+    window.ACERVO_OFICIAL = Array.from(mapa.values());
+
+} else {
+
+    localStorage.setItem(
+       'cordeiro_acervo_provas',
+       JSON.stringify(Array.from(mapa.values()))
+    );
+
+}
 
         // ENXERTO PASSIVO EXISTENTE
         novosItens.forEach(item => {
