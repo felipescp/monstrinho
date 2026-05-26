@@ -799,77 +799,98 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     display: block !important;
 }
 
-@media (max-width: 700px){
-
-   html,
-   body{
-
-      overflow-y: auto !important;
-      height: auto !important;
-
-   }
-
-   body{
-
-      min-height: 100vh;
-   }
-
-   .vitrine-container{
-
-      overflow: visible !important;
-
-   }
-
-   .grid-vitrine{
-
-      overflow: visible !important;
-
-   }
-
-.listagem-provas{
-
-    padding:15px;
-
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-
-    height:auto;
-    max-height:none;
-
-    overflow:visible;
-
-}   
-
 /* =========================================
-   HOME FACTUAL — SCROLL SOBERANO
+   TOPBAR MOBILE SOBERANA
 ========================================= */
 
-#tela-home{
+.topbar-mobile-fixa{
 
-    height:auto !important;
-    min-height:100vh;
-
-    overflow:visible !important;
+    display:none;
 
 }
 
-.v-acc-item.active{
+/* =========================================
+   MOBILE
+========================================= */
 
-    height:auto !important;
+@media (max-width:700px){
 
-    max-height:none !important;
+    html,
+    body{
+
+        overflow-y:auto !important;
+        height:auto !important;
+
+    }
+
+    body{
+
+        min-height:100vh;
+        display:block !important;
+    }
+
+    .vitrine-container,
+    .grid-vitrine,
+    .listagem-provas{
+
+        overflow:visible !important;
+
+    }
+
+    .listagem-provas{
+
+        padding:15px;
+
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+
+        height:auto;
+        max-height:none;
+
+    }
+
+    /* =========================================
+       TOPBAR MOBILE
+    ========================================= */
+
+    .topbar-mobile-fixa{
+
+        display:flex !important;
+
+        position:sticky;
+
+        top:0;
+        left:0;
+
+        z-index:9998;
+
+        align-items:center;
+        gap:10px;
+
+        width:100%;
+
+        padding:8px 10px;
+
+        overflow-x:auto;
+        overflow-y:hidden;
+
+        background:var(--bg-body);
+
+        border-bottom:1px solid var(--border-color);
+
+        scrollbar-width:none;
+
+        box-shadow:0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .topbar-mobile-fixa::-webkit-scrollbar{
+
+        display:none;
+
+    }
 
 }
-
-.v-acc-body{
-
-    overflow:visible !important;
-
-    flex:none !important;
-
-}
-
 /* =========================================
    HOME — DESACOPLAR BODY FLEX
 ========================================= */
@@ -979,6 +1000,182 @@ body{
   
 <!-- TELA 1: HOME DO ALUNO (Vitrine) -->
 <div id="tela-home" class="tela ativa" style="padding: 0; background: var(--bg-body); flex-direction: row; height: 100vh; overflow: hidden;">
+    
+<!-- ===================================================== -->
+<!-- TOPBAR SOBERANA — AÇÕES GLOBAIS -->
+<!-- ===================================================== -->
+<div class="topbar-mobile-fixa">
+
+    <!-- ============================================== -->
+    <!-- BLOCO: BACKUP / RESTAURAÇÃO -->
+    <!-- ============================================== -->
+    <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+
+        <button
+            onclick="window.SALINHA_BACKUP.exportar()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-main);
+            "
+            title="Exportar Ecossistema"
+        >
+            📤 BACKUP
+        </button>
+
+        <button
+            onclick="document.getElementById('salinha-backup-input').click()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-main);
+            "
+            title="Restaurar (Apaga atual)"
+        >
+            📥 RESTAURAR
+        </button>
+
+        <input
+            type="file"
+            id="salinha-backup-input"
+            accept=".json"
+            style="display:none;"
+            onchange="window.SALINHA_BACKUP.importar(event)"
+        >
+
+        <button
+            onclick="document.getElementById('import-incremental').click()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--app-primary);
+                border:1px solid var(--app-primary);
+                color:white;
+                font-weight:700;
+            "
+            title="Importar mantendo dados locais"
+        >
+            📥 MERGE (MANTER)
+        </button>
+
+        <input
+            type="file"
+            id="import-incremental"
+            accept=".json"
+            style="display:none;"
+        >
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- DIVISOR -->
+    <!-- ============================================== -->
+    <div
+        style="
+            width:1px;
+            height:24px;
+            background:var(--border-color);
+            flex-shrink:0;
+        "
+    ></div>
+
+    <!-- ============================================== -->
+    <!-- STATUS DE SINCRONIZAÇÃO -->
+    <!-- ============================================== -->
+    <div
+        style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            cursor:pointer;
+            padding:4px 8px;
+            border-radius:6px;
+            border:1px solid transparent;
+            transition:all 0.2s ease;
+            flex-shrink:0;
+        "
+        onmouseover="
+            this.style.borderColor='var(--border-color)';
+            this.style.background='var(--bg-body)';
+        "
+        onmouseout="
+            this.style.borderColor='transparent';
+            this.style.background='transparent';
+        "
+    >
+
+        <!-- TEXTO -->
+        <div
+            style="
+                display:flex;
+                flex-direction:column;
+                align-items:flex-end;
+                justify-content:center;
+            "
+        >
+            <span
+                style="
+                    font-size:11px;
+                    font-weight:700;
+                    color:var(--text-main);
+                    font-family:var(--font-body);
+                    line-height:1.2;
+                "
+            >
+                Modo Offline
+            </span>
+
+            <span
+                style="
+                    font-size:9px;
+                    color:var(--text-muted);
+                    font-family:var(--font-body);
+                    text-transform:uppercase;
+                    font-weight:500;
+                "
+            >
+                Sincronização Desativada
+            </span>
+        </div>
+
+        <!-- ÍCONE -->
+        <div
+            style="
+                width:28px;
+                height:28px;
+                border-radius:50%;
+                background:#e2e8f0;
+                border:1px solid var(--border-color);
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:12px;
+                color:var(--text-muted);
+                overflow:hidden;
+                flex-shrink:0;
+            "
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 256 256"
+            >
+                <path d="M128,120a56,56,0,1,0-56-56A56.06,56.06,0,0,0,128,120Zm0-96a40,40,0,1,1-40,40A40,40,0,0,1,128,24Zm71.43,153.71c-16.14-19.64-42.33-31.71-71.43-31.71s-55.29,12.07-71.43,31.71A8,8,0,1,0,68.86,188C82,172.07,103.54,162,128,162s46,10.07,59.14,26a8,8,0,1,0,12.29-10.29Z"></path>
+            </svg>
+        </div>
+
+    </div>
+
+</div>
     
     <!-- CORPO PRINCIPAL (Esquerda/Centro) -->
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 15px 20px; gap: 15px; overflow-y: auto;">
@@ -1417,6 +1614,43 @@ window.SALINHA_BACKUP.importar = function(event) {
                 throw new Error('Formato inválido');
             }
 
+// =========================================================
+// PURGA TOTAL DE ECOSSISTEMA
+// =========================================================
+//
+// Operação destrutiva.
+//
+// Remove:
+//
+// - runtime;
+// - catálogo;
+// - históricos;
+// - snapshots;
+// - configurações.
+//
+// Utilizar apenas em:
+//
+// - restore total;
+// - reset estrutural.
+//
+// =========================================================
+
+// =========================================================
+// MERGE ESTRUTURAL INCREMENTAL
+// =========================================================
+//
+// Esta pipeline:
+//
+// - NÃO substitui ecossistema;
+// - NÃO executa restore total;
+//
+// Ela apenas:
+//
+// - injeta entidades ausentes;
+// - preserva runtime local;
+// - preserva progresso existente.
+//
+// =========================================================
             if (confirm("ATENÇÃO: A restauração vai sobrescrever os dados atuais. Deseja continuar?")) {
                 // Executa a purga soberana e reescreve o storage bruto
                 localStorage.clear();
@@ -1464,6 +1698,23 @@ if (inputIncremental) {
 
                 let chavesMutadas = 0;
                 let entidadesInjetadas = 0;
+
+// =========================================================
+// MERGE ESTRUTURAL INCREMENTAL
+// =========================================================
+//
+// Esta pipeline:
+//
+// - NÃO substitui ecossistema;
+// - NÃO executa restore total;
+//
+// Ela apenas:
+//
+// - injeta entidades ausentes;
+// - preserva runtime local;
+// - preserva progresso existente.
+//
+// =========================================================
 
                 Object.keys(raizImportacao).forEach(chave => {
                     const valorImportadoBruto = raizImportacao[chave];
@@ -1672,10 +1923,45 @@ window.SALINHA_BACKUP = {
                 }
 
                 if (confirm("ATENÇÃO SOBERANA:\n\nA restauração completa apagará todo o progresso local atual para injetar o snapshot selecionado. Deseja continuar?")) {
-                    
+ // =========================================================
+// PURGA TOTAL DE ECOSSISTEMA
+// =========================================================
+//
+// Operação destrutiva.
+//
+// Remove:
+//
+// - runtime;
+// - catálogo;
+// - históricos;
+// - snapshots;
+// - configurações.
+//
+// Utilizar apenas em:
+//
+// - restore total;
+// - reset estrutural.
+//
+// =========================================================                   
                     // Purga o storage host para evitar colisões de estados remanescentes
                     localStorage.clear();
 
+// =========================================================
+// MERGE ESTRUTURAL INCREMENTAL
+// =========================================================
+//
+// Esta pipeline:
+//
+// - NÃO substitui ecossistema;
+// - NÃO executa restore total;
+//
+// Ela apenas:
+//
+// - injeta entidades ausentes;
+// - preserva runtime local;
+// - preserva progresso existente.
+//
+// =========================================================
                     // Injeção física direta na camada de storage bruto
                     Object.keys(raizImportacao).forEach(chave => {
                         let chaveDestino = chave;
@@ -1716,8 +2002,7 @@ window.SALINHA_BACKUP = {
     }
 };
 </script>
-<script>
-    
+<script>  
 window.MAPA_TJCE_RUNTIME = {
   jsonEdital: [],
   DOMAIN_FLAT: {}, 
@@ -1734,6 +2019,26 @@ window.MAPA_TJCE_RUNTIME = {
   normalize: function(str='') {
     return str.toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   },
+
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
 
   loadAcervo: function() {
     try {
@@ -1798,7 +2103,24 @@ window.MAPA_TJCE_RUNTIME = {
     // matching taxonômico soberano
     let batLinked = this.getBateriasVinculadas(item);
     if (batLinked.length === 0) return 0;
-    
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
+
     let arquivoMorto = window.cordeiro_auditoria_historica || JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
     let concluidas = batLinked.filter(p => arquivoMorto[p.id]).length;
     
@@ -1967,6 +2289,23 @@ renderMainPage: function() {
     let batArray = this.getBateriasVinculadas(item); // SOBERANO: passa item
     let arquivoMorto = window.cordeiro_auditoria_historica || JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
 
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
+
     popover.innerHTML = `<div class="bat-popover-header">Baterias (${batArray.length})</div>` + batArray.map(b => `
         <div class="bat-row">
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; color:${arquivoMorto[b.id] ? 'var(--green)' : 'inherit'}">${b.nome}</span>
@@ -2015,6 +2354,23 @@ if(ri) {
 
         if(a === 'vol')
             voltarSim(i);
+
+            // =========================================================
+// ENCERRAMENTO VISUAL / NOVA SESSÃO
+// =========================================================
+//
+// novoSim():
+//
+// - NÃO preserva runtime atual;
+// - NÃO cria snapshot;
+// - NÃO adiciona histórico.
+//
+// Seu objetivo é:
+//
+// - abandonar contexto atual;
+// - iniciar fluxo limpo.
+//
+// =========================================================
 
         else if(a === 'novo')
             novoSim();
@@ -2258,7 +2614,121 @@ if(ri) {
 <button id="top-toggle" onclick="toggleTop()" title="Menu Superior">⚙</button>
 
 <script>
+window.exportarRuntime = function(){
 
+   return {
+
+      version: 1,
+
+      sims: SIMS,
+
+      si: SI
+
+   };
+
+};
+
+window.importarRuntime = function(runtime){
+
+console.log(
+   '[IMPORTAR RUNTIME]',
+   runtime
+);
+
+   if(window.RUNTIME_LOCK){
+
+      console.warn(
+         '[LOCK] importarRuntime bloqueado'
+      );
+
+      return;
+   }
+
+   window.RUNTIME_LOCK = true;
+
+   try {
+
+      console.log(
+   '[IMPORTAR RUNTIME]',
+   runtime
+);
+
+console.log(
+   '[VALIDAR]',
+   window.validarRuntime(runtime)
+);
+
+if(
+   !window.validarRuntime(runtime)
+){
+   throw new Error('Runtime inválido');
+}
+
+      SIMS = runtime.sims;
+
+      SI = Math.min(
+         runtime.si || 0,
+         SIMS.length - 1
+      );
+
+      if(SI < 0) SI = 0;
+
+      var atual = SIMS[SI];
+
+      if(
+         !atual ||
+         !atual.cfg ||
+         !atual.dados
+      ){
+         throw new Error(
+            'Snapshot estrutural inválido'
+         );
+      }
+
+      C = JSON.parse(
+         JSON.stringify(atual.cfg)
+      );
+
+      D = JSON.parse(
+         JSON.stringify(atual.dados)
+      );
+
+      QA = atual.qSalva || null;
+
+      restaurarEstadoTempo(atual);
+
+      HIST = SIMS
+         .filter(function(s){
+            return s.stats;
+         })
+         .map(function(s){
+            return mkH(
+               s,
+               SIMS.indexOf(s)
+            );
+         });
+
+      HI = HIST.length - 1;
+
+   } finally {
+
+      window.RUNTIME_LOCK = false;
+
+   }
+
+};
+
+window.validarRuntime = function(rt){
+
+   return (
+      rt &&
+      typeof rt === 'object' &&
+      Array.isArray(rt.sims)
+   );
+
+};
+
+window.RUNTIME_LOCK = false;
 
 window.SimuladosEngine = {
     importar: function() {
@@ -2285,7 +2755,26 @@ window.SimuladosEngine = {
                     } catch (errParse) { 
                         runtimeAtual = {}; 
                     }
-                    
+        
+  // =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================      
                     var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
                     if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
 
@@ -2567,6 +3056,53 @@ if (typeof window.executarPatchVisualPlaylists === 'function') {
 }
         }
     }
+};
+
+
+window.inicializarTaxonomiaModuloPlaylist = function(selMateria, selTopico) {
+    if (!selMateria || !selTopico || typeof TAXONOMIA_DADOS === 'undefined') return;
+
+    selMateria.innerHTML = '<option value="">1. Selecione a Matéria...</option>';
+    selTopico.innerHTML = '<option value="">2. Selecione o Tópico...</option>';
+    selTopico.disabled = true;
+
+    // 1. Popula as Matérias (Nível 1)
+    if (TAXONOMIA_DADOS.taxonomia_concursos) {
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(mat => {
+            selMateria.innerHTML += `<option value="${mat.nivel_1}">${mat.nivel_1}</option>`;
+        });
+    }
+
+    // 2. Engine de mudança: Popula Divisões e Tópicos (Nível 2 e 3)
+    selMateria.onchange = function() {
+        let matSelecionada = this.value;
+        selTopico.innerHTML = '<option value="">2. Selecione o Tópico...</option>';
+        
+        if (!matSelecionada) {
+            selTopico.disabled = true;
+            return;
+        }
+
+        selTopico.disabled = false;
+        let materiaObj = TAXONOMIA_DADOS.taxonomia_concursos.find(m => m.nivel_1 === matSelecionada);
+        
+        if (materiaObj && materiaObj.divisoes) {
+            materiaObj.divisoes.forEach(div => {
+                let optgroup = document.createElement('optgroup');
+                optgroup.label = div.nivel_2;
+                
+                if(div.topicos) {
+                    div.topicos.forEach(top => {
+                        let opt = document.createElement('option');
+                        opt.value = top.id;
+                        opt.textContent = top.nivel_3;
+                        optgroup.appendChild(opt);
+                    });
+                }
+                selTopico.appendChild(optgroup);
+            });
+        }
+    };
 };
 
 window.ProvasEngine = {
@@ -2986,6 +3522,34 @@ function wsList(prefix,shared){
   } catch(e) { return Promise.resolve([]); }
 }
 
+// =========================================================
+// SNAPSHOT SOBERANO DO RUNTIME
+// =========================================================
+//
+// autoSave() representa:
+//
+// - persistência factual;
+// - continuidade de sessão;
+// - recuperação pós-F5.
+//
+// O payload:
+//
+// { sims: SIMS, si: SI }
+//
+// representa:
+//
+// - estado factual vivo;
+// - tabs abertas;
+// - progresso atual.
+//
+// NÃO representa:
+//
+// - histórico;
+// - auditoria;
+// - snapshots finalizados.
+//
+// =========================================================
+
 function autoSave(){
   if(!SIMS.length){ wsDel('clube_simulado_auto'); return; }
   
@@ -3002,8 +3566,12 @@ function autoSave(){
   }
   
   try {
-    var payload = JSON.stringify({ sims: SIMS, si: SI });
+    var payload = JSON.stringify(
+   exportarRuntime()
+);
     wsSet('clube_simulado_auto', payload);
+// Persistência soberana do runtime ativo
+
   } catch(e) {
     console.error("Erro ao auto-salvar:", e);
   }
@@ -3065,7 +3633,29 @@ window.ACERVO_OFICIAL_IDS = new Set(
 //
 // =========================================================
 
+// =========================================================
+// RESTAURAÇÃO AUTOMÁTICA DE RUNTIME
+// =========================================================
+//
+// Responsabilidade:
+//
+// - reidratar SIMS;
+// - restaurar tabs abertas;
+// - preservar progresso em andamento.
+//
+// NÃO deve:
+//
+// - abrir catálogo;
+// - criar sessões novas;
+// - restaurar itens órfãos;
+// - recriar tabs fechadas deliberadamente.
+//
+// =========================================================
 function autoLoad(cb){ 
+
+    console.log(
+   '[AUTOLOAD] iniciou'
+);
 
   wsGet('clube_simulado_auto').then(function(val){
 
@@ -3092,21 +3682,31 @@ function autoLoad(cb){
 
       );
 
-      if (Array.isArray(saved.sims)) {
+      // FILTRO SOBERANO TEMPORARIAMENTE DESATIVADO
+// Objetivo:
+// verificar se o filtro está destruindo
+// snapshots legítimos do runtime.
+//      if (Array.isArray(saved.sims)) {
+//
+//         saved.sims = saved.sims.filter(sim => {
 
-         saved.sims = saved.sims.filter(sim => {
+//            let id =
+//               sim?.cfg?.id || sim?.id;
 
-            let id =
-               sim?.cfg?.id || sim?.id;
+//            let idBase = id.split('_aba_')[0];
 
-            return (
-               id &&
-               oficiais.has(id)
-            );
+//return (
+//   id &&
+//   (
+//      oficiais.has(id)
+//      ||
+//      oficiais.has(idBase)
+//   )
+//);
 
-         });
+//         });
 
-      }
+//      }
 
       // ======================================
 
@@ -3129,29 +3729,36 @@ function autoLoad(cb){
          throw new Error("Sessão corrompida");
       }
 
-      SIMS = saved.sims;
+      if(
+   !window.validarRuntime(saved)
+){
+   throw new Error('Runtime inválido');
+}
 
-      SI = Math.min(
-         saved.si || 0,
-         SIMS.length - 1
-      );
+window.importarRuntime(saved);
 
-      if(SI < 0) SI = 0;
-      
-      C = JSON.parse(JSON.stringify(ul.cfg));
-      D = JSON.parse(JSON.stringify(ul.dados));
-      QA = ul.qSalva || null;
-      
-      HIST = SIMS.filter(function(s){ return s.stats; })
-                 .map(function(s){ return mkH(s, SIMS.indexOf(s)); });
-      HI = HIST.length - 1;
-      
-      cb(true);
-    } catch(e) { 
-      console.warn("Failsafe acionado: Cache corrompido expurgado.", e);
-      wsDel('clube_simulado_auto'); // Auto-purga o erro
-      cb(false); 
-    }
+console.log(
+   '[AUTOLOAD OK]'
+);
+
+cb(true);
+    } catch(e) {
+
+  console.error(
+     '[AUTOLOAD ERRO]',
+     e
+  );
+
+  console.warn(
+     "Failsafe acionado: Cache corrompido expurgado.",
+     e
+  );
+
+  wsDel('clube_simulado_auto');
+
+  cb(false);
+
+}
   }).catch(function() {
       // Garante que o callback sempre dispare, mesmo se a Promise falhar
       cb(false);
@@ -3206,6 +3813,31 @@ function autoLoad(cb){
 // - abrir simulados;
 // - restaurar sessão;
 // - alterar SIMS.
+//
+// =========================================================
+
+// =========================================================
+// BOOT FRIO DO ORQUESTRADOR
+// =========================================================
+//
+// Estado inicial vazio.
+//
+// IMPORTANTE:
+//
+// Este bloco NÃO representa:
+//
+// - limpeza deliberada;
+// - fechamento de sessão;
+// - reset do usuário.
+//
+// Ele apenas define:
+//
+// - estado base de inicialização.
+//
+// O restore verdadeiro ocorre posteriormente via:
+//
+// - autoLoad()
+// - carregarSessao()
 //
 // =========================================================
 window.SIMS = [];
@@ -3275,6 +3907,22 @@ if (listPA) listPA.remove();
 window.buildCardPlaylist = function(p) {
     if (!p || !p.id) return '';
 
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
     // Releitura longitudinal específica e isolada de playlists
     var arquivoMorto = {};
     try {
@@ -3551,6 +4199,26 @@ window.buildCardProvaAnterior = function(p, isResolvido, m, clickAcao) {
     </div>`;
 };
 
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
+
 window.renderHomeDashboard = function() {
     let acervo = [];
     try {
@@ -3562,7 +4230,27 @@ window.renderHomeDashboard = function() {
     // ==========================================
     const treeContainer = document.getElementById('home-tree-container');
     const listCE = document.getElementById('lista-provas-ce');
-    const provasCE = acervo.filter(p => p.tipo === 'ce');
+    const provasCE = [];
+    acervo.forEach(function(p) {
+        if (p.tipo === 'ce') {
+            provasCE.push(p);
+        } else if (p.is_playlist === true && Array.isArray(p.playlist_sims)) {
+            p.playlist_sims.forEach(function(simObj, idx) {
+                if (!simObj || !simObj.cfg || !simObj.dados || !simObj.dados.blocos) return;
+                provasCE.push({
+                    ...simObj,
+                    id: `${p.id}_aba_${idx}`,
+                    nome: simObj.cfg.nome || `Módulo ${idx + 1}`,
+                    materia: simObj.cfg.materia || '',
+                    caminho_completo: simObj.cfg.caminho_completo || '',
+                    origem_playlist: p.id,
+                    nome_playlist: p.nome,
+                    is_playlist_modulo: true,
+                    playlist_module_idx: idx
+                });
+            });
+        }
+    });
     
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
     
@@ -3588,7 +4276,21 @@ window.renderHomeDashboard = function() {
                 
 // NÍVEL 2: Tópicos (Este sim dispara a listagem)
                 mat.divisoes.forEach(div => {
-                    let qtdDiv = provasCE.filter(p => p.caminho_completo && p.caminho_completo.includes(div.nivel_2)).length;
+                    let qtdDiv = provasCE.filter(function(p){
+
+   let matchMat =
+      p.materia === mat.nivel_1.toUpperCase();
+
+   let matchDiv =
+      p.caminho_completo &&
+      p.caminho_completo.includes(div.nivel_2);
+
+   return (
+      matchMat &&
+      matchDiv
+   );
+
+}).length;
                     let badgeDiv = qtdDiv > 0 ? `<span style="font-size:8.5px; color:var(--app-primary); font-weight:bold; margin-left:4px;">(${qtdDiv})</span>` : '';
                     
                     htmlTree += `
@@ -3617,6 +4319,22 @@ window.filtrarProvasCE = function(materia, divisao) {
                     return;
                 }
 
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
                 // 1. Puxa o índice de provas já finalizadas para fazer a validação visual
                 let arquivoMorto = {};
                 try { arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}'); } catch(e){}
@@ -3634,7 +4352,16 @@ window.filtrarProvasCE = function(materia, divisao) {
                     let iconeAcao = isResolvido ? '<span style="font-size: 11px;" title="Ver Resultados">📔</span>' : '<span style="color: var(--danger); font-weight: 800; font-size: 11px;">▶</span>';
                     
                     // 3. Lógica de Ação (Abre Resultado x Inicia Simulado)
-                    let clickAcao = isResolvido ? `window.abrirResultadoHistorico('${p.id}')` : `window.iniciarSimuladoDaVitrine('${p.id}')`;
+                    let clickAcao = '';
+                    if (isResolvido) {
+                        clickAcao = `window.abrirResultadoHistorico('${p.id}')`;
+                    } else {
+                        if (p.is_playlist_modulo) {
+                            clickAcao = `window.iniciarSimuladoDaVitrine('${p.origem_playlist}', ${p.playlist_module_idx})`;
+                        } else {
+                            clickAcao = `window.iniciarSimuladoDaVitrine('${p.id}')`;
+                        }
+                    }
 
 return `
 <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;" 
@@ -3716,6 +4443,23 @@ return `
 window.renderizarPlaylists = function() {
             let containerPL = document.getElementById('lista-playlists');
             if(!containerPL) return;
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
 
             let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
             let playlists = acervo.filter(p => p.is_playlist || (p.cfg && p.cfg.is_playlist)).reverse();
@@ -3850,6 +4594,22 @@ window.renderizarSimuladosIneditos = function() {
 //
 // =========================================================
 
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
     let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
     
     let htmlSimulados = ineditosFiltrados.map(p => {
@@ -3926,6 +4686,23 @@ window.renderizarProvasAnterioresSidebar = function() {
         listFiltrada.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 9px; font-style: italic;">Nenhuma prova encontrada.</div>';
         return;
     }
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
 
     let exibidas = filtradas.slice(0, 20);
     let avisoExtra = filtradas.length > 20 ? `<div style="text-align:center; font-size:9px; color:var(--text-muted); padding-top:8px;">+ ${filtradas.length - 20} resultados ocultos. Refine a busca.</div>` : '';
@@ -4052,6 +4829,27 @@ window.MAPA_TAXONOMIA = {};
         if(g('barra1')) g('barra1').style.display = 'none';
         if(g('barra-nav')) g('barra-nav').style.display = 'none';
     } 
+    
+    // =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
+
     else if (isAdmin && !taxId) {
         tela('tela-home'); 
         window.acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas')) || [];
@@ -4061,6 +4859,24 @@ window.MAPA_TAXONOMIA = {};
         if(g('barra1')) g('barra1').style.display = 'none';
         if(g('barra-nav')) g('barra-nav').style.display = 'none';
     } 
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
+
     else if (auditId) {
         let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
         if (arquivoMorto[auditId]) {
@@ -4346,11 +5162,34 @@ if(roCe) {
         for(let i = 1; i <= qtd; i++) {
             html += `
             <div class="pl-module-wrapper" style="border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px;">
-                <input type="text" class="pl-mod-title" placeholder="Título do Simulado ${i} (Ex: Direitos Humanos para FCC - 50q)" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; font-weight: bold; width: 100%; outline: none; background: white;">
+                <input type="text" class="pl-mod-title" placeholder="Título da Bateria ${i} (Ex: Direitos Humanos para FCC - 50q)" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 12px; font-weight: bold; width: 100%; outline: none; background: white;">
+                
+                <div class="box-taxonomia-modulo" style="margin-top: 5px;">
+                    <div style="font-size: 11px; font-weight: bold; margin-bottom: 4px; color: var(--text-main);">Vincular à Taxonomia <span>*</span></div>
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <select class="playlist-materia-modulo" style="flex:1; min-width:0; padding:.5rem; border:1px solid var(--border-color); border-radius:4px; font-size:12px; background:var(--bg-white); color:var(--text-main); outline:none; text-overflow: ellipsis;">
+                            <option value="">1. Selecione a Matéria...</option>
+                        </select>
+                        <select class="playlist-topico-modulo" style="flex:2; min-width:0; padding:.5rem; border:1px solid var(--border-color); border-radius:4px; font-size:12px; background:var(--bg-white); color:var(--text-main); outline:none; text-overflow: ellipsis;" disabled>
+                            <option value="">2. Selecione o Tópico...</option>
+                        </select>
+                    </div>
+                </div>
+
                 <textarea class="pl-raw-text" placeholder="Cole as questões V/F do Simulado ${i} aqui..." style="width:100%; height:100px; border:1px solid var(--border-color); border-radius:4px; padding:8px; font-family:monospace; font-size:11px; resize:vertical; background:var(--bg-white); outline: none;"></textarea>
             </div>`;
         }
         plTextareasContainer.innerHTML = html;
+        
+        // INÍCIO DA INJEÇÃO TAXONÔMICA: Inicializar os selects recém-criados no DOM
+        plTextareasContainer.querySelectorAll('.pl-module-wrapper').forEach(linha => {
+            let selMateria = linha.querySelector('.playlist-materia-modulo');
+            let selTopico = linha.querySelector('.playlist-topico-modulo');
+            if (typeof window.inicializarTaxonomiaModuloPlaylist === 'function') {
+                window.inicializarTaxonomiaModuloPlaylist(selMateria, selTopico);
+            }
+        });
+        // FIM DA INJEÇÃO TAXONÔMICA
         
         document.querySelectorAll('.pl-raw-text, .pl-mod-title').forEach(el => el.addEventListener('input', validarFormAdmin));
     }
@@ -4581,6 +5420,29 @@ function exQ(l,idx){var m=l.match(/^\[(.+)\]\[([VFvf])\](?:\[(.+)\])?$/);if(!m)r
 function apiT(p,cb){_api(p,'Você é tutor jurídico especializado. Responda em português, direto e técnico.',cb);}
 function _api(p,sys,cb){fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:8000,system:sys,messages:[{role:'user',content:p}]})}).then(function(r){return r.json();}).then(function(d){cb(d.content&&d.content[0]&&d.content[0].text?d.content[0].text:'');}).catch(function(e){alert('Erro de conexão: '+e);tela('tela-upload');});}
 
+// =========================================================
+// MATERIALIZAÇÃO DE SESSÃO
+// =========================================================
+//
+// Transforma:
+//
+// - configuração;
+// - upload;
+// - parsing;
+//
+// em:
+//
+// - runtime persistente;
+// - aba ativa;
+// - sessão multitabs.
+//
+// A partir daqui:
+//
+// - SIMS torna-se soberano;
+// - autoSave passa a persistir.
+//
+// =========================================================
+
 // ── LANÇAR ────────────────────────────────────────────────
 function lancar(){MODO_REVISAO=false;if(!D.blocos.length){alert('Nenhuma questão encontrada.');tela('tela-upload');return;}SIMS.push({cfg:JSON.parse(JSON.stringify(C)),dados:JSON.parse(JSON.stringify(D)),stats:null,qSalva:null,data:new Date().toISOString()});SI=SIMS.length-1;tela(null);tela('tela-simulado');;g('b1-limpar').disabled=true;renderSim();renderNav();var pq=D.blocos[0].questoes[0];if(pq)setQA(pq.id);renderTabs();autoSave();renderSessoes();}
 
@@ -4635,9 +5497,23 @@ function salvarProvaNoAcervo() {
                 // Aplica as Chaves Compostas no objeto D recém-parseado
                 window.aplicarChavesCompostas(D, baseIdSubmodulo);
 
+                let topicoId = wrap.querySelector('.playlist-topico-modulo')?.value;
+                let cfgModulo = JSON.parse(JSON.stringify(C));
+                
+                // --- ACESSO AO COFRE SEGURO (NATIVO DA ROTA CE) ---
+                if (topicoId && window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[topicoId]) {
+                    cfgModulo.id_taxonomia = topicoId;
+                    cfgModulo.materia = window.MAPA_TAXONOMIA[topicoId].materia;
+                    cfgModulo.caminho_completo = window.MAPA_TAXONOMIA[topicoId].caminho;
+                } else {
+                    cfgModulo.id_taxonomia = null;
+                    cfgModulo.materia = '';
+                    cfgModulo.caminho_completo = '';
+                }
+
                 // Empacota o simulado perfeitamente isolado!
                 playlistSims.push({
-                    cfg: JSON.parse(JSON.stringify(C)),
+                    cfg: cfgModulo,
                     dados: JSON.parse(JSON.stringify(D)),
                     stats: null,
                     qSalva: null,
@@ -4655,16 +5531,62 @@ function salvarProvaNoAcervo() {
         let isEdicao = window.ID_EDICAO !== null && window.ID_EDICAO !== undefined;
         let finalId = isEdicao ? window.ID_EDICAO : 'pl_' + Date.now();
 
+// O Objeto Supremo da Playlist (Emula o seu JSON externo)
+        // Captura a taxonomia do 1º Módulo para ancorar o card visualmente
+        let rootTaxId = playlistSims.length > 0 ? playlistSims[0].cfg.id_taxonomia : null;
+        let rootMateria = playlistSims.length > 0 ? playlistSims[0].cfg.materia : '';
+        let rootCaminho = playlistSims.length > 0 ? playlistSims[0].cfg.caminho_completo : '';
+
         // O Objeto Supremo da Playlist (Emula o seu JSON externo)
         let novaPlaylist = {
             id: finalId,
             nome: document.getElementById('cfg-nome').value.trim(),
+            
+            // --- INJEÇÃO DA ÂNCORA VISUAL DE RAIZ ---
+            id_taxonomia: rootTaxId,
+            materia: rootMateria,
+            caminho_completo: rootCaminho,
+            // ----------------------------------------
+            
             is_playlist: true,
             tipo: 'pl',
             referencias: document.getElementById('cfg-pl-ref').value.trim(),
+            
+            metadados_mc: null,
+            cfg: {
+                nome: document.getElementById('cfg-nome').value.trim(),
+                tipo: 'ce',
+                is_playlist: true,
+                
+                // Proteção extra contra engines de fallback
+                id_taxonomia: rootTaxId,
+                materia: rootMateria,
+                caminho_completo: rootCaminho
+            },
+
             playlist_sims: playlistSims, // O Array de Abas
             dataCriacao: new Date().toISOString()
         };
+
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
 
         let acervo = [];
         try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
@@ -4809,6 +5731,36 @@ function pct(d){
   return Math.round(validas.filter(function(q){return d.res[q.id]&&d.res[q.id].c&&d.res[q.id].ok;}).length/validas.length*100);
 }
 
+// =========================================================
+// HIDRATAÇÃO VISUAL DE RUNTIME
+// =========================================================
+//
+// renderTabs NÃO cria sessões.
+//
+// Apenas reflete:
+//
+// - estado atual de SIMS;
+// - foco SI;
+// - runtime já existente.
+//
+// =========================================================
+// =========================================================
+// RENDERIZADOR VISUAL DE TABS
+// =========================================================
+//
+// Esta função:
+//
+// - NÃO cria sessões;
+// - NÃO altera runtime diretamente;
+//
+// Porém:
+//
+// - conecta eventos de navegação;
+// - delega mutações para trocarTab().
+//
+// =========================================================
+
+
 function renderTabs(){
   var b2 = g('barra2'); 
   if (!b2) return;
@@ -4882,6 +5834,23 @@ x.addEventListener('click', function(e){
 
 function mkH(s,si){return{nome:s.cfg.nome,cfg:s.cfg,dados:s.dados,stats:s.stats,data:s.data,si:si};}
 
+
+// =========================================================
+// ROTEADOR SOBERANO DE TABS
+// =========================================================
+//
+// trocarTab():
+//
+// - troca o contexto factual ativo;
+// - redefine SI;
+// - reidrata C/D/QA;
+// - restaura estado temporal;
+// - sincroniza renderização.
+//
+// É a ÚNICA rota autorizada
+// para mudança de aba ativa.
+//
+// =========================================================
 function trocarTab(i, forceQuestao){
     var telaSim = g('tela-simulado');
     var isSimVisible = telaSim && (telaSim.style.display === 'flex' || telaSim.classList.contains('ativa'));
@@ -4922,6 +5891,32 @@ function trocarTab(i, forceQuestao){
     renderTabs(); 
     autoSave();
 }
+
+
+// =========================================================
+// FECHAMENTO DELIBERADO DE SESSÃO
+// =========================================================
+//
+// Cada aba representa:
+//
+// - uma sessão persistente individual.
+//
+// Fechar uma aba:
+//
+// - remove do runtime;
+// - remove do snapshot;
+// - impede restauração futura.
+//
+// Diferente de:
+//
+// - F5
+// - navegação
+// - fechamento do navegador
+//
+// que preservam sessão.
+//
+// =========================================================
+
 function fecharTab(i){
 
   let confirmar = confirm(
@@ -4961,6 +5956,7 @@ function fecharTab(i){
     // --- PATCH CIRÚRGICO ---
     // Força o storage a reconhecer que o runtime está limpo.
     wsSet('clube_simulado_auto', { sims: [], si: -1 });
+    // Persistência soberana do catálogo factual
     // -----------------------
 
     // Retorno contextual inteligente
@@ -5004,6 +6000,34 @@ function fecharTab(i){
   autoSave();
 }
 
+
+// =========================================================
+// HIDRATAÇÃO VISUAL DO SIMULADO
+// =========================================================
+//
+// CONTRATO SOBERANO:
+//
+// renderSim() NÃO pode:
+//
+// - alterar SIMS;
+// - alterar SI;
+// - substituir D;
+// - abrir sessões;
+// - restaurar snapshots;
+// - salvar runtime.
+//
+// Responsabilidade:
+//
+// - renderizar DOM;
+// - refletir D atual;
+// - aplicar modo visual;
+// - hidratar interface.
+//
+// Toda mutação de runtime deve ocorrer:
+//
+// ANTES de renderSim().
+//
+// =========================================================
 // ── RENDER SIMULADO ───────────────────────────────────────
 function renderSim(){
     C.tipo = (C.tipo || '').toLowerCase();
@@ -5359,6 +6383,30 @@ function cenSb(qId){
 }
 function togExp(qId){var et=g('et-'+qId),be=et?et.previousElementSibling:null;if(!et||!be)return;var h=!et.style.display||et.style.display==='none';et.style.display=h?'block':'none';be.textContent=h?'Ocultar explicação ▾':'Ver explicação ▸';}
 // Localize a função renderNav() e modifique o início dela:
+
+
+// =========================================================
+// RENDERIZAÇÃO PASSIVA DE NAVEGAÇÃO
+// =========================================================
+//
+// CONTRATO SOBERANO:
+//
+// renderNav() NÃO pode:
+//
+// - alterar SIMS;
+// - alterar SI;
+// - alterar QA;
+// - salvar runtime;
+// - abrir sessões;
+// - trocar tabs.
+//
+// Ela apenas:
+//
+// - reflete estado atual;
+// - renderiza progresso;
+// - renderiza navegação lateral.
+//
+// =========================================================
 function renderNav(){
     var nav=g('sbnav');nav.innerHTML='';var gi=0;
 
@@ -5489,6 +6537,8 @@ function bindResultadoActions() {
             window.exportarNotebookLM();
     });
 }
+
+
 
 // ── RESULTADO ─────────────────────────────────────────────
 function voltarSim(idx){
@@ -5994,6 +7044,23 @@ function salvarSessao(){
   });
 }
 
+// =========================================================
+// REIDRATAÇÃO EXPLÍCITA DE SESSÃO
+// =========================================================
+//
+// carregarSessao():
+//
+// - restaura snapshot persistido;
+// - reidrata runtime ativo;
+// - reconstrói SIMS/SI/C/D/QA.
+//
+// Difere de:
+//
+// autoLoad():
+// restauração automática pós-F5.
+//
+// =========================================================
+
 function carregarSessao(key){
   wsGet(key, true).then(function(val){
     if(!val)return;
@@ -6001,16 +7068,11 @@ function carregarSessao(key){
       var saved=JSON.parse(val);
       var arr=saved.sims||[];
       if(!arr.length)return;
-      SIMS=arr;
-      SI=Math.min(saved.si||0,SIMS.length-1);
-      if(SI<0)SI=0;
-      var ul=SIMS[SI];
-      C=JSON.parse(JSON.stringify(ul.cfg));
-      D=JSON.parse(JSON.stringify(ul.dados));
-      QA=ul.qSalva||null;
-      restaurarEstadoTempo(ul);
-      HIST=SIMS.filter(function(s){return s.stats;}).map(function(s){return mkH(s,SIMS.indexOf(s));});
-      HI=HIST.length-1;
+      if(
+   !window.validarRuntime(saved)
+){
+   return;
+}
       renderTabs();
       
       if(ul.stats&&HI>=0){
@@ -6227,6 +7289,25 @@ function mostrarModal(cfg){
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 }
+
+// =========================================================
+// SNAPSHOT MANUAL DE SESSÃO
+// =========================================================
+//
+// Apesar do nome histórico:
+//
+// pausarSimulado()
+//
+// NÃO pausa semanticamente o runtime.
+//
+// Ela:
+//
+// - cria snapshot persistido;
+// - salva estado atual;
+// - retorna ao home.
+//
+// =========================================================
+
 window.pausarSimulado = function() {
     if (C.tipo === 'mc' && QA && !MODO_REVISAO) {
         if (!D.res[QA]) D.res[QA] = {};
@@ -6275,6 +7356,25 @@ window.pausarSimulado = function() {
     }, 300);
 };
 
+// =========================================================
+// PIPELINE SOBERANA DE FINALIZAÇÃO
+// =========================================================
+//
+// Esta função:
+//
+// - encerra o runtime factual;
+// - congela snapshot estatístico;
+// - grava histórico imutável;
+// - sincroniza Planner;
+// - atualiza renderização.
+//
+// NÃO deve:
+//
+// - abrir novas sessões;
+// - substituir SIMS global;
+// - restaurar snapshots.
+//
+// =========================================================
 function finalizarSimulado() {
     if(C.tipo === 'mc' && QA && !MODO_REVISAO) {
         if(!D.res[QA]) D.res[QA] = {};
@@ -6326,6 +7426,23 @@ function finalizarSimulado() {
                 s.stats = calcStats();
                 s.data = s.data || new Date().toISOString();
                 autoSave();
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
 
                 // 1. Grava a "Fotografia" na Rota do Arquivo Morto
                 let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
@@ -6527,6 +7644,26 @@ window.patchCardResolvido = function(id) {
         return;
     }
 
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
+
     try {
         // 2. Releitura do acervo factual soberano
         var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
@@ -6668,6 +7805,21 @@ function exportarErrosTxt(idx){
   // Novo sistema de Download
   downloadArquivo(linhas.join('\n'), h.nome + '_erros.txt', 'text/plain');
 }
+
+// =========================================================
+// DERIVAÇÃO DE RUNTIME
+// =========================================================
+//
+// Gera uma nova sessão derivada
+// de um snapshot histórico.
+//
+// O runtime criado:
+//
+// - NÃO altera o original;
+// - NÃO sobrescreve histórico;
+// - cria uma nova aba independente.
+//
+// =========================================================
 
 function refazerErradas(idx){
   var h=HIST[idx];if(!h)return;
@@ -7132,6 +8284,26 @@ function restaurarEstadoTempo(ul) {
 }
 
 
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
+
 window.baixarSimuladoAcervo = function(id) {
     let acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
     let prova = acervo.find(p => p.id === id);
@@ -7368,10 +8540,46 @@ document.addEventListener('click', () => {
 
 <script>
 
+// =========================================================
+// RUNTIME HISTÓRICO ISOLADO
+// =========================================================
+//
+// Snapshot derivado do Arquivo Morto.
+//
+// Utilizado apenas para:
+//
+// - revisão;
+// - auditoria;
+// - visualização histórica.
+//
+// NÃO deve contaminar:
+//
+// - runtime multitabs;
+// - sessão ativa.
+//
+// =========================================================
+
 window.abrirResultadoHistorico = function(id) {
     // 1. Limpa eventuais modais sobrepostos
     document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
-    
+
+// =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
+
     // 2. Busca o exame no Arquivo Morto
     let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
     if (arquivoMorto[id]) {
@@ -7396,11 +8604,40 @@ window.abrirResultadoHistorico = function(id) {
     }
 };
 
+// =========================================================
+// ORQUESTRADOR DE ABERTURA DE SESSÕES
+// =========================================================
+//
+// Ponte entre:
+//
+// - catálogo factual;
+// - runtime ativo.
+//
+// Responsável por:
+//
+// - abrir novas tabs;
+// - retomar playlists;
+// - criar sessões derivadas.
+//
+// =========================================================
+
 // ==========================================
 // MÓDULO: INICIALIZAÇÃO INSTANTÂNEA DA VITRINE (SPA)
 // ==========================================
+
 window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
 
+    if(window.RUNTIME_LOCK){
+        console.warn(
+            '[LOCK] abertura bloqueada'
+        );
+        return;
+    }
+
+    window.RUNTIME_LOCK = true;
+
+    try {
+    
     // 1. Limpa modais sobrepostos
     document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
 
@@ -7427,6 +8664,22 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
         renderSim();
     }
 
+// =========================================================
+// ABERTURA MULTITABS CONTROLADA
+// =========================================================
+//
+// Playlists operam por:
+//
+// - expansão procedural;
+// - múltiplas sessões independentes.
+//
+// Cada módulo:
+//
+// - torna-se uma aba autônoma;
+// - possui persistência própria;
+// - possui ciclo de vida isolado.
+//
+// =========================================================
     // ----------------------------------------------------
     // LÓGICA DE PLAYLIST (Lote ou Individual)
     // ----------------------------------------------------
@@ -7446,6 +8699,24 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
             SI = SIMS.length - 1;
 
         } else {
+
+        // =========================================================
+// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
+//
+// Representa:
+//
+// - simulados concluídos;
+// - snapshots finalizados;
+// - auditoria longitudinal.
+//
+// NÃO representa:
+//
+// - runtime ativo;
+// - tabs abertas;
+// - sessão persistente.
+//
+// =========================================================
+
 // ---> CLIQUE EM LOTE [INICIAR TUDO / RETOMAR]
             // Filtra os módulos que ainda não estão nas abas e que não constam no arquivo morto (já resolvidos)
             let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
@@ -7503,6 +8774,13 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
     autoSave();
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } finally {
+
+        window.RUNTIME_LOCK = false;
+
+    }
+
 };
 
 // 1. Injeção direta de estado (Bypass de Race Condition)
@@ -7818,6 +9096,27 @@ window.ACERVO_OFICIAL_IDS = new Set(
       '/monstrinho/dados/provasanteriores/historico_provas_anteriores_backup.json'
    );
 
+
+// =========================================================
+// CATÁLOGO FACTUAL SOBERANO
+// =========================================================
+//
+// Fonte oficial de entidades cadastradas.
+//
+// Representa:
+//
+// - biblioteca;
+// - vitrine;
+// - acervo persistente.
+//
+// NÃO representa:
+//
+// - runtime;
+// - tabs;
+// - sessão ativa.
+//
+// =========================================================
+
    // ======================================
 // REIDRATAÇÃO SOBERANA DO RUNTIME
 // ======================================
@@ -7899,6 +9198,16 @@ window.processarImportacaoAcervo = function(
     dadosImportados,
     opcoes = {}
 ) {
+
+    if(window.RUNTIME_LOCK){
+   console.warn(
+      '[LOCK] importação bloqueada'
+   );
+   return;
+}
+
+window.RUNTIME_LOCK = true;
+
     try {
 
         let acervoLocal = JSON.parse(
@@ -8041,6 +9350,7 @@ novosItens.forEach(item => {
 
     } catch(e) {
 
+
         console.error(
             '[ACERVO] Erro no processamento:',
             e
@@ -8049,8 +9359,13 @@ novosItens.forEach(item => {
         alert(
             'Erro ao processar acervo: ' + e.message
         );
-    }
-};
+
+        } finally {
+
+   window.RUNTIME_LOCK = false;
+
+}
+    };
 
 // A exportação reutiliza nativamente a sua função `downloadArquivo` já existente
 /* ==========================================
@@ -8202,7 +9517,12 @@ function filtrarPorTipo(prova, tipo) {
 }
 
 function filtrarPorTipo(p, tipo) {    
-    if (tipo === 'ce') return p.tipo === 'ce';
+    if (tipo === 'ce')
+   return (
+      p.tipo === 'ce'
+      ||
+      p.is_playlist === true
+   );
     if (tipo === 'playlists') return p.tipo === 'pl' || p.is_playlist;
     if (tipo === 'simulados') return p.tipo === 'mc' && p.metadados_mc && p.metadados_mc.classificacao?.toUpperCase().includes('SIMULADO');
     if (tipo === 'provas_anteriores') return p.tipo === 'mc' && !(p.metadados_mc && p.metadados_mc.classificacao?.toUpperCase().includes('SIMULADO'));
