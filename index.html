@@ -2288,7 +2288,34 @@ window.SimuladosEngine = {
                     
                     var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
                     if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
-                    
+
+// =========================================================
+// RUNTIME FACTUAL DE SIMULADOS
+// =========================================================
+//
+// Esta coluna possui natureza híbrida:
+//
+// - os simulados existem no catálogo factual;
+// - mas também possuem persistência runtime;
+//
+// Portanto:
+//
+// runtimeAtual.sims NÃO representa:
+// - tabs abertas globais;
+// - sessão principal do usuário;
+//
+// Ele representa apenas:
+// - estado persistente da coluna factual
+//   de simulados.
+//
+// Qualquer alteração aqui deve evitar:
+//
+// - interferir em SIMS global;
+// - abrir tabs automaticamente;
+// - restaurar runtime principal.
+//
+// =========================================================
+
                     runtimeAtual.sims = acervoSoberano.filter(function(item) {
                         return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO');
                     });
@@ -2982,6 +3009,31 @@ function autoSave(){
   }
 }
 
+// =========================================================
+// CATÁLOGO FACTUAL / ACERVO SOBERANO
+// =========================================================
+//
+// ACERVO_OFICIAL representa:
+//
+// - biblioteca disponível;
+// - catálogo renderizável;
+// - conteúdo factual do sistema.
+//
+// O catálogo:
+//
+// - NÃO possui runtime;
+// - NÃO possui foco;
+// - NÃO possui SI;
+// - NÃO abre tabs.
+//
+// Importar catálogo NÃO significa:
+//
+// - abrir simulados;
+// - restaurar sessão;
+// - alterar SIMS.
+//
+// =========================================================
+
 window.ACERVO_OFICIAL_IDS = new Set(
    JSON.parse(
       localStorage.getItem(
@@ -2990,7 +3042,28 @@ window.ACERVO_OFICIAL_IDS = new Set(
    ).map(x => x.id)
 );
 
-
+// =========================================================
+// RESTAURAÇÃO SOBERANA DE SESSÃO
+// =========================================================
+//
+// Responsabilidade:
+//
+// - restaurar runtime legítimo;
+// - reabrir tabs existentes;
+// - manter progresso após:
+//
+//   * F5
+//   * navegação
+//   * fechamento do navegador
+//
+// NÃO pode:
+//
+// - criar sessão nova;
+// - abrir catálogo;
+// - restaurar itens órfãos;
+// - recriar tabs fechadas deliberadamente.
+//
+// =========================================================
 
 function autoLoad(cb){ 
 
@@ -3085,6 +3158,56 @@ function autoLoad(cb){
   });
 }
 
+// =========================================================
+// RUNTIME ATIVO (SESSÃO DO USUÁRIO)
+// =========================================================
+//
+// SIMS representa EXCLUSIVAMENTE:
+//
+// - abas abertas;
+// - progresso em andamento;
+// - simulados ativos;
+// - sessão restaurável.
+//
+// Alterações em SIMS:
+// - impactam persistência;
+// - impactam autosave;
+// - impactam restore;
+//
+// Somente ações explícitas do usuário
+// ou restore legítimo podem alterar SIMS.
+//
+// O boot factual NUNCA deve:
+// - abrir tabs;
+// - fazer push em SIMS;
+// - alterar SI/C/D.
+//
+// =========================================================
+
+// =========================================================
+// CATÁLOGO FACTUAL / ACERVO SOBERANO
+// =========================================================
+//
+// ACERVO_OFICIAL representa:
+//
+// - biblioteca disponível;
+// - catálogo renderizável;
+// - conteúdo factual do sistema.
+//
+// O catálogo:
+//
+// - NÃO possui runtime;
+// - NÃO possui foco;
+// - NÃO possui SI;
+// - NÃO abre tabs.
+//
+// Importar catálogo NÃO significa:
+//
+// - abrir simulados;
+// - restaurar sessão;
+// - alterar SIMS.
+//
+// =========================================================
 window.SIMS = [];
 if (typeof window.renderizarSimuladosIneditos === 'function') {
     window.renderizarSimuladosIneditos();
@@ -3327,6 +3450,32 @@ window.enxertarNovoCardFactual = function(item) {
         }
     }
 };
+
+// =========================================================
+// RUNTIME ATIVO (SESSÃO DO USUÁRIO)
+// =========================================================
+//
+// SIMS representa EXCLUSIVAMENTE:
+//
+// - abas abertas;
+// - progresso em andamento;
+// - simulados ativos;
+// - sessão restaurável.
+//
+// Alterações em SIMS:
+// - impactam persistência;
+// - impactam autosave;
+// - impactam restore;
+//
+// Somente ações explícitas do usuário
+// ou restore legítimo podem alterar SIMS.
+//
+// O boot factual NUNCA deve:
+// - abrir tabs;
+// - fazer push em SIMS;
+// - alterar SI/C/D.
+//
+// =========================================================
 
 window.buildCardSimulado = function(p, isResolvido, qtdQ, disciplinasHtml, m) {
     const adminKebab = (typeof IS_ADMIN !== 'undefined' && IS_ADMIN) 
@@ -3675,6 +3824,32 @@ window.renderizarSimuladosIneditos = function() {
         return matchB && matchC && matchA;
     });
 
+// =========================================================
+// RUNTIME ATIVO (SESSÃO DO USUÁRIO)
+// =========================================================
+//
+// SIMS representa EXCLUSIVAMENTE:
+//
+// - abas abertas;
+// - progresso em andamento;
+// - simulados ativos;
+// - sessão restaurável.
+//
+// Alterações em SIMS:
+// - impactam persistência;
+// - impactam autosave;
+// - impactam restore;
+//
+// Somente ações explícitas do usuário
+// ou restore legítimo podem alterar SIMS.
+//
+// O boot factual NUNCA deve:
+// - abrir tabs;
+// - fazer push em SIMS;
+// - alterar SI/C/D.
+//
+// =========================================================
+
     let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
     
     let htmlSimulados = ineditosFiltrados.map(p => {
@@ -3914,6 +4089,26 @@ window.MAPA_TAXONOMIA = {};
             if (dOrigem && iOrigem !== null && pOrigem) {
                 C.vinculo_planner = { id_planner: pOrigem, dia: dOrigem, meta_idx: iOrigem };
             }
+
+// =========================================================
+// ABERTURA ISOLADA DE PROVA
+// =========================================================
+//
+// Este fluxo substitui completamente o runtime atual.
+//
+// Usado para:
+//
+// - abertura unitária;
+// - retomada direta;
+// - navegação singleton.
+//
+// NÃO utilizar para:
+//
+// - importação cumulativa;
+// - playlists;
+// - multitabs.
+//
+// =========================================================
 
             SIMS = [{ cfg: C, dados: D, stats: null, qSalva: null, data: new Date().toISOString() }];
             SI = 0;
@@ -4728,12 +4923,40 @@ function trocarTab(i, forceQuestao){
     autoSave();
 }
 function fecharTab(i){
-  SIMS.splice(i,1);
+
+  let confirmar = confirm(
+     'Ao fechar esta aba, o progresso deste simulado será perdido.\n\n' +
+     'Se quiser continuar depois, basta deixar a aba aberta.\n\n' +
+     'Deseja realmente fechar?'
+  );
+
+  if (!confirmar) return;
+
+  SIMS.splice(i,1);
   if(!SIMS.length){
     SI=-1;
     D={blocos:[],res:{},fin:{},caderno:[]};
     g('tela-simulado').style.display='none';
     renderTabs();
+
+// =========================================================
+// ENCERRAMENTO DELIBERADO DE RUNTIME
+// =========================================================
+//
+// Fechar a última aba:
+//
+// - destrói o snapshot persistente;
+// - impede restauração via autoLoad;
+//
+// Diferente de:
+//
+// - F5
+// - navegação
+// - fechamento do navegador
+//
+// que preservam sessão.
+//
+// =========================================================
 
     // --- PATCH CIRÚRGICO ---
     // Força o storage a reconhecer que o runtime está limpo.
@@ -5649,6 +5872,24 @@ function abrirModalExportacao() {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 }
+
+// =========================================================
+// IMPORTAÇÃO MANUAL DE RUNTIME
+// =========================================================
+//
+// Esta função representa:
+//
+// - abertura explícita;
+// - importação intencional do usuário;
+// - restauração manual de sessão.
+//
+// Portanto:
+//
+// - PODE alterar SIMS;
+// - PODE abrir tabs;
+// - PODE alterar SI/C/D.
+//
+// =========================================================
 
 // ── IMPORTAÇÃO CUMULATIVA ──
 function importarJSON(e){
@@ -6704,7 +6945,32 @@ function abrirBiblioteca() {
             .then(function(data) {
               var arr = data.sims || data.simulados || data;
               if(!Array.isArray(arr) || !arr.length) throw new Error('Formato inválido.');
-              
+
+// =========================================================
+// CATÁLOGO FACTUAL / ACERVO SOBERANO
+// =========================================================
+//
+// ACERVO_OFICIAL representa:
+//
+// - biblioteca disponível;
+// - catálogo renderizável;
+// - conteúdo factual do sistema.
+//
+// O catálogo:
+//
+// - NÃO possui runtime;
+// - NÃO possui foco;
+// - NÃO possui SI;
+// - NÃO abre tabs.
+//
+// Importar catálogo NÃO significa:
+//
+// - abrir simulados;
+// - restaurar sessão;
+// - alterar SIMS.
+//
+// =========================================================
+
               window.ACERVO_OFICIAL =
    (window.ACERVO_OFICIAL || [])
       .concat(arr);
@@ -7493,9 +7759,31 @@ window.importarAcervoOficial = async function(url) {
 
 window.carregarAcervosOficiais = async function() {
 
-    // ======================================
-// CATÁLOGO OFICIAL SOBERANO
-// ======================================
+
+// =========================================================
+// CATÁLOGO FACTUAL / ACERVO SOBERANO
+// =========================================================
+//
+// ACERVO_OFICIAL representa:
+//
+// - biblioteca disponível;
+// - catálogo renderizável;
+// - conteúdo factual do sistema.
+//
+// O catálogo:
+//
+// - NÃO possui runtime;
+// - NÃO possui foco;
+// - NÃO possui SI;
+// - NÃO abre tabs.
+//
+// Importar catálogo NÃO significa:
+//
+// - abrir simulados;
+// - restaurar sessão;
+// - alterar SIMS.
+//
+// =========================================================
 
 window.ACERVO_OFICIAL_IDS = new Set(
    JSON.parse(
@@ -7587,6 +7875,25 @@ window.enxertarSimuladosMC = function(novosItens) {
     });
 
 };
+
+// =========================================================
+// PROCESSAMENTO DE CATÁLOGO FACTUAL
+// =========================================================
+//
+// Responsabilidade:
+//
+// - registrar acervo;
+// - hidratar catálogo;
+// - renderizar cards/listagens.
+//
+// NÃO pode:
+//
+// - abrir runtime;
+// - alterar SIMS;
+// - alterar SI/C/D;
+// - restaurar tabs.
+//
+// =========================================================
 
 window.processarImportacaoAcervo = function(
     dadosImportados,
@@ -7700,7 +8007,32 @@ novosItens.forEach(item => {
       ).map(item => [item.id, item])
    ).values()
 );
-      
+
+   // =========================================================
+// CATÁLOGO FACTUAL / ACERVO SOBERANO
+// =========================================================
+//
+// ACERVO_OFICIAL representa:
+//
+// - biblioteca disponível;
+// - catálogo renderizável;
+// - conteúdo factual do sistema.
+//
+// O catálogo:
+//
+// - NÃO possui runtime;
+// - NÃO possui foco;
+// - NÃO possui SI;
+// - NÃO abre tabs.
+//
+// Importar catálogo NÃO significa:
+//
+// - abrir simulados;
+// - restaurar sessão;
+// - alterar SIMS.
+//
+// =========================================================
+
         console.log(
    '[BOOT OFICIAL]',
    novosItens.length,
