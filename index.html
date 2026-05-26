@@ -6702,16 +6702,9 @@ function abrirBiblioteca() {
               var arr = data.sims || data.simulados || data;
               if(!Array.isArray(arr) || !arr.length) throw new Error('Formato inválido.');
               
-              SIMS = SIMS.concat(arr);
-              SI = SIMS.length - arr.length;
-              
-              var ul = SIMS[SI];
-              C = JSON.parse(JSON.stringify(ul.cfg));
-              D = JSON.parse(JSON.stringify(ul.dados));
-              QA = ul.qSalva || null;
-	      restaurarEstadoTempo(ul);
-              HIST = SIMS.filter(function(s){return s.stats;}).map(function(s){return mkH(s,SIMS.indexOf(s));});
-              HI = HIST.length - 1;
+              window.ACERVO_OFICIAL =
+   (window.ACERVO_OFICIAL || [])
+      .concat(arr);
               
               renderTabs();
               
@@ -7650,45 +7643,6 @@ novosItens.forEach(item => {
    JSON.stringify(Array.from(mapa.values()))
 );
 
-novosItens.forEach(function(item){
-
-    if (!item || item.tipo !== 'ce') return;
-
-    var jaExiste = SIMS.some(function(s){
-        return s &&
-               s.cfg &&
-               s.cfg.id === item.id;
-    });
-
-    if (jaExiste) return;
-
-    novosItens.forEach(function(item){
-
-    if (!item || item.tipo !== 'ce') return;
-
-    var jaExiste = SIMS.some(function(s){
-        return s &&
-               s.id === item.id;
-    });
-
-    if (jaExiste) return;
-
-    SIMS.push(item);
-
-});
-
-});
-
-if (typeof renderTabs === 'function') {
-    renderTabs();
-}
-
-if (typeof renderSim === 'function' && SIMS.length > 0) {
-    SI = 0;
-    C = SIMS[0].cfg;
-    D = SIMS[0].dados;
-    renderSim();
-}
         // ENXERTO PASSIVO EXISTENTE
         novosItens.forEach(item => {
 
@@ -7731,30 +7685,15 @@ if (typeof renderSim === 'function' && SIMS.length > 0) {
             );
         });
 
-        
-
-novosItens.forEach(function(item){
-
-
-
-    if (!item || item.tipo !== 'ce') return;
-
-    var jaExiste = SIMS.some(function(s){
-        return s && s.id === item.id;
-    });
-
-    
-
-    if (jaExiste) return;
-
-    SIMS.push(item);
-
-    console.log('[PUSH]', item.id);
-
-});
-
-
-
+    window.ACERVO_OFICIAL = Array.from(
+   new Map(
+      (
+         (window.ACERVO_OFICIAL || [])
+            .concat(novosItens)
+      ).map(item => [item.id, item])
+   ).values()
+);
+      
         console.log(
    '[BOOT OFICIAL]',
    novosItens.length,
