@@ -9729,8 +9729,76 @@ if (
    dadosImportados &&
    dadosImportados.type === 'playlists'
 ) {
-   dadosImportados =
+
+   // =====================================
+   // PRESERVA CATÁLOGO SOBERANO
+   // =====================================
+
+   let playlistsImportadas =
       dadosImportados.data || [];
+
+   let playlistsAtuais = [];
+
+   try {
+
+      playlistsAtuais = JSON.parse(
+         localStorage.getItem(
+            'cordeiro_playlists_soberanas'
+         ) || '[]'
+      );
+
+   } catch(e){
+
+      playlistsAtuais = [];
+
+   }
+
+   let mapaPlaylists = new Map(
+      playlistsAtuais.map(x => [x.id, x])
+   );
+
+   playlistsImportadas.forEach(function(pl){
+
+      if (pl && pl.id) {
+
+         mapaPlaylists.set(pl.id, pl);
+
+      }
+
+   });
+
+   localStorage.setItem(
+      'cordeiro_playlists_soberanas',
+      JSON.stringify(
+         Array.from(mapaPlaylists.values())
+      )
+   );
+
+   // =====================================
+   // EXPANSÃO FACTUAL
+   // =====================================
+
+   let expandido = [];
+
+   playlistsImportadas.forEach(function(pl){
+
+      // playlist raiz
+      expandido.push(pl);
+
+      // módulos soberanos
+      if (Array.isArray(pl.playlist_sims)) {
+
+         pl.playlist_sims.forEach(function(sim){
+
+            expandido.push(sim);
+
+         });
+
+      }
+
+   });
+
+   dadosImportados = expandido;
 }
 
 if (
