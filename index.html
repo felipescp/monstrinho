@@ -5916,68 +5916,8 @@ function trocarTab(i, forceQuestao){
 // =========================================================
 
 function fecharTab(i){
-
-  let sim = SIMS[i];
-
-  // =====================================================
-  // SIMULADO JÁ FINALIZADO
-  // =====================================================
-  //
-  // Resultado já:
-  // - consolidado;
-  // - auditado;
-  // - persistido.
-  //
-  // Portanto:
-  // fechamento não representa perda factual.
-  //
-  // =====================================================
-
-  if(sim && sim.stats){
-
-    SIMS.splice(i,1);
-
-    if(!SIMS.length){
-
-      SI = -1;
-
-      D = {
-        blocos:[],
-        res:{},
-        fin:{},
-        caderno:[]
-      };
-
-      g('tela-simulado').style.display='none';
-
-    } else {
-
-      SI = Math.min(
-        SI,
-        SIMS.length - 1
-      );
-
-    }
-
-    renderTabs();
-
-    autoSave();
-
-    return;
-  }
-
-  let confirmar = confirm(
-     'Ao fechar esta aba, o progresso deste simulado será perdido.\n\n' +
-     'Se quiser continuar depois, basta deixar a aba aberta.\n\n' +
-     'Deseja realmente fechar?'
-  );
-
-  if (!confirmar) return;
-
-  SIMS.splice(i,1);
-
-  if(!SIMS.length){
-
+  SIMS.splice(i,1);
+  if(!SIMS.length){
     SI=-1;
 
     D={
