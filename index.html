@@ -2114,12 +2114,29 @@ window.MAPA_TJCE_RUNTIME = {
 
   // CORRELAÇÃO SOBERANA TAXONÔMICA
   getBateriasVinculadas: function(item) {
+
     const bd = this.loadAcervo();
-    if (!item || !Array.isArray(item.tax_ids)) return [];
-    
-    // matching exclusivo por id_taxonomia
-    return bd.filter(bat => item.tax_ids.includes(bat.id_taxonomia));
-  },
+
+    if (!item || !Array.isArray(item.tax_ids))
+        return [];
+
+    return bd.filter(bat => {
+
+        // Ignora playlists agregadoras
+        if (bat.is_playlist === true)
+            return false;
+
+        // Compatibilidade:
+        // nome pode estar no topo OU em cfg.nome
+        bat.nome = bat.nome || bat.cfg?.nome || 'Sem nome';
+
+        return item.tax_ids.includes(
+            bat.id_taxonomia
+        );
+
+    });
+
+},
 
   getDiscColor: function(nome) {
     if (this.DISCIPLINA_CORES[nome]) return this.DISCIPLINA_CORES[nome];
@@ -3105,9 +3122,40 @@ window.PlaylistsEngine = {
                     });
                     
                     localStorage.setItem('cordeiro_playlists_soberanas', JSON.stringify(dadosAtuais));
-                    var acervoFinal = acervoSoberano.filter(function(item) {
-                        return item.tipo !== 'pl';
-                    });
+                    var playlistsIds = acervoSoberano
+    .filter(function(item){
+
+        return (
+            item.tipo === 'pl' ||
+            item.cfg?.tipo === 'pl'
+        );
+
+    })
+    .map(function(item){
+        return item.id;
+    });
+
+var acervoFinal = acervoSoberano.filter(function(item){
+
+    // remove playlists agregadoras
+    if (
+        item.tipo === 'pl' ||
+        item.cfg?.tipo === 'pl'
+    ) return false;
+
+    // remove módulos soberanos
+    if (
+        typeof item.id === 'string' &&
+        playlistsIds.some(function(pid){
+
+            return item.id.startsWith(pid + '_mod');
+
+        })
+    ) return false;
+
+    return true;
+
+});
                     dadosAtuais.forEach(function(item) {
                         if (!acervoFinal.some(function(existing) {
                             return existing && existing.id === item.id;
@@ -3164,8 +3212,21 @@ window.PlaylistsEngine = {
             var acervoSoberano = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
             if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
             var acervoFinal = acervoSoberano.filter(function(item) {
-                return item.tipo !== 'pl';
-            });
+
+    // remove playlists agregadoras
+    if (item.is_playlist === true)
+        return false;
+
+    // remove módulos soberanos de playlists
+    if (
+        item.id &&
+        typeof item.id === 'string' &&
+        item.id.includes('_mod')
+    ) return false;
+
+    return true;
+
+});
             localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervoFinal));
             
             // Redirecionamento de nó-folha: Mutação localizada substitui o repaint global
@@ -3965,6 +4026,7 @@ if (typeof window.renderizarSimuladosIneditos === 'function') {
 if (typeof renderSessoes === 'function') {
     renderSessoes();
 }
+
 window.ACERVO_OFICIAL = [];
 window.SI = -1;
 window.HIST = [];
@@ -5717,16 +5779,84 @@ function salvarProvaNoAcervo() {
 // =========================================================
 
         let acervo = [];
-        try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
-        
-        if (isEdicao) {
-            let idx = acervo.findIndex(p => p.id === window.ID_EDICAO);
-            if(idx !== -1) novaPlaylist.dataCriacao = acervo[idx].dataCriacao;
-            acervo[idx] = novaPlaylist;
-        } else {
-            acervo.push(novaPlaylist);
-        }
-        localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(acervo));
+
+try {
+
+    acervo = JSON.parse(
+        localStorage.getItem('cordeiro_acervo_provas') || '[]'
+    );
+
+} catch(e){}
+
+// =========================================================
+// PLAYLISTS: PERSISTÊNCIA SOBERANA DOS SUBMÓDULOS
+// =========================================================
+
+// =========================================================
+// LIMPEZA ESTRUTURAL GLOBAL
+// =========================================================
+
+// 1. Remove playlist antiga em edição
+if (isEdicao) {
+
+    acervo = acervo.filter(function(p){
+
+        if (p.id === window.ID_EDICAO)
+            return false;
+
+        if (
+            typeof p.id === 'string' &&
+            p.id.startsWith(window.ID_EDICAO + '_mod')
+        ) return false;
+
+        return true;
+
+    });
+
+}
+
+// =========================================================
+// 2. REMOVE MÓDULOS ÓRFÃOS GLOBAIS
+// =========================================================
+
+acervo = acervo.filter(function(p){
+
+    // mantém tudo que não é módulo
+    if (
+        !p.id ||
+        typeof p.id !== 'string' ||
+        !p.id.includes('_mod')
+    ) return true;
+
+    // raiz da playlist
+    let raiz = p.id.split('_mod')[0];
+
+    // playlist correspondente existe?
+    return acervo.some(function(x){
+
+        return (
+            x.id === raiz &&
+            x.is_playlist === true
+        );
+
+    });
+
+});
+
+// Persistência soberana dos módulos
+playlistSims.forEach(function(sim){
+
+    acervo.push(sim);
+
+});
+
+// Persistência da playlist agregadora
+acervo.push(novaPlaylist);
+
+localStorage.setItem(
+    'cordeiro_acervo_provas',
+    JSON.stringify(acervo)
+);
 
         alert('Playlist processada e salva no Acervo!');
         
