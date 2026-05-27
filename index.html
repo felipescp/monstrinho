@@ -2121,40 +2121,37 @@ window.MAPA_TJCE_RUNTIME = {
         return [];
 
     // =========================================
-    // NOVO MODELO:
-    // módulos soberanos existem
+    // PROCURA MÓDULOS _MOD COMPATÍVEIS
     // =========================================
 
-    const mods = bd.filter(function(x){
+    const modsCompativeis = bd.filter(function(sim){
+
+        if (
+            !sim ||
+            !sim.id ||
+            typeof sim.id !== 'string' ||
+            !sim.id.includes('_mod')
+        ) return false;
+
+        const tax =
+            sim.id_taxonomia ||
+            sim.cfg?.id_taxonomia;
 
         return (
-            x &&
-            x.id &&
-            typeof x.id === 'string' &&
-            x.id.includes('_mod')
+            tax &&
+            item.tax_ids.includes(tax)
         );
 
     });
 
     // =========================================
-    // SE EXISTIREM _MOD:
-    // IGNORA COMPLETAMENTE O LEGADO
+    // SE EXISTIREM _MOD PARA ESTE CARD:
+    // USA SOMENTE ELES
     // =========================================
 
-    if (mods.length > 0) {
+    if (modsCompativeis.length > 0) {
 
-        return mods.filter(function(sim){
-
-            const tax =
-                sim.id_taxonomia ||
-                sim.cfg?.id_taxonomia;
-
-            return (
-                tax &&
-                item.tax_ids.includes(tax)
-            );
-
-        }).map(function(sim){
+        return modsCompativeis.map(function(sim){
 
             return {
 
@@ -2172,13 +2169,16 @@ window.MAPA_TJCE_RUNTIME = {
     }
 
     // =========================================
-    // LEGADO:
-    // playlist agregadora
+    // FALLBACK LEGADO
     // =========================================
 
     let resultado = [];
 
     bd.forEach(function(bat){
+
+        // -----------------------------
+        // Playlist agregadora antiga
+        // -----------------------------
 
         if (
             bat &&
@@ -2211,6 +2211,36 @@ window.MAPA_TJCE_RUNTIME = {
                 }
 
             });
+
+        }
+
+        // -----------------------------
+        // Bateria V/F simples
+        // -----------------------------
+
+        else {
+
+            const tax =
+                bat.id_taxonomia ||
+                bat.cfg?.id_taxonomia;
+
+            if (
+                tax &&
+                item.tax_ids.includes(tax)
+            ) {
+
+                resultado.push({
+
+                    ...bat,
+
+                    nome:
+                        bat.nome ||
+                        bat.cfg?.nome ||
+                        'Sem nome'
+
+                });
+
+            }
 
         }
 
@@ -4793,11 +4823,11 @@ let totalMods = p.playlist_sims ? p.playlist_sims.length : 0;
                             <h4 style="font-size: 13px; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.nome}">
                                 + ${p.nome}
                             </h4>
-                            <button class="icon-btn" onclick="window.exportarEntidadeJson('${p.id}'); event.stopPropagation();" title="Exportar Playlist"></button>
+                            <button class="icon-btn" onclick="window.exportarEntidadeJson('${p.id}'); event.stopPropagation();" title="Exportar Playlist">📤</button>
                             <button onclick="window.excluirSimuladoIndividual('${p.id}'); event.stopPropagation();" 
                                     style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; padding:0 4px; font-size:14px;" 
                                     title="Excluir esta playlist">
-                                
+                                ✕
                             </button>
                         </div>
 
