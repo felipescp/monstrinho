@@ -562,6 +562,14 @@ const TAXONOMIA_DADOS = {
             {
               "id": "top_1779238997005",
               "nivel_3": "Extinção e Sanções Contratuais"
+            },
+            {
+              "id": "top_1779840565511",
+              "nivel_3": "Contratos Administrativos",
+              "aliases": [
+                "Alterações",
+                "Reequilíbrio e Extinção"
+              ]
             }
           ]
         },
