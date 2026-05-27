@@ -2120,21 +2120,103 @@ window.MAPA_TJCE_RUNTIME = {
     if (!item || !Array.isArray(item.tax_ids))
         return [];
 
-    return bd.filter(bat => {
+    // =========================================
+    // NOVO MODELO:
+    // módulos soberanos existem
+    // =========================================
 
-        // Ignora playlists agregadoras
-        if (bat.is_playlist === true)
-            return false;
+    const mods = bd.filter(function(x){
 
-        // Compatibilidade:
-        // nome pode estar no topo OU em cfg.nome
-        bat.nome = bat.nome || bat.cfg?.nome || 'Sem nome';
-
-        return item.tax_ids.includes(
-            bat.id_taxonomia
+        return (
+            x &&
+            x.id &&
+            typeof x.id === 'string' &&
+            x.id.includes('_mod')
         );
 
     });
+
+    // =========================================
+    // SE EXISTIREM _MOD:
+    // IGNORA COMPLETAMENTE O LEGADO
+    // =========================================
+
+    if (mods.length > 0) {
+
+        return mods.filter(function(sim){
+
+            const tax =
+                sim.id_taxonomia ||
+                sim.cfg?.id_taxonomia;
+
+            return (
+                tax &&
+                item.tax_ids.includes(tax)
+            );
+
+        }).map(function(sim){
+
+            return {
+
+                ...sim,
+
+                nome:
+                    sim.nome ||
+                    sim.cfg?.nome ||
+                    'Sem nome'
+
+            };
+
+        });
+
+    }
+
+    // =========================================
+    // LEGADO:
+    // playlist agregadora
+    // =========================================
+
+    let resultado = [];
+
+    bd.forEach(function(bat){
+
+        if (
+            bat &&
+            bat.is_playlist === true &&
+            Array.isArray(bat.playlist_sims)
+        ) {
+
+            bat.playlist_sims.forEach(function(sim){
+
+                const tax =
+                    sim.id_taxonomia ||
+                    sim.cfg?.id_taxonomia;
+
+                if (
+                    tax &&
+                    item.tax_ids.includes(tax)
+                ) {
+
+                    resultado.push({
+
+                        ...sim,
+
+                        nome:
+                            sim.nome ||
+                            sim.cfg?.nome ||
+                            'Sem nome'
+
+                    });
+
+                }
+
+            });
+
+        }
+
+    });
+
+    return resultado;
 
 },
 
