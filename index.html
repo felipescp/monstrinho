@@ -237,31 +237,94 @@ body.saindo-da-pagina { opacity: 0; }
 .tab-wrap { padding: 6px 16px 10px; font-size: 11px; font-family: var(--font-display); font-weight: 800; color: var(--text-muted); cursor: pointer; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 8px 8px; text-transform: uppercase; transition: 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; background: var(--bg-white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); user-select: none; }
 .tab-wrap:hover { background: #f8fafc; color: var(--app-primary); }
 
-/* Aba Ativa (Fundo preenchido com a cor primária) */
-.tab-wrap.ativa { background: var(--app-primary) !important; color: white !important; border: none !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background 0.4s ease; }
+/* =========================================
+   TAB ATIVA — ÊNFASE REAL
+========================================= */
 
-/* Comportamento do Texto (Apenas Leitura, Longo, com Reticências) */
-.tab-nome {
-    max-width: 150px; /* Aumentado para nomes longos */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: inherit !important;
-    font-size: 11px !important;
-    font-weight: inherit !important;
-    color: inherit !important;
+.tab-wrap.ativa{
+
+    position:relative;
+
+    background:linear-gradient(
+        135deg,
+        var(--app-primary),
+        #6366f1
+    ) !important;
+
+    color:white !important;
+
+    border:1px solid var(--app-primary) !important;
+
+    transform:translateY(-2px);
+
+    z-index:20;
+
+    box-shadow:
+        0 10px 24px rgba(79,70,229,0.28);
+
 }
-.tab-wrap.ativa .tab-nome { color: white !important; }
 
-/* Badge de Porcentagem (Ultracompacto) */
-.tab-pct { font-size: 9.5px; border-radius: 4px; padding: 2px 5px; font-weight: 800; background: rgba(0,0,0,0.06); color: inherit; white-space: nowrap; margin-left: 2px;}
-.tab-wrap.ativa .tab-pct { background: rgba(0,0,0,0.15) !important; color: white !important; }
+/* brilho superior */
+.tab-wrap.ativa::before{
+
+    content:'';
+
+    position:absolute;
+
+    top:0;
+    left:0;
+    right:0;
+
+    height:3px;
+
+    background:white;
+
+    opacity:0.9;
+
+    border-radius:8px 8px 0 0;
+
+}
+
+/* texto */
+.tab-wrap.ativa .tab-nome{
+
+    color:white !important;
+
+    font-weight:800 !important;
+
+}
+
+/* badge */
+.tab-wrap.ativa .tab-pct{
+
+    background:rgba(255,255,255,0.18) !important;
+
+    color:white !important;
+
+    border:1px solid rgba(255,255,255,0.22);
+
+}
+
+/* X */
+.tab-wrap.ativa .tab-x{
+
+    color:rgba(255,255,255,0.85) !important;
+
+    opacity:1;
+
+}
+
+.tab-wrap.ativa .tab-x:hover{
+
+    color:white !important;
+
+}
+
 
 /* Aba Concluída (Verde) - Ativas e Inativas */
 .tab-wrap.conc { color: var(--success); }
 .tab-wrap.conc .tab-pct { background: rgba(16, 185, 129, 0.12); color: var(--success); }
 
-.tab-wrap.ativa.conc { background: var(--success) !important; color: white !important; }
 .tab-wrap.ativa.conc .tab-pct { background: rgba(0,0,0,0.15) !important; color: white !important; }
 .tab-wrap.ativa.conc .tab-x { color: rgba(255,255,255,0.8) !important; }
 
@@ -3845,6 +3908,7 @@ if (typeof window.renderizarSimuladosIneditos === 'function') {
 if (typeof renderSessoes === 'function') {
     renderSessoes();
 }
+window.HOME_ATIVA = true;
 window.ACERVO_OFICIAL = [];
 window.SI = -1;
 window.HIST = [];
@@ -3879,13 +3943,19 @@ function tela(id) {
 
     var target = document.getElementById(id);
 
-    if (target) {
-        if (id === 'tela-simulado' || id === 'section-mapa-tjce') {
-            target.style.display = 'flex';
-        } else {
-            target.style.display = 'block';
-        }
+document.body.classList.remove('home-ativa');
+
+if (id === 'tela-home') {
+    document.body.classList.add('home-ativa');
+}
+
+if (target) {
+    if (id === 'tela-simulado' || id === 'section-mapa-tjce') {
+        target.style.display = 'flex';
+    } else {
+        target.style.display = 'block';
     }
+}
 }
 
 // 1. Quebra a trava dos Simulados Inéditos (reduz options.length)
@@ -4521,11 +4591,11 @@ let totalMods = p.playlist_sims ? p.playlist_sims.length : 0;
                             <h4 style="font-size: 13px; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.nome}">
                                 + ${p.nome}
                             </h4>
-                            <button class="icon-btn" onclick="window.exportarEntidadeJson('${p.id}'); event.stopPropagation();" title="Exportar Playlist">📤</button>
+                            <button class="icon-btn" onclick="window.exportarEntidadeJson('${p.id}'); event.stopPropagation();" title="Exportar Playlist"></button>
                             <button onclick="window.excluirSimuladoIndividual('${p.id}'); event.stopPropagation();" 
                                     style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; padding:0 4px; font-size:14px;" 
                                     title="Excluir esta playlist">
-                                ✕
+                                
                             </button>
                         </div>
 
@@ -4722,11 +4792,16 @@ window.renderizarProvasAnterioresSidebar = function() {
 
 
 window.voltarParaVitrine = function() {
-const simWrap = document.getElementById('sim-wrap');
 
-tela('tela-home');
-renderTabs();
-renderHomeDashboard();
+    window.HOME_ATIVA = true;
+
+    const simWrap = document.getElementById('sim-wrap');
+
+    tela('tela-home');
+
+    renderTabs();
+
+    renderHomeDashboard();
 };
 
 window.addEventListener('load', function() {
@@ -5766,7 +5841,10 @@ function renderTabs(){
 
   // Dinâmica de visibilidade para a Vitrine (Mostra se tiver 1+ abas)
   var telaHome = g('tela-home');
-  var isHome = telaHome && (telaHome.style.display === 'flex' || telaHome.classList.contains('ativa'));
+  var isHome =
+   document.body.classList.contains(
+      'home-ativa'
+   );
   var telaAdmin = g('tela-admin');
   var isAdmin = telaAdmin && telaAdmin.classList.contains('ativa');
 
@@ -5916,8 +5994,68 @@ function trocarTab(i, forceQuestao){
 // =========================================================
 
 function fecharTab(i){
-  SIMS.splice(i,1);
-  if(!SIMS.length){
+
+  let sim = SIMS[i];
+
+  // =====================================================
+  // SIMULADO JÁ FINALIZADO
+  // =====================================================
+  //
+  // Resultado já:
+  // - consolidado;
+  // - auditado;
+  // - persistido.
+  //
+  // Portanto:
+  // fechamento não representa perda factual.
+  //
+  // =====================================================
+
+  if(sim && sim.stats){
+
+    SIMS.splice(i,1);
+
+    if(!SIMS.length){
+
+      SI = -1;
+
+      D = {
+        blocos:[],
+        res:{},
+        fin:{},
+        caderno:[]
+      };
+
+      g('tela-simulado').style.display='none';
+
+    } else {
+
+      SI = Math.min(
+        SI,
+        SIMS.length - 1
+      );
+
+    }
+
+    renderTabs();
+
+    autoSave();
+
+    return;
+  }
+
+  let confirmar = confirm(
+     'Ao fechar esta aba, o progresso deste simulado será perdido.\n\n' +
+     'Se quiser continuar depois, basta deixar a aba aberta.\n\n' +
+     'Deseja realmente fechar?'
+  );
+
+  if (!confirmar) return;
+
+  SIMS.splice(i,1);
+
+  if(!SIMS.length){
+
     SI=-1;
 
     D={
@@ -7842,10 +7980,31 @@ function refazerErradas(idx){
   var novoC=JSON.parse(JSON.stringify(h.cfg));
   novoC.nome=nomeNovo;
   var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
-  SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
-  var novoSI=SIMS.length-1;
-  autoSave();
-  trocarTab(novoSI);
+  // Procura explicitamente a aba histórica correspondente
+// Remove a aba histórica temporária, se existir
+SIMS = SIMS.filter(function(s){
+
+    return !(s && s.__resultado_historico__);
+
+});
+
+// Cria runtime novo legítimo
+SIMS.push({
+
+    cfg: novoC,
+    dados: novoD,
+    stats: null,
+    qSalva: null,
+    data: new Date().toISOString()
+
+});
+
+var novoSI = SIMS.length - 1;
+
+autoSave();
+
+trocarTab(novoSI, true);
+
 }
 
 // ── EXPORTADOR ULTRA-OTIMIZADO PARA PLANNER E NOTEBOOKLM (.MD) ──
@@ -8556,9 +8715,16 @@ document.addEventListener('click', () => {
 //
 // =========================================================
 
+
+
 window.abrirResultadoHistorico = function(id) {
+
     // 1. Limpa eventuais modais sobrepostos
-    document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
+    document
+        .querySelectorAll('div[style*="z-index: 9999"]')
+        .forEach(function(el){
+            el.remove();
+        });
 
 // =========================================================
 // ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
@@ -8578,26 +8744,117 @@ window.abrirResultadoHistorico = function(id) {
 // =========================================================
 
     // 2. Busca o exame no Arquivo Morto
-    let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
+    let arquivoMorto = JSON.parse(
+        localStorage.getItem(
+            'cordeiro_auditoria_historica'
+        ) || '{}'
+    );
+
     if (arquivoMorto[id]) {
+
         let snap = arquivoMorto[id];
-        
-        // 3. Hidrata as variáveis de estado
-        C = snap.cfg; 
-        D = snap.dados;
-        SIMS = [snap]; 
-        SI = 0;
-        HIST = [mkH(snap, 0)]; 
+
+        // =====================================================
+        // 3. Injeta o snapshot no runtime
+        // sem destruir abas existentes
+        // =====================================================
+
+        snap.__resultado_historico__ = true;
+
+        let idxExistente = SIMS.findIndex(function(s){
+
+            if (!s) return false;
+
+            // Compatibilidade híbrida:
+            // tenta ID raiz e fallback estrutural
+            if (s.id && snap.id) {
+                return s.id === snap.id;
+            }
+
+            return (
+                s.cfg &&
+                snap.cfg &&
+                s.cfg.nome === snap.cfg.nome &&
+                s.data === snap.data
+            );
+
+        });
+
+        // Se ainda não existe runtime correspondente,
+        // cria uma nova aba legítima
+        if (idxExistente === -1) {
+
+            SIMS.push(
+        JSON.parse(
+        JSON.stringify(snap)
+    )
+);
+
+            SI = SIMS.length - 1;
+
+        }
+
+        // Se já existe,
+        // apenas focaliza a aba correta
+        else {
+
+            SI = idxExistente;
+
+        }
+
+        // =====================================================
+        // 4. Hidrata o runtime ativo
+        // =====================================================
+
+        let alvo = SIMS[SI];
+
+        C = JSON.parse(
+            JSON.stringify(alvo.cfg)
+        );
+
+        D = JSON.parse(
+            JSON.stringify(alvo.dados)
+        );
+
+        QA = alvo.qSalva || null;
+
+        // =====================================================
+        // 5. Reconstrói histórico focal
+        // =====================================================
+
+        HIST = [
+            mkH(alvo, SI)
+        ];
+
         HI = 0;
-        
-        // 4. Renderiza e exibe a tela de Resultados
-        tela(null); 
+
+        // =====================================================
+        // 6. Re-renderiza tabs corretamente
+        // =====================================================
+
+        renderTabs();
+
+        // =====================================================
+        // 7. Exibe resultado
+        // =====================================================
+
+        tela(null);
+
         tela('tela-resultado');
+
         renderResultado(0);
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
     } else {
-        alert('Resultado não encontrado no Arquivo Morto.');
+
+        alert(
+            'Resultado não encontrado no Arquivo Morto.'
+        );
+
     }
 };
 
