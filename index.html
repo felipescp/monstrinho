@@ -2116,21 +2116,31 @@ getBateriasVinculadas: function(item) {
 
     const bd = this.loadAcervo();
 
-    if (!item || !Array.isArray(item.tax_ids))
+    if (
+        !item ||
+        !Array.isArray(item.tax_ids)
+    ) {
         return [];
+    }
 
-    // =========================================
-    // PROCURA MÓDULOS _MOD COMPATÍVEIS
-    // =========================================
+    // =====================================================
+    // 1. NOVO MODELO SOBERANO (_mod)
+    // =====================================================
 
     const modsCompativeis = bd.filter(function(sim){
 
         if (
             !sim ||
             !sim.id ||
-            typeof sim.id !== 'string' ||
-            !sim.id.includes('_mod')
-        ) return false;
+            typeof sim.id !== 'string'
+        ) {
+            return false;
+        }
+
+        // apenas módulos soberanos
+        if (!sim.id.includes('_mod')) {
+            return false;
+        }
 
         const tax =
             sim.id_taxonomia ||
@@ -2143,10 +2153,10 @@ getBateriasVinculadas: function(item) {
 
     });
 
-    // =========================================
-    // SE EXISTIREM _MOD PARA ESTE CARD:
-    // USA SOMENTE ELES
-    // =========================================
+    // =====================================================
+    // SE EXISTIREM _MOD:
+    // USA EXCLUSIVAMENTE ELES
+    // =====================================================
 
     if (modsCompativeis.length > 0) {
 
@@ -2167,17 +2177,27 @@ getBateriasVinculadas: function(item) {
 
     }
 
-    // =========================================
+    // =====================================================
     // FALLBACK LEGADO
-    // =========================================
+    // =====================================================
+    //
+    // IMPORTANTE:
+    //
+    // Só roda se NÃO existirem _mod.
+    //
+    // Compatibilidade com:
+    // playlists antigas
+    // baterias VF antigas
+    //
+    // =====================================================
 
     let resultado = [];
 
     bd.forEach(function(bat){
 
-        // -----------------------------
-        // Playlist agregadora antiga
-        // -----------------------------
+        // -------------------------------------------------
+        // PLAYLIST LEGADA (SEM _mod soberano)
+        // -------------------------------------------------
 
         if (
             bat &&
@@ -2211,7 +2231,40 @@ getBateriasVinculadas: function(item) {
 
             });
 
+            return;
         }
+
+        // -------------------------------------------------
+        // BATERIAS VF SIMPLES
+        // -------------------------------------------------
+
+        const tax =
+            bat.id_taxonomia ||
+            bat.cfg?.id_taxonomia;
+
+        if (
+            tax &&
+            item.tax_ids.includes(tax)
+        ) {
+
+            resultado.push({
+
+                ...bat,
+
+                nome:
+                    bat.nome ||
+                    bat.cfg?.nome ||
+                    'Sem nome'
+
+            });
+
+        }
+
+    });
+
+    return resultado;
+
+},
 
         // -----------------------------
         // Bateria V/F simples
@@ -4279,7 +4332,7 @@ window.buildCardPlaylist = function(p) {
     } else if (resolvidosCount > 0 && resolvidosCount < totalMods) {
         btnMain = '<button style="background:var(--warning);color:white;border:none;border-radius:4px;padding:6px 14px;font-size:9px;font-family:var(--font-display);font-weight:800;cursor:pointer;transition:0.2s;flex-shrink:0;" onclick="window.iniciarSimuladoDaVitrine(\'' + p.id + '\')" >▶ RETOMAR</button>';
     } else {
-        btnMain = '<button style="background:var(--danger);color:white;border:none;border-radius:4px;padding:6px 14px;font-size:9px;font-family:var(--font-display);font-weight:800;cursor:pointer;transition:0.2s;flex-shrink:0;" onclick="window.iniciarSimuladoDaVitrine(\'' + p.id + '\')">▶ INICIAR</button>';
+        btnMain = '<button style="background:var(--danger);color:white;border:none;border-radius:4px;padding:6px 14px;font-size:9px;font-family:var(--font-display);font-weight:800;cursor:pointer;transition:0.2s;flex-shrink:0;" onclick="window.iniciarSimuladoDaVitrine(\'' + p.id + '\')">▶</button>';
     }
 
     var adminKebab = (typeof IS_ADMIN !== 'undefined' && IS_ADMIN)
@@ -4458,9 +4511,9 @@ window.buildCardSimulado = function(p, isResolvido, qtdQ, disciplinasHtml, m) {
             ${adminKebab}
             ${btnAcao}
         </div>
-        <div style="padding-right: 95px;">
+        <div style="padding-right: 30px;">
             <div style="font-size: 11px; font-weight: 800; color: var(--text-main); text-transform: uppercase;">${m.carreira || 'Geral'}</div>
-            <div style="font-size: 10px; color: var(--app-primary); font-weight: 800; text-transform: uppercase;">${m.orgao || ''}</div>
+            <div style="font-size: 10px; color: var(--app-primary); font-weight: 800;">${m.orgao || ''}</div>
         </div>
         <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
             ${qtdQ} questões • ${m.ano || 'S/A'} • estilo "${m.banca || 'N/A'}"
@@ -9591,9 +9644,6 @@ window.ACERVO_OFICIAL_IDS = new Set(
       '/monstrinho/dados/playlists/playlists_soberanas_backup.json'
    );
 
-      await window.importarAcervoOficial(
-      '/monstrinho/dados/playlists/playlists_soberanas_backup1.json'
-   );
 
    await window.importarAcervoOficial(
       '/monstrinho/dados/simulados/simulados_soberanos_backup.json'
