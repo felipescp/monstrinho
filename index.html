@@ -2123,137 +2123,56 @@ getBateriasVinculadas: function(item) {
         return [];
     }
 
-    // =====================================================
-    // 1. NOVO MODELO SOBERANO (_mod)
-    // =====================================================
+    let resultado = [];
 
-    const modsCompativeis = bd.filter(function(sim){
+    bd.forEach(function(sim){
 
         if (
             !sim ||
             !sim.id ||
             typeof sim.id !== 'string'
         ) {
-            return false;
+            return;
         }
 
-        // apenas módulos soberanos
-        if (!sim.id.includes('_mod')) {
-            return false;
+        // =====================================
+        // IGNORA PLAYLIST RAIZ
+        // =====================================
+
+        if (
+            sim.is_playlist === true
+        ) {
+            return;
         }
+
+        // =====================================
+        // IGNORA QUALQUER ENTIDADE
+        // SEM TAXONOMIA
+        // =====================================
 
         const tax =
             sim.id_taxonomia ||
             sim.cfg?.id_taxonomia;
 
-        return (
-            tax &&
+        if (!tax) {
+            return;
+        }
+
+        // =====================================
+        // MATCH
+        // =====================================
+
+        if (
             item.tax_ids.includes(tax)
-        );
+        ) {
 
-    });
-
-    // =====================================================
-    // SE EXISTIREM _MOD:
-    // USA EXCLUSIVAMENTE ELES
-    // =====================================================
-
-    if (modsCompativeis.length > 0) {
-
-        return modsCompativeis.map(function(sim){
-
-            return {
+            resultado.push({
 
                 ...sim,
 
                 nome:
                     sim.nome ||
                     sim.cfg?.nome ||
-                    'Sem nome'
-
-            };
-
-        });
-
-    }
-
-    // =====================================================
-    // FALLBACK LEGADO
-    // =====================================================
-    //
-    // IMPORTANTE:
-    //
-    // Só roda se NÃO existirem _mod.
-    //
-    // Compatibilidade com:
-    // playlists antigas
-    // baterias VF antigas
-    //
-    // =====================================================
-
-    let resultado = [];
-
-    bd.forEach(function(bat){
-
-        // -------------------------------------------------
-        // PLAYLIST LEGADA (SEM _mod soberano)
-        // -------------------------------------------------
-
-        if (
-            bat &&
-            bat.is_playlist === true &&
-            Array.isArray(bat.playlist_sims)
-        ) {
-
-            bat.playlist_sims.forEach(function(sim){
-
-                const tax =
-                    sim.id_taxonomia ||
-                    sim.cfg?.id_taxonomia;
-
-                if (
-                    tax &&
-                    item.tax_ids.includes(tax)
-                ) {
-
-                    resultado.push({
-
-                        ...sim,
-
-                        nome:
-                            sim.nome ||
-                            sim.cfg?.nome ||
-                            'Sem nome'
-
-                    });
-
-                }
-
-            });
-
-            return;
-        }
-
-        // -------------------------------------------------
-        // BATERIAS VF SIMPLES
-        // -------------------------------------------------
-
-        const tax =
-            bat.id_taxonomia ||
-            bat.cfg?.id_taxonomia;
-
-        if (
-            tax &&
-            item.tax_ids.includes(tax)
-        ) {
-
-            resultado.push({
-
-                ...bat,
-
-                nome:
-                    bat.nome ||
-                    bat.cfg?.nome ||
                     'Sem nome'
 
             });
