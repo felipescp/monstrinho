@@ -9544,6 +9544,7 @@ window.importarAcervoOficial = async function(url) {
 window.carregarAcervosOficiais = async function() {
 
 
+
 // =========================================================
 // CATÁLOGO FACTUAL / ACERVO SOBERANO
 // =========================================================
@@ -9568,6 +9569,19 @@ window.carregarAcervosOficiais = async function() {
 // - alterar SIMS.
 //
 // =========================================================
+
+novosItens.forEach(item => {
+
+    if(item && item.id){
+
+        item.origem = 'oficial';
+
+        window.ACERVO_OFICIAL_IDS.add(
+            item.id
+        );
+    }
+
+});
 
 window.ACERVO_OFICIAL_IDS = new Set(
    JSON.parse(
@@ -9640,6 +9654,33 @@ window.ACERVO_OFICIAL = acervo;
 
 };
 
+
+let acervo = JSON.parse(
+    localStorage.getItem(
+        'cordeiro_acervo_provas'
+    ) || '[]'
+);
+
+acervo = acervo.filter(item => {
+
+    // mantém tudo local/manual
+    if(item.origem !== 'oficial'){
+        return true;
+    }
+
+    // mantém apenas oficiais atuais
+    return window.ACERVO_OFICIAL_IDS.has(
+        item.id
+    );
+
+});
+
+localStorage.setItem(
+    'cordeiro_acervo_provas',
+    JSON.stringify(acervo)
+);
+
+
 window.enxertarSimuladosMC = function(novosItens) {
 
     novosItens.forEach(item => {
@@ -9709,6 +9750,19 @@ window.processarImportacaoAcervo = function(
     dadosImportados,
     opcoes = {}
 ) {
+
+    novosItens.forEach(item => {
+
+    if(item && item.id){
+
+        item.origem = 'oficial';
+
+        window.ACERVO_OFICIAL_IDS.add(
+            item.id
+        );
+    }
+
+});
 
     if(window.RUNTIME_LOCK){
    console.warn(
