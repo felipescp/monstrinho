@@ -115,7 +115,27 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
 .vitrine-header-wrap { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
 
 /* Grid Responsivo da Vitrine (4 Colunas travadas) */
-.grid-vitrine { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; flex: 1; min-height: 0; width: 100%; }
+.grid-vitrine {
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap:15px;
+
+    width:100%;
+
+    align-items:start;
+
+    height:auto;
+
+    min-height:auto;
+
+    max-height:none;
+
+    overflow:visible;
+}
 @media(max-width: 1200px) { .grid-vitrine { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width: 800px) { .grid-vitrine { grid-template-columns: minmax(0, 1fr); } }
 
@@ -214,8 +234,24 @@ body.saindo-da-pagina { opacity: 0; }
 
 /* 6. COMPONENTES ESTRUTURAIS */
 .tela { display: none; flex-direction: column; }
-.tela.ativa { display: flex; flex: 1; min-height: 0; }
+.tela.ativa {
 
+    display:flex;
+
+    flex:1;
+
+    min-height:100vh;
+
+    height:auto;
+}
+.tela.ativa{
+
+    padding-bottom:80px;
+}
+.vitrine-container{
+
+    padding-bottom:120px;
+}
 .header, #barra1 { background: var(--bg-white); height: 54px; box-sizing: border-box; padding: 0 25px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
 .header h1, #barra1 h1 { font-family: var(--font-display); font-size: 16px; line-height: 1; color: var(--app-primary); letter-spacing: -0.5px; text-transform: uppercase; transition: color 0.4s ease; margin: 0; }
 
@@ -974,8 +1010,9 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     min-height:100vh;
 
     overflow-y:auto !important;
-*/
-}
+
+}*/
+
 </style>
 </head>
 <body>
@@ -2197,37 +2234,7 @@ getBateriasVinculadas: function(item) {
         // Bateria V/F simples
         // -----------------------------
 
-        else {
-
-            const tax =
-                bat.id_taxonomia ||
-                bat.cfg?.id_taxonomia;
-
-            if (
-                tax &&
-                item.tax_ids.includes(tax)
-            ) {
-
-                resultado.push({
-
-                    ...bat,
-
-                    nome:
-                        bat.nome ||
-                        bat.cfg?.nome ||
-                        'Sem nome'
-
-                });
-
-            }
-
-        }
-
-    });
-
-    return resultado;
-
-},
+ 
 
   getDiscColor: function(nome) {
     if (this.DISCIPLINA_CORES[nome]) return this.DISCIPLINA_CORES[nome];
