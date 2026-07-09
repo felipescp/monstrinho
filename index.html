@@ -6691,13 +6691,16 @@ function mkQ(q, modoRevisao){
     be.textContent = q.axioma ? 'Ver Explicação e Axioma ▸' : 'Ver explicação ▸';
     be.setAttribute('data-qid',q.id); be.onclick=function(){togExp(this.getAttribute('data-qid'));};
     ew.appendChild(be);
-    
+
     var et=document.createElement('div'); et.className='etx'; et.id='et-'+q.id;
     if (q.explicacao) {
-      var expText = document.createElement('div');
-      expText.innerHTML = q.explicacao.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-      et.appendChild(expText);
+        var expText = document.createElement('div');
+        expText.innerHTML = q.explicacao
+            .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+            .replace(/(?<!\*)\*(?!\*)(.*?)\*(?!\*)/g,'<em>$1</em>');
+        et.appendChild(expText);
     }
+
     if (q.axioma) {
       var axCard = document.createElement('div'); axCard.className = 'axioma-card'; axCard.style.marginTop = '1rem'; 
       var axTexto = document.createElement('div'); axTexto.innerHTML = '<strong>📌 AXIOMA:</strong> ' + q.axioma.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
