@@ -5193,40 +5193,16 @@ window.MAPA_TAXONOMIA = {};
 
 else if (auditId) {
 
-    console.log(
-        '[ROTA_AUDITID]',
-        {
-            auditId,
-            simsAntes: SIMS.length,
-            siAntes: SI
-        }
-    );
+    if (window.abrirResultadoHistorico) {
 
-    let arquivoMorto = JSON.parse(
-        localStorage.getItem('cordeiro_auditoria_historica') || '{}'
-    );
+        window.abrirResultadoHistorico(auditId);
 
-    if (arquivoMorto[auditId]) {
+    }
 
-        let snap = arquivoMorto[auditId];
+    if(g('barra1')) g('barra1').style.display = 'none';
+    if(g('barra-nav')) g('barra-nav').style.display = 'none';
 
-        C = snap.cfg;
-        D = snap.dados;
-        SIMS = [snap];
-        SI = 0;
-            tela(null);
-tela('tela-resultado');
-
-HIST = [mkH(snap, 0)];
-HI = 0;
-
-renderResultado(0);
-renderTabs();
-autoSave();
-            if(g('barra1')) g('barra1').style.display = 'none';
-            if(g('barra-nav')) g('barra-nav').style.display = 'none';
-        }
-    } 
+}
     else if (simId) {
         tela(null); tela('tela-simulado');
         let acervo = [];
