@@ -4617,6 +4617,10 @@ window.filtrarProvasCE = function(materia, divisao) {
                     return;
                 }
 
+                let btnCompartilhar = p.origem_oficial
+                    ? `<button class="icon-btn" onclick="window.compartilharBateria('${p.id}'); event.stopPropagation();" title="Copiar link de compartilhamento">🔗</button>`
+                    : '';
+
 // =========================================================
 // ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
 //
@@ -5045,7 +5049,7 @@ renderTabs();
 renderHomeDashboard();
 };
 
-window.addEventListener('load', function() {
+window.addEventListener('load', async function() {
     // 1. RECUPERAÇÃO DA ROTA ATIVA (Sem revelar a página ainda)
     const activeModule = localStorage.getItem('salinha_active_module');
     window.ZOOM_LEVEL = 1;
@@ -5204,12 +5208,18 @@ else if (auditId) {
 
 }
     else if (simId) {
-        tela(null); tela('tela-simulado');
-        let acervo = [];
+    tela(null); tela('tela-simulado');
+    let acervo = [];
+    try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
+    let provaAlvo = acervo.find(p => p.id === simId);
+
+    if (!provaAlvo && window.__bootOficialPromise__) {
+        await window.__bootOficialPromise__;
         try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
-        let provaAlvo = acervo.find(p => p.id === simId);
-        
-        if (provaAlvo) {
+        provaAlvo = acervo.find(p => p.id === simId);
+    }
+    
+    if (provaAlvo) {
             C = provaAlvo.cfg; D = provaAlvo.dados; C.id = simId; 
             
             let dOrigem = sessionStorage.getItem('etl_retorno_dia');
@@ -9569,7 +9579,8 @@ window.importarAcervoOficial = async function(url) {
         const dadosImportados = await r.json();
 
         window.processarImportacaoAcervo(
-            dadosImportados
+            dadosImportados,
+            { origemOficial: true }
         );
 
         console.log(
@@ -9934,6 +9945,9 @@ let mapa = new Map(
 
 novosItens.forEach(item => {
     if (item && item.id) {
+        if (opcoes.origemOficial) {
+            item.origem_oficial = true;
+        }
         mapa.set(item.id, item);
     }
 });
@@ -10092,6 +10106,38 @@ window.exportarEntidadeJson = function(arg1, arg2) {
         return; 
     }
     downloadArquivo(JSON.stringify(entidade, null, 2), `export-${id}.json`, 'application/json');
+};
+
+window.compartilharBateria = function(id) {
+    let acervo = [];
+    try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e) {}
+    let entidade = acervo.find(p => String(p.id) === String(id));
+
+    if (!entidade || !entidade.origem_oficial) {
+        alert('Só é possível compartilhar baterias que fazem parte do acervo oficial (visíveis para todos os usuários).');
+        return;
+    }
+
+    let link = window.location.origin + window.location.pathname + '?simId=' + encodeURIComponent(id);
+
+    let trigger = document.querySelector(`[onclick*="compartilharBateria('${id}')"]`);
+
+    function avisar(texto) {
+        if (!trigger) { alert(texto); return; }
+        let original = trigger.textContent;
+        trigger.textContent = '✓';
+        setTimeout(function() { trigger.textContent = original; }, 1500);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function() {
+            avisar('Link copiado: ' + link);
+        }).catch(function() {
+            alert('Link de compartilhamento:\n' + link);
+        });
+    } else {
+        alert('Link de compartilhamento:\n' + link);
+    }
 };
 
 window.exportarAcervoJson = function() {
@@ -10305,10 +10351,8 @@ window.triggerFileUpload = function(callback) {
 
 <script>
 
-(async function(){
-
+window.__bootOficialPromise__ = (async function(){
    try {
-
       await window.carregarAcervosOficiais();
 
       console.log(
