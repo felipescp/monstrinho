@@ -6255,6 +6255,19 @@ function mkH(s,si){return{nome:s.cfg.nome,cfg:s.cfg,dados:s.dados,stats:s.stats,
 // para mudança de aba ativa.
 //
 // =========================================================
+// Encontra a primeira questão ainda não respondida (anuladas nunca contam como pendência)
+function primeiraQuestaoPendente(dados) {
+    for (var i = 0; i < dados.blocos.length; i++) {
+        var qs = dados.blocos[i].questoes;
+        for (var j = 0; j < qs.length; j++) {
+            var q = qs[j];
+            var respondida = dados.res && dados.res[q.id] && dados.res[q.id].c;
+            if (!respondida && q.gabarito !== 'ANULADA') return q;
+        }
+    }
+    return null;
+}
+
 function trocarTab(i, forceQuestao){
     var telaSim = g('tela-simulado');
     var isSimVisible = telaSim && (telaSim.style.display === 'flex' || telaSim.classList.contains('ativa'));
@@ -6273,7 +6286,11 @@ function trocarTab(i, forceQuestao){
     
     C = JSON.parse(JSON.stringify(s.cfg));
     D = JSON.parse(JSON.stringify(s.dados));
-    QA = s.qSalva || null;
+
+    // Ao reabrir a aba, prioriza a primeira questão ainda pendente.
+    // Só usa qSalva (ou a 1ª questão) se a bateria já estiver 100% respondida.
+    var pendente = primeiraQuestaoPendente(D);
+    QA = pendente ? pendente.id : (s.qSalva || null);
     
     restaurarEstadoTempo(s);
     
