@@ -1097,6 +1097,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     <div class="nav-hd-zone">        
         <div class="nav-item hd-item" id="btn-nav-tjce" onclick="localStorage.setItem('salinha_active_module', 'section-mapa-tjce'); tela('section-mapa-tjce'); if(window.MAPA_TJCE_RUNTIME) window.MAPA_TJCE_RUNTIME.init();" style="cursor:pointer;" title="Cockpit Edital">📚 PAINEL TJPE</div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>        
+        <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões Salvas">📓 CADERNO</div>
     </div>
 </nav>
 
@@ -9556,6 +9557,116 @@ function closeAnalyticsModal() {
     }
 }
 
+// ── CADERNO DE QUESTÕES SALVAS (nativo, sem depender de página externa) ──
+
+function abrirCadernoModal() {
+    const modal = document.getElementById('caderno-modal');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    window.mostrarAbaCaderno('erros');
+}
+
+function fecharCadernoModal() {
+    const modal = document.getElementById('caderno-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function escapeAttrCaderno(str) {
+    return String(str == null ? '' : str).replace(/'/g, "\\'");
+}
+
+function escapeHtmlCaderno(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+window.mostrarAbaCaderno = function(aba) {
+    let btnErros = document.getElementById('btn-caderno-erros');
+    let btnAxiomas = document.getElementById('btn-caderno-axiomas');
+    if (btnErros) {
+        btnErros.style.color = (aba === 'erros') ? 'var(--app-primary)' : 'var(--text-muted)';
+        btnErros.style.borderBottomColor = (aba === 'erros') ? 'var(--app-primary)' : 'transparent';
+    }
+    if (btnAxiomas) {
+        btnAxiomas.style.color = (aba === 'axiomas') ? 'var(--app-primary)' : 'var(--text-muted)';
+        btnAxiomas.style.borderBottomColor = (aba === 'axiomas') ? 'var(--app-primary)' : 'transparent';
+    }
+
+    let dbStr = localStorage.getItem('salinha_longitudinal_runtime') || localStorage.getItem('etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
+
+    let corpo = document.getElementById('caderno-modal-body');
+    if (!corpo) return;
+
+    let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
+    let materias = Object.keys(dados);
+
+    if (materias.length === 0) {
+        corpo.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic;">Nenhuma questão salva ainda neste caderno.</div>';
+        return;
+    }
+
+    let html = '';
+    materias.forEach(function(mat) {
+        let topicos = dados[mat];
+        html += `<div style="margin-bottom:18px;"><h3 style="font-size:12px; font-weight:800; color:var(--app-primary); text-transform:uppercase; margin-bottom:8px; border-bottom:2px solid var(--app-primary); padding-bottom:4px;">${escapeHtmlCaderno(mat)}</h3>`;
+        Object.keys(topicos).forEach(function(top) {
+            let itens = topicos[top];
+            html += `<div style="margin-bottom:12px;"><div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">${escapeHtmlCaderno(top)} <span style="color:var(--app-primary);">(${itens.length})</span></div>`;
+            itens.forEach(function(item, idx) {
+                let btnRemover = `<button onclick="window.removerDoCaderno('${aba}','${escapeAttrCaderno(mat)}','${escapeAttrCaderno(top)}',${idx})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px;" title="Remover do caderno">✕ remover</button>`;
+                if (aba === 'erros') {
+                    let corGabarito = item.gabarito === 'V' ? '#166534' : '#991b1b';
+                    let bgGabarito = item.gabarito === 'V' ? '#dcfce7' : '#fee2e2';
+                    let textoGabarito = item.gabarito === 'V' ? 'VERDADEIRO' : (item.gabarito === 'F' ? 'FALSO' : item.gabarito);
+                    html += `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:10px;">
+                        <div style="font-size:12px; line-height:1.5; flex:1;">${escapeHtmlCaderno(item.enunciado)}</div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+                            <span style="font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; background:${bgGabarito}; color:${corGabarito};">${textoGabarito}</span>
+                            ${btnRemover}
+                        </div>
+                    </div>`;
+                } else {
+                    html += `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:8px;">
+                        <div style="font-size:11px; color:var(--text-muted); line-height:1.4; margin-bottom:6px;">${escapeHtmlCaderno(item.enunciado)}</div>
+                        <div style="font-size:12px; font-weight:700; color:var(--app-primary); line-height:1.5;">📌 ${escapeHtmlCaderno(item.axioma)}</div>
+                        <div style="text-align:right; margin-top:6px;">${btnRemover}</div>
+                    </div>`;
+                }
+            });
+            html += `</div>`;
+        });
+        html += `</div>`;
+    });
+    corpo.innerHTML = html;
+};
+
+window.removerDoCaderno = function(aba, mat, topico, idx) {
+    let dbStr = localStorage.getItem('salinha_longitudinal_runtime') || localStorage.getItem('etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
+
+    let chave = aba === 'erros' ? 'caderno_erros' : 'caderno_axiomas';
+    if (dbPlanner[chave] && dbPlanner[chave][mat] && dbPlanner[chave][mat][topico]) {
+        dbPlanner[chave][mat][topico].splice(idx, 1);
+        if (dbPlanner[chave][mat][topico].length === 0) delete dbPlanner[chave][mat][topico];
+        if (Object.keys(dbPlanner[chave][mat]).length === 0) delete dbPlanner[chave][mat];
+    }
+
+    localStorage.setItem('salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
+    localStorage.setItem('etl_planner_db', JSON.stringify(dbPlanner));
+
+    window.mostrarAbaCaderno(aba);
+};
+
 
 function exportarAcervoJson() {
     try {
@@ -10406,6 +10517,31 @@ window.triggerFileUpload = function(callback) {
             src="dashboard.html"
             loading="lazy">
         </iframe>
+
+    </div>
+</div>
+
+<div id="caderno-modal" class="analytics-modal">
+    <div class="analytics-modal-content">
+
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">
+                📓 Caderno de Questões Salvas
+            </div>
+
+            <button
+                class="analytics-close-btn"
+                onclick="fecharCadernoModal()">
+                ✕
+            </button>
+        </div>
+
+        <div style="display:flex; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+            <button id="btn-caderno-erros" onclick="window.mostrarAbaCaderno('erros')" style="flex:1; padding:10px; font-size:11px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom:2px solid var(--app-primary);">⭐ Caderno de Erros</button>
+            <button id="btn-caderno-axiomas" onclick="window.mostrarAbaCaderno('axiomas')" style="flex:1; padding:10px; font-size:11px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent;">📌 Caderno de Axiomas</button>
+        </div>
+
+        <div id="caderno-modal-body" style="flex:1; overflow-y:auto; padding:16px;"></div>
 
     </div>
 </div>
