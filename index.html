@@ -4481,7 +4481,7 @@ window.renderHomeDashboard = function() {
 
 // COLUNA 1: Disciplinas
                 htmlMaterias += `
-                <div class="col-materia-item" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this);">
+                <div class="col-materia-item" data-materia="${mat.nivel_1}" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this);">
                     <span style="color: ${corMat}; font-size:10px; font-weight:800; font-family:var(--font-display); text-transform: uppercase; line-height: 1;">${mat.nivel_1} ${badgeMat}</span>
                     <span style="color:var(--text-muted); font-size: 13px; line-height: 1;">›</span>
                 </div>`;
@@ -4491,6 +4491,7 @@ window.renderHomeDashboard = function() {
 
 // COLUNA 2: Tópicos da matéria selecionada
         window.selecionarMateriaVitrine = function(materiaNome, el) {
+            window.__ultimaMateriaSelecionada = materiaNome;
             document.querySelectorAll('.col-materia-item').forEach(item => {
                 item.classList.remove('ativo');
                 item.style.background = 'transparent';
@@ -4528,7 +4529,7 @@ window.renderHomeDashboard = function() {
                 let badgeDiv = qtdDiv > 0 ? `<span style="font-size:8.5px; color:var(--app-primary); font-weight:bold; margin-left:4px;">(${qtdDiv})</span>` : '';
 
                 htmlTopicos += `
-                <div class="col-topico-item" style="padding: 8px 4px; margin: 0; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.col-topico-item').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}');">
+                <div class="col-topico-item" data-topico="${div.nivel_2}" style="padding: 8px 4px; margin: 0; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.col-topico-item').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}');">
                     <span style="font-size:10px; font-weight:700; line-height: 1.2; margin: 0; padding: 0; display: block;">${div.nivel_2} ${badgeDiv}</span>
                 </div>`;
             });
@@ -4659,6 +4660,7 @@ window.exibirMateriaSelecionada = function() {
 function marcarModoListaAtivo(modo) {
     let btnTodas = document.getElementById('btn-modo-todas');
     let btnMateria = document.getElementById('btn-modo-materia');
+    window.__modoListaAtivo = modo;
     if (btnTodas) {
         btnTodas.style.color = (modo === 'todas') ? 'var(--app-primary)' : 'var(--text-muted)';
         btnTodas.style.borderBottomColor = (modo === 'todas') ? 'var(--app-primary)' : 'transparent';
@@ -4669,10 +4671,22 @@ function marcarModoListaAtivo(modo) {
     }
 }
             
-            // ESTADO INICIAL (Vazio Pedagógico em vez de listar consolidado)
-            let cabecalhoDireita = document.getElementById('header-filtro-ce');
-            if (cabecalhoDireita) cabecalhoDireita.innerHTML = 'AGUARDANDO SELEÇÃO';
-            listCE.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 10.5px; font-style: italic; line-height: 1.5;">Selecione um tópico no menu ao lado para<br>exibir as baterias focadas.</div>';
+            // ESTADO PERSISTIDO: restaura o modo/matéria/tópico que estava ativo antes de sair da tela
+            if (window.__modoListaAtivo === 'todas') {
+                window.exibirTodasBaterias();
+            } else if (window.__ultimaMateriaSelecionada) {
+                let elMateria = colMaterias.querySelector('.col-materia-item[data-materia="' + window.__ultimaMateriaSelecionada + '"]');
+                window.selecionarMateriaVitrine(window.__ultimaMateriaSelecionada, elMateria);
+                if (window.__ultimoFiltroCE && window.__ultimoFiltroCE.materia === window.__ultimaMateriaSelecionada && window.__ultimoFiltroCE.divisao) {
+                    let elTopico = colTopicos ? colTopicos.querySelector('.col-topico-item[data-topico="' + window.__ultimoFiltroCE.divisao + '"]') : null;
+                    if (elTopico) elTopico.style.color = 'var(--app-primary)';
+                    window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+                }
+            } else {
+                let cabecalhoDireita = document.getElementById('header-filtro-ce');
+                if (cabecalhoDireita) cabecalhoDireita.innerHTML = 'AGUARDANDO SELEÇÃO';
+                listCE.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 10.5px; font-style: italic; line-height: 1.5;">Selecione um tópico no menu ao lado para<br>exibir as baterias focadas.</div>';
+            }
         }
     }
 
