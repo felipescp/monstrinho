@@ -2853,7 +2853,8 @@ if(
          JSON.stringify(atual.dados)
       );
 
-      QA = atual.qSalva || null;
+      var pendente = primeiraQuestaoPendente(D);
+      QA = pendente ? pendente.id : (atual.qSalva || null);
 
       restaurarEstadoTempo(atual);
 
@@ -6493,8 +6494,9 @@ function fecharTab(i){
   SI=novoI;
   var s2=SIMS[novoI];
   C=JSON.parse(JSON.stringify(s2.cfg));
-  D=JSON.parse(JSON.stringify(s2.dados));
-  QA=s2.qSalva||null;
+    D=JSON.parse(JSON.stringify(s2.dados));
+  var pendenteFT = primeiraQuestaoPendente(D);
+  QA = pendenteFT ? pendenteFT.id : (s2.qSalva || null);
   ['tela-config','tela-upload','tela-proc','tela-resultado'].forEach(function(id){
     var el=g(id);if(el){el.classList.remove('ativa');el.style.display='none';}
   });
@@ -7506,8 +7508,9 @@ function importarJSON(e){
       
       var ul = SIMS[SI];
       C = JSON.parse(JSON.stringify(ul.cfg));
-      D = JSON.parse(JSON.stringify(ul.dados));
-      QA = ul.qSalva || null;
+            D = JSON.parse(JSON.stringify(ul.dados));
+      var pendenteUl = primeiraQuestaoPendente(D);
+      QA = pendenteUl ? pendenteUl.id : (ul.qSalva || null);
       HIST = SIMS.filter(function(s){return s.stats;}).map(function(s){return mkH(s,SIMS.indexOf(s));});
       HI = HIST.length - 1;
       
