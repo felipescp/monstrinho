@@ -5221,7 +5221,7 @@ else if (auditId) {
     }
     
     if (provaAlvo) {
-            C = provaAlvo.cfg; D = provaAlvo.dados; C.id = simId; 
+            C = provaAlvo.cfg; D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo))); C.id = simId; 
             
             let dOrigem = sessionStorage.getItem('etl_retorno_dia');
             let iOrigem = sessionStorage.getItem('etl_retorno_idx');
@@ -6237,6 +6237,13 @@ x.addEventListener('click', function(e){
 }
 
 function mkH(s,si){return{nome:s.cfg.nome,cfg:s.cfg,dados:s.dados,stats:s.stats,data:s.data,si:si};}
+
+function resolverDadosCompletos(item) {
+    if (item && item.origem_oficial && window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]) {
+        return window.ACERVO_OFICIAL_FULL[item.id].dados;
+    }
+    return item ? item.dados : null;
+}
 
 
 // =========================================================
@@ -8999,7 +9006,11 @@ window.editarSimuladoAcervo = function(id) {
     let prova = acervo.find(p => p.id === id);
     if(!prova) return;
 
-    window.ID_EDICAO = id; 
+    if (prova.origem_oficial) {
+        prova = Object.assign({}, prova, { dados: resolverDadosCompletos(prova) });
+    }
+
+    window.ID_EDICAO = id;
 
     g('cfg-nome').value = prova.nome;
     
@@ -9342,7 +9353,7 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
         if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
         
         C = JSON.parse(JSON.stringify(provaAlvo.cfg));
-        D = JSON.parse(JSON.stringify(provaAlvo.dados));
+        D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
         C.id = simId; 
         SIMS.push({ cfg: C, dados: D, stats: null, qSalva: null, data: new Date().toISOString() });
         SI = SIMS.length - 1;
@@ -9979,8 +9990,24 @@ novosItens.forEach(item => {
     if (item && item.id) {
         if (opcoes.origemOficial) {
             item.origem_oficial = true;
+
+            if (!window.ACERVO_OFICIAL_FULL) window.ACERVO_OFICIAL_FULL = {};
+            window.ACERVO_OFICIAL_FULL[item.id] = item;
+
+            let itemRaso = JSON.parse(JSON.stringify(item));
+            if (itemRaso.dados && Array.isArray(itemRaso.dados.blocos)) {
+                itemRaso.dados.blocos.forEach(function(bloco) {
+                    (bloco.questoes || []).forEach(function(q) {
+                        q.enunciado = '';
+                        q.explicacao = '';
+                        q.axioma = '';
+                    });
+                });
+            }
+            mapa.set(item.id, itemRaso);
+        } else {
+            mapa.set(item.id, item);
         }
-        mapa.set(item.id, item);
     }
 });
 
@@ -10083,8 +10110,8 @@ novosItens.forEach(item => {
             e
         );
 
-        alert(
-            'Erro ao processar acervo: ' + e.message
+        console.warn(
+            '[ACERVO] Falha ao salvar — operando só em memória nesta sessão: ' + e.message
         );
 
         } finally {
@@ -10137,6 +10164,11 @@ window.exportarEntidadeJson = function(arg1, arg2) {
         alert('Entidade não encontrada no Acervo local.'); 
         return; 
     }
+
+    if (entidade.origem_oficial) {
+        entidade = Object.assign({}, entidade, { dados: resolverDadosCompletos(entidade) });
+    }
+
     downloadArquivo(JSON.stringify(entidade, null, 2), `export-${id}.json`, 'application/json');
 };
 
