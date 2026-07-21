@@ -5205,14 +5205,18 @@ else if (auditId) {
     try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
     let provaAlvo = acervo.find(p => p.id === simId);
 
-    if (!provaAlvo && window.__bootOficialPromise__) {
+     if (!provaAlvo && window.__bootOficialPromise__) {
         await window.__bootOficialPromise__;
         try { acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]'); } catch(e){}
         provaAlvo = acervo.find(p => p.id === simId);
+    } else if (provaAlvo && provaAlvo.origem_oficial && window.__bootOficialPromise__) {
+        // Encontrada, mas "rasa" (é oficial) — espera o boot terminar antes de
+        // resolver o conteúdo completo, senão resolverDadosCompletos cai na versão rasa.
+        await window.__bootOficialPromise__;
     }
     
     if (provaAlvo) {
-            C = provaAlvo.cfg; D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo))); C.id = simId; 
+        C = provaAlvo.cfg; D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo))); C.id = simId;
             
             let dOrigem = sessionStorage.getItem('etl_retorno_dia');
             let iOrigem = sessionStorage.getItem('etl_retorno_idx');
