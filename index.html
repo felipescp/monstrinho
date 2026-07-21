@@ -8083,7 +8083,7 @@ function sincronizarResultadoComPlanner(simSession) {
                 if (!dbPlanner.caderno_erros[mat]) dbPlanner.caderno_erros[mat] = {};
                 if (!dbPlanner.caderno_erros[mat][topico]) dbPlanner.caderno_erros[mat][topico] = [];
                 if (!dbPlanner.caderno_erros[mat][topico].some(e => e.id_q === q.id && e.sim_id === simSession.cfg.id)) {
-                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito });
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao });
                 }
             }
 
@@ -9625,9 +9625,12 @@ window.mostrarAbaCaderno = function(aba) {
                     let corGabarito = item.gabarito === 'V' ? '#166534' : '#991b1b';
                     let bgGabarito = item.gabarito === 'V' ? '#dcfce7' : '#fee2e2';
                     let textoGabarito = item.gabarito === 'V' ? 'VERDADEIRO' : (item.gabarito === 'F' ? 'FALSO' : item.gabarito);
-                    html += `
+html += `
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:10px;">
-                        <div style="font-size:12px; line-height:1.5; flex:1;">${escapeHtmlCaderno(item.enunciado)}</div>
+                        <div style="flex:1;">
+                            <div style="font-size:12px; line-height:1.5;">${escapeHtmlCaderno(item.enunciado)}</div>
+                            ${item.explicacao ? `<div style="font-size:11px; color:var(--text-muted); line-height:1.5; margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px;">${escapeHtmlCaderno(item.explicacao)}</div>` : ''}
+                        </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; background:${bgGabarito}; color:${corGabarito};">${textoGabarito}</span>
                             ${btnRemover}
