@@ -4577,6 +4577,7 @@ window.filtrarProvasCE = function(materia, divisao) {
                     
                     // 2. Lógica de Identidade Visual (Novo x Resolvido)
                     let isResolvido = !!arquivoMorto[p.id];
+                    let rendimento = (isResolvido && arquivoMorto[p.id].stats && typeof arquivoMorto[p.id].stats.pct === 'number') ? arquivoMorto[p.id].stats.pct : null;
                     
                     let corTitulo = isResolvido ? 'var(--success)' : 'var(--text-main)';
                     let bgQtd = isResolvido ? '#dcfce7' : '#f8fafc';
@@ -4619,10 +4620,11 @@ return `
         </button>
     </div>
 
-    <div style="flex-shrink: 0; margin-left: 10px;">
+    <div style="flex-shrink: 0; margin-left: 10px; display:flex; align-items:center; gap:6px;">
         <span style="font-size: 9px; color: ${corQtdTexto}; font-weight: 800; background: ${bgQtd}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderQtd}; display:flex; align-items:center; gap:4px;">
             ${qtdQ} questões ${iconeAcao}
         </span>
+        ${rendimento !== null ? `<span style="font-size: 9px; color: #166534; font-weight: 800; background: #dcfce7; padding: 2px 5px; border-radius: 4px; border: 1px solid #bbf7d0;">${rendimento}%</span>` : ''}
     </div>
 </div>`;
                 }).join('');
