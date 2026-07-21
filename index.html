@@ -8024,6 +8024,60 @@ function finalizarSimulado() {
     });
 }
 
+// Sincroniza SÓ o caderno (erros/axiomas) com o Planner — segura pra chamar a qualquer momento,
+// inclusive no meio da bateria, porque não depende de stats (que só existem após finalizar).
+function sincronizarCadernoComPlanner(simSession) {
+    if (!simSession || !simSession.dados || !Array.isArray(simSession.dados.blocos)) return;
+
+    let dbStr = localStorage.getItem('salinha_longitudinal_runtime') || localStorage.getItem('etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) { dbPlanner = {}; }
+
+    if (!dbPlanner.caderno_erros) dbPlanner.caderno_erros = {};
+    if (!dbPlanner.caderno_axiomas) dbPlanner.caderno_axiomas = {};
+
+    simSession.dados.blocos.forEach(function(b) {
+        (b.questoes || []).forEach(function(q) {
+            let matOriginal = "DIVERSOS";
+            if (q.topico && q.topico.includes(' > ')) {
+                matOriginal = q.topico.split(' > ')[0];
+            } else if (b.nome && b.nome.toUpperCase() !== "GERAL" && b.nome.toUpperCase() !== (simSession.cfg.nome || '').toUpperCase()) {
+                matOriginal = b.nome;
+            } else if (q.taxonomia) {
+                matOriginal = q.taxonomia;
+            } else {
+                matOriginal = simSession.cfg.materia || "DIVERSOS";
+            }
+
+            let mat = matOriginal.toUpperCase().trim();
+            let topico = q.topico || b.nome;
+            let prefixo = mat + " > ";
+            if (topico.toUpperCase().startsWith(prefixo)) {
+                topico = topico.substring(prefixo.length).trim();
+            }
+
+            if (simSession.dados.cadernoAxiomas && simSession.dados.cadernoAxiomas.includes(q.id) && q.axioma) {
+                if (!dbPlanner.caderno_axiomas[mat]) dbPlanner.caderno_axiomas[mat] = {};
+                if (!dbPlanner.caderno_axiomas[mat][topico]) dbPlanner.caderno_axiomas[mat][topico] = [];
+                if (!dbPlanner.caderno_axiomas[mat][topico].some(function(a){ return a.id_q === q.id && a.sim_id === simSession.cfg.id; })) {
+                    dbPlanner.caderno_axiomas[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, axioma: q.axioma, enunciado: q.enunciado });
+                }
+            }
+
+            if (simSession.dados.caderno && simSession.dados.caderno.includes(q.id)) {
+                if (!dbPlanner.caderno_erros[mat]) dbPlanner.caderno_erros[mat] = {};
+                if (!dbPlanner.caderno_erros[mat][topico]) dbPlanner.caderno_erros[mat][topico] = [];
+                if (!dbPlanner.caderno_erros[mat][topico].some(function(e){ return e.id_q === q.id && e.sim_id === simSession.cfg.id; })) {
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito });
+                }
+            }
+        });
+    });
+
+    localStorage.setItem('salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
+    localStorage.setItem('etl_planner_db', JSON.stringify(dbPlanner));
+}
+
 // O MOTOR DE INTEGRAÇÃO COM A CENTRAL ANALÍTICA
 function sincronizarResultadoComPlanner(simSession) {
     let dbStr = localStorage.getItem('salinha_longitudinal_runtime') || localStorage.getItem('etl_planner_db') || '{}';
