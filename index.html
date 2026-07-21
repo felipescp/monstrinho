@@ -1319,10 +1319,14 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                         </div>
                         <!-- Coluna 3: Baterias do tópico selecionado -->
                         <div style="display:flex; flex-direction:column; overflow:hidden;">
+                            <div style="display:flex; border-bottom: 1px solid var(--border-color); flex-shrink:0;">
+                                <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Todas</button>
+                                <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria Selecionada</button>
+                            </div>
                             <div style="padding: 8px 15px; background: #fafafa; font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); flex-shrink: 0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
                             <div class="listagem-provas" id="lista-provas-ce" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;">
                                 <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>
-                            </div><!-- fecha lista-provas-ce -->
+                            </div>
                         </div>
                     </div>
                 </div><!-- fecha v-acc-body -->
@@ -4535,20 +4539,14 @@ window.renderHomeDashboard = function() {
             if (cabecalhoReset) cabecalhoReset.textContent = materiaNome;
             if (listCE) listCE.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>';
         };
-window.filtrarProvasCE = function(materia, divisao) {
-                let filtradas = provasCE.filter(p => {
-                    let matchMat = p.materia === materia.toUpperCase();
-                    let matchDiv = divisao ? (p.caminho_completo && p.caminho_completo.includes(divisao)) : true;
-                    return matchMat && matchDiv;
-                });
-                
+function renderizarListaBaterias(filtradas, headerHtml) {
                 let cabecalhoDireita = document.getElementById('header-filtro-ce');
                 if (cabecalhoDireita) {
-                    cabecalhoDireita.innerHTML = divisao ? `${materia} <span style="color:var(--border-color)">/</span> ${divisao}` : `${materia}`;
+                    cabecalhoDireita.innerHTML = headerHtml;
                 }
 
                 if (filtradas.length === 0) {
-                    listCE.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 11px; font-style: italic;">Nenhuma bateria encontrada neste tópico.</div>';
+                    listCE.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 11px; font-style: italic;">Nenhuma bateria encontrada.</div>';
                     return;
                 }
 
@@ -4597,9 +4595,9 @@ window.filtrarProvasCE = function(materia, divisao) {
                         }
                     }
 
-                let btnCompartilhar = p.origem_oficial
-                    ? `<button class="icon-btn" onclick="window.compartilharBateria('${p.id}'); event.stopPropagation();" title="Copiar link de compartilhamento">🔗</button>`
-                    : '';
+let btnCompartilhar = p.origem_oficial
+    ? `<button class="icon-btn" onclick="window.compartilharBateria('${p.id}'); event.stopPropagation();" title="Copiar link de compartilhamento">🔗</button>`
+    : '';
 
 return `
 <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;" 
@@ -4629,6 +4627,47 @@ return `
 </div>`;
                 }).join('');
             };
+
+window.filtrarProvasCE = function(materia, divisao) {
+    let filtradas = provasCE.filter(p => {
+        let matchMat = p.materia === materia.toUpperCase();
+        let matchDiv = divisao ? (p.caminho_completo && p.caminho_completo.includes(divisao)) : true;
+        return matchMat && matchDiv;
+    });
+    let headerHtml = divisao ? `${materia} <span style="color:var(--border-color)">/</span> ${divisao}` : `${materia}`;
+    window.__ultimoFiltroCE = { materia: materia, divisao: divisao };
+    marcarModoListaAtivo('materia');
+    renderizarListaBaterias(filtradas, headerHtml);
+};
+
+window.exibirTodasBaterias = function() {
+    marcarModoListaAtivo('todas');
+    renderizarListaBaterias(provasCE, 'TODAS AS BATERIAS');
+};
+
+window.exibirMateriaSelecionada = function() {
+    marcarModoListaAtivo('materia');
+    if (window.__ultimoFiltroCE) {
+        window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+    } else {
+        let cabecalhoDireita = document.getElementById('header-filtro-ce');
+        if (cabecalhoDireita) cabecalhoDireita.textContent = 'SELECIONE UM TÓPICO';
+        if (listCE) listCE.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>';
+    }
+};
+
+function marcarModoListaAtivo(modo) {
+    let btnTodas = document.getElementById('btn-modo-todas');
+    let btnMateria = document.getElementById('btn-modo-materia');
+    if (btnTodas) {
+        btnTodas.style.color = (modo === 'todas') ? 'var(--app-primary)' : 'var(--text-muted)';
+        btnTodas.style.borderBottomColor = (modo === 'todas') ? 'var(--app-primary)' : 'transparent';
+    }
+    if (btnMateria) {
+        btnMateria.style.color = (modo === 'materia') ? 'var(--app-primary)' : 'var(--text-muted)';
+        btnMateria.style.borderBottomColor = (modo === 'materia') ? 'var(--app-primary)' : 'transparent';
+    }
+}
             
             // ESTADO INICIAL (Vazio Pedagógico em vez de listar consolidado)
             let cabecalhoDireita = document.getElementById('header-filtro-ce');
