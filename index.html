@@ -114,13 +114,13 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
 .vitrine-container { max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; padding-bottom: 40px; }
 .vitrine-header-wrap { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; }
 
-/* Grid Responsivo da Vitrine (4 Colunas travadas) */
+/* Grid da Vitrine — só resta o painel Baterias V/F, ocupando toda a largura */
 .grid-vitrine {
 
     display:grid;
 
     grid-template-columns:
-        repeat(4, minmax(0, 1fr));
+        minmax(0, 1fr);
 
     gap:15px;
 
@@ -136,8 +136,6 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
 
     overflow:visible;
 }
-@media(max-width: 1200px) { .grid-vitrine { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media(max-width: 800px) { .grid-vitrine { grid-template-columns: minmax(0, 1fr); } }
 
 /* Accordions Principais */
 .v-acc-item { background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 15px; transition: 0.3s; }
@@ -1311,115 +1309,28 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     </div>
 </div>
                 </div>
-                <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
-                    <!-- Árvore -->
-                    <div id="home-tree-container" style="height: 35%; min-height: 150px; overflow-y: auto; border-bottom: 1px solid var(--border-color); background: #f8fafc; padding: 10px;"></div>
-                    <!-- Lista de Provas -->
-                    <div style="padding: 8px 15px; background: #fafafa; font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); flex-shrink: 0;" id="header-filtro-ce">TODAS AS MATÉRIAS</div>
-                    <div class="listagem-provas" id="lista-provas-ce" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;"></div>
-                </div>
-            </div>
-<!-- COLUNA 3: Playlists -->
-            <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
-                <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
-                    <div class="v-acc-title"><div class="v-acc-icon" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1); width: 28px; height: 28px; font-size: 14px;">🎬</div> Playlists de V/F</div>
-                    <div style="position: relative;">
-                        
-                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
-                            ⋮
+                                <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color); max-height: 80vh;">
+                    <div style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); flex:1; overflow:hidden;">
+                        <!-- Coluna 1: Matérias -->
+                        <div id="col-materias" style="overflow-y:auto; border-right:1px solid var(--border-color); background:#f8fafc; padding:10px;"></div>
+                        <!-- Coluna 2: Tópicos da matéria selecionada -->
+                        <div id="col-topicos" style="overflow-y:auto; border-right:1px solid var(--border-color); padding:10px;">
+                            <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione uma matéria.</div>
                         </div>
-                        
-                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
-                            <div class="kebab-item" onclick="window.PlaylistsEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📥 Importar JSON
-                            </div>
-                            <div class="kebab-item" onclick="window.PlaylistsEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📤 Exportar Grupo
-                            </div>
-                            <div class="kebab-item" onclick="window.PlaylistsEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
-                                ✕ Excluir Grupo
-                            </div>
-                        </div>
-</div>
-                </div>
-                <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
-                    <div class="listagem-provas" id="lista-playlists" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;">
-                        <!-- Injetado via JS -->
-                    </div>
-                </div>
-
-
-
-            </div>
-            <!-- COLUNA 2: Provas Anteriores (Com Filtros) -->
-            <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
-                <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
-                    <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--danger); background: rgba(239, 68, 68, 0.1); width: 28px; height: 28px; font-size: 14px;">🏛️</div> Simulados</div>
-                    <div style="position: relative;">
-                        
-                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
-                            ⋮
-                        </div>
-                        
-                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
-                            <div class="kebab-item" onclick="window.SimuladosEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📥 Importar JSON
-                            </div>
-                            <div class="kebab-item" onclick="window.SimuladosEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📤 Exportar Grupo
-                            </div>
-                            <div class="kebab-item" onclick="window.SimuladosEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
-                                ✕ Excluir Grupo
-                            </div>
-                        </div>
-</div>
-                </div>
-                <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
-<!-- Filtros Simulados Inéditos -->
-                    <div class="filtros-bar">
-                        <select id="v-filtro-banca" onchange="window.renderizarSimuladosIneditos()"><option value="">Banca (Todas)</option></select>
-                        <div style="display:flex; gap:6px; width: 100%;">
-                            <select id="v-filtro-carreira" onchange="window.renderizarSimuladosIneditos()" style="flex:2;"><option value="">Cargo (Todos)</option></select>
-                            <input type="number" id="v-filtro-ano" placeholder="Ano" oninput="window.renderizarSimuladosIneditos()" style="flex:1; min-width:0;">
+                        <!-- Coluna 3: Baterias do tópico selecionado -->
+                        <div style="display:flex; flex-direction:column; overflow:hidden;">
+                            <div style="padding: 8px 15px; background: #fafafa; font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); flex-shrink: 0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
+                            <div class="listagem-provas" id="lista-provas-ce" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;">
+                                <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>
+                            </div><!-- fecha lista-provas-ce -->
                         </div>
                     </div>
-                    <!-- Lista de Provas -->
-                    <div class="listagem-provas" id="lista-provas-mc" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;"></div>
-                </div>
-            </div>
+                </div><!-- fecha v-acc-body -->
+            </div><!-- fecha v-acc-item (painel Baterias V/F) -->
+        </div><!-- fecha grid-vitrine -->
+    </div><!-- fecha vitrine-container -->
 
-
-<!-- COLUNA 4: Provas Anteriores -->
-            <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
-                <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
-                    <div class="v-acc-title"><div class="v-acc-icon" style="color: #059669; background: rgba(5, 150, 105, 0.1); width: 28px; height: 28px; font-size: 14px;">🏛️</div> Provas Anteriores</div>
-                    <div style="position: relative;">
-                        
-                        <div class="kebab-trigger" style="cursor: pointer; padding: 4px 8px; font-size: 18px;" onclick="document.querySelectorAll('.dropdown-local.active').forEach(el => { if(el !== this.nextElementSibling) el.classList.remove('active'); }); this.nextElementSibling.classList.toggle('active');">
-                            ⋮
-                        </div>
-                        
-                        <div class="kebab-dropdown dropdown-local" style="position: absolute; right: 0; background: white; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 4px; z-index: 100;">
-                            <div class="kebab-item" onclick="window.ProvasEngine.importar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📥 Importar JSON
-                            </div>
-                            <div class="kebab-item" onclick="window.ProvasEngine.exportar(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; border-bottom: 1px solid var(--border-color);">
-                                📤 Exportar Grupo
-                            </div>
-                            <div class="kebab-item" onclick="window.ProvasEngine.excluir(); this.parentElement.classList.remove('active');" style="padding: 8px 12px; font-size: 11px; cursor: pointer; color:var(--danger);">
-                                ✕ Excluir Grupo
-                            </div>
-                        </div>
-</div>
-                </div>
-                <div class="v-acc-body" id="bloco-provas-anteriores" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color);">
-                    <!-- Injetado via JS -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
+</div><!-- fecha tela-home -->
 
 <section id="section-mapa-tjce" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background: var(--bg-tjce);">
 <style>
@@ -4526,7 +4437,8 @@ window.renderHomeDashboard = function() {
     // ==========================================
     // 1. RENDERIZAÇÃO: ÁRVORE E LISTA CERTO/ERRADO
     // ==========================================
-    const treeContainer = document.getElementById('home-tree-container');
+        const colMaterias = document.getElementById('col-materias');
+    const colTopicos = document.getElementById('col-topicos');
     const listCE = document.getElementById('lista-provas-ce');
     const provasCE = [];
     acervo.forEach(function(p) {
@@ -4552,29 +4464,49 @@ window.renderHomeDashboard = function() {
     
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
     
-    if (treeContainer && listCE) {
+    if (colMaterias && listCE) {
         if (!taxBase || taxBase.length === 0) {
-            treeContainer.innerHTML = '<div style="padding:15px; color:var(--danger); font-size:11px; font-weight:bold;">Falha ao injetar taxonomia.js.</div>';
+            colMaterias.innerHTML = '<div style="padding:15px; color:var(--danger); font-size:11px; font-weight:bold;">Falha ao injetar taxonomia.js.</div>';
         } else {
-            let htmlTree = '';
-            
-            taxBase.forEach((mat, mIdx) => {
-                // Cálculo de nós filhos existentes
+            let htmlMaterias = '';
+
+            taxBase.forEach((mat) => {
                 let qtdMat = provasCE.filter(p => p.materia === mat.nivel_1.toUpperCase()).length;
                 let badgeMat = qtdMat > 0 ? `<span style="font-size:9px; background:var(--app-primary); color:white; padding:2px 5px; border-radius:4px; margin-left:5px;">${qtdMat}</span>` : '';
                 let corMat = typeof getMateriaColor === 'function' ? getMateriaColor(mat.nivel_1) : 'var(--text-main)';
-                
-// NÍVEL 1: Disciplina (Acordeon Restritivo)
-                htmlTree += `
-                <div class="tree-n1" style="padding: 0px 4px !important; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'" onclick="let exp = this.classList.contains('expanded'); document.querySelectorAll('.tree-n1').forEach(el => { el.classList.remove('expanded'); el.nextElementSibling.style.display = 'none'; }); if(!exp) { this.classList.add('expanded'); this.nextElementSibling.style.display = 'block'; }">
+
+// COLUNA 1: Disciplinas
+                htmlMaterias += `
+                <div class="col-materia-item" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this);">
                     <span style="color: ${corMat}; font-size:10px; font-weight:800; font-family:var(--font-display); text-transform: uppercase; line-height: 1;">${mat.nivel_1} ${badgeMat}</span>
-                    <span class="ico" style="color:var(--text-muted); font-size: 14px; line-height: 1;">▾</span>
-                </div>
-                <div class="tree-n2-container" style="display: none; background: rgba(255,255,255,0.5);">`;
-                
-// NÍVEL 2: Tópicos (Este sim dispara a listagem)
-                mat.divisoes.forEach(div => {
-                    let qtdDiv = provasCE.filter(function(p){
+                    <span style="color:var(--text-muted); font-size: 13px; line-height: 1;">›</span>
+                </div>`;
+            });
+            colMaterias.innerHTML = htmlMaterias;
+    };
+
+// COLUNA 2: Tópicos da matéria selecionada
+        window.selecionarMateriaVitrine = function(materiaNome, el) {
+            document.querySelectorAll('.col-materia-item').forEach(item => {
+                item.classList.remove('ativo');
+                item.style.background = 'transparent';
+            });
+            if (el) {
+                el.classList.add('ativo');
+                el.style.background = '#eef2ff';
+            }
+
+            let mat = taxBase.find(m => m.nivel_1 === materiaNome);
+            if (!colTopicos) return;
+
+            if (!mat) {
+                colTopicos.innerHTML = '';
+                return;
+            }
+
+            let htmlTopicos = '';
+            mat.divisoes.forEach(div => {
+                let qtdDiv = provasCE.filter(function(p){
 
    let matchMat =
       p.materia === mat.nivel_1.toUpperCase();
@@ -4589,17 +4521,20 @@ window.renderHomeDashboard = function() {
    );
 
 }).length;
-                    let badgeDiv = qtdDiv > 0 ? `<span style="font-size:8.5px; color:var(--app-primary); font-weight:bold; margin-left:4px;">(${qtdDiv})</span>` : '';
-                    
-                    htmlTree += `
-                    <div class="tree-n2" style="padding: 0px 4px 4px 10px !important; margin: 0 !important; min-height: 0 !important; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.tree-n2').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}');">
-                        <span style="font-size:10px; font-weight:700; line-height: 1.2; margin: 0; padding: 0; display: block;">${div.nivel_2} ${badgeDiv}</span>
-                    </div>`;
-                });
-                htmlTree += `</div>`;
+                let badgeDiv = qtdDiv > 0 ? `<span style="font-size:8.5px; color:var(--app-primary); font-weight:bold; margin-left:4px;">(${qtdDiv})</span>` : '';
+
+                htmlTopicos += `
+                <div class="col-topico-item" style="padding: 8px 4px; margin: 0; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.col-topico-item').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}');">
+                    <span style="font-size:10px; font-weight:700; line-height: 1.2; margin: 0; padding: 0; display: block;">${div.nivel_2} ${badgeDiv}</span>
+                </div>`;
             });
-            treeContainer.innerHTML = htmlTree;
-  };          
+            colTopicos.innerHTML = htmlTopicos || '<div style="padding:15px; color:var(--text-muted); font-size:11px; font-style:italic;">Nenhum tópico cadastrado.</div>';
+
+            // Reseta a coluna de baterias — matéria mudou, seleção de tópico anterior não vale mais
+            let cabecalhoReset = document.getElementById('header-filtro-ce');
+            if (cabecalhoReset) cabecalhoReset.textContent = materiaNome;
+            if (listCE) listCE.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>';
+        };
 window.filtrarProvasCE = function(materia, divisao) {
                 let filtradas = provasCE.filter(p => {
                     let matchMat = p.materia === materia.toUpperCase();
