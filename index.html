@@ -9674,8 +9674,11 @@ window.mostrarAbaCaderno = function(aba) {
     }
 
     let html = '<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:14px;">' +
-        '<button onclick="window.expandirTudoCaderno(true)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>' +
+'<button onclick="window.expandirTudoCaderno(true)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>' +
         '<button onclick="window.expandirTudoCaderno(false)" style="background:none; border:none; color:var(--text-muted); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▸ Recolher tudo</button>' +
+        '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
+        '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
+        '<button onclick="window.ajustarZoomCaderno(0.1)" title="Aumentar letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A+</button>' +
         '</div>';
 
     materias.forEach(function(mat) {
@@ -9716,8 +9719,9 @@ window.mostrarAbaCaderno = function(aba) {
                     html += `
                     <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:12px;">
                         <div style="flex:1;">
+                            <div style="font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Enunciado</div>
                             <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${escapeHtmlCaderno(item.enunciado)}</div>
-                            ${item.explicacao ? `<div style="font-size:11px; color:var(--text-muted); line-height:1.6; margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px;">${escapeHtmlCaderno(item.explicacao)}</div>` : ''}
+                            ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed #e2e8f0; padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${escapeHtmlCaderno(item.explicacao)}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
@@ -9741,6 +9745,15 @@ window.mostrarAbaCaderno = function(aba) {
     });
 
     corpo.innerHTML = html;
+    corpo.style.zoom = window.CADERNO_ZOOM_LEVEL || 1;
+};
+
+window.CADERNO_ZOOM_LEVEL = window.CADERNO_ZOOM_LEVEL || 1;
+
+window.ajustarZoomCaderno = function(delta) {
+    window.CADERNO_ZOOM_LEVEL = Math.max(0.7, Math.min(1.5, (window.CADERNO_ZOOM_LEVEL || 1) + delta));
+    let corpo = document.getElementById('caderno-modal-body');
+    if (corpo) corpo.style.zoom = window.CADERNO_ZOOM_LEVEL;
 };
 
 window.toggleCadernoAcc = function(headerEl) {
