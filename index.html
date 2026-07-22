@@ -9673,44 +9673,94 @@ window.mostrarAbaCaderno = function(aba) {
         return;
     }
 
-    let html = '';
+    let html = '<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:14px;">' +
+        '<button onclick="window.expandirTudoCaderno(true)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>' +
+        '<button onclick="window.expandirTudoCaderno(false)" style="background:none; border:none; color:var(--text-muted); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▸ Recolher tudo</button>' +
+        '</div>';
+
     materias.forEach(function(mat) {
         let topicos = dados[mat];
-        html += `<div style="margin-bottom:18px;"><h3 style="font-size:12px; font-weight:800; color:var(--app-primary); text-transform:uppercase; margin-bottom:8px; border-bottom:2px solid var(--app-primary); padding-bottom:4px;">${escapeHtmlCaderno(mat)}</h3>`;
+        let totalMateria = Object.keys(topicos).reduce(function(acc, t){ return acc + topicos[t].length; }, 0);
+        let corMat = typeof getMateriaColor === 'function' ? getMateriaColor(mat) : 'var(--app-primary)';
+
+        html += `
+        <div class="caderno-materia" style="margin-bottom:10px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+            <div class="caderno-acc-header" onclick="window.toggleCadernoAcc(this)" onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='#f8fafc'" style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:#f8fafc; cursor:pointer; border-left:4px solid ${corMat}; transition:background 0.15s;">
+                <span style="font-size:12.5px; font-weight:800; color:${corMat}; text-transform:uppercase; letter-spacing:0.02em;">${escapeHtmlCaderno(mat)}</span>
+                <span style="display:flex; align-items:center; gap:9px;">
+                    <span style="font-size:10px; font-weight:700; color:var(--text-muted); background:#e2e8f0; padding:2px 8px; border-radius:10px;">${totalMateria}</span>
+                    <span class="caderno-acc-seta" style="font-size:11px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
+                </span>
+            </div>
+            <div class="caderno-acc-body" style="display:none; padding:12px 14px; background:#fff;">`;
+
         Object.keys(topicos).forEach(function(top) {
             let itens = topicos[top];
-            html += `<div style="margin-bottom:12px;"><div style="font-size:10.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">${escapeHtmlCaderno(top)} <span style="color:var(--app-primary);">(${itens.length})</span></div>`;
+            html += `
+            <div class="caderno-topico" style="margin-bottom:8px; border:1px solid #edf1f5; border-radius:6px; overflow:hidden;">
+                <div class="caderno-acc-header" onclick="window.toggleCadernoAcc(this)" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'" style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#fff; cursor:pointer; transition:background 0.15s;">
+                    <span style="font-size:11px; font-weight:700; color:var(--text-main);">${escapeHtmlCaderno(top)}</span>
+                    <span style="display:flex; align-items:center; gap:9px;">
+                        <span style="font-size:9.5px; font-weight:700; color:var(--app-primary);">${itens.length}</span>
+                        <span class="caderno-acc-seta" style="font-size:10px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
+                    </span>
+                </div>
+                <div class="caderno-acc-body" style="display:none; padding:10px 12px; background:#fbfbfd;">`;
+
             itens.forEach(function(item, idx) {
-                let btnRemover = `<button onclick="window.removerDoCaderno('${aba}','${escapeAttrCaderno(mat)}','${escapeAttrCaderno(top)}',${idx})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px;" title="Remover do caderno">✕ remover</button>`;
+                let btnRemover = `<button onclick="window.removerDoCaderno('${aba}','${escapeAttrCaderno(mat)}','${escapeAttrCaderno(top)}',${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px;" title="Remover do caderno">✕ remover</button>`;
                 if (aba === 'erros') {
                     let corGabarito = item.gabarito === 'V' ? '#166534' : '#991b1b';
                     let bgGabarito = item.gabarito === 'V' ? '#dcfce7' : '#fee2e2';
                     let textoGabarito = item.gabarito === 'V' ? 'VERDADEIRO' : (item.gabarito === 'F' ? 'FALSO' : item.gabarito);
-html += `
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; gap:10px;">
+                    html += `
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:12px;">
                         <div style="flex:1;">
-                            <div style="font-size:12px; line-height:1.5;">${escapeHtmlCaderno(item.enunciado)}</div>
-                            ${item.explicacao ? `<div style="font-size:11px; color:var(--text-muted); line-height:1.5; margin-top:6px; border-top:1px dashed #e2e8f0; padding-top:6px;">${escapeHtmlCaderno(item.explicacao)}</div>` : ''}
+                            <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${escapeHtmlCaderno(item.enunciado)}</div>
+                            ${item.explicacao ? `<div style="font-size:11px; color:var(--text-muted); line-height:1.6; margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px;">${escapeHtmlCaderno(item.explicacao)}</div>` : ''}
                         </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
-                            <span style="font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; background:${bgGabarito}; color:${corGabarito};">${textoGabarito}</span>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
+                            <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
                             ${btnRemover}
                         </div>
                     </div>`;
                 } else {
                     html += `
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px 12px; margin-bottom:8px;">
-                        <div style="font-size:11px; color:var(--text-muted); line-height:1.4; margin-bottom:6px;">${escapeHtmlCaderno(item.enunciado)}</div>
-                        <div style="font-size:12px; font-weight:700; color:var(--app-primary); line-height:1.5;">📌 ${escapeHtmlCaderno(item.axioma)}</div>
-                        <div style="text-align:right; margin-top:6px;">${btnRemover}</div>
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:12px 14px; margin-bottom:8px;">
+                        <div style="font-size:11px; color:var(--text-muted); line-height:1.5; margin-bottom:8px;">${escapeHtmlCaderno(item.enunciado)}</div>
+                        <div style="font-size:12.5px; font-weight:700; color:var(--app-primary); line-height:1.6; background:#eef2ff; padding:8px 10px; border-radius:5px;">📌 ${escapeHtmlCaderno(item.axioma)}</div>
+                        <div style="text-align:right; margin-top:8px;">${btnRemover}</div>
                     </div>`;
                 }
             });
-            html += `</div>`;
+
+            html += `</div></div>`;
         });
-        html += `</div>`;
+
+        html += `</div></div>`;
     });
+
     corpo.innerHTML = html;
+};
+
+window.toggleCadernoAcc = function(headerEl) {
+    let body = headerEl.nextElementSibling;
+    if (!body) return;
+    let seta = headerEl.querySelector('.caderno-acc-seta');
+    let abrindo = body.style.display === 'none' || !body.style.display;
+    body.style.display = abrindo ? 'block' : 'none';
+    if (seta) seta.style.transform = abrindo ? 'rotate(90deg)' : 'rotate(0deg)';
+};
+
+window.expandirTudoCaderno = function(abrir) {
+    let corpo = document.getElementById('caderno-modal-body');
+    if (!corpo) return;
+    corpo.querySelectorAll('.caderno-acc-body').forEach(function(body) {
+        body.style.display = abrir ? 'block' : 'none';
+    });
+    corpo.querySelectorAll('.caderno-acc-seta').forEach(function(seta) {
+        seta.style.transform = abrir ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
 };
 
 window.removerDoCaderno = function(aba, mat, topico, idx) {
