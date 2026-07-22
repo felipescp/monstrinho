@@ -1173,6 +1173,52 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             style="display:none;"
         >
 
+        <button
+            onclick="window.SALINHA_GIST_SYNC.exportarNuvem()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-main);
+            "
+            title="Enviar backup pra nuvem (GitHub Gist)"
+        >
+            ☁️⬆️ Nuvem
+        </button>
+
+        <button
+            onclick="window.SALINHA_GIST_SYNC.importarNuvem()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-main);
+            "
+            title="Trazer o backup mais recente da nuvem"
+        >
+            ☁️⬇️ Nuvem
+        </button>
+
+        <button
+            onclick="window.SALINHA_GIST_SYNC.configurar()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-muted);
+                width:26px;
+            "
+            title="Configurar token do GitHub pra sincronização em nuvem"
+        >
+            ⚙️
+        </button>
+
     </div>
 
     <!-- ============================================== -->
@@ -1879,39 +1925,39 @@ window.SALINHA_BACKUP = {
         'tjce_card_materials'
     ],
 
+    construirPayload: function() {
+        let payload = {
+            version: 'SALINHA_BACKUP_V1',
+            schema: 1,
+            created_at: new Date().toISOString(),
+            data: {}
+        };
+
+        this.STORAGE_KEYS.forEach(chave => {
+            let valor = localStorage.getItem(chave);
+            if (valor !== null) {
+                payload.data[chave] = valor;
+            }
+        });
+
+        let rawFactual =
+            localStorage.getItem(STORAGE_KEY_ATIVO) ||
+            localStorage.getItem(LEGACY_KEY_ATIVO);
+
+        if (!rawFactual && typeof db !== 'undefined' && db !== null) {
+            rawFactual = JSON.stringify(db);
+        }
+
+        if (rawFactual) {
+            payload.data[STORAGE_KEY_ATIVO] = rawFactual;
+        }
+
+        return payload;
+    },
+
     exportar: function() {
         try {
-            // Preservação estrita do envelope histórico do Monstrinho
-            let payload = {
-                version: 'SALINHA_BACKUP_V1',
-                schema: 1,
-                created_at: new Date().toISOString(),
-                data: {}
-            };
-
-            // Varredura física das chaves declaradas na whitelist
-            this.STORAGE_KEYS.forEach(chave => {
-                let valor = localStorage.getItem(chave);
-                if (valor !== null) {
-                    payload.data[chave] = valor;
-                }
-            });
-
-            // -----------------------------------------------------------------
-            // AJUSTE 2: PATCH CIRÚRGICO EM exportar() - GARANTIA FACTUAL DEFENSIVA
-            // -----------------------------------------------------------------
-            let rawFactual =
-                localStorage.getItem(STORAGE_KEY_ATIVO) ||
-                localStorage.getItem(LEGACY_KEY_ATIVO);
-
-            // Força a captura a partir da memória viva (db) se o storage físico estiver dessincronizado
-            if (!rawFactual && typeof db !== 'undefined' && db !== null) {
-                rawFactual = JSON.stringify(db);
-            }
-
-            if (rawFactual) {
-                payload.data[STORAGE_KEY_ATIVO] = rawFactual;
-            }
+            let payload = this.construirPayload();
 
             // Geração e descarregamento do artefato portátil (.json)
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1925,6 +1971,49 @@ window.SALINHA_BACKUP = {
         }
     },
 
+    aplicarPayload: function(jsonString) {
+        const importado = JSON.parse(jsonString);
+
+        // Validação de segurança estrutural contra payloads corrompidos
+        const raizImportacao = importado.data || importado;
+        if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
+            throw new Error('Payload estruturalmente incompatível.');
+        }
+
+        if (!confirm("ATENÇÃO SOBERANA:\n\nA restauração completa apagará todo o progresso local atual para injetar o snapshot selecionado. Deseja continuar?")) {
+            return false;
+        }
+
+        // Purga o storage host para evitar colisões de estados remanescentes
+        localStorage.clear();
+
+        // Injeção física direta na camada de storage bruto
+        Object.keys(raizImportacao).forEach(chave => {
+            let chaveDestino = chave;
+
+            // Convergência imediata de namespaces factuais para o padrão moderno ativo
+            if (chave === STORAGE_KEY_ATIVO || chave === LEGACY_KEY_ATIVO) {
+                chaveDestino = STORAGE_KEY_ATIVO;
+            }
+
+            localStorage.setItem(chaveDestino, raizImportacao[chave]);
+        });
+
+        if (typeof window.loadFactualDatabase === 'function') {
+            window.loadFactualDatabase();
+        }
+
+        if (typeof window.renderAll === 'function') {
+            window.renderAll();
+        }
+
+        alert("Ecossistema restaurado com sucesso!");
+
+        // Executa o reboot do ciclo de vida do orquestrador
+        location.reload();
+        return true;
+    },
+
     importar: function(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1932,91 +2021,125 @@ window.SALINHA_BACKUP = {
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const importado = JSON.parse(e.target.result);
-                
-                // Validação de segurança estrutural contra payloads corrompidos
-                const raizImportacao = importado.data || importado;
-                if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
-                    throw new Error('Payload estruturalmente incompatível.');
-                }
-
-                if (confirm("ATENÇÃO SOBERANA:\n\nA restauração completa apagará todo o progresso local atual para injetar o snapshot selecionado. Deseja continuar?")) {
- // =========================================================
-// PURGA TOTAL DE ECOSSISTEMA
-// =========================================================
-//
-// Operação destrutiva.
-//
-// Remove:
-//
-// - runtime;
-// - catálogo;
-// - históricos;
-// - snapshots;
-// - configurações.
-//
-// Utilizar apenas em:
-//
-// - restore total;
-// - reset estrutural.
-//
-// =========================================================                   
-                    // Purga o storage host para evitar colisões de estados remanescentes
-                    localStorage.clear();
-
-// =========================================================
-// MERGE ESTRUTURAL INCREMENTAL
-// =========================================================
-//
-// Esta pipeline:
-//
-// - NÃO substitui ecossistema;
-// - NÃO executa restore total;
-//
-// Ela apenas:
-//
-// - injeta entidades ausentes;
-// - preserva runtime local;
-// - preserva progresso existente.
-//
-// =========================================================
-                    // Injeção física direta na camada de storage bruto
-                    Object.keys(raizImportacao).forEach(chave => {
-                        let chaveDestino = chave;
-                        
-                        // Convergência imediata de namespaces factuais para o padrão moderno ativo
-                        if (chave === STORAGE_KEY_ATIVO || chave === LEGACY_KEY_ATIVO) {
-                            chaveDestino = STORAGE_KEY_ATIVO;
-                        }
-                        
-                        localStorage.setItem(chaveDestino, raizImportacao[chave]);
-                    });
-
-                    // -----------------------------------------------------------------
-                    // AJUSTE 3: PATCH CIRÚRGICO EM importar() - REIDRATAÇÃO IMEDIATA
-                    // -----------------------------------------------------------------
-                    if (typeof window.loadFactualDatabase === 'function') {
-                        window.loadFactualDatabase();
-                    }
-
-                    if (typeof window.renderAll === 'function') {
-                        window.renderAll();
-                    }
-
-                    alert("Ecossistema restaurado com sucesso!");
-                    
-                    // Executa o reboot do ciclo de vida do orquestrador
-                    location.reload();
-                }
+                window.SALINHA_BACKUP.aplicarPayload(e.target.result);
             } catch (err) {
                 console.error("Erro crítico no processamento do restore:", err);
                 alert("[ERRO CRÍTICO] O arquivo JSON submetido é inválido, inconsistente ou está corrompido.");
             } finally {
-                // Purga o buffer do input de arquivos
                 event.target.value = '';
             }
         };
         reader.readAsText(file);
+    }
+};
+
+// =========================================================================
+// SINCRONIZAÇÃO EM NUVEM (GITHUB GIST) — pra usar o Monstrinho em mais de
+// um computador sem precisar baixar/subir arquivo manualmente a cada troca.
+// =========================================================================
+window.SALINHA_GIST_SYNC = {
+    NOME_ARQUIVO: 'monstrinho-backup.json',
+
+    getToken: function() {
+        return localStorage.getItem('salinha_github_token') || '';
+    },
+
+    getGistId: function() {
+        return localStorage.getItem('salinha_github_gist_id') || '';
+    },
+
+    configurar: function() {
+        let tokenAtual = this.getToken();
+        let novoToken = prompt(
+            'Cole seu token de acesso pessoal do GitHub (Settings → Developer settings → Personal access tokens), com permissão apenas de "gist":',
+            tokenAtual
+        );
+        if (novoToken === null) return;
+        localStorage.setItem('salinha_github_token', novoToken.trim());
+        alert('Token salvo neste computador. Use "☁️⬆️ Nuvem" pra criar o backup automático — na primeira vez ele cria o Gist sozinho.');
+    },
+
+    exportarNuvem: async function() {
+        let token = this.getToken();
+        if (!token) {
+            alert('Configure primeiro o token do GitHub (botão ⚙️).');
+            return;
+        }
+        try {
+            let payload = window.SALINHA_BACKUP.construirPayload();
+            let conteudo = JSON.stringify(payload, null, 2);
+            let gistId = this.getGistId();
+
+            let url = gistId ? ('https://api.github.com/gists/' + gistId) : 'https://api.github.com/gists';
+            let metodo = gistId ? 'PATCH' : 'POST';
+            let corpo = {
+                description: 'Backup automático — A Salinha / Monstrinho',
+                public: false,
+                files: {}
+            };
+            corpo.files[this.NOME_ARQUIVO] = { content: conteudo };
+
+            let resposta = await fetch(url, {
+                method: metodo,
+                headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(corpo)
+            });
+
+            if (!resposta.ok) {
+                let corpoErro = await resposta.text();
+                throw new Error('GitHub respondeu ' + resposta.status + ': ' + corpoErro);
+            }
+
+            let json = await resposta.json();
+            if (!gistId) {
+                localStorage.setItem('salinha_github_gist_id', json.id);
+            }
+
+            alert('Backup enviado pra nuvem com sucesso.');
+        } catch (err) {
+            console.error('[GIST SYNC] Falha ao exportar:', err);
+            alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
+        }
+    },
+
+    importarNuvem: async function() {
+        let token = this.getToken();
+        let gistId = this.getGistId();
+        if (!token) {
+            alert('Configure primeiro o token do GitHub (botão ⚙️).');
+            return;
+        }
+        if (!gistId) {
+            alert('Ainda não existe backup na nuvem — use "☁️⬆️ Nuvem" primeiro (em qualquer um dos computadores).');
+            return;
+        }
+        try {
+            let resposta = await fetch('https://api.github.com/gists/' + gistId, {
+                headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+
+            if (!resposta.ok) {
+                throw new Error('GitHub respondeu ' + resposta.status);
+            }
+
+            let json = await resposta.json();
+            let arquivo = json.files && json.files[this.NOME_ARQUIVO];
+            if (!arquivo || !arquivo.content) {
+                throw new Error('Backup não encontrado dentro do Gist.');
+            }
+
+            window.SALINHA_BACKUP.aplicarPayload(arquivo.content);
+        } catch (err) {
+            console.error('[GIST SYNC] Falha ao importar:', err);
+            alert('Não foi possível importar o backup da nuvem:\n' + err.message);
+        }
     }
 };
 </script>
