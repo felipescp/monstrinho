@@ -2074,7 +2074,7 @@ window.SALINHA_GIST_SYNC = {
         return partes;
     },
 
-    exportarNuvem: async function() {
+exportarNuvem: async function() {
         let token = this.getToken();
         if (!token) {
             alert('Configure primeiro o token do GitHub (botão ⚙️).');
@@ -2086,59 +2086,78 @@ window.SALINHA_GIST_SYNC = {
             let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
             let gistId = this.getGistId();
 
-            // Descobre quais partes antigas existem, pra apagar as que sobrarem
-            // (o backup pode ter menos partes agora do que na última vez)
-            let nomesAntigos = [];
-            if (gistId) {
-                let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
-                    headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+            if (!gistId) {
+                // Cria o gist com um arquivo mínimo, só pra existir e ganhar um ID —
+                // as partes de verdade entram depois, uma requisição PATCH por vez
+                let respostaCriacao = await fetch('https://api.github.com/gists', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'token ' + token,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        description: 'Backup automático — A Salinha / Monstrinho',
+                        public: false,
+                        files: { 'monstrinho-backup.json': { content: 'inicializando…' } }
+                    })
                 });
-                if (respostaAtual.ok) {
-                    let jsonAtual = await respostaAtual.json();
-                    nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
+                if (!respostaCriacao.ok) {
+                    let corpoErro = await respostaCriacao.text();
+                    throw new Error('GitHub respondeu ' + respostaCriacao.status + ' (criar gist): ' + corpoErro);
+                }
+                let jsonCriacao = await respostaCriacao.json();
+                gistId = jsonCriacao.id;
+                localStorage.setItem('salinha_github_gist_id', gistId);
+            }
+
+            // Descobre quais partes antigas existem, pra apagar as que sobrarem
+            let nomesAntigos = [];
+            let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
+                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+            });
+            if (respostaAtual.ok) {
+                let jsonAtual = await respostaAtual.json();
+                nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
+            }
+
+            // Envia cada parte em uma requisição PATCH separada — nunca todas juntas
+            for (let i = 0; i < partes.length; i++) {
+                let corpoParte = { files: {} };
+                corpoParte.files[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: partes[i] };
+
+                let respostaParte = await fetch('https://api.github.com/gists/' + gistId, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'token ' + token,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(corpoParte)
+                });
+
+                if (!respostaParte.ok) {
+                    let corpoErro = await respostaParte.text();
+                    throw new Error('GitHub respondeu ' + respostaParte.status + ' (parte ' + (i + 1) + ' de ' + partes.length + '): ' + corpoErro);
                 }
             }
 
-            let corpoFiles = {};
-            partes.forEach((parte, i) => {
-                corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte };
-            });
-            nomesAntigos.forEach(nome => {
-                if (!corpoFiles[nome]) corpoFiles[nome] = null; // apaga parte antiga que não existe mais
-            });
-            // Remove o formato antigo de arquivo único, se existir de uma tentativa anterior
-            // (só faz sentido num Gist que já existe — não há nada a apagar na criação)
-            if (gistId) {
-                corpoFiles[this.NOME_ARQUIVO] = null;
-            }
+            // Limpa partes antigas que sobraram (backup ficou menor) e o formato antigo de arquivo único
+            let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
+            let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
+            paraApagar.push(this.NOME_ARQUIVO);
 
-            let url = gistId ? ('https://api.github.com/gists/' + gistId) : 'https://api.github.com/gists';
-            let metodo = gistId ? 'PATCH' : 'POST';
-            let corpo = {
-                description: 'Backup automático — A Salinha / Monstrinho (' + partes.length + ' parte(s))',
-                public: false,
-                files: corpoFiles
-            };
-
-            let resposta = await fetch(url, {
-                method: metodo,
+            let corpoLimpeza = { files: {} };
+            paraApagar.forEach(nome => { corpoLimpeza.files[nome] = null; });
+            await fetch('https://api.github.com/gists/' + gistId, {
+                method: 'PATCH',
                 headers: {
                     'Authorization': 'token ' + token,
                     'Accept': 'application/vnd.github+json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(corpo)
+                body: JSON.stringify(corpoLimpeza)
             });
-
-            if (!resposta.ok) {
-                let corpoErro = await resposta.text();
-                throw new Error('GitHub respondeu ' + resposta.status + ': ' + corpoErro);
-            }
-
-            let json = await resposta.json();
-            if (!gistId) {
-                localStorage.setItem('salinha_github_gist_id', json.id);
-            }
 
             alert('Backup enviado pra nuvem com sucesso (' + partes.length + ' parte(s)).');
         } catch (err) {
