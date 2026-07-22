@@ -2043,6 +2043,8 @@ window.SALINHA_BACKUP = {
 // =========================================================================
 window.SALINHA_GIST_SYNC = {
     NOME_ARQUIVO: 'monstrinho-backup.json',
+    PREFIXO_PARTE: 'monstrinho-backup.part',
+    TAMANHO_MAX_PARTE: 700000, // ~700KB por parte — margem de segurança sob o limite de 1MB do Gist
 
     getToken: function() {
         return localStorage.getItem('salinha_github_token') || '';
@@ -2063,6 +2065,15 @@ window.SALINHA_GIST_SYNC = {
         alert('Token salvo neste computador. Use "☁️⬆️ Nuvem" pra criar o backup automático — na primeira vez ele cria o Gist sozinho.');
     },
 
+    dividirEmPartes: function(texto, tamanhoMax) {
+        let partes = [];
+        for (let i = 0; i < texto.length; i += tamanhoMax) {
+            partes.push(texto.slice(i, i + tamanhoMax));
+        }
+        if (partes.length === 0) partes.push('');
+        return partes;
+    },
+
     exportarNuvem: async function() {
         let token = this.getToken();
         if (!token) {
@@ -2072,16 +2083,42 @@ window.SALINHA_GIST_SYNC = {
         try {
             let payload = window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
+            let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
             let gistId = this.getGistId();
+
+            // Descobre quais partes antigas existem, pra apagar as que sobrarem
+            // (o backup pode ter menos partes agora do que na última vez)
+            let nomesAntigos = [];
+            if (gistId) {
+                let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
+                    headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+                });
+                if (respostaAtual.ok) {
+                    let jsonAtual = await respostaAtual.json();
+                    nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
+                }
+            }
+
+            let corpoFiles = {};
+            partes.forEach((parte, i) => {
+                corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte };
+            });
+            nomesAntigos.forEach(nome => {
+                if (!corpoFiles[nome]) corpoFiles[nome] = null; // apaga parte antiga que não existe mais
+            });
+            // Remove o formato antigo de arquivo único, se existir de uma tentativa anterior
+            // (só faz sentido num Gist que já existe — não há nada a apagar na criação)
+            if (gistId) {
+                corpoFiles[this.NOME_ARQUIVO] = null;
+            }
 
             let url = gistId ? ('https://api.github.com/gists/' + gistId) : 'https://api.github.com/gists';
             let metodo = gistId ? 'PATCH' : 'POST';
             let corpo = {
-                description: 'Backup automático — A Salinha / Monstrinho',
+                description: 'Backup automático — A Salinha / Monstrinho (' + partes.length + ' parte(s))',
                 public: false,
-                files: {}
+                files: corpoFiles
             };
-            corpo.files[this.NOME_ARQUIVO] = { content: conteudo };
 
             let resposta = await fetch(url, {
                 method: metodo,
@@ -2103,7 +2140,7 @@ window.SALINHA_GIST_SYNC = {
                 localStorage.setItem('salinha_github_gist_id', json.id);
             }
 
-            alert('Backup enviado pra nuvem com sucesso.');
+            alert('Backup enviado pra nuvem com sucesso (' + partes.length + ' parte(s)).');
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
@@ -2134,12 +2171,36 @@ window.SALINHA_GIST_SYNC = {
             }
 
             let json = await resposta.json();
-            let arquivo = json.files && json.files[this.NOME_ARQUIVO];
-            if (!arquivo || !arquivo.content) {
+            let arquivos = json.files || {};
+
+            let nomesPartes = Object.keys(arquivos)
+                .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
+                .sort(function(a, b) {
+                    let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
+                    let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
+                    return na - nb;
+                });
+
+            let conteudoCompleto = '';
+
+            if (nomesPartes.length > 0) {
+                for (let nome of nomesPartes) {
+                    let arquivo = arquivos[nome];
+                    let texto = arquivo.content;
+                    if (arquivo.truncated && arquivo.raw_url) {
+                        let respostaRaw = await fetch(arquivo.raw_url);
+                        texto = await respostaRaw.text();
+                    }
+                    conteudoCompleto += texto;
+                }
+            } else if (arquivos[this.NOME_ARQUIVO]) {
+                // Compatibilidade com um backup antigo, salvo antes do particionamento
+                conteudoCompleto = arquivos[this.NOME_ARQUIVO].content;
+            } else {
                 throw new Error('Backup não encontrado dentro do Gist.');
             }
 
-            window.SALINHA_BACKUP.aplicarPayload(arquivo.content);
+            window.SALINHA_BACKUP.aplicarPayload(conteudoCompleto);
         } catch (err) {
             console.error('[GIST SYNC] Falha ao importar:', err);
             alert('Não foi possível importar o backup da nuvem:\n' + err.message);
