@@ -9719,6 +9719,10 @@ window.removerDoCaderno = function(aba, mat, topico, idx) {
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
     let chave = aba === 'erros' ? 'caderno_erros' : 'caderno_axiomas';
+    let item = (dbPlanner[chave] && dbPlanner[chave][mat] && dbPlanner[chave][mat][topico])
+        ? dbPlanner[chave][mat][topico][idx]
+        : null;
+
     if (dbPlanner[chave] && dbPlanner[chave][mat] && dbPlanner[chave][mat][topico]) {
         dbPlanner[chave][mat][topico].splice(idx, 1);
         if (dbPlanner[chave][mat][topico].length === 0) delete dbPlanner[chave][mat][topico];
@@ -9728,7 +9732,52 @@ window.removerDoCaderno = function(aba, mat, topico, idx) {
     localStorage.setItem('salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
     localStorage.setItem('etl_planner_db', JSON.stringify(dbPlanner));
 
+    // Desmarca o toggle na origem — senão volta pro caderno na próxima sincronização
+    if (item && item.sim_id && item.id_q) {
+        window.desmarcarToggleNaOrigem(aba, item.sim_id, item.id_q);
+    }
+
     window.mostrarAbaCaderno(aba);
+};
+
+window.desmarcarToggleNaOrigem = function(aba, simId, qId) {
+    let campo = aba === 'erros' ? 'caderno' : 'cadernoAxiomas';
+
+    // 1. Qualquer aba aberta agora (inclusive a ativa), no runtime em memória
+    if (typeof SIMS !== 'undefined' && Array.isArray(SIMS)) {
+        SIMS.forEach(function(s) {
+            if (s && s.cfg && s.cfg.id === simId && s.dados && Array.isArray(s.dados[campo])) {
+                let i = s.dados[campo].indexOf(qId);
+                if (i >= 0) s.dados[campo].splice(i, 1);
+            }
+        });
+        if (typeof autoSave === 'function') autoSave();
+    }
+
+    // 2. Se for a bateria exibida na tela agora, atualiza também a variável global D e o botão visível
+    if (typeof C !== 'undefined' && C && C.id === simId && typeof D !== 'undefined' && D && Array.isArray(D[campo])) {
+        let i2 = D[campo].indexOf(qId);
+        if (i2 >= 0) {
+            D[campo].splice(i2, 1);
+            let btn = document.getElementById(aba === 'erros' ? ('bcad-' + qId) : ('bax-' + qId));
+            if (btn) {
+                btn.textContent = aba === 'erros' ? '+ Caderno' : '+ Caderno de Axiomas';
+                btn.classList.remove('ativo');
+            }
+        }
+    }
+
+    // 3. Arquivo morto (baterias já finalizadas)
+    try {
+        let arquivoMorto = JSON.parse(localStorage.getItem('cordeiro_auditoria_historica') || '{}');
+        if (arquivoMorto[simId] && arquivoMorto[simId].dados && Array.isArray(arquivoMorto[simId].dados[campo])) {
+            let i3 = arquivoMorto[simId].dados[campo].indexOf(qId);
+            if (i3 >= 0) {
+                arquivoMorto[simId].dados[campo].splice(i3, 1);
+                localStorage.setItem('cordeiro_auditoria_historica', JSON.stringify(arquivoMorto));
+            }
+        }
+    } catch(e) {}
 };
 
 
