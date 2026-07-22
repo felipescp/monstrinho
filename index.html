@@ -2062,7 +2062,17 @@ window.SALINHA_GIST_SYNC = {
         );
         if (novoToken === null) return;
         localStorage.setItem('salinha_github_token', novoToken.trim());
-        alert('Token salvo neste computador. Use "☁️⬆️ Nuvem" pra criar o backup automático — na primeira vez ele cria o Gist sozinho.');
+
+        let gistIdAtual = this.getGistId();
+        let novoGistId = prompt(
+            'Se este é o SEGUNDO computador (ou mais), cole aqui o ID do Gist que apareceu no aviso de sucesso do primeiro computador.\n\nSe este é o PRIMEIRO computador (ainda não existe backup em nenhum lugar), deixe como está — o ID é criado sozinho no primeiro "☁️⬆️ Nuvem".',
+            gistIdAtual
+        );
+        if (novoGistId !== null) {
+            localStorage.setItem('salinha_github_gist_id', novoGistId.trim());
+        }
+
+        alert('Configuração salva neste computador. Use "☁️⬆️ Nuvem" ou "☁️⬇️ Nuvem" agora.');
     },
 
     dividirEmPartes: function(texto, tamanhoMax) {
@@ -2159,7 +2169,7 @@ exportarNuvem: async function() {
                 body: JSON.stringify(corpoLimpeza)
             });
 
-            alert('Backup enviado pra nuvem com sucesso (' + partes.length + ' parte(s)).');
+            alert('Backup enviado pra nuvem com sucesso (' + partes.length + ' parte(s)).\n\nPra usar em outro computador, copie este ID do Gist e cole em "⚙️" naquele computador:\n\n' + gistId);
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
