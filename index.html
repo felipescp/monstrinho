@@ -5275,6 +5275,8 @@ else if (auditId) {
 
             if (typeof QA !== 'undefined' && QA) {
                 setQA(QA);
+                let elQuestaoAtiva = document.getElementById('q-' + QA);
+                if (elQuestaoAtiva) elQuestaoAtiva.scrollIntoView({ block: 'start' });
             }
         } else {
             tela('tela-home');
@@ -6303,11 +6305,12 @@ console.log({
    stats: !!s.stats,
    modoRevisaoAtual
 });
-        tela('tela-simulado'); 
+       tela('tela-simulado'); 
         renderSim(); 
         renderNav();
         if(QA) setQA(QA); 
         else if(D.blocos[0] && D.blocos[0].questoes[0]) setQA(D.blocos[0].questoes[0].id);
+        (function(){ let elQA = document.getElementById('q-' + QA); if (elQA) elQA.scrollIntoView({ block: 'start' }); })();
     } else {
         tela('tela-resultado');
         HIST = SIMS.filter(function(x){return x.stats;}).map(function(x){return mkH(x,SIMS.indexOf(x));});
