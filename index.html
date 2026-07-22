@@ -7765,6 +7765,10 @@ function toggleCaderno(qId){
   else D.caderno.push(qId);
   if(SI>=0&&SIMS[SI])SIMS[SI].dados=JSON.parse(JSON.stringify(D));
   autoSave();
+  // Sincroniza com o Planner na hora, sem esperar a finalização da bateria
+  if (typeof sincronizarCadernoComPlanner === 'function') {
+    try { sincronizarCadernoComPlanner({ cfg: C, dados: D }); } catch(e) { console.warn('[CADERNO] Falha ao sincronizar ao vivo:', e); }
+  }
   // Atualizar só o botão, sem re-renderizar tudo
   var btn=g('bcad-'+qId);
   if(btn){
@@ -7782,6 +7786,10 @@ function toggleCadernoAxioma(qId){
   
   if(SI >= 0 && SIMS[SI]) SIMS[SI].dados = JSON.parse(JSON.stringify(D));
   autoSave();
+  // Sincroniza com o Planner na hora, sem esperar a finalização da bateria
+  if (typeof sincronizarCadernoComPlanner === 'function') {
+    try { sincronizarCadernoComPlanner({ cfg: C, dados: D }); } catch(e) { console.warn('[CADERNO] Falha ao sincronizar ao vivo:', e); }
+  }
   
   var btn = g('bax-'+qId);
   if(btn){
