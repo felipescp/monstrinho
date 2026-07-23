@@ -1750,137 +1750,8 @@ if (inputIncremental) {
         const reader = new FileReader();
         reader.onload = function(f) {
             try {
-                const importado = JSON.parse(f.target.result);
-                
-                const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'monstrinho_factual_db';
-                const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'cordeiro_factual_db';
-
-                if (!importado || typeof importado !== 'object' || Array.isArray(importado)) {
-                    throw new Error('Payload incompatível.');
-                }
-
-                const raizImportacao = importado.data || importado;
-                if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
-                    throw new Error('Envelope de dados inválido.');
-                }
-
-                let chavesMutadas = 0;
-                let entidadesInjetadas = 0;
-
-// =========================================================
-// MERGE ESTRUTURAL INCREMENTAL
-// =========================================================
-//
-// Esta pipeline:
-//
-// - NÃO substitui ecossistema;
-// - NÃO executa restore total;
-//
-// Ela apenas:
-//
-// - injeta entidades ausentes;
-// - preserva runtime local;
-// - preserva progresso existente.
-//
-// =========================================================
-
-                Object.keys(raizImportacao).forEach(chave => {
-                    const valorImportadoBruto = raizImportacao[chave];
-                    let chaveDestinoLocal = chave;
-
-                    // Ajuste 1: Convergência imediata de namespaces para a chave moderna ativa
-                    if (chave === STORAGE_KEY_ATIVO || chave === LEGACY_KEY_ATIVO) {
-                        chaveDestinoLocal = STORAGE_KEY_ATIVO;
-                    }
-
-                    const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
-                    let objImportado = null;
-                    let objLocal = null;
-
-                    try {
-                        objImportado = (typeof valorImportadoBruto === 'string') ? JSON.parse(valorImportadoBruto) : valorImportadoBruto;
-                    } catch (err) {
-                        return;
-                    }
-
-                    if (valorLocalBruto !== null) {
-                        try { objLocal = JSON.parse(valorLocalBruto); } catch (err) { objLocal = null; }
-                    }
-
-                    if (objLocal === null || objLocal === undefined) {
-                        if (Array.isArray(objImportado)) objLocal = [];
-                        else if (typeof objImportado === 'object') objLocal = {};
-                        else return;
-                    }
-
-                    let persistirChave = false;
-
-                    // ── ESTRATÉGIA A: ARRAYS (Acervos, Baterias, Históricos de Prova) ──
-                    if (Array.isArray(objImportado) && Array.isArray(objLocal)) {
-                        objImportado.forEach(item => {
-                            if (!item) return;
-                            const itemId = item.id || item.uid || item.hash || item.codigo;
-                            if (!itemId) return;
-
-                            if (!objLocal.some(local => {
-                                const localId = local.id || local.uid || local.hash || local.codigo;
-                                return localId === itemId;
-                            })) {
-                                objLocal.push(item);
-                                entidadesInjetadas++;
-                                persistirChave = true;
-                            }
-                        });
-                    } 
-                    // ── ESTRATÉGIA B: DICIONÁRIOS / MAPAS (Base Factual 'db' do Dashboard) ──
-                    else if (
-                        objImportado !== null && typeof objImportado === 'object' && !Array.isArray(objImportado) &&
-                        objLocal !== null && typeof objLocal === 'object' && !Array.isArray(objLocal)
-                    ) {
-                        Object.keys(objImportado).forEach(subChave => {
-                            if (!subChave || objImportado[subChave] === null || objImportado[subChave] === undefined) return;
-
-                            // Ajuste 2: Inicialização estrutural defensiva para evitar o descarte de novos arrays analíticos
-                            if (Array.isArray(objImportado[subChave]) && !Array.isArray(objLocal[subChave])) {
-                                objLocal[subChave] = [];
-                            }
-
-                            if (Array.isArray(objImportado[subChave]) && Array.isArray(objLocal[subChave])) {
-                                objImportado[subChave].forEach(itemInterno => {
-                                    if (!itemInterno) return;
-                                    const itemId = itemInterno.id || itemInterno.uid || itemInterno.hash || itemInterno.codigo;
-                                    if (!itemId) return;
-
-                                    if (!objLocal[subChave].some(lInterno => {
-                                        const localId = lInterno.id || lInterno.uid || lInterno.hash || lInterno.codigo;
-                                        return localId === itemId;
-                                    })) {
-                                        objLocal[subChave].push(itemInterno);
-                                        entidadesInjetadas++;
-                                        persistirChave = true;
-                                    }
-                                });
-                            } else if (objLocal[subChave] === undefined) {
-                                objLocal[subChave] = objImportado[subChave];
-                                entidadesInjetadas++;
-                                persistirChave = true;
-                            }
-                        });
-                    }
-
-                    if (persistirChave) {
-                        localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
-                        chavesMutadas++;
-                    }
-                });
-
-                // Executa o pulso de reidratação e sinaliza as alterações para o dashboard passivo
-                if (chavesMutadas > 0) {
-                    notificarMutacaoAoDashboard();
-                }
-
-                alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${chavesMutadas}\nNovas entidades injetadas: ${entidadesInjetadas}`);
-
+                let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(f.target.result);
+                alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${resultado.chavesMutadas}\nNovas entidades injetadas: ${resultado.entidadesInjetadas}`);
             } catch (error) {
                 console.error("Erro na fusão incremental:", error);
                 alert("[ERRO CRÍTICO] Falha no processamento do merge estrutural.");
@@ -1973,6 +1844,117 @@ window.SALINHA_BACKUP = {
             console.error("Falha na geração do snapshot de backup:", err);
             alert("[ERRO] Não foi possível compilar o arquivo de exportação.");
         }
+    },
+
+    aplicarPayloadMerge: function(jsonString) {
+        const importado = JSON.parse(jsonString);
+
+        const STORAGE_KEY_ATIVO_LOCAL = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'monstrinho_factual_db';
+        const LEGACY_KEY_ATIVO_LOCAL = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'cordeiro_factual_db';
+
+        if (!importado || typeof importado !== 'object' || Array.isArray(importado)) {
+            throw new Error('Payload incompatível.');
+        }
+
+        const raizImportacao = importado.data || importado;
+        if (!raizImportacao || typeof raizImportacao !== 'object' || Array.isArray(raizImportacao)) {
+            throw new Error('Envelope de dados inválido.');
+        }
+
+        let chavesMutadas = 0;
+        let entidadesInjetadas = 0;
+
+        Object.keys(raizImportacao).forEach(chave => {
+            const valorImportadoBruto = raizImportacao[chave];
+            let chaveDestinoLocal = chave;
+
+            if (chave === STORAGE_KEY_ATIVO_LOCAL || chave === LEGACY_KEY_ATIVO_LOCAL) {
+                chaveDestinoLocal = STORAGE_KEY_ATIVO_LOCAL;
+            }
+
+            const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
+            let objImportado = null;
+            let objLocal = null;
+
+            try {
+                objImportado = (typeof valorImportadoBruto === 'string') ? JSON.parse(valorImportadoBruto) : valorImportadoBruto;
+            } catch (err) {
+                return;
+            }
+
+            if (valorLocalBruto !== null) {
+                try { objLocal = JSON.parse(valorLocalBruto); } catch (err) { objLocal = null; }
+            }
+
+            if (objLocal === null || objLocal === undefined) {
+                if (Array.isArray(objImportado)) objLocal = [];
+                else if (typeof objImportado === 'object') objLocal = {};
+                else return;
+            }
+
+            let persistirChave = false;
+
+            if (Array.isArray(objImportado) && Array.isArray(objLocal)) {
+                objImportado.forEach(item => {
+                    if (!item) return;
+                    const itemId = item.id || item.uid || item.hash || item.codigo;
+                    if (!itemId) return;
+
+                    if (!objLocal.some(local => {
+                        const localId = local.id || local.uid || local.hash || local.codigo;
+                        return localId === itemId;
+                    })) {
+                        objLocal.push(item);
+                        entidadesInjetadas++;
+                        persistirChave = true;
+                    }
+                });
+            }
+            else if (
+                objImportado !== null && typeof objImportado === 'object' && !Array.isArray(objImportado) &&
+                objLocal !== null && typeof objLocal === 'object' && !Array.isArray(objLocal)
+            ) {
+                Object.keys(objImportado).forEach(subChave => {
+                    if (!subChave || objImportado[subChave] === null || objImportado[subChave] === undefined) return;
+
+                    if (Array.isArray(objImportado[subChave]) && !Array.isArray(objLocal[subChave])) {
+                        objLocal[subChave] = [];
+                    }
+
+                    if (Array.isArray(objImportado[subChave]) && Array.isArray(objLocal[subChave])) {
+                        objImportado[subChave].forEach(itemInterno => {
+                            if (!itemInterno) return;
+                            const itemId = itemInterno.id || itemInterno.uid || itemInterno.hash || itemInterno.codigo;
+                            if (!itemId) return;
+
+                            if (!objLocal[subChave].some(lInterno => {
+                                const localId = lInterno.id || lInterno.uid || lInterno.hash || lInterno.codigo;
+                                return localId === itemId;
+                            })) {
+                                objLocal[subChave].push(itemInterno);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                    } else if (objLocal[subChave] === undefined) {
+                        objLocal[subChave] = objImportado[subChave];
+                        entidadesInjetadas++;
+                        persistirChave = true;
+                    }
+                });
+            }
+
+            if (persistirChave) {
+                localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                chavesMutadas++;
+            }
+        });
+
+        if (chavesMutadas > 0 && typeof notificarMutacaoAoDashboard === 'function') {
+            notificarMutacaoAoDashboard();
+        }
+
+        return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas };
     },
 
     aplicarPayload: function(jsonString) {
@@ -2229,7 +2211,8 @@ exportarNuvem: async function() {
                 throw new Error('Backup não encontrado dentro do Gist.');
             }
 
-            window.SALINHA_BACKUP.aplicarPayload(conteudoCompleto);
+            let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+            alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas);
         } catch (err) {
             console.error('[GIST SYNC] Falha ao importar:', err);
             alert('Não foi possível importar o backup da nuvem:\n' + err.message);
