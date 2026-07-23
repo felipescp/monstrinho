@@ -2210,6 +2210,65 @@ exportarNuvem: async function() {
         }
     }
 };
+
+// =========================================================================
+// CARREGAMENTO AUTOMÁTICO E SILENCIOSO AO ABRIR O SITE
+// =========================================================================
+// Roda por conta própria, sem interferir na sequência de boot existente
+// (RESTAURAÇÃO SOBERANA DE SESSÃO). Se achar algo novo na nuvem, recarrega
+// a página uma vez — a próxima carga já começa com o dado atualizado,
+// sem precisar alterar a ordem de nada que já existia.
+window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
+    let token = this.getToken();
+    let gistId = this.getGistId();
+    if (!token || !gistId) return; // nunca configurado nesta máquina — não faz nada
+
+    try {
+        let resposta = await fetch('https://api.github.com/gists/' + gistId, {
+            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+        });
+        if (!resposta.ok) return;
+
+        let json = await resposta.json();
+        let arquivos = json.files || {};
+
+        let nomesPartes = Object.keys(arquivos)
+            .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
+            .sort(function(a, b) {
+                let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
+                let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
+                return na - nb;
+            });
+
+        let conteudoCompleto = '';
+        if (nomesPartes.length > 0) {
+            for (let nome of nomesPartes) {
+                let arquivo = arquivos[nome];
+                let texto = arquivo.content;
+                if (arquivo.truncated && arquivo.raw_url) {
+                    let respostaRaw = await fetch(arquivo.raw_url);
+                    texto = await respostaRaw.text();
+                }
+                conteudoCompleto += texto;
+            }
+        } else if (arquivos[this.NOME_ARQUIVO]) {
+            conteudoCompleto = arquivos[this.NOME_ARQUIVO].content;
+        } else {
+            return;
+        }
+
+        let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+        if (resultado.chavesMutadas > 0) {
+            location.reload();
+        }
+    } catch (err) {
+        console.warn('[GIST SYNC] Sincronização automática silenciosa falhou:', err);
+    }
+};
+
+window.addEventListener('load', function() {
+    window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
+});
 </script>
 <script>  
 window.MAPA_TJCE_RUNTIME = {
