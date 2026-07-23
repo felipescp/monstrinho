@@ -1830,6 +1830,41 @@ window.SALINHA_BACKUP = {
 
             let persistirChave = false;
 
+            // ── CASO ESPECIAL: SESSÃO ATIVA (abas abertas, com respostas parciais) ──
+            // O id de cada aba fica em item.cfg.id, não em item.id — a estratégia
+            // genérica abaixo nunca encontra correspondência pra esse formato.
+            if (chaveDestinoLocal === 'clube_simulado_auto') {
+                if (objImportado && Array.isArray(objImportado.sims)) {
+                    if (!objLocal || typeof objLocal !== 'object' || Array.isArray(objLocal)) {
+                        objLocal = { version: 1, sims: [], si: -1 };
+                    }
+                    if (!Array.isArray(objLocal.sims)) objLocal.sims = [];
+
+                    objImportado.sims.forEach(simImportado => {
+                        if (!simImportado || !simImportado.cfg || !simImportado.cfg.id) return;
+                        let idImportado = simImportado.cfg.id;
+                        let jaExiste = objLocal.sims.some(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
+                        if (!jaExiste) {
+                            objLocal.sims.push(simImportado);
+                            entidadesInjetadas++;
+                            persistirChave = true;
+                        }
+                    });
+
+                    if (persistirChave && (objLocal.si === undefined || objLocal.si === null || objLocal.si < 0)) {
+                        objLocal.si = objLocal.sims.length > 0 ? 0 : -1;
+                    }
+                }
+
+                if (persistirChave) {
+                    localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                    chavesMutadas++;
+                }
+                return;
+            }
+
+            // ── ESTRATÉGIA A: ARRAYS (Acervos, Baterias, Históricos de Prova) ──
+
             if (Array.isArray(objImportado) && Array.isArray(objLocal)) {
                 objImportado.forEach(item => {
                     if (!item) return;
