@@ -2123,25 +2123,17 @@ exportarNuvem: async function() {
                 body: JSON.stringify(corpoLimpeza)
             });
 
-            if (eraNovoGist) {
-                mostrarModal({
-                    titulo: '☁️ Backup enviado com sucesso',
-                    mensagemHtml: true,
-                    mensagem:
-                        '<div>Enviado em ' + partes.length + ' parte(s). Este é o <b>primeiro</b> backup — pra usar em outro computador, cole este ID do Gist em "⚙️" naquele computador (só precisa fazer isso uma vez, na configuração inicial daquele computador).</div>' +
-                        '<div style="display:flex; gap:6px; margin-top:12px;">' +
-                            '<input id="campo-gist-id-copia" type="text" value="' + gistId + '" readonly onclick="this.select();" style="flex:1; min-width:0; font-family:monospace; font-size:12px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f8fafc;">' +
-                            '<button type="button" onclick="document.getElementById(\'campo-gist-id-copia\').select(); navigator.clipboard.writeText(\'' + gistId + '\'); this.textContent=\'✓ Copiado\';" style="padding:8px 12px; border-radius:6px; border:none; background:var(--app-primary); color:white; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">📋 Copiar</button>' +
-                        '</div>',
-                    botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
-                });
-            } else {
-                mostrarModal({
-                    titulo: '☁️ Backup enviado com sucesso',
-                    mensagem: 'Enviado em ' + partes.length + ' parte(s).',
-                    botoes: [{ label: 'OK', cor: 'var(--app-primary)' }]
-                });
-            }
+            mostrarModal({
+                titulo: '☁️ Backup enviado com sucesso',
+                mensagemHtml: true,
+                mensagem:
+                    '<div>Enviado em ' + partes.length + ' parte(s). Pra usar em outro computador (ou parear um novo, mais tarde), cole este ID do Gist em "⚙️" naquele computador — só precisa fazer isso uma vez por computador.</div>' +
+                    '<div style="display:flex; gap:6px; margin-top:12px;">' +
+                        '<input id="campo-gist-id-copia" type="text" value="' + gistId + '" readonly onclick="this.select();" style="flex:1; min-width:0; font-family:monospace; font-size:12px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f8fafc;">' +
+                        '<button type="button" onclick="document.getElementById(\'campo-gist-id-copia\').select(); navigator.clipboard.writeText(\'' + gistId + '\'); this.textContent=\'✓ Copiado\';" style="padding:8px 12px; border-radius:6px; border:none; background:var(--app-primary); color:white; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">📋 Copiar</button>' +
+                    '</div>',
+                botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
+            });
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
