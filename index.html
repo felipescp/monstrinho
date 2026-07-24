@@ -6,6 +6,86 @@
   <title>Monstrinho</title>
   <link rel="icon" href="./favicon.ico?v=1" type="image/x-icon">
   
+  <script>
+// =========================================================
+// ISOLAMENTO DE ARMAZENAMENTO (NAMESPACE)
+// =========================================================
+// Este site compartilha o domínio felipescp.github.io com outros
+// projetos (outras edições do Monstrinho). Como localStorage é
+// isolado por domínio, não por pasta/repositório, sem isso os dados
+// de um site "vazam" pro outro. Este bloco isola completamente os
+// dados deste site, sem precisar tocar em nenhum outro ponto do
+// código — todo o resto continua chamando localStorage normalmente.
+(function() {
+    var NS_PREFIX = 'tjpe_v1__';
+    var _raw = window.localStorage;
+
+    // Migração única: traz pro namespace isolado os dados que já
+    // existiam sob os nomes antigos (compartilhados com outros sites).
+    var CHAVES_CONHECIDAS = [
+        'cordeiro_acervo_provas', 'cordeiro_auditoria_historica',
+        'clube_simulado_auto', 'clube_simulado_mobile',
+        'salinha_longitudinal_runtime', 'etl_planner_db',
+        'cordeiro_playlists_soberanas', 'cordeiro_links_uteis',
+        'cordeiro_config_view', 'cordeiro_view_ativa', 'salinha_active_module',
+        'tjce_factual_l3_checks', 'tjce_user_links', 'tjce_card_links', 'tjce_card_materials',
+        'salinha_github_token', 'salinha_github_gist_id', 'salinha_return_route',
+        'monstrinho_factual_db', 'cordeiro_factual_db'
+    ];
+
+    if (_raw.getItem(NS_PREFIX + '__migrado__') === null) {
+        CHAVES_CONHECIDAS.forEach(function(chave) {
+            var valorAntigo = _raw.getItem(chave);
+            if (valorAntigo !== null && _raw.getItem(NS_PREFIX + chave) === null) {
+                _raw.setItem(NS_PREFIX + chave, valorAntigo);
+            }
+        });
+        _raw.setItem(NS_PREFIX + '__migrado__', '1');
+    }
+
+    var storageIsolado = {
+        getItem: function(chave) { return _raw.getItem(NS_PREFIX + chave); },
+        setItem: function(chave, valor) { return _raw.setItem(NS_PREFIX + chave, valor); },
+        removeItem: function(chave) { return _raw.removeItem(NS_PREFIX + chave); },
+        clear: function() {
+            var chaves = [];
+            for (var i = 0; i < _raw.length; i++) {
+                var k = _raw.key(i);
+                if (k && k.indexOf(NS_PREFIX) === 0) chaves.push(k);
+            }
+            chaves.forEach(function(k) { _raw.removeItem(k); });
+        },
+        key: function(index) {
+            var chaves = [];
+            for (var i = 0; i < _raw.length; i++) {
+                var k = _raw.key(i);
+                if (k && k.indexOf(NS_PREFIX) === 0) chaves.push(k.slice(NS_PREFIX.length));
+            }
+            return chaves[index] !== undefined ? chaves[index] : null;
+        }
+    };
+    Object.defineProperty(storageIsolado, 'length', {
+        get: function() {
+            var count = 0;
+            for (var i = 0; i < _raw.length; i++) {
+                var k = _raw.key(i);
+                if (k && k.indexOf(NS_PREFIX) === 0) count++;
+            }
+            return count;
+        }
+    });
+
+    try {
+        Object.defineProperty(window, 'localStorage', {
+            value: storageIsolado,
+            writable: false,
+            configurable: true
+        });
+    } catch (e) {
+        console.warn('[NAMESPACE] Não foi possível isolar o localStorage:', e);
+    }
+})();
+</script>
 <style>
 
 /* 1. IMPORTAÇÃO DE FONTES */
