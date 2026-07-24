@@ -215,38 +215,8 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
 <body>
     <main class="content">
         <section id="rendimento" style="display: flex; flex-direction: column; flex: 1;"> 
-           <div style="display:flex; gap: 20px; border-bottom: 2px solid var(--border-color); margin-bottom: 20px;">
-                <div class="nav-item hd-item active" id="btn-view-simulados" onclick="window.switchRendimentoView('simulados')" style="color: var(--text-main); border-bottom-color: var(--app-primary); padding-bottom: 10px;">📊 Baterias V/F</div>
-                <div class="nav-item hd-item" id="btn-view-provas" onclick="window.switchRendimentoView('provas')" style="padding-bottom: 10px;">📊 Provas e Simulados (Múltipla Escolha)</div>
-            </div>
-
-            <!-- VIEW: PROVAS ANTERIORES -->
-            <div id="container-provas-anteriores" style="display: none;">
-                <div style="display:flex; justify-content: flex-start; align-items: center; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-                    <div style="display:flex; gap: 10px; align-items: center;">
-                        <div class="form-group" style="margin-bottom: 0;"><label style="font-size: 9px;">Carreira</label><select id="filtro-carreira" style="font-size: 11px; padding: 5px;"><option value="">Todas</option></select></div>
-                        <div class="form-group" style="margin-bottom: 0;"><label style="font-size: 9px;">Banca</label><select id="filtro-banca" style="font-size: 11px; padding: 5px;"><option value="">Todas</option></select></div>
-                        <div class="form-group" style="margin-bottom: 0;"><label style="font-size: 9px;">Tipo</label><select id="filtro-tipo" style="font-size: 11px; padding: 5px;"><option value="">Todos os Tipos</option></select></div>
-                        <button class="btn btn-primary" style="margin-top: 15px; height: 32px;" onclick="window.aplicarFiltrosProvas()">Aplicar</button>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div class="etl-insight-card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border: none;">
-                        <div><h3 style="margin: 0; font-size: 12px; color: #94a3b8; letter-spacing: 1px;">MÉDIA GERAL (FILTRO ATUAL)</h3><div style="font-size: 36px; font-weight: 800; font-family: var(--font-display); line-height: 1.2;" id="kpi-media-geral">--%</div><div style="font-size: 11px; color: #cbd5e1;" id="kpi-vol-geral">0 questões resolvidas</div></div><div style="font-size: 48px; opacity: 0.2;">🎯</div>
-                    </div>
-                    <div class="etl-insight-card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between; background: white; border-left: 4px solid var(--app-primary);">
-                        <div><h3 style="margin: 0; font-size: 12px; color: var(--text-muted); letter-spacing: 1px;">TERMÔMETRO DE PRONTIDÃO (GAP)</h3><div style="display: flex; align-items: baseline; gap: 10px;"><div style="font-size: 32px; font-weight: 800; font-family: var(--font-display); line-height: 1.2;" id="kpi-gap-corte">--</div><span style="font-size: 12px; font-weight: bold; color: var(--text-muted);" id="kpi-gap-label">em relação à nota de corte</span></div></div><div style="font-size: 32px;" id="kpi-gap-icon">⚖️</div>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: stretch; margin-bottom: 25px;">
-                    <div class="etl-insight-card" style="padding: 15px; display: flex; flex-direction: column;"><h3 style="font-family: var(--font-display); font-size: 14px; margin: 0 0 10px 0; color: var(--app-primary); text-transform: uppercase;">🕸️ O "Shape" do Candidato</h3><p style="font-size: 10px; color: var(--text-muted); margin-bottom: 15px;">Equilíbrio de domínio nas disciplinas núcleo do filtro selecionado.</p><div style="flex:1; position:relative; min-height: 280px; display: flex; align-items: center; justify-content: center;"><canvas id="chartRadarProvas"></canvas></div></div>
-                    <div class="etl-insight-card" style="padding: 15px; display: flex; flex-direction: column;"><h3 style="font-family: var(--font-display); font-size: 14px; margin: 0 0 10px 0; color: var(--danger); text-transform: uppercase;">🩸 Anatomia do Erro (Viés)</h3><p style="font-size: 10px; color: var(--text-muted); margin-bottom: 15px;">De onde as bancas estão tirando as questões que você erra.</p><div id="matriz-vies-container" style="display: flex; flex-direction: column; gap: 10px; flex: 1;"></div></div>
-                </div>
-
-                <div class="etl-insight-card" style="padding: 15px; display: flex; flex-direction: column; margin-bottom: 25px;"><h3 style="font-family: var(--font-display); font-size: 14px; margin: 0 0 15px 0; color: var(--app-primary); text-transform: uppercase;">📊 Desempenho Detalhado por Matéria</h3><div class="grid-macro" id="provas-detalhes-materias"></div></div>
-                <h3 style="font-family: var(--font-display); font-size: 14px; margin: 20px 0 15px 0; color: var(--text-muted);">📜 ACERVO DE PROVAS</h3><div class="grid-macro" id="historico-provas-list"></div>
+           <div style="margin-bottom: 20px;">
+                <h2 style="font-family: var(--font-display); font-size: 18px; margin: 0; color: var(--text-main);">📊 Desempenho e Estatísticas</h2>
             </div>
 
             <!-- VIEW: SIMULADOS (ETL MASTER) -->
