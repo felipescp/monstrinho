@@ -6703,6 +6703,10 @@ function fecharTab(i){
         SIMS.length - 1
     );
 
+    // O splice acima pode ter deslocado outras abas pra posições anteriores.
+    // Invalida SI antes de trocar, pra trocarTab não tentar salvar o D
+    // desta aba (já removida) num slot que agora pertence a outra aba.
+    SI = -1;
     trocarTab(novoIndiceRestante);
 
     return;
