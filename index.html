@@ -996,6 +996,43 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     }
 
 }
+
+/* =========================================
+   VITRINE (BATERIAS V/F) — DRILL-DOWN NO MOBILE
+   No desktop as 3 colunas continuam lado a lado.
+   No mobile, só a coluna do passo atual aparece,
+   em tela cheia, com um botão "‹ Voltar" pra recuar.
+   ========================================= */
+.btn-voltar-coluna-vitrine { display: none; }
+
+@media (max-width:700px){
+    #grid-vitrine-3col {
+        grid-template-columns: 1fr !important;
+    }
+    #grid-vitrine-3col #col-materias,
+    #grid-vitrine-3col #col-topicos,
+    #grid-vitrine-3col #col-baterias-wrapper {
+        display: none;
+        border-right: none !important;
+    }
+    #grid-vitrine-3col.mob-step-materias #col-materias { display: block; }
+    #grid-vitrine-3col.mob-step-topicos #col-topicos { display: block; }
+    #grid-vitrine-3col.mob-step-baterias #col-baterias-wrapper { display: flex; }
+
+    .btn-voltar-coluna-vitrine {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        color: var(--app-primary);
+        font-weight: 800;
+        font-size: 12px;
+        padding: 8px 4px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+}
 /* =========================================
    HOME — DESACOPLAR BODY FLEX
 ========================================= */
@@ -1293,15 +1330,17 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </div>
                 </div>
                                 <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color); max-height: 80vh;">
-                    <div style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); flex:1; overflow:hidden;">
+                    <div id="grid-vitrine-3col" class="mob-step-materias" style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); flex:1; overflow:hidden;">
                         <!-- Coluna 1: Matérias -->
                         <div id="col-materias" style="overflow-y:auto; border-right:1px solid var(--border-color); background:#f8fafc; padding:10px;"></div>
                         <!-- Coluna 2: Tópicos da matéria selecionada -->
                         <div id="col-topicos" style="overflow-y:auto; border-right:1px solid var(--border-color); padding:10px;">
+                            <button class="btn-voltar-coluna-vitrine" onclick="window.voltarColunaVitrineMobile('materias')">‹ Matérias</button>
                             <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione uma matéria.</div>
                         </div>
                         <!-- Coluna 3: Baterias do tópico selecionado -->
-                        <div style="display:flex; flex-direction:column; overflow:hidden;">
+                        <div id="col-baterias-wrapper" style="display:flex; flex-direction:column; overflow:hidden;">
+                            <button class="btn-voltar-coluna-vitrine" onclick="window.voltarColunaVitrineMobile('topicos')" style="padding-left:15px;">‹ Tópicos</button>
                             <div style="display:flex; border-bottom: 1px solid var(--border-color); flex-shrink:0;">
                                 <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Todas</button>
                                 <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria Selecionada</button>
@@ -4721,13 +4760,23 @@ window.renderHomeDashboard = function() {
 
 // COLUNA 1: Disciplinas
                 htmlMaterias += `
-                <div class="col-materia-item" data-materia="${mat.nivel_1}" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this);">
+                <div class="col-materia-item" data-materia="${mat.nivel_1}" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this); window.avancarColunaVitrineMobile('topicos');">
                     <span style="color: ${corMat}; font-size:10px; font-weight:800; font-family:var(--font-display); text-transform: uppercase; line-height: 1;">${mat.nivel_1} ${badgeMat}</span>
                     <span style="color:var(--text-muted); font-size: 13px; line-height: 1;">›</span>
                 </div>`;
             });
             colMaterias.innerHTML = htmlMaterias;
     };
+
+    window.avancarColunaVitrineMobile = function(passo) {
+            let grid = document.getElementById('grid-vitrine-3col');
+            if (!grid) return;
+            grid.classList.remove('mob-step-materias', 'mob-step-topicos', 'mob-step-baterias');
+            grid.classList.add('mob-step-' + passo);
+        };
+        window.voltarColunaVitrineMobile = function(passo) {
+            window.avancarColunaVitrineMobile(passo);
+        };
 
 // COLUNA 2: Tópicos da matéria selecionada
         window.selecionarMateriaVitrine = function(materiaNome, el) {
@@ -4769,7 +4818,7 @@ window.renderHomeDashboard = function() {
                 let badgeDiv = qtdDiv > 0 ? `<span style="font-size:8.5px; color:var(--app-primary); font-weight:bold; margin-left:4px;">(${qtdDiv})</span>` : '';
 
                 htmlTopicos += `
-                <div class="col-topico-item" data-topico="${div.nivel_2}" style="padding: 8px 4px; margin: 0; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.col-topico-item').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}');">
+                <div class="col-topico-item" data-topico="${div.nivel_2}" style="padding: 8px 4px; margin: 0; display: block; cursor: pointer; border-bottom: 1px dashed #f1f5f9; transition: color 0.2s;" onclick="document.querySelectorAll('.col-topico-item').forEach(el=>el.style.color='var(--text-muted)'); this.style.color='var(--app-primary)'; window.filtrarProvasCE('${mat.nivel_1}', '${div.nivel_2}'); window.avancarColunaVitrineMobile('baterias');">
                     <span style="font-size:10px; font-weight:700; line-height: 1.2; margin: 0; padding: 0; display: block;">${div.nivel_2} ${badgeDiv}</span>
                 </div>`;
             });
@@ -4912,6 +4961,7 @@ function marcarModoListaAtivo(modo) {
             // ESTADO PERSISTIDO: restaura o modo/matéria/tópico que estava ativo antes de sair da tela
             if (window.__modoListaAtivo === 'todas') {
                 window.exibirTodasBaterias();
+                window.avancarColunaVitrineMobile('baterias');
             } else if (window.__ultimaMateriaSelecionada) {
                 let elMateria = colMaterias.querySelector('.col-materia-item[data-materia="' + window.__ultimaMateriaSelecionada + '"]');
                 window.selecionarMateriaVitrine(window.__ultimaMateriaSelecionada, elMateria);
@@ -4919,6 +4969,7 @@ function marcarModoListaAtivo(modo) {
                     let elTopico = colTopicos ? colTopicos.querySelector('.col-topico-item[data-topico="' + window.__ultimoFiltroCE.divisao + '"]') : null;
                     if (elTopico) elTopico.style.color = 'var(--app-primary)';
                     window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+                    window.avancarColunaVitrineMobile('baterias');
                 }
             } else {
                 let cabecalhoDireita = document.getElementById('header-filtro-ce');
