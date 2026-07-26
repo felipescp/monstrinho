@@ -1156,7 +1156,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             
             <div style="display: flex; gap: 6px; align-items: center;">
 
-                <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
+                <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.configurar()" class="b1" style="height:26px; font-size:9.5px; width:26px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Configurar token do GitHub pra sincronização em nuvem">⚙️</button>
 
@@ -1230,7 +1230,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 
         <button
-            onclick="window.SALINHA_GIST_SYNC.exportarNuvem()"
+            onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)"
             class="b1"
             style="
                 height:26px;
@@ -2484,13 +2484,21 @@ window.SALINHA_GIST_SYNC = {
         return partes;
     },
 
-exportarNuvem: async function() {
-        let token = this.getToken();
-        if (!token) {
-            alert('Configure primeiro o token do GitHub (botão ⚙️).');
-            return;
+exportarNuvem: async function(botao) {
+        let htmlOriginal = null;
+        if (botao) {
+            htmlOriginal = botao.innerHTML;
+            botao.innerHTML = '⏳ Salvando...';
+            botao.disabled = true;
         }
+
         try {
+            let token = this.getToken();
+            if (!token) {
+                alert('Configure primeiro o token do GitHub (botão ⚙️).');
+                return;
+            }
+
             let payload = await window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
             let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
@@ -2584,6 +2592,11 @@ exportarNuvem: async function() {
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
+        } finally {
+            if (botao) {
+                botao.innerHTML = htmlOriginal;
+                botao.disabled = false;
+            }
         }
     },
 
