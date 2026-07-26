@@ -52,22 +52,31 @@
     // conteúdo ATUAL das chaves antigas — que nunca foram apagadas — trazendo
     // de volta qualquer coisa que ficou de fora da primeira tentativa.
     //
-    // IMPORTANTE: apaga a cópia antiga logo depois de confirmar a nova —
-    // manter as duas ao mesmo tempo quase dobra o uso de espaço, e foi
-    // isso que estourou a cota do navegador pra algumas pessoas. Cada
-    // chave é protegida individualmente: se uma falhar por falta de
-    // espaço, as outras continuam normalmente, em vez de travar tudo.
+    // IMPORTANTE: apaga a cópia antiga ANTES de gravar a nova — gravar a
+    // nova primeiro e só depois apagar a antiga quase dobra o uso de espaço
+    // no pico (as duas coexistindo), e foi isso que estourou a cota do
+    // navegador pra algumas pessoas. Apagando primeiro, a gravação da nova
+    // já roda com o espaço liberado. Se mesmo assim a gravação falhar
+    // (dispositivo praticamente sem espaço nenhum), tenta restaurar a cópia
+    // antiga a partir do valor que já está em memória — pra não perder o
+    // dado por causa da ordem invertida. Cada chave é protegida
+    // individualmente: se uma falhar, as outras continuam normalmente.
     if (localStorage.getItem(NS_PREFIX + '__remigrado_v2__') === null) {
         var falhouAlguma = false;
         CHAVES_CONHECIDAS.forEach(function(chave) {
             var valorAntigoAtual = localStorage.getItem(chave);
             if (valorAntigoAtual !== null) {
+                localStorage.removeItem(chave);
                 try {
                     localStorage.setItem(NS_PREFIX + chave, valorAntigoAtual);
-                    localStorage.removeItem(chave);
                 } catch (e) {
                     falhouAlguma = true;
                     console.warn('[NAMESPACE] Falha ao recuperar "' + chave + '" (provável falta de espaço):', e);
+                    try {
+                        localStorage.setItem(chave, valorAntigoAtual);
+                    } catch (e2) {
+                        console.error('[NAMESPACE] Falha crítica: não foi possível gravar a nova nem restaurar a antiga "' + chave + '":', e2);
+                    }
                 }
             }
         });
@@ -1816,49 +1825,175 @@ const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'tj
 const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'tjpe_v1__cordeiro_factual_db';
 
 // =========================================================================
+// HELPER COMPARTILHADO: INDEXEDDB CHAVE-VALOR (ETAPA 2)
+// =========================================================================
+// Backend genérico usado tanto pelo arquivo morto quanto pela sessão
+// ativa. Nunca rejeita — em qualquer falha (IndexedDB indisponível,
+// bloqueado, erro de transação), resolve com um valor sentinela
+// (undefined na leitura, false na escrita) em vez de lançar. Isso permite
+// que quem chama sempre trate "não deu" de forma graciosa, sem try/catch
+// espalhado por todo canto.
+const IDB_NOME = 'tjpe_v1_db';
+const IDB_STORE = 'kv';
+let _idbPromise = null;
+window._idbDisponivel = true;
+
+function abrirIndexedDB() {
+    if (_idbPromise) return _idbPromise;
+    _idbPromise = new Promise(function(resolve) {
+        if (!window.indexedDB) { window._idbDisponivel = false; resolve(null); return; }
+        try {
+            const req = indexedDB.open(IDB_NOME, 1);
+            req.onupgradeneeded = function() {
+                if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
+            };
+            req.onsuccess = function() { resolve(req.result); };
+            req.onerror = req.onblocked = function() { window._idbDisponivel = false; resolve(null); };
+        } catch (e) { window._idbDisponivel = false; resolve(null); }
+    });
+    return _idbPromise;
+}
+
+function idbGet(chave) {
+    return abrirIndexedDB().then(function(db) {
+        if (!db) return undefined;
+        return new Promise(function(resolve) {
+            try {
+                const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(chave);
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { resolve(undefined); };
+            } catch (e) { resolve(undefined); }
+        });
+    });
+}
+
+function idbSet(chave, valor) {
+    return abrirIndexedDB().then(function(db) {
+        if (!db) return false;
+        return new Promise(function(resolve) {
+            try {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(valor, chave);
+                tx.oncomplete = function() { resolve(true); };
+                tx.onerror = tx.onabort = function() { resolve(false); };
+            } catch (e) { resolve(false); }
+        });
+    });
+}
+
+// =========================================================================
 // CAMADA DE ACESSO: ARQUIVO MORTO (cordeiro_auditoria_historica)
 // =========================================================================
-// Isola o resto do app de ONDE o histórico de baterias finalizadas é
-// persistido. Etapa 1: ainda é localStorage por baixo, só que através de
-// um cache em memória — isso permite trocar o backend por IndexedDB
-// (etapa 2, futura) sem precisar mexer nos ~14 pontos de leitura/escrita
-// espalhados pelo app. salvarArquivoMorto() já devolve uma Promise (nunca
-// rejeita — resolve true/false) pra quem precisa confirmar a persistência
-// antes de continuar (ex.: recarregar a página); quem não precisa, chama
-// sem "await" e segue, exatamente como já fazia antes com localStorage.
+// Etapa 2: backend real é IndexedDB. lerArquivoMorto() continua 100%
+// síncrona (é chamada em loops de render) — só devolve o cache em
+// memória. A hidratação do cache é assíncrona (__arquivoMortoPromise__,
+// disparada uma vez, cedo) e faz a migração única: procura no IndexedDB
+// primeiro; se não achar, lê a origem atual (chave prefixada ou legada
+// sem prefixo, o que existir) e só apaga essa origem do localStorage
+// DEPOIS de confirmar que a gravação no IndexedDB deu certo.
 window.CHAVE_ARQUIVO_MORTO = 'tjpe_v1__cordeiro_auditoria_historica';
 window.CHAVE_ARQUIVO_MORTO_LEGADA = 'cordeiro_auditoria_historica';
-let _arquivoMortoCache = null;
+window.CHAVE_ARQUIVO_MORTO_IDB = 'cordeiro_auditoria_historica';
+let _arquivoMortoCache = {};
 
 window.lerArquivoMorto = function() {
-    if (_arquivoMortoCache === null) {
-        // Não passa mais pelo script de migração de namespace — a chave
-        // antiga (sem prefixo) nunca foi apagada, é onde o dado real está
-        // hoje pra quase todo mundo. Só popula o cache; não escreve de
-        // volta em nenhuma das duas até a Etapa 2 (IndexedDB) confirmar.
-        try {
-            let bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO);
-            if (bruto === null) bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO_LEGADA);
-            _arquivoMortoCache = JSON.parse(bruto || '{}');
-        } catch (e) {
-            _arquivoMortoCache = {};
-        }
-    }
     return _arquivoMortoCache;
 };
 
 window.salvarArquivoMorto = function(dados) {
-    _arquivoMortoCache = dados;
-    return new Promise(function(resolve) {
-        try {
-            localStorage.setItem(window.CHAVE_ARQUIVO_MORTO, JSON.stringify(dados));
-            resolve(true);
-        } catch (e) {
-            console.warn('[ARQUIVO MORTO] Falha ao persistir (provável falta de espaço):', e);
-            resolve(false);
-        }
+    _arquivoMortoCache = dados; // síncrono e imediato — nada muda pros ~11 chamadores
+    if (!window._idbDisponivel) return Promise.resolve(false); // só memória, nunca reescreve localStorage
+    return idbSet(window.CHAVE_ARQUIVO_MORTO_IDB, dados).then(function(ok) {
+        if (!ok) console.warn('[ARQUIVO MORTO] Falha ao persistir no IndexedDB.');
+        return ok;
     });
 };
+
+window.__arquivoMortoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_ARQUIVO_MORTO_IDB);
+        if (valor !== undefined) {
+            _arquivoMortoCache = valor;
+            return;
+        }
+
+        // Ainda não migrado — busca na origem atual, sem apagar nada ainda
+        let bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO);
+        if (bruto === null) bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO_LEGADA);
+        let dados = {};
+        try { dados = JSON.parse(bruto || '{}'); } catch (e) { dados = {}; }
+        _arquivoMortoCache = dados;
+
+        if (window._idbDisponivel && Object.keys(dados).length > 0) {
+            const ok = await idbSet(window.CHAVE_ARQUIVO_MORTO_IDB, dados);
+            if (ok) {
+                // Só apaga a origem DEPOIS de confirmar a gravação no IndexedDB
+                try { localStorage.removeItem(window.CHAVE_ARQUIVO_MORTO); } catch (e) {}
+                try { localStorage.removeItem(window.CHAVE_ARQUIVO_MORTO_LEGADA); } catch (e) {}
+            }
+        }
+    } finally {
+        // Se alguma view já renderizou com o cache ainda vazio (janela entre
+        // o boot e o IndexedDB responder), corrige os badges agora.
+        if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+        if (window.MAPA_TJCE_RUNTIME && typeof window.MAPA_TJCE_RUNTIME.init === 'function' &&
+            localStorage.getItem('tjpe_v1__salinha_active_module') === 'section-mapa-tjce') {
+            window.MAPA_TJCE_RUNTIME.init();
+        }
+    }
+})();
+
+// =========================================================================
+// CAMADA DE ACESSO: SESSÃO ATIVA (clube_simulado_auto)
+// =========================================================================
+// Diferente do arquivo morto, nenhum consumidor desta chave está em
+// hot-loop de render — todos são: boot (aguarda) ou clique de usuário
+// (pode aguardar). Por isso não precisa de cache síncrono: lerSessaoAtiva
+// é assíncrona de ponta a ponta, sempre. Mesma regra de nunca apagar a
+// origem antes de confirmar, e mesmo fallback pra modo só-memória.
+window.CHAVE_SESSAO_ATIVA = 'tjpe_v1__clube_simulado_auto';
+window.CHAVE_SESSAO_ATIVA_LEGADA = 'clube_simulado_auto';
+window.CHAVE_SESSAO_ATIVA_IDB = 'clube_simulado_auto';
+
+window.lerSessaoAtiva = async function() {
+    let valor = await idbGet(window.CHAVE_SESSAO_ATIVA_IDB);
+    if (valor !== undefined) return valor;
+
+    // Ainda não migrado — lê a origem atual sem apagar nada
+    let bruto = localStorage.getItem(window.CHAVE_SESSAO_ATIVA);
+    if (bruto === null) bruto = localStorage.getItem(window.CHAVE_SESSAO_ATIVA_LEGADA);
+    if (!bruto) return null;
+    try { return JSON.parse(bruto); } catch (e) { return null; }
+};
+
+window.salvarSessaoAtiva = function(dados) {
+    if (!window._idbDisponivel) return Promise.resolve(false); // só memória, nunca reescreve localStorage
+    return idbSet(window.CHAVE_SESSAO_ATIVA_IDB, dados).then(function(ok) {
+        if (!ok) console.warn('[SESSÃO ATIVA] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+// Migração oportunista: da primeira vez que uma leitura encontrar a sessão
+// ainda na origem antiga (localStorage), tenta gravar no IndexedDB e só
+// apaga a origem depois de confirmar — nunca antes.
+window.__migrarSessaoAtivaSeNecessario__ = async function(dadosLidos) {
+    if (!dadosLidos || !window._idbDisponivel) return;
+    const jaEstavaNoIdb = (await idbGet(window.CHAVE_SESSAO_ATIVA_IDB)) !== undefined;
+    if (jaEstavaNoIdb) return;
+    const ok = await window.salvarSessaoAtiva(dadosLidos);
+    if (ok) {
+        try { localStorage.removeItem(window.CHAVE_SESSAO_ATIVA); } catch (e) {}
+        try { localStorage.removeItem(window.CHAVE_SESSAO_ATIVA_LEGADA); } catch (e) {}
+    }
+};
+
+// Dispara a leitura o quanto antes possível — mesmo padrão que
+// window.__bootOficialPromise__ já usa neste arquivo pro catálogo oficial.
+// Tem que ser aqui (logo após lerSessaoAtiva existir), bem antes de
+// qualquer chamador (autoLoad, handler de 'load') tentar consumir esta
+// Promise — nenhum deles pode rodar antes dela ter sido criada.
+window.__sessaoAtivaPromise__ = window.lerSessaoAtiva();
 
 // =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
@@ -1891,7 +2026,7 @@ window.SALINHA_BACKUP = {
         'tjpe_v1__tjce_card_materials'
     ],
 
-    construirPayload: function() {
+    construirPayload: async function() {
         let payload = {
             version: 'SALINHA_BACKUP_V1',
             schema: 1,
@@ -1899,19 +2034,26 @@ window.SALINHA_BACKUP = {
             data: {}
         };
 
-        this.STORAGE_KEYS.forEach(chave => {
+        for (const chave of this.STORAGE_KEYS) {
             if (chave === window.CHAVE_ARQUIVO_MORTO) {
                 let dadosArquivoMorto = window.lerArquivoMorto();
                 if (dadosArquivoMorto && Object.keys(dadosArquivoMorto).length > 0) {
                     payload.data[chave] = JSON.stringify(dadosArquivoMorto);
                 }
-                return;
+                continue;
+            }
+            if (chave === window.CHAVE_SESSAO_ATIVA) {
+                let dadosSessao = await window.lerSessaoAtiva();
+                if (dadosSessao) {
+                    payload.data[chave] = JSON.stringify(dadosSessao);
+                }
+                continue;
             }
             let valor = localStorage.getItem(chave);
             if (valor !== null) {
                 payload.data[chave] = valor;
             }
-        });
+        }
 
         let rawFactual =
             localStorage.getItem(STORAGE_KEY_ATIVO) ||
@@ -1928,9 +2070,9 @@ window.SALINHA_BACKUP = {
         return payload;
     },
 
-    exportar: function() {
+    exportar: async function() {
         try {
-            let payload = this.construirPayload();
+            let payload = await this.construirPayload();
 
             // Geração e descarregamento do artefato portátil (.json)
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1963,16 +2105,21 @@ window.SALINHA_BACKUP = {
         let chavesMutadas = 0;
         let entidadesInjetadas = 0;
 
-        // O arquivo morto (cordeiro_auditoria_historica) não passa mais por
-        // localStorage direto — sai do laço genérico abaixo e é tratado à
-        // parte, depois, via lerArquivoMorto()/salvarArquivoMorto().
+        // O arquivo morto (cordeiro_auditoria_historica) e a sessão ativa
+        // (clube_simulado_auto) não passam mais por localStorage direto —
+        // saem do laço genérico abaixo e são tratados à parte, depois, via
+        // suas próprias camadas de acesso (IndexedDB por baixo).
         const chaveArquivoMortoImportada = Object.keys(raizImportacao).find(chave => {
             const semPrefixo = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
             return chave === window.CHAVE_ARQUIVO_MORTO || semPrefixo === 'cordeiro_auditoria_historica';
         });
+        const chaveSessaoAtivaImportada = Object.keys(raizImportacao).find(chave => {
+            const semPrefixo = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
+            return chave === window.CHAVE_SESSAO_ATIVA || semPrefixo === 'clube_simulado_auto';
+        });
 
         Object.keys(raizImportacao).forEach(chave => {
-            if (chave === chaveArquivoMortoImportada) return;
+            if (chave === chaveArquivoMortoImportada || chave === chaveSessaoAtivaImportada) return;
 
             const valorImportadoBruto = raizImportacao[chave];
             const chaveSemPrefixoMerge = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
@@ -2010,43 +2157,6 @@ window.SALINHA_BACKUP = {
             }
 
             let persistirChave = false;
-
-            // ── CASO ESPECIAL: SESSÃO ATIVA (abas abertas, com respostas parciais) ──
-            // O id de cada aba fica em item.cfg.id, não em item.id — a estratégia
-            // genérica abaixo nunca encontra correspondência pra esse formato.
-            if (chaveDestinoLocal === 'tjpe_v1__clube_simulado_auto') {
-                if (objImportado && Array.isArray(objImportado.sims)) {
-                    if (!objLocal || typeof objLocal !== 'object' || Array.isArray(objLocal)) {
-                        objLocal = { version: 1, sims: [], si: -1 };
-                    }
-                    if (!Array.isArray(objLocal.sims)) objLocal.sims = [];
-
-                    objImportado.sims.forEach(simImportado => {
-                        if (!simImportado || !simImportado.cfg || !simImportado.cfg.id) return;
-                        let idImportado = simImportado.cfg.id;
-                        let jaExiste = objLocal.sims.some(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
-                        if (!jaExiste) {
-                            objLocal.sims.push(simImportado);
-                            entidadesInjetadas++;
-                            persistirChave = true;
-                        }
-                    });
-
-                    if (persistirChave && (objLocal.si === undefined || objLocal.si === null || objLocal.si < 0)) {
-                        objLocal.si = objLocal.sims.length > 0 ? 0 : -1;
-                    }
-                }
-
-                if (persistirChave) {
-                    try {
-                        localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
-                        chavesMutadas++;
-                    } catch (e) {
-                        console.warn('[MERGE] Falha ao persistir "' + chaveDestinoLocal + '" (provável falta de espaço):', e);
-                    }
-                }
-                return;
-            }
 
             // ── ESTRATÉGIA A: ARRAYS (Acervos, Baterias, Históricos de Prova) ──
 
@@ -2140,6 +2250,48 @@ window.SALINHA_BACKUP = {
             }
         }
 
+        // ── SESSÃO ATIVA (clube_simulado_auto) ──
+        // O id de cada aba fica em item.cfg.id, não em item.id — por isso
+        // tem lógica própria, igual já tinha antes (dedup por cfg.id), só
+        // que lendo/gravando via lerSessaoAtiva()/salvarSessaoAtiva() em
+        // vez de localStorage direto.
+        if (chaveSessaoAtivaImportada !== undefined) {
+            try {
+                const objImportado = JSON.parse(raizImportacao[chaveSessaoAtivaImportada]);
+                let objLocal = await window.lerSessaoAtiva();
+                let mudouSessaoAtiva = false;
+
+                if (objImportado && Array.isArray(objImportado.sims)) {
+                    if (!objLocal || typeof objLocal !== 'object' || Array.isArray(objLocal)) {
+                        objLocal = { version: 1, sims: [], si: -1 };
+                    }
+                    if (!Array.isArray(objLocal.sims)) objLocal.sims = [];
+
+                    objImportado.sims.forEach(simImportado => {
+                        if (!simImportado || !simImportado.cfg || !simImportado.cfg.id) return;
+                        let idImportado = simImportado.cfg.id;
+                        let jaExiste = objLocal.sims.some(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
+                        if (!jaExiste) {
+                            objLocal.sims.push(simImportado);
+                            entidadesInjetadas++;
+                            mudouSessaoAtiva = true;
+                        }
+                    });
+
+                    if (mudouSessaoAtiva && (objLocal.si === undefined || objLocal.si === null || objLocal.si < 0)) {
+                        objLocal.si = objLocal.sims.length > 0 ? 0 : -1;
+                    }
+                }
+
+                if (mudouSessaoAtiva) {
+                    const ok = await window.salvarSessaoAtiva(objLocal);
+                    if (ok) chavesMutadas++;
+                }
+            } catch (e) {
+                console.warn('[MERGE] Falha ao mesclar sessão ativa:', e);
+            }
+        }
+
         if (chavesMutadas > 0 && typeof notificarMutacaoAoDashboard === 'function') {
             notificarMutacaoAoDashboard();
         }
@@ -2167,10 +2319,12 @@ window.SALINHA_BACKUP = {
             .filter(k => k.indexOf('tjpe_v1__') === 0)
             .forEach(k => localStorage.removeItem(k));
 
-        // O arquivo morto não é mais gravado direto no localStorage — sai
-        // do laço genérico abaixo e é restaurado à parte, via
-        // salvarArquivoMorto(), depois que o laço terminar.
+        // O arquivo morto e a sessão ativa não são mais gravados direto no
+        // localStorage — saem do laço genérico abaixo e são restaurados à
+        // parte, via suas próprias camadas de acesso, depois que o laço
+        // terminar.
         let valorArquivoMortoImportado = null;
+        let valorSessaoAtivaImportado = null;
 
         // Injeção física direta na camada de storage bruto
         Object.keys(raizImportacao).forEach(chave => {
@@ -2185,6 +2339,10 @@ window.SALINHA_BACKUP = {
                 valorArquivoMortoImportado = raizImportacao[chave];
                 return;
             }
+            if (chaveDestino === window.CHAVE_SESSAO_ATIVA) {
+                valorSessaoAtivaImportado = raizImportacao[chave];
+                return;
+            }
 
             localStorage.setItem(chaveDestino, raizImportacao[chave]);
         });
@@ -2193,6 +2351,12 @@ window.SALINHA_BACKUP = {
             await window.salvarArquivoMorto(valorArquivoMortoImportado ? JSON.parse(valorArquivoMortoImportado) : {});
         } catch (e) {
             console.warn('[RESTORE] Arquivo morto do backup veio corrompido, ignorando:', e);
+        }
+
+        try {
+            await window.salvarSessaoAtiva(valorSessaoAtivaImportado ? JSON.parse(valorSessaoAtivaImportado) : { sims: [], si: -1 });
+        } catch (e) {
+            console.warn('[RESTORE] Sessão ativa do backup veio corrompida, ignorando:', e);
         }
 
         if (typeof window.loadFactualDatabase === 'function') {
@@ -2283,7 +2447,7 @@ exportarNuvem: async function() {
             return;
         }
         try {
-            let payload = window.SALINHA_BACKUP.construirPayload();
+            let payload = await window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
             let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
             let gistId = this.getGistId();
@@ -3379,22 +3543,17 @@ window.SimuladosEngine = {
             var file = e.target.files[0];
             if (!file) return;
             var reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = async function(event) {
                 try {
                     var parsed = JSON.parse(event.target.result);
-                    
+
                     if (parsed.type !== 'simulados' || parsed.version !== 1 || !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
                         throw new Error("Arquivo incompatível. O envelope estrutural não corresponde à coluna de Simulados.");
                     }
-                    
+
                     var novosSims = Array.isArray(parsed.data.sims) ? parsed.data.sims : [];
-                    
-                    var runtimeAtual;
-                    try {
-                        runtimeAtual = JSON.parse(localStorage.getItem('tjpe_v1__clube_simulado_auto') || '{}');
-                    } catch (errParse) { 
-                        runtimeAtual = {}; 
-                    }
+
+                    var runtimeAtual = (await window.lerSessaoAtiva()) || {};
         
   // =========================================================
 // CATÁLOGO FACTUAL SOBERANO
@@ -3465,9 +3624,9 @@ window.SimuladosEngine = {
                     if (runtimeAtual.sims.length > 0 && typeof runtimeAtual.si !== 'number') {
                         runtimeAtual.si = 0;
                     }
-                    
-                    localStorage.setItem('tjpe_v1__clube_simulado_auto', JSON.stringify(runtimeAtual));
-                    
+
+                    await window.salvarSessaoAtiva(runtimeAtual);
+
                     var acervoFinal = acervoSoberano.filter(function(item) {
                         return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO'));
                     });
@@ -3524,13 +3683,8 @@ window.SimuladosEngine = {
         input.click();
     },
 
-    exportar: function() {
-        var runtime;
-        try {
-            runtime = JSON.parse(localStorage.getItem('tjpe_v1__clube_simulado_auto') || '{}');
-        } catch (e) {
-            runtime = {};
-        }
+    exportar: async function() {
+        var runtime = (await window.lerSessaoAtiva()) || {};
         var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
         if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
         runtime.sims = acervoSoberano.filter(function(item) {
@@ -3555,20 +3709,15 @@ window.SimuladosEngine = {
         }, 1000);
     },
 
-    excluir: function() {
+    excluir: async function() {
         if (confirm('Atenção: Isso apagará os simulados desta coluna. O runtime factual não será afetado. Deseja continuar?')) {
-            var runtimeAtual;
-            try {
-                runtimeAtual = JSON.parse(localStorage.getItem('tjpe_v1__clube_simulado_auto') || '{}');
-            } catch (e) {
-                runtimeAtual = {};
-            }
-            
+            var runtimeAtual = (await window.lerSessaoAtiva()) || {};
+
             runtimeAtual.sims = [];
             runtimeAtual.si = 0;
-            
-            localStorage.setItem('tjpe_v1__clube_simulado_auto', JSON.stringify(runtimeAtual));
-            
+
+            await window.salvarSessaoAtiva(runtimeAtual);
+
             var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
             if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
             var acervoFinal = acervoSoberano.filter(function(item) {
@@ -4044,21 +4193,12 @@ window.zerarAcervoTotal = function() {
     // =========================================================
     if (typeof autoLoad === 'function') {
         autoLoad(function(temSessaoSalva) {
-            let viewAtiva = localStorage.getItem('tjpe_v1__cordeiro_view_ativa');
-
-            // Reidrata apenas as abas históricas
+            // Reidrata apenas as abas históricas — adiantamento visual; a
+            // decisão de rota de verdade (tela-simulado vs tela-home) é
+            // tomada no handler de 'load', aguardando diretamente
+            // window.__sessaoAtivaPromise__ (não depende deste callback).
             if (temSessaoSalva) {
                 renderTabs();
-            }
-
-            // Marca runtime restaurado
-            if (
-                temSessaoSalva &&
-                viewAtiva === 'executor' &&
-                typeof SIMS !== 'undefined' &&
-                SIMS.length > 0
-            ) {
-                window.__SESSAO_REIDRATADA__ = true;
             }
         });
     }
@@ -4235,12 +4375,12 @@ function wsList(prefix,shared){
 // =========================================================
 
 function autoSave(){
-  if(!SIMS.length){ wsDel('tjpe_v1__clube_simulado_auto'); return; }
-  
+  if(!SIMS.length){ window.salvarSessaoAtiva({ sims: [], si: -1 }); return; }
+
   if(SI >= 0 && SIMS[SI]){
     SIMS[SI].dados = JSON.parse(JSON.stringify(D));
     SIMS[SI].qSalva = QA;
-    
+
     if (C.tipo === 'mc') {
         SIMS[SI].estado_tempo = {
             segundos: cronoSegundosAtuais,
@@ -4248,12 +4388,9 @@ function autoSave(){
         };
     }
   }
-  
+
   try {
-    var payload = JSON.stringify(
-   exportarRuntime()
-);
-    wsSet('tjpe_v1__clube_simulado_auto', payload);
+    window.salvarSessaoAtiva(exportarRuntime());
 // Persistência soberana do runtime ativo
 
   } catch(e) {
@@ -4335,22 +4472,26 @@ window.ACERVO_OFICIAL_IDS = new Set(
 // - recriar tabs fechadas deliberadamente.
 //
 // =========================================================
-function autoLoad(cb){ 
+function autoLoad(cb){
 
     console.log(
    '[AUTOLOAD] iniciou'
 );
 
-  wsGet('tjpe_v1__clube_simulado_auto').then(function(val){
+  // Guarda defensiva: a ordem dos <script> tags do arquivo já garante que
+  // window.__sessaoAtivaPromise__ existe neste ponto, mas um fallback de
+  // uma linha custa nada e evita que um refactor futuro que mova blocos
+  // de <script> quebre essa pré-condição silenciosamente.
+  if (!window.__sessaoAtivaPromise__) window.__sessaoAtivaPromise__ = window.lerSessaoAtiva();
 
-    if(!val){
+  window.__sessaoAtivaPromise__.then(function(saved){
+
+    if(!saved){
       cb(false);
       return;
     }
 
     try {
-
-      var saved = JSON.parse(val);
 
       // ======================================
       // FILTRO SOBERANO DE ENTIDADES OFICIAIS
@@ -4421,6 +4562,9 @@ function autoLoad(cb){
 
 window.importarRuntime(saved);
 
+// Migração oportunista pro IndexedDB — fire-and-forget, não atrasa o boot
+window.__migrarSessaoAtivaSeNecessario__(saved);
+
 console.log(
    '[AUTOLOAD OK]'
 );
@@ -4438,7 +4582,7 @@ cb(true);
      e
   );
 
-  wsDel('tjpe_v1__clube_simulado_auto');
+  window.salvarSessaoAtiva({ sims: [], si: -1 });
 
   cb(false);
 
@@ -5746,9 +5890,27 @@ else if (auditId) {
                 window.MAPA_TJCE_RUNTIME.init();
             }
         } else {
-        // Evita fallback destruir sessão factual restaurada
+        // Evita fallback destruir sessão factual restaurada. Aguarda
+        // DIRETAMENTE a Promise da sessão ativa — nunca decide "sem
+        // sessão" só porque a leitura assíncrona ainda não voltou,
+        // não importa quanto tempo o IndexedDB demore pra responder.
+        const sessaoRestaurada = await window.__sessaoAtivaPromise__;
+        let restaurouComSucesso = false;
+
+        if (sessaoRestaurada && window.validarRuntime(sessaoRestaurada) && sessaoRestaurada.sims.length > 0) {
+            const ultimaAba = sessaoRestaurada.sims[Math.min(sessaoRestaurada.si || 0, sessaoRestaurada.sims.length - 1)];
+            if (ultimaAba && ultimaAba.cfg && ultimaAba.dados && ultimaAba.dados.blocos) {
+                try {
+                    window.importarRuntime(sessaoRestaurada);
+                    restaurouComSucesso = true;
+                } catch (e) {
+                    console.error('[BOOT] Falha ao restaurar sessão:', e);
+                }
+            }
+        }
+
         if (
-            window.__SESSAO_REIDRATADA__ &&
+            restaurouComSucesso &&
             typeof SIMS !== 'undefined' &&
             SIMS.length > 0 &&
             SIMS[SI]
@@ -6879,7 +7041,7 @@ function fecharTab(i){
   //
   // =========================================================
 
-  wsSet('tjpe_v1__clube_simulado_auto', {
+  window.salvarSessaoAtiva({
     sims: [],
     si: -1
   });
@@ -6954,7 +7116,7 @@ function fecharTab(i){
 
     // --- PATCH CIRÚRGICO ---
     // Força o storage a reconhecer que o runtime está limpo.
-    wsSet('tjpe_v1__clube_simulado_auto', { sims: [], si: -1 });
+    window.salvarSessaoAtiva({ sims: [], si: -1 });
     // Persistência soberana do catálogo factual
     // -----------------------
 
