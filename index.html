@@ -6,7 +6,7 @@
   <title>Monstrinho</title>
   <link rel="icon" href="./favicon.ico?v=1" type="image/x-icon">
   
- <script>
+<script>
 // =========================================================
 // MIGRAÇÃO ÚNICA PRO NAMESPACE ISOLADO (TJPE_V1)
 // =========================================================
@@ -17,21 +17,21 @@
 // lê e escreve usando chaves com o prefixo "tjpe_v1__" — isso, por
 // si só, já isola os dados (chaves diferentes, sem conflito). Este
 // bloco só cuida de trazer os dados que já existiam sob os nomes
-// antigos (sem prefixo) pra dentro do novo namespace, uma única vez.
+// antigos (sem prefixo) pra dentro do novo namespace.
 (function() {
     var NS_PREFIX = 'tjpe_v1__';
+    var CHAVES_CONHECIDAS = [
+        'cordeiro_acervo_provas', 'cordeiro_auditoria_historica',
+        'clube_simulado_auto', 'clube_simulado_mobile',
+        'salinha_longitudinal_runtime', 'etl_planner_db',
+        'cordeiro_playlists_soberanas', 'cordeiro_links_uteis',
+        'cordeiro_config_view', 'cordeiro_view_ativa', 'salinha_active_module',
+        'tjce_factual_l3_checks', 'tjce_user_links', 'tjce_card_links', 'tjce_card_materials',
+        'salinha_github_token', 'salinha_github_gist_id', 'salinha_return_route',
+        'monstrinho_factual_db', 'cordeiro_factual_db'
+    ];
 
     if (localStorage.getItem(NS_PREFIX + '__migrado__') === null) {
-        var CHAVES_CONHECIDAS = [
-            'tjpe_v1__cordeiro_acervo_provas', 'tjpe_v1__cordeiro_auditoria_historica',
-            'tjpe_v1__clube_simulado_auto', 'tjpe_v1__clube_simulado_mobile',
-            'tjpe_v1__salinha_longitudinal_runtime', 'tjpe_v1__etl_planner_db',
-            'tjpe_v1__cordeiro_playlists_soberanas', 'tjpe_v1__cordeiro_links_uteis',
-            'tjpe_v1__cordeiro_config_view', 'tjpe_v1__cordeiro_view_ativa', 'tjpe_v1__salinha_active_module',
-            'tjpe_v1__tjce_factual_l3_checks', 'tjpe_v1__tjce_user_links', 'tjpe_v1__tjce_card_links', 'tjpe_v1__tjce_card_materials',
-            'tjpe_v1__salinha_github_token', 'tjpe_v1__salinha_github_gist_id', 'tjpe_v1__salinha_return_route',
-            'tjpe_v1__monstrinho_factual_db', 'tjpe_v1__cordeiro_factual_db'
-        ];
         CHAVES_CONHECIDAS.forEach(function(chave) {
             var valorAntigo = localStorage.getItem(chave);
             if (valorAntigo !== null && localStorage.getItem(NS_PREFIX + chave) === null) {
@@ -39,6 +39,21 @@
             }
         });
         localStorage.setItem(NS_PREFIX + '__migrado__', '1');
+    }
+
+    // CORREÇÃO: a primeira tentativa de migração rodou de forma incompleta
+    // pra algumas pessoas (o namespace acabou com uma "foto" antiga/parcial).
+    // Este passo roda uma única vez, força a atualização das chaves com o
+    // conteúdo ATUAL das chaves antigas — que nunca foram apagadas — trazendo
+    // de volta qualquer coisa que ficou de fora da primeira tentativa.
+    if (localStorage.getItem(NS_PREFIX + '__remigrado_v2__') === null) {
+        CHAVES_CONHECIDAS.forEach(function(chave) {
+            var valorAntigoAtual = localStorage.getItem(chave);
+            if (valorAntigoAtual !== null) {
+                localStorage.setItem(NS_PREFIX + chave, valorAntigoAtual);
+            }
+        });
+        localStorage.setItem(NS_PREFIX + '__remigrado_v2__', '1');
     }
 })();
 </script>
