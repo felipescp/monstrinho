@@ -20,8 +20,13 @@
 // antigos (sem prefixo) pra dentro do novo namespace.
 (function() {
     var NS_PREFIX = 'tjpe_v1__';
+    // 'cordeiro_auditoria_historica' NÃO entra nessa lista — o arquivo morto
+    // tem sua própria camada de acesso (lerArquivoMorto()/salvarArquivoMorto())
+    // e lê direto da chave antiga sem prefixo até a Etapa 2 (IndexedDB)
+    // confirmar a escrita lá. Duplicar essa chave aqui só pra depois ela
+    // migrar de novo em outro lugar seria um salto arriscado a mais.
     var CHAVES_CONHECIDAS = [
-        'cordeiro_acervo_provas', 'cordeiro_auditoria_historica',
+        'cordeiro_acervo_provas',
         'clube_simulado_auto', 'clube_simulado_mobile',
         'salinha_longitudinal_runtime', 'etl_planner_db',
         'cordeiro_playlists_soberanas', 'cordeiro_links_uteis',
@@ -1822,12 +1827,19 @@ const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STOR
 // antes de continuar (ex.: recarregar a página); quem não precisa, chama
 // sem "await" e segue, exatamente como já fazia antes com localStorage.
 window.CHAVE_ARQUIVO_MORTO = 'tjpe_v1__cordeiro_auditoria_historica';
+window.CHAVE_ARQUIVO_MORTO_LEGADA = 'cordeiro_auditoria_historica';
 let _arquivoMortoCache = null;
 
 window.lerArquivoMorto = function() {
     if (_arquivoMortoCache === null) {
+        // Não passa mais pelo script de migração de namespace — a chave
+        // antiga (sem prefixo) nunca foi apagada, é onde o dado real está
+        // hoje pra quase todo mundo. Só popula o cache; não escreve de
+        // volta em nenhuma das duas até a Etapa 2 (IndexedDB) confirmar.
         try {
-            _arquivoMortoCache = JSON.parse(localStorage.getItem(window.CHAVE_ARQUIVO_MORTO) || '{}');
+            let bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO);
+            if (bruto === null) bruto = localStorage.getItem(window.CHAVE_ARQUIVO_MORTO_LEGADA);
+            _arquivoMortoCache = JSON.parse(bruto || '{}');
         } catch (e) {
             _arquivoMortoCache = {};
         }
