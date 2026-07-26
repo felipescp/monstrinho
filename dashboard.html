@@ -572,12 +572,23 @@ histHTML.push(`
                     }).join('');
 
                     return `<div style="margin-bottom: 10px;">
-                        <div class="hm-ext-card ${bgCGrupo}" style="margin-bottom: 6px; border-left: 6px solid var(--app-primary);">
-                            <div class="hm-ext-head"><span class="hm-ext-title" style="text-transform: uppercase; letter-spacing: 0.03em; font-weight: 900;">${g.grupo}</span><div style="text-align: right;"><div class="hm-ext-score" style="color: #fff; opacity: 1; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.35);">${g.pct}%</div><div style="font-size: 8.5px; color: #fff; opacity: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.35);">Vol: ${g.acertos}/${g.feitas}</div></div></div>
+                        <div class="hm-ext-card ${bgCGrupo} rend-grupo-header" onclick="window.toggleGrupoRendimento(this)" style="margin-bottom: 0; border-left: 6px solid var(--app-primary); cursor: pointer;">
+                            <div class="hm-ext-head">
+                                <span class="hm-ext-title" style="text-transform: uppercase; letter-spacing: 0.03em; font-weight: 900;"><span class="rend-grupo-seta" style="display:inline-block; margin-right:6px; transition:transform 0.2s;">▸</span>${g.grupo}</span>
+                                <div style="background: rgba(0,0,0,0.28); padding: 3px 10px; border-radius: 8px; display: inline-block; text-align: right;">
+                                    <div class="hm-ext-score" style="color: #fff;">${g.pct}%</div>
+                                    <div style="font-size: 8.5px; color: #fff;">Vol: ${g.acertos}/${g.feitas}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:6px; padding-left: 14px;">${itensHTML}</div>
+                        <div class="rend-grupo-body" style="display:none; flex-direction:column; gap:6px; padding-left: 14px; margin-top: 6px;">${itensHTML}</div>
                     </div>`;
                 }).join('');
+                const controleGrupos = gruposArray.length > 0 ? `<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:6px;">
+                    <button onclick="window.expandirTudoRendimento(this, true)" style="background:none; border:none; color:var(--app-primary); font-size:10px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>
+                    <button onclick="window.expandirTudoRendimento(this, false)" style="background:none; border:none; color:var(--text-muted); font-size:10px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▸ Recolher tudo</button>
+                </div>` : '';
+                topicosHTML = controleGrupos + topicosHTML;
 
                 const totalPct = Math.round((tA/tF)*100) || 0; const cor = getMateriaColor(materia);
                 subjectStats.push({ materia, cor, tF, tA, totalPct, leiPct: Math.round((tLeiAc/tLeiTot)*100) || 0, doutPct: Math.round((tDoutAc/tDoutTot)*100) || 0, jurPct: Math.round((tJurAc/tJurTot)*100) || 0 });
@@ -646,6 +657,30 @@ histHTML.push(`
             if(lineSelectMat) { const currentLineVal = lineSelectMat.value; lineSelectMat.innerHTML = '<option value="">Visão Global</option>'; Array.from(comboMaterias).sort().forEach(m => lineSelectMat.innerHTML += `<option value="${m}">${m}</option>`); lineSelectMat.value = currentLineVal; }
             setTimeout(() => { if(typeof window.updateLineChart === 'function') window.updateLineChart(); }, 50);
         }
+
+        // Acordeão dos grupos L2 (Análise Agregada por Matéria) — mesmo padrão
+        // do caderno-acc-header/body do index.html (toggleCadernoAcc/
+        // expandirTudoCaderno), replicado aqui porque dashboard.html roda em
+        // documento/iframe separado e não enxerga o window do index.html.
+        window.toggleGrupoRendimento = function(headerEl) {
+            let body = headerEl.nextElementSibling;
+            if (!body) return;
+            let seta = headerEl.querySelector('.rend-grupo-seta');
+            let abrindo = body.style.display === 'none' || !body.style.display;
+            body.style.display = abrindo ? 'flex' : 'none';
+            if (seta) seta.style.transform = abrindo ? 'rotate(90deg)' : 'rotate(0deg)';
+        };
+
+        window.expandirTudoRendimento = function(btn, abrir) {
+            let container = btn.closest('.prog-grid-container');
+            if (!container) return;
+            container.querySelectorAll('.rend-grupo-body').forEach(function(body) {
+                body.style.display = abrir ? 'flex' : 'none';
+            });
+            container.querySelectorAll('.rend-grupo-seta').forEach(function(seta) {
+                seta.style.transform = abrir ? 'rotate(90deg)' : 'rotate(0deg)';
+            });
+        };
 
         window.updateLineChart = function() {
             const simulados = getDadosGlobaisETL();
