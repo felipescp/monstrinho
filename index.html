@@ -554,6 +554,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+.pisca-atencao { animation-name: pulse-green; animation-duration: 1.5s; animation-iteration-count: 1; }
 
 .qn { font-family: var(--font-display); font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: .5rem; text-transform: uppercase; }
 .qe { font-size: 15px; line-height: 1.7; margin-bottom: 1.25rem; color: var(--text-main); }
@@ -7620,6 +7621,7 @@ function conf(qId){
       var qel0 = g('q-'+qId); if(qel0){ qel0.classList.remove('qa'); qel0.classList.add('qnul'); }
       g('b1-limpar').disabled = false;
       verBloco(q.bn); renderNav(); renderTabs(); autoSave();
+      verificarUltimaQuestao();
       if (C.auto !== false) { setTimeout(function(){ avancar(qId); }, 600); }
       return;
   }
@@ -7657,6 +7659,7 @@ function conf(qId){
   
   g('b1-limpar').disabled = false;
   verBloco(q.bn); renderNav(); renderTabs(); autoSave();
+  verificarUltimaQuestao();
   if (C.auto !== false) { setTimeout(function(){ avancar(qId); }, 1200); }
 }
 
@@ -7674,6 +7677,36 @@ function getQ(id) {
 }
 function verBloco(nome){var b=null;for(var i=0;i<D.blocos.length;i++)if(D.blocos[i].nome===nome){b=D.blocos[i];break;}if(!b)return;if(b.questoes.every(function(q){return D.res[q.id]&&D.res[q.id].c;}))D.fin[nome]=true;prog();}
 function prog(){D.blocos.forEach(function(b,bi){var r=b.questoes.filter(function(q){return D.res[q.id]&&D.res[q.id].c;}).length;var el=g('pr-'+bi);if(el){el.textContent=r+' / '+b.questoes.length;if(r===b.questoes.length)el.style.color='#22c55e';}});}
+
+// Chama a atenção pro botão Finalizar quando a última questão pendente é
+// respondida — roda sempre (independente de avanço automático). O estado
+// __ultimaQuestaoAvisada fica no próprio D (dados da bateria ativa), não
+// numa variável global solta: reseta sozinho ao trocar de aba (D é
+// reatribuído por inteiro) e ao reabrir uma questão já respondida.
+function verificarUltimaQuestao() {
+    var pendentes = 0;
+    for (var i = 0; i < D.blocos.length; i++) {
+        for (var j = 0; j < D.blocos[i].questoes.length; j++) {
+            var q = D.blocos[i].questoes[j];
+            if (!(D.res[q.id] && D.res[q.id].c) && q.gabarito !== 'ANULADA') pendentes++;
+        }
+    }
+    if (pendentes === 0) {
+        if (D.__ultimaQuestaoAvisada) return;
+        D.__ultimaQuestaoAvisada = true;
+        var btnFin = g('b1-finalizar');
+        if (btnFin) {
+            btnFin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            btnFin.classList.add('pisca-atencao');
+            btnFin.addEventListener('animationend', function aoTerminar() {
+                btnFin.classList.remove('pisca-atencao');
+                btnFin.removeEventListener('animationend', aoTerminar);
+            }, { once: true });
+        }
+    } else {
+        D.__ultimaQuestaoAvisada = false;
+    }
+}
 
 function avancar(qId) {
     var found = false, next = null, pendentes = 0, primeiraPendente = null;
@@ -7704,18 +7737,11 @@ function avancar(qId) {
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     } else if (pendentes === 0) {
-        // FIM DA PROVA! Desloca a sidebar pro topo e induz a finalização
+        // FIM DA PROVA! verificarUltimaQuestao() já deve ter avisado (chamada
+        // em conf() antes deste avancar() ser agendado) — o guard __ultimaQuestaoAvisada
+        // evita que pisque de novo aqui; mantido por segurança (idempotente).
         setTimeout(function() {
-            var sb = g('sb');
-            if (sb) sb.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            var btnFin = g('b1-finalizar');
-            if (btnFin) {
-                // Reutiliza a animação pulse-green que já existe no seu CSS
-                btnFin.style.animation = 'pulse-green 1.5s infinite';
-                btnFin.style.transform = 'scale(1.02)';
-                btnFin.style.transition = 'all 0.3s ease';
-            }
+            verificarUltimaQuestao();
         }, 300);
     }
 }
