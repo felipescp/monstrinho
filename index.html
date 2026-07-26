@@ -2607,6 +2607,95 @@ exportarNuvem: async function() {
 };
 
 // =========================================================================
+// SALVAMENTO AUTOMÁTICO E SILENCIOSO — PERIÓDICO (a cada 5min de atividade)
+// =========================================================================
+// Mesma lógica de upload de exportarNuvem() (cria partes, faz PATCH no
+// Gist, limpa partes velhas), só que sem alert()/mostrarModal() — falhas
+// só viram console.warn, pra não incomodar o usuário a cada 5 minutos.
+// Exige token E gistId já configurados (o próprio usuário precisa ter
+// feito o 1º "☁️⬆️ Salvar" manual pelo menos uma vez); sem isso, não faz
+// nada — nunca cria um Gist novo silenciosamente sozinha.
+window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
+    let token = this.getToken();
+    let gistId = this.getGistId();
+    if (!token || !gistId) return;
+
+    try {
+        let payload = await window.SALINHA_BACKUP.construirPayload();
+        let conteudo = JSON.stringify(payload, null, 2);
+        let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
+
+        let nomesAntigos = [];
+        let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
+            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+        });
+        if (respostaAtual.ok) {
+            let jsonAtual = await respostaAtual.json();
+            nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
+        }
+
+        for (let i = 0; i < partes.length; i++) {
+            let corpoParte = { files: {} };
+            corpoParte.files[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: partes[i] };
+            let respostaParte = await fetch('https://api.github.com/gists/' + gistId, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(corpoParte)
+            });
+            if (!respostaParte.ok) {
+                throw new Error('GitHub respondeu ' + respostaParte.status + ' (parte ' + (i + 1) + ' de ' + partes.length + ')');
+            }
+        }
+
+        let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
+        let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
+        paraApagar.push(this.NOME_ARQUIVO);
+
+        let corpoLimpeza = { files: {} };
+        paraApagar.forEach(nome => { corpoLimpeza.files[nome] = null; });
+        await fetch('https://api.github.com/gists/' + gistId, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': 'token ' + token,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(corpoLimpeza)
+        });
+
+        console.log('[GIST SYNC] Salvamento periódico silencioso concluído.');
+    } catch (err) {
+        console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
+    }
+};
+
+// Gancho de ativação: reaproveita autoSave() (chamada em ~20 lugares a
+// cada resposta/troca de aba) em vez de um setInterval independente, que
+// rodaria mesmo sem nenhuma atividade do usuário. window.__salvamentoNuvemEmAndamento
+// evita sobreposição se um envio anterior ainda estiver em curso.
+window.__ultimoSalvamentoNuvemPeriodico = window.__ultimoSalvamentoNuvemPeriodico || Date.now();
+window.__salvamentoNuvemEmAndamento = false;
+
+function verificarSalvamentoPeriodicoNuvem() {
+    if (window.__salvamentoNuvemEmAndamento) return;
+    let agora = Date.now();
+    let cincoMinutos = 5 * 60 * 1000;
+    if (agora - window.__ultimoSalvamentoNuvemPeriodico >= cincoMinutos) {
+        window.__ultimoSalvamentoNuvemPeriodico = agora;
+        if (window.SALINHA_GIST_SYNC && typeof window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa === 'function') {
+            window.__salvamentoNuvemEmAndamento = true;
+            window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa().finally(function() {
+                window.__salvamentoNuvemEmAndamento = false;
+            });
+        }
+    }
+}
+
+// =========================================================================
 // CARREGAMENTO AUTOMÁTICO E SILENCIOSO AO ABRIR O SITE
 // =========================================================================
 // Roda por conta própria, sem interferir na sequência de boot existente
@@ -4375,7 +4464,7 @@ function wsList(prefix,shared){
 // =========================================================
 
 function autoSave(){
-  if(!SIMS.length){ window.salvarSessaoAtiva({ sims: [], si: -1 }); return; }
+  if(!SIMS.length){ window.salvarSessaoAtiva({ sims: [], si: -1 }); verificarSalvamentoPeriodicoNuvem(); return; }
 
   if(SI >= 0 && SIMS[SI]){
     SIMS[SI].dados = JSON.parse(JSON.stringify(D));
@@ -4396,6 +4485,8 @@ function autoSave(){
   } catch(e) {
     console.error("Erro ao auto-salvar:", e);
   }
+
+  verificarSalvamentoPeriodicoNuvem();
 }
 
 // =========================================================
