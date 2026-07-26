@@ -586,7 +586,7 @@ histHTML.push(`
                     </div>`;
                 }).join('');
                 const controleGrupos = gruposArray.length > 0 ? `<div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-                    <div class="history-battery-toggle" style="align-self:flex-end;" onclick="window.alternarTudoRendimento(this)">Expandir Tudo ▼</div>
+                    <div class="history-battery-toggle" style="align-self:flex-end;" data-expandido="false" onclick="window.alternarTudoRendimento(this)">Expandir Tudo ▼</div>
                 </div>` : '';
                 topicosHTML = controleGrupos + topicosHTML;
 
@@ -675,7 +675,7 @@ histHTML.push(`
             let container = elemento.closest('.prog-grid-container');
             if (!container) return;
 
-            const vaiExpandir = elemento.innerText.indexOf('Expandir') === 0;
+            const vaiExpandir = elemento.getAttribute('data-expandido') !== 'true';
 
             container.querySelectorAll('.rend-grupo-body').forEach(function(body) {
                 body.style.display = vaiExpandir ? 'flex' : 'none';
@@ -684,6 +684,7 @@ histHTML.push(`
                 seta.style.transform = vaiExpandir ? 'rotate(90deg)' : 'rotate(0deg)';
             });
 
+            elemento.setAttribute('data-expandido', vaiExpandir ? 'true' : 'false');
             elemento.innerText = vaiExpandir ? 'Recolher Tudo ▲' : 'Expandir Tudo ▼';
         };
 
