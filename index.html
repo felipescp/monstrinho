@@ -46,14 +46,29 @@
     // Este passo roda uma única vez, força a atualização das chaves com o
     // conteúdo ATUAL das chaves antigas — que nunca foram apagadas — trazendo
     // de volta qualquer coisa que ficou de fora da primeira tentativa.
+    //
+    // IMPORTANTE: apaga a cópia antiga logo depois de confirmar a nova —
+    // manter as duas ao mesmo tempo quase dobra o uso de espaço, e foi
+    // isso que estourou a cota do navegador pra algumas pessoas. Cada
+    // chave é protegida individualmente: se uma falhar por falta de
+    // espaço, as outras continuam normalmente, em vez de travar tudo.
     if (localStorage.getItem(NS_PREFIX + '__remigrado_v2__') === null) {
+        var falhouAlguma = false;
         CHAVES_CONHECIDAS.forEach(function(chave) {
             var valorAntigoAtual = localStorage.getItem(chave);
             if (valorAntigoAtual !== null) {
-                localStorage.setItem(NS_PREFIX + chave, valorAntigoAtual);
+                try {
+                    localStorage.setItem(NS_PREFIX + chave, valorAntigoAtual);
+                    localStorage.removeItem(chave);
+                } catch (e) {
+                    falhouAlguma = true;
+                    console.warn('[NAMESPACE] Falha ao recuperar "' + chave + '" (provável falta de espaço):', e);
+                }
             }
         });
-        localStorage.setItem(NS_PREFIX + '__remigrado_v2__', '1');
+        if (!falhouAlguma) {
+            localStorage.setItem(NS_PREFIX + '__remigrado_v2__', '1');
+        }
     }
 })();
 </script>
