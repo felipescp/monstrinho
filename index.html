@@ -2183,6 +2183,50 @@ window.SALINHA_BACKUP = {
                 Object.keys(objImportado).forEach(subChave => {
                     if (!subChave || objImportado[subChave] === null || objImportado[subChave] === undefined) return;
 
+                    // ── CASO ESPECIAL: CADERNO DE ERROS/AXIOMAS (salinha_longitudinal_runtime / etl_planner_db) ──
+                    // Formato é chave → matéria → tópico → array de itens (3 níveis).
+                    // A estratégia genérica abaixo só sabe mesclar "chave → array" ou
+                    // copiar por inteiro se a chave local nunca existiu — como
+                    // caderno_erros/caderno_axiomas já nascem como {} na primeira
+                    // vez que qualquer item é salvo, o conteúdo do backup pra essas
+                    // duas chaves era descartado em silêncio. Desce os 2 níveis de
+                    // aninhamento e mescla item a item por id_q + sim_id — mesma
+                    // chave de identidade que o próprio código usa ao salvar.
+                    if ((subChave === 'caderno_erros' || subChave === 'caderno_axiomas') &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(materia => {
+                            const topicosImportados = objImportado[subChave][materia];
+                            if (!topicosImportados || typeof topicosImportados !== 'object') return;
+                            if (!objLocal[subChave][materia] || typeof objLocal[subChave][materia] !== 'object') {
+                                objLocal[subChave][materia] = {};
+                            }
+                            Object.keys(topicosImportados).forEach(topico => {
+                                const itensImportados = topicosImportados[topico];
+                                if (!Array.isArray(itensImportados)) return;
+                                if (!Array.isArray(objLocal[subChave][materia][topico])) {
+                                    objLocal[subChave][materia][topico] = [];
+                                }
+                                itensImportados.forEach(item => {
+                                    if (!item || !item.id_q || !item.sim_id) return;
+                                    const jaExiste = objLocal[subChave][materia][topico].some(function(local) {
+                                        return local && local.id_q === item.id_q && local.sim_id === item.sim_id;
+                                    });
+                                    if (!jaExiste) {
+                                        objLocal[subChave][materia][topico].push(item);
+                                        entidadesInjetadas++;
+                                        persistirChave = true;
+                                    }
+                                });
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     if (Array.isArray(objImportado[subChave]) && !Array.isArray(objLocal[subChave])) {
                         objLocal[subChave] = [];
                     }
@@ -10417,8 +10461,7 @@ window.mostrarAbaCaderno = function(aba) {
     }
 
     let html = '<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:14px;">' +
-'<button onclick="window.expandirTudoCaderno(true)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>' +
-        '<button onclick="window.expandirTudoCaderno(false)" style="background:none; border:none; color:var(--text-muted); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▸ Recolher tudo</button>' +
+'<button onclick="window.alternarTudoCaderno(this)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">Expandir Tudo ▾</button>' +
         '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
         '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
         '<button onclick="window.ajustarZoomCaderno(0.1)" title="Aumentar letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A+</button>' +
@@ -10508,15 +10551,20 @@ window.toggleCadernoAcc = function(headerEl) {
     if (seta) seta.style.transform = abrindo ? 'rotate(90deg)' : 'rotate(0deg)';
 };
 
-window.expandirTudoCaderno = function(abrir) {
+window.alternarTudoCaderno = function(elemento) {
     let corpo = document.getElementById('caderno-modal-body');
     if (!corpo) return;
+
+    const vaiExpandir = elemento.innerText.indexOf('Expandir') === 0;
+
     corpo.querySelectorAll('.caderno-acc-body').forEach(function(body) {
-        body.style.display = abrir ? 'block' : 'none';
+        body.style.display = vaiExpandir ? 'block' : 'none';
     });
     corpo.querySelectorAll('.caderno-acc-seta').forEach(function(seta) {
-        seta.style.transform = abrir ? 'rotate(90deg)' : 'rotate(0deg)';
+        seta.style.transform = vaiExpandir ? 'rotate(90deg)' : 'rotate(0deg)';
     });
+
+    elemento.innerText = vaiExpandir ? 'Recolher Tudo ▴' : 'Expandir Tudo ▾';
 };
 
 window.removerDoCaderno = function(aba, mat, topico, idx) {
