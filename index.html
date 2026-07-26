@@ -10461,7 +10461,7 @@ window.mostrarAbaCaderno = function(aba) {
     }
 
     let html = '<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:14px;">' +
-'<button onclick="window.alternarTudoCaderno(this)" style="background:none; border:none; color:var(--app-primary); font-size:10.5px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">Expandir Tudo ▾</button>' +
+'<button onclick="window.alternarTudoCaderno(this)" data-expandido="false" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;">Expandir Tudo ▼</button>' +
         '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
         '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
         '<button onclick="window.ajustarZoomCaderno(0.1)" title="Aumentar letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A+</button>' +
@@ -10555,7 +10555,7 @@ window.alternarTudoCaderno = function(elemento) {
     let corpo = document.getElementById('caderno-modal-body');
     if (!corpo) return;
 
-    const vaiExpandir = elemento.innerText.indexOf('Expandir') === 0;
+    const vaiExpandir = elemento.getAttribute('data-expandido') !== 'true';
 
     corpo.querySelectorAll('.caderno-acc-body').forEach(function(body) {
         body.style.display = vaiExpandir ? 'block' : 'none';
@@ -10564,7 +10564,8 @@ window.alternarTudoCaderno = function(elemento) {
         seta.style.transform = vaiExpandir ? 'rotate(90deg)' : 'rotate(0deg)';
     });
 
-    elemento.innerText = vaiExpandir ? 'Recolher Tudo ▴' : 'Expandir Tudo ▾';
+    elemento.setAttribute('data-expandido', vaiExpandir ? 'true' : 'false');
+    elemento.innerText = vaiExpandir ? 'Recolher Tudo ▲' : 'Expandir Tudo ▼';
 };
 
 window.removerDoCaderno = function(aba, mat, topico, idx) {
