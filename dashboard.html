@@ -529,26 +529,64 @@ histHTML.push(`
             distributeToColumns('rendimento-cards', histHTML, "Nenhum histórico.");
 
             let subjectStats = []; let matHTML = [];
-            Object.entries(memMaterias).sort().forEach(([materia, topicos]) => {
+            let materiasProcessadas = Object.entries(memMaterias).sort().map(([materia, topicos]) => {
                 let tF = 0, tA = 0; let tLeiAc = 0, tLeiTot = 0, tDoutAc = 0, tDoutTot = 0, tJurAc = 0, tJurTot = 0;
                 let topicosArray = Object.entries(topicos).map(([nome, s]) => {
                     tF += s.feitas; tA += s.acertos;
                     tLeiAc += (s.lei?.ac || 0); tLeiTot += (s.lei?.tot || 0);
                     tDoutAc += (s.doutrina?.ac || 0); tDoutTot += (s.doutrina?.tot || 0);
                     tJurAc += (s.juris?.ac || 0); tJurTot += (s.juris?.tot || 0);
-                    return { nome, s, pct: Math.round((s.acertos/s.feitas)*100) || 0 };
+                    // "nome" vem como "Subtema1 > Subtema2" (topico já sem o
+                    // prefixo da matéria). Defensivo: se não tiver os 2
+                    // segmentos esperados, cai num grupo "Outros" em vez de quebrar.
+                    const partes = nome.split(' > ');
+                    const grupo = partes.length >= 2 ? partes[0] : 'Outros';
+                    const titulo = partes.length >= 2 ? partes.slice(1).join(' > ') : nome;
+                    return { nome, titulo, grupo, s, pct: Math.round((s.acertos/s.feitas)*100) || 0 };
                 });
-                topicosArray.sort((a,b) => a.pct - b.pct);
-                let topicosHTML = topicosArray.map(({nome, s, pct}) => {
-                    const bgC = getBgClass(pct);
-                    let micro = '';
-                    const fts = [ {l:'Doutrina', d:s.doutrina}, {l:'Lei Seca', d:s.lei}, {l:'Jurisprudência', d:s.juris} ];
-                    fts.forEach(f => { if(f.d && f.d.tot > 0) { const pctF = Math.round((f.d.ac/f.d.tot)*100) || 0; micro += `<div class="hm-ext-micro"><span>${pctF < 50 ? '⚠️ ' : ''}${f.l}</span><strong>${pctF}% (${f.d.ac}/${f.d.tot})</strong></div>`; } });
-                    return `<div class="hm-ext-card ${bgC}"><div class="hm-ext-head"><span class="hm-ext-title">${nome}</span><div style="text-align: right;"><div class="hm-ext-score">${pct}%</div><div style="font-size: 8.5px; opacity: 0.9;">Vol: ${s.acertos}/${s.feitas}</div></div></div>${micro ? `<div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">${micro}</div>` : ''}</div>`;
+
+                // L2: agrupa os tópicos (L3) por Subtema1, somando acertos/feitas
+                // de todos os L3 do grupo pra ter um % agregado do grupo.
+                let gruposMap = {};
+                topicosArray.forEach(item => {
+                    if (!gruposMap[item.grupo]) gruposMap[item.grupo] = { itens: [], feitas: 0, acertos: 0 };
+                    gruposMap[item.grupo].itens.push(item);
+                    gruposMap[item.grupo].feitas += item.s.feitas;
+                    gruposMap[item.grupo].acertos += item.s.acertos;
+                });
+                let gruposArray = Object.entries(gruposMap).map(([grupo, g]) => ({
+                    grupo, itens: g.itens, feitas: g.feitas, acertos: g.acertos,
+                    pct: Math.round((g.acertos / g.feitas) * 100) || 0
+                }));
+                gruposArray.sort((a, b) => b.pct - a.pct); // L2: melhor desempenho primeiro
+                gruposArray.forEach(g => g.itens.sort((a, b) => b.pct - a.pct)); // L3: melhor desempenho primeiro dentro do grupo
+
+                let topicosHTML = gruposArray.map(g => {
+                    const bgCGrupo = getBgClass(g.pct);
+                    const itensHTML = g.itens.map(({ titulo, s, pct }) => {
+                        const bgC = getBgClass(pct);
+                        let micro = '';
+                        const fts = [ {l:'Doutrina', d:s.doutrina}, {l:'Lei Seca', d:s.lei}, {l:'Jurisprudência', d:s.juris} ];
+                        fts.forEach(f => { if(f.d && f.d.tot > 0) { const pctF = Math.round((f.d.ac/f.d.tot)*100) || 0; micro += `<div class="hm-ext-micro"><span>${pctF < 50 ? '⚠️ ' : ''}${f.l}</span><strong>${pctF}% (${f.d.ac}/${f.d.tot})</strong></div>`; } });
+                        return `<div class="hm-ext-card ${bgC}"><div class="hm-ext-head"><span class="hm-ext-title">${titulo}</span><div style="text-align: right;"><div class="hm-ext-score">${pct}%</div><div style="font-size: 8.5px; opacity: 0.9;">Vol: ${s.acertos}/${s.feitas}</div></div></div>${micro ? `<div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">${micro}</div>` : ''}</div>`;
+                    }).join('');
+
+                    return `<div style="margin-bottom: 10px;">
+                        <div class="hm-ext-card ${bgCGrupo}" style="margin-bottom: 6px;">
+                            <div class="hm-ext-head"><span class="hm-ext-title">${g.grupo}</span><div style="text-align: right;"><div class="hm-ext-score">${g.pct}%</div><div style="font-size: 8.5px; opacity: 0.9;">Vol: ${g.acertos}/${g.feitas}</div></div></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; padding-left: 14px;">${itensHTML}</div>
+                    </div>`;
                 }).join('');
 
                 const totalPct = Math.round((tA/tF)*100) || 0; const cor = getMateriaColor(materia);
                 subjectStats.push({ materia, cor, tF, tA, totalPct, leiPct: Math.round((tLeiAc/tLeiTot)*100) || 0, doutPct: Math.round((tDoutAc/tDoutTot)*100) || 0, jurPct: Math.round((tJurAc/tJurTot)*100) || 0 });
+                return { materia, cor, totalPct, tF, tA, topicosHTML };
+            });
+
+            materiasProcessadas.sort((a, b) => b.totalPct - a.totalPct); // L1: melhor desempenho primeiro
+
+            materiasProcessadas.forEach(({ materia, cor, totalPct, tF, tA, topicosHTML }) => {
                 matHTML.push(`<div class="prog-subject-card"><div class="prog-subject-header" onclick="this.closest('.prog-subject-card').classList.toggle('active')"><div class="prog-subject-title"><span><span style="color:${cor}; margin-right:5px;">■</span> ${materia}</span>
                     <span style="
     color:${getHeatmapColor(totalPct)};
