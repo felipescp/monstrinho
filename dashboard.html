@@ -585,9 +585,8 @@ histHTML.push(`
                         <div class="rend-grupo-body" style="display:none; flex-direction:column; gap:6px; padding-left: 14px; margin-top: 6px;">${itensHTML}</div>
                     </div>`;
                 }).join('');
-                const controleGrupos = gruposArray.length > 0 ? `<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:6px;">
-                    <button onclick="window.expandirTudoRendimento(this, true)" style="background:none; border:none; color:var(--app-primary); font-size:10px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▾ Expandir tudo</button>
-                    <button onclick="window.expandirTudoRendimento(this, false)" style="background:none; border:none; color:var(--text-muted); font-size:10px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em;">▸ Recolher tudo</button>
+                const controleGrupos = gruposArray.length > 0 ? `<div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
+                    <div class="history-battery-toggle" style="align-self:flex-end;" onclick="window.alternarTudoRendimento(this)">Expandir Tudo ▼</div>
                 </div>` : '';
                 topicosHTML = controleGrupos + topicosHTML;
 
@@ -672,15 +671,20 @@ histHTML.push(`
             if (seta) seta.style.transform = abrindo ? 'rotate(90deg)' : 'rotate(0deg)';
         };
 
-        window.expandirTudoRendimento = function(btn, abrir) {
-            let container = btn.closest('.prog-grid-container');
+        window.alternarTudoRendimento = function(elemento) {
+            let container = elemento.closest('.prog-grid-container');
             if (!container) return;
+
+            const vaiExpandir = elemento.innerText.indexOf('Expandir') === 0;
+
             container.querySelectorAll('.rend-grupo-body').forEach(function(body) {
-                body.style.display = abrir ? 'flex' : 'none';
+                body.style.display = vaiExpandir ? 'flex' : 'none';
             });
             container.querySelectorAll('.rend-grupo-seta').forEach(function(seta) {
-                seta.style.transform = abrir ? 'rotate(90deg)' : 'rotate(0deg)';
+                seta.style.transform = vaiExpandir ? 'rotate(90deg)' : 'rotate(0deg)';
             });
+
+            elemento.innerText = vaiExpandir ? 'Recolher Tudo ▲' : 'Expandir Tudo ▼';
         };
 
         window.updateLineChart = function() {
