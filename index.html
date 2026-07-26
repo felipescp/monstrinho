@@ -1892,6 +1892,7 @@ window.SALINHA_BACKUP = {
 
         const STORAGE_KEY_ATIVO_LOCAL = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'tjpe_v1__monstrinho_factual_db';
         const LEGACY_KEY_ATIVO_LOCAL = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'tjpe_v1__cordeiro_factual_db';
+        const NS_PREFIXO_MERGE = 'tjpe_v1__';
 
         if (!importado || typeof importado !== 'object' || Array.isArray(importado)) {
             throw new Error('Payload incompatível.');
@@ -1907,10 +1908,18 @@ window.SALINHA_BACKUP = {
 
         Object.keys(raizImportacao).forEach(chave => {
             const valorImportadoBruto = raizImportacao[chave];
+            const chaveSemPrefixoMerge = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
             let chaveDestinoLocal = chave;
 
-            if (chave === STORAGE_KEY_ATIVO_LOCAL || chave === LEGACY_KEY_ATIVO_LOCAL) {
+            if (chave === STORAGE_KEY_ATIVO_LOCAL || chave === LEGACY_KEY_ATIVO_LOCAL ||
+                chaveSemPrefixoMerge === 'monstrinho_factual_db' || chaveSemPrefixoMerge === 'cordeiro_factual_db') {
                 chaveDestinoLocal = STORAGE_KEY_ATIVO_LOCAL;
+            } else if (chave.indexOf(NS_PREFIXO_MERGE) !== 0) {
+                // Backup gerado antes do namespace tjpe_v1__ — a chave vem sem
+                // prefixo. Sem este mapeamento, o merge escreve numa chave morta
+                // que o app não lê mais, e nunca encontra "igual" ao comparar
+                // contra os dados reais — resultando em reload em loop.
+                chaveDestinoLocal = NS_PREFIXO_MERGE + chave;
             }
 
             const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
@@ -1962,8 +1971,12 @@ window.SALINHA_BACKUP = {
                 }
 
                 if (persistirChave) {
-                    localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
-                    chavesMutadas++;
+                    try {
+                        localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                        chavesMutadas++;
+                    } catch (e) {
+                        console.warn('[MERGE] Falha ao persistir "' + chaveDestinoLocal + '" (provável falta de espaço):', e);
+                    }
                 }
                 return;
             }
@@ -2021,8 +2034,12 @@ window.SALINHA_BACKUP = {
             }
 
             if (persistirChave) {
-                localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
-                chavesMutadas++;
+                try {
+                    localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                    chavesMutadas++;
+                } catch (e) {
+                    console.warn('[MERGE] Falha ao persistir "' + chaveDestinoLocal + '" (provável falta de espaço):', e);
+                }
             }
         });
 
