@@ -1789,9 +1789,9 @@ if (inputIncremental) {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function(f) {
+        reader.onload = async function(f) {
             try {
-                let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(f.target.result);
+                let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(f.target.result);
                 alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${resultado.chavesMutadas}\nNovas entidades injetadas: ${resultado.entidadesInjetadas}`);
             } catch (error) {
                 console.error("Erro na fusão incremental:", error);
@@ -1809,6 +1809,44 @@ if (inputIncremental) {
 // =========================================================================
 const STORAGE_KEY_ATIVO = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'tjpe_v1__monstrinho_factual_db';
 const LEGACY_KEY_ATIVO = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'tjpe_v1__cordeiro_factual_db';
+
+// =========================================================================
+// CAMADA DE ACESSO: ARQUIVO MORTO (cordeiro_auditoria_historica)
+// =========================================================================
+// Isola o resto do app de ONDE o histórico de baterias finalizadas é
+// persistido. Etapa 1: ainda é localStorage por baixo, só que através de
+// um cache em memória — isso permite trocar o backend por IndexedDB
+// (etapa 2, futura) sem precisar mexer nos ~14 pontos de leitura/escrita
+// espalhados pelo app. salvarArquivoMorto() já devolve uma Promise (nunca
+// rejeita — resolve true/false) pra quem precisa confirmar a persistência
+// antes de continuar (ex.: recarregar a página); quem não precisa, chama
+// sem "await" e segue, exatamente como já fazia antes com localStorage.
+window.CHAVE_ARQUIVO_MORTO = 'tjpe_v1__cordeiro_auditoria_historica';
+let _arquivoMortoCache = null;
+
+window.lerArquivoMorto = function() {
+    if (_arquivoMortoCache === null) {
+        try {
+            _arquivoMortoCache = JSON.parse(localStorage.getItem(window.CHAVE_ARQUIVO_MORTO) || '{}');
+        } catch (e) {
+            _arquivoMortoCache = {};
+        }
+    }
+    return _arquivoMortoCache;
+};
+
+window.salvarArquivoMorto = function(dados) {
+    _arquivoMortoCache = dados;
+    return new Promise(function(resolve) {
+        try {
+            localStorage.setItem(window.CHAVE_ARQUIVO_MORTO, JSON.stringify(dados));
+            resolve(true);
+        } catch (e) {
+            console.warn('[ARQUIVO MORTO] Falha ao persistir (provável falta de espaço):', e);
+            resolve(false);
+        }
+    });
+};
 
 // =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
@@ -1850,6 +1888,13 @@ window.SALINHA_BACKUP = {
         };
 
         this.STORAGE_KEYS.forEach(chave => {
+            if (chave === window.CHAVE_ARQUIVO_MORTO) {
+                let dadosArquivoMorto = window.lerArquivoMorto();
+                if (dadosArquivoMorto && Object.keys(dadosArquivoMorto).length > 0) {
+                    payload.data[chave] = JSON.stringify(dadosArquivoMorto);
+                }
+                return;
+            }
             let valor = localStorage.getItem(chave);
             if (valor !== null) {
                 payload.data[chave] = valor;
@@ -1887,7 +1932,7 @@ window.SALINHA_BACKUP = {
         }
     },
 
-    aplicarPayloadMerge: function(jsonString) {
+    aplicarPayloadMerge: async function(jsonString) {
         const importado = JSON.parse(jsonString);
 
         const STORAGE_KEY_ATIVO_LOCAL = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'tjpe_v1__monstrinho_factual_db';
@@ -1906,7 +1951,17 @@ window.SALINHA_BACKUP = {
         let chavesMutadas = 0;
         let entidadesInjetadas = 0;
 
+        // O arquivo morto (cordeiro_auditoria_historica) não passa mais por
+        // localStorage direto — sai do laço genérico abaixo e é tratado à
+        // parte, depois, via lerArquivoMorto()/salvarArquivoMorto().
+        const chaveArquivoMortoImportada = Object.keys(raizImportacao).find(chave => {
+            const semPrefixo = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
+            return chave === window.CHAVE_ARQUIVO_MORTO || semPrefixo === 'cordeiro_auditoria_historica';
+        });
+
         Object.keys(raizImportacao).forEach(chave => {
+            if (chave === chaveArquivoMortoImportada) return;
+
             const valorImportadoBruto = raizImportacao[chave];
             const chaveSemPrefixoMerge = chave.indexOf(NS_PREFIXO_MERGE) === 0 ? chave.slice(NS_PREFIXO_MERGE.length) : chave;
             let chaveDestinoLocal = chave;
@@ -2043,6 +2098,36 @@ window.SALINHA_BACKUP = {
             }
         });
 
+        // ── ARQUIVO MORTO (cordeiro_auditoria_historica) ──
+        // Dicionário examId → snapshot imutável. Mesma semântica da
+        // ESTRATÉGIA B genérica acima (copia o snapshot só se o exame
+        // ainda não existe localmente), só que lendo/gravando via
+        // lerArquivoMorto()/salvarArquivoMorto() em vez de localStorage
+        // direto — senão o merge escreve numa chave morta que o app não
+        // lê mais.
+        if (chaveArquivoMortoImportada !== undefined) {
+            try {
+                const objImportado = JSON.parse(raizImportacao[chaveArquivoMortoImportada]);
+                const objLocal = window.lerArquivoMorto();
+                let mudouArquivoMorto = false;
+
+                Object.keys(objImportado).forEach(examId => {
+                    if (objLocal[examId] === undefined) {
+                        objLocal[examId] = objImportado[examId];
+                        entidadesInjetadas++;
+                        mudouArquivoMorto = true;
+                    }
+                });
+
+                if (mudouArquivoMorto) {
+                    const ok = await window.salvarArquivoMorto(objLocal);
+                    if (ok) chavesMutadas++;
+                }
+            } catch (e) {
+                console.warn('[MERGE] Falha ao mesclar arquivo morto:', e);
+            }
+        }
+
         if (chavesMutadas > 0 && typeof notificarMutacaoAoDashboard === 'function') {
             notificarMutacaoAoDashboard();
         }
@@ -2050,7 +2135,7 @@ window.SALINHA_BACKUP = {
         return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas };
     },
 
-    aplicarPayload: function(jsonString) {
+    aplicarPayload: async function(jsonString) {
         const importado = JSON.parse(jsonString);
 
         // Validação de segurança estrutural contra payloads corrompidos
@@ -2063,8 +2148,17 @@ window.SALINHA_BACKUP = {
             return false;
         }
 
-        // Purga o storage host para evitar colisões de estados remanescentes
-        localStorage.clear();
+        // Purga só o namespace deste app (tjpe_v1__) — o domínio é
+        // compartilhado com outros projetos no GitHub Pages, e um
+        // localStorage.clear() geral apagaria os dados deles também.
+        Object.keys(localStorage)
+            .filter(k => k.indexOf('tjpe_v1__') === 0)
+            .forEach(k => localStorage.removeItem(k));
+
+        // O arquivo morto não é mais gravado direto no localStorage — sai
+        // do laço genérico abaixo e é restaurado à parte, via
+        // salvarArquivoMorto(), depois que o laço terminar.
+        let valorArquivoMortoImportado = null;
 
         // Injeção física direta na camada de storage bruto
         Object.keys(raizImportacao).forEach(chave => {
@@ -2075,8 +2169,19 @@ window.SALINHA_BACKUP = {
                 chaveDestino = STORAGE_KEY_ATIVO;
             }
 
+            if (chaveDestino === window.CHAVE_ARQUIVO_MORTO) {
+                valorArquivoMortoImportado = raizImportacao[chave];
+                return;
+            }
+
             localStorage.setItem(chaveDestino, raizImportacao[chave]);
         });
+
+        try {
+            await window.salvarArquivoMorto(valorArquivoMortoImportado ? JSON.parse(valorArquivoMortoImportado) : {});
+        } catch (e) {
+            console.warn('[RESTORE] Arquivo morto do backup veio corrompido, ignorando:', e);
+        }
 
         if (typeof window.loadFactualDatabase === 'function') {
             window.loadFactualDatabase();
@@ -2098,9 +2203,9 @@ window.SALINHA_BACKUP = {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
-                window.SALINHA_BACKUP.aplicarPayload(e.target.result);
+                await window.SALINHA_BACKUP.aplicarPayload(e.target.result);
             } catch (err) {
                 console.error("Erro crítico no processamento do restore:", err);
                 alert("[ERRO CRÍTICO] O arquivo JSON submetido é inválido, inconsistente ou está corrompido.");
@@ -2315,7 +2420,7 @@ exportarNuvem: async function() {
                 throw new Error('Backup não encontrado dentro do Gist.');
             }
 
-            let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+            let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
             alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas);
             location.reload();
         } catch (err) {
@@ -2371,7 +2476,7 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
             return;
         }
 
-        let resultado = window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+        let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
         if (resultado.chavesMutadas > 0) {
             location.reload();
         }
@@ -2587,7 +2692,7 @@ const mapIncidencia = {
 //
 // =========================================================
 
-    let arquivoMorto = window.cordeiro_auditoria_historica || JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+    let arquivoMorto = window.lerArquivoMorto();
     let concluidas = batLinked.filter(p => arquivoMorto[p.id]).length;
     
     
@@ -2754,7 +2859,7 @@ renderMainPage: function() {
 
     let item = this.DOMAIN_FLAT[this.state.discAtiva].itens[idx];
     let batArray = this.getBateriasVinculadas(item); // SOBERANO: passa item
-    let arquivoMorto = window.cordeiro_auditoria_historica || JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+    let arquivoMorto = window.lerArquivoMorto();
 
 // =========================================================
 // ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
@@ -4500,12 +4605,7 @@ window.buildCardPlaylist = function(p) {
 //
 // =========================================================
     // Releitura longitudinal específica e isolada de playlists
-    var arquivoMorto = {};
-    try {
-        arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
-    } catch (e) {
-        arquivoMorto = {};
-    }
+    var arquivoMorto = window.lerArquivoMorto();
 
     var refs = p.cfg ? p.cfg.referencias : (p.referencias || '');
     var htmlRefs = refs
@@ -4939,8 +5039,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
 //
 // =========================================================
                 // 1. Puxa o índice de provas já finalizadas para fazer a validação visual
-                let arquivoMorto = {};
-                try { arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}'); } catch(e){}
+                let arquivoMorto = window.lerArquivoMorto();
 
                 listCE.innerHTML = filtradas.map(p => {
                     let qtdQ = 0; p.dados.blocos.forEach(b => qtdQ += b.questoes.length);
@@ -5127,7 +5226,7 @@ window.renderizarPlaylists = function() {
 //
 // =========================================================
 
-            let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+            let arquivoMorto = window.lerArquivoMorto();
             let playlists = acervo.filter(p => p.is_playlist || (p.cfg && p.cfg.is_playlist)).reverse();
             
             if(playlists.length === 0) {
@@ -5292,8 +5391,8 @@ window.renderizarSimuladosIneditos = function() {
 // - sessão persistente.
 //
 // =========================================================
-    let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
-    
+    let arquivoMorto = window.lerArquivoMorto();
+
     let htmlSimulados = ineditosFiltrados.map(p => {
         console.log('🧪 CARD GERADO', {
     id: p.id,
@@ -5388,7 +5487,7 @@ window.renderizarProvasAnterioresSidebar = function() {
 
     let exibidas = filtradas.slice(0, 20);
     let avisoExtra = filtradas.length > 20 ? `<div style="text-align:center; font-size:9px; color:var(--text-muted); padding-top:8px;">+ ${filtradas.length - 20} resultados ocultos. Refine a busca.</div>` : '';
-    let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+    let arquivoMorto = window.lerArquivoMorto();
 
     listFiltrada.innerHTML = exibidas.map(p => {
         let m = p.metadados_mc || {};
@@ -8384,9 +8483,9 @@ function finalizarSimulado() {
 // =========================================================
 
                 // 1. Grava a "Fotografia" na Rota do Arquivo Morto
-                let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+                let arquivoMorto = window.lerArquivoMorto();
                 arquivoMorto[s.cfg.id] = { cfg: s.cfg, dados: s.dados, stats: s.stats, data: s.data };
-                localStorage.setItem('tjpe_v1__cordeiro_auditoria_historica', JSON.stringify(arquivoMorto));
+                window.salvarArquivoMorto(arquivoMorto);
 
                 // 2. Extrai os dados para o Planner (ETL)
                 if (typeof sincronizarResultadoComPlanner === 'function') {
@@ -9591,7 +9690,7 @@ window.abrirResultadoHistorico = function(id) {
 // =========================================================
 
     // 2. Busca o exame no Arquivo Morto
-    let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+    let arquivoMorto = window.lerArquivoMorto();
     if (arquivoMorto[id]) {
         let snap = arquivoMorto[id];
         
@@ -9752,7 +9851,7 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
 
 // ---> CLIQUE EM LOTE [INICIAR TUDO / RETOMAR]
             // Filtra os módulos que ainda não estão nas abas e que não constam no arquivo morto (já resolvidos)
-            let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+            let arquivoMorto = window.lerArquivoMorto();
             let modulosParaAbrir = provaAlvo.playlist_sims.filter((sim, idx) => {
                 let idAba = `${simId}_aba_${idx}`;
                 return !SIMS.some(s => s.cfg.id === idAba && !s.stats) && !arquivoMorto[idAba];
@@ -10211,12 +10310,12 @@ window.desmarcarToggleNaOrigem = function(aba, simId, qId) {
 
     // 3. Arquivo morto (baterias já finalizadas)
     try {
-        let arquivoMorto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_auditoria_historica') || '{}');
+        let arquivoMorto = window.lerArquivoMorto();
         if (arquivoMorto[simId] && arquivoMorto[simId].dados && Array.isArray(arquivoMorto[simId].dados[campo])) {
             let i3 = arquivoMorto[simId].dados[campo].indexOf(qId);
             if (i3 >= 0) {
                 arquivoMorto[simId].dados[campo].splice(i3, 1);
-                localStorage.setItem('tjpe_v1__cordeiro_auditoria_historica', JSON.stringify(arquivoMorto));
+                window.salvarArquivoMorto(arquivoMorto);
             }
         }
     } catch(e) {}
