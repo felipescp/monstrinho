@@ -305,8 +305,8 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
 /**
 * 1. STORAGE SOBERANO
 */
-const STORAGE_KEY = 'salinha_longitudinal_runtime';
-const LEGACY_STORAGE_KEY = 'etl_planner_db';
+const STORAGE_KEY = 'tjpe_v1__salinha_longitudinal_runtime';
+const LEGACY_STORAGE_KEY = 'tjpe_v1__etl_planner_db';
 
 const DEFAULT_DB = { historico_provas_anteriores: [], simulados_avulsos: [], cadernos_perenes: {}, caderno_erros: {}, caderno_axiomas: {}, materiais: {}, hues: {} };
 let db = { ...DEFAULT_DB };
@@ -935,7 +935,7 @@ window.abrirBiblioteca = function() {
               if(!Array.isArray(arr)) arr = [arr]; // Garante que seja array
               
               // INTEGRAÇÃO COM A VITRINE: Salva diretamente no Acervo
-              let acervo = JSON.parse(localStorage.getItem('cordeiro_acervo_provas') || '[]');
+              let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
               let map = new Map();
               acervo.forEach(p => map.set(p.id, p));
               
@@ -951,7 +951,7 @@ window.abrirBiblioteca = function() {
               });
 
               if (novos > 0) {
-                  localStorage.setItem('cordeiro_acervo_provas', JSON.stringify(Array.from(map.values())));
+                  localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(Array.from(map.values())));
                   // Sucesso Visual: Mostra que baixou
                   btnBaixar.style.background = 'var(--success)';
                   btnBaixar.textContent = '✓ OK (' + novos + ')';
