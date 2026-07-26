@@ -1410,7 +1410,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </div>
                 </div>
                                 <div class="v-acc-body" style="display:flex; flex-direction:column; flex:1; overflow:hidden; padding:0; border-top: 1px solid var(--border-color); max-height: 80vh;">
-                    <div id="grid-vitrine-3col" class="mob-step-materias" style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); flex:1; overflow:hidden;">
+                    <div id="grid-vitrine-3col" class="mob-step-materias" style="display:grid; grid-template-columns: 0.85fr 0.85fr 1.3fr; flex:1; overflow:hidden;">
                         <!-- Coluna 1: Matérias -->
                         <div id="col-materias" style="overflow-y:auto; border-right:1px solid var(--border-color); background:#f8fafc; padding:10px;"></div>
                         <!-- Coluna 2: Tópicos da matéria selecionada -->
@@ -4303,6 +4303,49 @@ window.fecharKebabMenu = function() {
     if (menu) menu.style.display = 'none';
 };
 
+// Kebab por linha da coluna 3 (Baterias V/F) — reaproveita o MESMO
+// #admin-kebab-menu flutuante e window.fecharKebabMenu() de cima, só com
+// as 3 ações específicas desta lista (compartilhar/exportar/excluir) em
+// vez das ações fixas de window.abrirKebabMenu (editar/baixar/deletar).
+window.abrirKebabBateriaVF = function(event, id, ehOficial) {
+    event.stopPropagation();
+
+    let menu = document.getElementById('admin-kebab-menu');
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = 'admin-kebab-menu';
+        document.body.appendChild(menu);
+    }
+
+    let itemCompartilhar = ehOficial
+        ? `<div class="kebab-item" onclick="window.compartilharBateria('${id}'); window.fecharKebabMenu();"><span>🔗</span> Copiar Link</div>`
+        : '';
+
+    menu.innerHTML = `
+        ${itemCompartilhar}
+        <div class="kebab-item" onclick="window.exportarEntidadeJson('baterias_vf', '${id}'); window.fecharKebabMenu();">
+            <span>📤</span> Exportar JSON
+        </div>
+        <div class="kebab-item danger" onclick="window.excluirSimuladoIndividual('${id}'); window.fecharKebabMenu();">
+            <span>✕</span> Excluir
+        </div>
+    `;
+
+    menu.style.visibility = 'hidden';
+    menu.style.display = 'flex';
+    const menuRect = menu.getBoundingClientRect();
+    menu.style.visibility = 'visible';
+
+    const rect = event.target.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < menuRect.height && rect.top > menuRect.height) {
+        menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+    } else {
+        menu.style.top = (rect.bottom + 4) + 'px';
+    }
+    menu.style.left = (rect.right - menuRect.width) + 'px';
+};
+
 // Listeners de Segurança: Fecha o menu se clicar fora, rolar a tela ou redimensionar
 document.addEventListener('click', window.fecharKebabMenu);
 window.addEventListener('resize', window.fecharKebabMenu);
@@ -5370,27 +5413,17 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         }
                     }
 
-let btnCompartilhar = p.origem_oficial
-    ? `<button class="icon-btn" onclick="window.compartilharBateria('${p.id}'); event.stopPropagation();" title="Copiar link de compartilhamento">🔗</button>`
-    : '';
-
 return `
-<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;" 
-     onmouseover="this.style.background='#f1f5f9'" 
-     onmouseout="this.style.background='transparent'" 
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;"
+     onmouseover="this.style.background='#f1f5f9'"
+     onmouseout="this.style.background='transparent'"
      onclick="${clickAcao}">
-    
+
     <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-        <span style="font-size: 10px; font-weight: 700; color: ${corTitulo}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <span style="font-size: 10px; font-weight: 700; color: ${corTitulo};">
             ${p.nome}
         </span>
-        ${btnCompartilhar}
-        <button class="icon-btn" onclick="window.exportarEntidadeJson('baterias_vf', '${p.id}'); event.stopPropagation();" title="Exportar JSON">📤</button>
-        <button onclick="window.excluirSimuladoIndividual('${p.id}'); event.stopPropagation();" 
-                style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; padding:0 4px; font-size:14px;" 
-                title="Excluir este simulado">
-            ✕
-        </button>
+        <button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>
     </div>
 
     <div style="flex-shrink: 0; margin-left: 10px; display:flex; align-items:center; gap:6px;">
