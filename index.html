@@ -3687,8 +3687,10 @@ window.CRONOGRAMA_RUNTIME = {
         if (!item) return;
 
         item[campo] = !item[campo];
-        if (campo === 'feitas' && !item.feitas) item.resolvidas = false;
-        item.status = item.resolvidas ? 'finalizado' : 'pendente';
+        // Único checkbox da UI agora é "feitas" — ele que decide o status
+        // visual (finalizado/pendente). "resolvidas" fica no schema sem uso
+        // na UI, reservado pro futuro mecanismo de rastreamento via acervo.
+        item.status = item.feitas ? 'finalizado' : 'pendente';
         this.salvar();
         this.render();
     },
@@ -3702,13 +3704,9 @@ window.CRONOGRAMA_RUNTIME = {
             if (codigo < 0x0300 || codigo > 0x036f) prio += prioSemAcento[ch];
         }
         let classePrio = prio === 'CRITICA' ? 'critica' : prio === 'ALTA' ? 'alta' : prio === 'MEDIA' ? 'media' : 'baixa';
-        let checkResolvido = item.feitas
-            ? '<button class="crono-check' + (item.resolvidas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'resolvidas\')" title="Resolvido">' + (item.resolvidas ? '✓' : '') + '</button>'
-            : '';
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '">' +
             '<div class="crono-card-checks">' +
                 '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
-                checkResolvido +
             '</div>' +
             '<div class="crono-card-body">' +
                 '<div class="crono-card-tags">' +
