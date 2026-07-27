@@ -11511,6 +11511,93 @@ function escapeHtmlCaderno(str) {
         .replace(/>/g, '&gt;');
 }
 
+// Range de marcas diacríticas combináveis (U+0300–U+036F) construído via
+// String.fromCharCode em vez de escape \uXXXX direto na regex — evita
+// qualquer ambiguidade de codificação na fonte.
+var REGEX_DIACRITICOS = new RegExp('[' + String.fromCharCode(0x0300) + '-' + String.fromCharCode(0x036f) + ']', 'g');
+
+function slugCaderno(str) {
+    return String(str || '')
+        .normalize('NFD').replace(REGEX_DIACRITICOS, '') // remove acentos
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+// Markdown do Caderno (Erros ou Axiomas) — mesma nesting matéria > tópico >
+// itens já usada em mostrarAbaCaderno. materiaFiltro null/undefined exporta
+// tudo (título "Todas as Matérias" e um "# matéria" por seção); com filtro,
+// exporta só aquela matéria, sem o cabeçalho "# matéria" repetido.
+function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
+    let materias = materiaFiltro ? [materiaFiltro] : Object.keys(dados);
+    let exportandoTudo = !materiaFiltro;
+    let tituloDoc = (aba === 'erros' ? 'Caderno de Erros' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
+
+    let linhas = ['# ' + tituloDoc, ''];
+
+    materias.forEach(function(mat) {
+        let topicos = dados[mat];
+        if (!topicos) return;
+
+        if (exportandoTudo) {
+            linhas.push('# ' + mat);
+            linhas.push('');
+        }
+
+        Object.keys(topicos).forEach(function(top) {
+            linhas.push('## ' + top);
+            linhas.push('');
+
+            topicos[top].forEach(function(item) {
+                linhas.push('**Enunciado:** ' + (item.enunciado || ''));
+                linhas.push('');
+
+                if (aba === 'erros') {
+                    let textoGabarito = item.gabarito === 'V' ? 'VERDADEIRO' : (item.gabarito === 'F' ? 'FALSO' : item.gabarito);
+                    linhas.push('**Gabarito:** ' + textoGabarito);
+                    linhas.push('');
+                    if (item.explicacao) {
+                        linhas.push('**Explicação:** ' + item.explicacao);
+                        linhas.push('');
+                    }
+                } else {
+                    linhas.push('**Axioma:** ' + (item.axioma || ''));
+                    linhas.push('');
+                }
+
+                linhas.push('---');
+                linhas.push('');
+            });
+        });
+    });
+
+    return linhas.join('\n');
+}
+
+window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
+    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
+
+    let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
+
+    if (materiaFiltro) {
+        if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
+            alert('Nenhuma questão salva nesta matéria ainda.');
+            return;
+        }
+    } else if (Object.keys(dados).length === 0) {
+        alert('Caderno vazio — nada para exportar.');
+        return;
+    }
+
+    let md = gerarMarkdownCaderno(aba, dados, materiaFiltro);
+    let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
+    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.md') : (prefixo + '-completo.md');
+
+    downloadArquivo(md, nomeArquivo, 'text/markdown');
+};
+
 window.mostrarAbaCaderno = function(aba) {
     let btnErros = document.getElementById('btn-caderno-erros');
     let btnAxiomas = document.getElementById('btn-caderno-axiomas');
@@ -11538,7 +11625,9 @@ window.mostrarAbaCaderno = function(aba) {
         return;
     }
 
-    let html = '<div style="display:flex; justify-content:flex-end; gap:16px; margin-bottom:14px;">' +
+    let html = '<div style="display:flex; justify-content:flex-end; align-items:center; gap:16px; margin-bottom:14px;">' +
+'<button onclick="window.exportarCadernoMarkdown(\'' + aba + '\')" title="Exportar todas as matérias desta aba em Markdown" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📤 Exportar Tudo</button>' +
+        '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
 '<button onclick="window.alternarTudoCaderno(this)" data-expandido="false" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;">Expandir Tudo ▼</button>' +
         '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
         '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
@@ -11556,6 +11645,7 @@ window.mostrarAbaCaderno = function(aba) {
                 <span style="font-size:12.5px; font-weight:800; color:${corMat}; text-transform:uppercase; letter-spacing:0.02em;">${escapeHtmlCaderno(mat)}</span>
                 <span style="display:flex; align-items:center; gap:9px;">
                     <span style="font-size:10px; font-weight:700; color:var(--text-muted); background:#e2e8f0; padding:2px 8px; border-radius:10px;">${totalMateria}</span>
+                    <button onclick="event.stopPropagation(); window.exportarCadernoMarkdown('${aba}', '${escapeAttrCaderno(mat)}')" title="Exportar esta matéria em Markdown" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">📤</button>
                     <span class="caderno-acc-seta" style="font-size:11px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
                 </span>
             </div>
