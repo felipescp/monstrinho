@@ -4396,6 +4396,17 @@ document.addEventListener('click', function(e) {
                         <option value="__NEW__" style="font-weight: bold; color: var(--app-primary);">➕ Criar Novo...</option>
                     </select>
                 </div>
+                <div style="margin-top:10px;">
+                    <label style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">IA Utilizada</label>
+                    <select id="cfg-ce-ia" style="width:100%; padding:.5rem; border:1px solid var(--border-color); border-radius:4px; font-size:12px; background:var(--bg-white); color:var(--text-main); outline:none;">
+                        <option value="">Selecione...</option>
+                        <option value="Gemini">Gemini</option>
+                        <option value="GPT">GPT</option>
+                        <option value="Claude">Claude</option>
+                        <option value="NotebookLM">NotebookLM</option>
+                        <option value="__NEW__" style="font-weight: bold; color: var(--app-primary);">➕ Criar Novo...</option>
+                    </select>
+                </div>
             </div>
 
 <!-- OPÇÃO B: METADADOS MÚLTIPLA ESCOLHA -->
@@ -6458,6 +6469,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     }
                     let criadaEmTxt = window.formatarDataBR(p.dataCriacao);
                     let estiloTxt = p.estilo || '—';
+                    let iaTxt = p.iaUtilizada || '—';
 
 return `
 <div style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;"
@@ -6482,7 +6494,7 @@ return `
     </div>
 
     <div style="padding: 0 8px 4px 8px; font-size: 9px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
-        Base de Dados: ${estiloTxt} | Criada em: ${criadaEmTxt} | Resolvida em: ${resolvidaEmTxt}
+        Base de Dados: ${estiloTxt} | IA utilizada: ${iaTxt} | Criada em: ${criadaEmTxt} | Resolvida em: ${resolvidaEmTxt}
     </div>
 </div>`;
                 }).join('');
@@ -7278,6 +7290,10 @@ if (C.tipo === 'ce') {
     let elCeEstilo = document.getElementById('cfg-ce-estilo');
     if (elCeEstilo) elCeEstilo.addEventListener('change', gerenciarCriacaoSelect);
 
+    // "IA Utilizada" do tipo CE — mesmo padrão select+__NEW__+prompt().
+    let elCeIa = document.getElementById('cfg-ce-ia');
+    if (elCeIa) elCeIa.addEventListener('change', gerenciarCriacaoSelect);
+
     ['cfg-mc-tipo', 'cfg-mc-ano', 'cfg-mc-carreira', 'cfg-mc-banca', 'cfg-mc-orgao'].forEach(id => {
         let el = document.getElementById(id);
         if (el) {
@@ -7897,6 +7913,7 @@ localStorage.setItem(
     var res = parsear(txt);
     
     let estiloCE = null;
+    let iaUtilizadaCE = null;
     if (res.ok) {
         if (C.tipo === 'ce') {
             let selTax = document.getElementById('cfg-taxonomia');
@@ -7921,6 +7938,10 @@ localStorage.setItem(
             // no mesmo nível de dataCriacao no registro do acervo.
             let selEstilo = document.getElementById('cfg-ce-estilo');
             estiloCE = (selEstilo && selEstilo.value && selEstilo.value !== '__NEW__') ? selEstilo.value : null;
+
+            // "IA Utilizada" — mesmo tratamento de estilo: só tipo CE, raiz do registro.
+            let selIa = document.getElementById('cfg-ce-ia');
+            iaUtilizadaCE = (selIa && selIa.value && selIa.value !== '__NEW__') ? selIa.value : null;
         } else {
             C.id_taxonomia = null;
 C.metadados_mc = {
@@ -7959,6 +7980,7 @@ let isEdicao = window.ID_EDICAO !== null && window.ID_EDICAO !== undefined;
             tipo: C.tipo,
             metadados_mc: C.metadados_mc,
             estilo: estiloCE, // mesmo nível de dataCriacao — só se aplica ao tipo CE
+            iaUtilizada: iaUtilizadaCE, // idem
             dataCriacao: new Date().toISOString(), // Se for edição, vamos preservar a data original abaixo
             cfg: C,
             dados: D
@@ -11006,6 +11028,7 @@ window.editarSimuladoAcervo = function(id) {
         setTimeout(() => {
             if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || '';
             if(g('cfg-ce-estilo')) g('cfg-ce-estilo').value = prova.estilo || '';
+            if(g('cfg-ce-ia')) g('cfg-ce-ia').value = prova.iaUtilizada || '';
             validarFormAdmin();
         }, 50);
         g('paste-area').value = window.reconstruirTextoOriginal(prova);
