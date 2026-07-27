@@ -3974,6 +3974,24 @@ window.CRONOGRAMA_RUNTIME = {
         }
     },
 
+    // Progresso geral de UM cronograma (todas as semanas, todos os dias):
+    // % de itens com feitas === true sobre o total de itens.
+    calcularProgressoPlanner: function(id) {
+        let p = this.planners[id];
+        let total = 0, feitos = 0;
+        if (p && p.planejamento) {
+            Object.keys(p.planejamento).forEach(function(semana) {
+                Object.keys(p.planejamento[semana]).forEach(function(dia) {
+                    (p.planejamento[semana][dia] || []).forEach(function(item) {
+                        total++;
+                        if (item && item.feitas === true) feitos++;
+                    });
+                });
+            });
+        }
+        return { total: total, feitos: feitos, pct: total > 0 ? Math.round(feitos / total * 100) : 0 };
+    },
+
     render: function() {
         let tabsEl = document.getElementById('crono-tabs');
         let contentEl = document.getElementById('crono-content');
@@ -3999,9 +4017,11 @@ window.CRONOGRAMA_RUNTIME = {
         tabsEl.innerHTML = idsOrdenados.map(function(id) {
             let p = self.planners[id];
             let ativo = id === self.activePlannerId;
+            let prog = self.calcularProgressoPlanner(id);
             return '<div class="crono-tab' + (ativo ? ' ativo' : '') + '" style="' + (ativo ? 'border-color:' + p.cor + ';' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.trocarPlanner(\'' + id + '\')">' +
                 '<span style="width:8px; height:8px; border-radius:50%; background:' + p.cor + '; display:inline-block; flex-shrink:0;"></span>' +
                 '<span class="crono-tab-nome" contenteditable="false" spellcheck="false" ondblclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.iniciarEdicaoNome(this)" onblur="this.contentEditable=\'false\'; window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
+                '<span class="tab-pct">' + prog.pct + '% (' + prog.feitos + '/' + prog.total + ')</span>' +
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') +
