@@ -3467,19 +3467,18 @@ window.CRONOGRAMA_RUNTIME = {
 
     init: function() {
         this.carregar();
-        if (Object.keys(this.planners).length === 0) {
-            // Primeiro uso — cria um cronograma padrão automaticamente,
-            // pra não deixar a tela sem nenhuma aba pra clicar.
-            this.criarPlanner('Meu Cronograma', true);
-            return; // criarPlanner já chama render()
-        }
-        if (!this.activePlannerId || !this.planners[this.activePlannerId]) {
+        // Sem criação automática — a única forma de existir um cronograma
+        // é importando um JSON (criarPlanner fica sem uso, ver nota nela).
+        if (Object.keys(this.planners).length > 0 && (!this.activePlannerId || !this.planners[this.activePlannerId])) {
             this.activePlannerId = Object.keys(this.planners)[0];
             this.salvar();
         }
         this.render();
     },
 
+    // Sem uso — o botão "+" que a chamava foi removido (a única forma de
+    // criar cronograma agora é via importação de JSON, processarImportacao()).
+    // Deixada intacta, sem nenhum outro lugar chamando ela.
     criarPlanner: function(nomeForcado, semPrompt) {
         let nome = semPrompt ? nomeForcado : prompt('Nome do novo cronograma:', 'Novo Cronograma');
         if (nome === null) return; // cancelou o prompt
@@ -3925,6 +3924,18 @@ window.CRONOGRAMA_RUNTIME = {
             return new Date(self.planners[a].criadoEm) - new Date(self.planners[b].criadoEm);
         });
 
+        if (idsOrdenados.length === 0) {
+            // Nenhum cronograma existe ainda — sem fita de abas (não há nada
+            // pra mostrar em aba), só o convite pra importar.
+            tabsEl.innerHTML = '';
+            contentEl.innerHTML =
+                '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:60px 20px;">' +
+                    '<div style="margin-bottom:14px;">Nenhum cronograma carregado ainda.</div>' +
+                    '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON">⬆️ Carregar Cronograma</div>' +
+                '</div>';
+            return;
+        }
+
         tabsEl.innerHTML = idsOrdenados.map(function(id) {
             let p = self.planners[id];
             let ativo = id === self.activePlannerId;
@@ -3934,8 +3945,7 @@ window.CRONOGRAMA_RUNTIME = {
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') +
-            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.criarPlanner()" title="Novo cronograma">+</div>' +
-            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Cronograma</div>';
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Novo Cronograma</div>';
 
         let ativo = this.planners[this.activePlannerId];
         if (!ativo) {
