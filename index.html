@@ -3380,16 +3380,21 @@ if(ri) {
     #section-cronograma .crono-day-header { padding:7px 10px; background:#eef2ff; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; gap:4px; }
     #section-cronograma .crono-day-name { font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--text-main); }
     #section-cronograma .crono-day-count { font-family:var(--font-display); font-size:9px; font-weight:600; color:var(--text-muted); background:#e2e8f0; padding:1px 5px; border-radius:99px; flex-shrink:0; }
-    #section-cronograma .crono-day-body { padding:8px; display:flex; flex-direction:column; gap:7px; }
+    #section-cronograma .crono-day-body { padding:8px; display:flex; flex-direction:column; gap:7px; min-height:20px; transition:background 0.15s; }
+    #section-cronograma .crono-day-body.drag-over { background:#eef2ff; border-radius:6px; }
+    #section-cronograma .crono-week-tab.drag-over { background:#eef2ff; box-shadow:0 0 0 2px var(--app-primary) inset; }
 
-    #section-cronograma .crono-card { background:#f8fafc; border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:8px 8px 8px 10px; display:flex; align-items:flex-start; gap:8px; transition:0.2s; }
+    #section-cronograma .crono-card { background:#f8fafc; border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:8px 8px 8px 10px; display:flex; align-items:flex-start; gap:8px; transition:0.2s; cursor:grab; }
     #section-cronograma .crono-card:hover { box-shadow:0 3px 14px rgba(30,58,138,0.12); }
+    #section-cronograma .crono-card.dragging { opacity:0.4; transform:rotate(1deg); }
     #section-cronograma .crono-card.finalizado { border-left-color:#22c55e; background:rgba(34,197,94,0.07); }
     #section-cronograma .crono-card.finalizado .crono-card-topico { text-decoration:line-through; opacity:0.6; }
     #section-cronograma .crono-card-checks { display:flex; flex-direction:column; gap:5px; flex-shrink:0; margin-top:2px; }
     #section-cronograma .crono-check { width:20px; height:20px; border-radius:50%; border:2px solid #93b4e0; background:#e0eaf8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; transition:0.2s; }
     #section-cronograma .crono-check:hover { border-color:var(--app-primary); }
     #section-cronograma .crono-check.checked { background:linear-gradient(135deg, var(--app-primary), #3b82f6); border-color:var(--app-primary); color:#fff; }
+    #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; }
+    #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
     #section-cronograma .crono-card-body { flex:1; min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
     #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; }
@@ -3407,6 +3412,16 @@ if(ri) {
     #section-cronograma .crono-kanban-title { font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--text-main); }
     #section-cronograma .crono-kanban-count { font-family:var(--font-display); font-size:10px; font-weight:600; color:var(--text-muted); background:#f1f5f9; padding:2px 7px; border-radius:99px; margin-left:auto; }
     #section-cronograma .crono-kanban-body { padding:12px; display:flex; flex-direction:column; gap:10px; }
+
+    /* #crono-mover-menu é anexado a document.body (fora de #section-cronograma),
+       por isso as regras abaixo não levam o prefixo da seção. */
+    #crono-mover-menu { position:fixed; display:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; padding:12px; width:180px; }
+    #crono-mover-menu .crono-mover-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); margin-bottom:8px; }
+    #crono-mover-menu .crono-mover-label { display:block; font-size:9px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:2px; }
+    #crono-mover-menu .crono-mover-select { width:100%; padding:5px 6px; margin-bottom:8px; border:1px solid var(--border-color); border-radius:5px; font-size:11px; background:var(--bg-white); color:var(--text-main); }
+    #crono-mover-menu .crono-mover-acoes { display:flex; justify-content:flex-end; gap:6px; margin-top:2px; }
+    #crono-mover-menu .crono-mover-acoes button { font-size:10px; font-weight:700; padding:5px 10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; }
+    #crono-mover-menu .crono-mover-acoes button.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
 </style>
 
     <div class="crono-tabs" id="crono-tabs"></div>
@@ -3424,6 +3439,7 @@ window.CRONOGRAMA_RUNTIME = {
     planners: {},
     activePlannerId: null,
     viewModo: 'dias', // 'dias' | 'kanban' — não persiste, reseta a cada carregamento da tela
+    dragOrigem: null, // { dia, id } do card sendo arrastado — null quando não há arraste em andamento
     STORAGE_KEY: 'tjpe_v1__cronograma_runtime',
     PALETA_CORES: ['#4f46e5', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#db2777'],
     CORES_MATERIA: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#ec4899'],
@@ -3695,7 +3711,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
     },
 
-    renderCard: function(item) {
+    renderCard: function(item, dia) {
         let cor = this.corMateria(item.materia);
         let prioSemAcento = (item.prioridade || '').toUpperCase().normalize('NFD');
         let prio = '';
@@ -3704,9 +3720,10 @@ window.CRONOGRAMA_RUNTIME = {
             if (codigo < 0x0300 || codigo > 0x036f) prio += prioSemAcento[ch];
         }
         let classePrio = prio === 'CRITICA' ? 'critica' : prio === 'ALTA' ? 'alta' : prio === 'MEDIA' ? 'media' : 'baixa';
-        return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '">' +
+        return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
             '<div class="crono-card-checks">' +
                 '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
+                '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
             '</div>' +
             '<div class="crono-card-body">' +
                 '<div class="crono-card-tags">' +
@@ -3732,7 +3749,7 @@ window.CRONOGRAMA_RUNTIME = {
                     '<span class="crono-day-name">' + nomeDia + '</span>' +
                     '<span class="crono-day-count">' + itens.length + '</span>' +
                 '</div>' +
-                '<div class="crono-day-body">' + (itens.length ? itens.map(function(it) { return self.renderCard(it); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">Nenhum item</div>') + '</div>' +
+                '<div class="crono-day-body" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNoDia(event, \'' + dia + '\')">' + (itens.length ? itens.map(function(it) { return self.renderCard(it, dia); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">Nenhum item</div>') + '</div>' +
             '</div>';
         }).join('') + '</div>';
     },
@@ -3741,23 +3758,161 @@ window.CRONOGRAMA_RUNTIME = {
         let self = this;
         let todos = [];
         Object.keys(diasSemana).forEach(function(dia) {
-            diasSemana[dia].forEach(function(it) { todos.push(it); });
+            diasSemana[dia].forEach(function(it) { todos.push({ item: it, dia: dia }); });
         });
-        let pendentes = todos.filter(function(it) { return it.status !== 'finalizado'; });
-        let finalizados = todos.filter(function(it) { return it.status === 'finalizado'; });
+        let pendentes = todos.filter(function(t) { return t.item.status !== 'finalizado'; });
+        let finalizados = todos.filter(function(t) { return t.item.status === 'finalizado'; });
 
-        function coluna(titulo, cor, itens) {
+        function coluna(titulo, cor, lista) {
             return '<div class="crono-kanban-col">' +
                 '<div class="crono-kanban-col-header">' +
                     '<span class="crono-kanban-dot" style="background:' + cor + ';"></span>' +
                     '<span class="crono-kanban-title">' + titulo + '</span>' +
-                    '<span class="crono-kanban-count">' + itens.length + '</span>' +
+                    '<span class="crono-kanban-count">' + lista.length + '</span>' +
                 '</div>' +
-                '<div class="crono-kanban-body">' + (itens.length ? itens.map(function(it) { return self.renderCard(it); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">Vazio</div>') + '</div>' +
+                '<div class="crono-kanban-body">' + (lista.length ? lista.map(function(t) { return self.renderCard(t.item, t.dia); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">Vazio</div>') + '</div>' +
             '</div>';
         }
 
         return '<div class="crono-kanban-board">' + coluna('Pendente', '#94a3b8', pendentes) + coluna('Finalizado', '#22c55e', finalizados) + '</div>';
+    },
+
+    // ── PEDIDO 3: ARRASTAR ENTRE DIAS E SEMANAS + MENU "MOVER PARA..." ──
+
+    // Mutação única e compartilhada — usada tanto pelo drop (dia ou aba de
+    // semana) quanto pelo menu "Mover para..." (evita duplicar a lógica de
+    // remover-do-array-de-origem + inserir-no-de-destino em 3 lugares.
+    moverItem: function(itemId, semanaOrigem, diaOrigem, semanaDestino, diaDestino) {
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return false;
+        if (!ativo.planejamento[semanaOrigem] || !Array.isArray(ativo.planejamento[semanaOrigem][diaOrigem])) return false;
+        if (semanaOrigem === semanaDestino && diaOrigem === diaDestino) return false;
+
+        let arrOrigem = ativo.planejamento[semanaOrigem][diaOrigem];
+        let idx = arrOrigem.findIndex(function(it) { return it.id === itemId; });
+        if (idx === -1) return false;
+
+        let item = arrOrigem.splice(idx, 1)[0];
+
+        if (!ativo.planejamento[semanaDestino]) ativo.planejamento[semanaDestino] = {};
+        if (!Array.isArray(ativo.planejamento[semanaDestino][diaDestino])) ativo.planejamento[semanaDestino][diaDestino] = [];
+
+        item.id = semanaDestino + '_' + diaDestino + '_' + Date.now();
+        ativo.planejamento[semanaDestino][diaDestino].push(item);
+
+        this.salvar();
+        return true;
+    },
+
+    iniciarArraste: function(event, dia, itemId) {
+        this.dragOrigem = { dia: dia, id: itemId };
+        event.currentTarget.classList.add('dragging');
+        event.dataTransfer.effectAllowed = 'move';
+    },
+
+    finalizarArraste: function() {
+        this.dragOrigem = null;
+        document.querySelectorAll('.dragging').forEach(function(el) { el.classList.remove('dragging'); });
+        document.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+    },
+
+    // Solta dentro de uma coluna de dia — sempre dentro da MESMA semana ativa.
+    dropNoDia: function(event, diaDestino) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        if (!this.dragOrigem) return;
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return;
+        let semanaAtiva = this.getSemanaAtiva(ativo);
+        let ok = this.moverItem(this.dragOrigem.id, semanaAtiva, this.dragOrigem.dia, semanaAtiva, diaDestino);
+        this.dragOrigem = null;
+        if (ok) this.render();
+    },
+
+    // Solta sobre a ABA de outra semana — move mantendo o mesmo dia da
+    // semana, e já troca a visão pra lá (pra mostrar onde o card caiu).
+    dropNaAbaSemana: function(event, semanaDestino) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        if (!this.dragOrigem) return;
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return;
+        let semanaAtiva = this.getSemanaAtiva(ativo);
+        let ok = this.moverItem(this.dragOrigem.id, semanaAtiva, this.dragOrigem.dia, semanaDestino, this.dragOrigem.dia);
+        this.dragOrigem = null;
+        if (ok) this.mudarSemana(semanaDestino);
+    },
+
+    // Menu flutuante "Mover para..." — alternativa/complemento ao arraste
+    // (semana + dia num só lugar), reaproveitando o mesmo truque de
+    // posicionamento dinâmico já usado em #admin-kebab-menu.
+    abrirMenuMover: function(event, itemId, diaOrigem) {
+        event.stopPropagation();
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return;
+        let semanaAtiva = this.getSemanaAtiva(ativo);
+
+        let menu = document.getElementById('crono-mover-menu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'crono-mover-menu';
+            document.body.appendChild(menu);
+        }
+
+        let semanasOrdenadas = Object.keys(ativo.planejamento).sort(function(a, b) {
+            return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
+        });
+        let diasNomes = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+        let ordemDias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+
+        menu.innerHTML =
+            '<div class="crono-mover-titulo">Mover tópico para...</div>' +
+            '<label class="crono-mover-label">Semana</label>' +
+            '<select class="crono-mover-select" id="crono-mover-semana">' + semanasOrdenadas.map(function(s) {
+                let numero = s.replace('semana_', '');
+                return '<option value="' + s + '"' + (s === semanaAtiva ? ' selected' : '') + '>Semana ' + numero + '</option>';
+            }).join('') + '</select>' +
+            '<label class="crono-mover-label">Dia</label>' +
+            '<select class="crono-mover-select" id="crono-mover-dia">' + ordemDias.map(function(d) {
+                return '<option value="' + d + '"' + (d === diaOrigem ? ' selected' : '') + '>' + diasNomes[d] + '</option>';
+            }).join('') + '</select>' +
+            '<div class="crono-mover-acoes">' +
+                '<button onclick="window.CRONOGRAMA_RUNTIME.fecharMenuMover()">Cancelar</button>' +
+                '<button class="primario" onclick="window.CRONOGRAMA_RUNTIME.confirmarMover(\'' + itemId + '\',\'' + semanaAtiva + '\',\'' + diaOrigem + '\')">Mover</button>' +
+            '</div>';
+
+        menu.style.visibility = 'hidden';
+        menu.style.display = 'block';
+        let menuRect = menu.getBoundingClientRect();
+        menu.style.visibility = 'visible';
+
+        let rect = event.currentTarget.getBoundingClientRect();
+        let spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < menuRect.height && rect.top > menuRect.height) {
+            menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+        } else {
+            menu.style.top = (rect.bottom + 4) + 'px';
+        }
+        menu.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - menuRect.width - 10)) + 'px';
+    },
+
+    fecharMenuMover: function() {
+        let menu = document.getElementById('crono-mover-menu');
+        if (menu) menu.style.display = 'none';
+    },
+
+    confirmarMover: function(itemId, semanaOrigem, diaOrigem) {
+        let semanaDestino = document.getElementById('crono-mover-semana').value;
+        let diaDestino = document.getElementById('crono-mover-dia').value;
+        this.fecharMenuMover();
+        let ok = this.moverItem(itemId, semanaOrigem, diaOrigem, semanaDestino, diaDestino);
+        if (ok) {
+            if (semanaDestino !== semanaOrigem) {
+                this.mudarSemana(semanaDestino);
+            } else {
+                this.render();
+            }
+        }
     },
 
     render: function() {
@@ -3801,7 +3956,7 @@ window.CRONOGRAMA_RUNTIME = {
 
         let htmlWeekTabs = '<div class="crono-week-tabs">' + semanasOrdenadas.map(function(s) {
             let numero = s.replace('semana_', '');
-            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')">Semana ' + numero + '</div>';
+            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')">Semana ' + numero + '</div>';
         }).join('') + '</div>';
 
         let htmlViewToggle = '<div class="crono-view-toggle">' +
@@ -3817,6 +3972,15 @@ window.CRONOGRAMA_RUNTIME = {
         contentEl.innerHTML = htmlControlsRow + htmlCorpo;
     }
 };
+
+// Fecha o menu "Mover para..." ao clicar fora dele (mesmo padrão de
+// segurança usado pro #admin-kebab-menu) — registrado uma única vez.
+document.addEventListener('click', function(e) {
+    let menu = document.getElementById('crono-mover-menu');
+    if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && !e.target.closest('.crono-mover-btn')) {
+        menu.style.display = 'none';
+    }
+});
 </script>
 </section>
 
