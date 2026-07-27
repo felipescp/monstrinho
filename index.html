@@ -1208,6 +1208,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </div>
     <div class="nav-hd-zone">        
         <div class="nav-item hd-item" id="btn-nav-tjce" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-mapa-tjce'); tela('section-mapa-tjce'); if(window.MAPA_TJCE_RUNTIME) window.MAPA_TJCE_RUNTIME.init();" style="cursor:pointer;" title="Cockpit Edital">📚 PAINEL TJPE</div>
+        <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>        
         <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões Salvas">📓 CADERNO</div>
     </div>
@@ -3348,6 +3349,156 @@ if(ri) {
 </script>
 </section>
 
+<!-- ========================================================= -->
+<!-- SEÇÃO: CRONOGRAMA (Etapa 1 — esqueleto, sem visual de cards) -->
+<!-- ========================================================= -->
+<section id="section-cronograma" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
+<style>
+    #section-cronograma .crono-header { display:flex; align-items:center; padding:16px 24px; background:#fff; border-bottom:1px solid var(--border-color); flex-shrink:0; }
+    #section-cronograma .crono-header h1 { font-family:var(--font-display); font-size:18px; margin:0; color:var(--text-main); }
+    #section-cronograma .crono-tabs { display:flex; align-items:center; gap:4px; padding:10px 24px 0 24px; background:#fff; overflow-x:auto; flex-shrink:0; }
+    #section-cronograma .crono-tab { display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:8px 8px 0 0; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; border:1px solid transparent; border-bottom:none; color:var(--text-muted); margin-bottom:-1px; }
+    #section-cronograma .crono-tab.ativo { background:#f1f5f9; color:var(--text-main); border-color:var(--border-color); }
+    #section-cronograma .crono-tab-nome { outline:none; min-width:20px; }
+    #section-cronograma .crono-tab-nome:focus { text-decoration:underline; }
+    #section-cronograma .crono-tab-del { opacity:0.5; font-size:11px; padding:0 2px; }
+    #section-cronograma .crono-tab-del:hover { opacity:1; color:var(--danger); }
+    #section-cronograma .crono-tab-add { padding:8px 12px; font-size:15px; font-weight:800; color:var(--app-primary); cursor:pointer; border-radius:8px 8px 0 0; }
+    #section-cronograma .crono-tab-add:hover { background:#eef2ff; }
+    #section-cronograma .crono-content { flex:1; overflow-y:auto; padding:40px; display:flex; align-items:center; justify-content:center; }
+</style>
+
+    <div class="crono-header">
+        <h1>🗓️ Cronograma</h1>
+    </div>
+
+    <div class="crono-tabs" id="crono-tabs"></div>
+
+    <div class="crono-content" id="crono-content"></div>
+
+<script>
+// =========================================================================
+// window.CRONOGRAMA_RUNTIME — Etapa 1: esqueleto (múltiplos cronogramas
+// nomeados, CRUD de abas). Etapa 2 (importação por JSON do planejamento) e
+// Etapa 3 (visual de cards) ainda não implementadas — "planejamento" fica
+// {} vazio e o conteúdo é só um placeholder textual.
+// =========================================================================
+window.CRONOGRAMA_RUNTIME = {
+    planners: {},
+    activePlannerId: null,
+    STORAGE_KEY: 'tjpe_v1__cronograma_runtime',
+    PALETA_CORES: ['#4f46e5', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#db2777'],
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.planners = (bruto && typeof bruto.planners === 'object') ? bruto.planners : {};
+        this.activePlannerId = (bruto && bruto.activePlannerId) || null;
+    },
+
+    salvar: function() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId }));
+        } catch (e) {
+            console.warn('[CRONOGRAMA] Falha ao salvar:', e);
+        }
+    },
+
+    corLivre: function() {
+        let usadas = Object.values(this.planners).map(function(p) { return p.cor; });
+        let livre = this.PALETA_CORES.find(function(c) { return usadas.indexOf(c) === -1; });
+        return livre || this.PALETA_CORES[Object.keys(this.planners).length % this.PALETA_CORES.length];
+    },
+
+    init: function() {
+        this.carregar();
+        if (Object.keys(this.planners).length === 0) {
+            // Primeiro uso — cria um cronograma padrão automaticamente,
+            // pra não deixar a tela sem nenhuma aba pra clicar.
+            this.criarPlanner('Meu Cronograma', true);
+            return; // criarPlanner já chama render()
+        }
+        if (!this.activePlannerId || !this.planners[this.activePlannerId]) {
+            this.activePlannerId = Object.keys(this.planners)[0];
+            this.salvar();
+        }
+        this.render();
+    },
+
+    criarPlanner: function(nomeForcado, semPrompt) {
+        let nome = semPrompt ? nomeForcado : prompt('Nome do novo cronograma:', 'Novo Cronograma');
+        if (nome === null) return; // cancelou o prompt
+        nome = nome.trim() || 'Cronograma';
+
+        let id = 'crono_' + Date.now();
+        this.planners[id] = { id: id, nome: nome, cor: this.corLivre(), planejamento: {}, criadoEm: new Date().toISOString() };
+        this.activePlannerId = id;
+        this.salvar();
+        this.render();
+    },
+
+    trocarPlanner: function(id) {
+        if (!this.planners[id]) return;
+        this.activePlannerId = id;
+        this.salvar();
+        this.render();
+    },
+
+    renomearPlanner: function(id, novoNome) {
+        if (!this.planners[id]) return;
+        novoNome = (novoNome || '').trim();
+        if (!novoNome) novoNome = this.planners[id].nome; // não deixa vazio
+        this.planners[id].nome = novoNome;
+        this.salvar();
+        this.render();
+    },
+
+    excluirPlanner: function(id) {
+        if (!this.planners[id]) return;
+        if (Object.keys(this.planners).length <= 1) {
+            alert('Não é possível excluir o último cronograma restante.');
+            return;
+        }
+        if (!confirm('Excluir o cronograma "' + this.planners[id].nome + '" permanentemente?')) return;
+
+        delete this.planners[id];
+        if (this.activePlannerId === id) {
+            this.activePlannerId = Object.keys(this.planners)[0];
+        }
+        this.salvar();
+        this.render();
+    },
+
+    render: function() {
+        let tabsEl = document.getElementById('crono-tabs');
+        let contentEl = document.getElementById('crono-content');
+        if (!tabsEl || !contentEl) return;
+
+        let self = this;
+        let idsOrdenados = Object.keys(this.planners).sort(function(a, b) {
+            return new Date(self.planners[a].criadoEm) - new Date(self.planners[b].criadoEm);
+        });
+
+        tabsEl.innerHTML = idsOrdenados.map(function(id) {
+            let p = self.planners[id];
+            let ativo = id === self.activePlannerId;
+            return '<div class="crono-tab' + (ativo ? ' ativo' : '') + '" style="' + (ativo ? 'border-color:' + p.cor + ';' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.trocarPlanner(\'' + id + '\')">' +
+                '<span style="width:8px; height:8px; border-radius:50%; background:' + p.cor + '; display:inline-block; flex-shrink:0;"></span>' +
+                '<span class="crono-tab-nome" contenteditable="true" spellcheck="false" onclick="event.stopPropagation()" onblur="window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
+                '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
+            '</div>';
+        }).join('') + '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.criarPlanner()" title="Novo cronograma">+</div>';
+
+        let ativo = this.planners[this.activePlannerId];
+        let qtdSemanas = ativo ? Object.keys(ativo.planejamento).length : 0;
+        contentEl.innerHTML = ativo
+            ? '<div style="text-align:center; color:var(--text-muted); font-size:13px;">Cronograma: <strong>' + ativo.nome + '</strong> — ' + qtdSemanas + ' semanas carregadas (importação por JSON vem na próxima etapa)</div>'
+            : '<div style="text-align:center; color:var(--text-muted); font-size:13px;">Nenhum cronograma selecionado.</div>';
+    }
+};
+</script>
+</section>
+
 <!-- TELA 2: BACKOFFICE DO ADMIN (AGORA UM MODAL) -->
 <div id="tela-admin" class="mo" style="z-index: 4000;">
     <div class="mdl" style="max-width: 800px; width: 95%; max-height: 90vh; padding: 25px; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--border-color); align-items: center;">
@@ -4911,7 +5062,7 @@ if (id === 'tela-home') {
 }
 
 if (target) {
-    if (id === 'tela-simulado' || id === 'section-mapa-tjce') {
+    if (id === 'tela-simulado' || id === 'section-mapa-tjce' || id === 'section-cronograma') {
         target.style.display = 'flex';
     } else {
         target.style.display = 'block';
