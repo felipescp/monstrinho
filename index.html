@@ -2025,7 +2025,10 @@ window.SALINHA_BACKUP = {
         'tjpe_v1__tjce_factual_l3_checks',
         'tjpe_v1__tjce_user_links',
         'tjpe_v1__tjce_card_links',
-        'tjpe_v1__tjce_card_materials'
+        'tjpe_v1__tjce_card_materials',
+
+        // CRONOGRAMA
+        'tjpe_v1__cronograma_runtime'
     ],
 
     construirPayload: async function() {
@@ -2225,6 +2228,32 @@ window.SALINHA_BACKUP = {
                                     }
                                 });
                             });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: CRONOGRAMA (cronograma_runtime.planners) ──
+                    // planners é um dicionário {id → cronograma}, não um array —
+                    // a ESTRATÉGIA B genérica só copia a sub-chave inteira se
+                    // objLocal.planners nunca existiu, o que quase nunca é
+                    // verdade (mesmo vazio, já existe {}) — descartaria em
+                    // silêncio os cronogramas importados. Mescla por id de
+                    // planner (união): cronogramas com id novo entram, os que
+                    // já existem localmente com o mesmo id são preservados
+                    // (não sobrescreve), igual ao padrão de arquivo morto.
+                    if (chaveSemPrefixoMerge === 'cronograma_runtime' && subChave === 'planners' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(plannerId => {
+                            if (objLocal[subChave][plannerId] === undefined) {
+                                objLocal[subChave][plannerId] = objImportado[subChave][plannerId];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
                         });
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
