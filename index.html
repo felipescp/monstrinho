@@ -2345,11 +2345,24 @@ window.SALINHA_BACKUP = {
                     objImportado.sims.forEach(simImportado => {
                         if (!simImportado || !simImportado.cfg || !simImportado.cfg.id) return;
                         let idImportado = simImportado.cfg.id;
-                        let jaExiste = objLocal.sims.some(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
-                        if (!jaExiste) {
+                        let simLocalExistente = objLocal.sims.find(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
+                        if (!simLocalExistente) {
                             objLocal.sims.push(simImportado);
                             entidadesInjetadas++;
                             mudouSessaoAtiva = true;
+                        } else {
+                            // Mesma aba dos dois lados: só substitui se a nuvem
+                            // tiver estritamente mais respostas que a local —
+                            // senão um F5 no computador "atrasado" sobrescreveria
+                            // progresso mais avançado feito em outro computador.
+                            let respostasLocais = Object.keys((simLocalExistente.dados && simLocalExistente.dados.res) || {}).length;
+                            let respostasNuvem = Object.keys((simImportado.dados && simImportado.dados.res) || {}).length;
+                            if (respostasNuvem > respostasLocais) {
+                                let indice = objLocal.sims.indexOf(simLocalExistente);
+                                objLocal.sims[indice] = simImportado;
+                                entidadesInjetadas++;
+                                mudouSessaoAtiva = true;
+                            }
                         }
                     });
 
