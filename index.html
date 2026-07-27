@@ -6397,6 +6397,21 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                 // 1. Puxa o índice de provas já finalizadas para fazer a validação visual
                 let arquivoMorto = window.lerArquivoMorto();
 
+                // 1b. Fallback de "Resolvida em" pra baterias finalizadas ANTES de
+                // finalizadaEm existir — sincronizarResultadoComPlanner já grava
+                // data (formato DD/MM/AAAA) em simulados_avulsos[] há muito mais
+                // tempo, casado pelo id original da bateria (id_original).
+                let mapaDataResolucaoPlanner = {};
+                try {
+                    let dbStrVitrine = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+                    let dbPlannerVitrine = JSON.parse(dbStrVitrine);
+                    (dbPlannerVitrine.simulados_avulsos || []).forEach(function(sim) {
+                        if (sim && sim.id_original && sim.data && !mapaDataResolucaoPlanner[sim.id_original]) {
+                            mapaDataResolucaoPlanner[sim.id_original] = sim.data;
+                        }
+                    });
+                } catch (e) {}
+
                 listCE.innerHTML = filtradas.map(p => {
                     let qtdQ = 0; p.dados.blocos.forEach(b => qtdQ += b.questoes.length);
                     
@@ -6431,7 +6446,16 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     }
 
                     // 4. Linha 2 — Estilo / Criada em / Resolvida em ("—" quando ausente)
-                    let resolvidaEmTxt = window.formatarDataBR(isResolvido ? arquivoMorto[p.id].finalizadaEm : null);
+                    // Ordem de prioridade: finalizadaEm (novo, exato) -> data do
+                    // Planner via simulados_avulsos (antigo, mas sempre existiu) -> "—".
+                    let resolvidaEmTxt = '—';
+                    if (isResolvido) {
+                        if (arquivoMorto[p.id].finalizadaEm) {
+                            resolvidaEmTxt = window.formatarDataBR(arquivoMorto[p.id].finalizadaEm);
+                        } else if (mapaDataResolucaoPlanner[p.id]) {
+                            resolvidaEmTxt = window.encurtarAnoDataBR(mapaDataResolucaoPlanner[p.id]);
+                        }
+                    }
                     let criadaEmTxt = window.formatarDataBR(p.dataCriacao);
                     let estiloTxt = p.estilo || '—';
 
@@ -11577,6 +11601,18 @@ window.formatarDataBR = function(isoString) {
     let mm = String(d.getMonth() + 1).padStart(2, '0');
     let aa = String(d.getFullYear()).slice(-2);
     return dd + '/' + mm + '/' + aa;
+};
+
+// Encurta "DD/MM/AAAA" (formato de simulados_avulsos[].data, gerado via
+// toLocaleDateString('pt-BR')) para "DD/MM/AA". NÃO usa new Date() aqui de
+// propósito — new Date("DD/MM/AAAA") é ambíguo/mal interpretado pelo motor
+// JS (que por padrão assume MM/DD para strings com "/"), então tratamos
+// como texto puro em vez de arriscar reparsear uma data que já está certa.
+window.encurtarAnoDataBR = function(dataBrLonga) {
+    if (!dataBrLonga || typeof dataBrLonga !== 'string') return '—';
+    let partes = dataBrLonga.split('/');
+    if (partes.length !== 3) return dataBrLonga;
+    return partes[0] + '/' + partes[1] + '/' + partes[2].slice(-2);
 };
 
 // Markdown do Caderno (Erros ou Axiomas) — mesma nesting matéria > tópico >
