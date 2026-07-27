@@ -3354,8 +3354,6 @@ if(ri) {
 <!-- ========================================================= -->
 <section id="section-cronograma" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
 <style>
-    #section-cronograma .crono-header { display:flex; align-items:center; padding:16px 24px; background:#fff; border-bottom:1px solid var(--border-color); flex-shrink:0; }
-    #section-cronograma .crono-header h1 { font-family:var(--font-display); font-size:18px; margin:0; color:var(--text-main); }
     #section-cronograma .crono-tabs { display:flex; align-items:center; gap:4px; padding:10px 24px 0 24px; background:#fff; overflow-x:auto; flex-shrink:0; }
     #section-cronograma .crono-tab { display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:8px 8px 0 0; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; border:1px solid transparent; border-bottom:none; color:var(--text-muted); margin-bottom:-1px; }
     #section-cronograma .crono-tab.ativo { background:#f1f5f9; color:var(--text-main); border-color:var(--border-color); }
@@ -3367,10 +3365,6 @@ if(ri) {
     #section-cronograma .crono-tab-add:hover { background:#eef2ff; }
     #section-cronograma .crono-content { flex:1; overflow-y:auto; padding:40px; display:flex; align-items:center; justify-content:center; }
 </style>
-
-    <div class="crono-header">
-        <h1>🗓️ Cronograma</h1>
-    </div>
 
     <div class="crono-tabs" id="crono-tabs"></div>
 
@@ -3482,6 +3476,108 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
     },
 
+    // ── ETAPA 2: IMPORTAÇÃO POR JSON ──
+    // Aciona um <input type="file"> oculto (criado sob demanda, reaproveitado
+    // nas próximas chamadas), lê o arquivo escolhido e repassa pra validação.
+    carregarCronogramaJSON: function() {
+        let input = document.getElementById('crono-import-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.id = 'crono-import-input';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.addEventListener('change', function(e) {
+                let file = e.target.files[0];
+                if (!file) return;
+                let reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        let bruto = JSON.parse(ev.target.result);
+                        window.CRONOGRAMA_RUNTIME.processarImportacao(bruto);
+                    } catch (err) {
+                        alert('Não foi possível ler o arquivo: ' + err.message);
+                    } finally {
+                        e.target.value = '';
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+        input.click();
+    },
+
+    // Valida o formato esperado ({ "semana_1": { "segunda": [...], ... }, ... }),
+    // expande cada item pro formato de runtime (id único + campos de
+    // progresso zerados) e cria um cronograma NOVO com o resultado — nunca
+    // sobrescreve um cronograma existente.
+    processarImportacao: function(bruto) {
+        if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) {
+            alert('Formato inválido. Esperado um objeto com chaves "semana_1", "semana_2" etc., cada uma contendo os dias da semana como listas de itens.');
+            return;
+        }
+
+        let chavesSemana = Object.keys(bruto);
+        if (chavesSemana.length === 0 || !chavesSemana.every(function(k) { return /^semana_\d+$/.test(k); })) {
+            alert('Formato inválido. Esperado um objeto com chaves no formato "semana_1", "semana_2" etc.');
+            return;
+        }
+
+        for (let i = 0; i < chavesSemana.length; i++) {
+            let semana = chavesSemana[i];
+            let dias = bruto[semana];
+            if (!dias || typeof dias !== 'object' || Array.isArray(dias)) {
+                alert('Formato inválido em "' + semana + '": esperado um objeto com os dias da semana.');
+                return;
+            }
+            let nomesDias = Object.keys(dias);
+            for (let j = 0; j < nomesDias.length; j++) {
+                if (!Array.isArray(dias[nomesDias[j]])) {
+                    alert('Formato inválido em "' + semana + '.' + nomesDias[j] + '": esperado uma lista (array) de itens.');
+                    return;
+                }
+            }
+        }
+
+        let nome = prompt('Nome do novo cronograma:', 'Cronograma Importado');
+        if (nome === null) return; // cancelou o prompt
+        nome = nome.trim() || 'Cronograma Importado';
+
+        let planejamento = {};
+        let totalItens = 0;
+        chavesSemana.forEach(function(semana) {
+            planejamento[semana] = {};
+            Object.keys(bruto[semana]).forEach(function(dia) {
+                planejamento[semana][dia] = bruto[semana][dia].map(function(item, indice) {
+                    totalItens++;
+                    return {
+                        id: semana + '_' + dia + '_' + indice,
+                        materia: item.materia || '',
+                        topico: item.topico || '',
+                        prioridade: item.prioridade || '',
+                        justificativa: item.justificativa || '',
+                        status: 'pendente',
+                        feitas: false,
+                        resolvidas: false,
+                        link: '',
+                        link2: '',
+                        axiomasText: '',
+                        resolucao: ''
+                    };
+                });
+            });
+        });
+
+        let id = 'crono_' + Date.now();
+        this.planners[id] = { id: id, nome: nome, cor: this.corLivre(), planejamento: planejamento, criadoEm: new Date().toISOString() };
+        this.activePlannerId = id;
+        this.salvar();
+        this.render();
+
+        alert('Cronograma "' + nome + '" importado: ' + chavesSemana.length + ' semana(s), ' + totalItens + ' item(ns).');
+    },
+
     render: function() {
         let tabsEl = document.getElementById('crono-tabs');
         let contentEl = document.getElementById('crono-content');
@@ -3500,12 +3596,22 @@ window.CRONOGRAMA_RUNTIME = {
                 '<span class="crono-tab-nome" contenteditable="false" spellcheck="false" ondblclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.iniciarEdicaoNome(this)" onblur="this.contentEditable=\'false\'; window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
-        }).join('') + '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.criarPlanner()" title="Novo cronograma">+</div>';
+        }).join('') +
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.criarPlanner()" title="Novo cronograma">+</div>' +
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Cronograma</div>';
 
         let ativo = this.planners[this.activePlannerId];
-        let qtdSemanas = ativo ? Object.keys(ativo.planejamento).length : 0;
+        let qtdSemanas = 0, qtdItens = 0;
+        if (ativo) {
+            qtdSemanas = Object.keys(ativo.planejamento).length;
+            Object.keys(ativo.planejamento).forEach(function(semana) {
+                Object.keys(ativo.planejamento[semana]).forEach(function(dia) {
+                    qtdItens += ativo.planejamento[semana][dia].length;
+                });
+            });
+        }
         contentEl.innerHTML = ativo
-            ? '<div style="text-align:center; color:var(--text-muted); font-size:13px;">Cronograma: <strong>' + ativo.nome + '</strong> — ' + qtdSemanas + ' semanas carregadas (importação por JSON vem na próxima etapa)</div>'
+            ? '<div style="text-align:center; color:var(--text-muted); font-size:13px;">Cronograma: <strong>' + ativo.nome + '</strong> — ' + qtdSemanas + ' semana(s), ' + qtdItens + ' item(ns) carregados (visual em cards vem na próxima etapa)</div>'
             : '<div style="text-align:center; color:var(--text-muted); font-size:13px;">Nenhum cronograma selecionado.</div>';
     }
 };
