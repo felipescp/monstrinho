@@ -3437,6 +3437,8 @@ if(ri) {
     #section-cronograma .crono-check.checked { background:linear-gradient(135deg, var(--app-primary), #3b82f6); border-color:var(--app-primary); color:#fff; }
     #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
     #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
+    #section-cronograma .crono-simulados-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
+    #section-cronograma .crono-simulados-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
     #section-cronograma .crono-card-body { min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
     #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; max-width:100%; word-break:break-word; }
@@ -3464,6 +3466,23 @@ if(ri) {
     #crono-mover-menu .crono-mover-acoes { display:flex; justify-content:flex-end; gap:6px; margin-top:2px; }
     #crono-mover-menu .crono-mover-acoes button { font-size:10px; font-weight:700; padding:5px 10px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; }
     #crono-mover-menu .crono-mover-acoes button.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+
+    /* #crono-simulados-menu — mesmo tratamento de #crono-mover-menu (anexado
+       a document.body), mas com corpo em coluna porque a lista de baterias
+       tem tamanho variável e precisa de scroll próprio sem empurrar o
+       título/botão "+ Incluir" pra fora da viewport. */
+    #crono-simulados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:280px; max-height:70vh; overflow:hidden; }
+    #crono-simulados-menu .crono-sim-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); padding:12px 12px 8px 12px; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-secao-label { font-size:9px; font-weight:700; text-transform:uppercase; color:var(--text-muted); padding:8px 12px 4px 12px; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-lista { overflow-y:auto; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-item { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 12px; font-size:11px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #crono-simulados-menu .crono-sim-item:hover { background:#f8fafc; }
+    #crono-simulados-menu .crono-sim-item-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main); font-weight:600; cursor:pointer; }
+    #crono-simulados-menu .crono-sim-item-remover { flex-shrink:0; border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:2px 4px; }
+    #crono-simulados-menu .crono-sim-item-remover:hover { color:var(--danger); }
+    #crono-simulados-menu .crono-sim-vazio { padding:6px 12px 10px 12px; font-size:10px; color:var(--text-muted); font-style:italic; }
+    #crono-simulados-menu .crono-sim-add-btn { margin:8px 12px 12px 12px; padding:7px; border-radius:6px; border:1px dashed var(--app-primary); background:none; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-add-btn:hover { background:#eef2ff; }
 </style>
 
     <div class="crono-tabs" id="crono-tabs"></div>
@@ -3679,6 +3698,7 @@ window.CRONOGRAMA_RUNTIME = {
                         justificativa: item.justificativa || '',
                         id_taxonomia: item.id_taxonomia,
                         metodo: item.metodo,
+                        simuladosVinculados: item.simuladosVinculados,
                         status: 'pendente',
                         feitas: false,
                         resolvidas: false,
@@ -3791,6 +3811,7 @@ window.CRONOGRAMA_RUNTIME = {
                 '<div class="crono-card-justif">' + (item.justificativa || '') + '</div>' +
             '</div>' +
             '<div class="crono-card-footer">' +
+                '<button class="crono-simulados-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirPainelSimulados(event, \'' + item.id + '\')" title="Simulados relacionados">🎯</button>' +
                 '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
                 '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
             '</div>' +
@@ -3962,6 +3983,199 @@ window.CRONOGRAMA_RUNTIME = {
         if (menu) menu.style.display = 'none';
     },
 
+    // Acha o item (em qualquer dia/semana do cronograma ativo) pelo id —
+    // mesma varredura de toggleCheck, fatorada aqui pra reaproveitar no
+    // painel "🎯 Simulados Relacionados" e no modal de inclusão manual.
+    _localizarItem: function(itemId) {
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return null;
+        let encontrado = null;
+        Object.keys(ativo.planejamento).forEach(function(semana) {
+            Object.keys(ativo.planejamento[semana]).forEach(function(dia) {
+                ativo.planejamento[semana][dia].forEach(function(it) {
+                    if (it.id === itemId) encontrado = it;
+                });
+            });
+        });
+        return encontrado;
+    },
+
+    // Baterias do catálogo cujo id_taxonomia bate com o do card — calculado
+    // na hora a cada abertura do painel, nunca persistido (diferente da
+    // lista manual, que fica salva em item.simuladosVinculados).
+    _matchAutomaticoSimulados: function(item) {
+        if (!item || !item.id_taxonomia) return [];
+        let acervo = [];
+        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        return acervo.filter(function(p) {
+            let tax = p && (p.id_taxonomia || (p.cfg && p.cfg.id_taxonomia));
+            return tax === item.id_taxonomia;
+        });
+    },
+
+    // Painel flutuante "🎯" — correspondência automática (por id_taxonomia)
+    // + inclusões manuais (simuladosVinculados) + atalho pro catálogo
+    // inteiro. Mesmo truque de posicionamento do #crono-mover-menu.
+    abrirPainelSimulados: function(event, itemId) {
+        event.stopPropagation();
+        let menu = document.getElementById('crono-simulados-menu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'crono-simulados-menu';
+            document.body.appendChild(menu);
+        }
+        menu.innerHTML = this._renderConteudoPainelSimulados(itemId);
+
+        menu.style.visibility = 'hidden';
+        menu.style.display = 'flex';
+        let menuRect = menu.getBoundingClientRect();
+        menu.style.visibility = 'visible';
+
+        let rect = event.currentTarget.getBoundingClientRect();
+        let spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < menuRect.height && rect.top > menuRect.height) {
+            menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+        } else {
+            menu.style.top = (rect.bottom + 4) + 'px';
+        }
+        menu.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - menuRect.width - 10)) + 'px';
+    },
+
+    fecharPainelSimulados: function() {
+        let menu = document.getElementById('crono-simulados-menu');
+        if (menu) menu.style.display = 'none';
+    },
+
+    // Gera só o HTML interno do painel — reaproveitado tanto na abertura
+    // quanto na atualização in-place após remover um vínculo manual (sem
+    // reposicionar o menu, só trocar o conteúdo).
+    _renderConteudoPainelSimulados: function(itemId) {
+        let item = this._localizarItem(itemId);
+        if (!item) return '<div class="crono-sim-vazio">Item não encontrado.</div>';
+
+        let automaticos = this._matchAutomaticoSimulados(item);
+        let idsAutomaticos = automaticos.map(function(p) { return p.id; });
+
+        let manuaisIds = Array.isArray(item.simuladosVinculados) ? item.simuladosVinculados : [];
+        let acervo = [];
+        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        // Baterias incluídas manualmente que já aparecem na correspondência
+        // automática ficam de fora daqui — a inclusão em si continua salva
+        // em simuladosVinculados, só a exibição duplicada é que é filtrada.
+        let manuais = manuaisIds
+            .filter(function(id) { return idsAutomaticos.indexOf(id) === -1; })
+            .map(function(id) { return acervo.find(function(p) { return p.id === id; }); })
+            .filter(Boolean);
+
+        let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
+
+        let linhaAuto = function(p) {
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelSimulados(); window.iniciarSimuladoDaVitrine(\'' + p.id + '\');" title="' + escaparAspas(p.nome) + '">' +
+                '<span class="crono-sim-item-nome">' + (p.nome || '(sem nome)') + '</span>' +
+            '</div>';
+        };
+
+        let linhaManual = function(p) {
+            return '<div class="crono-sim-item">' +
+                '<span class="crono-sim-item-nome" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelSimulados(); window.iniciarSimuladoDaVitrine(\'' + p.id + '\');" title="' + escaparAspas(p.nome) + '">' + (p.nome || '(sem nome)') + '</span>' +
+                '<button class="crono-sim-item-remover" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.removerSimuladoVinculado(\'' + itemId + '\', \'' + p.id + '\');" title="Remover vínculo">✕</button>' +
+            '</div>';
+        };
+
+        return (
+            '<div class="crono-sim-titulo">🎯 Simulados Relacionados</div>' +
+            '<div class="crono-sim-secao-label">Correspondência automática</div>' +
+            '<div class="crono-sim-lista" style="max-height:120px;">' +
+                (automaticos.length ? automaticos.map(linhaAuto).join('') : '<div class="crono-sim-vazio">' + (item.id_taxonomia ? 'Nenhuma bateria com essa taxonomia no catálogo.' : 'Card sem taxonomia — sem correspondência automática.') + '</div>') +
+            '</div>' +
+            '<div class="crono-sim-secao-label">📌 Incluídos manualmente</div>' +
+            '<div class="crono-sim-lista" style="max-height:120px;">' +
+                (manuais.length ? manuais.map(linhaManual).join('') : '<div class="crono-sim-vazio">Nenhum simulado incluído manualmente ainda.</div>') +
+            '</div>' +
+            '<button class="crono-sim-add-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirModalIncluirSimulado(\'' + itemId + '\')">+ Incluir Simulado</button>'
+        );
+    },
+
+    removerSimuladoVinculado: function(itemId, bateriaId) {
+        let item = this._localizarItem(itemId);
+        if (!item || !Array.isArray(item.simuladosVinculados)) return;
+        let idx = item.simuladosVinculados.indexOf(bateriaId);
+        if (idx === -1) return;
+        item.simuladosVinculados.splice(idx, 1);
+        this.salvar();
+        let menu = document.getElementById('crono-simulados-menu');
+        if (menu) menu.innerHTML = this._renderConteudoPainelSimulados(itemId);
+    },
+
+    // Modal cheio (padrão .mo/.mdl, igual #tela-admin) pra buscar e incluir
+    // manualmente qualquer bateria do catálogo — a lista pode ser grande,
+    // por isso não usa o painel flutuante, que só comporta 2-3 linhas sem
+    // scroll dedicado.
+    abrirModalIncluirSimulado: function(itemId) {
+        this.fecharPainelSimulados();
+        this._itemAlvoInclusao = itemId;
+        let busca = document.getElementById('crono-inc-busca');
+        if (busca) busca.value = '';
+        this.filtrarModalIncluirSimulado('');
+        document.getElementById('modal-incluir-simulado').classList.add('open');
+        if (busca) setTimeout(function() { busca.focus(); }, 50);
+    },
+
+    fecharModalIncluirSimulado: function() {
+        document.getElementById('modal-incluir-simulado').classList.remove('open');
+        this._itemAlvoInclusao = null;
+    },
+
+    filtrarModalIncluirSimulado: function(termo) {
+        let item = this._localizarItem(this._itemAlvoInclusao);
+        let vinculados = (item && Array.isArray(item.simuladosVinculados)) ? item.simuladosVinculados : [];
+
+        let acervo = [];
+        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+
+        let termoNorm = (termo || '').trim().toLowerCase();
+        let filtrados = acervo.filter(function(p) {
+            if (!p || p.is_playlist === true) return false;
+            if (!termoNorm) return true;
+            let alvo = ((p.nome || '') + ' ' + (p.materia || '') + ' ' + (p.caminho_completo || '')).toLowerCase();
+            return alvo.indexOf(termoNorm) !== -1;
+        });
+
+        let lista = document.getElementById('crono-inc-lista');
+        if (!lista) return;
+
+        if (filtrados.length === 0) {
+            lista.innerHTML = '<div style="padding:14px; font-size:11px; color:var(--text-muted); text-align:center;">Nenhuma bateria encontrada.</div>';
+            return;
+        }
+
+        lista.innerHTML = filtrados.map(function(p) {
+            let incluido = vinculados.indexOf(p.id) !== -1;
+            return '<div onclick="window.CRONOGRAMA_RUNTIME.alternarSimuladoVinculado(\'' + p.id + '\')" style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px; border-bottom:1px solid #f1f5f9; cursor:pointer; background:' + (incluido ? '#eef2ff' : 'transparent') + ';">' +
+                '<div style="min-width:0;">' +
+                    '<div style="font-size:11px; font-weight:700; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (p.nome || '(sem nome)') + '</div>' +
+                    '<div style="font-size:9px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (p.caminho_completo || p.materia || '') + '</div>' +
+                '</div>' +
+                '<span style="flex-shrink:0; font-size:14px; color:' + (incluido ? 'var(--app-primary)' : 'var(--border-color)') + ';">' + (incluido ? '✓' : '+') + '</span>' +
+            '</div>';
+        }).join('');
+    },
+
+    alternarSimuladoVinculado: function(bateriaId) {
+        let item = this._localizarItem(this._itemAlvoInclusao);
+        if (!item) return;
+        if (!Array.isArray(item.simuladosVinculados)) item.simuladosVinculados = [];
+        let idx = item.simuladosVinculados.indexOf(bateriaId);
+        if (idx === -1) {
+            item.simuladosVinculados.push(bateriaId);
+        } else {
+            item.simuladosVinculados.splice(idx, 1);
+        }
+        this.salvar();
+        let busca = document.getElementById('crono-inc-busca');
+        this.filtrarModalIncluirSimulado(busca ? busca.value : '');
+    },
+
     confirmarMover: function(itemId, semanaOrigem, diaOrigem) {
         let semanaDestino = document.getElementById('crono-mover-semana').value;
         let diaDestino = document.getElementById('crono-mover-dia').value;
@@ -4065,16 +4279,36 @@ window.CRONOGRAMA_RUNTIME = {
     }
 };
 
-// Fecha o menu "Mover para..." ao clicar fora dele (mesmo padrão de
-// segurança usado pro #admin-kebab-menu) — registrado uma única vez.
+// Fecha os menus flutuantes ("Mover para..." e "🎯 Simulados
+// Relacionados") ao clicar fora deles (mesmo padrão de segurança usado
+// pro #admin-kebab-menu) — registrado uma única vez.
 document.addEventListener('click', function(e) {
     let menu = document.getElementById('crono-mover-menu');
     if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && !e.target.closest('.crono-mover-btn')) {
         menu.style.display = 'none';
     }
+    let menuSim = document.getElementById('crono-simulados-menu');
+    if (menuSim && menuSim.style.display !== 'none' && !menuSim.contains(e.target) && !e.target.closest('.crono-simulados-btn')) {
+        menuSim.style.display = 'none';
+    }
 });
 </script>
 </section>
+
+<!-- MODAL: Incluir Simulado manualmente num card do Cronograma (via 🎯) —
+     catálogo inteiro pode ser grande, por isso usa o padrão .mo/.mdl de
+     tela cheia (igual #tela-admin) em vez do painel flutuante, que só
+     comporta listas curtas sem busca. -->
+<div id="modal-incluir-simulado" class="mo">
+    <div class="mdl" style="max-width:560px; width:92%; max-height:85vh; padding:20px; overflow:hidden; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-family:var(--font-display); font-size:16px; color:var(--app-primary); margin:0; text-transform:uppercase;">🎯 Incluir Simulado</h2>
+            <button onclick="window.CRONOGRAMA_RUNTIME.fecharModalIncluirSimulado()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <input type="text" id="crono-inc-busca" class="imod" placeholder="Buscar por nome, matéria ou tópico..." oninput="window.CRONOGRAMA_RUNTIME.filtrarModalIncluirSimulado(this.value)">
+        <div id="crono-inc-lista" style="flex:1; overflow-y:auto; min-height:0; border:1px solid var(--border-color); border-radius:8px;"></div>
+    </div>
+</div>
 
 <!-- TELA 2: BACKOFFICE DO ADMIN (AGORA UM MODAL) -->
 <div id="tela-admin" class="mo" style="z-index: 4000;">
