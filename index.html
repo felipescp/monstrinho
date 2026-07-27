@@ -4386,6 +4386,16 @@ document.addEventListener('click', function(e) {
                         <option value="">2. Selecione o Tópico...</option>
                     </select>
                 </div>
+                <div style="margin-top:10px;">
+                    <label style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Estilo (Banca)</label>
+                    <select id="cfg-ce-estilo" style="width:100%; padding:.5rem; border:1px solid var(--border-color); border-radius:4px; font-size:12px; background:var(--bg-white); color:var(--text-main); outline:none;">
+                        <option value="">Selecione...</option>
+                        <option value="FGV">FGV</option>
+                        <option value="FCC">FCC</option>
+                        <option value="CESPE">CESPE / CEBRASPE</option>
+                        <option value="__NEW__" style="font-weight: bold; color: var(--app-primary);">➕ Criar Novo...</option>
+                    </select>
+                </div>
             </div>
 
 <!-- OPÇÃO B: METADADOS MÚLTIPLA ESCOLHA -->
@@ -6407,7 +6417,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         else if (rendimento >= 50) { bgRend = '#fef3c7'; corRendTexto = '#92400e'; borderRend = '#fde68a'; }
                     }
                     let iconeAcao = isResolvido ? '<span style="font-size: 11px;" title="Ver Resultados">📔</span>' : '<span style="color: var(--danger); font-weight: 800; font-size: 11px;">▶</span>';
-                    
+
                     // 3. Lógica de Ação (Abre Resultado x Inicia Simulado)
                     let clickAcao = '';
                     if (isResolvido) {
@@ -6420,24 +6430,35 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         }
                     }
 
+                    // 4. Linha 2 — Estilo / Criada em / Resolvida em ("—" quando ausente)
+                    let resolvidaEmTxt = window.formatarDataBR(isResolvido ? arquivoMorto[p.id].finalizadaEm : null);
+                    let criadaEmTxt = window.formatarDataBR(p.dataCriacao);
+                    let estiloTxt = p.estilo || '—';
+
 return `
-<div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;"
+<div style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;"
      onmouseover="this.style.background='#f1f5f9'"
      onmouseout="this.style.background='transparent'"
      onclick="${clickAcao}">
 
-    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-        <span style="font-size: 10px; font-weight: 700; color: ${corTitulo};">
-            ${p.nome}
-        </span>
-        <button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
+        <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+            <span style="font-size: 10px; font-weight: 700; color: ${corTitulo};">
+                ${p.nome}
+            </span>
+            <button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>
+        </div>
+
+        <div style="flex-shrink: 0; margin-left: 10px; display:flex; align-items:center; gap:6px;">
+            <span style="font-size: 9px; color: ${corQtdTexto}; font-weight: 800; background: ${bgQtd}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderQtd}; display:flex; align-items:center; gap:4px;">
+                ${qtdQ} questões ${iconeAcao}
+            </span>
+            ${rendimento !== null ? `<span style="font-size: 9px; color: ${corRendTexto}; font-weight: 800; background: ${bgRend}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderRend};">${rendimento}%</span>` : ''}
+        </div>
     </div>
 
-    <div style="flex-shrink: 0; margin-left: 10px; display:flex; align-items:center; gap:6px;">
-        <span style="font-size: 9px; color: ${corQtdTexto}; font-weight: 800; background: ${bgQtd}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderQtd}; display:flex; align-items:center; gap:4px;">
-            ${qtdQ} questões ${iconeAcao}
-        </span>
-        ${rendimento !== null ? `<span style="font-size: 9px; color: ${corRendTexto}; font-weight: 800; background: ${bgRend}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderRend};">${rendimento}%</span>` : ''}
+    <div style="padding: 0 8px 4px 8px; font-size: 9px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        Estilo: ${estiloTxt} | Criada em: ${criadaEmTxt} | Resolvida em: ${resolvidaEmTxt}
     </div>
 </div>`;
                 }).join('');
@@ -7228,6 +7249,11 @@ if (C.tipo === 'ce') {
         validarFormAdmin();
     }
 
+    // "Estilo (Banca)" do tipo CE — mesmo padrão select+__NEW__+prompt() do
+    // cfg-mc-banca acima, reaproveitando gerenciarCriacaoSelect.
+    let elCeEstilo = document.getElementById('cfg-ce-estilo');
+    if (elCeEstilo) elCeEstilo.addEventListener('change', gerenciarCriacaoSelect);
+
     ['cfg-mc-tipo', 'cfg-mc-ano', 'cfg-mc-carreira', 'cfg-mc-banca', 'cfg-mc-orgao'].forEach(id => {
         let el = document.getElementById(id);
         if (el) {
@@ -7846,11 +7872,12 @@ localStorage.setItem(
     tela('tela-proc');
     var res = parsear(txt);
     
+    let estiloCE = null;
     if (res.ok) {
         if (C.tipo === 'ce') {
             let selTax = document.getElementById('cfg-taxonomia');
-            C.id_taxonomia = selTax.value; 
-            
+            C.id_taxonomia = selTax.value;
+
             // Lê do Cofre Seguro
             if (window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[C.id_taxonomia]) {
                 C.materia = window.MAPA_TAXONOMIA[C.id_taxonomia].materia;
@@ -7865,6 +7892,11 @@ localStorage.setItem(
                 return;
             }
             C.metadados_mc = null;
+
+            // "Estilo" (banca) — só existe pro tipo CE; fica de fora de cfg,
+            // no mesmo nível de dataCriacao no registro do acervo.
+            let selEstilo = document.getElementById('cfg-ce-estilo');
+            estiloCE = (selEstilo && selEstilo.value && selEstilo.value !== '__NEW__') ? selEstilo.value : null;
         } else {
             C.id_taxonomia = null;
 C.metadados_mc = {
@@ -7902,8 +7934,9 @@ let isEdicao = window.ID_EDICAO !== null && window.ID_EDICAO !== undefined;
             caminho_completo: C.caminho_completo, 
             tipo: C.tipo,
             metadados_mc: C.metadados_mc,
+            estilo: estiloCE, // mesmo nível de dataCriacao — só se aplica ao tipo CE
             dataCriacao: new Date().toISOString(), // Se for edição, vamos preservar a data original abaixo
-            cfg: C, 
+            cfg: C,
             dados: D
         };
         
@@ -8853,6 +8886,7 @@ function renderNav(){
             metaDiv.style.cssText = 'background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
             
             metaDiv.innerHTML = `
+                <div style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Criada em: ${window.formatarDataBR(C.dataCriacao)}</div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
                 <div style="font-size: 11px; color: #64748b; line-height: 1.5;">${htmlCaminho}</div>
             `;
@@ -9850,6 +9884,10 @@ function finalizarSimulado() {
                 s.qSalva = QA;
                 s.stats = calcStats();
                 s.data = s.data || new Date().toISOString();
+                // "Resolvida em" de verdade — sem fallback, sempre o instante real
+                // deste clique em "Encerrar Definitivamente" (diferente de s.data,
+                // que guarda quando a bateria foi ABERTA, não finalizada).
+                s.finalizadaEm = new Date().toISOString();
                 autoSave();
 
 // =========================================================
@@ -9871,7 +9909,7 @@ function finalizarSimulado() {
 
                 // 1. Grava a "Fotografia" na Rota do Arquivo Morto
                 let arquivoMorto = window.lerArquivoMorto();
-                arquivoMorto[s.cfg.id] = { cfg: s.cfg, dados: s.dados, stats: s.stats, data: s.data };
+                arquivoMorto[s.cfg.id] = { cfg: s.cfg, dados: s.dados, stats: s.stats, data: s.data, finalizadaEm: s.finalizadaEm };
                 window.salvarArquivoMorto(arquivoMorto);
 
                 // 2. Extrai os dados para o Planner (ETL)
@@ -10941,7 +10979,11 @@ window.editarSimuladoAcervo = function(id) {
     // Rota Certo/Errado
     if(prova.tipo === 'ce') {
         g('ro-ce').click();
-        setTimeout(() => { if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || ''; validarFormAdmin(); }, 50);
+        setTimeout(() => {
+            if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || '';
+            if(g('cfg-ce-estilo')) g('cfg-ce-estilo').value = prova.estilo || '';
+            validarFormAdmin();
+        }, 50);
         g('paste-area').value = window.reconstruirTextoOriginal(prova);
         
     // Nova Rota: Playlist
@@ -11278,7 +11320,8 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
         
         C = JSON.parse(JSON.stringify(provaAlvo.cfg));
         D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
-        C.id = simId; 
+        C.id = simId;
+        C.dataCriacao = provaAlvo.dataCriacao; // pro painel "Criada em" na sidebar (dataCriacao vive na raiz do acervo, não em cfg)
         SIMS.push({ cfg: JSON.parse(JSON.stringify(C)), dados: JSON.parse(JSON.stringify(D)), stats: null, qSalva: null, data: new Date().toISOString() });
         SI = SIMS.length - 1;
     }
@@ -11523,6 +11566,18 @@ function slugCaderno(str) {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 }
+
+// Formata data ISO 8601 -> DD/MM/AA (ex.: 27/07/26). Usado em qualquer lugar
+// que exiba "Criada em"/"Resolvida em" de uma bateria. "—" se ausente/inválida.
+window.formatarDataBR = function(isoString) {
+    if (!isoString) return '—';
+    let d = new Date(isoString);
+    if (isNaN(d.getTime())) return '—';
+    let dd = String(d.getDate()).padStart(2, '0');
+    let mm = String(d.getMonth() + 1).padStart(2, '0');
+    let aa = String(d.getFullYear()).slice(-2);
+    return dd + '/' + mm + '/' + aa;
+};
 
 // Markdown do Caderno (Erros ou Axiomas) — mesma nesting matéria > tópico >
 // itens já usada em mostrarAbaCaderno. materiaFiltro null/undefined exporta
