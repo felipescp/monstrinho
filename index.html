@@ -3437,8 +3437,12 @@ if(ri) {
     #section-cronograma .crono-check.checked { background:linear-gradient(135deg, var(--app-primary), #3b82f6); border-color:var(--app-primary); color:#fff; }
     #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
     #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
-    #section-cronograma .crono-simulados-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
+    #section-cronograma .crono-simulados-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; opacity:1; }
     #section-cronograma .crono-simulados-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
+    /* Sem nenhum simulado vinculado (nem automático, nem manual) — ícone
+       fosco, ainda clicável (sem pointer-events:none), só menos chamativo. */
+    #section-cronograma .crono-simulados-btn.sem-vinculo { opacity:0.35; }
+    #section-cronograma .crono-simulados-btn.sem-vinculo:hover { opacity:0.7; }
     #section-cronograma .crono-card-body { min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
     #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; max-width:100%; word-break:break-word; }
@@ -3801,6 +3805,16 @@ window.CRONOGRAMA_RUNTIME = {
             if (codigo < 0x0300 || codigo > 0x036f) prio += prioSemAcento[ch];
         }
         let classePrio = prio === 'CRITICA' ? 'critica' : prio === 'ALTA' ? 'alta' : prio === 'MEDIA' ? 'media' : 'baixa';
+
+        // Ícone 🎯 fosco quando não há nenhum simulado vinculado — nem por
+        // correspondência automática (id_taxonomia bate com o catálogo) nem
+        // por inclusão manual. this._setTaxonomiasComBaterias vem pré-
+        // computado uma vez em render() (ver ali), evitando refiltrar o
+        // catálogo inteiro pra cada card.
+        let temAuto = !!(item.id_taxonomia && this._setTaxonomiasComBaterias && this._setTaxonomiasComBaterias.has(item.id_taxonomia));
+        let temManual = Array.isArray(item.simuladosVinculados) && item.simuladosVinculados.length > 0;
+        let temVinculo = temAuto || temManual;
+
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
             '<div class="crono-card-body">' +
                 '<div class="crono-card-tags">' +
@@ -3811,7 +3825,7 @@ window.CRONOGRAMA_RUNTIME = {
                 '<div class="crono-card-justif">' + (item.justificativa || '') + '</div>' +
             '</div>' +
             '<div class="crono-card-footer">' +
-                '<button class="crono-simulados-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirPainelSimulados(event, \'' + item.id + '\')" title="Simulados relacionados">🎯</button>' +
+                '<button class="crono-simulados-btn' + (temVinculo ? '' : ' sem-vinculo') + '" onclick="window.CRONOGRAMA_RUNTIME.abrirPainelSimulados(event, \'' + item.id + '\')" title="' + (temVinculo ? 'Simulados relacionados' : 'Nenhum simulado vinculado ainda — clique pra incluir') + '">🎯</button>' +
                 '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
                 '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
             '</div>' +
@@ -4011,6 +4025,23 @@ window.CRONOGRAMA_RUNTIME = {
             let tax = p && (p.id_taxonomia || (p.cfg && p.cfg.id_taxonomia));
             return tax === item.id_taxonomia;
         });
+    },
+
+    // Conjunto de todo id_taxonomia com pelo menos 1 bateria no catálogo —
+    // construído UMA VEZ por passada de render() (ver render(), que grava
+    // em this._setTaxonomiasComBaterias) e reaproveitado por renderCard em
+    // todos os cards, em vez de filtrar o catálogo inteiro de novo a cada
+    // botão 🎯. Só decide "tem ou não tem" pra colorir o ícone — o conteúdo
+    // completo do painel continua vindo de _matchAutomaticoSimulados.
+    _construirSetTaxonomiasComBaterias: function() {
+        let acervo = [];
+        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        let set = new Set();
+        acervo.forEach(function(p) {
+            let tax = p && (p.id_taxonomia || (p.cfg && p.cfg.id_taxonomia));
+            if (tax) set.add(tax);
+        });
+        return set;
     },
 
     // Painel flutuante "🎯" — correspondência automática (por id_taxonomia)
@@ -4271,6 +4302,11 @@ window.CRONOGRAMA_RUNTIME = {
         '</div>';
 
         let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlViewToggle + '</div>';
+
+        // Pré-computado uma vez por passada de render() — renderCard lê
+        // this._setTaxonomiasComBaterias em vez de filtrar o catálogo
+        // inteiro de novo pra cada card da semana.
+        this._setTaxonomiasComBaterias = this._construirSetTaxonomiasComBaterias();
 
         let diasSemana = ativo.planejamento[semanaAtiva] || {};
         let htmlCorpo = this.viewModo === 'kanban' ? this.renderKanban(diasSemana) : this.renderDias(diasSemana);
