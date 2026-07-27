@@ -5400,6 +5400,14 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     let bgQtd = isResolvido ? '#dcfce7' : '#f8fafc';
                     let corQtdTexto = isResolvido ? '#166534' : 'var(--text-muted)';
                     let borderQtd = isResolvido ? '#bbf7d0' : 'var(--border-color)';
+
+                    // Mesmos limiares de getHeatmapColor/getBgClass do dashboard.html (50/70/85)
+                    let bgRend = '#fee2e2', corRendTexto = '#991b1b', borderRend = '#fecaca'; // < 50%
+                    if (rendimento !== null) {
+                        if (rendimento >= 85) { bgRend = '#dcfce7'; corRendTexto = '#166534'; borderRend = '#bbf7d0'; }
+                        else if (rendimento >= 70) { bgRend = '#ecfccb'; corRendTexto = '#3f6212'; borderRend = '#d9f99d'; }
+                        else if (rendimento >= 50) { bgRend = '#fef3c7'; corRendTexto = '#92400e'; borderRend = '#fde68a'; }
+                    }
                     let iconeAcao = isResolvido ? '<span style="font-size: 11px;" title="Ver Resultados">📔</span>' : '<span style="color: var(--danger); font-weight: 800; font-size: 11px;">▶</span>';
                     
                     // 3. Lógica de Ação (Abre Resultado x Inicia Simulado)
@@ -5431,7 +5439,7 @@ return `
         <span style="font-size: 9px; color: ${corQtdTexto}; font-weight: 800; background: ${bgQtd}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderQtd}; display:flex; align-items:center; gap:4px;">
             ${qtdQ} questões ${iconeAcao}
         </span>
-        ${rendimento !== null ? `<span style="font-size: 9px; color: #166534; font-weight: 800; background: #dcfce7; padding: 2px 5px; border-radius: 4px; border: 1px solid #bbf7d0;">${rendimento}%</span>` : ''}
+        ${rendimento !== null ? `<span style="font-size: 9px; color: ${corRendTexto}; font-weight: 800; background: ${bgRend}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${borderRend};">${rendimento}%</span>` : ''}
     </div>
 </div>`;
                 }).join('');
