@@ -3444,6 +3444,19 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
     },
 
+    // Chamado no duplo-clique do nome da aba — destrava a edição (nasce
+    // contenteditable="false" pra não competir com o clique único de
+    // trocar de aba) e seleciona o texto todo, pra facilitar substituir.
+    iniciarEdicaoNome: function(el) {
+        el.contentEditable = 'true';
+        el.focus();
+        let range = document.createRange();
+        range.selectNodeContents(el);
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    },
+
     renomearPlanner: function(id, novoNome) {
         if (!this.planners[id]) return;
         novoNome = (novoNome || '').trim();
@@ -3484,7 +3497,7 @@ window.CRONOGRAMA_RUNTIME = {
             let ativo = id === self.activePlannerId;
             return '<div class="crono-tab' + (ativo ? ' ativo' : '') + '" style="' + (ativo ? 'border-color:' + p.cor + ';' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.trocarPlanner(\'' + id + '\')">' +
                 '<span style="width:8px; height:8px; border-radius:50%; background:' + p.cor + '; display:inline-block; flex-shrink:0;"></span>' +
-                '<span class="crono-tab-nome" contenteditable="true" spellcheck="false" onclick="event.stopPropagation()" onblur="window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
+                '<span class="crono-tab-nome" contenteditable="false" spellcheck="false" ondblclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.iniciarEdicaoNome(this)" onblur="this.contentEditable=\'false\'; window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') + '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.criarPlanner()" title="Novo cronograma">+</div>';
