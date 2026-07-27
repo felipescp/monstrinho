@@ -2584,7 +2584,7 @@ exportarNuvem: async function(botao) {
                 titulo: '☁️ Backup enviado com sucesso',
                 mensagemHtml: true,
                 mensagem:
-                    '<div>Enviado em ' + partes.length + ' parte(s). Pra usar em outro computador (ou parear um novo, mais tarde), cole este ID do Gist em "⚙️" naquele computador — só precisa fazer isso uma vez por computador.</div>' +
+                    '<div>Pra usar sua conta em outro computador ou celular: clique em "⚙️" naquele dispositivo, cole o mesmo token, e quando pedir o ID do Gist, cole este aqui. Depois disso, feito uma única vez, "☁️⬇️ Carregar" já traz seus dados automaticamente..</div>' +
                     '<div style="display:flex; gap:6px; margin-top:12px;">' +
                         '<input id="campo-gist-id-copia" type="text" value="' + gistId + '" readonly onclick="this.select();" style="flex:1; min-width:0; font-family:monospace; font-size:12px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f8fafc;">' +
                         '<button type="button" onclick="document.getElementById(\'campo-gist-id-copia\').select(); navigator.clipboard.writeText(\'' + gistId + '\'); this.textContent=\'✓ Copiado\';" style="padding:8px 12px; border-radius:6px; border:none; background:var(--app-primary); color:white; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">📋 Copiar</button>' +
@@ -3384,20 +3384,20 @@ if(ri) {
     #section-cronograma .crono-day-body.drag-over { background:#eef2ff; border-radius:6px; }
     #section-cronograma .crono-week-tab.drag-over { background:#eef2ff; box-shadow:0 0 0 2px var(--app-primary) inset; }
 
-    #section-cronograma .crono-card { background:#f8fafc; border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:8px 8px 8px 10px; display:flex; align-items:flex-start; gap:8px; transition:0.2s; cursor:grab; }
+    #section-cronograma .crono-card { background:#f8fafc; border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:8px 8px 8px 10px; display:flex; flex-direction:column; gap:6px; transition:0.2s; cursor:grab; }
     #section-cronograma .crono-card:hover { box-shadow:0 3px 14px rgba(30,58,138,0.12); }
     #section-cronograma .crono-card.dragging { opacity:0.4; transform:rotate(1deg); }
     #section-cronograma .crono-card.finalizado { border-left-color:#22c55e; background:rgba(34,197,94,0.07); }
     #section-cronograma .crono-card.finalizado .crono-card-topico { text-decoration:line-through; opacity:0.6; }
-    #section-cronograma .crono-card-checks { display:flex; flex-direction:column; gap:5px; flex-shrink:0; margin-top:2px; }
-    #section-cronograma .crono-check { width:20px; height:20px; border-radius:50%; border:2px solid #93b4e0; background:#e0eaf8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; transition:0.2s; }
+    #section-cronograma .crono-card-footer { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+    #section-cronograma .crono-check { width:20px; height:20px; border-radius:50%; border:2px solid #93b4e0; background:#e0eaf8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; transition:0.2s; flex-shrink:0; }
     #section-cronograma .crono-check:hover { border-color:var(--app-primary); }
     #section-cronograma .crono-check.checked { background:linear-gradient(135deg, var(--app-primary), #3b82f6); border-color:var(--app-primary); color:#fff; }
-    #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; }
+    #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
     #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
-    #section-cronograma .crono-card-body { flex:1; min-width:0; }
+    #section-cronograma .crono-card-body { min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
-    #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; }
+    #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; max-width:100%; word-break:break-word; }
     #section-cronograma .crono-tag-critica { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
     #section-cronograma .crono-tag-alta { background:#ffedd5; color:#ea580c; border:1px solid #fdba74; }
     #section-cronograma .crono-tag-media { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; }
@@ -3442,7 +3442,20 @@ window.CRONOGRAMA_RUNTIME = {
     dragOrigem: null, // { dia, id } do card sendo arrastado — null quando não há arraste em andamento
     STORAGE_KEY: 'tjpe_v1__cronograma_runtime',
     PALETA_CORES: ['#4f46e5', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#db2777'],
-    CORES_MATERIA: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#14b8a6', '#f97316', '#ec4899'],
+    // Pares fundo pastel + texto saturado da MESMA família de cor — mesmo
+    // padrão já usado em .tag-critica/.tag-alta/.tag-media/.tag-baixa.
+    // Famílias diferentes das 4 de prioridade, pra não confundir as duas
+    // tags (matéria x prioridade) lado a lado no card.
+    CORES_MATERIA: [
+        { bg: '#ede9fe', texto: '#6d28d9', borda: '#c4b5fd' }, // roxo
+        { bg: '#ccfbf1', texto: '#0f766e', borda: '#5eead4' }, // teal
+        { bg: '#fce7f3', texto: '#be185d', borda: '#f9a8d4' }, // rosa
+        { bg: '#e0e7ff', texto: '#4338ca', borda: '#a5b4fc' }, // índigo
+        { bg: '#d1fae5', texto: '#047857', borda: '#6ee7b7' }, // esmeralda
+        { bg: '#fef3c7', texto: '#b45309', borda: '#fcd34d' }, // âmbar
+        { bg: '#cffafe', texto: '#0e7490', borda: '#67e8f9' }, // ciano
+        { bg: '#fae8ff', texto: '#a21caf', borda: '#f0abfc' }  // violeta
+    ],
 
     carregar: function() {
         let bruto = null;
@@ -3493,6 +3506,12 @@ window.CRONOGRAMA_RUNTIME = {
 
     trocarPlanner: function(id) {
         if (!this.planners[id]) return;
+        // Sem isso, clicar na aba JÁ ativa (inclusive os 2 cliques que compõem
+        // um duplo-clique) reconstruía o HTML das abas a cada clique — o
+        // dblclick então acabava mirando num <span> que o próprio 2º clique
+        // já tinha removido do DOM, e a edição rodava num elemento órfão,
+        // invisível pro usuário.
+        if (id === this.activePlannerId) return;
         this.activePlannerId = id;
         this.salvar();
         this.render();
@@ -3644,7 +3663,7 @@ window.CRONOGRAMA_RUNTIME = {
     // pra usar um dicionário fixo tipo o do painel TJCE porque as matérias
     // aqui vêm de qualquer JSON importado, não de uma lista conhecida.
     corMateria: function(materia) {
-        if (!materia) return '#64748b';
+        if (!materia) return { bg: '#f1f5f9', texto: '#64748b', borda: '#cbd5e1' };
         let norm = materia.toUpperCase().trim();
         let hash = 0;
         for (let i = 0; i < norm.length; i++) hash = norm.charCodeAt(i) + ((hash << 5) - hash);
@@ -3710,7 +3729,7 @@ window.CRONOGRAMA_RUNTIME = {
     },
 
     renderCard: function(item, dia) {
-        let cor = this.corMateria(item.materia);
+        let corMat = this.corMateria(item.materia);
         let prioSemAcento = (item.prioridade || '').toUpperCase().normalize('NFD');
         let prio = '';
         for (let ch = 0; ch < prioSemAcento.length; ch++) {
@@ -3719,17 +3738,17 @@ window.CRONOGRAMA_RUNTIME = {
         }
         let classePrio = prio === 'CRITICA' ? 'critica' : prio === 'ALTA' ? 'alta' : prio === 'MEDIA' ? 'media' : 'baixa';
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
-            '<div class="crono-card-checks">' +
-                '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
-                '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
-            '</div>' +
             '<div class="crono-card-body">' +
                 '<div class="crono-card-tags">' +
-                    '<span class="crono-tag" style="background:' + cor + '20; color:' + cor + '; border:1px solid ' + cor + '40;">' + (item.materia || '') + '</span>' +
+                    '<span class="crono-tag" style="background:' + corMat.bg + '; color:' + corMat.texto + '; border:1px solid ' + corMat.borda + ';">' + (item.materia || '') + '</span>' +
                     '<span class="crono-tag crono-tag-' + classePrio + '">' + (item.prioridade || '') + '</span>' +
                 '</div>' +
                 '<div class="crono-card-topico">' + (item.topico || '') + '</div>' +
                 '<div class="crono-card-justif">' + (item.justificativa || '') + '</div>' +
+            '</div>' +
+            '<div class="crono-card-footer">' +
+                '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
+                '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
             '</div>' +
         '</div>';
     },
