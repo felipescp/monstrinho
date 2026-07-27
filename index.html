@@ -3522,10 +3522,9 @@ window.CRONOGRAMA_RUNTIME = {
 
     excluirPlanner: function(id) {
         if (!this.planners[id]) return;
-        if (Object.keys(this.planners).length <= 1) {
-            alert('Não é possível excluir o último cronograma restante.');
-            return;
-        }
+        // Sem trava de "último restante" — zero cronogramas é um estado
+        // válido agora (tela de "Carregar Novo Cronograma"), não precisa
+        // impedir chegar nele por exclusão.
         if (!confirm('Excluir o cronograma "' + this.planners[id].nome + '" permanentemente?')) return;
 
         delete this.planners[id];
@@ -3931,7 +3930,7 @@ window.CRONOGRAMA_RUNTIME = {
             contentEl.innerHTML =
                 '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:60px 20px;">' +
                     '<div style="margin-bottom:14px;">Nenhum cronograma carregado ainda.</div>' +
-                    '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON">⬆️ Carregar Cronograma</div>' +
+                    '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON">⬆️ Carregar Novo Cronograma</div>' +
                 '</div>';
             return;
         }
