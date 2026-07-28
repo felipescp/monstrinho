@@ -10717,6 +10717,16 @@ if (idxExistente >= 0) {
 
 window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
 
+    // Bloqueia abertura de bateria sem token cadastrado em ⚙️ (formato de
+    // token pessoal clássico do GitHub: 40 caracteres). Checagem só de
+    // formato, sem chamada de rede — não confirma que o token é aceito
+    // pelo GitHub, só que tem cara de token de verdade.
+    let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
+    if (!tokenCadastrado || tokenCadastrado.length !== 40) {
+        alert('Insira um token válido em ⚙️.');
+        return;
+    }
+
     if(window.RUNTIME_LOCK){
         console.warn(
             '[LOCK] abertura bloqueada'
