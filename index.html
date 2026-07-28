@@ -2380,6 +2380,49 @@ window.SALINHA_BACKUP = {
             }
         }
 
+        // ── VERIFICAÇÃO CRUZADA: aba "em andamento" de uma bateria já finalizada ──
+        // Roda por ÚLTIMO, depois que arquivo morto e sessão ativa já estão nas
+        // versões finais mescladas (local + o que acabou de vir da nuvem).
+        // A mesclagem de clube_simulado_auto acima é puramente aditiva — nunca
+        // remove uma aba — então se a MESMA bateria foi finalizada em outro
+        // computador (e por isso não veio mais como aba ativa na nuvem, só no
+        // arquivo morto), a aba local ficava órfã, "em andamento" pra sempre.
+        try {
+            let arquivoMortoFinal = window.lerArquivoMorto();
+            let sessaoAtivaFinal = await window.lerSessaoAtiva();
+
+            if (sessaoAtivaFinal && Array.isArray(sessaoAtivaFinal.sims) && sessaoAtivaFinal.sims.length > 0) {
+                let abaAtivaAntes = (sessaoAtivaFinal.si >= 0 && sessaoAtivaFinal.si < sessaoAtivaFinal.sims.length)
+                    ? sessaoAtivaFinal.sims[sessaoAtivaFinal.si]
+                    : null;
+
+                let simsFiltrados = sessaoAtivaFinal.sims.filter(function(sim) {
+                    return !(sim && sim.cfg && sim.cfg.id && arquivoMortoFinal[sim.cfg.id]);
+                });
+
+                if (simsFiltrados.length !== sessaoAtivaFinal.sims.length) {
+                    let novoSi;
+                    if (simsFiltrados.length === 0) {
+                        // Mesmo padrão de fecharTab() ao fechar a última aba.
+                        novoSi = -1;
+                    } else if (abaAtivaAntes && simsFiltrados.indexOf(abaAtivaAntes) !== -1) {
+                        // A aba que estava ativa sobreviveu à filtragem — mantém o foco nela.
+                        novoSi = simsFiltrados.indexOf(abaAtivaAntes);
+                    } else {
+                        // A aba ativa foi uma das removidas — mesmo cálculo de
+                        // "aba mais próxima" que fecharTab() usa.
+                        novoSi = Math.min(sessaoAtivaFinal.si, simsFiltrados.length - 1);
+                        if (novoSi < 0) novoSi = 0;
+                    }
+
+                    const ok = await window.salvarSessaoAtiva({ sims: simsFiltrados, si: novoSi });
+                    if (ok) chavesMutadas++;
+                }
+            }
+        } catch (e) {
+            console.warn('[MERGE] Falha na verificação cruzada arquivo-morto x sessão-ativa:', e);
+        }
+
         if (chavesMutadas > 0 && typeof notificarMutacaoAoDashboard === 'function') {
             notificarMutacaoAoDashboard();
         }
