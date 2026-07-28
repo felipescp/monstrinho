@@ -260,6 +260,10 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
                             <div><div class="evo-stat-valor" id="evo-stat-materias">0</div><div class="evo-stat-label">Total de matérias</div></div>
                             <div><div class="evo-stat-valor" id="evo-stat-erros" style="color:var(--danger);">0</div><div class="evo-stat-label">Erros</div></div>
                         </div>
+                        <div style="position:relative; width:150px; height:150px; margin:20px auto 0;">
+                            <canvas id="evoDonutChart"></canvas>
+                            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:17px; font-weight:800; color:var(--text-main); pointer-events:none;" id="evo-donut-pct">0%</div>
+                        </div>
                     </div>
                     <div style="flex:1; min-width:320px;">
                         <div class="evo-titulo-bloco">Evolução do Desempenho</div>
@@ -462,6 +466,7 @@ function loadFactualDatabase() {
         window.__evoMateriasSelecionadas = null;
         window.__evoMateriasTodasConhecidas = [];
         window.__evoChartInstance = null;
+        window.__evoDonutChartInstance = null;
 
         function evoFormatarDataCurta(d) {
             return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
@@ -610,6 +615,29 @@ function loadFactualDatabase() {
             let elAcertos = document.getElementById('evo-stat-acertos'); if (elAcertos) elAcertos.textContent = acertos;
             let elMaterias = document.getElementById('evo-stat-materias'); if (elMaterias) elMaterias.textContent = materiasEncontradas.size;
             let elErros = document.getElementById('evo-stat-erros'); if (elErros) elErros.textContent = erros;
+
+            let pctAcertos = (acertos + erros) > 0 ? Math.round((acertos / (acertos + erros)) * 100) : 0;
+            let elDonutPct = document.getElementById('evo-donut-pct'); if (elDonutPct) elDonutPct.textContent = pctAcertos + '%';
+            let ctxDonut = document.getElementById('evoDonutChart');
+            if (window.__evoDonutChartInstance) window.__evoDonutChartInstance.destroy();
+            if (ctxDonut && typeof Chart !== 'undefined') {
+                window.__evoDonutChartInstance = new Chart(ctxDonut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Acertos', 'Erros'],
+                        datasets: [{ data: [acertos, erros], backgroundColor: ['#10b981', '#ef4444'], borderColor: 'var(--bg-card)', borderWidth: 2 }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '72%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + ctx.parsed; } } }
+                        }
+                    }
+                });
+            }
 
             let labels = buckets.map(function(b) { return evoFormatarDataCurta(b.inicio) + ' a ' + evoFormatarDataCurta(b.fim); });
             let ctx = document.getElementById('evoChart');
