@@ -599,6 +599,11 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .motivo-erro-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: .4rem; font-family: var(--font-display); }
 .motivo-erro-rg.rg { gap: 6px; }
 .motivo-erro-rg .ro { padding: .4rem .5rem; font-size: 11px; border-radius: 6px; line-height: 1.3; }
+/* Travado = escolha definitiva, não dá mais pra clicar em outra opção. */
+.motivo-erro-rg .ro.travado { cursor: default; }
+.motivo-erro-rg .ro.travado:hover { border-color: var(--border-color); background: var(--bg-body); }
+.motivo-erro-rg .ro.travado:not(.sel) { opacity: .4; }
+.motivo-erro-rg .ro.travado.sel:hover { background: var(--app-primary); }
 
 .axioma-card { background: #fffbeb; border-left: 4px solid var(--warning); padding: 1rem; margin-bottom: 1rem; border-radius: 6px; font-size: 13px; color: #854d0e; line-height: 1.6; display: flex; flex-direction: column; gap: 0.75rem; }
 
@@ -7993,6 +7998,10 @@ D.blocos.forEach(function(b){b.questoes.forEach(function(q){
       else qel.classList.add(r.ok?'qv':'qf');
     }
     var ew=g('ew-'+q.id);if(ew&&!cegas)ew.style.display='';
+    // Restaura o bloco de motivo do erro — mkQ() já nasce com a classe
+    // certa (sel/travado) quando D.res[q.id].motivoErro existe, então aqui
+    // só falta reexibir o container (nasce com display:none sempre).
+    var me=g('me-'+q.id); if(me) me.style.display=(!r.ok&&!cegas)?'':'none';
   });});
 }
 
@@ -8064,8 +8073,11 @@ function mkQ(q, modoRevisao){
   var meWrap = document.createElement('div'); meWrap.className='motivo-erro'; meWrap.id='me-'+q.id; meWrap.style.display='none';
   var meLabel = document.createElement('div'); meLabel.className='motivo-erro-label'; meLabel.textContent='Por que errou?';
   var meRg = document.createElement('div'); meRg.className='rg motivo-erro-rg';
+  // Se já existe motivoErro salvo (bateria restaurada, ou re-render), nasce
+  // já travado e marcado — reforça visualmente que a escolha é definitiva.
+  var motivoJaEscolhido = D.res[q.id] && D.res[q.id].motivoErro;
   ['Esqueci','Não Sabia','Pegadinha/Confundi'].forEach(function(motivo){
-    var opt = document.createElement('div'); opt.className='ro';
+    var opt = document.createElement('div'); opt.className='ro' + (motivoJaEscolhido ? ' travado' : '') + (motivoJaEscolhido === motivo ? ' sel' : '');
     opt.textContent = motivo;
     opt.setAttribute('data-qid', q.id); opt.setAttribute('data-motivo', motivo);
     opt.onclick = function(){ selecionarMotivoErro(this.getAttribute('data-qid'), this.getAttribute('data-motivo')); };
@@ -8191,10 +8203,12 @@ function conf(qId){
 // item salvo ficaria com o motivo desatualizado).
 function selecionarMotivoErro(qId, motivo) {
   if (!D.res[qId]) return;
+  if (D.res[qId].motivoErro) return; // já escolhido — trava, ignora novo clique
   D.res[qId].motivoErro = motivo;
 
   var opcoes = document.querySelectorAll('.ro[data-qid="' + qId + '"]');
   opcoes.forEach(function(el) {
+    el.classList.add('travado');
     el.classList.toggle('sel', el.getAttribute('data-motivo') === motivo);
   });
 
