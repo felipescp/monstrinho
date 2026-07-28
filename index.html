@@ -592,6 +592,14 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .bexp:hover { background: rgba(79, 70, 229, 0.05); }
 .etx { margin-top: .75rem; font-size: 13px; line-height: 1.7; color: var(--text-main); background: var(--bg-body); border-radius: 6px; padding: .75rem; border: 1px solid var(--border-color); display: none; }
 
+/* Motivo do erro — mesmo padrão .rg/.ro/.sel do seletor de tipo de bateria
+   (index.html ~488-491), só com pegada visual menor pra caber dentro do
+   card compacto da questão, sem alterar o .ro/.rg globais usados lá. */
+.motivo-erro { margin-top: .75rem; border-top: 1px solid var(--border-color); padding-top: .75rem; }
+.motivo-erro-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: .4rem; font-family: var(--font-display); }
+.motivo-erro-rg.rg { gap: 6px; }
+.motivo-erro-rg .ro { padding: .4rem .5rem; font-size: 11px; border-radius: 6px; line-height: 1.3; }
+
 .axioma-card { background: #fffbeb; border-left: 4px solid var(--warning); padding: 1rem; margin-bottom: 1rem; border-radius: 6px; font-size: 13px; color: #854d0e; line-height: 1.6; display: flex; flex-direction: column; gap: 0.75rem; }
 
 .b-axioma { align-self: flex-start; background: transparent; border: 1px solid var(--warning); color: var(--warning); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 10px; text-transform: uppercase; font-family: var(--font-display); cursor: pointer; font-weight: 700; transition: 0.2s; }
@@ -8048,6 +8056,24 @@ function mkQ(q, modoRevisao){
   ac.appendChild(bc);ac.appendChild(bca);
   div.appendChild(num);div.appendChild(en);div.appendChild(vg);div.appendChild(ac);
 
+  // Motivo do erro — sempre criado (ao contrário do bloco de explicação
+  // logo abaixo, que só existe se a questão tiver explicacao/axioma
+  // salvos), porque a classificação do erro tem que aparecer pra QUALQUER
+  // resposta incorreta. Escondido até conf() decidir se a resposta foi
+  // certa ou errada.
+  var meWrap = document.createElement('div'); meWrap.className='motivo-erro'; meWrap.id='me-'+q.id; meWrap.style.display='none';
+  var meLabel = document.createElement('div'); meLabel.className='motivo-erro-label'; meLabel.textContent='Por que errou?';
+  var meRg = document.createElement('div'); meRg.className='rg motivo-erro-rg';
+  ['Esqueci','Não Sabia','Pegadinha/Confundi'].forEach(function(motivo){
+    var opt = document.createElement('div'); opt.className='ro';
+    opt.textContent = motivo;
+    opt.setAttribute('data-qid', q.id); opt.setAttribute('data-motivo', motivo);
+    opt.onclick = function(){ selecionarMotivoErro(this.getAttribute('data-qid'), this.getAttribute('data-motivo')); };
+    meRg.appendChild(opt);
+  });
+  meWrap.appendChild(meLabel); meWrap.appendChild(meRg);
+  div.appendChild(meWrap);
+
   if((q.explicacao || q.axioma) && !cegas){
     var ew=document.createElement('div'); ew.className='ew'; ew.id='ew-'+q.id; ew.style.display='none';
     var be=document.createElement('button'); be.className='bexp';
@@ -8150,6 +8176,7 @@ function conf(qId){
   }
 
   var ew = g('ew-'+qId); if(ew && !cegas) ew.style.display = '';
+  var me = g('me-'+qId); if(me) me.style.display = (!r.ok && !cegas) ? '' : 'none';
   if(SI >= 0 && SIMS[SI]) SIMS[SI].dados = JSON.parse(JSON.stringify(D));
   
   g('b1-limpar').disabled = false;
@@ -8158,7 +8185,26 @@ function conf(qId){
   if (C.auto !== false) { setTimeout(function(){ avancar(qId); }, 1200); }
 }
 
+// Classificação do motivo do erro ("Esqueci"/"Não Sabia"/"Pegadinha/Confundi")
+// — salva direto em D.res[qId], sem botão de confirmar. Se a questão já
+// estiver no Caderno de Erros, propaga a mudança pra lá também (senão o
+// item salvo ficaria com o motivo desatualizado).
+function selecionarMotivoErro(qId, motivo) {
+  if (!D.res[qId]) return;
+  D.res[qId].motivoErro = motivo;
 
+  var opcoes = document.querySelectorAll('.ro[data-qid="' + qId + '"]');
+  opcoes.forEach(function(el) {
+    el.classList.toggle('sel', el.getAttribute('data-motivo') === motivo);
+  });
+
+  if (SI >= 0 && SIMS[SI]) SIMS[SI].dados = JSON.parse(JSON.stringify(D));
+  autoSave();
+
+  if (D.caderno && D.caderno.indexOf(qId) >= 0 && typeof sincronizarCadernoComPlanner === 'function') {
+    try { sincronizarCadernoComPlanner({ cfg: C, dados: D }); } catch(e) { console.warn('[MOTIVO ERRO] Falha ao propagar pro Caderno:', e); }
+  }
+}
 
 function getQ(id) {
     for (var i = 0; i < D.blocos.length; i++) {
@@ -9433,8 +9479,15 @@ function sincronizarCadernoComPlanner(simSession) {
             if (simSession.dados.caderno && simSession.dados.caderno.includes(q.id)) {
                 if (!dbPlanner.caderno_erros[mat]) dbPlanner.caderno_erros[mat] = {};
                 if (!dbPlanner.caderno_erros[mat][topico]) dbPlanner.caderno_erros[mat][topico] = [];
-                if (!dbPlanner.caderno_erros[mat][topico].some(function(e){ return e.id_q === q.id && e.sim_id === simSession.cfg.id; })) {
-                   dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao });
+                let motivoErro = (simSession.dados.res[q.id] || {}).motivoErro;
+                // .find() em vez de .some() — se o item já existe, ATUALIZA o
+                // motivoErro nele (permite reclassificar depois de já ter
+                // adicionado ao Caderno), em vez de só ignorar silenciosamente.
+                let existente = dbPlanner.caderno_erros[mat][topico].find(function(e){ return e.id_q === q.id && e.sim_id === simSession.cfg.id; });
+                if (existente) {
+                    existente.motivoErro = motivoErro;
+                } else {
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: motivoErro });
                 }
             }
         });
@@ -9502,8 +9555,13 @@ function sincronizarResultadoComPlanner(simSession) {
             if (simSession.dados.caderno && simSession.dados.caderno.includes(q.id)) {
                 if (!dbPlanner.caderno_erros[mat]) dbPlanner.caderno_erros[mat] = {};
                 if (!dbPlanner.caderno_erros[mat][topico]) dbPlanner.caderno_erros[mat][topico] = [];
-                if (!dbPlanner.caderno_erros[mat][topico].some(e => e.id_q === q.id && e.sim_id === simSession.cfg.id)) {
-                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao });
+                // .find() em vez de .some() — mesmo fix de sincronizarCadernoComPlanner,
+                // permite atualizar motivoErro num item já salvo.
+                let existente = dbPlanner.caderno_erros[mat][topico].find(e => e.id_q === q.id && e.sim_id === simSession.cfg.id);
+                if (existente) {
+                    existente.motivoErro = r && r.motivoErro;
+                } else {
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: r && r.motivoErro });
                 }
             }
 
@@ -11064,6 +11122,10 @@ function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
                     linhas.push('');
                     if (item.explicacao) {
                         linhas.push('**Explicação:** ' + item.explicacao);
+                        linhas.push('');
+                    }
+                    if (item.motivoErro) {
+                        linhas.push('**Motivo do erro:** ' + item.motivoErro);
                         linhas.push('');
                     }
                 } else {
