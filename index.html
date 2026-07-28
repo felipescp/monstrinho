@@ -9791,6 +9791,8 @@ function exportarCadernoTxt(){
       if(q.taxonomia) linhas.push('Taxonomia:    '+q.taxonomia);
       linhas.push('Gabarito:     '+(q.gabarito==='V'?'Verdadeiro':'Falso'));
       if(q.explicacao) linhas.push('Explicação:   '+q.explicacao);
+      var motivoErroQ = D.res[q.id] && D.res[q.id].motivoErro;
+      if(motivoErroQ) linhas.push('Motivo do erro: '+motivoErroQ);
     });
   });
 
@@ -9837,6 +9839,7 @@ function exportarErrosTxt(idx){
       linhas.push('Sua resposta:   '+suaTxt);
       linhas.push('Gabarito:       '+gabTxt);
       if(q.explicacao)linhas.push('Explicação:     '+q.explicacao);
+      if(r.motivoErro)linhas.push('Motivo do erro: '+r.motivoErro);
     });
   });
 
@@ -11271,6 +11274,7 @@ window.mostrarAbaCaderno = function(aba) {
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
+                            ${item.motivoErro ? `<span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:#fef3c7; color:#92400e; letter-spacing:0.03em; text-align:right;">${escapeHtmlCaderno(item.motivoErro)}</span>` : ''}
                             ${btnRemover}
                         </div>
                     </div>`;
