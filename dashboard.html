@@ -481,7 +481,12 @@ function loadFactualDatabase() {
             let histHTML = []; 
             let comboMaterias = new Set();
             
-            simuladosGlobais.sort((a,b) => parseInt(b.id) - parseInt(a.id)).forEach(sim => {
+            // Ordena pela DATA real (parseDateBr), não pelo id — id nem
+            // sempre é um número comparável (avulsas x integradas podem
+            // gerar ids em formatos diferentes), então um sort por id podia
+            // silenciosamente virar NaN-vs-NaN e não reordenar nada,
+            // deixando a ordem de inserção (mais antiga primeiro) vazar.
+            simuladosGlobais.sort((a,b) => parseDateBr(b.data) - parseDateBr(a.data)).forEach(sim => {
                 if(sim.granulares) sim.granulares.forEach(g => comboMaterias.add(g.materia));
                 if (sim.granulares) { 
                     sim.granulares.forEach(g => { 
