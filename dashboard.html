@@ -337,7 +337,22 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
     </main>
 
     <!-- MODAIS SOBERANOS PRESERVADOS -->
-    <div id="modal-export-etl" class="modal-overlay"></div>
+    <div id="modal-export-etl" class="modal-overlay">
+        <div style="width:360px; max-width:90vw; background:var(--bg-white); border-radius:12px; padding:22px; border:1px solid var(--border-color);">
+            <div style="font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:4px;">📤 Exportação Avançada</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">Gera um Markdown com os dados dos cards de matéria (desempenho por tópico e fonte).</div>
+            <div style="margin-bottom:18px;">
+                <label style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Matéria</label>
+                <select id="export-etl-materia" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box;">
+                    <option value="">-- TODAS AS MATÉRIAS --</option>
+                </select>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="btn" onclick="window.fecharModalExportETL()">Cancelar</button>
+                <button class="btn btn-primary" onclick="window.exportarRendimentoETL()">📤 Exportar</button>
+            </div>
+        </div>
+    </div>
     <div id="modal-iframe-cofre" class="modal-overlay" style="z-index: 3000;">
         <div class="modal-box" style="width: 95vw; height: 95vh; max-width: 1300px; padding: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border-color);">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 12px 20px; margin: 0; background: #f8fafc; flex-shrink: 0;">
@@ -694,10 +709,75 @@ function loadFactualDatabase() {
             if(event) event.stopPropagation();
             if(confirm("Deseja excluir definitivamente este simulado da base de dados?")) {
                 window.executarExclusaoSimulado(id);
-                window.initializeLongitudinalRuntime(); 
+                window.initializeLongitudinalRuntime();
             }
         }
-        
+
+        // EXPORTAÇÃO AVANÇADA — mesmos dados dos cards de matéria (renderSimuladosCiclo/
+        // renderRendimentoETL: acertos/feitas por tópico + fontes lei/juris/doutrina),
+        // em Markdown, com filtro opcional por matéria.
+        window.abrirModalExportETL = function() {
+            const globais = getDadosGlobaisETL();
+            const materiasSet = new Set();
+            globais.forEach(sim => { if (sim.granulares) sim.granulares.forEach(g => materiasSet.add(g.materia)); });
+            const sel = document.getElementById('export-etl-materia');
+            if (sel) {
+                sel.innerHTML = '<option value="">-- TODAS AS MATÉRIAS --</option>' +
+                    Array.from(materiasSet).sort().map(m => `<option value="${m}">${m}</option>`).join('');
+            }
+            document.getElementById('modal-export-etl').classList.add('active');
+        };
+
+        window.fecharModalExportETL = function() {
+            document.getElementById('modal-export-etl').classList.remove('active');
+        };
+
+        window.exportarRendimentoETL = function() {
+            const globais = getDadosGlobaisETL();
+            const fMat = document.getElementById('export-etl-materia').value;
+
+            let memExport = {};
+            globais.forEach(sim => {
+                if (!sim.granulares) return;
+                sim.granulares.forEach(g => {
+                    if (fMat && g.materia !== fMat) return;
+                    if (!memExport[g.materia]) memExport[g.materia] = {};
+                    if (!memExport[g.materia][g.topico]) memExport[g.materia][g.topico] = { feitas: 0, acertos: 0, lei: { ac: 0, tot: 0 }, juris: { ac: 0, tot: 0 }, doutrina: { ac: 0, tot: 0 } };
+                    let b = memExport[g.materia][g.topico];
+                    b.feitas += g.feitas; b.acertos += g.acertos;
+                    b.lei.ac += (g.fontes?.lei?.ac || 0); b.lei.tot += (g.fontes?.lei?.tot || 0);
+                    b.juris.ac += (g.fontes?.juris?.ac || 0); b.juris.tot += (g.fontes?.juris?.tot || 0);
+                    b.doutrina.ac += (g.fontes?.doutrina?.ac || 0); b.doutrina.tot += (g.fontes?.doutrina?.tot || 0);
+                });
+            });
+
+            if (Object.keys(memExport).length === 0) { alert('Nenhum dado encontrado para exportar.'); return; }
+
+            let md = `# RELATÓRIO DE DESEMPENHO POR MATÉRIA\n*Data de Extração: ${new Date().toLocaleDateString('pt-BR')}*\n\n`;
+            Object.keys(memExport).sort().forEach(materia => {
+                md += `## ${materia}\n`;
+                let tAc = 0, tF = 0;
+                Object.entries(memExport[materia]).sort().forEach(([topico, s]) => {
+                    tAc += s.acertos; tF += s.feitas;
+                    const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
+                    md += `### ${topico}\n- **Desempenho:** ${s.acertos}/${s.feitas} (${pct}%)\n`;
+                    if (s.doutrina.tot > 0) md += `  - *Doutrina:* ${s.doutrina.ac}/${s.doutrina.tot}\n`;
+                    if (s.lei.tot > 0) md += `  - *Lei Seca:* ${s.lei.ac}/${s.lei.tot}\n`;
+                    if (s.juris.tot > 0) md += `  - *Jurisprudência:* ${s.juris.ac}/${s.juris.tot}\n`;
+                    md += `\n`;
+                });
+                const matPct = tF > 0 ? Math.round((tAc / tF) * 100) : 0;
+                md += `**Índice Geral em ${materia}:** ${tAc}/${tF} (${matPct}%)\n\n---\n\n`;
+            });
+
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Desempenho_${fMat ? fMat.replace(/\s+/g, '_') : 'Todas_Materias'}_${Date.now()}.md`;
+            link.click();
+            window.fecharModalExportETL();
+        };
+
 
         function renderProgressoCheck() { 
             const simulados = getDadosGlobaisETL();
