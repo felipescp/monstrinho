@@ -1158,7 +1158,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             <div style="display: flex; gap: 6px; align-items: center;">
 
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
-                <button onclick="window.SALINHA_GIST_SYNC.importarNuvem()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
+                <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.configurar()" class="b1" style="height:26px; font-size:9.5px; width:26px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Configurar token do GitHub pra sincronização em nuvem">⚙️</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
@@ -2477,18 +2477,26 @@ exportarNuvem: async function(botao) {
         }
     },
 
-    importarNuvem: async function() {
-        let token = this.getToken();
-        let gistId = this.getGistId();
-        if (!token) {
-            alert('Configure primeiro o token do GitHub (botão ⚙️).');
-            return;
+    importarNuvem: async function(botao) {
+        let htmlOriginal = null;
+        if (botao) {
+            htmlOriginal = botao.innerHTML;
+            botao.innerHTML = '⏳ Carregando...';
+            botao.disabled = true;
         }
-        if (!gistId) {
-            alert('Ainda não existe backup na nuvem — use "☁️⬆️ Salvar" primeiro (em qualquer um dos computadores).');
-            return;
-        }
+
         try {
+            let token = this.getToken();
+            let gistId = this.getGistId();
+            if (!token) {
+                alert('Configure primeiro o token do GitHub (botão ⚙️).');
+                return;
+            }
+            if (!gistId) {
+                alert('Ainda não existe backup na nuvem — use "☁️⬆️ Salvar" primeiro (em qualquer um dos computadores).');
+                return;
+            }
+
             let resposta = await fetch('https://api.github.com/gists/' + gistId, {
                 headers: {
                     'Authorization': 'token ' + token,
@@ -2536,6 +2544,11 @@ exportarNuvem: async function(botao) {
         } catch (err) {
             console.error('[GIST SYNC] Falha ao importar:', err);
             alert('Não foi possível importar o backup da nuvem:\n' + err.message);
+        } finally {
+            if (botao) {
+                botao.innerHTML = htmlOriginal;
+                botao.disabled = false;
+            }
         }
     }
 };
