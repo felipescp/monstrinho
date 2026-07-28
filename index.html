@@ -3878,14 +3878,12 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-card-tile { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:10px; min-height:90px; display:flex; flex-direction:column; cursor:pointer; position:relative; font-size:11px; transition:0.15s; }
     #section-flashcards .fc-card-tile:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
     #section-flashcards .fc-tile-especial { align-items:center; justify-content:center; text-align:center; background:#eef2ff; border-style:dashed; border-color:#c7d2fe; gap:4px; }
+    #section-flashcards .fc-tile-deck { align-items:center; justify-content:center; text-align:center; gap:4px; }
     #section-flashcards .fc-tile-icone { font-size:20px; }
     #section-flashcards .fc-tile-titulo { font-weight:700; color:var(--text-main); }
     #section-flashcards .fc-tile-count { font-size:9px; color:var(--text-muted); font-weight:700; }
-    #section-flashcards .fc-tile-manual { padding-top:22px; }
-    #section-flashcards .fc-tile-acoes { position:absolute; top:4px; right:4px; display:flex; gap:2px; }
-    #section-flashcards .fc-tile-acoes button { background:none; border:none; font-size:10px; cursor:pointer; padding:2px; opacity:0.6; }
-    #section-flashcards .fc-tile-acoes button:hover { opacity:1; }
-    #section-flashcards .fc-tile-texto { flex:1; overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; color:var(--text-main); line-height:1.35; }
+    #section-flashcards .fc-tile-excluir-baralho { position:absolute; top:4px; right:4px; background:none; border:none; font-size:11px; cursor:pointer; padding:2px; opacity:0.5; }
+    #section-flashcards .fc-tile-excluir-baralho:hover { opacity:1; }
 
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
@@ -3894,6 +3892,7 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #modal-flashcard .fc-tb-btn.ativo { background:#fef3c7; border-color:#fcd34d; color:#92400e; }
     #modal-flashcard .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
+    #modal-flashcard .fc-card-clicavel { cursor:pointer; }
     #modal-flashcard .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; white-space:pre-wrap; }
     #modal-flashcard .fc-card-dica { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--text-muted); text-transform:uppercase; }
     #modal-flashcard .fc-star { position:absolute; top:10px; right:10px; background:none; border:none; font-size:18px; cursor:pointer; color:#cbd5e1; padding:2px; }
@@ -3904,10 +3903,16 @@ document.addEventListener('click', function(e) {
     #modal-flashcard #fc-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-flashcard .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
     #modal-flashcard .fc-footer-btn, #modal-flashcard-bulk .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
-    #modal-flashcard-bulk .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-flashcard .fc-footer-btn.perigo { color:var(--danger); border-color:#fecaca; }
+    #modal-flashcard .fc-footer-btn.primario, #modal-flashcard-bulk .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-flashcard .fc-form { display:flex; flex-direction:column; gap:10px; }
+    #modal-flashcard .fc-form textarea { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; min-height:60px; }
+    #modal-flashcard .fc-form-campo label, #modal-flashcard-bulk .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-flashcard-bulk .fc-form-campo { margin-bottom:0; }
+    #modal-flashcard-bulk .fc-form-campo input[type="text"] { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; }
     #modal-flashcard-bulk .fc-bulk-ajuda { font-size:12px; color:var(--text-muted); line-height:1.4; }
     #modal-flashcard-bulk .fc-bulk-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
-    #modal-flashcard-bulk .fc-bulk-textarea { width:100%; min-height:280px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; }
+    #modal-flashcard-bulk .fc-bulk-textarea { width:100%; min-height:260px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; box-sizing:border-box; }
     #modal-flashcard-bulk .fc-bulk-erro { font-size:11px; color:var(--danger); font-weight:700; }
 </style>
 
@@ -3935,6 +3940,8 @@ document.addEventListener('click', function(e) {
         </div>
 
         <div class="fc-popup-footer">
+            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarCardAtual()">✏️ Editar</button>
+            <button class="fc-footer-btn perigo" id="fc-btn-excluir" onclick="window.FLASHCARDS_RUNTIME.excluirCardAtual()">🗑️ Excluir</button>
             <button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.fecharPopup()">Fechar</button>
         </div>
     </div>
@@ -3942,7 +3949,11 @@ document.addEventListener('click', function(e) {
 
 <div id="modal-flashcard-bulk" class="mo">
     <div class="mdl">
-        <div class="fc-popup-header">✦ <span id="fc-bulk-titulo"></span> — Flashcards</div>
+        <div class="fc-popup-header">✦ Novo Baralho — <span id="fc-bulk-divisao"></span></div>
+        <div class="fc-form-campo">
+            <label>Nome do baralho</label>
+            <input type="text" id="fc-bulk-nome" placeholder="Ex.: Baralho de contratos">
+        </div>
         <div class="fc-bulk-ajuda">Um axioma por linha. Para frente/verso (vira a carta), use <code>frente :: verso</code>.</div>
         <textarea id="fc-bulk-texto" class="fc-bulk-textarea"></textarea>
         <div id="fc-bulk-erro" class="fc-bulk-erro" style="display:none;"></div>
@@ -3956,31 +3967,35 @@ document.addEventListener('click', function(e) {
 <script>
 // =========================================================================
 // window.FLASHCARDS_RUNTIME — axiomas do Caderno (fonte automática, leitura
-// só) + flashcards manuais (frente/verso, CRUD completo aqui) + favoritos.
-// Estruturas próprias (manuais/favoritos), NUNCA escreve em caderno_axiomas
-// — favoritar/criar/editar/excluir aqui não altera o Caderno de Axiomas.
+// só) + baralhos manuais (criados em massa, com CRUD por card aqui dentro)
+// + favoritos. Estruturas próprias (manuais/favoritos), NUNCA escreve em
+// caderno_axiomas — nada feito aqui altera o Caderno de Axiomas.
 //
 // Layout: L1 > L2 na sidebar (≤1/3 da largura) seleciona um L2, que
-// preenche a grade de cards à direita (2/3). O 1º tile da grade abre o
-// popup 1-a-1 (só axiomas do Caderno); os demais tiles SÃO os flashcards
-// manuais, exibidos direto na grade (clique vira frente/verso).
+// preenche a grade de cards à direita (2/3): 1º tile fixo = "Axiomas do
+// Caderno" (abre popup só-leitura); 1 tile por baralho manual (abre popup
+// de navegação escopado a esse baralho, com editar/excluir por card);
+// último tile fixo = "Adicionar Flashcards" (cria um baralho novo, em massa).
+//
+// manuais[chaveL2] = [ { id, nome, cards:[{id,frente,verso}], criadoEm }, ... ]
+// favoritos = { "<idDoCard>": true }  — id do axioma (id_q+'_'+sim_id) ou do card manual.
 // =========================================================================
 window.FLASHCARDS_RUNTIME = {
-    manuais: {},   // { "MATÉRIA > Divisão": [ {id, frente, verso, criadoEm}, ... ] }
-    favoritos: {}, // { "<chaveEstavel>": true }
+    manuais: {},
+    favoritos: {},
     STORAGE_KEY: 'tjpe_v1__flashcards_runtime',
 
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
-    _tilesFlip: {},         // { idDoCardManual: true/false } — flip por tile na grade
-    _editandoTileId: null,  // setado por editarTile(), limpo por abrirModalBulk()/fecharModalBulk()
-    _popupState: null,      // { materia, divisao, cardsBase, ordemChaves, indiceAtual, soFavoritos }
+    _formularioAberto: false,
+    _popupState: null,   // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, soFavoritos, flipado }
 
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
         this.favoritos = (bruto && typeof bruto.favoritos === 'object') ? bruto.favoritos : {};
+        this._migrarManuaisSeNecessario();
     },
 
     salvar: function() {
@@ -3994,6 +4009,36 @@ window.FLASHCARDS_RUNTIME = {
     init: function() {
         this.carregar();
         this.render();
+    },
+
+    // Formato antigo (pré-baralhos) tinha manuais[chaveL2] como array de
+    // cards soltos ({id, frente, verso}). Agrupa isso, uma vez só, num
+    // baralho único "Baralho migrado" — preserva os ids dos cards (então
+    // favoritos antigos não se perdem) e nunca mais dispara depois disso.
+    _migrarManuaisSeNecessario: function() {
+        let self = this;
+        let mudou = false;
+        Object.keys(this.manuais).forEach(function(chaveL2) {
+            let arr = self.manuais[chaveL2];
+            if (!Array.isArray(arr) || arr.length === 0) return;
+            let temFormatoAntigo = arr.some(function(item) { return item && typeof item.frente === 'string' && !Array.isArray(item.cards); });
+            if (!temFormatoAntigo) return;
+
+            let cardsAntigos = arr.filter(function(item) { return item && typeof item.frente === 'string' && !Array.isArray(item.cards); });
+            let baralhosJaNovos = arr.filter(function(item) { return item && Array.isArray(item.cards); });
+
+            let deckMigrado = {
+                id: 'deck_migrado_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                nome: 'Baralho migrado',
+                cards: cardsAntigos.map(function(c) {
+                    return { id: c.id || ('card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)), frente: c.frente, verso: c.verso || '' };
+                }),
+                criadoEm: new Date().toISOString()
+            };
+            self.manuais[chaveL2] = baralhosJaNovos.concat([deckMigrado]);
+            mudou = true;
+        });
+        if (mudou) this.salvar();
     },
 
     _chaveL2: function(materia, divisao) {
@@ -4015,9 +4060,8 @@ window.FLASHCARDS_RUNTIME = {
         return (db && typeof db.caderno_axiomas === 'object') ? db.caderno_axiomas : {};
     },
 
-    // Une axiomas do Caderno (cujo "topico" comece com essa divisão) +
-    // flashcards manuais desse L2 — array de cards num formato só.
-    listarCardsDoL2: function(materia, divisao) {
+    // Só os axiomas do Caderno (leitura) desse L2.
+    listarAxiomasDoL2: function(materia, divisao) {
         let cards = [];
         let axiomas = this._lerCadernoAxiomas();
         let materiaUpper = (materia || '').toUpperCase().trim();
@@ -4034,17 +4078,19 @@ window.FLASHCARDS_RUNTIME = {
             });
         });
 
-        let chaveL2 = this._chaveL2(materia, divisao);
-        let manuaisDoL2 = Array.isArray(this.manuais[chaveL2]) ? this.manuais[chaveL2] : [];
-        manuaisDoL2.forEach(function(item) {
-            cards.push({ tipo: 'manual', chave: item.id, id: item.id, frente: item.frente, verso: item.verso });
-        });
-
         return cards;
     },
 
+    listarBaralhosDoL2: function(materia, divisao) {
+        let chaveL2 = this._chaveL2(materia, divisao);
+        return Array.isArray(this.manuais[chaveL2]) ? this.manuais[chaveL2] : [];
+    },
+
     contarCardsDoL2: function(materia, divisao) {
-        return this.listarCardsDoL2(materia, divisao).length;
+        let totalManual = this.listarBaralhosDoL2(materia, divisao).reduce(function(soma, deck) {
+            return soma + (Array.isArray(deck.cards) ? deck.cards.length : 0);
+        }, 0);
+        return this.listarAxiomasDoL2(materia, divisao).length + totalManual;
     },
 
     // ── SIDEBAR L1 > L2 ──
@@ -4104,7 +4150,6 @@ window.FLASHCARDS_RUNTIME = {
     selecionarDivisao: function(materia, divisao) {
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
-        this._tilesFlip = {};
         document.querySelectorAll('#fc-col-divisoes .fc-divisao-item').forEach(function(el) { el.classList.remove('ativa'); });
         let alvo = Array.from(document.querySelectorAll('#fc-col-divisoes .fc-divisao-item')).find(function(el) {
             return el.querySelector('span').textContent === divisao;
@@ -4123,9 +4168,8 @@ window.FLASHCARDS_RUNTIME = {
         }
 
         let self = this;
-        let cards = this.listarCardsDoL2(materia, divisao);
-        let qtdAxiomas = cards.filter(function(c) { return c.tipo === 'axioma'; }).length;
-        let manuais = cards.filter(function(c) { return c.tipo === 'manual'; });
+        let qtdAxiomas = this.listarAxiomasDoL2(materia, divisao).length;
+        let baralhos = this.listarBaralhosDoL2(materia, divisao);
         let mEsc = materia.replace(/'/g, "\\'");
         let dEsc = divisao.replace(/'/g, "\\'");
 
@@ -4133,70 +4177,56 @@ window.FLASHCARDS_RUNTIME = {
             '<div class="fc-card-tile fc-tile-especial" onclick="window.FLASHCARDS_RUNTIME.abrirPopup(\'' + mEsc + '\', \'' + dEsc + '\')">' +
                 '<div class="fc-tile-icone">📚</div><div class="fc-tile-titulo">Axiomas do Caderno</div><div class="fc-tile-count">(' + qtdAxiomas + ')</div>' +
             '</div>' +
+            baralhos.map(function(deck) {
+                let n = Array.isArray(deck.cards) ? deck.cards.length : 0;
+                return '<div class="fc-card-tile fc-tile-deck" onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + deck.id + '\')">' +
+                    '<button class="fc-tile-excluir-baralho" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.excluirBaralho(\'' + deck.id + '\')" title="Excluir baralho">🗑️</button>' +
+                    '<div class="fc-tile-icone">🗂️</div>' +
+                    '<div class="fc-tile-titulo">' + self._escapar(deck.nome) + '</div>' +
+                    '<div class="fc-tile-count">' + (n === 0 ? 'sem cards' : ('(' + n + ' card' + (n === 1 ? '' : 's') + ')')) + '</div>' +
+                '</div>';
+            }).join('') +
             '<div class="fc-card-tile fc-tile-especial fc-tile-add" onclick="window.FLASHCARDS_RUNTIME.abrirModalBulk(\'' + mEsc + '\', \'' + dEsc + '\')">' +
                 '<div class="fc-tile-icone">➕</div><div class="fc-tile-titulo">Adicionar Flashcards</div>' +
-            '</div>' +
-            manuais.map(function(card) {
-                let flip = !!self._tilesFlip[card.id];
-                let texto = (flip && card.verso) ? card.verso : card.frente;
-                return '<div class="fc-card-tile fc-tile-manual" onclick="window.FLASHCARDS_RUNTIME.alternarFlipTile(\'' + card.id + '\')">' +
-                    '<div class="fc-tile-acoes">' +
-                        '<button onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.editarTile(\'' + card.id + '\')" title="Editar">✏️</button>' +
-                        '<button onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.excluirTile(\'' + card.id + '\')" title="Excluir">🗑️</button>' +
-                    '</div>' +
-                    '<div class="fc-tile-texto">' + self._escapar(texto) + '</div>' +
-                '</div>';
-            }).join('');
+            '</div>';
 
         colCards.innerHTML = '<div class="fc-cards-grid">' + tiles + '</div>';
     },
 
-    alternarFlipTile: function(id) {
-        this._tilesFlip[id] = !this._tilesFlip[id];
-        this.renderGradeCards();
-    },
-
-    editarTile: function(id) {
-        let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let item = (this.manuais[chaveL2] || []).find(function(c) { return c.id === id; });
-        if (!item) return;
-        this._editandoTileId = id;
-        document.getElementById('fc-bulk-titulo').textContent = this._divisaoSelecionada;
-        document.getElementById('fc-bulk-texto').value = item.verso ? (item.frente + ' :: ' + item.verso) : item.frente;
-        document.getElementById('fc-bulk-erro').style.display = 'none';
-        document.getElementById('modal-flashcard-bulk').classList.add('open');
-    },
-
-    excluirTile: function(id) {
-        if (!confirm('Excluir este flashcard permanentemente?')) return;
+    // Ação destrutiva de vários cards de uma vez (o baralho inteiro) —
+    // sempre passa por confirm() antes de tocar nos dados.
+    excluirBaralho: function(deckId) {
+        if (!confirm('Excluir este baralho e todos os seus cards permanentemente?')) return;
         let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
         let arr = this.manuais[chaveL2];
-        if (Array.isArray(arr)) {
-            let idx = arr.findIndex(function(c) { return c.id === id; });
-            if (idx !== -1) arr.splice(idx, 1);
+        if (!Array.isArray(arr)) return;
+        let self = this;
+        let deck = arr.find(function(d) { return d.id === deckId; });
+        if (deck && Array.isArray(deck.cards)) {
+            deck.cards.forEach(function(c) { delete self.favoritos[c.id]; });
         }
-        delete this.favoritos[id];
+        let idx = arr.findIndex(function(d) { return d.id === deckId; });
+        if (idx !== -1) arr.splice(idx, 1);
         this.salvar();
         this.renderGradeCards();
-        this.selecionarMateria(this._materiaSelecionada, true); // atualiza o contador do L2 na sidebar
+        this.selecionarMateria(this._materiaSelecionada, true);
     },
 
-    // ── MODAL DE CRIAÇÃO EM MASSA (e edição de 1 card, reaproveitando o mesmo modal) ──
+    // ── MODAL DE CRIAÇÃO EM MASSA (sempre cria um baralho NOVO) ──
 
     abrirModalBulk: function(materia, divisao) {
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
-        this._editandoTileId = null;
-        document.getElementById('fc-bulk-titulo').textContent = divisao;
+        document.getElementById('fc-bulk-divisao').textContent = divisao;
+        document.getElementById('fc-bulk-nome').value = '';
         document.getElementById('fc-bulk-texto').value = '';
         document.getElementById('fc-bulk-erro').style.display = 'none';
         document.getElementById('modal-flashcard-bulk').classList.add('open');
-        setTimeout(function() { let t = document.getElementById('fc-bulk-texto'); if (t) t.focus(); }, 50);
+        setTimeout(function() { let n = document.getElementById('fc-bulk-nome'); if (n) n.focus(); }, 50);
     },
 
     fecharModalBulk: function() {
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
-        this._editandoTileId = null;
     },
 
     _parsearLinhaBulk: function(linha) {
@@ -4206,66 +4236,79 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     salvarBulk: function() {
+        let erroEl = document.getElementById('fc-bulk-erro');
+        let nome = (document.getElementById('fc-bulk-nome').value || '').trim();
+        if (!nome) {
+            if (erroEl) { erroEl.textContent = 'Dê um nome ao baralho.'; erroEl.style.display = 'block'; }
+            return;
+        }
+
         let textoBruto = document.getElementById('fc-bulk-texto').value;
         let linhas = textoBruto.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
-        let erroEl = document.getElementById('fc-bulk-erro');
-
         if (linhas.length === 0) {
             if (erroEl) { erroEl.textContent = 'Digite ao menos 1 linha.'; erroEl.style.display = 'block'; }
             return;
         }
 
+        let self = this;
+        let cards = linhas.map(function(linha) {
+            let partes = self._parsearLinhaBulk(linha);
+            return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
+        }).filter(function(c) { return c.frente; });
+
+        if (cards.length === 0) {
+            if (erroEl) { erroEl.textContent = 'Nenhuma linha válida.'; erroEl.style.display = 'block'; }
+            return;
+        }
+
         let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
         if (!Array.isArray(this.manuais[chaveL2])) this.manuais[chaveL2] = [];
-
-        if (this._editandoTileId) {
-            // Edição de 1 card existente — aceita exatamente 1 linha.
-            if (linhas.length > 1) {
-                if (erroEl) { erroEl.textContent = 'Edição aceita só 1 linha.'; erroEl.style.display = 'block'; }
-                return;
-            }
-            let item = this.manuais[chaveL2].find(function(c) { return c.id === window.FLASHCARDS_RUNTIME._editandoTileId; });
-            if (item) {
-                let partes = this._parsearLinhaBulk(linhas[0]);
-                item.frente = partes.frente;
-                item.verso = partes.verso;
-                // id e criadoEm permanecem intocados — é uma edição, não um card novo.
-            }
-        } else {
-            // Criação em massa — 1 linha = 1 card novo.
-            let self = this;
-            linhas.forEach(function(linha) {
-                let partes = self._parsearLinhaBulk(linha);
-                if (!partes.frente) return;
-                self.manuais[chaveL2].push({
-                    id: 'fc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-                    frente: partes.frente,
-                    verso: partes.verso,
-                    criadoEm: new Date().toISOString()
-                });
-            });
-        }
+        this.manuais[chaveL2].push({
+            id: 'deck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+            nome: nome,
+            cards: cards,
+            criadoEm: new Date().toISOString()
+        });
 
         this.salvar();
         if (erroEl) erroEl.style.display = 'none';
-        this._editandoTileId = null;
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
         this.renderGradeCards();
-        this.selecionarMateria(this._materiaSelecionada, true); // atualiza contador
+        this.selecionarMateria(this._materiaSelecionada, true);
     },
 
-    // ── POPUP 1-A-1 (só axiomas do Caderno — não editável/excluível aqui) ──
+    // ── POPUP 1-A-1 (2 modos: 'axiomas' = só leitura / 'baralho' = editável por card) ──
 
     abrirPopup: function(materia, divisao) {
-        let cards = this.listarCardsDoL2(materia, divisao).filter(function(c) { return c.tipo === 'axioma'; });
+        let cards = this.listarAxiomasDoL2(materia, divisao);
         this._popupState = {
-            materia: materia,
-            divisao: divisao,
+            modo: 'axiomas',
+            materia: materia, divisao: divisao, deckId: null,
             cardsBase: cards,
             ordemChaves: cards.map(function(c) { return c.chave; }),
-            indiceAtual: 0,
-            soFavoritos: false
+            indiceAtual: 0, soFavoritos: false, flipado: false
         };
+        this._formularioAberto = false;
+        document.getElementById('fc-popup-titulo').textContent = divisao;
+        document.getElementById('modal-flashcard').classList.add('open');
+        this.renderPopup();
+        document.addEventListener('keydown', this._handlerTeclado);
+    },
+
+    abrirPopupBaralho: function(deckId) {
+        let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === deckId; });
+        if (!deck) return;
+        let cards = (deck.cards || []).map(function(c) { return { tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso }; });
+        this._popupState = {
+            modo: 'baralho',
+            materia: this._materiaSelecionada, divisao: this._divisaoSelecionada, deckId: deckId,
+            cardsBase: cards,
+            ordemChaves: cards.map(function(c) { return c.chave; }),
+            indiceAtual: 0, soFavoritos: false, flipado: false
+        };
+        this._formularioAberto = false;
+        document.getElementById('fc-popup-titulo').textContent = deck.nome;
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
@@ -4274,14 +4317,18 @@ window.FLASHCARDS_RUNTIME = {
     fecharPopup: function() {
         document.getElementById('modal-flashcard').classList.remove('open');
         document.removeEventListener('keydown', this._handlerTeclado);
+        this._formularioAberto = false;
     },
 
     _handlerTeclado: function(e) {
         if (!document.getElementById('modal-flashcard').classList.contains('open')) return;
+        if (window.FLASHCARDS_RUNTIME._formularioAberto) return;
         if (e.key === 'ArrowLeft') window.FLASHCARDS_RUNTIME.anterior();
         else if (e.key === 'ArrowRight') window.FLASHCARDS_RUNTIME.proximo();
     },
 
+    // Deck efetivamente navegável agora: ordemChaves (respeita embaralhar)
+    // resolvida pra objetos de card, filtrada por favoritos se ativo.
     _deckAtual: function() {
         let s = this._popupState;
         let self = this;
@@ -4304,9 +4351,10 @@ window.FLASHCARDS_RUNTIME = {
         let s = this._popupState;
         if (!s) return;
         let deck = this._deckAtual();
-        if (deck.length === 0) { s.indiceAtual = 0; return; }
+        if (deck.length === 0) { s.indiceAtual = 0; s.flipado = false; return; }
         let idx = chavePreferida ? deck.findIndex(function(c) { return c.chave === chavePreferida; }) : -1;
         s.indiceAtual = idx !== -1 ? idx : 0;
+        s.flipado = false;
     },
 
     embaralhar: function() {
@@ -4317,6 +4365,7 @@ window.FLASHCARDS_RUNTIME = {
             let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
         }
         s.indiceAtual = 0;
+        s.flipado = false;
         this.renderPopup();
     },
 
@@ -4335,6 +4384,7 @@ window.FLASHCARDS_RUNTIME = {
         let deck = this._deckAtual();
         if (!s || deck.length < 2) return;
         s.indiceAtual = (s.indiceAtual + 1) % deck.length;
+        s.flipado = false;
         this.renderPopup();
     },
 
@@ -4343,6 +4393,14 @@ window.FLASHCARDS_RUNTIME = {
         let deck = this._deckAtual();
         if (!s || deck.length < 2) return;
         s.indiceAtual = (s.indiceAtual - 1 + deck.length) % deck.length;
+        s.flipado = false;
+        this.renderPopup();
+    },
+
+    alternarFlip: function() {
+        let card = this._cardAtual();
+        if (!card || card.tipo !== 'manual' || !card.verso) return;
+        this._popupState.flipado = !this._popupState.flipado;
         this.renderPopup();
     },
 
@@ -4355,12 +4413,103 @@ window.FLASHCARDS_RUNTIME = {
         this.renderPopup();
     },
 
+    // ── CRUD DE CARD (só modo 'baralho' — axiomas não editam/excluem aqui) ──
+
+    editarCardAtual: function() {
+        let s = this._popupState;
+        if (!s || s.modo !== 'baralho') return;
+        if (!this._cardAtual()) return;
+        this._formularioAberto = true;
+        this.renderPopup();
+    },
+
+    cancelarFormulario: function() {
+        this._formularioAberto = false;
+        this.renderPopup();
+    },
+
+    confirmarFormulario: function() {
+        let frenteEl = document.getElementById('fc-form-frente');
+        let versoEl = document.getElementById('fc-form-verso');
+        let frente = (frenteEl ? frenteEl.value : '').trim();
+        let verso = (versoEl ? versoEl.value : '').trim();
+        if (!frente) { alert('A frente do card não pode ficar vazia.'); return; }
+
+        let s = this._popupState;
+        if (!s || s.modo !== 'baralho') return;
+        let card = this._cardAtual();
+        if (!card) return;
+
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === s.deckId; });
+        if (!deck) return;
+        let itemReal = (deck.cards || []).find(function(c) { return c.id === card.id; });
+        if (itemReal) { itemReal.frente = frente; itemReal.verso = verso; }
+        this.salvar();
+
+        let cardObj = s.cardsBase.find(function(c) { return c.chave === card.chave; });
+        if (cardObj) { cardObj.frente = frente; cardObj.verso = verso; }
+
+        this._formularioAberto = false;
+        this.renderPopup();
+    },
+
+    excluirCardAtual: function() {
+        let s = this._popupState;
+        if (!s || s.modo !== 'baralho') return;
+        let card = this._cardAtual();
+        if (!card) return;
+        if (!confirm('Excluir este flashcard permanentemente?')) return;
+
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === s.deckId; });
+        if (!deck) return;
+
+        let idx = (deck.cards || []).findIndex(function(c) { return c.id === card.id; });
+        if (idx !== -1) deck.cards.splice(idx, 1);
+        delete this.favoritos[card.chave];
+
+        let chaveRemovida = card.chave;
+        s.cardsBase = s.cardsBase.filter(function(c) { return c.chave !== chaveRemovida; });
+        s.ordemChaves = s.ordemChaves.filter(function(chave) { return chave !== chaveRemovida; });
+
+        if (deck.cards.length === 0) {
+            this.salvar();
+            let excluirBaralhoTambem = confirm('Esse era o último card do baralho "' + deck.nome + '". Excluir o baralho também?');
+            if (excluirBaralhoTambem) {
+                let arr = this.manuais[chaveL2];
+                let di = arr.findIndex(function(d) { return d.id === deck.id; });
+                if (di !== -1) arr.splice(di, 1);
+                this.salvar();
+            }
+            this.fecharPopup();
+            this.renderGradeCards();
+            this.selecionarMateria(this._materiaSelecionada, true);
+            return;
+        }
+
+        this.salvar();
+        this._reposicionarApos(null);
+        this.renderPopup();
+        this.renderGradeCards();
+    },
+
+    // ── RENDER DO POPUP ──
+
+    _renderFormulario: function(item) {
+        return '<div class="fc-form">' +
+            '<div class="fc-form-campo"><label>Frente</label><textarea id="fc-form-frente">' + this._escapar(item.frente) + '</textarea></div>' +
+            '<div class="fc-form-campo"><label>Verso (opcional)</label><textarea id="fc-form-verso">' + this._escapar(item.verso || '') + '</textarea></div>' +
+            '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
+                '<button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.cancelarFormulario()">Cancelar</button>' +
+                '<button class="fc-footer-btn primario" onclick="window.FLASHCARDS_RUNTIME.confirmarFormulario()">💾 Salvar</button>' +
+            '</div>' +
+        '</div>';
+    },
+
     renderPopup: function() {
         let s = this._popupState;
         if (!s) return;
-
-        let tituloEl = document.getElementById('fc-popup-titulo');
-        if (tituloEl) tituloEl.textContent = s.divisao || '';
 
         let totalFav = s.cardsBase.filter(function(c) { return window.FLASHCARDS_RUNTIME.favoritos[c.chave]; }).length;
         let contFav = document.getElementById('fc-count-fav');
@@ -4369,25 +4518,51 @@ window.FLASHCARDS_RUNTIME = {
         if (btnFav) btnFav.classList.toggle('ativo', s.soFavoritos);
 
         let corpo = document.getElementById('fc-corpo-popup');
+        let navEl = document.getElementById('fc-popup-nav');
+        let btnEditar = document.getElementById('fc-btn-editar');
+        let btnExcluir = document.getElementById('fc-btn-excluir');
+
+        if (this._formularioAberto) {
+            let card = this._cardAtual();
+            corpo.innerHTML = card ? this._renderFormulario(card) : '';
+            if (navEl) navEl.style.display = 'none';
+            if (btnEditar) btnEditar.style.display = 'none';
+            if (btnExcluir) btnExcluir.style.display = 'none';
+            return;
+        }
+        if (navEl) navEl.style.display = 'flex';
+
         let deck = this._deckAtual();
         let posEl = document.getElementById('fc-posicao');
         if (deck.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">' + (s.soFavoritos ? 'Nenhum favorito neste L2 ainda.' : 'Nenhum axioma neste L2 ainda.') + '</div>';
+            let msgVazio = s.modo === 'baralho'
+                ? (s.soFavoritos ? 'Nenhum favorito neste baralho.' : 'Este baralho está sem cards.')
+                : (s.soFavoritos ? 'Nenhum favorito neste L2 ainda.' : 'Nenhum axioma neste L2 ainda.');
+            corpo.innerHTML = '<div class="fc-vazio">' + msgVazio + '</div>';
             if (posEl) posEl.textContent = '0 / 0';
+            if (btnEditar) btnEditar.style.display = 'none';
+            if (btnExcluir) btnExcluir.style.display = 'none';
             return;
         }
 
         let card = this._cardAtual();
         let favoritado = !!this.favoritos[card.chave];
+        let mostrarVerso = card.tipo === 'manual' && s.flipado;
+        let texto = card.tipo === 'axioma' ? card.texto : (mostrarVerso ? card.verso : card.frente);
+        let temVerso = card.tipo === 'manual' && card.verso;
 
         corpo.innerHTML =
-            '<div class="fc-card">' +
+            '<div class="fc-card' + (temVerso ? ' fc-card-clicavel' : '') + '"' + (temVerso ? ' onclick="window.FLASHCARDS_RUNTIME.alternarFlip()"' : '') + '>' +
                 '<button class="fc-star' + (favoritado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.alternarFavorito()" title="' + (favoritado ? 'Remover dos favoritos' : 'Favoritar') + '">⭐</button>' +
-                '<div class="fc-card-texto">' + this._escapar(card.texto) + '</div>' +
-                '<div class="fc-card-dica">USE ‹› PARA NAVEGAR</div>' +
+                '<div class="fc-card-texto">' + this._escapar(texto) + '</div>' +
+                '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : 'USE ‹› PARA NAVEGAR') + '</div>' +
             '</div>';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
+
+        let podeEditar = s.modo === 'baralho';
+        if (btnEditar) btnEditar.style.display = podeEditar ? 'inline-block' : 'none';
+        if (btnExcluir) btnExcluir.style.display = podeEditar ? 'inline-block' : 'none';
     }
 };
 </script>
