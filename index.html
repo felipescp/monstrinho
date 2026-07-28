@@ -1220,6 +1220,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         
 </div>
     <div class="nav-hd-zone">        
+        <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>        
         <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões Salvas">📓 CADERNO</div>
@@ -1829,9 +1830,11 @@ window.SALINHA_BACKUP = {
         'tjpe_v1__cordeiro_view_ativa',
         'tjpe_v1__salinha_active_module',
 
-
         // CRONOGRAMA
-        'tjpe_v1__cronograma_runtime'
+        'tjpe_v1__cronograma_runtime',
+
+        // FLASHCARDS
+        'tjpe_v1__flashcards_runtime'
     ],
 
     construirPayload: async function() {
@@ -2054,6 +2057,67 @@ window.SALINHA_BACKUP = {
                         Object.keys(objImportado[subChave]).forEach(plannerId => {
                             if (objLocal[subChave][plannerId] === undefined) {
                                 objLocal[subChave][plannerId] = objImportado[subChave][plannerId];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.manuais) ──
+                    // Mesma forma de caderno_erros/caderno_axiomas: dicionário
+                    // {"MATÉRIA > Divisão" → array de flashcards}. A ESTRATÉGIA B
+                    // genérica só copia a sub-chave inteira se objLocal.manuais
+                    // nunca existiu — mesmo bug que já corrigimos lá. Desce 1
+                    // nível (a chave L2 já vem "achatada", sem 2º nível de
+                    // aninhamento como caderno_erros/axiomas têm) e mescla os
+                    // flashcards por id — união, mantém a versão local em caso
+                    // de mesmo id dos dois lados.
+                    if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'manuais' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const cardsImportados = objImportado[subChave][chaveL2];
+                            if (!Array.isArray(cardsImportados)) return;
+                            if (!Array.isArray(objLocal[subChave][chaveL2])) {
+                                objLocal[subChave][chaveL2] = [];
+                            }
+                            cardsImportados.forEach(card => {
+                                if (!card || !card.id) return;
+                                const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
+                                    return local && local.id === card.id;
+                                });
+                                if (!jaExiste) {
+                                    objLocal[subChave][chaveL2].push(card);
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.favoritos) ──
+                    // Dicionário achatado {chaveEstavel → true}, não array — mesmo
+                    // problema: a ESTRATÉGIA B genérica só copiaria a sub-chave
+                    // inteira se objLocal.favoritos nunca tivesse existido. Aqui
+                    // não tem estrutura aninhada pra descer, só união das chaves
+                    // (favoritado em QUALQUER dos dois lados = favoritado depois
+                    // do merge — não existe "desfavoritar" via merge).
+                    if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'favoritos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveCard => {
+                            if (objLocal[subChave][chaveCard] === undefined) {
+                                objLocal[subChave][chaveCard] = objImportado[subChave][chaveCard];
                                 entidadesInjetadas++;
                                 persistirChave = true;
                             }
@@ -3790,6 +3854,528 @@ document.addEventListener('click', function(e) {
     </div>
 </div>
 
+<!-- ========================================================= -->
+<!-- SEÇÃO: FLASHCARDS (axiomas do Caderno + manuais, por L1>L2) -->
+<!-- ========================================================= -->
+<section id="section-flashcards" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
+<style>
+    #section-flashcards .fc-grid { display:grid; grid-template-columns: 0.85fr 1.15fr; flex:1; overflow:hidden; }
+    #section-flashcards .fc-col { overflow-y:auto; padding:10px; }
+    #section-flashcards #fc-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
+    #section-flashcards #fc-col-divisoes { border-right:1px solid var(--border-color); }
+    #section-flashcards .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #section-flashcards .fc-materia-item:hover { background:#eef2ff; }
+    #section-flashcards .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-flashcards .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #section-flashcards .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #section-flashcards .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
+    #section-flashcards .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-flashcards .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+
+    #modal-flashcard .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
+    #modal-flashcard .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-flashcard .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-flashcard .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-flashcard .fc-tb-btn.ativo { background:#fef3c7; border-color:#fcd34d; color:#92400e; }
+    #modal-flashcard .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
+    #modal-flashcard .fc-card-clicavel { cursor:pointer; }
+    #modal-flashcard .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; white-space:pre-wrap; }
+    #modal-flashcard .fc-card-dica { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--text-muted); text-transform:uppercase; }
+    #modal-flashcard .fc-star { position:absolute; top:10px; right:10px; background:none; border:none; font-size:18px; cursor:pointer; color:#cbd5e1; padding:2px; }
+    #modal-flashcard .fc-star.ativo { color:#f59e0b; }
+    #modal-flashcard .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    #modal-flashcard .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #modal-flashcard .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #modal-flashcard #fc-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #modal-flashcard .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
+    #modal-flashcard .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-flashcard .fc-footer-btn.perigo { color:var(--danger); border-color:#fecaca; }
+    #modal-flashcard .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; margin-right:auto; }
+    #modal-flashcard .fc-form textarea { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; min-height:60px; }
+    #modal-flashcard .fc-form label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-flashcard .fc-form-campo { margin-bottom:10px; }
+</style>
+
+    <div class="fc-grid">
+        <div class="fc-col" id="fc-col-materias"></div>
+        <div class="fc-col" id="fc-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+    </div>
+
+<div id="modal-flashcard" class="mo">
+    <div class="mdl">
+        <div class="fc-popup-header">✦ <span id="fc-popup-titulo"></span> — Flashcards</div>
+
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralhar()">🔀 Embaralhar</button>
+            <button class="fc-tb-btn" id="fc-btn-favoritos" onclick="window.FLASHCARDS_RUNTIME.alternarSoFavoritos()">⭐ só favoritos (<span id="fc-count-fav">0</span>)</button>
+        </div>
+
+        <div id="fc-corpo-popup"></div>
+
+        <div class="fc-popup-nav" id="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.anterior()">‹</button>
+            <span id="fc-posicao">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.proximo()">›</button>
+        </div>
+
+        <div class="fc-popup-footer">
+            <button class="fc-footer-btn primario" onclick="window.FLASHCARDS_RUNTIME.abrirFormularioNovoCard()">+ Criar Flashcard</button>
+            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarCardAtual()">✏️ Editar</button>
+            <button class="fc-footer-btn perigo" id="fc-btn-excluir" onclick="window.FLASHCARDS_RUNTIME.excluirCardAtual()">🗑️ Excluir</button>
+            <button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.fecharPopup()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =========================================================================
+// window.FLASHCARDS_RUNTIME — axiomas do Caderno (fonte automática, leitura
+// só) + flashcards manuais (frente/verso, CRUD completo aqui) + favoritos.
+// Estruturas próprias (manuais/favoritos), NUNCA escreve em caderno_axiomas
+// — favoritar/criar/editar/excluir aqui não altera o Caderno de Axiomas.
+// =========================================================================
+window.FLASHCARDS_RUNTIME = {
+    manuais: {},   // { "MATÉRIA > Divisão": [ {id, frente, verso, criadoEm}, ... ] }
+    favoritos: {}, // { "<chaveEstavel>": true }
+    STORAGE_KEY: 'tjpe_v1__flashcards_runtime',
+
+    _popupState: null,     // { materia, divisao, cardsBase, ordemChaves, indiceAtual, soFavoritos, flipado }
+    _formularioAberto: false,
+    _idEmEdicao: null,
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
+        this.favoritos = (bruto && typeof bruto.favoritos === 'object') ? bruto.favoritos : {};
+    },
+
+    salvar: function() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ manuais: this.manuais, favoritos: this.favoritos }));
+        } catch (e) {
+            console.warn('[FLASHCARDS] Falha ao salvar:', e);
+        }
+    },
+
+    init: function() {
+        this.carregar();
+        this.render();
+    },
+
+    _chaveL2: function(materia, divisao) {
+        return (materia || '').toUpperCase().trim() + ' > ' + divisao;
+    },
+
+    // Lê caderno_axiomas de onde quer que ele esteja persistido hoje —
+    // mesmo fallback de chave que sincronizarCadernoComPlanner() já usa.
+    _lerCadernoAxiomas: function() {
+        let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+        let db = {};
+        try { db = JSON.parse(dbStr); } catch (e) { db = {}; }
+        return (db && typeof db.caderno_axiomas === 'object') ? db.caderno_axiomas : {};
+    },
+
+    // Une axiomas do Caderno (cujo "topico" comece com essa divisão) +
+    // flashcards manuais desse L2 — array de cards num formato só, pro
+    // popup não precisar saber a origem de cada um.
+    listarCardsDoL2: function(materia, divisao) {
+        let cards = [];
+        let axiomas = this._lerCadernoAxiomas();
+        let materiaUpper = (materia || '').toUpperCase().trim();
+        let porMateria = axiomas[materiaUpper] || {};
+
+        Object.keys(porMateria).forEach(function(topico) {
+            let ehDesseL2 = topico === divisao || topico.indexOf(divisao + ' > ') === 0;
+            if (!ehDesseL2) return;
+            let itens = porMateria[topico];
+            if (!Array.isArray(itens)) return;
+            itens.forEach(function(item) {
+                if (!item || !item.id_q || !item.sim_id || !item.axioma) return;
+                cards.push({ tipo: 'axioma', chave: item.id_q + '_' + item.sim_id, texto: item.axioma, id_q: item.id_q, sim_id: item.sim_id });
+            });
+        });
+
+        let chaveL2 = this._chaveL2(materia, divisao);
+        let manuaisDoL2 = Array.isArray(this.manuais[chaveL2]) ? this.manuais[chaveL2] : [];
+        manuaisDoL2.forEach(function(item) {
+            cards.push({ tipo: 'manual', chave: item.id, id: item.id, frente: item.frente, verso: item.verso });
+        });
+
+        return cards;
+    },
+
+    contarCardsDoL2: function(materia, divisao) {
+        return this.listarCardsDoL2(materia, divisao).length;
+    },
+
+    // ── SIDEBAR L1 > L2 ──
+
+    render: function() {
+        let colMaterias = document.getElementById('fc-col-materias');
+        if (!colMaterias) return;
+        let self = this;
+
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
+            return;
+        }
+
+        colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            let ativa = mat.nivel_1 === self._materiaSelecionada;
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+            '</div>';
+        }).join('');
+
+        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+    },
+
+    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = nivel1;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#fc-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#fc-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === nivel1;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+
+        let colDivisoes = document.getElementById('fc-col-divisoes');
+        if (!colDivisoes) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            return;
+        }
+
+        let self = this;
+        colDivisoes.innerHTML = mat.divisoes.map(function(div) {
+            let n = self.contarCardsDoL2(nivel1, div.nivel_2);
+            return '<div class="fc-divisao-item" onclick="window.FLASHCARDS_RUNTIME.abrirPopup(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                '<span>' + div.nivel_2 + '</span>' +
+                '<span class="fc-divisao-count">' + n + '</span>' +
+            '</div>';
+        }).join('');
+    },
+
+    // ── POPUP ──
+
+    abrirPopup: function(materia, divisao) {
+        let cards = this.listarCardsDoL2(materia, divisao);
+        this._popupState = {
+            materia: materia,
+            divisao: divisao,
+            cardsBase: cards,
+            ordemChaves: cards.map(function(c) { return c.chave; }),
+            indiceAtual: 0,
+            soFavoritos: false,
+            flipado: false
+        };
+        this._formularioAberto = false;
+        this._idEmEdicao = null;
+        document.getElementById('modal-flashcard').classList.add('open');
+        this.renderPopup();
+        document.addEventListener('keydown', this._handlerTeclado);
+    },
+
+    fecharPopup: function() {
+        document.getElementById('modal-flashcard').classList.remove('open');
+        document.removeEventListener('keydown', this._handlerTeclado);
+    },
+
+    _handlerTeclado: function(e) {
+        if (!document.getElementById('modal-flashcard').classList.contains('open')) return;
+        if (e.key === 'ArrowLeft') window.FLASHCARDS_RUNTIME.anterior();
+        else if (e.key === 'ArrowRight') window.FLASHCARDS_RUNTIME.proximo();
+    },
+
+    // Deck efetivamente navegável agora: ordemChaves (respeita embaralhar)
+    // resolvida pra objetos de card, filtrada por favoritos se ativo.
+    _deckAtual: function() {
+        let s = this._popupState;
+        let self = this;
+        if (!s) return [];
+        return s.ordemChaves
+            .map(function(chave) { return s.cardsBase.find(function(c) { return c.chave === chave; }); })
+            .filter(function(c) { return c && (!s.soFavoritos || self.favoritos[c.chave]); });
+    },
+
+    _cardAtual: function() {
+        let s = this._popupState;
+        let deck = this._deckAtual();
+        if (!s || deck.length === 0) return null;
+        if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
+        if (s.indiceAtual < 0) s.indiceAtual = 0;
+        return deck[s.indiceAtual];
+    },
+
+    // Reposiciona indiceAtual pra manter (se possível) o card de uma chave
+    // específica em foco depois de uma mudança no deck (filtro/exclusão) —
+    // se não achar mais essa chave no deck, cai pro primeiro item (índice 0)
+    // sem quebrar, mesmo que o deck esteja vazio.
+    _reposicionarApos: function(chavePreferida) {
+        let s = this._popupState;
+        if (!s) return;
+        let deck = this._deckAtual();
+        if (deck.length === 0) { s.indiceAtual = 0; s.flipado = false; return; }
+        let idx = chavePreferida ? deck.findIndex(function(c) { return c.chave === chavePreferida; }) : -1;
+        s.indiceAtual = idx !== -1 ? idx : 0;
+        s.flipado = false;
+    },
+
+    embaralhar: function() {
+        let s = this._popupState;
+        if (!s) return;
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        s.flipado = false;
+        this.renderPopup();
+    },
+
+    alternarSoFavoritos: function() {
+        let s = this._popupState;
+        if (!s) return;
+        let cardAtual = this._cardAtual();
+        let chaveAtual = cardAtual ? cardAtual.chave : null;
+        s.soFavoritos = !s.soFavoritos;
+        this._reposicionarApos(chaveAtual);
+        this.renderPopup();
+    },
+
+    proximo: function() {
+        let s = this._popupState;
+        let deck = this._deckAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + 1) % deck.length;
+        s.flipado = false;
+        this.renderPopup();
+    },
+
+    anterior: function() {
+        let s = this._popupState;
+        let deck = this._deckAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual - 1 + deck.length) % deck.length;
+        s.flipado = false;
+        this.renderPopup();
+    },
+
+    alternarFlip: function() {
+        let card = this._cardAtual();
+        if (!card || card.tipo !== 'manual' || !card.verso) return;
+        this._popupState.flipado = !this._popupState.flipado;
+        this.renderPopup();
+    },
+
+    alternarFavorito: function() {
+        let card = this._cardAtual();
+        if (!card) return;
+        if (this.favoritos[card.chave]) delete this.favoritos[card.chave];
+        else this.favoritos[card.chave] = true;
+        this.salvar();
+        this.renderPopup();
+    },
+
+    // ── CRUD DE MANUAIS (axiomas do Caderno não passam por aqui) ──
+
+    abrirFormularioNovoCard: function() {
+        this._formularioAberto = true;
+        this._idEmEdicao = null;
+        this.renderPopup();
+    },
+
+    editarCardAtual: function() {
+        let card = this._cardAtual();
+        if (!card || card.tipo !== 'manual') return;
+        this._formularioAberto = true;
+        this._idEmEdicao = card.id;
+        this.renderPopup();
+    },
+
+    cancelarFormulario: function() {
+        this._formularioAberto = false;
+        this._idEmEdicao = null;
+        this.renderPopup();
+    },
+
+    confirmarFormulario: function() {
+        let frenteEl = document.getElementById('fc-form-frente');
+        let versoEl = document.getElementById('fc-form-verso');
+        let frente = frenteEl ? frenteEl.value : '';
+        let verso = versoEl ? versoEl.value : '';
+        if (this._idEmEdicao) {
+            this._salvarEdicaoCard(this._idEmEdicao, frente, verso);
+        } else {
+            this.salvarNovoCard(frente, verso);
+        }
+    },
+
+    salvarNovoCard: function(frente, verso) {
+        frente = (frente || '').trim();
+        verso = (verso || '').trim();
+        if (!frente) { alert('A frente do card não pode ficar vazia.'); return; }
+
+        let s = this._popupState;
+        if (!s) return;
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        if (!Array.isArray(this.manuais[chaveL2])) this.manuais[chaveL2] = [];
+
+        let novoId = 'fc_' + Date.now();
+        this.manuais[chaveL2].push({ id: novoId, frente: frente, verso: verso, criadoEm: new Date().toISOString() });
+        this.salvar();
+
+        s.cardsBase.push({ tipo: 'manual', chave: novoId, id: novoId, frente: frente, verso: verso });
+        s.ordemChaves.push(novoId);
+
+        this._formularioAberto = false;
+        this._reposicionarApos(novoId);
+        this.renderPopup();
+        this.render();
+    },
+
+    _salvarEdicaoCard: function(id, frente, verso) {
+        frente = (frente || '').trim();
+        verso = (verso || '').trim();
+        if (!frente) { alert('A frente do card não pode ficar vazia.'); return; }
+
+        let s = this._popupState;
+        if (!s) return;
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        let arr = this.manuais[chaveL2];
+        let item = Array.isArray(arr) ? arr.find(function(c) { return c.id === id; }) : null;
+        if (!item) return;
+        item.frente = frente;
+        item.verso = verso;
+        this.salvar();
+
+        let cardObj = s.cardsBase.find(function(c) { return c.chave === id; });
+        if (cardObj) { cardObj.frente = frente; cardObj.verso = verso; }
+
+        this._formularioAberto = false;
+        this._idEmEdicao = null;
+        this.renderPopup();
+    },
+
+    excluirCardAtual: function() {
+        let card = this._cardAtual();
+        if (!card || card.tipo !== 'manual') return;
+        if (!confirm('Excluir este flashcard permanentemente?')) return;
+
+        let s = this._popupState;
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        let arr = this.manuais[chaveL2];
+        if (Array.isArray(arr)) {
+            let idx = arr.findIndex(function(c) { return c.id === card.id; });
+            if (idx !== -1) arr.splice(idx, 1);
+        }
+        delete this.favoritos[card.chave];
+        this.salvar();
+
+        let chaveRemovida = card.chave;
+        s.cardsBase = s.cardsBase.filter(function(c) { return c.chave !== chaveRemovida; });
+        s.ordemChaves = s.ordemChaves.filter(function(chave) { return chave !== chaveRemovida; });
+
+        if (s.cardsBase.length === 0) {
+            this.fecharPopup();
+            this.render();
+            return;
+        }
+
+        let deck = this._deckAtual();
+        if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
+        if (s.indiceAtual < 0) s.indiceAtual = 0;
+        s.flipado = false;
+        this.renderPopup();
+        this.render();
+    },
+
+    // ── RENDER DO POPUP ──
+
+    _escapar: function(s) {
+        return (s || '').replace(/[&<>"']/g, function(c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    },
+
+    _renderFormulario: function(item) {
+        let frente = item ? item.frente : '';
+        let verso = item ? item.verso : '';
+        return '<div class="fc-form">' +
+            '<div class="fc-form-campo"><label>Frente</label><textarea id="fc-form-frente">' + this._escapar(frente) + '</textarea></div>' +
+            '<div class="fc-form-campo"><label>Verso (opcional)</label><textarea id="fc-form-verso">' + this._escapar(verso) + '</textarea></div>' +
+            '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
+                '<button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.cancelarFormulario()">Cancelar</button>' +
+                '<button class="fc-footer-btn primario" onclick="window.FLASHCARDS_RUNTIME.confirmarFormulario()">💾 Salvar</button>' +
+            '</div>' +
+        '</div>';
+    },
+
+    renderPopup: function() {
+        let s = this._popupState;
+        if (!s) return;
+
+        let tituloEl = document.getElementById('fc-popup-titulo');
+        if (tituloEl) tituloEl.textContent = s.divisao || '';
+
+        let totalFav = s.cardsBase.filter(function(c) { return window.FLASHCARDS_RUNTIME.favoritos[c.chave]; }).length;
+        let contFav = document.getElementById('fc-count-fav');
+        if (contFav) contFav.textContent = totalFav;
+        let btnFav = document.getElementById('fc-btn-favoritos');
+        if (btnFav) btnFav.classList.toggle('ativo', s.soFavoritos);
+
+        let corpo = document.getElementById('fc-corpo-popup');
+        let navEl = document.getElementById('fc-popup-nav');
+        let btnEditar = document.getElementById('fc-btn-editar');
+        let btnExcluir = document.getElementById('fc-btn-excluir');
+
+        if (this._formularioAberto) {
+            let item = this._idEmEdicao ? (this.manuais[this._chaveL2(s.materia, s.divisao)] || []).find(function(c) { return c.id === window.FLASHCARDS_RUNTIME._idEmEdicao; }) : null;
+            corpo.innerHTML = this._renderFormulario(item);
+            if (navEl) navEl.style.display = 'none';
+            if (btnEditar) btnEditar.style.display = 'none';
+            if (btnExcluir) btnExcluir.style.display = 'none';
+            return;
+        }
+        if (navEl) navEl.style.display = 'flex';
+
+        let deck = this._deckAtual();
+        let posEl = document.getElementById('fc-posicao');
+        if (deck.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">' + (s.soFavoritos ? 'Nenhum favorito neste L2 ainda.' : 'Nenhum flashcard neste L2 ainda.') + '</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            if (btnEditar) btnEditar.style.display = 'none';
+            if (btnExcluir) btnExcluir.style.display = 'none';
+            return;
+        }
+
+        let card = this._cardAtual();
+        let favoritado = !!this.favoritos[card.chave];
+        let mostrarVerso = card.tipo === 'manual' && s.flipado;
+        let texto = card.tipo === 'axioma' ? card.texto : (mostrarVerso ? card.verso : card.frente);
+        let temVerso = card.tipo === 'manual' && card.verso;
+
+        corpo.innerHTML =
+            '<div class="fc-card' + (temVerso ? ' fc-card-clicavel' : '') + '" onclick="window.FLASHCARDS_RUNTIME.alternarFlip()">' +
+                '<button class="fc-star' + (favoritado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.alternarFavorito()" title="' + (favoritado ? 'Remover dos favoritos' : 'Favoritar') + '">⭐</button>' +
+                '<div class="fc-card-texto">' + this._escapar(texto) + '</div>' +
+                '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : 'USE ‹› PARA NAVEGAR') + '</div>' +
+            '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
+
+        let podeEditar = card.tipo === 'manual';
+        if (btnEditar) btnEditar.style.display = podeEditar ? 'inline-block' : 'none';
+        if (btnExcluir) btnExcluir.style.display = podeEditar ? 'inline-block' : 'none';
+    }
+};
+</script>
+</section>
+
 <!-- TELA 2: BACKOFFICE DO ADMIN (AGORA UM MODAL) -->
 <div id="tela-admin" class="mo" style="z-index: 4000;">
     <div class="mdl" style="max-width: 800px; width: 95%; max-height: 90vh; padding: 25px; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--border-color); align-items: center;">
@@ -5376,7 +5962,7 @@ if (id === 'tela-home') {
 }
 
 if (target) {
-    if (id === 'tela-simulado' || id === 'section-cronograma') {
+    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards') {
         target.style.display = 'flex';
     } else {
         target.style.display = 'block';
