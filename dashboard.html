@@ -211,13 +211,63 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
 .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
 .btn { padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 10px; cursor: pointer; border: 1px solid var(--border-color); background: var(--bg-white); font-family: var(--font-display); text-transform: uppercase; transition: 0.3s; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center;}
 .btn-primary { background: var(--app-primary); color: white; border: none; }
+
+/* Evolução do Desempenho — filtros + KPIs + gráfico, substitui o
+   cabeçalho redundante "Desempenho e Estatísticas" (o modal já tem esse
+   título na barra de cima). */
+.evo-filtro-label { display:block; font-family:var(--font-display); font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
+.evo-input-data { padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; font-family:var(--font-body); color:var(--text-main); background:var(--bg-white); }
+.evo-materia-btn { display:flex; align-items:center; gap:10px; padding:6px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); font-size:12px; color:var(--text-main); cursor:pointer; font-family:var(--font-body); min-width:200px; justify-content:space-between; }
+.evo-materia-btn:hover { border-color:var(--app-primary); }
+.evo-materia-dropdown { position:absolute; top:calc(100% + 4px); left:0; z-index:20; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.12); padding:8px; min-width:220px; max-height:240px; overflow-y:auto; }
+.evo-materia-item { display:flex; align-items:center; gap:8px; padding:5px 6px; font-size:12px; color:var(--text-main); cursor:pointer; border-radius:4px; }
+.evo-materia-item:hover { background:var(--bg-body); }
+.evo-materia-item.tudo { font-weight:700; border-bottom:1px solid var(--border-color); margin-bottom:4px; padding-bottom:8px; }
+.evo-titulo-bloco { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:12px; }
+.evo-stat-valor { font-family:var(--font-display); font-size:24px; font-weight:800; color:var(--text-main); line-height:1.1; }
+.evo-stat-label { font-size:11px; color:var(--text-muted); margin-top:3px; }
     </style>
 </head>
 <body>
     <main class="content">
         <section id="rendimento" style="display: flex; flex-direction: column; flex: 1;"> 
-           <div style="margin-bottom: 20px;">
-                <h2 style="font-family: var(--font-display); font-size: 18px; margin: 0; color: var(--text-main);">📊 Desempenho e Estatísticas</h2>
+           <div class="etl-insight-card" style="padding:15px; margin-bottom:20px;">
+                <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:20px;">
+                    <div>
+                        <label class="evo-filtro-label">Período</label>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <input type="date" id="evo-periodo-de" class="evo-input-data">
+                            <span style="color:var(--text-muted); font-size:12px;">–</span>
+                            <input type="date" id="evo-periodo-ate" class="evo-input-data">
+                        </div>
+                    </div>
+                    <div style="position:relative;">
+                        <label class="evo-filtro-label">Matéria(s)</label>
+                        <button type="button" id="evo-materia-btn" class="evo-materia-btn" onclick="window.toggleEvoMateriaDropdown(event)">
+                            <span id="evo-materia-resumo">Todos itens selecionados</span> <span style="font-size:9px;">▾</span>
+                        </button>
+                        <div id="evo-materia-dropdown" class="evo-materia-dropdown" style="display:none;"></div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="window.atualizarEvolucaoDesempenho()">Filtrar</button>
+                </div>
+
+                <div style="display:flex; gap:28px; flex-wrap:wrap;">
+                    <div style="min-width:180px;">
+                        <div class="evo-titulo-bloco">Desempenho Geral</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px 24px;">
+                            <div><div class="evo-stat-valor" id="evo-stat-resolvidas">0</div><div class="evo-stat-label">Questões resolvidas</div></div>
+                            <div><div class="evo-stat-valor" id="evo-stat-acertos" style="color:var(--success);">0</div><div class="evo-stat-label">Acertos</div></div>
+                            <div><div class="evo-stat-valor" id="evo-stat-materias">0</div><div class="evo-stat-label">Total de matérias</div></div>
+                            <div><div class="evo-stat-valor" id="evo-stat-erros" style="color:var(--danger);">0</div><div class="evo-stat-label">Erros</div></div>
+                        </div>
+                    </div>
+                    <div style="flex:1; min-width:320px;">
+                        <div class="evo-titulo-bloco">Evolução do Desempenho</div>
+                        <div style="position:relative; height:230px;">
+                            <canvas id="evoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- VIEW: SIMULADOS (ETL MASTER) -->
@@ -403,6 +453,210 @@ function loadFactualDatabase() {
         }
         function parseDateBr(dateStr) { if(!dateStr) return new Date(); const parts = dateStr.split('/'); if(parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]); return new Date(dateStr); }
         function getDadosGlobaisETL() { return db.simulados_avulsos || []; }
+
+        // =========================================================
+        // EVOLUÇÃO DO DESEMPENHO — filtros de período/matéria + KPIs + gráfico
+        // =========================================================
+        // null = nenhum filtro de matéria ativo ("Todos itens selecionados");
+        // Set = seleção explícita de matérias.
+        window.__evoMateriasSelecionadas = null;
+        window.__evoMateriasTodasConhecidas = [];
+        window.__evoChartInstance = null;
+
+        function evoFormatarDataCurta(d) {
+            return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+
+        // Divide [de, ate] em N períodos iguais — mesma ideia de bucket usada
+        // pra não plotar um ponto por bateria individual (ilegível com muitos
+        // dados), sem depender de nenhuma granularidade fixa de calendário.
+        function evoBuckets(de, ate, numBuckets) {
+            let totalMs = ate.getTime() - de.getTime();
+            if (totalMs <= 0) return [{ inicio: de, fim: ate }];
+            let passoMs = totalMs / numBuckets;
+            let buckets = [];
+            for (let i = 0; i < numBuckets; i++) {
+                buckets.push({ inicio: new Date(de.getTime() + passoMs * i), fim: new Date(de.getTime() + passoMs * (i + 1)) });
+            }
+            return buckets;
+        }
+
+        window.popularFiltroEvoMaterias = function() {
+            let materiasSet = new Set();
+            getDadosGlobaisETL().forEach(function(sim) {
+                (sim.granulares || []).forEach(function(g) { materiasSet.add(g.materia); });
+            });
+            window.__evoMateriasTodasConhecidas = Array.from(materiasSet).sort();
+
+            let dropdown = document.getElementById('evo-materia-dropdown');
+            if (!dropdown) return;
+
+            let htmlTudo = '<div class="evo-materia-item tudo"><label style="display:flex; align-items:center; gap:8px; cursor:pointer; width:100%;"><input type="checkbox" id="evo-materia-check-tudo" ' +
+                (window.__evoMateriasSelecionadas === null ? 'checked' : '') +
+                ' onchange="window.toggleEvoMateriaTodos()"> Todas as matérias</label></div>';
+
+            let htmlItens = window.__evoMateriasTodasConhecidas.map(function(m) {
+                let marcado = window.__evoMateriasSelecionadas === null || window.__evoMateriasSelecionadas.has(m);
+                return '<label class="evo-materia-item"><input type="checkbox" data-materia="' + m.replace(/"/g, '&quot;') + '" ' +
+                    (marcado ? 'checked' : '') + ' onchange="window.toggleEvoMateriaItem(this)"> ' + m + '</label>';
+            }).join('');
+
+            dropdown.innerHTML = htmlTudo + htmlItens;
+            evoAtualizarResumoMateria();
+        };
+
+        window.toggleEvoMateriaDropdown = function(e) {
+            e.stopPropagation();
+            let dropdown = document.getElementById('evo-materia-dropdown');
+            if (!dropdown) return;
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        };
+
+        document.addEventListener('click', function(e) {
+            let dropdown = document.getElementById('evo-materia-dropdown');
+            let btn = document.getElementById('evo-materia-btn');
+            if (dropdown && dropdown.style.display !== 'none' && btn && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        window.toggleEvoMateriaTodos = function() {
+            let checkTudo = document.getElementById('evo-materia-check-tudo');
+            let itens = document.querySelectorAll('#evo-materia-dropdown input[data-materia]');
+            if (checkTudo.checked) {
+                window.__evoMateriasSelecionadas = null;
+                itens.forEach(function(el) { el.checked = true; });
+            } else {
+                window.__evoMateriasSelecionadas = new Set();
+                itens.forEach(function(el) { el.checked = false; });
+            }
+            evoAtualizarResumoMateria();
+        };
+
+        window.toggleEvoMateriaItem = function(checkboxEl) {
+            let materia = checkboxEl.getAttribute('data-materia');
+            if (window.__evoMateriasSelecionadas === null) {
+                // "Todas" estava marcado — desmarcar 1 item vira seleção
+                // explícita com todas as outras, menos essa.
+                window.__evoMateriasSelecionadas = new Set(window.__evoMateriasTodasConhecidas);
+            }
+            if (checkboxEl.checked) window.__evoMateriasSelecionadas.add(materia);
+            else window.__evoMateriasSelecionadas.delete(materia);
+
+            if (window.__evoMateriasSelecionadas.size === window.__evoMateriasTodasConhecidas.length) {
+                window.__evoMateriasSelecionadas = null; // tudo marcado de novo = "todas"
+            }
+            let checkTudo = document.getElementById('evo-materia-check-tudo');
+            if (checkTudo) checkTudo.checked = (window.__evoMateriasSelecionadas === null);
+            evoAtualizarResumoMateria();
+        };
+
+        function evoAtualizarResumoMateria() {
+            let resumo = document.getElementById('evo-materia-resumo');
+            if (!resumo) return;
+            if (window.__evoMateriasSelecionadas === null) {
+                resumo.textContent = 'Todos itens selecionados';
+            } else if (window.__evoMateriasSelecionadas.size === 0) {
+                resumo.textContent = 'Nenhuma matéria selecionada';
+            } else {
+                resumo.textContent = window.__evoMateriasSelecionadas.size + ' selecionada(s)';
+            }
+        }
+
+        window.atualizarEvolucaoDesempenho = function() {
+            let inputDe = document.getElementById('evo-periodo-de');
+            let inputAte = document.getElementById('evo-periodo-ate');
+            if (!inputDe || !inputAte || !inputDe.value || !inputAte.value) return;
+
+            let de = new Date(inputDe.value + 'T00:00:00');
+            let ate = new Date(inputAte.value + 'T23:59:59');
+            if (ate < de) return;
+
+            let materiasFiltro = window.__evoMateriasSelecionadas;
+            let questoesResolvidas = 0, acertos = 0;
+            let materiasEncontradas = new Set();
+            let buckets = evoBuckets(de, ate, 9).map(function(b) { return { inicio: b.inicio, fim: b.fim, acertos: 0, erros: 0 }; });
+
+            getDadosGlobaisETL().forEach(function(sim) {
+                let dataSim = parseDateBr(sim.data);
+                if (dataSim < de || dataSim > ate) return;
+
+                let materiasDoSim = (sim.granulares || []).map(function(g) { return g.materia; });
+                let materiasRelevantes = materiasFiltro ? materiasDoSim.filter(function(m) { return materiasFiltro.has(m); }) : materiasDoSim;
+                materiasRelevantes.forEach(function(m) { materiasEncontradas.add(m); });
+
+                let simAcertos, simFeitas;
+                if (!materiasFiltro) {
+                    simAcertos = sim.global.acertos; simFeitas = sim.global.feitas;
+                } else {
+                    simAcertos = 0; simFeitas = 0;
+                    (sim.granulares || []).forEach(function(g) {
+                        if (materiasFiltro.has(g.materia)) { simAcertos += g.acertos; simFeitas += g.feitas; }
+                    });
+                    if (simFeitas === 0) return; // nada relevante desse sim pro filtro ativo
+                }
+
+                questoesResolvidas += simFeitas;
+                acertos += simAcertos;
+
+                let bucket = buckets.find(function(b) { return dataSim >= b.inicio && dataSim <= b.fim; }) || buckets[buckets.length - 1];
+                bucket.acertos += simAcertos;
+                bucket.erros += (simFeitas - simAcertos);
+            });
+
+            let erros = questoesResolvidas - acertos;
+
+            let elResolvidas = document.getElementById('evo-stat-resolvidas'); if (elResolvidas) elResolvidas.textContent = questoesResolvidas;
+            let elAcertos = document.getElementById('evo-stat-acertos'); if (elAcertos) elAcertos.textContent = acertos;
+            let elMaterias = document.getElementById('evo-stat-materias'); if (elMaterias) elMaterias.textContent = materiasEncontradas.size;
+            let elErros = document.getElementById('evo-stat-erros'); if (elErros) elErros.textContent = erros;
+
+            let labels = buckets.map(function(b) { return evoFormatarDataCurta(b.inicio) + ' a ' + evoFormatarDataCurta(b.fim); });
+            let ctx = document.getElementById('evoChart');
+            if (window.__evoChartInstance) window.__evoChartInstance.destroy();
+            if (ctx && typeof Chart !== 'undefined') {
+                window.__evoChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'Acertos', data: buckets.map(function(b) { return b.acertos; }), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#10b981' },
+                            { label: 'Erros', data: buckets.map(function(b) { return b.erros; }), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#ef4444' }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                        plugins: {
+                            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, font: { size: 11 } } },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        interaction: { mode: 'index', intersect: false }
+                    }
+                });
+            }
+        };
+
+        // Preenche as datas padrão (1º de janeiro do ano atual até hoje) só
+        // se ainda não tiverem valor — preserva o filtro do usuário entre
+        // re-renders (ex.: depois de excluir uma bateria do histórico).
+        window.inicializarEvolucaoDesempenho = function() {
+            let inputDe = document.getElementById('evo-periodo-de');
+            let inputAte = document.getElementById('evo-periodo-ate');
+            if (!inputDe || !inputAte) return;
+
+            if (!inputDe.value) {
+                let inicioAno = new Date(new Date().getFullYear(), 0, 1);
+                inputDe.value = inicioAno.toISOString().slice(0, 10);
+            }
+            if (!inputAte.value) {
+                inputAte.value = new Date().toISOString().slice(0, 10);
+            }
+
+            window.popularFiltroEvoMaterias();
+            window.atualizarEvolucaoDesempenho();
+        };
 
         window.executarExclusaoSimulado = function(id) {
             if (db.simulados_avulsos) db.simulados_avulsos = db.simulados_avulsos.filter(sim => String(sim.id) !== String(id));
@@ -661,6 +915,7 @@ histHTML.push(`
             const lineSelectMat = document.getElementById('line-chart-mat');
             if(lineSelectMat) { const currentLineVal = lineSelectMat.value; lineSelectMat.innerHTML = '<option value="">Visão Global</option>'; Array.from(comboMaterias).sort().forEach(m => lineSelectMat.innerHTML += `<option value="${m}">${m}</option>`); lineSelectMat.value = currentLineVal; }
             setTimeout(() => { if(typeof window.updateLineChart === 'function') window.updateLineChart(); }, 50);
+            setTimeout(() => { if(typeof window.inicializarEvolucaoDesempenho === 'function') window.inicializarEvolucaoDesempenho(); }, 50);
         }
 
         // Acordeão dos grupos L2 (Análise Agregada por Matéria) — mesmo padrão
