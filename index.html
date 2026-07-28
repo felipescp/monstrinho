@@ -3452,8 +3452,9 @@ if(ri) {
 
     #section-cronograma .crono-controls-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
 
-    #section-cronograma .crono-week-tabs { display:flex; gap:5px; flex-wrap:wrap; }
-    #section-cronograma .crono-week-tab { padding:5px 12px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-muted); }
+    #section-cronograma .crono-week-tabs { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+    #section-cronograma .crono-week-tabs-label { font-family:var(--font-display); font-size:11px; font-weight:700; color:var(--text-muted); margin-right:2px; }
+    #section-cronograma .crono-week-tab { padding:5px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-muted); }
     #section-cronograma .crono-week-tab.ativa { background:var(--app-primary); color:#fff; border-color:var(--app-primary); }
 
     #section-cronograma .crono-view-toggle { display:flex; gap:4px; background:#eef2ff; border:1px solid var(--border-color); border-radius:99px; padding:3px; width:fit-content; flex-shrink:0; }
@@ -4190,11 +4191,19 @@ window.CRONOGRAMA_RUNTIME = {
         let arquivoMorto = window.lerArquivoMorto();
         let self = this;
         let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
+        // Mostra a IA usada pra gerar a bateria entre parênteses ao lado do
+        // nome — mesmo dado (p.iaUtilizada) já exibido na 2ª linha da
+        // vitrine, útil aqui pra distinguir baterias com o mesmo nome
+        // geradas por IAs diferentes (ex.: "Penas (GPT)" x "Penas (Gemini)").
+        let nomeComIA = function(p) {
+            let nome = p.nome || '(sem nome)';
+            return p.iaUtilizada ? nome + ' (' + p.iaUtilizada + ')' : nome;
+        };
 
         let linhaAuto = function(p) {
             let vis = self._dadosVisuaisBateria(p, arquivoMorto);
             return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelSimulados(); ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' +
-                '<span class="crono-sim-item-nome">' + (p.nome || '(sem nome)') + '</span>' +
+                '<span class="crono-sim-item-nome">' + nomeComIA(p) + '</span>' +
                 '<span style="flex-shrink:0; display:flex; align-items:center; gap:6px;">' + vis.badgesHtml + '</span>' +
             '</div>';
         };
@@ -4202,7 +4211,7 @@ window.CRONOGRAMA_RUNTIME = {
         let linhaManual = function(p) {
             let vis = self._dadosVisuaisBateria(p, arquivoMorto);
             return '<div class="crono-sim-item">' +
-                '<span class="crono-sim-item-nome" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelSimulados(); ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' + (p.nome || '(sem nome)') + '</span>' +
+                '<span class="crono-sim-item-nome" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelSimulados(); ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' + nomeComIA(p) + '</span>' +
                 '<span style="flex-shrink:0; display:flex; align-items:center; gap:6px;">' + vis.badgesHtml + '</span>' +
                 '<button class="crono-sim-item-remover" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.removerSimuladoVinculado(\'' + itemId + '\', \'' + p.id + '\');" title="Remover vínculo">✕</button>' +
             '</div>';
@@ -4386,9 +4395,9 @@ window.CRONOGRAMA_RUNTIME = {
             return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
         });
 
-        let htmlWeekTabs = '<div class="crono-week-tabs">' + semanasOrdenadas.map(function(s) {
+        let htmlWeekTabs = '<div class="crono-week-tabs"><span class="crono-week-tabs-label">Semanas:</span>' + semanasOrdenadas.map(function(s) {
             let numero = s.replace('semana_', '');
-            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')">Semana ' + numero + '</div>';
+            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '">(' + numero + ')</div>';
         }).join('') + '</div>';
 
         let htmlViewToggle = '<div class="crono-view-toggle">' +
