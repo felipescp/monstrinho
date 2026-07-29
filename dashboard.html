@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
+    <script>
+    // Same-origin com index.html — lê a cor de tema salva direto do
+    // localStorage compartilhado, antes de qualquer pintura (sem flash).
+    // Sincronização ao vivo (modal já aberto + cor trocada no index.html)
+    // vem depois, via postMessage — ver window.addEventListener('message', ...).
+    (function() {
+        try {
+            var corSalva = localStorage.getItem('tjpe_v1__cor_tema');
+            if (corSalva) document.documentElement.style.setProperty('--app-primary', corSalva);
+        } catch (e) {}
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monstrinho | Central Analítica Longitudinal</title>
@@ -1527,10 +1539,12 @@ window.alternarSanfonaFactual = function(elemento) {
 
         window.addEventListener('message', function(event) {
             if (event.data === 'SIMULADO_FINALIZADO' || event.data === 'BATERIA_CRIADA') {
-                loadFactualDatabase(); 
-                window.initializeLongitudinalRuntime(); 
+                loadFactualDatabase();
+                window.initializeLongitudinalRuntime();
             } else if (event.data === 'FECHAR_MODAL') {
                 if (typeof window.fecharModalCofre === 'function') window.fecharModalCofre();
+            } else if (event.data && event.data.type === 'TROCAR_COR_TEMA') {
+                document.documentElement.style.setProperty('--app-primary', event.data.cor);
             }
         });
 
