@@ -2736,6 +2736,40 @@ function verificarSalvamentoPeriodicoNuvem() {
 // (RESTAURAÇÃO SOBERANA DE SESSÃO). Se achar algo novo na nuvem, recarrega
 // a página uma vez — a próxima carga já começa com o dado atualizado,
 // sem precisar alterar a ordem de nada que já existia.
+// Guard contra loop de reload — rede de segurança pra QUALQUER causa de
+// loop na sincronização automática silenciosa, não só a que já corrigimos.
+// sessionStorage (não localStorage) é o escopo certo: sobrevive a
+// location.reload() (o contador precisa persistir entre as recargas pra
+// contar), mas some ao fechar a aba — uma sessão nova sempre recomeça
+// zerada, sem exigir limpeza manual. Se detectar 3+ tentativas de reload
+// numa janela de 60s, aborta em vez de recarregar de novo (sem retry).
+// Zerado sempre que um merge não encontra nada novo (chavesMutadas === 0)
+// — sinal de que o ciclo normal (config nova só ocasionalmente) voltou.
+const SYNC_RELOAD_GUARD_KEY = 'tjpe_v1__sync_reload_guard';
+const SYNC_RELOAD_GUARD_JANELA_MS = 60000;
+const SYNC_RELOAD_GUARD_LIMITE = 3;
+
+function _syncReloadGuardPermiteReload() {
+    let bruto = null;
+    try { bruto = JSON.parse(sessionStorage.getItem(SYNC_RELOAD_GUARD_KEY) || 'null'); } catch (e) { bruto = null; }
+    let tentativas = (bruto && Array.isArray(bruto.tentativas)) ? bruto.tentativas : [];
+    let agora = Date.now();
+    tentativas = tentativas.filter(function(ts) { return (agora - ts) < SYNC_RELOAD_GUARD_JANELA_MS; });
+
+    if (tentativas.length >= SYNC_RELOAD_GUARD_LIMITE) {
+        console.warn('[GIST SYNC] Guard de reload ativado: ' + tentativas.length + ' tentativas de sincronização automática em menos de ' + (SYNC_RELOAD_GUARD_JANELA_MS / 1000) + 's. Abortando pra evitar loop — não tenta de novo sozinho nesta sessão.');
+        return false;
+    }
+
+    tentativas.push(agora);
+    try { sessionStorage.setItem(SYNC_RELOAD_GUARD_KEY, JSON.stringify({ tentativas: tentativas })); } catch (e) {}
+    return true;
+}
+
+function _syncReloadGuardZerar() {
+    try { sessionStorage.removeItem(SYNC_RELOAD_GUARD_KEY); } catch (e) {}
+}
+
 window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
     let token = this.getToken();
     let gistId = this.getGistId();
@@ -2777,17 +2811,20 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
 
         let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
         if (resultado.chavesMutadas > 0) {
-            location.reload();
+            if (_syncReloadGuardPermiteReload()) {
+                location.reload();
+            }
+        } else {
+            _syncReloadGuardZerar();
         }
     } catch (err) {
         console.warn('[GIST SYNC] Sincronização automática silenciosa falhou:', err);
     }
 };
 
-// DESATIVADO TEMPORARIAMENTE — estava causando recarregamento em loop
-// window.addEventListener('load', function() {
-//     window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
-// });
+window.addEventListener('load', function() {
+    window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
+});
 </script>
 <script>
 // =========================================================
