@@ -4377,8 +4377,21 @@ window.FLASHCARDS_RUNTIME = {
         return !!(r && r.proximaRevisao && r.proximaRevisao <= this._hojeISO());
     },
 
-    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior.
+    // Limpa por completo a classificação de um card — volta a "nunca
+    // classificado". Usado quando o usuário clica de novo no botão que já
+    // é a classificação atual (toggle: 2º clique desmarca).
+    _desmarcar: function(chave) {
+        delete this.revisao[chave];
+        this.salvar();
+    },
+
+    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior. Se
+    // o card JÁ está em Difícil, o clique desmarca em vez de reaplicar.
     marcarDificil: function(chave) {
+        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'dificil') {
+            this._desmarcar(chave);
+            return;
+        }
         let intervalo = Math.min(180, 1);
         this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'dificil' };
         this.salvar();
@@ -4387,8 +4400,13 @@ window.FLASHCARDS_RUNTIME = {
     // Médio: multiplica o intervalo atual (ou 1, se nunca teve) por 3. Se
     // passar de 180, NÃO trava em 180 — reinicia o ciclo pro valor-base do
     // Médio (3), criando uma repetição (3 -> 9 -> 27 -> 81 -> [243, passou
-    // de 180] -> 3 -> 9 -> ...).
+    // de 180] -> 3 -> 9 -> ...). Se o card JÁ está em Médio, o clique
+    // desmarca em vez de reaplicar a fórmula.
     marcarMedio: function(chave) {
+        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'medio') {
+            this._desmarcar(chave);
+            return;
+        }
         let r = this.revisao[chave];
         let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
         let calculado = Math.max(base, 1) * 3;
@@ -4399,8 +4417,13 @@ window.FLASHCARDS_RUNTIME = {
 
     // Fácil: multiplica o intervalo atual (ou 1, se nunca teve) por 9. Se
     // passar de 180, reinicia o ciclo pro valor-base do Fácil (9), mesmo
-    // princípio do Médio.
+    // princípio do Médio. Se o card JÁ está em Fácil, o clique desmarca em
+    // vez de reaplicar a fórmula.
     marcarFacil: function(chave) {
+        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'facil') {
+            this._desmarcar(chave);
+            return;
+        }
         let r = this.revisao[chave];
         let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
         let calculado = Math.max(base, 1) * 9;
@@ -12576,10 +12599,23 @@ function slugCaderno(str) {
 }
 
 // Formata data ISO 8601 -> DD/MM/AA (ex.: 27/07/26). Usado em qualquer lugar
-// que exiba "Criada em"/"Resolvida em" de uma bateria. "—" se ausente/inválida.
+// que exiba "Criada em"/"Resolvida em" de uma bateria, e também as datas de
+// repetição espaçada dos Flashcards (proximaRevisao). "—" se ausente/inválida.
 window.formatarDataBR = function(isoString) {
     if (!isoString) return '—';
-    let d = new Date(isoString);
+    let d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(isoString)) {
+        // Data "só-dia" (sem hora/fuso), ex.: proximaRevisao dos Flashcards.
+        // new Date("YYYY-MM-DD") é interpretado como meia-noite UTC pelo
+        // spec — em fusos negativos (Brasil, UTC-3) isso exibiria o dia
+        // ANTERIOR ao real. Construindo em hora local explicitamente evita
+        // esse off-by-one; datas com hora (ex.: toISOString() completo)
+        // continuam pelo caminho de baixo, que já está correto pra elas.
+        let partes = isoString.split('-');
+        d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+    } else {
+        d = new Date(isoString);
+    }
     if (isNaN(d.getTime())) return '—';
     let dd = String(d.getDate()).padStart(2, '0');
     let mm = String(d.getMonth() + 1).padStart(2, '0');
