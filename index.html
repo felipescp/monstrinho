@@ -1182,6 +1182,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                         <div class="kebab-item" onclick="window.SALINHA_BACKUP.exportar()">📤 Backup</div>
                         <div class="kebab-item" onclick="document.getElementById('salinha-backup-input').click()">📥 Restaurar (apaga atual)</div>
                         <div class="kebab-item" onclick="document.getElementById('import-incremental').click()">📥 Merge (mantém local)</div>
+                        <div class="kebab-item" onclick="window.zerarAcervoTotal()" style="color:var(--danger);">🗑️ Zerar Acervo</div>
                     </div>
                     <input type="file" id="salinha-backup-input" accept=".json" style="display:none;" onchange="window.SALINHA_BACKUP.importar(event)">
                     <input type="file" id="import-incremental" accept=".json" style="display:none;">
@@ -1209,15 +1210,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     <a href="https://chatgpt.com/g/g-6a32cf4d1ad08191b8926fb2b463c6fa-salinha-gerador-de-questoes-2-0-tjpe" target="_blank" class="b1" style="height: 28px; background: #e0f2fe; color: #0369a1; border-color: #bae6fd; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GPT</a>
 <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
     <button class="b1" style="color:var(--danger); border-color:rgba(239,68,68,0.3); height: 32px; margin: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" onclick="window.abrirModalCriacao()" title="Criar Nova Bateria">➕ NOVA BATERIA</button>
-    <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
-    <span style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px;">
-    acervo:
-</span>
 
-        <button onclick="window.zerarAcervoTotal()" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:10px; font-weight:bold;">
-    🗑️ ZERAR
-</button>
-        
 </div>
     <div class="nav-hd-zone">        
         <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
@@ -1440,7 +1433,13 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                                 <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Todas</button>
                                 <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria Selecionada</button>
                             </div>
-                            <div style="padding: 8px 15px; background: #fafafa; font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); flex-shrink: 0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding: 6px 15px; background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+                                <div style="display:flex; gap:4px; flex-shrink:0;">
+                                    <button id="btn-ordenar-az" onclick="window.ordenarListaBaterias('az')" title="Ordenar por nome" style="padding:2px 7px; font-size:9px; font-weight:800; text-transform:uppercase; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">A-Z</button>
+                                    <button id="btn-ordenar-data" onclick="window.ordenarListaBaterias('data')" title="Ordenar por data de criação (mais recente primeiro)" style="padding:2px 7px; font-size:9px; font-weight:800; text-transform:uppercase; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Por Data</button>
+                                </div>
+                                <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
+                            </div>
                             <div class="listagem-provas" id="lista-provas-ce" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;">
                                 <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>
                             </div>
@@ -7383,6 +7382,19 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     cabecalhoDireita.innerHTML = headerHtml;
                 }
 
+                // Ordenação opcional (botões A-Z / Por Data) — não persiste
+                // entre reloads, só entre trocas de filtro na mesma sessão.
+                // Sem ordenação ativa, mantém a ordem original (a do acervo).
+                if (window.__ordenacaoListaCE === 'az') {
+                    filtradas = filtradas.slice().sort(function(a, b) {
+                        return (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
+                    });
+                } else if (window.__ordenacaoListaCE === 'data') {
+                    filtradas = filtradas.slice().sort(function(a, b) {
+                        return (b.dataCriacao || '').localeCompare(a.dataCriacao || ''); // mais recente primeiro
+                    });
+                }
+
                 if (filtradas.length === 0) {
                     listCE.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 11px; font-style: italic;">Nenhuma bateria encontrada.</div>';
                     return;
@@ -7526,6 +7538,34 @@ window.exibirMateriaSelecionada = function() {
         if (listCE) listCE.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>';
     }
 };
+
+// Ordenação da lista de baterias (coluna 3) — reaplica o filtro/modo
+// corrente (Todas ou Matéria/Tópico) pra re-renderizar já ordenado,
+// sem duplicar a lógica de "qual view está ativa" (mesmo padrão de
+// restauração já usado em window.__modoListaAtivo/__ultimoFiltroCE).
+window.ordenarListaBaterias = function(tipo) {
+    window.__ordenacaoListaCE = tipo;
+    marcarBotaoOrdenacaoAtivo();
+    if (window.__modoListaAtivo === 'todas') {
+        window.exibirTodasBaterias();
+    } else if (window.__ultimoFiltroCE) {
+        window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+    }
+};
+
+function marcarBotaoOrdenacaoAtivo() {
+    let btnAz = document.getElementById('btn-ordenar-az');
+    let btnData = document.getElementById('btn-ordenar-data');
+    let ativo = window.__ordenacaoListaCE;
+    [[btnAz, 'az'], [btnData, 'data']].forEach(function(par) {
+        let btn = par[0], tipo = par[1];
+        if (!btn) return;
+        let estaAtivo = ativo === tipo;
+        btn.style.color = estaAtivo ? '#fff' : 'var(--text-muted)';
+        btn.style.background = estaAtivo ? 'var(--app-primary)' : 'var(--bg-white)';
+        btn.style.borderColor = estaAtivo ? 'var(--app-primary)' : 'var(--border-color)';
+    });
+}
 
 function marcarModoListaAtivo(modo) {
     let btnTodas = document.getElementById('btn-modo-todas');
