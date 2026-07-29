@@ -10838,13 +10838,19 @@ function navQuestao(dir) {
 // Atalho de teclado < / > pra navegar entre questões — mesma função dos
 // botões ❮/❯ (navQuestao). Só ativo com o simulado em foco (tela-simulado)
 // e nunca enquanto o usuário está digitando em algum campo.
+// e.key sozinho depende de o navegador resolver corretamente o caractere
+// pro layout do usuário (ex.: ABNT2/teclado brasileiro) — como rede de
+// segurança, e.code (posição física da tecla, independente de layout)
+// entra como alternativa: Shift+vírgula/Shift+ponto também contam.
 document.addEventListener('keydown', function(e) {
     if (window.__TELA_ATIVA__ !== 'tela-simulado') return;
     var alvo = e.target;
     var tag = alvo && alvo.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || (alvo && alvo.isContentEditable)) return;
-    if (e.key === '<') navQuestao(-1);
-    else if (e.key === '>') navQuestao(1);
+    var ehAnterior = e.key === '<' || (e.code === 'Comma' && e.shiftKey);
+    var ehProxima = e.key === '>' || (e.code === 'Period' && e.shiftKey);
+    if (ehAnterior) navQuestao(-1);
+    else if (ehProxima) navQuestao(1);
 });
 
 // Sincroniza a cor e o ícone dos botões na barra superior
