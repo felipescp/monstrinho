@@ -7386,9 +7386,11 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     cabecalhoDireita.innerHTML = headerHtml;
                 }
 
-                // Ordenação opcional (botões A-Z / Por Data) — não persiste
-                // entre reloads, só entre trocas de filtro na mesma sessão.
-                // Sem ordenação ativa, mantém a ordem original (a do acervo).
+                // Ordenação (botões A-Z / Por Data) — não persiste entre
+                // reloads, só entre trocas de filtro na mesma sessão. Padrão
+                // (nunca escolhido ainda): Por Data, mais recente primeiro.
+                if (!window.__ordenacaoListaCE) window.__ordenacaoListaCE = 'data';
+                marcarBotaoOrdenacaoAtivo();
                 if (window.__ordenacaoListaCE === 'az') {
                     filtradas = filtradas.slice().sort(function(a, b) {
                         return (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
