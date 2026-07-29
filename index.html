@@ -8165,15 +8165,33 @@ else if (auditId) {
                 if (elQuestaoAtiva) elQuestaoAtiva.scrollIntoView({ block: 'start' });
             }
         } else {
-            tela('tela-home');
+            // Sem bateria ativa pra restaurar — abre a seção salva em
+            // salinha_active_module (Cronograma/Flashcards), se houver;
+            // senão cai na Vitrine, como sempre foi. Allowlist explícita:
+            // activeModule também guarda IDs gravados pelo tela() genérico
+            // a cada troca de tela (tela-simulado, tela-admin etc.), que
+            // não fazem sentido reabrir direto no boot — só as seções de
+            // navegação de topo entram aqui.
+            const SECOES_RESTAURAVEIS = {
+                'section-cronograma': function() { if (window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init(); },
+                'section-flashcards': function() { if (window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init(); }
+            };
 
-            renderTabs();
+            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule)) {
+                tela(activeModule);
+                renderTabs();
+                SECOES_RESTAURAVEIS[activeModule]();
+            } else {
+                tela('tela-home');
 
-            setTimeout(() => {
-                if (typeof window.renderHomeDashboard === 'function') {
-                    window.renderHomeDashboard();
-                }
-            }, 100);
+                renderTabs();
+
+                setTimeout(() => {
+                    if (typeof window.renderHomeDashboard === 'function') {
+                        window.renderHomeDashboard();
+                    }
+                }, 100);
+            }
 }
     } // <-- Fim do bloco principal else do Roteador
 
