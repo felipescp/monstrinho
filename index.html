@@ -6930,7 +6930,7 @@ window.ACERVO_OFICIAL = [];
 window.SI = -1;
 window.HIST = [];
 window.HI = -1;
-var C={nome:'',tipo:'ce',cegas:false,auto:true};
+var C={nome:'',tipo:'ce',cegas:false,auto:false};
 var D={blocos:[],res:{},fin:{},caderno:[],cadernoAxiomas:[]};
 var QA=null;
 var DARK=false;
@@ -8171,6 +8171,7 @@ else if (auditId) {
     
     if (provaAlvo) {
         C = provaAlvo.cfg; D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo))); C.id = simId;
+        C.auto = false; // Avanço automático nunca reativa sozinho ao abrir por link direto (?sim=) — precisa de clique explícito
             
             let dOrigem = sessionStorage.getItem('etl_retorno_dia');
             let iOrigem = sessionStorage.getItem('etl_retorno_idx');
@@ -9494,6 +9495,7 @@ function fecharTab(i){
   SI=novoI;
   var s2=SIMS[novoI];
   C=JSON.parse(JSON.stringify(s2.cfg));
+  C.auto = false; // Avanço automático nunca reativa sozinho ao fechar a aba atual e focar noutra — precisa de clique explícito
     D=JSON.parse(JSON.stringify(s2.dados));
   var pendenteFT = primeiraQuestaoPendente(D);
   QA = pendenteFT ? pendenteFT.id : (s2.qSalva || null);
@@ -9809,7 +9811,7 @@ function conf(qId){
       g('b1-limpar').disabled = false;
       verBloco(q.bn); renderNav(); renderTabs(); autoSave();
       verificarUltimaQuestao();
-      if (C.auto !== false) { setTimeout(function(){ avancar(qId); }, 600); }
+      if (C.auto === true) { setTimeout(function(){ avancar(qId); }, 600); }
       return;
   }
 
@@ -9848,7 +9850,7 @@ function conf(qId){
   g('b1-limpar').disabled = false;
   verBloco(q.bn); renderNav(); renderTabs(); autoSave();
   verificarUltimaQuestao();
-  if (C.auto !== false) { setTimeout(function(){ avancar(qId); }, 1200); }
+  if (C.auto === true) { setTimeout(function(){ avancar(qId); }, 1200); }
 }
 
 // Classificação do motivo do erro ("Esqueci"/"Não Sabia"/"Pegadinha/Confundi")
@@ -10605,6 +10607,7 @@ function importarJSON(e){
       
       var ul = SIMS[SI];
       C = JSON.parse(JSON.stringify(ul.cfg));
+      C.auto = false; // Avanço automático nunca reativa sozinho ao importar um JSON de simulados — precisa de clique explícito
             D = JSON.parse(JSON.stringify(ul.dados));
       var pendenteUl = primeiraQuestaoPendente(D);
       QA = pendenteUl ? pendenteUl.id : (ul.qSalva || null);
@@ -10832,6 +10835,18 @@ function navQuestao(dir) {
   }
 }
 
+// Atalho de teclado < / > pra navegar entre questões — mesma função dos
+// botões ❮/❯ (navQuestao). Só ativo com o simulado em foco (tela-simulado)
+// e nunca enquanto o usuário está digitando em algum campo.
+document.addEventListener('keydown', function(e) {
+    if (window.__TELA_ATIVA__ !== 'tela-simulado') return;
+    var alvo = e.target;
+    var tag = alvo && alvo.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (alvo && alvo.isContentEditable)) return;
+    if (e.key === '<') navQuestao(-1);
+    else if (e.key === '>') navQuestao(1);
+});
+
 // Sincroniza a cor e o ícone dos botões na barra superior
 function syncTogglesUI() {
   var btnCegas = g('b1-cegas');
@@ -10844,7 +10859,7 @@ function syncTogglesUI() {
 
   var btnAuto = g('b1-auto');
   if (btnAuto) {
-    var isAuto = C.auto !== false; // Padrão é true
+    var isAuto = C.auto === true; // Padrão é false — só liga com clique explícito
     btnAuto.title = isAuto ? 'Desativar Avanço Automático' : 'Ativar Avanço Automático';
     if (isAuto) btnAuto.classList.add('p');
     else btnAuto.classList.remove('p');
@@ -12530,6 +12545,7 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
 
         // Hidrata o ambiente com o simulado focado
         C = JSON.parse(JSON.stringify(SIMS[SI].cfg));
+        C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
         D = JSON.parse(JSON.stringify(SIMS[SI].dados));
 
     } else {
@@ -12539,6 +12555,7 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
         if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
         
         C = JSON.parse(JSON.stringify(provaAlvo.cfg));
+        C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
         D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
         C.id = simId;
         C.dataCriacao = provaAlvo.dataCriacao; // pro painel "Criada em" na sidebar (dataCriacao vive na raiz do acervo, não em cfg)
@@ -12642,7 +12659,7 @@ window.syncToPlanner = function() {
         type: 'SYNC_TOOLS',
         limparDisabled: btnL ? btnL.disabled : true,
         isMobile: document.body.classList.contains('force-mobile'),
-        isAuto: C.auto !== false,
+        isAuto: C.auto === true,
         isCegas: !!C.cegas,
         isSom: !!window.SOM_ATIVO,
         isDark: !!DARK
