@@ -10082,8 +10082,9 @@ function renderNav(){
             metaDiv.style.cssText = 'background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
 
             metaDiv.innerHTML = `
-                <div style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Criada em: ${window.formatarDataBR(C.dataCriacao)}</div>
-                <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
+                <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📅 Criada em: <span style="color: var(--app-primary);">${window.formatarDataBR(C.dataCriacao)}</span></div>
+                <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🤖 IA Utilizada: <span style="color: var(--app-primary);">${C.iaUtilizada || '—'}</span></div>
+                <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
                 <div style="font-size: 11px; color: #64748b; line-height: 1.5;">${htmlCaminho}</div>${htmlBaralhos}
             `;
             nav.parentElement.insertBefore(metaDiv, nav);
@@ -12565,6 +12566,7 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
         D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
         C.id = simId;
         C.dataCriacao = provaAlvo.dataCriacao; // pro painel "Criada em" na sidebar (dataCriacao vive na raiz do acervo, não em cfg)
+        C.iaUtilizada = provaAlvo.iaUtilizada; // pro painel "IA Utilizada" na sidebar (mesmo motivo — vive na raiz, não em cfg)
         SIMS.push({ cfg: JSON.parse(JSON.stringify(C)), dados: JSON.parse(JSON.stringify(D)), stats: null, qSalva: null, data: new Date().toISOString() });
         SI = SIMS.length - 1;
     }
