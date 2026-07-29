@@ -3977,6 +3977,10 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #section-flashcards .fc-corpo-aba { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
     #section-flashcards .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+    #section-flashcards .fc-proximos { width:100%; max-width:480px; margin-top:4px; }
+    #section-flashcards .fc-proximos:empty { margin-top:0; }
+    #section-flashcards .fc-proximos-titulo { font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; text-align:center; border-top:1px dashed var(--border-color); padding-top:10px; margin-bottom:6px; }
+    #section-flashcards .fc-proximo-item { font-size:10.5px; color:var(--text-muted); opacity:0.55; padding:4px 8px; text-align:center; pointer-events:none; }
 
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
@@ -4047,6 +4051,7 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-dificil">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('dificil', 1)">›</button>
         </div>
+        <div class="fc-proximos" id="fc-proximos-dificil"></div>
     </div>
 
     <div class="fc-aba-revisao" id="fc-aba-medio" style="display:none;">
@@ -4060,6 +4065,7 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-medio">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('medio', 1)">›</button>
         </div>
+        <div class="fc-proximos" id="fc-proximos-medio"></div>
     </div>
 
     <div class="fc-aba-revisao" id="fc-aba-facil" style="display:none;">
@@ -4073,6 +4079,7 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-facil">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('facil', 1)">›</button>
         </div>
+        <div class="fc-proximos" id="fc-proximos-facil"></div>
     </div>
 
 <div id="modal-flashcard" class="mo">
@@ -4149,10 +4156,13 @@ document.addEventListener('click', function(e) {
 //   1-a-1 inline (não modal) sobre TODOS os cards (axiomas+manuais,
 //   qualquer L2/matéria) VENCIDOS (proximaRevisao <= hoje) cuja última
 //   classificação bate com a aba. Cards nunca classificados não aparecem
-//   aqui. Na aba Difícil, o botão "Difícil" some (reclassificar como
-//   Difícil um card que já está lá não muda nada). Classificar um card
-//   sempre o remove do pool corrente, mesmo se a nova classificação for
-//   igual à aba atual (a data de vencimento sempre muda).
+//   aqui. O botão do MESMO nível da aba atual (ex.: "Difícil" dentro da
+//   aba Difícil) some rotulado como "Desmarcar X" — clicar nele remove a
+//   classificação (toggle). Classificar um card sempre o remove do pool
+//   corrente, mesmo se a nova classificação for igual à aba atual (a data
+//   de vencimento sempre muda). Abaixo do navegador 1-a-1, uma lista
+//   esmaecida e não-interativa mostra os cards já classificados nesse
+//   nível mas ainda não vencidos — confirmação visual de que "pegou".
 //
 // manuais[chaveL2] = [ { id, nome, cards:[{id,frente,verso}], criadoEm }, ... ]
 // revisao = { "<chave>": { intervaloDias, proximaRevisao, ultimaClassificacao } }
@@ -5013,21 +5023,27 @@ window.FLASHCARDS_RUNTIME = {
     // .ativa (fundo cheio, permanente até reclassificar — CSS cuida do
     // resto). onclick por padrão chama marcarXAtual() (popup de Navegar);
     // opts.onclickPara() permite customizar (usado pelas abas de dificuldade).
+    // opts.desmarcarNivel: nível cujo botão, aqui, deve trocar o rótulo pra
+    // "Desmarcar X" — usado pelas abas de dificuldade pra deixar explícito
+    // que o botão do MESMO nível da aba atual remove a classificação em vez
+    // de reaplicá-la (o clique já fazia isso; só o rótulo era ambíguo).
     _botoesRevisaoHtml: function(chave, opts) {
         opts = opts || {};
         let esconder = opts.esconder || null;
+        let desmarcarNivel = opts.desmarcarNivel || null;
         let onclickPara = opts.onclickPara || function(nivel) {
             return 'window.FLASHCARDS_RUNTIME.marcar' + (nivel === 'dificil' ? 'Dificil' : nivel === 'medio' ? 'Medio' : 'Facil') + 'Atual()';
         };
         let atual = this.revisao[chave] ? this.revisao[chave].ultimaClassificacao : null;
         let niveis = [
-            { chave: 'dificil', rotulo: '🔴 Difícil' },
-            { chave: 'medio', rotulo: '🟡 Médio' },
-            { chave: 'facil', rotulo: '🟢 Fácil' }
+            { chave: 'dificil', rotulo: '🔴 Difícil', rotuloDesmarcar: '🔴 Desmarcar Difícil' },
+            { chave: 'medio', rotulo: '🟡 Médio', rotuloDesmarcar: '🟡 Desmarcar Médio' },
+            { chave: 'facil', rotulo: '🟢 Fácil', rotuloDesmarcar: '🟢 Desmarcar Fácil' }
         ];
         return niveis.filter(function(n) { return n.chave !== esconder; }).map(function(n) {
             let classeAtiva = (atual === n.chave) ? ' ativa' : '';
-            return '<button class="fc-rev-btn fc-rev-' + n.chave + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + n.rotulo + '</button>';
+            let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
+            return '<button class="fc-rev-btn fc-rev-' + n.chave + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
         }).join('');
     },
 
@@ -5119,6 +5135,39 @@ window.FLASHCARDS_RUNTIME = {
         return resultado;
     },
 
+    // Oposto de listarCardsPorClassificacaoVencida(): cards já classificados
+    // nesse nível cuja proximaRevisao ainda está no futuro. Usado só pra
+    // preview passiva (lista esmaecida) — confirma que a classificação
+    // "pegou" e está na fila, mesmo sem poder revisar ainda. Ordenado pela
+    // data de disponibilidade (mais cedo primeiro).
+    listarCardsClassificadosNaoVencidos: function(materiaFiltro, classificacaoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = [];
+        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        let bate = function(chave) {
+            let r = self.revisao[chave];
+            return !!(r && r.ultimaClassificacao === classificacaoAlvo && r.proximaRevisao && !self._vencido(chave));
+        };
+        materias.forEach(function(materia) {
+            self.listarAxiomasDaMateria(materia).forEach(function(c) {
+                if (bate(c.chave)) resultado.push(c);
+            });
+            self.listarBaralhosDaMateria(materia).forEach(function(b) {
+                (b.deck.cards || []).forEach(function(c) {
+                    if (bate(c.id)) {
+                        resultado.push({ tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso, materia: materia, divisao: b.divisao, deckNome: b.deck.nome });
+                    }
+                });
+            });
+        });
+        resultado.sort(function(a, b) {
+            let ra = self.revisao[a.chave], rb = self.revisao[b.chave];
+            return (ra.proximaRevisao || '').localeCompare(rb.proximaRevisao || '');
+        });
+        return resultado;
+    },
+
     _contarPorMateria: function(classificacaoAlvo) {
         let self = this;
         let mapa = {};
@@ -5141,6 +5190,37 @@ window.FLASHCARDS_RUNTIME = {
         s.flipado = false;
         this._renderPillsAba(aba);
         this._renderCorpoAba(aba);
+        this._renderProximosAba(aba);
+    },
+
+    // Lista secundária esmaecida e não-interativa (pointer-events:none —
+    // ver CSS .fc-proximo-item), abaixo do navegador principal: cards já
+    // classificados nesse nível, mas ainda não vencidos. Só recalculada nos
+    // pontos que mudam QUAL card está classificado nesse nível especificamente
+    // (troca de aba, troca de pílula) — classificar/desmarcar um card do pool
+    // vencido corrente sempre muda ele pra outro nível ou remove a
+    // classificação, nunca faz ele "aparecer" na lista de não-vencidos desta
+    // mesma aba, então marcarNaAba() não precisa chamar isso de novo.
+    _renderProximosAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let el = document.getElementById('fc-proximos-' + aba);
+        if (!el) return;
+        let self = this;
+        let lista = this.listarCardsClassificadosNaoVencidos(s.materiaFiltro, aba);
+        if (lista.length === 0) {
+            el.innerHTML = '';
+            return;
+        }
+        el.innerHTML =
+            '<div class="fc-proximos-titulo">Já classificados, aguardando a data (' + lista.length + ')</div>' +
+            lista.map(function(c) {
+                let texto = c.tipo === 'axioma' ? c.texto : c.frente;
+                let previewBruto = (texto || '').trim();
+                let preview = self._escapar(previewBruto.length > 60 ? previewBruto.slice(0, 60) + '…' : previewBruto);
+                let r = self.revisao[c.chave];
+                let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
+                return '<div class="fc-proximo-item">' + preview + ' — disponível em ' + dataTxt + '</div>';
+            }).join('');
     },
 
     _renderPillsAba: function(aba) {
@@ -5215,14 +5295,13 @@ window.FLASHCARDS_RUNTIME = {
             ? ('📚 ' + card.materia + ' — ' + card.divisao)
             : ('🗂️ ' + card.deckNome + ' — ' + card.materia + ' > ' + card.divisao);
 
-        // Na aba Difícil, o botão "Difícil" some — reclassificar como
-        // Difícil um card que já está em Difícil não muda nada (intervalo
-        // já é 1, voltaria a ser 1), então é redundante mostrá-lo aqui.
-        // O botão da classificação ATUAL do card (sempre a própria aba,
-        // já que o pool é filtrado por ultimaClassificacao === aba) sai
-        // marcado com .ativa via _botoesRevisaoHtml.
+        // O botão da classificação ATUAL do card (sempre a própria aba, já
+        // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
+        // com .ativa via _botoesRevisaoHtml, e com o rótulo "Desmarcar X" —
+        // clicar nele já desmarca (marcarDificil/Medio/Facil fazem toggle
+        // quando a classificação clicada é igual à atual).
         let botoes = this._botoesRevisaoHtml(card.chave, {
-            esconder: aba === 'dificil' ? 'dificil' : null,
+            desmarcarNivel: aba,
             onclickPara: function(nivel) { return "window.FLASHCARDS_RUNTIME.marcarNaAba('" + aba + "', '" + nivel + "')"; }
         });
 
