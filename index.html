@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script>
+// Aplica a cor de tema salva ANTES de qualquer outra coisa — evita o
+// "flash" do indigo padrão do :root antes da preferência do usuário
+// carregar. Ver window.mudarCorTema() mais abaixo pra troca em tempo real.
+(function() {
+    try {
+        var corSalva = localStorage.getItem('tjpe_v1__cor_tema');
+        if (corSalva) document.documentElement.style.setProperty('--app-primary', corSalva);
+    } catch (e) {}
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monstrinho</title>
@@ -106,6 +117,12 @@
 .gerar-q-wrap { display: flex; align-items: center; }
 .gerar-q-itens { display: flex; align-items: center; gap: 8px; max-width: 0; overflow: hidden; opacity: 0; margin-left: 0; white-space: nowrap; transition: max-width 0.3s ease, opacity 0.2s ease, margin-left 0.3s ease; }
 .gerar-q-wrap:hover .gerar-q-itens { max-width: 420px; opacity: 1; margin-left: 10px; }
+
+/* Seletor de paleta de cores do tema — mesmo padrão do color-picker-container/color-swatch já usado noutras telas da mesma família de apps */
+.color-picker-container { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 4px; }
+.color-swatch { width: 14px; height: 14px; border-radius: 3px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border: 1.5px solid transparent; opacity: 0.6; }
+.color-swatch:hover { transform: scale(1.3); opacity: 1; }
+.color-swatch.active { border-color: #ffffff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.3); opacity: 1; transform: scale(1.1); }
 
 
 /* Oculta a nova barra no Mobile (Foco) a menos que o menu esteja aberto */
@@ -1221,6 +1238,8 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             <button class="b1" style="color:var(--danger); border-color:rgba(239,68,68,0.3); height: 28px; margin: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" onclick="window.abrirModalCriacao()" title="Criar Nova Bateria">➕ NOVA BATERIA</button>
         </div>
     </div>
+
+    <div id="seletor-cor-tema" class="color-picker-container"></div>
 
 </div>
     <div class="nav-hd-zone">        
@@ -6432,6 +6451,42 @@ window.zerarAcervoTotal = function() {
         }
     }
 };
+
+// =========================================================
+// SELETOR DE PALETA DE CORES DO TEMA (8 cores fixas)
+// =========================================================
+// Mesma paleta/mecânica já usada noutras telas da família de apps
+// (color-picker-container/color-swatch, PALETA_CICLOS) — aqui é uma
+// escolha de tema GLOBAL única (não por cronograma), persistida em
+// tjpe_v1__cor_tema. Aplicação sem flash já rodou no <head>; aqui só
+// desenha os swatches e trata o clique/sincronização com o dashboard.
+const PALETA_TEMA = ['#4f46e5', '#059669', '#ea580c', '#FA2F5A', '#0891b2', '#7c3aed', '#b45309', '#FF0000'];
+
+function renderSeletorCorTema(corAtual) {
+    const seletor = document.getElementById('seletor-cor-tema');
+    if (!seletor) return;
+    seletor.innerHTML = PALETA_TEMA.map(function(cor) {
+        const isActive = cor.toLowerCase() === (corAtual || '').toLowerCase() ? 'active' : '';
+        return '<div class="color-swatch ' + isActive + '" style="background-color: ' + cor + ';" onclick="window.mudarCorTema(\'' + cor + '\')"></div>';
+    }).join('');
+}
+
+window.mudarCorTema = function(novaCor) {
+    document.documentElement.style.setProperty('--app-primary', novaCor);
+    try { localStorage.setItem('tjpe_v1__cor_tema', novaCor); } catch (e) {}
+    renderSeletorCorTema(novaCor);
+
+    // Sincroniza ao vivo com o dashboard.html, se o modal de Estatísticas
+    // estiver aberto no momento (senão ele lê tjpe_v1__cor_tema sozinho
+    // no próprio boot, por ser same-origin — não precisa de postMessage
+    // pra abrir já correto, só pra atualizar em tempo real sem reabrir).
+    const frame = document.getElementById('analytics-frame');
+    if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: 'TROCAR_COR_TEMA', cor: novaCor }, '*');
+    }
+};
+
+renderSeletorCorTema(localStorage.getItem('tjpe_v1__cor_tema') || PALETA_TEMA[0]);
 
 // Aplica a cor do ecossistema imediatamente ao carregar o DOM e escuta mudanças
 (function aplicarCorTema() {
