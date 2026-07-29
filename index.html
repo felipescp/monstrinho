@@ -136,6 +136,35 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
 @media (max-width:700px) { .gerar-q-wrap, #seletor-cor-tema { display: none !important; } }
 body.force-mobile .gerar-q-wrap, body.force-mobile #seletor-cor-tema { display: none !important; }
 
+/* #barra-nav/#barra2 nunca tiveram position:fixed — ao revelar via
+   top-aberto, apareciam só na posição original deles no documento (topo
+   da página), então se o usuário já tivesse rolado a página, o menu
+   "aparecia" fora da tela, sem jeito de alcançar. #mobile-nav-fixed-wrap
+   (novo <div> envolvendo os dois, sem efeito nenhum no desktop) vira
+   fixo no topo do viewport enquanto o menu estiver aberto, independente
+   de rolagem — mesma lógica dos botões flutuantes (#top-toggle etc.),
+   que já eram fixed e por isso sempre funcionavam. */
+@media (max-width:700px) {
+    body.top-aberto #mobile-nav-fixed-wrap {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9997;
+        display: flex;
+        flex-direction: column;
+    }
+}
+body.force-mobile.top-aberto #mobile-nav-fixed-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9997;
+    display: flex;
+    flex-direction: column;
+}
+
 @media (max-width: 768px) {
     /* 1. Permite que a navegação cresça em altura e quebre linhas */
     .main-nav { 
@@ -1245,6 +1274,9 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 
 
+<!-- Wrapper só ganha comportamento próprio no mobile (ver #mobile-nav-fixed-wrap
+     em CSS) — no desktop é um <div> transparente, sem efeito nenhum no layout. -->
+<div id="mobile-nav-fixed-wrap">
 <!-- NOVA BARRA DE NAVEGAÇÃO (Padrão Planner) -->
 <nav class="main-nav" id="barra-nav">
     <div class="nav-ram-zone" style="display: flex; align-items: center; gap: 10px; padding: 0 25px; background: var(--app-primary);">
@@ -1274,7 +1306,8 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </nav>
 
 <div id="barra2"></div>
-  
+</div>
+
 <!-- TELA 1: HOME DO ALUNO (Vitrine) -->
 <div id="tela-home" class="tela ativa" style="padding: 0; background: var(--bg-body); flex-direction: row; height: 100vh; min-height: 0; overflow: hidden;">
     
