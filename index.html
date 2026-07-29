@@ -178,14 +178,14 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
     border-radius: 4px;
     transition: 0.2s;
 }
-.kebab-trigger:hover { background: #e2e8f0; color: var(--app-primary); }
+.kebab-trigger:hover { background: var(--bg-body); color: var(--app-primary); }
 
 /* O Menu suspenso */
 .kebab-dropdown {
     position: absolute;
     right: 0;
     top: 100%;
-    background: white;
+    background: var(--bg-white);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -213,7 +213,7 @@ body.force-mobile.top-aberto #barra-nav { display: flex !important; }
     color: var(--text-main);
     transition: background 0.2s;
 }
-.kebab-item:hover { background: #f8fafc; color: var(--app-primary); }
+.kebab-item:hover { background: var(--bg-body); color: var(--app-primary); }
 /* ==========================================
    NOVA VITRINE DO SIMULADOR (TELA HOME)
    ========================================== */
@@ -886,7 +886,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     transition: background 0.2s;
 }
 .kebab-item:last-child { border-bottom: none; }
-.kebab-item:hover { background: #f8fafc; color: var(--app-primary); }
+.kebab-item:hover { background: var(--bg-body); color: var(--app-primary); }
 .kebab-item.danger:hover { background: #fef2f2; color: var(--danger); }
 
 /* ==========================================
@@ -1863,7 +1863,10 @@ window.SALINHA_BACKUP = {
         'tjpe_v1__cronograma_runtime',
 
         // FLASHCARDS
-        'tjpe_v1__flashcards_runtime'
+        'tjpe_v1__flashcards_runtime',
+
+        // TEMA
+        'tjpe_v1__cor_tema'
     ],
 
     construirPayload: async function() {
@@ -1974,6 +1977,21 @@ window.SALINHA_BACKUP = {
                 // que o app não lê mais, e nunca encontra "igual" ao comparar
                 // contra os dados reais — resultando em reload em loop.
                 chaveDestinoLocal = NS_PREFIXO_MERGE + chave;
+            }
+
+            // ── CASO ESPECIAL: COR DO TEMA (tjpe_v1__cor_tema) ──
+            // Ao contrário de todas as outras chaves, o valor é uma string
+            // crua (hex, ex.: "#4f46e5"), não um JSON serializado — o
+            // JSON.parse genérico abaixo sempre falharia nela (string sem
+            // aspas não é JSON válido) e a chave seria ignorada em
+            // silêncio. É uma preferência simples, sem estrutura pra
+            // reconciliar: só aplica se vier diferente do valor local.
+            if (chaveSemPrefixoMerge === 'cor_tema') {
+                if (valorImportadoBruto && valorImportadoBruto !== localStorage.getItem(chaveDestinoLocal)) {
+                    localStorage.setItem(chaveDestinoLocal, valorImportadoBruto);
+                    chavesMutadas++;
+                }
+                return;
             }
 
             const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
@@ -10145,13 +10163,13 @@ function renderNav(){
                 }
             }
 
-            metaDiv.style.cssText = 'background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
+            metaDiv.style.cssText = 'background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
 
             metaDiv.innerHTML = `
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📅 Criada em: <span style="color: var(--app-primary);">${window.formatarDataBR(C.dataCriacao)}</span></div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🤖 IA Utilizada: <span style="color: var(--app-primary);">${C.iaUtilizada || '—'}</span></div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
-                <div style="font-size: 11px; color: #64748b; line-height: 1.5;">${htmlCaminho}</div>${htmlBaralhos}
+                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">${htmlCaminho}</div>${htmlBaralhos}
             `;
             nav.parentElement.insertBefore(metaDiv, nav);
         } else {

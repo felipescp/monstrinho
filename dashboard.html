@@ -600,6 +600,8 @@ function loadFactualDatabase() {
             let inputAte = document.getElementById('evo-periodo-ate');
             if (!inputDe || !inputAte || !inputDe.value || !inputAte.value) return;
 
+            try { localStorage.setItem('tjpe_v1__evo_periodo_de', inputDe.value); } catch (e) {}
+
             let de = new Date(inputDe.value + 'T00:00:00');
             let ate = new Date(inputAte.value + 'T23:59:59');
             if (ate < de) return;
@@ -702,8 +704,14 @@ function loadFactualDatabase() {
             if (!inputDe || !inputAte) return;
 
             if (!inputDe.value) {
-                let inicioAno = new Date(new Date().getFullYear(), 0, 1);
-                inputDe.value = inicioAno.toISOString().slice(0, 10);
+                let dataSalva = null;
+                try { dataSalva = localStorage.getItem('tjpe_v1__evo_periodo_de'); } catch (e) {}
+                if (dataSalva) {
+                    inputDe.value = dataSalva;
+                } else {
+                    let inicioAno = new Date(new Date().getFullYear(), 0, 1);
+                    inputDe.value = inicioAno.toISOString().slice(0, 10);
+                }
             }
             if (!inputAte.value) {
                 inputAte.value = new Date().toISOString().slice(0, 10);
