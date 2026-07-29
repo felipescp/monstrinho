@@ -3997,7 +3997,7 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .fc-footer-btn.primario, #modal-flashcard-bulk .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #modal-flashcard-bulk .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
     #modal-flashcard-bulk .fc-form-campo { margin-bottom:0; }
-    #modal-flashcard-bulk .fc-form-campo input[type="text"] { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; }
+    #modal-flashcard-bulk .fc-form-campo input[type="text"], #modal-flashcard-bulk .fc-form-campo select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
     #modal-flashcard-bulk .fc-bulk-ajuda { font-size:12px; color:var(--text-muted); line-height:1.4; }
     #modal-flashcard-bulk .fc-bulk-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
     #modal-flashcard-bulk .fc-bulk-textarea { width:100%; min-height:260px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; box-sizing:border-box; }
@@ -4012,6 +4012,13 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .fc-rev-medio:hover, #section-flashcards .fc-rev-medio:hover { background:#fef3c7; }
     #modal-flashcard .fc-rev-facil, #section-flashcards .fc-rev-facil { color:#166534; border-color:#bbf7d0; }
     #modal-flashcard .fc-rev-facil:hover, #section-flashcards .fc-rev-facil:hover { background:#dcfce7; }
+    /* .ativa = classificação ATUAL do card — fundo cheio, permanente até reclassificar (não só durante o clique). */
+    #modal-flashcard .fc-rev-dificil.ativa, #section-flashcards .fc-rev-dificil.ativa { background:#dc2626; border-color:#dc2626; color:#fff; }
+    #modal-flashcard .fc-rev-dificil.ativa:hover, #section-flashcards .fc-rev-dificil.ativa:hover { background:#b91c1c; }
+    #modal-flashcard .fc-rev-medio.ativa, #section-flashcards .fc-rev-medio.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #modal-flashcard .fc-rev-medio.ativa:hover, #section-flashcards .fc-rev-medio.ativa:hover { background:#b45309; }
+    #modal-flashcard .fc-rev-facil.ativa, #section-flashcards .fc-rev-facil.ativa { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #modal-flashcard .fc-rev-facil.ativa:hover, #section-flashcards .fc-rev-facil.ativa:hover { background:#15803d; }
 
     #section-flashcards .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
 </style>
@@ -4094,7 +4101,17 @@ document.addEventListener('click', function(e) {
 
 <div id="modal-flashcard-bulk" class="mo">
     <div class="mdl">
-        <div class="fc-popup-header">✦ Novo Baralho — <span id="fc-bulk-divisao"></span></div>
+        <div class="fc-popup-header" id="fc-bulk-header">✦ Novo Baralho</div>
+        <div style="display:flex; gap:10px;">
+            <div class="fc-form-campo" style="flex:1;">
+                <label>Matéria</label>
+                <select id="fc-bulk-materia" onchange="window.FLASHCARDS_RUNTIME.aoTrocarMateriaBulk()"></select>
+            </div>
+            <div class="fc-form-campo" style="flex:1;">
+                <label>Divisão</label>
+                <select id="fc-bulk-divisao-select"></select>
+            </div>
+        </div>
         <div class="fc-form-campo">
             <label>Nome do baralho</label>
             <input type="text" id="fc-bulk-nome" placeholder="Ex.: Baralho de contratos">
@@ -4141,8 +4158,10 @@ document.addEventListener('click', function(e) {
 // revisao = { "<chave>": { intervaloDias, proximaRevisao, ultimaClassificacao } }
 // — chave = id do axioma (id_q+'_'+sim_id) ou id do card manual.
 // ultimaClassificacao: 'dificil'|'medio'|'facil', ausente = nunca revisado.
-// Fórmulas (teto de 180 dias em todas): Difícil -> intervalo=1 sempre;
-// Médio -> intervalo atual (ou 1) * 3; Fácil -> intervalo atual (ou 1) * 9.
+// Fórmulas: Difícil -> intervalo=1 sempre; Médio -> intervalo atual (ou 1)
+// * 3; Fácil -> intervalo atual (ou 1) * 9. Se Médio/Fácil ultrapassarem
+// 180, reinicia o ciclo pro valor-base daquele nível (3 ou 9) em vez de
+// travar em 180.
 // =========================================================================
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
@@ -4153,6 +4172,7 @@ window.FLASHCARDS_RUNTIME = {
     _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado da matéria inteira)
     _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, flipado }
     _editandoDeckId: null, // setado por editarBaralhoAtual(), limpo por abrirModalBulk()/fecharModalBulk()
+    _editandoDeckChaveL2Original: null, // chaveL2 de onde o baralho editado veio (permite mover de L2 ao salvar)
     _bootstrapped: false,  // true depois da 1ª carregar() — ver _garantirCarregado()
     _abaAtiva: 'navegar',  // 'navegar' | 'dificil' | 'medio' | 'facil'
     _estadosAba: {         // estado independente de cada aba de dificuldade (filtro de matéria não é compartilhado)
@@ -4334,8 +4354,10 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     // ── REPETIÇÃO ESPAÇADA (3 níveis: Difícil / Médio / Fácil) ──
-    // Teto de 180 dias vale pras 3 fórmulas (Difícil nunca passa de 1, mas
-    // o Math.min(180, ...) fica lá mesmo assim, por consistência/segurança).
+    // 180 dias não é um teto que trava — é um limite de ciclo: quando
+    // Médio (x3) ou Fácil (x9) ultrapassariam 180, o intervalo reinicia
+    // pro valor-base daquele nível (3 ou 9), criando uma repetição em vez
+    // de travar parado em 180 pra sempre. Difícil não tem ciclo (sempre 1).
 
     _hojeISO: function() {
         let d = new Date();
@@ -4362,20 +4384,27 @@ window.FLASHCARDS_RUNTIME = {
         this.salvar();
     },
 
-    // Médio: multiplica o intervalo atual (ou 1, se nunca teve) por 3.
+    // Médio: multiplica o intervalo atual (ou 1, se nunca teve) por 3. Se
+    // passar de 180, NÃO trava em 180 — reinicia o ciclo pro valor-base do
+    // Médio (3), criando uma repetição (3 -> 9 -> 27 -> 81 -> [243, passou
+    // de 180] -> 3 -> 9 -> ...).
     marcarMedio: function(chave) {
         let r = this.revisao[chave];
         let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
-        let intervalo = Math.min(180, Math.max(base, 1) * 3);
+        let calculado = Math.max(base, 1) * 3;
+        let intervalo = calculado > 180 ? 3 : calculado;
         this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'medio' };
         this.salvar();
     },
 
-    // Fácil: multiplica o intervalo atual (ou 1, se nunca teve) por 9.
+    // Fácil: multiplica o intervalo atual (ou 1, se nunca teve) por 9. Se
+    // passar de 180, reinicia o ciclo pro valor-base do Fácil (9), mesmo
+    // princípio do Médio.
     marcarFacil: function(chave) {
         let r = this.revisao[chave];
         let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
-        let intervalo = Math.min(180, Math.max(base, 1) * 9);
+        let calculado = Math.max(base, 1) * 9;
+        let intervalo = calculado > 180 ? 9 : calculado;
         this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'facil' };
         this.salvar();
     },
@@ -4568,13 +4597,40 @@ window.FLASHCARDS_RUNTIME = {
         }) || null;
     },
 
-    // ── MODAL DE CRIAÇÃO EM MASSA (sempre cria um baralho NOVO) ──
+    // ── MODAL DE CRIAÇÃO/EDIÇÃO (Matéria+Divisão SEMPRE explícitos aqui
+    // dentro — nunca herdados implicitamente da barra lateral) ──
+
+    _popularSelectMateriaBulk: function() {
+        let sel = document.getElementById('fc-bulk-materia');
+        if (!sel || typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return;
+        sel.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            return '<option value="' + mat.nivel_1.replace(/"/g, '&quot;') + '">' + mat.nivel_1 + '</option>';
+        }).join('');
+    },
+
+    _popularSelectDivisaoBulk: function(materiaSelecionada, divisaoParaPreselecionar) {
+        let sel = document.getElementById('fc-bulk-divisao-select');
+        if (!sel || typeof TAXONOMIA_DADOS === 'undefined') return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materiaSelecionada; });
+        let divisoes = (mat && Array.isArray(mat.divisoes)) ? mat.divisoes : [];
+        sel.innerHTML = divisoes.map(function(div) {
+            return '<option value="' + div.nivel_2.replace(/"/g, '&quot;') + '">' + div.nivel_2 + '</option>';
+        }).join('');
+        if (divisaoParaPreselecionar) sel.value = divisaoParaPreselecionar;
+    },
+
+    aoTrocarMateriaBulk: function() {
+        let materiaSel = document.getElementById('fc-bulk-materia').value;
+        this._popularSelectDivisaoBulk(materiaSel, null);
+    },
 
     abrirModalBulk: function(materia, divisao) {
-        this._materiaSelecionada = materia;
-        this._divisaoSelecionada = divisao;
         this._editandoDeckId = null;
-        document.getElementById('fc-bulk-divisao').textContent = divisao;
+        this._editandoDeckChaveL2Original = null;
+        document.getElementById('fc-bulk-header').textContent = '✦ Novo Baralho';
+        this._popularSelectMateriaBulk();
+        document.getElementById('fc-bulk-materia').value = materia;
+        this._popularSelectDivisaoBulk(materia, divisao);
         document.getElementById('fc-bulk-nome').value = '';
         document.getElementById('fc-bulk-texto').value = '';
         document.getElementById('fc-bulk-erro').style.display = 'none';
@@ -4582,9 +4638,10 @@ window.FLASHCARDS_RUNTIME = {
         setTimeout(function() { let n = document.getElementById('fc-bulk-nome'); if (n) n.focus(); }, 50);
     },
 
-    // Abre o mesmo modal de criação em massa, mas pré-preenchido com todos
-    // os cards atuais do baralho (1 linha por card) — editar o bloco de
-    // texto e resalvar reaproveita ids de cards inalterados (ver salvarBulk).
+    // Abre o mesmo modal, pré-preenchido com todos os cards atuais do
+    // baralho (1 linha por card) E com Matéria/Divisão pré-selecionadas na
+    // localização ATUAL do baralho — o usuário pode mudar pra outra
+    // divisão ali mesmo, movendo o baralho de L2 ao salvar (ver salvarBulk).
     editarBaralhoAtual: function() {
         let s = this._popupState;
         if (!s || s.modo !== 'baralho') return;
@@ -4592,10 +4649,12 @@ window.FLASHCARDS_RUNTIME = {
         let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === s.deckId; });
         if (!deck) return;
 
-        this._materiaSelecionada = s.materia;
-        this._divisaoSelecionada = s.divisao;
         this._editandoDeckId = deck.id;
-        document.getElementById('fc-bulk-divisao').textContent = s.divisao;
+        this._editandoDeckChaveL2Original = chaveL2;
+        document.getElementById('fc-bulk-header').textContent = '✦ Editar Baralho';
+        this._popularSelectMateriaBulk();
+        document.getElementById('fc-bulk-materia').value = s.materia;
+        this._popularSelectDivisaoBulk(s.materia, s.divisao);
         document.getElementById('fc-bulk-nome').value = deck.nome;
         document.getElementById('fc-bulk-texto').value = deck.cards.map(function(c) {
             return c.verso ? (c.frente + ' :: ' + c.verso) : c.frente;
@@ -4607,6 +4666,7 @@ window.FLASHCARDS_RUNTIME = {
     fecharModalBulk: function() {
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
         this._editandoDeckId = null;
+        this._editandoDeckChaveL2Original = null;
     },
 
     _parsearLinhaBulk: function(linha) {
@@ -4617,6 +4677,13 @@ window.FLASHCARDS_RUNTIME = {
 
     salvarBulk: function() {
         let erroEl = document.getElementById('fc-bulk-erro');
+        let materiaEscolhida = document.getElementById('fc-bulk-materia').value;
+        let divisaoEscolhida = document.getElementById('fc-bulk-divisao-select').value;
+        if (!materiaEscolhida || !divisaoEscolhida) {
+            if (erroEl) { erroEl.textContent = 'Escolha a matéria e a divisão.'; erroEl.style.display = 'block'; }
+            return;
+        }
+
         let nome = (document.getElementById('fc-bulk-nome').value || '').trim();
         if (!nome) {
             if (erroEl) { erroEl.textContent = 'Dê um nome ao baralho.'; erroEl.style.display = 'block'; }
@@ -4637,7 +4704,7 @@ window.FLASHCARDS_RUNTIME = {
             return;
         }
 
-        let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let chaveL2Novo = this._chaveL2(materiaEscolhida, divisaoEscolhida);
         let deckIdSendoEditado = this._editandoDeckId;
 
         if (deckIdSendoEditado) {
@@ -4645,7 +4712,10 @@ window.FLASHCARDS_RUNTIME = {
             // revisão) de cada card cujo frente+verso batam EXATO com uma
             // linha nova; o resto vira card novo. Cards antigos que
             // sumiram das linhas são descartados (revisão órfã limpa junto).
-            let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === deckIdSendoEditado; });
+            let chaveL2Antigo = this._editandoDeckChaveL2Original || chaveL2Novo;
+            let arrAntigo = this.manuais[chaveL2Antigo];
+            let deck = arrAntigo ? arrAntigo.find(function(d) { return d.id === deckIdSendoEditado; }) : null;
+
             if (deck) {
                 let cardsAntigos = deck.cards.slice();
                 let usados = {};
@@ -4658,14 +4728,22 @@ window.FLASHCARDS_RUNTIME = {
 
                 deck.nome = nome;
                 deck.cards = novosCards;
+
+                // Matéria/Divisão mudaram no select -> move o baralho de L2.
+                if (chaveL2Antigo !== chaveL2Novo) {
+                    let idx = arrAntigo.indexOf(deck);
+                    if (idx !== -1) arrAntigo.splice(idx, 1);
+                    if (!Array.isArray(this.manuais[chaveL2Novo])) this.manuais[chaveL2Novo] = [];
+                    this.manuais[chaveL2Novo].push(deck);
+                }
             }
         } else {
-            // Criação — sempre um baralho novo.
+            // Criação — sempre um baralho novo, na Matéria/Divisão escolhidas nos selects.
             let cards = novasPartes.map(function(partes) {
                 return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
             });
-            if (!Array.isArray(this.manuais[chaveL2])) this.manuais[chaveL2] = [];
-            this.manuais[chaveL2].push({
+            if (!Array.isArray(this.manuais[chaveL2Novo])) this.manuais[chaveL2Novo] = [];
+            this.manuais[chaveL2Novo].push({
                 id: 'deck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                 nome: nome,
                 cards: cards,
@@ -4676,14 +4754,15 @@ window.FLASHCARDS_RUNTIME = {
         this.salvar();
         if (erroEl) erroEl.style.display = 'none';
         this._editandoDeckId = null;
+        this._editandoDeckChaveL2Original = null;
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
-        this.selecionarDivisao(this._materiaSelecionada, this._divisaoSelecionada);
+        this.selecionarDivisao(materiaEscolhida, divisaoEscolhida); // navega pra onde o baralho agora vive
 
         // Se o popup de navegação desse baralho estava aberto por trás,
-        // recarrega com os cards atualizados (senão ficaria mostrando os
-        // dados antigos até fechar/reabrir).
+        // recarrega com os cards (e local) atualizados (senão ficaria
+        // mostrando os dados antigos até fechar/reabrir).
         if (deckIdSendoEditado && this._popupState && this._popupState.modo === 'baralho' && this._popupState.deckId === deckIdSendoEditado) {
-            this.abrirPopupBaralho(deckIdSendoEditado, this._popupState.materia, this._popupState.divisao);
+            this.abrirPopupBaralho(deckIdSendoEditado, materiaEscolhida, divisaoEscolhida);
         }
     },
 
@@ -4906,6 +4985,29 @@ window.FLASHCARDS_RUNTIME = {
         return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
     },
 
+    // Gera o HTML dos 3 botões de classificação (ou 2, se opts.esconder
+    // pedir) — o botão da ultimaClassificacao ATUAL do card ganha a classe
+    // .ativa (fundo cheio, permanente até reclassificar — CSS cuida do
+    // resto). onclick por padrão chama marcarXAtual() (popup de Navegar);
+    // opts.onclickPara() permite customizar (usado pelas abas de dificuldade).
+    _botoesRevisaoHtml: function(chave, opts) {
+        opts = opts || {};
+        let esconder = opts.esconder || null;
+        let onclickPara = opts.onclickPara || function(nivel) {
+            return 'window.FLASHCARDS_RUNTIME.marcar' + (nivel === 'dificil' ? 'Dificil' : nivel === 'medio' ? 'Medio' : 'Facil') + 'Atual()';
+        };
+        let atual = this.revisao[chave] ? this.revisao[chave].ultimaClassificacao : null;
+        let niveis = [
+            { chave: 'dificil', rotulo: '🔴 Difícil' },
+            { chave: 'medio', rotulo: '🟡 Médio' },
+            { chave: 'facil', rotulo: '🟢 Fácil' }
+        ];
+        return niveis.filter(function(n) { return n.chave !== esconder; }).map(function(n) {
+            let classeAtiva = (atual === n.chave) ? ' ativa' : '';
+            return '<button class="fc-rev-btn fc-rev-' + n.chave + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + n.rotulo + '</button>';
+        }).join('');
+    },
+
     renderPopup: function() {
         let s = this._popupState;
         if (!s) return;
@@ -4938,11 +5040,7 @@ window.FLASHCARDS_RUNTIME = {
                 '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : 'USE ‹› PARA NAVEGAR') + '</div>' +
             '</div>' +
             '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoTexto(card.chave)) + '</div>' +
-            '<div class="fc-card-revisao-acoes">' +
-                '<button class="fc-rev-btn fc-rev-dificil" onclick="window.FLASHCARDS_RUNTIME.marcarDificilAtual()">🔴 Difícil</button>' +
-                '<button class="fc-rev-btn fc-rev-medio" onclick="window.FLASHCARDS_RUNTIME.marcarMedioAtual()">🟡 Médio</button>' +
-                '<button class="fc-rev-btn fc-rev-facil" onclick="window.FLASHCARDS_RUNTIME.marcarFacilAtual()">🟢 Fácil</button>' +
-            '</div>';
+            '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoHtml(card.chave, null) + '</div>';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
 
@@ -5097,12 +5195,13 @@ window.FLASHCARDS_RUNTIME = {
         // Na aba Difícil, o botão "Difícil" some — reclassificar como
         // Difícil um card que já está em Difícil não muda nada (intervalo
         // já é 1, voltaria a ser 1), então é redundante mostrá-lo aqui.
-        let botoes = '';
-        if (aba !== 'dificil') {
-            botoes += '<button class="fc-rev-btn fc-rev-dificil" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'dificil\')">🔴 Difícil</button>';
-        }
-        botoes += '<button class="fc-rev-btn fc-rev-medio" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'medio\')">🟡 Médio</button>';
-        botoes += '<button class="fc-rev-btn fc-rev-facil" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'facil\')">🟢 Fácil</button>';
+        // O botão da classificação ATUAL do card (sempre a própria aba,
+        // já que o pool é filtrado por ultimaClassificacao === aba) sai
+        // marcado com .ativa via _botoesRevisaoHtml.
+        let botoes = this._botoesRevisaoHtml(card.chave, {
+            esconder: aba === 'dificil' ? 'dificil' : null,
+            onclickPara: function(nivel) { return "window.FLASHCARDS_RUNTIME.marcarNaAba('" + aba + "', '" + nivel + "')"; }
+        });
 
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
