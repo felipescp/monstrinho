@@ -130,6 +130,12 @@
 body.force-mobile #barra-nav:not(.top-aberto) { display: none !important; }
 body.force-mobile.top-aberto #barra-nav { display: flex !important; }
 
+/* Mesmo quando o menu (top-aberto) revela #barra-nav no mobile, "Gerar
+   Questões" e a paleta de cores do tema ficam de fora — ganha espaço e
+   a topbar-mobile-fixa (Início/Salvar/Carregar/⚙️) já cobre o essencial. */
+@media (max-width:700px) { .gerar-q-wrap, #seletor-cor-tema { display: none !important; } }
+body.force-mobile .gerar-q-wrap, body.force-mobile #seletor-cor-tema { display: none !important; }
+
 @media (max-width: 768px) {
     /* 1. Permite que a navegação cresça em altura e quebre linhas */
     .main-nav { 
@@ -1260,12 +1266,14 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 <!-- ===================================================== -->
 <div class="topbar-mobile-fixa">
 
+    <button onclick="window.voltarParaVitrine()" class="b1" style="height:26px; font-size:9.5px; background:var(--bg-white); border:1px solid var(--border-color); color:var(--text-main); flex-shrink:0;" title="Voltar ao início">‹ Início</button>
+
+    <div style="width:1px; height:24px; background:var(--border-color); flex-shrink:0;"></div>
+
     <!-- ============================================== -->
     <!-- BLOCO: BACKUP / RESTAURAÇÃO -->
     <!-- ============================================== -->
     <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
-
-
 
         <button
             onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)"
@@ -1279,11 +1287,11 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             "
             title="Enviar backup pra nuvem (GitHub Gist)"
         >
-            ☁️⬆️ Nuvem
+            ☁️⬆️ Salvar
         </button>
 
         <button
-            onclick="window.SALINHA_GIST_SYNC.importarNuvem()"
+            onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)"
             class="b1"
             style="
                 height:26px;
@@ -1294,7 +1302,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             "
             title="Trazer o backup mais recente da nuvem"
         >
-            ☁️⬇️ Nuvem
+            ☁️⬇️ Carregar
         </button>
 
         <button
@@ -1312,108 +1320,6 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         >
             ⚙️
         </button>
-
-        
-    </div>
-
-    <!-- ============================================== -->
-    <!-- DIVISOR -->
-    <!-- ============================================== -->
-    <div
-        style="
-            width:1px;
-            height:24px;
-            background:var(--border-color);
-            flex-shrink:0;
-        "
-    ></div>
-
-    <!-- ============================================== -->
-    <!-- STATUS DE SINCRONIZAÇÃO -->
-    <!-- ============================================== -->
-    <div
-        style="
-            display:flex;
-            align-items:center;
-            gap:10px;
-            cursor:pointer;
-            padding:4px 8px;
-            border-radius:6px;
-            border:1px solid transparent;
-            transition:all 0.2s ease;
-            flex-shrink:0;
-        "
-        onmouseover="
-            this.style.borderColor='var(--border-color)';
-            this.style.background='var(--bg-body)';
-        "
-        onmouseout="
-            this.style.borderColor='transparent';
-            this.style.background='transparent';
-        "
-    >
-
-        <!-- TEXTO -->
-        <div
-            style="
-                display:flex;
-                flex-direction:column;
-                align-items:flex-end;
-                justify-content:center;
-            "
-        >
-            <span
-                style="
-                    font-size:11px;
-                    font-weight:700;
-                    color:var(--text-main);
-                    font-family:var(--font-body);
-                    line-height:1.2;
-                "
-            >
-                Modo Offline
-            </span>
-
-            <span
-                style="
-                    font-size:9px;
-                    color:var(--text-muted);
-                    font-family:var(--font-body);
-                    text-transform:uppercase;
-                    font-weight:500;
-                "
-            >
-                Sincronização Desativada
-            </span>
-        </div>
-
-        <!-- ÍCONE -->
-        <div
-            style="
-                width:28px;
-                height:28px;
-                border-radius:50%;
-                background:#e2e8f0;
-                border:1px solid var(--border-color);
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                font-size:12px;
-                color:var(--text-muted);
-                overflow:hidden;
-                flex-shrink:0;
-            "
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-            >
-                <path d="M128,120a56,56,0,1,0-56-56A56.06,56.06,0,0,0,128,120Zm0-96a40,40,0,1,1-40,40A40,40,0,0,1,128,24Zm71.43,153.71c-16.14-19.64-42.33-31.71-71.43-31.71s-55.29,12.07-71.43,31.71A8,8,0,1,0,68.86,188C82,172.07,103.54,162,128,162s46,10.07,59.14,26a8,8,0,1,0,12.29-10.29Z"></path>
-            </svg>
-        </div>
 
     </div>
 
