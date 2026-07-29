@@ -2101,14 +2101,14 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
-                    // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.favoritos) ──
-                    // Dicionário achatado {chaveEstavel → true}, não array — mesmo
-                    // problema: a ESTRATÉGIA B genérica só copiaria a sub-chave
-                    // inteira se objLocal.favoritos nunca tivesse existido. Aqui
-                    // não tem estrutura aninhada pra descer, só união das chaves
-                    // (favoritado em QUALQUER dos dois lados = favoritado depois
-                    // do merge — não existe "desfavoritar" via merge).
-                    if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'favoritos' &&
+                    // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.revisao) ──
+                    // Dicionário achatado {chaveEstavel → {intervaloDias, proximaRevisao}},
+                    // não array — mesmo problema: a ESTRATÉGIA B genérica só copiaria
+                    // a sub-chave inteira se objLocal.revisao nunca tivesse existido.
+                    // Quando os dois lados já têm progresso pro MESMO card, quem
+                    // vence é o de MAIOR intervaloDias (reflete quem revisou mais
+                    // vezes esse card, em vez de local ou importado ganharem sempre).
+                    if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'revisao' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -2116,9 +2116,16 @@ window.SALINHA_BACKUP = {
                         }
 
                         Object.keys(objImportado[subChave]).forEach(chaveCard => {
-                            if (objLocal[subChave][chaveCard] === undefined) {
-                                objLocal[subChave][chaveCard] = objImportado[subChave][chaveCard];
+                            const remoto = objImportado[subChave][chaveCard];
+                            const local = objLocal[subChave][chaveCard];
+                            if (!remoto || typeof remoto !== 'object') return;
+
+                            if (local === undefined) {
+                                objLocal[subChave][chaveCard] = remoto;
                                 entidadesInjetadas++;
+                                persistirChave = true;
+                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
+                                objLocal[subChave][chaveCard] = remoto;
                                 persistirChave = true;
                             }
                         });
@@ -3931,6 +3938,11 @@ document.addEventListener('click', function(e) {
 <!-- ========================================================= -->
 <section id="section-flashcards" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
 <style>
+    #section-flashcards .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #section-flashcards .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
+    #section-flashcards .fc-tab:hover { color:var(--app-primary); }
+    #section-flashcards .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+
     #section-flashcards .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-flashcards .fc-col { overflow-y:auto; padding:10px; }
     #section-flashcards #fc-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
@@ -3950,29 +3962,35 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-card-tile { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:10px; min-height:90px; display:flex; flex-direction:column; cursor:pointer; position:relative; font-size:11px; transition:0.15s; }
     #section-flashcards .fc-card-tile:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
     #section-flashcards .fc-tile-especial { align-items:center; justify-content:center; text-align:center; background:#eef2ff; border-style:dashed; border-color:#c7d2fe; gap:4px; }
-    #section-flashcards .fc-tile-deck { align-items:center; justify-content:center; text-align:center; gap:4px; }
+    #section-flashcards .fc-tile-deck { align-items:center; justify-content:center; text-align:center; gap:3px; }
     #section-flashcards .fc-tile-icone { font-size:20px; }
     #section-flashcards .fc-tile-titulo { font-weight:700; color:var(--text-main); }
     #section-flashcards .fc-tile-count { font-size:9px; color:var(--text-muted); font-weight:700; }
+    #section-flashcards .fc-tile-l2-badge { font-size:9px; color:var(--app-primary); font-weight:700; background:#eef2ff; padding:1px 6px; border-radius:99px; }
     #section-flashcards .fc-tile-excluir-baralho { position:absolute; top:4px; right:4px; background:none; border:none; font-size:11px; cursor:pointer; padding:2px; opacity:0.5; }
     #section-flashcards .fc-tile-excluir-baralho:hover { opacity:1; }
+
+    #section-flashcards .fc-aba-revisao { flex:1; overflow-y:auto; padding:24px 20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    #section-flashcards .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #section-flashcards .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-flashcards .fc-pill:hover { border-color:var(--app-primary); }
+    #section-flashcards .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #section-flashcards .fc-corpo-aba { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
+    #section-flashcards .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
 
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
     #modal-flashcard .fc-popup-header, #modal-flashcard-bulk .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     #modal-flashcard .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
     #modal-flashcard .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #modal-flashcard .fc-tb-btn.ativo { background:#fef3c7; border-color:#fcd34d; color:#92400e; }
-    #modal-flashcard .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
-    #modal-flashcard .fc-card-clicavel { cursor:pointer; }
-    #modal-flashcard .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; white-space:pre-wrap; }
-    #modal-flashcard .fc-card-dica { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--text-muted); text-transform:uppercase; }
-    #modal-flashcard .fc-star { position:absolute; top:10px; right:10px; background:none; border:none; font-size:18px; cursor:pointer; color:#cbd5e1; padding:2px; }
-    #modal-flashcard .fc-star.ativo { color:#f59e0b; }
-    #modal-flashcard .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
-    #modal-flashcard .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
-    #modal-flashcard .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
-    #modal-flashcard #fc-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #modal-flashcard .fc-card, #section-flashcards .fc-aba-revisao .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; width:100%; max-width:480px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
+    #modal-flashcard .fc-card-clicavel, #section-flashcards .fc-aba-revisao .fc-card-clicavel { cursor:pointer; }
+    #modal-flashcard .fc-card-texto, #section-flashcards .fc-aba-revisao .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; white-space:pre-wrap; }
+    #modal-flashcard .fc-card-dica, #section-flashcards .fc-aba-revisao .fc-card-dica { font-size:9px; font-weight:700; letter-spacing:0.05em; color:var(--text-muted); text-transform:uppercase; min-height:11px; }
+    #modal-flashcard .fc-vazio, #section-flashcards .fc-aba-revisao .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    #modal-flashcard .fc-popup-nav, #section-flashcards .fc-aba-revisao .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #modal-flashcard .fc-nav-btn, #section-flashcards .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #modal-flashcard #fc-posicao, #section-flashcards .fc-aba-revisao span[id^="fc-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-flashcard .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
     #modal-flashcard .fc-footer-btn, #modal-flashcard-bulk .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
     #modal-flashcard .fc-footer-btn.perigo { color:var(--danger); border-color:#fecaca; }
@@ -3984,12 +4002,52 @@ document.addEventListener('click', function(e) {
     #modal-flashcard-bulk .fc-bulk-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
     #modal-flashcard-bulk .fc-bulk-textarea { width:100%; min-height:260px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; box-sizing:border-box; }
     #modal-flashcard-bulk .fc-bulk-erro { font-size:11px; color:var(--danger); font-weight:700; }
+
+    #modal-flashcard .fc-card-revisao-status, #section-flashcards .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
+    #modal-flashcard .fc-card-revisao-acoes, #section-flashcards .fc-card-revisao-acoes { display:flex; gap:8px; }
+    #modal-flashcard .fc-rev-btn, #section-flashcards .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
+    #modal-flashcard .fc-rev-memorizei, #section-flashcards .fc-rev-memorizei { color:#166534; border-color:#bbf7d0; }
+    #modal-flashcard .fc-rev-memorizei:hover, #section-flashcards .fc-rev-memorizei:hover { background:#dcfce7; }
+    #modal-flashcard .fc-rev-revisar, #section-flashcards .fc-rev-revisar { color:#92400e; border-color:#fde68a; }
+    #modal-flashcard .fc-rev-revisar:hover, #section-flashcards .fc-rev-revisar:hover { background:#fef3c7; }
 </style>
 
-    <div class="fc-grid">
+    <div class="fc-tabs">
+        <button class="fc-tab ativa" id="fc-tab-navegar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
+        <button class="fc-tab" id="fc-tab-memorizei" onclick="window.FLASHCARDS_RUNTIME.trocarAba('memorizei')">✅ Memorizei</button>
+        <button class="fc-tab" id="fc-tab-revisar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('revisar')">🔄 Revisar</button>
+    </div>
+
+    <div class="fc-grid" id="fc-aba-navegar">
         <div class="fc-col" id="fc-col-materias"></div>
         <div class="fc-col" id="fc-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
         <div class="fc-col" id="fc-col-cards"><div class="fc-vazio-col">Selecione uma matéria e divisão.</div></div>
+    </div>
+
+    <div class="fc-aba-revisao" id="fc-aba-memorizei" style="display:none;">
+        <div class="fc-pills" id="fc-pills-memorizei"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('memorizei')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="fc-corpo-memorizei"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('memorizei', -1)">‹</button>
+            <span id="fc-posicao-memorizei">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('memorizei', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="fc-aba-revisar" style="display:none;">
+        <div class="fc-pills" id="fc-pills-revisar"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('revisar')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="fc-corpo-revisar"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('revisar', -1)">‹</button>
+            <span id="fc-posicao-revisar">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('revisar', 1)">›</button>
+        </div>
     </div>
 
 <div id="modal-flashcard" class="mo">
@@ -3998,7 +4056,6 @@ document.addEventListener('click', function(e) {
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralhar()">🔀 Embaralhar</button>
-            <button class="fc-tb-btn" id="fc-btn-favoritos" onclick="window.FLASHCARDS_RUNTIME.alternarSoFavoritos()">⭐ só favoritos (<span id="fc-count-fav">0</span>)</button>
         </div>
 
         <div id="fc-corpo-popup"></div>
@@ -4038,34 +4095,52 @@ document.addEventListener('click', function(e) {
 // =========================================================================
 // window.FLASHCARDS_RUNTIME — axiomas do Caderno (fonte automática, leitura
 // só) + baralhos manuais (criados em massa, com CRUD por card aqui dentro)
-// + favoritos. Estruturas próprias (manuais/favoritos), NUNCA escreve em
-// caderno_axiomas — nada feito aqui altera o Caderno de Axiomas.
+// + repetição espaçada (Nível 2, intervalo dobrando). Estruturas próprias
+// (manuais/revisao), NUNCA escreve em caderno_axiomas — nada feito aqui
+// altera o Caderno de Axiomas.
 //
-// Layout: L1 > L2 na sidebar (≤1/3 da largura) seleciona um L2, que
-// preenche a grade de cards à direita (2/3): 1º tile fixo = "Axiomas do
-// Caderno" (abre popup só-leitura); 1 tile por baralho manual (abre popup
-// de navegação escopado a esse baralho, com editar/excluir por card);
-// último tile fixo = "Adicionar Flashcards" (cria um baralho novo, em massa).
+// 3 abas no topo da seção:
+// - 🗂️ Navegar: L1 > L2 na sidebar (≤1/3 da largura). Clicar uma matéria
+//   já mostra a grade AGREGADA (todas as divisões juntas: 1 tile único de
+//   axiomas + todos os baralhos manuais, cada um com um badge da sua
+//   divisão); clicar uma divisão específica na coluna do meio (ou "Todas
+//   as divisões", sempre no topo) afunila. Tile "Adicionar Flashcards" só
+//   aparece com uma divisão específica selecionada (baralho novo precisa
+//   nascer num L2 concreto).
+// - ✅ Memorizei / 🔄 Revisar: visão por MATÉRIA (pílulas de filtro,
+//   "Todas" + 1 por matéria com card nesse estado), navegador 1-a-1 inline
+//   (não modal) sobre TODOS os cards (axiomas+manuais, qualquer L2/matéria)
+//   cujo estado de revisão bate com a aba.
 //
 // manuais[chaveL2] = [ { id, nome, cards:[{id,frente,verso}], criadoEm }, ... ]
-// favoritos = { "<idDoCard>": true }  — id do axioma (id_q+'_'+sim_id) ou do card manual.
+// revisao = { "<chave>": { intervaloDias, proximaRevisao } } — chave = id do
+// axioma (id_q+'_'+sim_id) ou id do card manual. Sem entrada ou
+// proximaRevisao <= hoje = "devido"; proximaRevisao no futuro = "aguardando".
 // =========================================================================
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
-    favoritos: {},
+    revisao: {}, // { "<chave>": { intervaloDias, proximaRevisao (ISO só-data ou null) } } — repetição espaçada, substitui favoritos
     STORAGE_KEY: 'tjpe_v1__flashcards_runtime',
 
     _materiaSelecionada: null,
-    _divisaoSelecionada: null,
-    _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, soFavoritos, flipado }
+    _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado da matéria inteira)
+    _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, flipado }
     _editandoDeckId: null, // setado por editarBaralhoAtual(), limpo por abrirModalBulk()/fecharModalBulk()
     _bootstrapped: false,  // true depois da 1ª carregar() — ver _garantirCarregado()
+    _abaAtiva: 'navegar',  // 'navegar' | 'memorizei' | 'revisar'
+    _estadosAba: {         // estado independente de cada aba de revisão (filtro de matéria não é compartilhado)
+        memorizei: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false },
+        revisar: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false }
+    },
 
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
-        this.favoritos = (bruto && typeof bruto.favoritos === 'object') ? bruto.favoritos : {};
+        // Favoritos antigos são descartados (não mapeiam pra um estado de
+        // repetição espaçada) — cards que eram favoritos voltam a nascer
+        // "nunca classificado" (devido), o estado neutro/seguro.
+        this.revisao = (bruto && typeof bruto.revisao === 'object') ? bruto.revisao : {};
         this._migrarManuaisSeNecessario();
         this._bootstrapped = true;
     },
@@ -4081,7 +4156,7 @@ window.FLASHCARDS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ manuais: this.manuais, favoritos: this.favoritos }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ manuais: this.manuais, revisao: this.revisao }));
         } catch (e) {
             console.warn('[FLASHCARDS] Falha ao salvar:', e);
         }
@@ -4090,12 +4165,14 @@ window.FLASHCARDS_RUNTIME = {
     init: function() {
         this.carregar();
         this.render();
+        if (this._abaAtiva !== 'navegar') this.renderAbaRevisao(this._abaAtiva);
     },
 
     // Formato antigo (pré-baralhos) tinha manuais[chaveL2] como array de
     // cards soltos ({id, frente, verso}). Agrupa isso, uma vez só, num
     // baralho único "Baralho migrado" — preserva os ids dos cards (então
-    // favoritos antigos não se perdem) e nunca mais dispara depois disso.
+    // qualquer estado de revisão já associado a eles não se perde) e nunca
+    // mais dispara depois disso.
     _migrarManuaisSeNecessario: function() {
         let self = this;
         let mudou = false;
@@ -4168,6 +4245,85 @@ window.FLASHCARDS_RUNTIME = {
         return Array.isArray(this.manuais[chaveL2]) ? this.manuais[chaveL2] : [];
     },
 
+    // Todos os axiomas de TODAS as divisões de uma matéria, cada um já
+    // marcado com a divisão de origem (usado no modo agregado da B e na
+    // consulta cross-L2 da C).
+    listarAxiomasDaMateria: function(materia) {
+        let cards = [];
+        let axiomas = this._lerCadernoAxiomas();
+        let materiaUpper = (materia || '').toUpperCase().trim();
+        let porMateria = axiomas[materiaUpper] || {};
+        Object.keys(porMateria).forEach(function(topico) {
+            let divisao = topico.indexOf(' > ') !== -1 ? topico.split(' > ')[0] : topico;
+            let itens = porMateria[topico];
+            if (!Array.isArray(itens)) return;
+            itens.forEach(function(item) {
+                if (!item || !item.id_q || !item.sim_id || !item.axioma) return;
+                cards.push({ tipo: 'axioma', chave: item.id_q + '_' + item.sim_id, texto: item.axioma, id_q: item.id_q, sim_id: item.sim_id, materia: materia, divisao: divisao });
+            });
+        });
+        return cards;
+    },
+
+    // Todos os baralhos manuais de TODAS as divisões de uma matéria, cada
+    // um marcado com sua divisão de origem.
+    listarBaralhosDaMateria: function(materia) {
+        this._garantirCarregado();
+        let materiaUpper = (materia || '').toUpperCase().trim();
+        let prefixo = materiaUpper + ' > ';
+        let self = this;
+        let resultado = [];
+        Object.keys(this.manuais).forEach(function(chaveL2) {
+            if (chaveL2.indexOf(prefixo) !== 0) return;
+            let divisao = chaveL2.slice(prefixo.length);
+            (self.manuais[chaveL2] || []).forEach(function(deck) {
+                resultado.push({ deck: deck, materia: materia, divisao: divisao });
+            });
+        });
+        return resultado;
+    },
+
+    contarCardsDaMateria: function(materia) {
+        let totalManual = this.listarBaralhosDaMateria(materia).reduce(function(soma, b) {
+            return soma + (Array.isArray(b.deck.cards) ? b.deck.cards.length : 0);
+        }, 0);
+        return this.listarAxiomasDaMateria(materia).length + totalManual;
+    },
+
+    // ── REPETIÇÃO ESPAÇADA (Nível 2, intervalo dobrando) ──
+
+    _hojeISO: function() {
+        let d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
+    _somarDiasISO: function(dias) {
+        let d = new Date();
+        d.setDate(d.getDate() + dias);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
+    // "devido": nunca classificado OU proximaRevisao já chegou/passou.
+    // "aguardando": tem proximaRevisao no futuro.
+    _estadoRevisao: function(chave) {
+        let r = this.revisao[chave];
+        if (!r || !r.proximaRevisao) return 'devido';
+        return r.proximaRevisao <= this._hojeISO() ? 'devido' : 'aguardando';
+    },
+
+    marcarMemorizei: function(chave) {
+        let r = this.revisao[chave];
+        let intervaloAtual = (r && r.intervaloDias) ? r.intervaloDias : 0;
+        let novoIntervalo = intervaloAtual ? intervaloAtual * 2 : 1;
+        this.revisao[chave] = { intervaloDias: novoIntervalo, proximaRevisao: this._somarDiasISO(novoIntervalo) };
+        this.salvar();
+    },
+
+    marcarRevisar: function(chave) {
+        this.revisao[chave] = { intervaloDias: 0, proximaRevisao: null };
+        this.salvar();
+    },
+
     // Deriva {materia, divisao} a partir de um id_taxonomia (L3) via
     // MAPA_TAXONOMIA — baralhos só têm granularidade de L2, então o L3
     // exato é ignorado. Usado pelas 2 superfícies de "baralhos associados"
@@ -4219,7 +4375,16 @@ window.FLASHCARDS_RUNTIME = {
             });
             if (alvo) alvo.classList.add('ativa');
         }
+        // Trocar de matéria sempre volta pro modo agregado ("todas as
+        // divisões") — o usuário afunila a partir daí, se quiser.
+        this.selecionarDivisao(nivel1, null);
+    },
 
+    // Reconstrói só a coluna do meio (L2), refletindo _divisaoSelecionada
+    // atual — usado tanto por selecionarDivisao() (navegação) quanto por
+    // qualquer refresh de contadores após uma mutação (sem mexer no filtro
+    // que o usuário já tinha escolhido).
+    _renderColunaDivisoes: function(nivel1) {
         let colDivisoes = document.getElementById('fc-col-divisoes');
         if (!colDivisoes) return;
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
@@ -4229,81 +4394,118 @@ window.FLASHCARDS_RUNTIME = {
         }
 
         let self = this;
-        colDivisoes.innerHTML = mat.divisoes.map(function(div) {
-            let n = self.contarCardsDoL2(nivel1, div.nivel_2);
-            let ativa = nivel1 === self._materiaSelecionada && div.nivel_2 === self._divisaoSelecionada;
-            return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
-                '<span>' + div.nivel_2 + '</span>' +
-                '<span class="fc-divisao-count">' + n + '</span>' +
-            '</div>';
-        }).join('');
+        let totalMateria = this.contarCardsDaMateria(nivel1);
+        colDivisoes.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
+            '</div>' +
+            mat.divisoes.map(function(div) {
+                let n = self.contarCardsDoL2(nivel1, div.nivel_2);
+                let ativa = self._divisaoSelecionada === div.nivel_2;
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + div.nivel_2 + '</span>' +
+                    '<span class="fc-divisao-count">' + n + '</span>' +
+                '</div>';
+            }).join('');
     },
 
     // ── GRADE DE CARDS (3ª coluna) ──
 
+    // divisao === null -> modo agregado (todas as divisões da matéria).
     selecionarDivisao: function(materia, divisao) {
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
-        document.querySelectorAll('#fc-col-divisoes .fc-divisao-item').forEach(function(el) { el.classList.remove('ativa'); });
-        let alvo = Array.from(document.querySelectorAll('#fc-col-divisoes .fc-divisao-item')).find(function(el) {
-            return el.querySelector('span').textContent === divisao;
-        });
-        if (alvo) alvo.classList.add('ativa');
+        this._renderColunaDivisoes(materia);
         this.renderGradeCards();
     },
 
+    // _divisaoSelecionada === null -> grade agregada com TODAS as divisões
+    // da matéria: 1 tile único de axiomas (soma de tudo) + todos os
+    // baralhos manuais juntos, cada um com um badge indicando sua divisão.
+    // Com uma divisão específica selecionada, comportamento inalterado.
     renderGradeCards: function() {
         let colCards = document.getElementById('fc-col-cards');
         if (!colCards) return;
-        let materia = this._materiaSelecionada, divisao = this._divisaoSelecionada;
-        if (!materia || !divisao) {
-            colCards.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria e divisão.</div>';
+        let materia = this._materiaSelecionada;
+        if (!materia) {
+            colCards.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
             return;
         }
 
+        let divisaoSelecionada = this._divisaoSelecionada;
         let self = this;
-        let qtdAxiomas = this.listarAxiomasDoL2(materia, divisao).length;
-        let baralhos = this.listarBaralhosDoL2(materia, divisao);
         let mEsc = materia.replace(/'/g, "\\'");
-        let dEsc = divisao.replace(/'/g, "\\'");
+
+        let qtdAxiomas, baralhosComContexto, tileAxiomasOnclick, mostrarBadgeL2, mostrarAdicionar, dEscParaAdicionar;
+
+        if (divisaoSelecionada) {
+            qtdAxiomas = this.listarAxiomasDoL2(materia, divisaoSelecionada).length;
+            baralhosComContexto = this.listarBaralhosDoL2(materia, divisaoSelecionada).map(function(deck) { return { deck: deck, divisao: divisaoSelecionada }; });
+            tileAxiomasOnclick = "window.FLASHCARDS_RUNTIME.abrirPopup('" + mEsc + "', '" + divisaoSelecionada.replace(/'/g, "\\'") + "')";
+            mostrarBadgeL2 = false;
+            mostrarAdicionar = true;
+            dEscParaAdicionar = divisaoSelecionada.replace(/'/g, "\\'");
+        } else {
+            qtdAxiomas = this.listarAxiomasDaMateria(materia).length;
+            baralhosComContexto = this.listarBaralhosDaMateria(materia).map(function(b) { return { deck: b.deck, divisao: b.divisao }; });
+            tileAxiomasOnclick = "window.FLASHCARDS_RUNTIME.abrirPopupAxiomasMateria('" + mEsc + "')";
+            mostrarBadgeL2 = true;
+            mostrarAdicionar = false; // criar baralho exige escolher uma divisão específica primeiro
+        }
 
         let tiles =
-            '<div class="fc-card-tile fc-tile-especial" onclick="window.FLASHCARDS_RUNTIME.abrirPopup(\'' + mEsc + '\', \'' + dEsc + '\')">' +
+            '<div class="fc-card-tile fc-tile-especial" onclick="' + tileAxiomasOnclick + '">' +
                 '<div class="fc-tile-icone">📚</div><div class="fc-tile-titulo">Axiomas do Caderno</div><div class="fc-tile-count">(' + qtdAxiomas + ')</div>' +
             '</div>' +
-            baralhos.map(function(deck) {
+            baralhosComContexto.map(function(item) {
+                let deck = item.deck;
                 let n = Array.isArray(deck.cards) ? deck.cards.length : 0;
-                return '<div class="fc-card-tile fc-tile-deck" onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + deck.id + '\')">' +
-                    '<button class="fc-tile-excluir-baralho" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.excluirBaralho(\'' + deck.id + '\')" title="Excluir baralho">🗑️</button>' +
+                let dEsc = (item.divisao || '').replace(/'/g, "\\'");
+                return '<div class="fc-card-tile fc-tile-deck" onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + deck.id + '\', \'' + mEsc + '\', \'' + dEsc + '\')">' +
+                    '<button class="fc-tile-excluir-baralho" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.excluirBaralho(\'' + deck.id + '\', \'' + dEsc + '\')" title="Excluir baralho">🗑️</button>' +
                     '<div class="fc-tile-icone">🗂️</div>' +
                     '<div class="fc-tile-titulo">' + self._escapar(deck.nome) + '</div>' +
+                    (mostrarBadgeL2 && item.divisao ? ('<div class="fc-tile-l2-badge">' + self._escapar(item.divisao) + '</div>') : '') +
                     '<div class="fc-tile-count">' + (n === 0 ? 'sem cards' : ('(' + n + ' card' + (n === 1 ? '' : 's') + ')')) + '</div>' +
                 '</div>';
             }).join('') +
-            '<div class="fc-card-tile fc-tile-especial fc-tile-add" onclick="window.FLASHCARDS_RUNTIME.abrirModalBulk(\'' + mEsc + '\', \'' + dEsc + '\')">' +
-                '<div class="fc-tile-icone">➕</div><div class="fc-tile-titulo">Adicionar Flashcards</div>' +
-            '</div>';
+            (mostrarAdicionar
+                ? '<div class="fc-card-tile fc-tile-especial fc-tile-add" onclick="window.FLASHCARDS_RUNTIME.abrirModalBulk(\'' + mEsc + '\', \'' + dEscParaAdicionar + '\')"><div class="fc-tile-icone">➕</div><div class="fc-tile-titulo">Adicionar Flashcards</div></div>'
+                : '');
 
         colCards.innerHTML = '<div class="fc-cards-grid">' + tiles + '</div>';
     },
 
     // Ação destrutiva de vários cards de uma vez (o baralho inteiro) —
-    // sempre passa por confirm() antes de tocar nos dados.
-    excluirBaralho: function(deckId) {
+    // sempre passa por confirm() antes de tocar nos dados. divisao: sempre
+    // fornecida pelo tile (funciona tanto no modo agregado quanto no modo
+    // de 1 divisão); fallback pra _divisaoSelecionada/busca por segurança.
+    excluirBaralho: function(deckId, divisao) {
         if (!confirm('Excluir este baralho e todos os seus cards permanentemente?')) return;
-        let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let divisaoAlvo = divisao || this._divisaoSelecionada;
+        let chaveL2 = divisaoAlvo ? this._chaveL2(this._materiaSelecionada, divisaoAlvo) : this._localizarChaveL2DoBaralho(deckId);
+        if (!chaveL2) return;
         let arr = this.manuais[chaveL2];
         if (!Array.isArray(arr)) return;
         let self = this;
         let deck = arr.find(function(d) { return d.id === deckId; });
         if (deck && Array.isArray(deck.cards)) {
-            deck.cards.forEach(function(c) { delete self.favoritos[c.id]; });
+            deck.cards.forEach(function(c) { delete self.revisao[c.id]; });
         }
         let idx = arr.findIndex(function(d) { return d.id === deckId; });
         if (idx !== -1) arr.splice(idx, 1);
         this.salvar();
-        this.renderGradeCards();
-        this.selecionarMateria(this._materiaSelecionada, true);
+        this.selecionarDivisao(this._materiaSelecionada, this._divisaoSelecionada);
+    },
+
+    // Rede de segurança de excluirBaralho() pro caso raro de divisao não
+    // vir preenchida: varre todas as chaves de L2 da matéria atual.
+    _localizarChaveL2DoBaralho: function(deckId) {
+        let prefixo = (this._materiaSelecionada || '').toUpperCase().trim() + ' > ';
+        let self = this;
+        return Object.keys(this.manuais).find(function(chave) {
+            return chave.indexOf(prefixo) === 0 && (self.manuais[chave] || []).some(function(d) { return d.id === deckId; });
+        }) || null;
     },
 
     // ── MODAL DE CRIAÇÃO EM MASSA (sempre cria um baralho NOVO) ──
@@ -4379,10 +4581,10 @@ window.FLASHCARDS_RUNTIME = {
         let deckIdSendoEditado = this._editandoDeckId;
 
         if (deckIdSendoEditado) {
-            // Edição do baralho inteiro — reaproveita id (e favorito) de
-            // cada card cujo frente+verso batam EXATO com uma linha nova;
-            // o resto vira card novo. Cards antigos que sumiram das linhas
-            // são descartados (favorito órfão limpo junto).
+            // Edição do baralho inteiro — reaproveita id (e estado de
+            // revisão) de cada card cujo frente+verso batam EXATO com uma
+            // linha nova; o resto vira card novo. Cards antigos que
+            // sumiram das linhas são descartados (revisão órfã limpa junto).
             let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === deckIdSendoEditado; });
             if (deck) {
                 let cardsAntigos = deck.cards.slice();
@@ -4392,7 +4594,7 @@ window.FLASHCARDS_RUNTIME = {
                     if (match) { usados[match.id] = true; return { id: match.id, frente: partes.frente, verso: partes.verso }; }
                     return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
                 });
-                cardsAntigos.forEach(function(c) { if (!usados[c.id]) delete self.favoritos[c.id]; });
+                cardsAntigos.forEach(function(c) { if (!usados[c.id]) delete self.revisao[c.id]; });
 
                 deck.nome = nome;
                 deck.cards = novosCards;
@@ -4415,14 +4617,13 @@ window.FLASHCARDS_RUNTIME = {
         if (erroEl) erroEl.style.display = 'none';
         this._editandoDeckId = null;
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
-        this.renderGradeCards();
-        this.selecionarMateria(this._materiaSelecionada, true);
+        this.selecionarDivisao(this._materiaSelecionada, this._divisaoSelecionada);
 
         // Se o popup de navegação desse baralho estava aberto por trás,
         // recarrega com os cards atualizados (senão ficaria mostrando os
         // dados antigos até fechar/reabrir).
         if (deckIdSendoEditado && this._popupState && this._popupState.modo === 'baralho' && this._popupState.deckId === deckIdSendoEditado) {
-            this.abrirPopupBaralho(deckIdSendoEditado);
+            this.abrirPopupBaralho(deckIdSendoEditado, this._popupState.materia, this._popupState.divisao);
         }
     },
 
@@ -4435,9 +4636,26 @@ window.FLASHCARDS_RUNTIME = {
             materia: materia, divisao: divisao, deckId: null,
             cardsBase: cards,
             ordemChaves: cards.map(function(c) { return c.chave; }),
-            indiceAtual: 0, soFavoritos: false, flipado: false
+            indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = divisao;
+        document.getElementById('modal-flashcard').classList.add('open');
+        this.renderPopup();
+        document.addEventListener('keydown', this._handlerTeclado);
+    },
+
+    // Variante agregada do popup de axiomas — navega por TODOS os axiomas
+    // de TODAS as divisões da matéria (usado pelo tile único do modo L1).
+    abrirPopupAxiomasMateria: function(materia) {
+        let cards = this.listarAxiomasDaMateria(materia);
+        this._popupState = {
+            modo: 'axiomas',
+            materia: materia, divisao: null, deckId: null,
+            cardsBase: cards,
+            ordemChaves: cards.map(function(c) { return c.chave; }),
+            indiceAtual: 0, flipado: false
+        };
+        document.getElementById('fc-popup-titulo').textContent = materia;
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
@@ -4461,7 +4679,7 @@ window.FLASHCARDS_RUNTIME = {
             materia: materia, divisao: divisao, deckId: deckId,
             cardsBase: cards,
             ordemChaves: cards.map(function(c) { return c.chave; }),
-            indiceAtual: 0, soFavoritos: false, flipado: false
+            indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = deck.nome;
         document.getElementById('modal-flashcard').classList.add('open');
@@ -4481,14 +4699,13 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     // Deck efetivamente navegável agora: ordemChaves (respeita embaralhar)
-    // resolvida pra objetos de card, filtrada por favoritos se ativo.
+    // resolvida pra objetos de card.
     _deckAtual: function() {
         let s = this._popupState;
-        let self = this;
         if (!s) return [];
         return s.ordemChaves
             .map(function(chave) { return s.cardsBase.find(function(c) { return c.chave === chave; }); })
-            .filter(function(c) { return c && (!s.soFavoritos || self.favoritos[c.chave]); });
+            .filter(Boolean);
     },
 
     _cardAtual: function() {
@@ -4522,16 +4739,6 @@ window.FLASHCARDS_RUNTIME = {
         this.renderPopup();
     },
 
-    alternarSoFavoritos: function() {
-        let s = this._popupState;
-        if (!s) return;
-        let cardAtual = this._cardAtual();
-        let chaveAtual = cardAtual ? cardAtual.chave : null;
-        s.soFavoritos = !s.soFavoritos;
-        this._reposicionarApos(chaveAtual);
-        this.renderPopup();
-    },
-
     proximo: function() {
         let s = this._popupState;
         let deck = this._deckAtual();
@@ -4557,12 +4764,21 @@ window.FLASHCARDS_RUNTIME = {
         this.renderPopup();
     },
 
-    alternarFavorito: function() {
+    // Marca/desmarca revisão sobre o card ATUAL do popup (funciona em
+    // ambos os modos, axiomas e baralho — repetição espaçada se aplica a
+    // qualquer card). Não remove o card da navegação corrente: o popup de
+    // "Navegar" não é filtrado por estado, só as abas Memorizei/Revisar são.
+    marcarMemorizeiAtual: function() {
         let card = this._cardAtual();
         if (!card) return;
-        if (this.favoritos[card.chave]) delete this.favoritos[card.chave];
-        else this.favoritos[card.chave] = true;
-        this.salvar();
+        this.marcarMemorizei(card.chave);
+        this.renderPopup();
+    },
+
+    marcarRevisarAtual: function() {
+        let card = this._cardAtual();
+        if (!card) return;
+        this.marcarRevisar(card.chave);
         this.renderPopup();
     },
 
@@ -4581,7 +4797,7 @@ window.FLASHCARDS_RUNTIME = {
 
         let idx = (deck.cards || []).findIndex(function(c) { return c.id === card.id; });
         if (idx !== -1) deck.cards.splice(idx, 1);
-        delete this.favoritos[card.chave];
+        delete this.revisao[card.chave];
 
         let chaveRemovida = card.chave;
         s.cardsBase = s.cardsBase.filter(function(c) { return c.chave !== chaveRemovida; });
@@ -4597,28 +4813,33 @@ window.FLASHCARDS_RUNTIME = {
                 this.salvar();
             }
             this.fecharPopup();
-            this.renderGradeCards();
-            this.selecionarMateria(this._materiaSelecionada, true);
+            this.selecionarDivisao(this._materiaSelecionada, this._divisaoSelecionada);
             return;
         }
 
         this.salvar();
         this._reposicionarApos(null);
         this.renderPopup();
-        this.renderGradeCards();
+        this.selecionarDivisao(this._materiaSelecionada, this._divisaoSelecionada);
     },
 
     // ── RENDER DO POPUP ──
 
+    // Rótulo de status pra exibir junto do card ("devido agora" ou a
+    // próxima data + intervalo atual) — usado só no popup de Navegar; as
+    // abas Memorizei/Revisar não mostram esse texto (o estado já é óbvio
+    // pelo fato do card estar naquela aba).
+    _statusRevisaoTexto: function(chave) {
+        let estado = this._estadoRevisao(chave);
+        if (estado === 'devido') return 'Devido para revisão';
+        let r = this.revisao[chave];
+        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
+        return 'Próxima revisão: ' + dataTxt + ' · intervalo ' + r.intervaloDias + 'd';
+    },
+
     renderPopup: function() {
         let s = this._popupState;
         if (!s) return;
-
-        let totalFav = s.cardsBase.filter(function(c) { return window.FLASHCARDS_RUNTIME.favoritos[c.chave]; }).length;
-        let contFav = document.getElementById('fc-count-fav');
-        if (contFav) contFav.textContent = totalFav;
-        let btnFav = document.getElementById('fc-btn-favoritos');
-        if (btnFav) btnFav.classList.toggle('ativo', s.soFavoritos);
 
         let corpo = document.getElementById('fc-corpo-popup');
         let navEl = document.getElementById('fc-popup-nav');
@@ -4629,9 +4850,7 @@ window.FLASHCARDS_RUNTIME = {
         let deck = this._deckAtual();
         let posEl = document.getElementById('fc-posicao');
         if (deck.length === 0) {
-            let msgVazio = s.modo === 'baralho'
-                ? (s.soFavoritos ? 'Nenhum favorito neste baralho.' : 'Este baralho está sem cards.')
-                : (s.soFavoritos ? 'Nenhum favorito neste L2 ainda.' : 'Nenhum axioma neste L2 ainda.');
+            let msgVazio = s.modo === 'baralho' ? 'Este baralho está sem cards.' : 'Nenhum axioma aqui ainda.';
             corpo.innerHTML = '<div class="fc-vazio">' + msgVazio + '</div>';
             if (posEl) posEl.textContent = '0 / 0';
             if (btnEditar) btnEditar.style.display = 'none';
@@ -4640,16 +4859,19 @@ window.FLASHCARDS_RUNTIME = {
         }
 
         let card = this._cardAtual();
-        let favoritado = !!this.favoritos[card.chave];
         let mostrarVerso = card.tipo === 'manual' && s.flipado;
         let texto = card.tipo === 'axioma' ? card.texto : (mostrarVerso ? card.verso : card.frente);
         let temVerso = card.tipo === 'manual' && card.verso;
 
         corpo.innerHTML =
             '<div class="fc-card' + (temVerso ? ' fc-card-clicavel' : '') + '"' + (temVerso ? ' onclick="window.FLASHCARDS_RUNTIME.alternarFlip()"' : '') + '>' +
-                '<button class="fc-star' + (favoritado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.alternarFavorito()" title="' + (favoritado ? 'Remover dos favoritos' : 'Favoritar') + '">⭐</button>' +
                 '<div class="fc-card-texto">' + this._escapar(texto) + '</div>' +
                 '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : 'USE ‹› PARA NAVEGAR') + '</div>' +
+            '</div>' +
+            '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoTexto(card.chave)) + '</div>' +
+            '<div class="fc-card-revisao-acoes">' +
+                '<button class="fc-rev-btn fc-rev-memorizei" onclick="window.FLASHCARDS_RUNTIME.marcarMemorizeiAtual()">✅ Memorizei</button>' +
+                '<button class="fc-rev-btn fc-rev-revisar" onclick="window.FLASHCARDS_RUNTIME.marcarRevisarAtual()">🔄 Revisar</button>' +
             '</div>';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
@@ -4657,6 +4879,182 @@ window.FLASHCARDS_RUNTIME = {
         let podeEditar = s.modo === 'baralho';
         if (btnEditar) btnEditar.style.display = podeEditar ? 'inline-block' : 'none';
         if (btnExcluir) btnExcluir.style.display = podeEditar ? 'inline-block' : 'none';
+    },
+
+    // ── ABAS "✅ MEMORIZEI" / "🔄 REVISAR" (MUDANÇA C) ──
+
+    trocarAba: function(aba) {
+        this._abaAtiva = aba;
+        document.querySelectorAll('#section-flashcards .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
+        let tabEl = document.getElementById('fc-tab-' + aba);
+        if (tabEl) tabEl.classList.add('ativa');
+        ['navegar', 'memorizei', 'revisar'].forEach(function(a) {
+            let el = document.getElementById('fc-aba-' + a);
+            if (!el) return;
+            el.style.display = (a !== aba) ? 'none' : (a === 'navegar' ? 'grid' : 'flex');
+        });
+        if (aba === 'memorizei' || aba === 'revisar') this.renderAbaRevisao(aba);
+    },
+
+    _estadoAlvoDaAba: function(aba) { return aba === 'memorizei' ? 'aguardando' : 'devido'; },
+
+    // Varre caderno_axiomas + manuais de uma matéria (ou de TODAS, se
+    // materiaFiltro for null) e retorna só os cards no estado pedido.
+    // Sem cache — dado o volume esperado (flashcards pessoais, não um
+    // catálogo grande), uma varredura completa a cada troca de aba/pílula
+    // já é rápida o bastante (mesmo padrão de _lerCadernoAxiomas, que
+    // também relê do zero a cada chamada).
+    listarCardsPorEstado: function(materiaFiltro, estadoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = [];
+        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        materias.forEach(function(materia) {
+            self.listarAxiomasDaMateria(materia).forEach(function(c) {
+                if (self._estadoRevisao(c.chave) === estadoAlvo) resultado.push(c);
+            });
+            self.listarBaralhosDaMateria(materia).forEach(function(b) {
+                (b.deck.cards || []).forEach(function(c) {
+                    if (self._estadoRevisao(c.id) === estadoAlvo) {
+                        resultado.push({ tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso, materia: materia, divisao: b.divisao, deckNome: b.deck.nome });
+                    }
+                });
+            });
+        });
+        return resultado;
+    },
+
+    _contarPorMateria: function(estadoAlvo) {
+        let self = this;
+        let mapa = {};
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
+            let n = self.listarCardsPorEstado(mat.nivel_1, estadoAlvo).length;
+            if (n > 0) mapa[mat.nivel_1] = n;
+        });
+        return mapa;
+    },
+
+    // Reconstrução completa: pílulas (contagens) + pool + reset de índice.
+    // Usada ao abrir a aba e ao trocar de pílula (índice deve voltar a 0).
+    renderAbaRevisao: function(aba) {
+        let s = this._estadosAba[aba];
+        let estadoAlvo = this._estadoAlvoDaAba(aba);
+        let pool = this.listarCardsPorEstado(s.materiaFiltro, estadoAlvo);
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(c) { return c.chave; });
+        s.indiceAtual = 0;
+        s.flipado = false;
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+    },
+
+    _renderPillsAba: function(aba) {
+        let estadoAlvo = this._estadoAlvoDaAba(aba);
+        let s = this._estadosAba[aba];
+        let contagens = this._contarPorMateria(estadoAlvo);
+        let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
+        let pillsEl = document.getElementById('fc-pills-' + aba);
+        if (!pillsEl) return;
+        let materiasOrdenadas = Object.keys(contagens).sort();
+        pillsEl.innerHTML =
+            '<button class="fc-pill' + (!s.materiaFiltro ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.filtrarAba(\'' + aba + '\', null)">Todas (' + total + ')</button>' +
+            materiasOrdenadas.map(function(mat) {
+                return '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.filtrarAba(\'' + aba + '\', \'' + mat.replace(/'/g, "\\'") + '\')">' + mat + ' (' + contagens[mat] + ')</button>';
+            }).join('');
+    },
+
+    filtrarAba: function(aba, materia) {
+        let s = this._estadosAba[aba];
+        s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    embaralharAba: function(aba) {
+        let s = this._estadosAba[aba];
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        s.flipado = false;
+        this._renderCorpoAba(aba);
+    },
+
+    navegarAba: function(aba, delta) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + delta + s.ordemChaves.length) % s.ordemChaves.length;
+        s.flipado = false;
+        this._renderCorpoAba(aba);
+    },
+
+    _cardAtualDaAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length === 0) return null;
+        let chave = s.ordemChaves[s.indiceAtual];
+        return s.pool.find(function(c) { return c.chave === chave; }) || null;
+    },
+
+    alternarFlipAba: function(aba) {
+        let card = this._cardAtualDaAba(aba);
+        if (!card || card.tipo !== 'manual' || !card.verso) return;
+        this._estadosAba[aba].flipado = !this._estadosAba[aba].flipado;
+        this._renderCorpoAba(aba);
+    },
+
+    _renderCorpoAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let corpo = document.getElementById('fc-corpo-' + aba);
+        let posEl = document.getElementById('fc-posicao-' + aba);
+        if (!corpo) return;
+        if (s.ordemChaves.length === 0) {
+            let msg = aba === 'memorizei' ? 'Nada aguardando revisão futura por aqui.' : 'Nada devido agora — tudo em dia!';
+            corpo.innerHTML = '<div class="fc-vazio">' + msg + '</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._cardAtualDaAba(aba);
+        let mostrarVerso = card.tipo === 'manual' && s.flipado;
+        let texto = card.tipo === 'axioma' ? card.texto : (mostrarVerso ? card.verso : card.frente);
+        let temVerso = card.tipo === 'manual' && card.verso;
+        let origem = card.tipo === 'axioma'
+            ? ('📚 ' + card.materia + ' — ' + card.divisao)
+            : ('🗂️ ' + card.deckNome + ' — ' + card.materia + ' > ' + card.divisao);
+
+        corpo.innerHTML =
+            '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
+            '<div class="fc-card' + (temVerso ? ' fc-card-clicavel' : '') + '"' + (temVerso ? (' onclick="window.FLASHCARDS_RUNTIME.alternarFlipAba(\'' + aba + '\')"') : '') + '>' +
+                '<div class="fc-card-texto">' + this._escapar(texto) + '</div>' +
+                '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : '') + '</div>' +
+            '</div>' +
+            '<div class="fc-card-revisao-acoes">' +
+                '<button class="fc-rev-btn fc-rev-memorizei" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', true)">✅ Memorizei</button>' +
+                '<button class="fc-rev-btn fc-rev-revisar" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', false)">🔄 Revisar</button>' +
+            '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
+    },
+
+    // Marca o card atual da aba e remove SÓ ELE do pool corrente (sem
+    // reconstruir tudo do zero) — a navegação avança pro próximo card
+    // automaticamente, sem precisar fechar/reabrir a aba. As pílulas são
+    // atualizadas à parte (contagens mudaram; a lista em si, não).
+    marcarNaAba: function(aba, memorizei) {
+        let s = this._estadosAba[aba];
+        let card = this._cardAtualDaAba(aba);
+        if (!card) return;
+        if (memorizei) this.marcarMemorizei(card.chave); else this.marcarRevisar(card.chave);
+
+        let chaveMarcada = card.chave;
+        s.ordemChaves = s.ordemChaves.filter(function(chave) { return chave !== chaveMarcada; });
+        s.pool = s.pool.filter(function(c) { return c.chave !== chaveMarcada; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+        s.flipado = false;
+
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
     }
 };
 </script>
