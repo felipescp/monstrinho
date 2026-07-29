@@ -2102,12 +2102,12 @@ window.SALINHA_BACKUP = {
                     }
 
                     // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.revisao) ──
-                    // Dicionário achatado {chaveEstavel → {intervaloDias, proximaRevisao}},
-                    // não array — mesmo problema: a ESTRATÉGIA B genérica só copiaria
-                    // a sub-chave inteira se objLocal.revisao nunca tivesse existido.
-                    // Quando os dois lados já têm progresso pro MESMO card, quem
-                    // vence é o de MAIOR intervaloDias (reflete quem revisou mais
-                    // vezes esse card, em vez de local ou importado ganharem sempre).
+                    // Dicionário achatado {chaveEstavel → {intervaloDias, proximaRevisao,
+                    // ultimaClassificacao}}, não array — mesmo problema: a ESTRATÉGIA B
+                    // genérica só copiaria a sub-chave inteira se objLocal.revisao nunca
+                    // tivesse existido. Quando os dois lados já têm progresso pro MESMO
+                    // card, quem vence é o de MAIOR intervaloDias (reflete quem revisou
+                    // mais vezes esse card, em vez de local ou importado ganharem sempre).
                     if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'revisao' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -3981,8 +3981,8 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
     #modal-flashcard .fc-popup-header, #modal-flashcard-bulk .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
-    #modal-flashcard .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
-    #modal-flashcard .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-flashcard .fc-popup-toolbar, #section-flashcards .fc-aba-revisao .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-flashcard .fc-tb-btn, #section-flashcards .fc-aba-revisao .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #modal-flashcard .fc-card, #section-flashcards .fc-aba-revisao .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; width:100%; max-width:480px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
     #modal-flashcard .fc-card-clicavel, #section-flashcards .fc-aba-revisao .fc-card-clicavel { cursor:pointer; }
     #modal-flashcard .fc-card-texto, #section-flashcards .fc-aba-revisao .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; white-space:pre-wrap; }
@@ -4006,16 +4006,21 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .fc-card-revisao-status, #section-flashcards .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
     #modal-flashcard .fc-card-revisao-acoes, #section-flashcards .fc-card-revisao-acoes { display:flex; gap:8px; }
     #modal-flashcard .fc-rev-btn, #section-flashcards .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
-    #modal-flashcard .fc-rev-memorizei, #section-flashcards .fc-rev-memorizei { color:#166534; border-color:#bbf7d0; }
-    #modal-flashcard .fc-rev-memorizei:hover, #section-flashcards .fc-rev-memorizei:hover { background:#dcfce7; }
-    #modal-flashcard .fc-rev-revisar, #section-flashcards .fc-rev-revisar { color:#92400e; border-color:#fde68a; }
-    #modal-flashcard .fc-rev-revisar:hover, #section-flashcards .fc-rev-revisar:hover { background:#fef3c7; }
+    #modal-flashcard .fc-rev-dificil, #section-flashcards .fc-rev-dificil { color:#991b1b; border-color:#fecaca; }
+    #modal-flashcard .fc-rev-dificil:hover, #section-flashcards .fc-rev-dificil:hover { background:#fee2e2; }
+    #modal-flashcard .fc-rev-medio, #section-flashcards .fc-rev-medio { color:#92400e; border-color:#fde68a; }
+    #modal-flashcard .fc-rev-medio:hover, #section-flashcards .fc-rev-medio:hover { background:#fef3c7; }
+    #modal-flashcard .fc-rev-facil, #section-flashcards .fc-rev-facil { color:#166534; border-color:#bbf7d0; }
+    #modal-flashcard .fc-rev-facil:hover, #section-flashcards .fc-rev-facil:hover { background:#dcfce7; }
+
+    #section-flashcards .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
 </style>
 
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="fc-tab-navegar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
-        <button class="fc-tab" id="fc-tab-memorizei" onclick="window.FLASHCARDS_RUNTIME.trocarAba('memorizei')">✅ Memorizei</button>
-        <button class="fc-tab" id="fc-tab-revisar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('revisar')">🔄 Revisar</button>
+        <button class="fc-tab" id="fc-tab-dificil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
+        <button class="fc-tab" id="fc-tab-medio" onclick="window.FLASHCARDS_RUNTIME.trocarAba('medio')">🟡 Médio</button>
+        <button class="fc-tab" id="fc-tab-facil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
     </div>
 
     <div class="fc-grid" id="fc-aba-navegar">
@@ -4024,29 +4029,42 @@ document.addEventListener('click', function(e) {
         <div class="fc-col" id="fc-col-cards"><div class="fc-vazio-col">Selecione uma matéria e divisão.</div></div>
     </div>
 
-    <div class="fc-aba-revisao" id="fc-aba-memorizei" style="display:none;">
-        <div class="fc-pills" id="fc-pills-memorizei"></div>
+    <div class="fc-aba-revisao" id="fc-aba-dificil" style="display:none;">
+        <div class="fc-pills" id="fc-pills-dificil"></div>
         <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('memorizei')">🔀 Embaralhar</button>
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('dificil')">🔀 Embaralhar</button>
         </div>
-        <div class="fc-corpo-aba" id="fc-corpo-memorizei"></div>
+        <div class="fc-corpo-aba" id="fc-corpo-dificil"></div>
         <div class="fc-popup-nav">
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('memorizei', -1)">‹</button>
-            <span id="fc-posicao-memorizei">0 / 0</span>
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('memorizei', 1)">›</button>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('dificil', -1)">‹</button>
+            <span id="fc-posicao-dificil">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('dificil', 1)">›</button>
         </div>
     </div>
 
-    <div class="fc-aba-revisao" id="fc-aba-revisar" style="display:none;">
-        <div class="fc-pills" id="fc-pills-revisar"></div>
+    <div class="fc-aba-revisao" id="fc-aba-medio" style="display:none;">
+        <div class="fc-pills" id="fc-pills-medio"></div>
         <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('revisar')">🔀 Embaralhar</button>
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('medio')">🔀 Embaralhar</button>
         </div>
-        <div class="fc-corpo-aba" id="fc-corpo-revisar"></div>
+        <div class="fc-corpo-aba" id="fc-corpo-medio"></div>
         <div class="fc-popup-nav">
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('revisar', -1)">‹</button>
-            <span id="fc-posicao-revisar">0 / 0</span>
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('revisar', 1)">›</button>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('medio', -1)">‹</button>
+            <span id="fc-posicao-medio">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('medio', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="fc-aba-facil" style="display:none;">
+        <div class="fc-pills" id="fc-pills-facil"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralharAba('facil')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="fc-corpo-facil"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('facil', -1)">‹</button>
+            <span id="fc-posicao-facil">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('facil', 1)">›</button>
         </div>
     </div>
 
@@ -4095,27 +4113,36 @@ document.addEventListener('click', function(e) {
 // =========================================================================
 // window.FLASHCARDS_RUNTIME — axiomas do Caderno (fonte automática, leitura
 // só) + baralhos manuais (criados em massa, com CRUD por card aqui dentro)
-// + repetição espaçada (Nível 2, intervalo dobrando). Estruturas próprias
-// (manuais/revisao), NUNCA escreve em caderno_axiomas — nada feito aqui
-// altera o Caderno de Axiomas.
+// + repetição espaçada de 3 níveis (Difícil/Médio/Fácil). Estruturas
+// próprias (manuais/revisao), NUNCA escreve em caderno_axiomas — nada
+// feito aqui altera o Caderno de Axiomas.
 //
-// 3 abas no topo da seção:
-// - 🗂️ Navegar: L1 > L2 na sidebar (≤1/3 da largura). Clicar uma matéria
-//   já mostra a grade AGREGADA (todas as divisões juntas: 1 tile único de
-//   axiomas + todos os baralhos manuais, cada um com um badge da sua
-//   divisão); clicar uma divisão específica na coluna do meio (ou "Todas
-//   as divisões", sempre no topo) afunila. Tile "Adicionar Flashcards" só
-//   aparece com uma divisão específica selecionada (baralho novo precisa
-//   nascer num L2 concreto).
-// - ✅ Memorizei / 🔄 Revisar: visão por MATÉRIA (pílulas de filtro,
-//   "Todas" + 1 por matéria com card nesse estado), navegador 1-a-1 inline
-//   (não modal) sobre TODOS os cards (axiomas+manuais, qualquer L2/matéria)
-//   cujo estado de revisão bate com a aba.
+// 4 abas no topo da seção:
+// - 🗂️ Navegar: L1 > L2 na sidebar (≤1/3 da largura, com contagem de
+//   baralhos ao lado do nome de cada matéria, estilo Vitrine). Clicar uma
+//   matéria já mostra a grade AGREGADA (todas as divisões juntas: 1 tile
+//   único de axiomas + todos os baralhos manuais, cada um com um badge da
+//   sua divisão); clicar uma divisão específica na coluna do meio (ou
+//   "Todas as divisões", sempre no topo) afunila. Tile "Adicionar
+//   Flashcards" só aparece com uma divisão específica selecionada (baralho
+//   novo precisa nascer num L2 concreto). Popup de card (axioma ou
+//   manual) sempre mostra os 3 botões de classificação juntos.
+// - 🔴 Difícil / 🟡 Médio / 🟢 Fácil: visão por MATÉRIA (pílulas de
+//   filtro, "Todas" + 1 por matéria com card nesse estado), navegador
+//   1-a-1 inline (não modal) sobre TODOS os cards (axiomas+manuais,
+//   qualquer L2/matéria) VENCIDOS (proximaRevisao <= hoje) cuja última
+//   classificação bate com a aba. Cards nunca classificados não aparecem
+//   aqui. Na aba Difícil, o botão "Difícil" some (reclassificar como
+//   Difícil um card que já está lá não muda nada). Classificar um card
+//   sempre o remove do pool corrente, mesmo se a nova classificação for
+//   igual à aba atual (a data de vencimento sempre muda).
 //
 // manuais[chaveL2] = [ { id, nome, cards:[{id,frente,verso}], criadoEm }, ... ]
-// revisao = { "<chave>": { intervaloDias, proximaRevisao } } — chave = id do
-// axioma (id_q+'_'+sim_id) ou id do card manual. Sem entrada ou
-// proximaRevisao <= hoje = "devido"; proximaRevisao no futuro = "aguardando".
+// revisao = { "<chave>": { intervaloDias, proximaRevisao, ultimaClassificacao } }
+// — chave = id do axioma (id_q+'_'+sim_id) ou id do card manual.
+// ultimaClassificacao: 'dificil'|'medio'|'facil', ausente = nunca revisado.
+// Fórmulas (teto de 180 dias em todas): Difícil -> intervalo=1 sempre;
+// Médio -> intervalo atual (ou 1) * 3; Fácil -> intervalo atual (ou 1) * 9.
 // =========================================================================
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
@@ -4127,22 +4154,38 @@ window.FLASHCARDS_RUNTIME = {
     _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, flipado }
     _editandoDeckId: null, // setado por editarBaralhoAtual(), limpo por abrirModalBulk()/fecharModalBulk()
     _bootstrapped: false,  // true depois da 1ª carregar() — ver _garantirCarregado()
-    _abaAtiva: 'navegar',  // 'navegar' | 'memorizei' | 'revisar'
-    _estadosAba: {         // estado independente de cada aba de revisão (filtro de matéria não é compartilhado)
-        memorizei: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false },
-        revisar: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false }
+    _abaAtiva: 'navegar',  // 'navegar' | 'dificil' | 'medio' | 'facil'
+    _estadosAba: {         // estado independente de cada aba de dificuldade (filtro de matéria não é compartilhado)
+        dificil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false },
+        medio: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false },
+        facil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0, flipado: false }
     },
 
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
-        // Favoritos antigos são descartados (não mapeiam pra um estado de
-        // repetição espaçada) — cards que eram favoritos voltam a nascer
-        // "nunca classificado" (devido), o estado neutro/seguro.
         this.revisao = (bruto && typeof bruto.revisao === 'object') ? bruto.revisao : {};
         this._migrarManuaisSeNecessario();
+        this._migrarRevisaoSeNecessario();
         this._bootstrapped = true;
+    },
+
+    // Formato antigo (favoritos, ou revisao no modelo de 2 estados
+    // Memorizei/Revisar de uma versão anterior) não tem ultimaClassificacao
+    // válida — descarta essas entradas silenciosamente, uma vez só, ao
+    // carregar. Cards afetados voltam ao estado neutro: "nunca classificado".
+    _migrarRevisaoSeNecessario: function() {
+        let self = this;
+        let mudou = false;
+        Object.keys(this.revisao).forEach(function(chave) {
+            let r = self.revisao[chave];
+            if (!r || ['dificil', 'medio', 'facil'].indexOf(r.ultimaClassificacao) === -1) {
+                delete self.revisao[chave];
+                mudou = true;
+            }
+        });
+        if (mudou) this.salvar();
     },
 
     // Carrega os baralhos do localStorage sob demanda — usado por quem
@@ -4290,7 +4333,9 @@ window.FLASHCARDS_RUNTIME = {
         return this.listarAxiomasDaMateria(materia).length + totalManual;
     },
 
-    // ── REPETIÇÃO ESPAÇADA (Nível 2, intervalo dobrando) ──
+    // ── REPETIÇÃO ESPAÇADA (3 níveis: Difícil / Médio / Fácil) ──
+    // Teto de 180 dias vale pras 3 fórmulas (Difícil nunca passa de 1, mas
+    // o Math.min(180, ...) fica lá mesmo assim, por consistência/segurança).
 
     _hojeISO: function() {
         let d = new Date();
@@ -4303,24 +4348,35 @@ window.FLASHCARDS_RUNTIME = {
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     },
 
-    // "devido": nunca classificado OU proximaRevisao já chegou/passou.
-    // "aguardando": tem proximaRevisao no futuro.
-    _estadoRevisao: function(chave) {
+    // Vencido: já foi classificado alguma vez E a data de revisão chegou/passou.
+    // Cards nunca classificados NÃO contam como vencidos (não têm proximaRevisao).
+    _vencido: function(chave) {
         let r = this.revisao[chave];
-        if (!r || !r.proximaRevisao) return 'devido';
-        return r.proximaRevisao <= this._hojeISO() ? 'devido' : 'aguardando';
+        return !!(r && r.proximaRevisao && r.proximaRevisao <= this._hojeISO());
     },
 
-    marcarMemorizei: function(chave) {
-        let r = this.revisao[chave];
-        let intervaloAtual = (r && r.intervaloDias) ? r.intervaloDias : 0;
-        let novoIntervalo = intervaloAtual ? intervaloAtual * 2 : 1;
-        this.revisao[chave] = { intervaloDias: novoIntervalo, proximaRevisao: this._somarDiasISO(novoIntervalo) };
+    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior.
+    marcarDificil: function(chave) {
+        let intervalo = Math.min(180, 1);
+        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'dificil' };
         this.salvar();
     },
 
-    marcarRevisar: function(chave) {
-        this.revisao[chave] = { intervaloDias: 0, proximaRevisao: null };
+    // Médio: multiplica o intervalo atual (ou 1, se nunca teve) por 3.
+    marcarMedio: function(chave) {
+        let r = this.revisao[chave];
+        let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
+        let intervalo = Math.min(180, Math.max(base, 1) * 3);
+        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'medio' };
+        this.salvar();
+    },
+
+    // Fácil: multiplica o intervalo atual (ou 1, se nunca teve) por 9.
+    marcarFacil: function(chave) {
+        let r = this.revisao[chave];
+        let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
+        let intervalo = Math.min(180, Math.max(base, 1) * 9);
+        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'facil' };
         this.salvar();
     },
 
@@ -4357,9 +4413,13 @@ window.FLASHCARDS_RUNTIME = {
 
         colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
             let ativa = mat.nivel_1 === self._materiaSelecionada;
+            let nBaralhos = self.listarBaralhosDaMateria(mat.nivel_1).length;
             return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
                 '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
-                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' +
+                    (nBaralhos > 0 ? ('<span class="fc-materia-count">' + nBaralhos + '</span>') : '') +
+                    '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '</span>' +
             '</div>';
         }).join('');
 
@@ -4764,21 +4824,28 @@ window.FLASHCARDS_RUNTIME = {
         this.renderPopup();
     },
 
-    // Marca/desmarca revisão sobre o card ATUAL do popup (funciona em
-    // ambos os modos, axiomas e baralho — repetição espaçada se aplica a
-    // qualquer card). Não remove o card da navegação corrente: o popup de
-    // "Navegar" não é filtrado por estado, só as abas Memorizei/Revisar são.
-    marcarMemorizeiAtual: function() {
+    // Classifica o card ATUAL do popup (funciona em ambos os modos, axiomas
+    // e baralho — sempre os 3 botões juntos aqui). Não remove o card da
+    // navegação corrente: o popup de "Navegar" não é filtrado por estado,
+    // só as abas Difícil/Médio/Fácil são.
+    marcarDificilAtual: function() {
         let card = this._cardAtual();
         if (!card) return;
-        this.marcarMemorizei(card.chave);
+        this.marcarDificil(card.chave);
         this.renderPopup();
     },
 
-    marcarRevisarAtual: function() {
+    marcarMedioAtual: function() {
         let card = this._cardAtual();
         if (!card) return;
-        this.marcarRevisar(card.chave);
+        this.marcarMedio(card.chave);
+        this.renderPopup();
+    },
+
+    marcarFacilAtual: function() {
+        let card = this._cardAtual();
+        if (!card) return;
+        this.marcarFacil(card.chave);
         this.renderPopup();
     },
 
@@ -4825,16 +4892,18 @@ window.FLASHCARDS_RUNTIME = {
 
     // ── RENDER DO POPUP ──
 
-    // Rótulo de status pra exibir junto do card ("devido agora" ou a
-    // próxima data + intervalo atual) — usado só no popup de Navegar; as
-    // abas Memorizei/Revisar não mostram esse texto (o estado já é óbvio
-    // pelo fato do card estar naquela aba).
+    // Rótulo de status pra exibir junto do card (última classificação +
+    // próxima data + intervalo, ou "ainda não classificado") — usado só no
+    // popup de Navegar; as abas Difícil/Médio/Fácil não mostram esse texto
+    // (o estado já é óbvio pelo fato do card estar naquela aba).
     _statusRevisaoTexto: function(chave) {
-        let estado = this._estadoRevisao(chave);
-        if (estado === 'devido') return 'Devido para revisão';
         let r = this.revisao[chave];
+        if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
+        let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
+        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
         let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
-        return 'Próxima revisão: ' + dataTxt + ' · intervalo ' + r.intervaloDias + 'd';
+        let vencidoTxt = this._vencido(chave) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
+        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
     },
 
     renderPopup: function() {
@@ -4870,8 +4939,9 @@ window.FLASHCARDS_RUNTIME = {
             '</div>' +
             '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoTexto(card.chave)) + '</div>' +
             '<div class="fc-card-revisao-acoes">' +
-                '<button class="fc-rev-btn fc-rev-memorizei" onclick="window.FLASHCARDS_RUNTIME.marcarMemorizeiAtual()">✅ Memorizei</button>' +
-                '<button class="fc-rev-btn fc-rev-revisar" onclick="window.FLASHCARDS_RUNTIME.marcarRevisarAtual()">🔄 Revisar</button>' +
+                '<button class="fc-rev-btn fc-rev-dificil" onclick="window.FLASHCARDS_RUNTIME.marcarDificilAtual()">🔴 Difícil</button>' +
+                '<button class="fc-rev-btn fc-rev-medio" onclick="window.FLASHCARDS_RUNTIME.marcarMedioAtual()">🟡 Médio</button>' +
+                '<button class="fc-rev-btn fc-rev-facil" onclick="window.FLASHCARDS_RUNTIME.marcarFacilAtual()">🟢 Fácil</button>' +
             '</div>';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
@@ -4881,41 +4951,45 @@ window.FLASHCARDS_RUNTIME = {
         if (btnExcluir) btnExcluir.style.display = podeEditar ? 'inline-block' : 'none';
     },
 
-    // ── ABAS "✅ MEMORIZEI" / "🔄 REVISAR" (MUDANÇA C) ──
+    // ── ABAS "🔴 DIFÍCIL" / "🟡 MÉDIO" / "🟢 FÁCIL" ──
 
     trocarAba: function(aba) {
         this._abaAtiva = aba;
         document.querySelectorAll('#section-flashcards .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
         let tabEl = document.getElementById('fc-tab-' + aba);
         if (tabEl) tabEl.classList.add('ativa');
-        ['navegar', 'memorizei', 'revisar'].forEach(function(a) {
+        ['navegar', 'dificil', 'medio', 'facil'].forEach(function(a) {
             let el = document.getElementById('fc-aba-' + a);
             if (!el) return;
             el.style.display = (a !== aba) ? 'none' : (a === 'navegar' ? 'grid' : 'flex');
         });
-        if (aba === 'memorizei' || aba === 'revisar') this.renderAbaRevisao(aba);
+        if (aba === 'dificil' || aba === 'medio' || aba === 'facil') this.renderAbaRevisao(aba);
     },
 
-    _estadoAlvoDaAba: function(aba) { return aba === 'memorizei' ? 'aguardando' : 'devido'; },
-
     // Varre caderno_axiomas + manuais de uma matéria (ou de TODAS, se
-    // materiaFiltro for null) e retorna só os cards no estado pedido.
+    // materiaFiltro for null) e retorna só os cards VENCIDOS (proximaRevisao
+    // <= hoje) cuja ultimaClassificacao bate com a aba. Cards nunca
+    // classificados nunca aparecem aqui (só ficam acessíveis via Navegar).
     // Sem cache — dado o volume esperado (flashcards pessoais, não um
     // catálogo grande), uma varredura completa a cada troca de aba/pílula
     // já é rápida o bastante (mesmo padrão de _lerCadernoAxiomas, que
     // também relê do zero a cada chamada).
-    listarCardsPorEstado: function(materiaFiltro, estadoAlvo) {
+    listarCardsPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
         this._garantirCarregado();
         let self = this;
         let resultado = [];
         let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        let bate = function(chave) {
+            let r = self.revisao[chave];
+            return !!(r && r.ultimaClassificacao === classificacaoAlvo && self._vencido(chave));
+        };
         materias.forEach(function(materia) {
             self.listarAxiomasDaMateria(materia).forEach(function(c) {
-                if (self._estadoRevisao(c.chave) === estadoAlvo) resultado.push(c);
+                if (bate(c.chave)) resultado.push(c);
             });
             self.listarBaralhosDaMateria(materia).forEach(function(b) {
                 (b.deck.cards || []).forEach(function(c) {
-                    if (self._estadoRevisao(c.id) === estadoAlvo) {
+                    if (bate(c.id)) {
                         resultado.push({ tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso, materia: materia, divisao: b.divisao, deckNome: b.deck.nome });
                     }
                 });
@@ -4924,12 +4998,12 @@ window.FLASHCARDS_RUNTIME = {
         return resultado;
     },
 
-    _contarPorMateria: function(estadoAlvo) {
+    _contarPorMateria: function(classificacaoAlvo) {
         let self = this;
         let mapa = {};
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
         TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
-            let n = self.listarCardsPorEstado(mat.nivel_1, estadoAlvo).length;
+            let n = self.listarCardsPorClassificacaoVencida(mat.nivel_1, classificacaoAlvo).length;
             if (n > 0) mapa[mat.nivel_1] = n;
         });
         return mapa;
@@ -4939,8 +5013,7 @@ window.FLASHCARDS_RUNTIME = {
     // Usada ao abrir a aba e ao trocar de pílula (índice deve voltar a 0).
     renderAbaRevisao: function(aba) {
         let s = this._estadosAba[aba];
-        let estadoAlvo = this._estadoAlvoDaAba(aba);
-        let pool = this.listarCardsPorEstado(s.materiaFiltro, estadoAlvo);
+        let pool = this.listarCardsPorClassificacaoVencida(s.materiaFiltro, aba);
         s.pool = pool;
         s.ordemChaves = pool.map(function(c) { return c.chave; });
         s.indiceAtual = 0;
@@ -4950,9 +5023,8 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     _renderPillsAba: function(aba) {
-        let estadoAlvo = this._estadoAlvoDaAba(aba);
         let s = this._estadosAba[aba];
-        let contagens = this._contarPorMateria(estadoAlvo);
+        let contagens = this._contarPorMateria(aba);
         let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
         let pillsEl = document.getElementById('fc-pills-' + aba);
         if (!pillsEl) return;
@@ -5009,8 +5081,7 @@ window.FLASHCARDS_RUNTIME = {
         let posEl = document.getElementById('fc-posicao-' + aba);
         if (!corpo) return;
         if (s.ordemChaves.length === 0) {
-            let msg = aba === 'memorizei' ? 'Nada aguardando revisão futura por aqui.' : 'Nada devido agora — tudo em dia!';
-            corpo.innerHTML = '<div class="fc-vazio">' + msg + '</div>';
+            corpo.innerHTML = '<div class="fc-vazio">Nada vencido nessa classificação agora — tudo em dia!</div>';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -5023,29 +5094,40 @@ window.FLASHCARDS_RUNTIME = {
             ? ('📚 ' + card.materia + ' — ' + card.divisao)
             : ('🗂️ ' + card.deckNome + ' — ' + card.materia + ' > ' + card.divisao);
 
+        // Na aba Difícil, o botão "Difícil" some — reclassificar como
+        // Difícil um card que já está em Difícil não muda nada (intervalo
+        // já é 1, voltaria a ser 1), então é redundante mostrá-lo aqui.
+        let botoes = '';
+        if (aba !== 'dificil') {
+            botoes += '<button class="fc-rev-btn fc-rev-dificil" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'dificil\')">🔴 Difícil</button>';
+        }
+        botoes += '<button class="fc-rev-btn fc-rev-medio" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'medio\')">🟡 Médio</button>';
+        botoes += '<button class="fc-rev-btn fc-rev-facil" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', \'facil\')">🟢 Fácil</button>';
+
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
             '<div class="fc-card' + (temVerso ? ' fc-card-clicavel' : '') + '"' + (temVerso ? (' onclick="window.FLASHCARDS_RUNTIME.alternarFlipAba(\'' + aba + '\')"') : '') + '>' +
                 '<div class="fc-card-texto">' + this._escapar(texto) + '</div>' +
                 '<div class="fc-card-dica">' + (temVerso ? (mostrarVerso ? 'VERSO · CLIQUE PRA VIRAR' : 'FRENTE · CLIQUE PRA VIRAR') : '') + '</div>' +
             '</div>' +
-            '<div class="fc-card-revisao-acoes">' +
-                '<button class="fc-rev-btn fc-rev-memorizei" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', true)">✅ Memorizei</button>' +
-                '<button class="fc-rev-btn fc-rev-revisar" onclick="window.FLASHCARDS_RUNTIME.marcarNaAba(\'' + aba + '\', false)">🔄 Revisar</button>' +
-            '</div>';
+            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
 
-    // Marca o card atual da aba e remove SÓ ELE do pool corrente (sem
+    // Classifica o card atual da aba e remove SÓ ELE do pool corrente (sem
     // reconstruir tudo do zero) — a navegação avança pro próximo card
-    // automaticamente, sem precisar fechar/reabrir a aba. As pílulas são
-    // atualizadas à parte (contagens mudaram; a lista em si, não).
-    marcarNaAba: function(aba, memorizei) {
+    // automaticamente, sem precisar fechar/reabrir a aba. Sai do pool SEMPRE,
+    // mesmo se a nova classificação for igual à aba atual (a data de
+    // vencimento sempre muda). Pílulas atualizadas à parte (contagens
+    // mudaram; a lista em si, não).
+    marcarNaAba: function(aba, classificacao) {
         let s = this._estadosAba[aba];
         let card = this._cardAtualDaAba(aba);
         if (!card) return;
-        if (memorizei) this.marcarMemorizei(card.chave); else this.marcarRevisar(card.chave);
+        if (classificacao === 'dificil') this.marcarDificil(card.chave);
+        else if (classificacao === 'medio') this.marcarMedio(card.chave);
+        else if (classificacao === 'facil') this.marcarFacil(card.chave);
 
         let chaveMarcada = card.chave;
         s.ordemChaves = s.ordemChaves.filter(function(chave) { return chave !== chaveMarcada; });
