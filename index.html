@@ -2885,12 +2885,12 @@ if(ri) {
     #section-cronograma .crono-check.checked { background:linear-gradient(135deg, var(--app-primary), #3b82f6); border-color:var(--app-primary); color:#fff; }
     #section-cronograma .crono-mover-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; }
     #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
-    #section-cronograma .crono-simulados-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; opacity:1; }
-    #section-cronograma .crono-simulados-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
-    /* Sem nenhum simulado vinculado (nem automático, nem manual) — ícone
-       fosco, ainda clicável (sem pointer-events:none), só menos chamativo. */
-    #section-cronograma .crono-simulados-btn.sem-vinculo { opacity:0.35; }
-    #section-cronograma .crono-simulados-btn.sem-vinculo:hover { opacity:0.7; }
+    #section-cronograma .crono-simulados-btn, #section-cronograma .crono-baralhos-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; opacity:1; }
+    #section-cronograma .crono-simulados-btn:hover, #section-cronograma .crono-baralhos-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
+    /* Sem nenhum simulado/baralho vinculado — ícone fosco, ainda clicável
+       (sem pointer-events:none), só menos chamativo. */
+    #section-cronograma .crono-simulados-btn.sem-vinculo, #section-cronograma .crono-baralhos-btn.sem-vinculo { opacity:0.35; }
+    #section-cronograma .crono-simulados-btn.sem-vinculo:hover, #section-cronograma .crono-baralhos-btn.sem-vinculo:hover { opacity:0.7; }
     #section-cronograma .crono-card-body { min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
     #section-cronograma .crono-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; max-width:100%; word-break:break-word; }
@@ -2922,17 +2922,19 @@ if(ri) {
     /* #crono-simulados-menu — mesmo tratamento de #crono-mover-menu (anexado
        a document.body), mas com corpo em coluna porque a lista de baterias
        tem tamanho variável e precisa de scroll próprio sem empurrar o
-       título/botão "+ Incluir" pra fora da viewport. */
-    #crono-simulados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:280px; max-height:70vh; overflow:hidden; }
-    #crono-simulados-menu .crono-sim-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); padding:12px 12px 8px 12px; flex-shrink:0; }
-    #crono-simulados-menu .crono-sim-secao-label { font-size:9px; font-weight:700; text-transform:uppercase; color:var(--text-muted); padding:8px 12px 4px 12px; flex-shrink:0; }
-    #crono-simulados-menu .crono-sim-lista { overflow-y:auto; flex-shrink:0; }
-    #crono-simulados-menu .crono-sim-item { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 12px; font-size:11px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
-    #crono-simulados-menu .crono-sim-item:hover { background:#f8fafc; }
-    #crono-simulados-menu .crono-sim-item-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main); font-weight:600; cursor:pointer; }
+       título/botão "+ Incluir" pra fora da viewport.
+       #crono-baralhos-menu (🗂️ baralhos associados) reaproveita exatamente
+       as mesmas regras — mesmo padrão visual, conteúdo diferente. */
+    #crono-simulados-menu, #crono-baralhos-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:280px; max-height:70vh; overflow:hidden; }
+    #crono-simulados-menu .crono-sim-titulo, #crono-baralhos-menu .crono-sim-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); padding:12px 12px 8px 12px; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-secao-label, #crono-baralhos-menu .crono-sim-secao-label { font-size:9px; font-weight:700; text-transform:uppercase; color:var(--text-muted); padding:8px 12px 4px 12px; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-lista, #crono-baralhos-menu .crono-sim-lista { overflow-y:auto; flex-shrink:0; }
+    #crono-simulados-menu .crono-sim-item, #crono-baralhos-menu .crono-sim-item { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 12px; font-size:11px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #crono-simulados-menu .crono-sim-item:hover, #crono-baralhos-menu .crono-sim-item:hover { background:#f8fafc; }
+    #crono-simulados-menu .crono-sim-item-nome, #crono-baralhos-menu .crono-sim-item-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main); font-weight:600; cursor:pointer; }
     #crono-simulados-menu .crono-sim-item-remover { flex-shrink:0; border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:2px 4px; }
     #crono-simulados-menu .crono-sim-item-remover:hover { color:var(--danger); }
-    #crono-simulados-menu .crono-sim-vazio { padding:6px 12px 10px 12px; font-size:10px; color:var(--text-muted); font-style:italic; }
+    #crono-simulados-menu .crono-sim-vazio, #crono-baralhos-menu .crono-sim-vazio { padding:6px 12px 10px 12px; font-size:10px; color:var(--text-muted); font-style:italic; }
     #crono-simulados-menu .crono-sim-add-btn { margin:8px 12px 12px 12px; padding:7px; border-radius:6px; border:1px dashed var(--app-primary); background:none; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; }
     #crono-simulados-menu .crono-sim-add-btn:hover { background:#eef2ff; }
 </style>
@@ -3262,6 +3264,7 @@ window.CRONOGRAMA_RUNTIME = {
         let temAuto = !!(item.id_taxonomia && this._setTaxonomiasComBaterias && this._setTaxonomiasComBaterias.has(item.id_taxonomia));
         let temManual = Array.isArray(item.simuladosVinculados) && item.simuladosVinculados.length > 0;
         let temVinculo = temAuto || temManual;
+        let temBaralhos = this._baralhosAssociados(item).length > 0;
 
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
             '<div class="crono-card-body">' +
@@ -3274,6 +3277,7 @@ window.CRONOGRAMA_RUNTIME = {
             '</div>' +
             '<div class="crono-card-footer">' +
                 '<button class="crono-simulados-btn' + (temVinculo ? '' : ' sem-vinculo') + '" onclick="window.CRONOGRAMA_RUNTIME.abrirPainelSimulados(event, \'' + item.id + '\')" title="' + (temVinculo ? 'Simulados relacionados' : 'Nenhum simulado vinculado ainda — clique pra incluir') + '">🎯</button>' +
+                '<button class="crono-baralhos-btn' + (temBaralhos ? '' : ' sem-vinculo') + '" onclick="window.CRONOGRAMA_RUNTIME.abrirPainelBaralhos(event, \'' + item.id + '\')" title="' + (temBaralhos ? 'Baralhos de flashcards associados' : 'Nenhum baralho de flashcards associado') + '">🗂️</button>' +
                 '<button class="crono-mover-btn" onclick="window.CRONOGRAMA_RUNTIME.abrirMenuMover(event, \'' + item.id + '\', \'' + dia + '\')" title="Mover para...">⇄</button>' +
                 '<button class="crono-check' + (item.feitas ? ' checked' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + item.id + '\',\'feitas\')" title="Feito">' + (item.feitas ? '✓' : '') + '</button>' +
             '</div>' +
@@ -3523,6 +3527,70 @@ window.CRONOGRAMA_RUNTIME = {
     fecharPainelSimulados: function() {
         let menu = document.getElementById('crono-simulados-menu');
         if (menu) menu.style.display = 'none';
+    },
+
+    // Baralhos manuais de Flashcards da mesma matéria+L2 do card — mesma
+    // derivação de id_taxonomia -> MAPA_TAXONOMIA usada em toda parte,
+    // mas resolvendo até o L2 (baralhos não têm granularidade de L3).
+    _baralhosAssociados: function(item) {
+        if (!item || !item.id_taxonomia || !window.FLASHCARDS_RUNTIME) return [];
+        let loc = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(item.id_taxonomia);
+        if (!loc) return [];
+        return window.FLASHCARDS_RUNTIME.listarBaralhosDoL2(loc.materia, loc.divisao).map(function(deck) {
+            return { deck: deck, materia: loc.materia, divisao: loc.divisao };
+        });
+    },
+
+    // Painel flutuante "🗂️" — mesmo padrão de posicionamento/anexação de
+    // abrirPainelSimulados(), conteúdo diferente (baralhos, não baterias).
+    abrirPainelBaralhos: function(event, itemId) {
+        event.stopPropagation();
+        let menu = document.getElementById('crono-baralhos-menu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'crono-baralhos-menu';
+            document.body.appendChild(menu);
+        }
+        menu.innerHTML = this._renderConteudoPainelBaralhos(itemId);
+
+        menu.style.visibility = 'hidden';
+        menu.style.display = 'flex';
+        let menuRect = menu.getBoundingClientRect();
+        menu.style.visibility = 'visible';
+
+        let rect = event.currentTarget.getBoundingClientRect();
+        let spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < menuRect.height && rect.top > menuRect.height) {
+            menu.style.top = (rect.top - menuRect.height - 4) + 'px';
+        } else {
+            menu.style.top = (rect.bottom + 4) + 'px';
+        }
+        menu.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - menuRect.width - 10)) + 'px';
+    },
+
+    fecharPainelBaralhos: function() {
+        let menu = document.getElementById('crono-baralhos-menu');
+        if (menu) menu.style.display = 'none';
+    },
+
+    _renderConteudoPainelBaralhos: function(itemId) {
+        let item = this._localizarItem(itemId);
+        if (!item) return '<div class="crono-sim-vazio">Item não encontrado.</div>';
+
+        let baralhos = this._baralhosAssociados(item);
+        let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
+
+        let corpo = baralhos.length > 0
+            ? baralhos.map(function(b) {
+                let n = Array.isArray(b.deck.cards) ? b.deck.cards.length : 0;
+                return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelBaralhos(); window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + b.deck.id + '\', \'' + b.materia.replace(/'/g, "\\'") + '\', \'' + b.divisao.replace(/'/g, "\\'") + '\');" title="' + escaparAspas(b.deck.nome) + '">' +
+                    '<span class="crono-sim-item-nome">🗂️ ' + b.deck.nome + '</span>' +
+                    '<span style="flex-shrink:0; font-size:9px; color:var(--text-muted); font-weight:800; background:#f1f5f9; padding:2px 5px; border-radius:4px; border:1px solid var(--border-color);">' + n + '</span>' +
+                '</div>';
+            }).join('')
+            : '<div class="crono-sim-vazio">' + (item.id_taxonomia ? 'Nenhum baralho de flashcards para essa matéria/divisão.' : 'Card sem taxonomia — sem correspondência automática.') + '</div>';
+
+        return '<div class="crono-sim-titulo">🗂️ Baralhos Associados</div><div class="crono-sim-lista">' + corpo + '</div>';
     },
 
     // Calcula os mesmos dados visuais (qtd de questões, ícone, badge de %,
@@ -3823,9 +3891,9 @@ window.CRONOGRAMA_RUNTIME = {
     }
 };
 
-// Fecha os menus flutuantes ("Mover para..." e "🎯 Simulados
-// Relacionados") ao clicar fora deles (mesmo padrão de segurança usado
-// pro #admin-kebab-menu) — registrado uma única vez.
+// Fecha os menus flutuantes ("Mover para...", "🎯 Simulados Relacionados"
+// e "🗂️ Baralhos Associados") ao clicar fora deles (mesmo padrão de
+// segurança usado pro #admin-kebab-menu) — registrado uma única vez.
 document.addEventListener('click', function(e) {
     let menu = document.getElementById('crono-mover-menu');
     if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && !e.target.closest('.crono-mover-btn')) {
@@ -3834,6 +3902,10 @@ document.addEventListener('click', function(e) {
     let menuSim = document.getElementById('crono-simulados-menu');
     if (menuSim && menuSim.style.display !== 'none' && !menuSim.contains(e.target) && !e.target.closest('.crono-simulados-btn')) {
         menuSim.style.display = 'none';
+    }
+    let menuBaralhos = document.getElementById('crono-baralhos-menu');
+    if (menuBaralhos && menuBaralhos.style.display !== 'none' && !menuBaralhos.contains(e.target) && !e.target.closest('.crono-baralhos-btn')) {
+        menuBaralhos.style.display = 'none';
     }
 });
 </script>
@@ -3905,9 +3977,7 @@ document.addEventListener('click', function(e) {
     #modal-flashcard .fc-footer-btn, #modal-flashcard-bulk .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
     #modal-flashcard .fc-footer-btn.perigo { color:var(--danger); border-color:#fecaca; }
     #modal-flashcard .fc-footer-btn.primario, #modal-flashcard-bulk .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
-    #modal-flashcard .fc-form { display:flex; flex-direction:column; gap:10px; }
-    #modal-flashcard .fc-form textarea { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; resize:vertical; min-height:60px; }
-    #modal-flashcard .fc-form-campo label, #modal-flashcard-bulk .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-flashcard-bulk .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
     #modal-flashcard-bulk .fc-form-campo { margin-bottom:0; }
     #modal-flashcard-bulk .fc-form-campo input[type="text"] { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; }
     #modal-flashcard-bulk .fc-bulk-ajuda { font-size:12px; color:var(--text-muted); line-height:1.4; }
@@ -3940,7 +4010,7 @@ document.addEventListener('click', function(e) {
         </div>
 
         <div class="fc-popup-footer">
-            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarCardAtual()">✏️ Editar</button>
+            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarBaralhoAtual()">✏️ Editar Baralho</button>
             <button class="fc-footer-btn perigo" id="fc-btn-excluir" onclick="window.FLASHCARDS_RUNTIME.excluirCardAtual()">🗑️ Excluir</button>
             <button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.fecharPopup()">Fechar</button>
         </div>
@@ -3987,8 +4057,9 @@ window.FLASHCARDS_RUNTIME = {
 
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
-    _formularioAberto: false,
-    _popupState: null,   // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, soFavoritos, flipado }
+    _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, soFavoritos, flipado }
+    _editandoDeckId: null, // setado por editarBaralhoAtual(), limpo por abrirModalBulk()/fecharModalBulk()
+    _bootstrapped: false,  // true depois da 1ª carregar() — ver _garantirCarregado()
 
     carregar: function() {
         let bruto = null;
@@ -3996,6 +4067,16 @@ window.FLASHCARDS_RUNTIME = {
         this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
         this.favoritos = (bruto && typeof bruto.favoritos === 'object') ? bruto.favoritos : {};
         this._migrarManuaisSeNecessario();
+        this._bootstrapped = true;
+    },
+
+    // Carrega os baralhos do localStorage sob demanda — usado por quem
+    // precisa ler window.FLASHCARDS_RUNTIME.manuais de FORA da seção
+    // Flashcards (sidebar do simulado, painel do Cronograma) sem depender
+    // do usuário ter aberto a seção nesta sessão (que é quem normalmente
+    // dispara carregar(), via init()).
+    _garantirCarregado: function() {
+        if (!this._bootstrapped) this.carregar();
     },
 
     salvar: function() {
@@ -4082,8 +4163,21 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     listarBaralhosDoL2: function(materia, divisao) {
+        this._garantirCarregado();
         let chaveL2 = this._chaveL2(materia, divisao);
         return Array.isArray(this.manuais[chaveL2]) ? this.manuais[chaveL2] : [];
+    },
+
+    // Deriva {materia, divisao} a partir de um id_taxonomia (L3) via
+    // MAPA_TAXONOMIA — baralhos só têm granularidade de L2, então o L3
+    // exato é ignorado. Usado pelas 2 superfícies de "baralhos associados"
+    // (sidebar do simulado ativo e card do Cronograma).
+    resolverMateriaDivisaoPorTaxonomia: function(idTaxonomia) {
+        if (!idTaxonomia || !window.MAPA_TAXONOMIA || !window.MAPA_TAXONOMIA[idTaxonomia]) return null;
+        let caminho = window.MAPA_TAXONOMIA[idTaxonomia].caminho || '';
+        let partes = caminho.split(' > ');
+        if (partes.length < 2) return null;
+        return { materia: partes[0], divisao: partes[1] };
     },
 
     contarCardsDoL2: function(materia, divisao) {
@@ -4217,6 +4311,7 @@ window.FLASHCARDS_RUNTIME = {
     abrirModalBulk: function(materia, divisao) {
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
+        this._editandoDeckId = null;
         document.getElementById('fc-bulk-divisao').textContent = divisao;
         document.getElementById('fc-bulk-nome').value = '';
         document.getElementById('fc-bulk-texto').value = '';
@@ -4225,8 +4320,31 @@ window.FLASHCARDS_RUNTIME = {
         setTimeout(function() { let n = document.getElementById('fc-bulk-nome'); if (n) n.focus(); }, 50);
     },
 
+    // Abre o mesmo modal de criação em massa, mas pré-preenchido com todos
+    // os cards atuais do baralho (1 linha por card) — editar o bloco de
+    // texto e resalvar reaproveita ids de cards inalterados (ver salvarBulk).
+    editarBaralhoAtual: function() {
+        let s = this._popupState;
+        if (!s || s.modo !== 'baralho') return;
+        let chaveL2 = this._chaveL2(s.materia, s.divisao);
+        let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === s.deckId; });
+        if (!deck) return;
+
+        this._materiaSelecionada = s.materia;
+        this._divisaoSelecionada = s.divisao;
+        this._editandoDeckId = deck.id;
+        document.getElementById('fc-bulk-divisao').textContent = s.divisao;
+        document.getElementById('fc-bulk-nome').value = deck.nome;
+        document.getElementById('fc-bulk-texto').value = deck.cards.map(function(c) {
+            return c.verso ? (c.frente + ' :: ' + c.verso) : c.frente;
+        }).join('\n');
+        document.getElementById('fc-bulk-erro').style.display = 'none';
+        document.getElementById('modal-flashcard-bulk').classList.add('open');
+    },
+
     fecharModalBulk: function() {
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
+        this._editandoDeckId = null;
     },
 
     _parsearLinhaBulk: function(linha) {
@@ -4251,30 +4369,61 @@ window.FLASHCARDS_RUNTIME = {
         }
 
         let self = this;
-        let cards = linhas.map(function(linha) {
-            let partes = self._parsearLinhaBulk(linha);
-            return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
-        }).filter(function(c) { return c.frente; });
-
-        if (cards.length === 0) {
+        let novasPartes = linhas.map(function(linha) { return self._parsearLinhaBulk(linha); }).filter(function(p) { return p.frente; });
+        if (novasPartes.length === 0) {
             if (erroEl) { erroEl.textContent = 'Nenhuma linha válida.'; erroEl.style.display = 'block'; }
             return;
         }
 
         let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        if (!Array.isArray(this.manuais[chaveL2])) this.manuais[chaveL2] = [];
-        this.manuais[chaveL2].push({
-            id: 'deck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-            nome: nome,
-            cards: cards,
-            criadoEm: new Date().toISOString()
-        });
+        let deckIdSendoEditado = this._editandoDeckId;
+
+        if (deckIdSendoEditado) {
+            // Edição do baralho inteiro — reaproveita id (e favorito) de
+            // cada card cujo frente+verso batam EXATO com uma linha nova;
+            // o resto vira card novo. Cards antigos que sumiram das linhas
+            // são descartados (favorito órfão limpo junto).
+            let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === deckIdSendoEditado; });
+            if (deck) {
+                let cardsAntigos = deck.cards.slice();
+                let usados = {};
+                let novosCards = novasPartes.map(function(partes) {
+                    let match = cardsAntigos.find(function(c) { return !usados[c.id] && c.frente === partes.frente && (c.verso || '') === partes.verso; });
+                    if (match) { usados[match.id] = true; return { id: match.id, frente: partes.frente, verso: partes.verso }; }
+                    return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
+                });
+                cardsAntigos.forEach(function(c) { if (!usados[c.id]) delete self.favoritos[c.id]; });
+
+                deck.nome = nome;
+                deck.cards = novosCards;
+            }
+        } else {
+            // Criação — sempre um baralho novo.
+            let cards = novasPartes.map(function(partes) {
+                return { id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), frente: partes.frente, verso: partes.verso };
+            });
+            if (!Array.isArray(this.manuais[chaveL2])) this.manuais[chaveL2] = [];
+            this.manuais[chaveL2].push({
+                id: 'deck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                nome: nome,
+                cards: cards,
+                criadoEm: new Date().toISOString()
+            });
+        }
 
         this.salvar();
         if (erroEl) erroEl.style.display = 'none';
+        this._editandoDeckId = null;
         document.getElementById('modal-flashcard-bulk').classList.remove('open');
         this.renderGradeCards();
         this.selecionarMateria(this._materiaSelecionada, true);
+
+        // Se o popup de navegação desse baralho estava aberto por trás,
+        // recarrega com os cards atualizados (senão ficaria mostrando os
+        // dados antigos até fechar/reabrir).
+        if (deckIdSendoEditado && this._popupState && this._popupState.modo === 'baralho' && this._popupState.deckId === deckIdSendoEditado) {
+            this.abrirPopupBaralho(deckIdSendoEditado);
+        }
     },
 
     // ── POPUP 1-A-1 (2 modos: 'axiomas' = só leitura / 'baralho' = editável por card) ──
@@ -4288,26 +4437,32 @@ window.FLASHCARDS_RUNTIME = {
             ordemChaves: cards.map(function(c) { return c.chave; }),
             indiceAtual: 0, soFavoritos: false, flipado: false
         };
-        this._formularioAberto = false;
         document.getElementById('fc-popup-titulo').textContent = divisao;
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
     },
 
-    abrirPopupBaralho: function(deckId) {
-        let chaveL2 = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+    // materiaExterna/divisaoExterna: usados por chamadores de FORA da seção
+    // Flashcards (sidebar do simulado, painel do Cronograma), que não têm
+    // (e não devem mexer em) _materiaSelecionada/_divisaoSelecionada.
+    abrirPopupBaralho: function(deckId, materiaExterna, divisaoExterna) {
+        this._garantirCarregado();
+        let materia = materiaExterna || this._materiaSelecionada;
+        let divisao = divisaoExterna || this._divisaoSelecionada;
+        let chaveL2 = this._chaveL2(materia, divisao);
         let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === deckId; });
         if (!deck) return;
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
         let cards = (deck.cards || []).map(function(c) { return { tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso }; });
         this._popupState = {
             modo: 'baralho',
-            materia: this._materiaSelecionada, divisao: this._divisaoSelecionada, deckId: deckId,
+            materia: materia, divisao: divisao, deckId: deckId,
             cardsBase: cards,
             ordemChaves: cards.map(function(c) { return c.chave; }),
             indiceAtual: 0, soFavoritos: false, flipado: false
         };
-        this._formularioAberto = false;
         document.getElementById('fc-popup-titulo').textContent = deck.nome;
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
@@ -4317,12 +4472,10 @@ window.FLASHCARDS_RUNTIME = {
     fecharPopup: function() {
         document.getElementById('modal-flashcard').classList.remove('open');
         document.removeEventListener('keydown', this._handlerTeclado);
-        this._formularioAberto = false;
     },
 
     _handlerTeclado: function(e) {
         if (!document.getElementById('modal-flashcard').classList.contains('open')) return;
-        if (window.FLASHCARDS_RUNTIME._formularioAberto) return;
         if (e.key === 'ArrowLeft') window.FLASHCARDS_RUNTIME.anterior();
         else if (e.key === 'ArrowRight') window.FLASHCARDS_RUNTIME.proximo();
     },
@@ -4415,45 +4568,6 @@ window.FLASHCARDS_RUNTIME = {
 
     // ── CRUD DE CARD (só modo 'baralho' — axiomas não editam/excluem aqui) ──
 
-    editarCardAtual: function() {
-        let s = this._popupState;
-        if (!s || s.modo !== 'baralho') return;
-        if (!this._cardAtual()) return;
-        this._formularioAberto = true;
-        this.renderPopup();
-    },
-
-    cancelarFormulario: function() {
-        this._formularioAberto = false;
-        this.renderPopup();
-    },
-
-    confirmarFormulario: function() {
-        let frenteEl = document.getElementById('fc-form-frente');
-        let versoEl = document.getElementById('fc-form-verso');
-        let frente = (frenteEl ? frenteEl.value : '').trim();
-        let verso = (versoEl ? versoEl.value : '').trim();
-        if (!frente) { alert('A frente do card não pode ficar vazia.'); return; }
-
-        let s = this._popupState;
-        if (!s || s.modo !== 'baralho') return;
-        let card = this._cardAtual();
-        if (!card) return;
-
-        let chaveL2 = this._chaveL2(s.materia, s.divisao);
-        let deck = (this.manuais[chaveL2] || []).find(function(d) { return d.id === s.deckId; });
-        if (!deck) return;
-        let itemReal = (deck.cards || []).find(function(c) { return c.id === card.id; });
-        if (itemReal) { itemReal.frente = frente; itemReal.verso = verso; }
-        this.salvar();
-
-        let cardObj = s.cardsBase.find(function(c) { return c.chave === card.chave; });
-        if (cardObj) { cardObj.frente = frente; cardObj.verso = verso; }
-
-        this._formularioAberto = false;
-        this.renderPopup();
-    },
-
     excluirCardAtual: function() {
         let s = this._popupState;
         if (!s || s.modo !== 'baralho') return;
@@ -4496,17 +4610,6 @@ window.FLASHCARDS_RUNTIME = {
 
     // ── RENDER DO POPUP ──
 
-    _renderFormulario: function(item) {
-        return '<div class="fc-form">' +
-            '<div class="fc-form-campo"><label>Frente</label><textarea id="fc-form-frente">' + this._escapar(item.frente) + '</textarea></div>' +
-            '<div class="fc-form-campo"><label>Verso (opcional)</label><textarea id="fc-form-verso">' + this._escapar(item.verso || '') + '</textarea></div>' +
-            '<div style="display:flex; gap:8px; justify-content:flex-end;">' +
-                '<button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.cancelarFormulario()">Cancelar</button>' +
-                '<button class="fc-footer-btn primario" onclick="window.FLASHCARDS_RUNTIME.confirmarFormulario()">💾 Salvar</button>' +
-            '</div>' +
-        '</div>';
-    },
-
     renderPopup: function() {
         let s = this._popupState;
         if (!s) return;
@@ -4521,15 +4624,6 @@ window.FLASHCARDS_RUNTIME = {
         let navEl = document.getElementById('fc-popup-nav');
         let btnEditar = document.getElementById('fc-btn-editar');
         let btnExcluir = document.getElementById('fc-btn-excluir');
-
-        if (this._formularioAberto) {
-            let card = this._cardAtual();
-            corpo.innerHTML = card ? this._renderFormulario(card) : '';
-            if (navEl) navEl.style.display = 'none';
-            if (btnEditar) btnEditar.style.display = 'none';
-            if (btnExcluir) btnExcluir.style.display = 'none';
-            return;
-        }
         if (navEl) navEl.style.display = 'flex';
 
         let deck = this._deckAtual();
@@ -9177,12 +9271,36 @@ function renderNav(){
             let htmlCaminho = partesCaminho.map(p => `<span style="color:var(--text-main); font-weight:700;">${p.trim()}</span>`).join(' <span style="color:var(--border-color); font-size:10px; margin:0 4px;">/</span> ');
             // let targetId = C.id_taxonomia; // Variável mantida se precisar para logs, mas o botão foi removido
 
+            // Baralhos manuais de Flashcards da mesma matéria+L2 dessa questão
+            // (associação por id_taxonomia -> MAPA_TAXONOMIA, mesma granularidade
+            // em que os baralhos vivem — ver FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia).
+            let htmlBaralhos = '';
+            if (window.FLASHCARDS_RUNTIME && C.id_taxonomia) {
+                let locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
+                if (locBaralhos) {
+                    let baralhosAssoc = window.FLASHCARDS_RUNTIME.listarBaralhosDoL2(locBaralhos.materia, locBaralhos.divisao);
+                    if (baralhosAssoc.length > 0) {
+                        let itensBaralhos = baralhosAssoc.map(function(deck) {
+                            let n = Array.isArray(deck.cards) ? deck.cards.length : 0;
+                            let mEsc = locBaralhos.materia.replace(/'/g, "\\'");
+                            let dEsc = locBaralhos.divisao.replace(/'/g, "\\'");
+                            return `<div onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho('${deck.id}', '${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
+                                <span>🗂️ ${deck.nome}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${n}</span>
+                            </div>`;
+                        }).join('');
+                        htmlBaralhos = `
+                <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">Baralhos associados</div>
+                <div>${itensBaralhos}</div>`;
+                    }
+                }
+            }
+
             metaDiv.style.cssText = 'background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
-            
+
             metaDiv.innerHTML = `
                 <div style="font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.3px;">Criada em: ${window.formatarDataBR(C.dataCriacao)}</div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
-                <div style="font-size: 11px; color: #64748b; line-height: 1.5;">${htmlCaminho}</div>
+                <div style="font-size: 11px; color: #64748b; line-height: 1.5;">${htmlCaminho}</div>${htmlBaralhos}
             `;
             nav.parentElement.insertBefore(metaDiv, nav);
         } else {
