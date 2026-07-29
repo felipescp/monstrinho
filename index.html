@@ -102,6 +102,11 @@
 .nav-item.hd-item { color: #94a3b8; }
 .nav-item.hd-item:hover { color: #f8fafc; }
 
+/* Menu "Gerar Questões" — recolhido, expande em hover (ver PEDIDO 1) */
+.gerar-q-wrap { display: flex; align-items: center; }
+.gerar-q-itens { display: flex; align-items: center; gap: 8px; max-width: 0; overflow: hidden; opacity: 0; margin-left: 0; white-space: nowrap; transition: max-width 0.3s ease, opacity 0.2s ease, margin-left 0.3s ease; }
+.gerar-q-wrap:hover .gerar-q-itens { max-width: 420px; opacity: 1; margin-left: 10px; }
+
 
 /* Oculta a nova barra no Mobile (Foco) a menos que o menu esteja aberto */
 @media(max-width:700px) { #barra-nav { display: none !important; } body.top-aberto #barra-nav { display: flex !important; } }
@@ -1207,13 +1212,15 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     <div class="nav-item ram-item active" id="btn-nav-inicio" onclick="window.voltarParaVitrine()">‹ INÍCIO</div>
         
     <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
-    <span style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px;">
-    Gerar questões:
-</span>
-    <a href="https://gemini.google.com/gem/e8f1fc104654" target="_blank" class="b1" style="height: 28px; background: #fef3c7; color: #92400e; border-color: #fcd34d; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GEM</a>
-    <a href="https://chatgpt.com/g/g-6a32cf4d1ad08191b8926fb2b463c6fa-salinha-gerador-de-questoes-2-0-tjpe" target="_blank" class="b1" style="height: 28px; background: #e0f2fe; color: #0369a1; border-color: #bae6fd; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GPT</a>
-<div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
-    <button class="b1" style="color:var(--danger); border-color:rgba(239,68,68,0.3); height: 32px; margin: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" onclick="window.abrirModalCriacao()" title="Criar Nova Bateria">➕ NOVA BATERIA</button>
+    <div class="gerar-q-wrap">
+        <button class="b1" style="height: 28px;">🔧 Gerar Questões</button>
+        <div class="gerar-q-itens">
+            <a href="https://gemini.google.com/gem/e8f1fc104654" target="_blank" class="b1" style="height: 28px; background: #fef3c7; color: #92400e; border-color: #fcd34d; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GEM</a>
+            <a href="https://chatgpt.com/g/g-6a32cf4d1ad08191b8926fb2b463c6fa-salinha-gerador-de-questoes-2-0-tjpe" target="_blank" class="b1" style="height: 28px; background: #e0f2fe; color: #0369a1; border-color: #bae6fd; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GPT</a>
+            <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); flex-shrink:0;"></div>
+            <button class="b1" style="color:var(--danger); border-color:rgba(239,68,68,0.3); height: 28px; margin: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" onclick="window.abrirModalCriacao()" title="Criar Nova Bateria">➕ NOVA BATERIA</button>
+        </div>
+    </div>
 
 </div>
     <div class="nav-hd-zone">        
@@ -6947,6 +6954,10 @@ function tela(id) {
     }
 
     window.__TELA_ATIVA__ = id;
+
+    // "‹ Início" não faz sentido já estando na Vitrine — some lá, aparece em qualquer outra tela
+    var btnInicio = document.getElementById('btn-nav-inicio');
+    if (btnInicio) btnInicio.style.display = (id === 'tela-home') ? 'none' : '';
 
     if(window.DEBUG_TELA){
     console.log('[TELA]', id, new Error().stack);
