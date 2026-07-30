@@ -2519,6 +2519,16 @@ window.SALINHA_GIST_SYNC = {
     },
 
 exportarNuvem: async function(botao) {
+        // Lock compartilhado com exportarNuvemSilenciosa() — mesmo desativada
+        // hoje (ver verificarSalvamentoPeriodicoNuvem), protege contra dois
+        // salvamentos manuais disparados em cliques duplos, e já deixa a
+        // corrida com o automático coberta pro dia em que for reativado.
+        if (window.__salvamentoNuvemEmAndamento) {
+            alert('Já existe uma sincronização com a nuvem em andamento — aguarde alguns segundos e tente de novo.');
+            return;
+        }
+        window.__salvamentoNuvemEmAndamento = true;
+
         let htmlOriginal = null;
         if (botao) {
             htmlOriginal = botao.innerHTML;
@@ -2574,24 +2584,13 @@ exportarNuvem: async function(botao) {
                 nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
             }
 
-            // Envia cada parte em uma requisição PATCH separada — nunca todas juntas
+            // Envia cada parte em uma requisição PATCH separada — nunca todas
+            // juntas — com retry automático em 409 (ver _enviarParteComRetry).
             for (let i = 0; i < partes.length; i++) {
-                let corpoParte = { files: {} };
-                corpoParte.files[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: partes[i] };
-
-                let respostaParte = await fetch('https://api.github.com/gists/' + gistId, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': 'token ' + token,
-                        'Accept': 'application/vnd.github+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(corpoParte)
-                });
-
-                if (!respostaParte.ok) {
-                    let corpoErro = await respostaParte.text();
-                    throw new Error('GitHub respondeu ' + respostaParte.status + ' (parte ' + (i + 1) + ' de ' + partes.length + '): ' + corpoErro);
+                try {
+                    await this._enviarParteComRetry(gistId, token, this.PREFIXO_PARTE + (i + 1) + '.json', partes[i]);
+                } catch (erroParte) {
+                    throw new Error('Falha na parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
                 }
             }
 
@@ -2627,6 +2626,7 @@ exportarNuvem: async function(botao) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
         } finally {
+            window.__salvamentoNuvemEmAndamento = false;
             if (botao) {
                 botao.innerHTML = htmlOriginal;
                 botao.disabled = false;
@@ -2718,6 +2718,39 @@ exportarNuvem: async function(botao) {
     }
 };
 
+// Envia uma parte do backup com retry automático em 409 (conflito de
+// escrita concorrente no Gist — ex.: um salvamento manual e um automático
+// tocando o mesmo Gist quase ao mesmo tempo). 3 tentativas, com espera
+// CRESCENTE entre elas (800ms, 1600ms) pra dar tempo do outro processo
+// terminar. Compartilhado por exportarNuvem() e exportarNuvemSilenciosa().
+window.SALINHA_GIST_SYNC._enviarParteComRetry = async function(gistId, token, nomeArquivo, conteudoParte) {
+    const MAX_TENTATIVAS = 3;
+    let corpoParte = { files: {} };
+    corpoParte.files[nomeArquivo] = { content: conteudoParte };
+
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+        let resposta = await fetch('https://api.github.com/gists/' + gistId, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': 'token ' + token,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(corpoParte)
+        });
+
+        if (resposta.ok) return resposta;
+
+        if (resposta.status === 409 && tentativa < MAX_TENTATIVAS) {
+            await new Promise(function(resolve) { setTimeout(resolve, 800 * tentativa); });
+            continue;
+        }
+
+        let corpoErro = await resposta.text();
+        throw new Error('GitHub respondeu ' + resposta.status + ': ' + corpoErro);
+    }
+};
+
 // =========================================================================
 // SALVAMENTO AUTOMÁTICO E SILENCIOSO — PERIÓDICO (a cada 5min de atividade)
 // =========================================================================
@@ -2727,11 +2760,17 @@ exportarNuvem: async function(botao) {
 // Exige token E gistId já configurados (o próprio usuário precisa ter
 // feito o 1º "☁️⬆️ Salvar" manual pelo menos uma vez); sem isso, não faz
 // nada — nunca cria um Gist novo silenciosamente sozinha.
+// Lock (__salvamentoNuvemEmAndamento) e retry em 409 são geridos AQUI
+// DENTRO, não pelo chamador — assim a função fica correta e auto-suficiente
+// não importa quem a chame (verificarSalvamentoPeriodicoNuvem, hoje
+// desativada, ou qualquer outro gatilho futuro).
 window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
     let token = this.getToken();
     let gistId = this.getGistId();
     if (!token || !gistId) return;
+    if (window.__salvamentoNuvemEmAndamento) return; // outro salvamento (manual ou automático) já em curso
 
+    window.__salvamentoNuvemEmAndamento = true;
     try {
         let payload = await window.SALINHA_BACKUP.construirPayload();
         let conteudo = JSON.stringify(payload, null, 2);
@@ -2747,19 +2786,10 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
         }
 
         for (let i = 0; i < partes.length; i++) {
-            let corpoParte = { files: {} };
-            corpoParte.files[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: partes[i] };
-            let respostaParte = await fetch('https://api.github.com/gists/' + gistId, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': 'token ' + token,
-                    'Accept': 'application/vnd.github+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(corpoParte)
-            });
-            if (!respostaParte.ok) {
-                throw new Error('GitHub respondeu ' + respostaParte.status + ' (parte ' + (i + 1) + ' de ' + partes.length + ')');
+            try {
+                await this._enviarParteComRetry(gistId, token, this.PREFIXO_PARTE + (i + 1) + '.json', partes[i]);
+            } catch (erroParte) {
+                throw new Error('parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
             }
         }
 
@@ -2782,27 +2812,35 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
         console.log('[GIST SYNC] Salvamento periódico silencioso concluído.');
     } catch (err) {
         console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
+    } finally {
+        window.__salvamentoNuvemEmAndamento = false;
     }
 };
 
 // Gancho de ativação: reaproveita autoSave() (chamada em ~20 lugares a
 // cada resposta/troca de aba) em vez de um setInterval independente, que
-// rodaria mesmo sem nenhuma atividade do usuário. window.__salvamentoNuvemEmAndamento
-// evita sobreposição se um envio anterior ainda estiver em curso.
+// rodaria mesmo sem nenhuma atividade do usuário. O lock
+// (window.__salvamentoNuvemEmAndamento) é gerido DENTRO de
+// exportarNuvemSilenciosa() — este chamador só decide O QUANDO, não a
+// concorrência, pra não duplicar (nem desalinhar) a lógica de trava.
 window.__ultimoSalvamentoNuvemPeriodico = window.__ultimoSalvamentoNuvemPeriodico || Date.now();
 window.__salvamentoNuvemEmAndamento = false;
 
 function verificarSalvamentoPeriodicoNuvem() {
-    if (window.__salvamentoNuvemEmAndamento) return;
+    // DESATIVADO — salvamento automático em nuvem removido a pedido do
+    // usuário (investigação de erro 409 intermitente, provável corrida
+    // entre salvamento manual e automático simultâneos — ver retry com
+    // backoff e o lock em exportarNuvem()/exportarNuvemSilenciosa(), já
+    // implementados e prontos pra quando isso for reativado). Reativar:
+    // apagar a linha "return;" abaixo — o resto da função já funciona.
+    return;
+
     let agora = Date.now();
     let cincoMinutos = 5 * 60 * 1000;
     if (agora - window.__ultimoSalvamentoNuvemPeriodico >= cincoMinutos) {
         window.__ultimoSalvamentoNuvemPeriodico = agora;
         if (window.SALINHA_GIST_SYNC && typeof window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa === 'function') {
-            window.__salvamentoNuvemEmAndamento = true;
-            window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa().finally(function() {
-                window.__salvamentoNuvemEmAndamento = false;
-            });
+            window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa();
         }
     }
 }
