@@ -1320,11 +1320,12 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 </div>
     <div class="nav-hd-zone">
-        <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-praticar" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" style="cursor:pointer;" title="Praticar Caderno de Questões">🎯 PRATICAR</div>
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
-        <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
+        <div class="nav-item hd-item" id="btn-nav-resumos" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-resumos'); tela('section-resumos'); if(window.RESUMOS_RUNTIME) window.RESUMOS_RUNTIME.init();" style="cursor:pointer;" title="Resumos e Jurisprudência (em construção)">📚 RESUMOS/JURISPRUDÊNCIA</div>
+        <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
+        <div class="nav-item hd-item" id="btn-nav-praticar" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" style="cursor:pointer;" title="Praticar Questões Marcadas">🎯 PRATICAR QUESTÕES MARCADAS</div>
         <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões e Axiomas Salvos">📓 CADERNO DE QUESTÕES E AXIOMAS</div>
+        <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
     </div>
 </nav>
 
@@ -6033,6 +6034,116 @@ window.PRATICAR_CADERNO_RUNTIME = {
 </script>
 </section>
 
+<!-- SEÇÃO: RESUMOS / JURISPRUDÊNCIA — EM CONSTRUÇÃO
+     Mesmo menu L1 (matérias) > L2 (divisões) do Flashcards, reaproveitando
+     as mesmas classes .fc-materia-item/.fc-divisao-item (visual idêntico),
+     mas sem 3ª coluna de conteúdo real ainda — só a mensagem central. -->
+<section id="section-resumos" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
+<style>
+    #section-resumos .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #section-resumos .fc-col { overflow-y:auto; padding:10px; }
+    #section-resumos #rs-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
+    #section-resumos #rs-col-divisoes { border-right:1px solid var(--border-color); }
+    #section-resumos #rs-col-central { display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    #section-resumos .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #section-resumos .fc-materia-item:hover { background:#eef2ff; }
+    #section-resumos .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-resumos .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #section-resumos .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #section-resumos .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
+    #section-resumos .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
+    #section-resumos .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+    #section-resumos .rs-em-construcao { font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase; text-align:center; opacity:0.7; }
+</style>
+
+    <div class="fc-grid" id="rs-grid">
+        <div class="fc-col" id="rs-col-materias"></div>
+        <div class="fc-col" id="rs-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        <div class="fc-col" id="rs-col-central">
+            <div class="rs-em-construcao">🚧 Em construção</div>
+        </div>
+    </div>
+
+<script>
+// ── RESUMOS / JURISPRUDÊNCIA — stub, mesmo menu L1/L2 do Flashcards ──
+// Sem conteúdo real ainda (3ª coluna sempre mostra "Em construção",
+// independente da seleção) — só a navegação de matéria/divisão funciona,
+// como preparação visual pro que vier depois.
+window.RESUMOS_RUNTIME = {
+    _materiaSelecionada: null,
+    _divisaoSelecionada: null,
+
+    init: function() {
+        this.render();
+    },
+
+    render: function() {
+        let colMaterias = document.getElementById('rs-col-materias');
+        if (!colMaterias) return;
+        let self = this;
+
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
+            return;
+        }
+
+        colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            let ativa = mat.nivel_1 === self._materiaSelecionada;
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.RESUMOS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+            '</div>';
+        }).join('');
+
+        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+    },
+
+    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = nivel1;
+        this._divisaoSelecionada = null;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#rs-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#rs-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === nivel1;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+        this._renderColunaDivisoes(nivel1);
+    },
+
+    _renderColunaDivisoes: function(nivel1) {
+        let colDivisoes = document.getElementById('rs-col-divisoes');
+        if (!colDivisoes) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            return;
+        }
+
+        let self = this;
+        colDivisoes.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.RESUMOS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todas as divisões</span>' +
+            '</div>' +
+            mat.divisoes.map(function(div) {
+                let ativa = self._divisaoSelecionada === div.nivel_2;
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.RESUMOS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + div.nivel_2 + '</span>' +
+                '</div>';
+            }).join('');
+    },
+
+    // divisao === null -> "Todas as divisões". Sem 3ª coluna real ainda,
+    // então só atualiza o estado/destaque visual da coluna L2.
+    selecionarDivisao: function(materia, divisao) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._renderColunaDivisoes(materia);
+    }
+};
+</script>
+</section>
+
 <!-- TELA 2: BACKOFFICE DO ADMIN (AGORA UM MODAL) -->
 <div id="tela-admin" class="mo" style="z-index: 4000;">
     <div class="mdl" style="max-width: 800px; width: 95%; max-height: 90vh; padding: 25px; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--border-color); align-items: center;">
@@ -7659,7 +7770,7 @@ if (id === 'tela-home') {
 }
 
 if (target) {
-    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards' || id === 'section-praticar-caderno') {
+    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards' || id === 'section-praticar-caderno' || id === 'section-resumos') {
         target.style.display = 'flex';
     } else {
         target.style.display = 'block';
