@@ -1297,11 +1297,12 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     <div id="seletor-cor-tema" class="color-picker-container"></div>
 
 </div>
-    <div class="nav-hd-zone">        
+    <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
+        <div class="nav-item hd-item" id="btn-nav-praticar" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" style="cursor:pointer;" title="Praticar Caderno de Questões">🎯 PRATICAR</div>
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
-        <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>        
-        <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões Salvas">📓 CADERNO</div>
+        <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
+        <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões e Axiomas Salvos">📓 CADERNO DE QUESTÕES E AXIOMAS</div>
     </div>
 </nav>
 
@@ -1821,6 +1822,9 @@ window.SALINHA_BACKUP = {
         // FLASHCARDS
         'tjpe_v1__flashcards_runtime',
 
+        // PRATICAR CADERNO DE QUESTÕES
+        'tjpe_v1__praticar_caderno_runtime',
+
         // TEMA
         'tjpe_v1__cor_tema'
     ],
@@ -2112,6 +2116,33 @@ window.SALINHA_BACKUP = {
                     // card, quem vence é o de MAIOR intervaloDias (reflete quem revisou
                     // mais vezes esse card, em vez de local ou importado ganharem sempre).
                     if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'revisao' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveCard => {
+                            const remoto = objImportado[subChave][chaveCard];
+                            const local = objLocal[subChave][chaveCard];
+                            if (!remoto || typeof remoto !== 'object') return;
+
+                            if (local === undefined) {
+                                objLocal[subChave][chaveCard] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
+                                objLocal[subChave][chaveCard] = remoto;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: PRATICAR CADERNO (praticar_caderno_runtime.revisaoQuestoes) ──
+                    // Mesmíssimo formato/problema/política do caso acima (flashcards_runtime.revisao),
+                    // só que a chave usada aqui é id_q+'_'+sim_id de questões do caderno_erros.
+                    if (chaveSemPrefixoMerge === 'praticar_caderno_runtime' && subChave === 'revisaoQuestoes' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -4213,6 +4244,59 @@ document.addEventListener('click', function(e) {
 // 180, reinicia o ciclo pro valor-base daquele nível (3 ou 9) em vez de
 // travar em 180.
 // =========================================================================
+// =========================================================================
+// window.RepeticaoEspacada — matemática de repetição espaçada de 3 níveis
+// (Difícil/Médio/Fácil), compartilhada entre FLASHCARDS_RUNTIME (revisao,
+// por card) e PRATICAR_CADERNO_RUNTIME (revisaoQuestoes, por questão) — a
+// mesma fórmula não fica duplicada em dois lugares. Puramente funcional:
+// não guarda estado, só recebe o estado atual e devolve o próximo.
+// =========================================================================
+window.RepeticaoEspacada = {
+    hojeISO: function() {
+        let d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
+    somarDiasISO: function(dias) {
+        let d = new Date();
+        d.setDate(d.getDate() + dias);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
+    // Vencido: já foi classificado alguma vez E a data de revisão chegou/passou.
+    // "estado" é o valor bruto de revisao[chave] (ou revisaoQuestoes[chave]) —
+    // undefined/null (nunca classificado) NÃO conta como vencido.
+    vencido: function(estado) {
+        return !!(estado && estado.proximaRevisao && estado.proximaRevisao <= this.hojeISO());
+    },
+
+    // nivel: 'dificil'|'medio'|'facil'. estadoAtual: o valor atual (ou
+    // undefined/null, se nunca classificado). Retorna o NOVO estado
+    // {intervaloDias, proximaRevisao, ultimaClassificacao}, ou `null` se o
+    // clique deve DESMARCAR (toggle: nivel clicado já é a classificação
+    // atual — chamador deve apagar a entrada nesse caso).
+    //
+    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior.
+    // Médio: intervalo atual (ou 1, se nunca teve) * 3. Fácil: * 9. Se
+    // Médio/Fácil ultrapassarem 180, NÃO trava em 180 — reinicia o ciclo
+    // pro valor-base daquele nível (3 ou 9), criando uma repetição em vez
+    // de travar parado em 180 pra sempre.
+    calcularProximo: function(nivel, estadoAtual) {
+        if (estadoAtual && estadoAtual.ultimaClassificacao === nivel) return null;
+
+        if (nivel === 'dificil') {
+            let intervalo = 1;
+            return { intervaloDias: intervalo, proximaRevisao: this.somarDiasISO(intervalo), ultimaClassificacao: 'dificil' };
+        }
+
+        let base = (estadoAtual && estadoAtual.intervaloDias) ? estadoAtual.intervaloDias : 1;
+        let multiplicador = nivel === 'medio' ? 3 : 9;
+        let calculado = Math.max(base, 1) * multiplicador;
+        let intervalo = calculado > 180 ? multiplicador : calculado;
+        return { intervaloDias: intervalo, proximaRevisao: this.somarDiasISO(intervalo), ultimaClassificacao: nivel };
+    }
+};
+
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
     revisao: {}, // { "<chave>": { intervaloDias, proximaRevisao (ISO só-data ou null) } } — repetição espaçada, substitui favoritos
@@ -4404,83 +4488,23 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     // ── REPETIÇÃO ESPAÇADA (3 níveis: Difícil / Médio / Fácil) ──
-    // 180 dias não é um teto que trava — é um limite de ciclo: quando
-    // Médio (x3) ou Fácil (x9) ultrapassariam 180, o intervalo reinicia
-    // pro valor-base daquele nível (3 ou 9), criando uma repetição em vez
-    // de travar parado em 180 pra sempre. Difícil não tem ciclo (sempre 1).
+    // Matemática vive em window.RepeticaoEspacada (compartilhada com
+    // PRATICAR_CADERNO_RUNTIME) — aqui só aplica no dict local (this.revisao,
+    // por chave de card) e persiste.
 
-    _hojeISO: function() {
-        let d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    },
-
-    _somarDiasISO: function(dias) {
-        let d = new Date();
-        d.setDate(d.getDate() + dias);
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    },
-
-    // Vencido: já foi classificado alguma vez E a data de revisão chegou/passou.
-    // Cards nunca classificados NÃO contam como vencidos (não têm proximaRevisao).
     _vencido: function(chave) {
-        let r = this.revisao[chave];
-        return !!(r && r.proximaRevisao && r.proximaRevisao <= this._hojeISO());
+        return window.RepeticaoEspacada.vencido(this.revisao[chave]);
     },
 
-    // Limpa por completo a classificação de um card — volta a "nunca
-    // classificado". Usado quando o usuário clica de novo no botão que já
-    // é a classificação atual (toggle: 2º clique desmarca).
-    _desmarcar: function(chave) {
-        delete this.revisao[chave];
+    _aplicarClassificacao: function(chave, nivel) {
+        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisao[chave]);
+        if (novo === null) delete this.revisao[chave]; else this.revisao[chave] = novo;
         this.salvar();
     },
 
-    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior. Se
-    // o card JÁ está em Difícil, o clique desmarca em vez de reaplicar.
-    marcarDificil: function(chave) {
-        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'dificil') {
-            this._desmarcar(chave);
-            return;
-        }
-        let intervalo = Math.min(180, 1);
-        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'dificil' };
-        this.salvar();
-    },
-
-    // Médio: multiplica o intervalo atual (ou 1, se nunca teve) por 3. Se
-    // passar de 180, NÃO trava em 180 — reinicia o ciclo pro valor-base do
-    // Médio (3), criando uma repetição (3 -> 9 -> 27 -> 81 -> [243, passou
-    // de 180] -> 3 -> 9 -> ...). Se o card JÁ está em Médio, o clique
-    // desmarca em vez de reaplicar a fórmula.
-    marcarMedio: function(chave) {
-        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'medio') {
-            this._desmarcar(chave);
-            return;
-        }
-        let r = this.revisao[chave];
-        let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
-        let calculado = Math.max(base, 1) * 3;
-        let intervalo = calculado > 180 ? 3 : calculado;
-        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'medio' };
-        this.salvar();
-    },
-
-    // Fácil: multiplica o intervalo atual (ou 1, se nunca teve) por 9. Se
-    // passar de 180, reinicia o ciclo pro valor-base do Fácil (9), mesmo
-    // princípio do Médio. Se o card JÁ está em Fácil, o clique desmarca em
-    // vez de reaplicar a fórmula.
-    marcarFacil: function(chave) {
-        if (this.revisao[chave] && this.revisao[chave].ultimaClassificacao === 'facil') {
-            this._desmarcar(chave);
-            return;
-        }
-        let r = this.revisao[chave];
-        let base = (r && r.intervaloDias) ? r.intervaloDias : 1;
-        let calculado = Math.max(base, 1) * 9;
-        let intervalo = calculado > 180 ? 9 : calculado;
-        this.revisao[chave] = { intervaloDias: intervalo, proximaRevisao: this._somarDiasISO(intervalo), ultimaClassificacao: 'facil' };
-        this.salvar();
-    },
+    marcarDificil: function(chave) { this._aplicarClassificacao(chave, 'dificil'); },
+    marcarMedio: function(chave) { this._aplicarClassificacao(chave, 'medio'); },
+    marcarFacil: function(chave) { this._aplicarClassificacao(chave, 'facil'); },
 
     // Deriva {materia, divisao} a partir de um id_taxonomia (L3) via
     // MAPA_TAXONOMIA — baralhos só têm granularidade de L2, então o L3
@@ -5378,6 +5402,541 @@ window.FLASHCARDS_RUNTIME = {
 
         this._renderPillsAba(aba);
         this._renderCorpoAba(aba);
+    }
+};
+</script>
+</section>
+
+<!-- ========================================================= -->
+<!-- SEÇÃO: PRATICAR CADERNO DE QUESTÕES (reflexo em tempo real de -->
+<!-- caderno_erros — sem criação/exclusão própria, sem "baralho")  -->
+<!-- ========================================================= -->
+<section id="section-praticar-caderno" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:#f1f5f9;">
+<style>
+    #section-praticar-caderno .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #section-praticar-caderno .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
+    #section-praticar-caderno .fc-tab:hover { color:var(--app-primary); }
+    #section-praticar-caderno .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+
+    #section-praticar-caderno .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #section-praticar-caderno .fc-col { overflow-y:auto; padding:10px; }
+    #section-praticar-caderno #pc-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
+    #section-praticar-caderno #pc-col-topicos { border-right:1px solid var(--border-color); }
+    #section-praticar-caderno #pc-col-questao { background:#f8fafc; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; }
+    #section-praticar-caderno .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #section-praticar-caderno .fc-materia-item:hover { background:#eef2ff; }
+    #section-praticar-caderno .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-praticar-caderno .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #section-praticar-caderno .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-praticar-caderno .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #section-praticar-caderno .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
+    #section-praticar-caderno .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
+    #section-praticar-caderno .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-praticar-caderno .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+
+    #section-praticar-caderno .fc-aba-revisao { flex:1; overflow-y:auto; padding:24px 20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    #section-praticar-caderno .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #section-praticar-caderno .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-praticar-caderno .fc-pill:hover { border-color:var(--app-primary); }
+    #section-praticar-caderno .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #section-praticar-caderno .fc-corpo-aba { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
+    #section-praticar-caderno .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+    #section-praticar-caderno .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #section-praticar-caderno .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+
+    #section-praticar-caderno .fc-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:120px; width:100%; max-width:560px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+    #section-praticar-caderno .fc-card-texto { font-size:14px; line-height:1.6; color:var(--text-main); text-align:center; }
+    #section-praticar-caderno .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    #section-praticar-caderno .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #section-praticar-caderno .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #section-praticar-caderno span[id^="pc-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+
+    #section-praticar-caderno .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
+    #section-praticar-caderno .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    #section-praticar-caderno .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
+    #section-praticar-caderno .fc-rev-dificil { color:#991b1b; border-color:#fecaca; }
+    #section-praticar-caderno .fc-rev-dificil:hover { background:#fee2e2; }
+    #section-praticar-caderno .fc-rev-medio { color:#92400e; border-color:#fde68a; }
+    #section-praticar-caderno .fc-rev-medio:hover { background:#fef3c7; }
+    #section-praticar-caderno .fc-rev-facil { color:#166534; border-color:#bbf7d0; }
+    #section-praticar-caderno .fc-rev-facil:hover { background:#dcfce7; }
+    #section-praticar-caderno .fc-rev-dificil.ativa { background:#dc2626; border-color:#dc2626; color:#fff; }
+    #section-praticar-caderno .fc-rev-dificil.ativa:hover { background:#b91c1c; }
+    #section-praticar-caderno .fc-rev-medio.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #section-praticar-caderno .fc-rev-medio.ativa:hover { background:#b45309; }
+    #section-praticar-caderno .fc-rev-facil.ativa { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #section-praticar-caderno .fc-rev-facil.ativa:hover { background:#15803d; }
+
+    #section-praticar-caderno .pc-resultado { padding:8px 12px; border-radius:6px; font-size:12px; font-weight:800; text-align:center; width:100%; max-width:560px; box-sizing:border-box; }
+    #section-praticar-caderno .pc-resultado.pc-acertou { background:#dcfce7; color:#166534; }
+    #section-praticar-caderno .pc-resultado.pc-errou { background:#fee2e2; color:#991b1b; }
+    #section-praticar-caderno .pc-explicacao { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:12px; font-size:12px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; width:100%; max-width:560px; box-sizing:border-box; }
+</style>
+
+    <div class="fc-tabs">
+        <button class="fc-tab ativa" id="pc-tab-navegar" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
+        <button class="fc-tab" id="pc-tab-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
+        <button class="fc-tab" id="pc-tab-medio" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('medio')">🟡 Médio</button>
+        <button class="fc-tab" id="pc-tab-facil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+    </div>
+
+    <div class="fc-grid" id="pc-aba-navegar">
+        <div class="fc-col" id="pc-col-materias"></div>
+        <div class="fc-col" id="pc-col-topicos"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        <div class="fc-col" id="pc-col-questao">
+            <div class="fc-corpo-aba" id="pc-corpo-navegar"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('navegar', -1)">‹</button>
+                <span id="pc-posicao-navegar">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('navegar', 1)">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="pc-aba-dificil" style="display:none;">
+        <div class="fc-pills" id="pc-pills-dificil"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.embaralhar('dificil')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="pc-corpo-dificil"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('dificil', -1)">‹</button>
+            <span id="pc-posicao-dificil">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('dificil', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="pc-aba-medio" style="display:none;">
+        <div class="fc-pills" id="pc-pills-medio"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.embaralhar('medio')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="pc-corpo-medio"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('medio', -1)">‹</button>
+            <span id="pc-posicao-medio">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('medio', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="pc-aba-facil" style="display:none;">
+        <div class="fc-pills" id="pc-pills-facil"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.embaralhar('facil')">🔀 Embaralhar</button>
+        </div>
+        <div class="fc-corpo-aba" id="pc-corpo-facil"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('facil', -1)">‹</button>
+            <span id="pc-posicao-facil">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.PRATICAR_CADERNO_RUNTIME.navegar('facil', 1)">›</button>
+        </div>
+    </div>
+
+<script>
+// =========================================================================
+// window.PRATICAR_CADERNO_RUNTIME — repetição espaçada de 3 níveis sobre o
+// Caderno de Erros (caderno_erros), 100% reflexo em tempo real: SEM criação
+// manual, SEM "baralho", SEM histórico próprio — sempre lê caderno_erros
+// fresco do localStorage (mesma leitura dupla-chave usada em todo o app).
+// Incluir/excluir só acontece através do Caderno já existente ("+ Caderno"
+// numa bateria, ou "✕ remover" no modal) — essa seção não tem botão próprio
+// de incluir/excluir. Questões ANULADA são excluídas do pool inteiro (sem
+// V/F pra comparar).
+//
+// 4 abas: 🗂️ Navegar (L1 matéria > L2 tópico, sem filtro de estado — mostra
+// TODAS as questões salvas daquele filtro) + 🔴 Difícil / 🟡 Médio / 🟢
+// Fácil (pílulas de matéria, só questões VENCIDAS cuja última classificação
+// bate com a aba).
+//
+// Interação do card, igual em TODAS as abas: mostra o enunciado + botões
+// Verdadeiro/Falso -> ao responder, trava a resposta, revela certo/errado
+// (comparando com gabarito) + a explicação -> SÓ ENTÃO aparecem os 3
+// botões de classificação. Responder de novo (trocar de card ou pílula)
+// reseta esse estado efêmero — nada disso é persistido, só a classificação.
+//
+// revisaoQuestoes = { "<id_q>_<sim_id>": {intervaloDias, proximaRevisao, ultimaClassificacao} }
+// Fórmula em window.RepeticaoEspacada (compartilhada com FLASHCARDS_RUNTIME).
+// =========================================================================
+window.PRATICAR_CADERNO_RUNTIME = {
+    revisaoQuestoes: {},
+    STORAGE_KEY: 'tjpe_v1__praticar_caderno_runtime',
+    _bootstrapped: false,
+
+    _materiaSelecionada: null,
+    _topicoSelecionado: null, // null = "todos os tópicos" (agregado)
+    _abaAtiva: 'navegar',
+    _estadoNavegar: { pool: [], ordemChaves: [], indiceAtual: 0 },
+    _estadosAba: {
+        dificil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        medio: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        facil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+    },
+    // Estado efêmero (NÃO persiste) da resposta do card atualmente exibido
+    // — reseta a cada troca de card/aba/pílula/classificação.
+    _estadoResposta: { chave: null, escolha: null, respondida: false, acertou: null },
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.revisaoQuestoes = (bruto && typeof bruto.revisaoQuestoes === 'object') ? bruto.revisaoQuestoes : {};
+        this._bootstrapped = true;
+    },
+
+    salvar: function() {
+        try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ revisaoQuestoes: this.revisaoQuestoes })); } catch (e) {
+            console.warn('[PRATICAR_CADERNO] Falha ao salvar:', e);
+        }
+    },
+
+    _garantirCarregado: function() { if (!this._bootstrapped) this.carregar(); },
+
+    init: function() {
+        this.carregar();
+        this.render();
+        if (this._abaAtiva !== 'navegar') this.renderAbaRevisao(this._abaAtiva);
+    },
+
+    _escapar: function(s) {
+        return (s || '').replace(/[&<>"']/g, function(c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    },
+
+    // Mesma leitura dupla-chave usada em todo o app (mostrarAbaCaderno,
+    // sincronizarCadernoComPlanner, _lerCadernoAxiomas do Flashcards).
+    _lerCadernoErros: function() {
+        let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+        let db = {};
+        try { db = JSON.parse(dbStr); } catch (e) { db = {}; }
+        return (db && typeof db.caderno_erros === 'object') ? db.caderno_erros : {};
+    },
+
+    // Questões de UM tópico específico — exclui ANULADA (sem V/F pra comparar).
+    listarQuestoesDoTopico: function(materia, topico) {
+        let erros = this._lerCadernoErros();
+        let porMateria = erros[materia] || {};
+        let itens = porMateria[topico];
+        if (!Array.isArray(itens)) return [];
+        return itens.filter(function(q) { return q && q.gabarito !== 'ANULADA'; }).map(function(q) {
+            return { chave: q.id_q + '_' + q.sim_id, id_q: q.id_q, sim_id: q.sim_id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, materia: materia, topico: topico };
+        });
+    },
+
+    // Todas as questões de TODOS os tópicos de uma matéria (modo agregado L1).
+    listarQuestoesDaMateria: function(materia) {
+        let erros = this._lerCadernoErros();
+        let porMateria = erros[materia] || {};
+        let self = this;
+        let resultado = [];
+        Object.keys(porMateria).forEach(function(topico) {
+            resultado = resultado.concat(self.listarQuestoesDoTopico(materia, topico));
+        });
+        return resultado;
+    },
+
+    contarQuestoesDaMateria: function(materia) { return this.listarQuestoesDaMateria(materia).length; },
+    contarQuestoesDoTopico: function(materia, topico) { return this.listarQuestoesDoTopico(materia, topico).length; },
+
+    // ── SIDEBAR L1 (matéria) > L2 (tópico) ──
+    // Diferente do Flashcards: NÃO itera TAXONOMIA_DADOS (matéria/tópico
+    // fixos) — itera só o que existe DE VERDADE em caderno_erros, já que
+    // não há criação aqui (nada a mostrar com contagem 0).
+
+    render: function() {
+        let col = document.getElementById('pc-col-materias');
+        if (!col) return;
+        let erros = this._lerCadernoErros();
+        let self = this;
+        let materias = Object.keys(erros).filter(function(m) { return self.contarQuestoesDaMateria(m) > 0; }).sort();
+        if (materias.length === 0) {
+            col.innerHTML = '<div class="fc-vazio-col">Nenhuma questão salva no Caderno ainda.</div>';
+            return;
+        }
+        col.innerHTML = materias.map(function(mat) {
+            let ativa = mat === self._materiaSelecionada;
+            let n = self.contarQuestoesDaMateria(mat);
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarMateria(\'' + mat.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat + '</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;"><span class="fc-materia-count">' + n + '</span><span style="color:var(--text-muted); font-size:12px;">›</span></span>' +
+            '</div>';
+        }).join('');
+        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+    },
+
+    selecionarMateria: function(materia, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = materia;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#pc-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#pc-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === materia;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+        this.selecionarTopico(materia, null); // trocar de matéria sempre volta pro agregado
+    },
+
+    _renderColunaTopicos: function(materia) {
+        let col = document.getElementById('pc-col-topicos');
+        if (!col) return;
+        let erros = this._lerCadernoErros();
+        let porMateria = erros[materia] || {};
+        let self = this;
+        let topicos = Object.keys(porMateria).filter(function(t) { return self.contarQuestoesDoTopico(materia, t) > 0; }).sort();
+        if (topicos.length === 0) {
+            col.innerHTML = '<div class="fc-vazio-col">Nenhum tópico.</div>';
+            return;
+        }
+        col.innerHTML =
+            '<div class="fc-divisao-item' + (!self._topicoSelecionado ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materia.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todos os tópicos</span><span class="fc-divisao-count">' + self.contarQuestoesDaMateria(materia) + '</span>' +
+            '</div>' +
+            topicos.map(function(top) {
+                let ativa = self._topicoSelecionado === top;
+                let n = self.contarQuestoesDoTopico(materia, top);
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materia.replace(/'/g, "\\'") + '\', \'' + top.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + top + '</span><span class="fc-divisao-count">' + n + '</span>' +
+                '</div>';
+            }).join('');
+    },
+
+    // topico === null -> modo agregado (todos os tópicos da matéria).
+    selecionarTopico: function(materia, topico) {
+        this._materiaSelecionada = materia;
+        this._topicoSelecionado = topico;
+        this._renderColunaTopicos(materia);
+        this._renderPoolNavegar();
+    },
+
+    _renderPoolNavegar: function() {
+        let materia = this._materiaSelecionada, topico = this._topicoSelecionado;
+        let pool = !materia ? [] : (topico ? this.listarQuestoesDoTopico(materia, topico) : this.listarQuestoesDaMateria(materia));
+        let s = this._estadoNavegar;
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(q) { return q.chave; });
+        s.indiceAtual = 0;
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        this._renderCorpo('navegar');
+    },
+
+    // ── ABAS DE DIFICULDADE ──
+
+    trocarAba: function(aba) {
+        this._abaAtiva = aba;
+        document.querySelectorAll('#section-praticar-caderno .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
+        let tabEl = document.getElementById('pc-tab-' + aba);
+        if (tabEl) tabEl.classList.add('ativa');
+        ['navegar', 'dificil', 'medio', 'facil'].forEach(function(a) {
+            let el = document.getElementById('pc-aba-' + a);
+            if (!el) return;
+            el.style.display = (a !== aba) ? 'none' : (a === 'navegar' ? 'grid' : 'flex');
+        });
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        if (aba === 'dificil' || aba === 'medio' || aba === 'facil') this.renderAbaRevisao(aba);
+        else this._renderCorpo('navegar');
+    },
+
+    // Sem cache — mesmo raciocínio do Flashcards: volume esperado (Caderno
+    // pessoal, não um catálogo grande) torna uma varredura completa a cada
+    // troca de aba/pílula rápida o bastante.
+    listarQuestoesPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let erros = this._lerCadernoErros();
+        let materias = materiaFiltro ? [materiaFiltro] : Object.keys(erros);
+        let resultado = [];
+        materias.forEach(function(materia) {
+            self.listarQuestoesDaMateria(materia).forEach(function(q) {
+                let r = self.revisaoQuestoes[q.chave];
+                if (r && r.ultimaClassificacao === classificacaoAlvo && window.RepeticaoEspacada.vencido(r)) resultado.push(q);
+            });
+        });
+        return resultado;
+    },
+
+    _contarPorMateria: function(classificacaoAlvo) {
+        let self = this;
+        let mapa = {};
+        let erros = this._lerCadernoErros();
+        Object.keys(erros).forEach(function(mat) {
+            let n = self.listarQuestoesPorClassificacaoVencida(mat, classificacaoAlvo).length;
+            if (n > 0) mapa[mat] = n;
+        });
+        return mapa;
+    },
+
+    renderAbaRevisao: function(aba) {
+        let s = this._estadosAba[aba];
+        let pool = this.listarQuestoesPorClassificacaoVencida(s.materiaFiltro, aba);
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(q) { return q.chave; });
+        s.indiceAtual = 0;
+        this._renderPillsAba(aba);
+        this._renderCorpo(aba);
+    },
+
+    _renderPillsAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let contagens = this._contarPorMateria(aba);
+        let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
+        let pillsEl = document.getElementById('pc-pills-' + aba);
+        if (!pillsEl) return;
+        let materiasOrdenadas = Object.keys(contagens).sort();
+        pillsEl.innerHTML =
+            '<button class="fc-pill' + (!s.materiaFiltro ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.filtrarAba(\'' + aba + '\', null)">Todas (' + total + ')</button>' +
+            materiasOrdenadas.map(function(mat) {
+                return '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.filtrarAba(\'' + aba + '\', \'' + mat.replace(/'/g, "\\'") + '\')">' + mat + ' (' + contagens[mat] + ')</button>';
+            }).join('');
+    },
+
+    filtrarAba: function(aba, materia) {
+        let s = this._estadosAba[aba];
+        s.materiaFiltro = materia;
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        this.renderAbaRevisao(aba);
+    },
+
+    embaralhar: function(contexto) {
+        let s = this._getEstado(contexto);
+        if (!s) return;
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        this._renderCorpo(contexto);
+    },
+
+    navegar: function(contexto, delta) {
+        let s = this._getEstado(contexto);
+        if (!s || s.ordemChaves.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + delta + s.ordemChaves.length) % s.ordemChaves.length;
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        this._renderCorpo(contexto);
+    },
+
+    _getEstado: function(contexto) {
+        return contexto === 'navegar' ? this._estadoNavegar : this._estadosAba[contexto];
+    },
+
+    _getCardAtual: function(contexto) {
+        let s = this._getEstado(contexto);
+        if (!s || s.ordemChaves.length === 0) return null;
+        let chave = s.ordemChaves[s.indiceAtual];
+        return s.pool.find(function(q) { return q.chave === chave; }) || null;
+    },
+
+    // ── INTERAÇÃO DO CARD: enunciado + V/F -> revela -> classificação ──
+
+    responder: function(contexto, resposta) {
+        let card = this._getCardAtual(contexto);
+        if (!card) return;
+        let acertou = resposta === card.gabarito;
+        this._estadoResposta = { chave: card.chave, escolha: resposta, respondida: true, acertou: acertou };
+        this._renderCorpo(contexto);
+    },
+
+    classificar: function(contexto, nivel) {
+        let card = this._getCardAtual(contexto);
+        if (!card) return;
+        this._aplicarClassificacao(card.chave, nivel);
+
+        if (contexto === 'navegar') {
+            // Navegar não filtra por estado — o card continua no pool, só
+            // reseta a resposta revelada e re-renderiza (mostra o status novo).
+            this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+            this._renderCorpo('navegar');
+            return;
+        }
+
+        // Abas de dificuldade: classificar sempre remove o card do pool
+        // corrente (a data de vencimento sempre muda), mesmo se a nova
+        // classificação for igual à aba atual.
+        let s = this._estadosAba[contexto];
+        let chaveMarcada = card.chave;
+        s.ordemChaves = s.ordemChaves.filter(function(ch) { return ch !== chaveMarcada; });
+        s.pool = s.pool.filter(function(c) { return c.chave !== chaveMarcada; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+        this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
+        this._renderPillsAba(contexto);
+        this._renderCorpo(contexto);
+    },
+
+    _aplicarClassificacao: function(chave, nivel) {
+        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisaoQuestoes[chave]);
+        if (novo === null) delete this.revisaoQuestoes[chave]; else this.revisaoQuestoes[chave] = novo;
+        this.salvar();
+    },
+
+    _statusRevisaoTexto: function(chave) {
+        let r = this.revisaoQuestoes[chave];
+        if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
+        let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
+        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
+        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
+        let vencidoTxt = window.RepeticaoEspacada.vencido(r) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
+        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
+    },
+
+    // Mesmo padrão "Desmarcar X" do Flashcards: o botão do MESMO nível da
+    // aba atual (onde o card sempre está classificado nesse nível) troca o
+    // rótulo pra deixar explícito que o clique remove a classificação.
+    _botoesClassificacaoHtml: function(chave, contexto) {
+        let atual = this.revisaoQuestoes[chave] ? this.revisaoQuestoes[chave].ultimaClassificacao : null;
+        let desmarcarNivel = (contexto === 'dificil' || contexto === 'medio' || contexto === 'facil') ? contexto : null;
+        let niveis = [
+            { chave: 'dificil', rotulo: '🔴 Difícil', rotuloDesmarcar: '🔴 Desmarcar Difícil' },
+            { chave: 'medio', rotulo: '🟡 Médio', rotuloDesmarcar: '🟡 Desmarcar Médio' },
+            { chave: 'facil', rotulo: '🟢 Fácil', rotuloDesmarcar: '🟢 Desmarcar Fácil' }
+        ];
+        return niveis.map(function(n) {
+            let classeAtiva = (atual === n.chave) ? ' ativa' : '';
+            let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
+            return '<button class="fc-rev-btn fc-rev-' + n.chave + classeAtiva + '" onclick="window.PRATICAR_CADERNO_RUNTIME.classificar(\'' + contexto + '\', \'' + n.chave + '\')">' + rotulo + '</button>';
+        }).join('');
+    },
+
+    _idCorpo: { navegar: 'pc-corpo-navegar', dificil: 'pc-corpo-dificil', medio: 'pc-corpo-medio', facil: 'pc-corpo-facil' },
+    _idPosicao: { navegar: 'pc-posicao-navegar', dificil: 'pc-posicao-dificil', medio: 'pc-posicao-medio', facil: 'pc-posicao-facil' },
+
+    _renderCorpo: function(contexto) {
+        let corpo = document.getElementById(this._idCorpo[contexto]);
+        let posEl = document.getElementById(this._idPosicao[contexto]);
+        if (!corpo) return;
+        let s = this._getEstado(contexto);
+
+        if (!s || s.ordemChaves.length === 0) {
+            let msg = contexto === 'navegar' ? 'Nenhuma questão salva aqui ainda.' : 'Nada vencido nessa classificação agora — tudo em dia!';
+            corpo.innerHTML = '<div class="fc-vazio">' + msg + '</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let questao = this._getCardAtual(contexto);
+        let resp = this._estadoResposta;
+        let respondendoEsseCard = resp.chave === questao.chave && resp.respondida;
+
+        if (!respondendoEsseCard) {
+            corpo.innerHTML =
+                '<div class="fc-card-origem">' + this._escapar(questao.materia + ' — ' + questao.topico) + '</div>' +
+                '<div class="fc-card"><div class="fc-card-texto">' + this._escapar(questao.enunciado) + '</div></div>' +
+                '<div class="fc-card-revisao-acoes">' +
+                    '<button class="fc-rev-btn fc-rev-facil" onclick="window.PRATICAR_CADERNO_RUNTIME.responder(\'' + contexto + '\', \'V\')">✅ Verdadeiro</button>' +
+                    '<button class="fc-rev-btn fc-rev-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.responder(\'' + contexto + '\', \'F\')">❌ Falso</button>' +
+                '</div>';
+        } else {
+            let acertou = resp.acertou;
+            let textoGab = questao.gabarito === 'V' ? 'Verdadeiro' : 'Falso';
+            corpo.innerHTML =
+                '<div class="fc-card-origem">' + this._escapar(questao.materia + ' — ' + questao.topico) + '</div>' +
+                '<div class="fc-card"><div class="fc-card-texto">' + this._escapar(questao.enunciado) + '</div></div>' +
+                '<div class="pc-resultado ' + (acertou ? 'pc-acertou' : 'pc-errou') + '">' + (acertou ? '✅ Você acertou!' : '❌ Você errou') + ' — gabarito: ' + textoGab + '</div>' +
+                (questao.explicacao ? ('<div class="pc-explicacao">' + this._escapar(questao.explicacao) + '</div>') : '') +
+                '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoTexto(questao.chave)) + '</div>' +
+                '<div class="fc-card-revisao-acoes">' + this._botoesClassificacaoHtml(questao.chave, contexto) + '</div>';
+        }
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     }
 };
 </script>
@@ -7009,7 +7568,7 @@ if (id === 'tela-home') {
 }
 
 if (target) {
-    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards') {
+    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards' || id === 'section-praticar-caderno') {
         target.style.display = 'flex';
     } else {
         target.style.display = 'block';
@@ -11243,6 +11802,19 @@ function sincronizarCadernoComPlanner(simSession) {
                 } else {
                     dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: motivoErro });
                 }
+            } else if (dbPlanner.caderno_erros[mat] && dbPlanner.caderno_erros[mat][topico]) {
+                // Usuário desmarcou "+ Caderno" nesta bateria — remove de
+                // verdade a entrada já persistida (mesmo efeito do botão
+                // "✕ remover" do modal do Caderno), não só evita que ela
+                // seja re-adicionada/atualizada numa próxima sincronização.
+                let arrExistente = dbPlanner.caderno_erros[mat][topico];
+                let idxExistente = arrExistente.findIndex(function(e){ return e.id_q === q.id && e.sim_id === simSession.cfg.id; });
+                if (idxExistente !== -1) {
+                    arrExistente.splice(idxExistente, 1);
+                    if (arrExistente.length === 0) delete dbPlanner.caderno_erros[mat][topico];
+                    if (Object.keys(dbPlanner.caderno_erros[mat]).length === 0) delete dbPlanner.caderno_erros[mat];
+                    if (typeof window.limparRevisaoQuestaoOrfa === 'function') window.limparRevisaoQuestaoOrfa(q.id, simSession.cfg.id);
+                }
             }
         });
     });
@@ -13119,9 +13691,32 @@ window.removerDoCaderno = function(aba, mat, topico, idx) {
     // Desmarca o toggle na origem — senão volta pro caderno na próxima sincronização
     if (item && item.sim_id && item.id_q) {
         window.desmarcarToggleNaOrigem(aba, item.sim_id, item.id_q);
+        // Questão removida do Caderno de Erros -> limpa o estado de revisão
+        // espaçada correspondente em Praticar Caderno (revisaoQuestoes),
+        // senão fica órfão (não se aplica à aba 'axiomas').
+        if (aba === 'erros') window.limparRevisaoQuestaoOrfa(item.id_q, item.sim_id);
     }
 
     window.mostrarAbaCaderno(aba);
+};
+
+// Apaga revisaoQuestoes[id_q+'_'+sim_id] de tjpe_v1__praticar_caderno_runtime
+// — chamado sempre que uma questão sai de caderno_erros de verdade (pelo
+// botão "✕ remover" do modal, ou desmarcando "+ Caderno" numa bateria), pra
+// não deixar um estado de revisão espaçada órfão apontando pra uma questão
+// que não existe mais no Caderno.
+window.limparRevisaoQuestaoOrfa = function(idQ, simId) {
+    if (!idQ || !simId) return;
+    try {
+        let chave = idQ + '_' + simId;
+        let raw = localStorage.getItem('tjpe_v1__praticar_caderno_runtime');
+        let obj = null;
+        try { obj = raw ? JSON.parse(raw) : null; } catch (e) { obj = null; }
+        if (obj && obj.revisaoQuestoes && obj.revisaoQuestoes[chave] !== undefined) {
+            delete obj.revisaoQuestoes[chave];
+            localStorage.setItem('tjpe_v1__praticar_caderno_runtime', JSON.stringify(obj));
+        }
+    } catch (e) {}
 };
 
 window.desmarcarToggleNaOrigem = function(aba, simId, qId) {
