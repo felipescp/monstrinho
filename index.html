@@ -125,10 +125,12 @@
 .color-swatch.active { border-color: #ffffff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.3); opacity: 1; transform: scale(1.1); }
 
 
-/* Oculta a nova barra no Mobile (Foco) a menos que o menu esteja aberto */
-@media(max-width:700px) { #barra-nav { display: none !important; } body.top-aberto #barra-nav { display: flex !important; } }
-body.force-mobile #barra-nav:not(.top-aberto) { display: none !important; }
-body.force-mobile.top-aberto #barra-nav { display: flex !important; }
+/* #barra-nav (a "‹ INÍCIO" isolada, revelada antes pelo toggle ⚙/× flutuante)
+   fica sempre oculta no mobile agora — .topbar-mobile-fixa (Início + Salvar +
+   Carregar + ⚙️) é a única barra que deve aparecer em telas ≤700px, em
+   qualquer tela e independente de body.top-aberto. */
+@media(max-width:700px) { #barra-nav { display: none !important; } }
+body.force-mobile #barra-nav { display: none !important; }
 
 /* Mesmo quando o menu (top-aberto) revela #barra-nav no mobile, "Gerar
    Questões" e a paleta de cores do tema ficam de fora — ganha espaço e
@@ -830,19 +832,23 @@ body.dark .cockpit-tools { background: var(--bg-white); border-color: var(--bord
    ========================================== */
 #sb-toggle, #top-toggle { display: none; }
 
-/* Regras Universais de Ocultação do Modo Foco (Desktop) */
-body.force-mobile #barra1, body.force-mobile #barra-nav:not(.top-aberto), body.force-mobile #barra2:not(.top-aberto) { display: none !important; }
-body.force-mobile.top-aberto #barra-nav, body.force-mobile.top-aberto #barra2 { display: flex !important; }
+/* Regras Universais de Ocultação do Modo Foco (Desktop) — #barra-nav
+   (a "‹ INÍCIO" isolada) fica sempre oculta agora; só .topbar-mobile-fixa
+   deve aparecer em modo mobile/foco, em qualquer tela. */
+body.force-mobile #barra1, body.force-mobile #barra-nav, body.force-mobile #barra2:not(.top-aberto) { display: none !important; }
+body.force-mobile.top-aberto #barra2 { display: flex !important; }
 body.force-mobile.top-aberto .nav-hd-zone { display: none !important; } /* Esconde o excesso da nav */
 
 @media(max-width:700px) {
     /* 1. Esconde tudo por padrão */
     #barra1, #barra2, #barra-nav { display: none !important; }
-    
+
     /* 2. O Cabeçalho (barra1) MORRE definitivamente no mobile. Nunca é exibido. */
-    
-    /* 3. A Engrenagem (top-aberto) acorda apenas as Abas e o botão Início */
-    body.top-aberto #barra-nav, body.top-aberto #barra2 { display: flex !important; }
+
+    /* 3. A Engrenagem (top-aberto) só acorda o resto de #barra2 — #barra-nav
+       (a "‹ INÍCIO" isolada) fica sempre oculta, .topbar-mobile-fixa já
+       cobre essa função sozinha, sempre visível, sem precisar do toggle. */
+    body.top-aberto #barra2 { display: flex !important; }
     body.top-aberto .nav-hd-zone { display: none !important; } /* Limpeza tática */
 
     /* 4. Barra Lateral vira Gaveta */
@@ -1095,6 +1101,9 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         display:flex;
         flex-direction:column;
         gap:8px;
+        min-width:0;
+        max-width:100%;
+        box-sizing:border-box;
 
         height:auto;
         max-height:none;
@@ -1204,6 +1213,19 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         max-height: none !important;
         overflow: visible !important;
     }
+
+    /* #col-materias/#col-topicos/#col-baterias-wrapper são ITENS DE GRID de
+       #grid-vitrine-3col (grid-template-columns:1fr acima) — por padrão,
+       item de grid tem min-width:auto, ou seja, NÃO encolhe abaixo do
+       conteúdo mínimo dos seus descendentes (ex.: o badge "NN questões",
+       que tem flex-shrink:0 no card da bateria). Sem isso, um badge/nome
+       longo o bastante força a trilha de 1fr (e a página inteira) a ficar
+       mais larga que a tela, exigindo rolagem lateral. */
+    #col-materias,
+    #col-topicos,
+    #col-baterias-wrapper {
+        min-width: 0 !important;
+    }
 }
 /* =========================================
    HOME — DESACOPLAR BODY FLEX
@@ -1309,11 +1331,14 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 <div id="barra2"></div>
 </div>
 
-<!-- TELA 1: HOME DO ALUNO (Vitrine) -->
-<div id="tela-home" class="tela ativa" style="padding: 0; background: var(--bg-body); flex-direction: row; height: 100vh; min-height: 0; overflow: hidden;">
-    
 <!-- ===================================================== -->
-<!-- TOPBAR SOBERANA — AÇÕES GLOBAIS -->
+<!-- TOPBAR SOBERANA — AÇÕES GLOBAIS. Movida pra FORA de
+     #tela-home (era filha dela, só existia na Vitrine) —
+     agora é irmã de todas as telas, sempre presente no DOM,
+     pra ficar visível no mobile em qualquer tela (inclusive
+     tela-simulado), não só na Vitrine. Sua visibilidade no
+     mobile (ver .topbar-mobile-fixa em CSS) não depende de
+     body.top-aberto — fica sempre à mostra em telas ≤700px. -->
 <!-- ===================================================== -->
 <div class="topbar-mobile-fixa">
 
@@ -1375,7 +1400,10 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     </div>
 
 </div>
-    
+
+<!-- TELA 1: HOME DO ALUNO (Vitrine) -->
+<div id="tela-home" class="tela ativa" style="padding: 0; background: var(--bg-body); flex-direction: row; height: 100vh; min-height: 0; overflow: hidden;">
+
     <!-- CORPO PRINCIPAL (Esquerda/Centro) -->
     <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 15px 20px; gap: 15px; overflow-y: auto; align-self: flex-start; max-height: 100%;">
         
@@ -1907,6 +1935,12 @@ window.SALINHA_BACKUP = {
 
         let chavesMutadas = 0;
         let entidadesInjetadas = 0;
+        // Chaves que o merge encontrou/calculou em memória mas NÃO conseguiu
+        // gravar de volta (ex.: localStorage.setItem estourando cota do
+        // dispositivo) — sem isso, entidadesInjetadas conta itens que na
+        // prática nunca chegaram a ser salvos, e o chamador (importarNuvem)
+        // mostraria "sucesso" mesmo quando algo se perdeu.
+        let chavesComErro = [];
 
         // O arquivo morto (cordeiro_auditoria_historica) e a sessão ativa
         // (clube_simulado_auto) não passam mais por localStorage direto —
@@ -2199,6 +2233,7 @@ window.SALINHA_BACKUP = {
                     chavesMutadas++;
                 } catch (e) {
                     console.warn('[MERGE] Falha ao persistir "' + chaveDestinoLocal + '" (provável falta de espaço):', e);
+                    chavesComErro.push(chaveDestinoLocal);
                 }
             }
         });
@@ -2227,9 +2262,11 @@ window.SALINHA_BACKUP = {
                 if (mudouArquivoMorto) {
                     const ok = await window.salvarArquivoMorto(objLocal);
                     if (ok) chavesMutadas++;
+                    else chavesComErro.push('cordeiro_auditoria_historica (arquivo morto)');
                 }
             } catch (e) {
                 console.warn('[MERGE] Falha ao mesclar arquivo morto:', e);
+                chavesComErro.push('cordeiro_auditoria_historica (arquivo morto)');
             }
         }
 
@@ -2282,9 +2319,11 @@ window.SALINHA_BACKUP = {
                 if (mudouSessaoAtiva) {
                     const ok = await window.salvarSessaoAtiva(objLocal);
                     if (ok) chavesMutadas++;
+                    else chavesComErro.push('clube_simulado_auto (sessão ativa)');
                 }
             } catch (e) {
                 console.warn('[MERGE] Falha ao mesclar sessão ativa:', e);
+                chavesComErro.push('clube_simulado_auto (sessão ativa)');
             }
         }
 
@@ -2335,7 +2374,7 @@ window.SALINHA_BACKUP = {
             notificarMutacaoAoDashboard();
         }
 
-        return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas };
+        return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas, chavesComErro: chavesComErro };
     },
 
     aplicarPayload: async function(jsonString) {
@@ -2657,7 +2696,15 @@ exportarNuvem: async function(botao) {
             }
 
             let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
-            alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas);
+            if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
+                // Algumas chaves foram calculadas em memória mas NÃO foram
+                // salvas de verdade (ex.: localStorage.setItem estourando a
+                // cota do dispositivo) — nunca mostrar "sucesso" nesse caso,
+                // senão o usuário acha que importou tudo e na real perdeu parte.
+                alert('Backup mesclado PARCIALMENTE — algo não coube no armazenamento deste dispositivo.\n\nChaves sincronizadas com sucesso: ' + resultado.chavesMutadas + '\nNovas entidades encontradas: ' + resultado.entidadesInjetadas + '\n\n⚠️ NÃO foi possível salvar: ' + resultado.chavesComErro.join(', ') + '\n\nProvável falta de espaço livre neste dispositivo (comum em celulares). Tente liberar espaço — ex.: limpar cache/dados de outros sites no navegador — e importe de novo.');
+            } else {
+                alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas);
+            }
             location.reload();
         } catch (err) {
             console.error('[GIST SYNC] Falha ao importar:', err);
@@ -2841,6 +2888,12 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
         }
 
         let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+        if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
+            // "Silenciosa" não deve virar alert() interrompendo a página no
+            // load — mas o erro não pode ficar 100% invisível também, então
+            // ao menos fica registrado no console pra quem for investigar.
+            console.warn('[GIST SYNC] Sincronização automática mesclou parcialmente — não coube no armazenamento: ' + resultado.chavesComErro.join(', '));
+        }
         if (resultado.chavesMutadas > 0) {
             if (_syncReloadGuardPermiteReload()) {
                 location.reload();
@@ -7949,7 +8002,7 @@ window.renderHomeDashboard = function() {
 
 // COLUNA 1: Disciplinas
                 htmlMaterias += `
-                <div class="col-materia-item" data-materia="${mat.nivel_1}" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this); window.avancarColunaVitrineMobile('topicos');">
+                <div class="col-materia-item" data-materia="${mat.nivel_1}" style="padding: 8px 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="if(!this.classList.contains('ativo')) this.style.background='#eef2ff'" onmouseout="if(!this.classList.contains('ativo')) this.style.background='transparent'" onclick="window.selecionarMateriaVitrine('${mat.nivel_1}', this); window.avancarColunaVitrineMobile('baterias');">
                     <span style="color: ${corMat}; font-size:10px; font-weight:800; font-family:var(--font-display); text-transform: uppercase; line-height: 1;">${mat.nivel_1} ${badgeMat}</span>
                     <span style="color:var(--text-muted); font-size: 13px; line-height: 1;">›</span>
                 </div>`;
@@ -8125,12 +8178,12 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     let iaTxt = p.iaUtilizada || '—';
 
 return `
-<div style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s;"
+<div style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
      onmouseover="this.style.background='#f1f5f9'"
      onmouseout="this.style.background='transparent'"
      onclick="${clickAcao}">
 
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; min-width: 0;">
         <div style="display:flex; align-items:center; gap:6px; min-width:0;">
             <span style="font-size: 10px; font-weight: 700; color: ${corTitulo};">
                 ${p.nome}
@@ -8146,7 +8199,7 @@ return `
         </div>
     </div>
 
-    <div style="padding: 0 8px 4px 8px; font-size: 9px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">
+    <div style="padding: 0 8px 4px 8px; font-size: 9px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; min-width: 0; width: 100%; box-sizing: border-box;">
         Base de Dados: ${estiloTxt} | IA utilizada: ${iaTxt} | Criada em: ${criadaEmTxt} | Resolvida em: ${resolvidaEmTxt}
     </div>
 </div>`;
@@ -8234,6 +8287,11 @@ function marcarModoListaAtivo(modo) {
                     let elTopico = colTopicos ? colTopicos.querySelector('.col-topico-item[data-topico="' + window.__ultimoFiltroCE.divisao + '"]') : null;
                     if (elTopico) elTopico.style.color = 'var(--app-primary)';
                     window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+                    window.avancarColunaVitrineMobile('baterias');
+                } else {
+                    // Só matéria (sem tópico) — selecionarMateriaVitrine() já filtrou
+                    // e renderizou TODAS as baterias dela; no mobile falta só avançar
+                    // pro passo visível certo (mesmo bug corrigido no clique direto).
                     window.avancarColunaVitrineMobile('baterias');
                 }
             } else {
