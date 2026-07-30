@@ -10715,7 +10715,14 @@ function verificarUltimaQuestao() {
         D.__ultimaQuestaoAvisada = true;
         var btnFin = g('b1-finalizar');
         if (btnFin) {
-            btnFin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // scrollIntoView({block:'nearest'}) não sabe que .cockpit-tools é
+            // sticky e cobre o topo do #sb — ele rola só o suficiente pra
+            // encostar no topo "cru" do container, deixando o Finalizar
+            // escondido atrás da barra fixa. Rolar o próprio #sb até 0
+            // (mesmo padrão já usado em cenSb() pra 1ª questão) resolve, já
+            // que .sb-box com o Finalizar é o 1º conteúdo após a barra sticky.
+            var sbEl = g('sb');
+            if (sbEl) sbEl.scrollTo({ top: 0, behavior: 'smooth' });
             btnFin.classList.add('pisca-atencao');
             btnFin.addEventListener('animationend', function aoTerminar() {
                 btnFin.classList.remove('pisca-atencao');
