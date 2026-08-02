@@ -587,6 +587,18 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 #mc { flex: 1; padding: 15px 2rem 4rem; overflow-y: auto; min-width: 0; }
 
 #sb { width: 500px; min-width: 200px; flex-shrink: 0; padding: 15px; overflow-y: auto; background: #f8fafc; border-left: 1px solid var(--border-color); transition: transform .25s ease; display: flex; flex-direction: column; gap: 15px; }
+
+/* Abaixo de 1200px de largura de janela, a barra lateral em si encolhe
+   (não o tamanho dos botões, que fica sempre 36px fixo) — o flex-wrap de
+   .gn naturalmente cabe menos botões por linha numa #sb mais estreita.
+   280px é o valor mínimo que garante exatamente 5 colunas de 36px+6px de
+   gap, considerando o padding duplo real (15px de #sb + 15px de .sb-box,
+   que embrulha #sbnav, = 30px de cada lado): 5×36 + 4×6 = 204px de
+   conteúdo + 60px de padding duplo = 264px mínimo; 280px dá uma folga de
+   ~16px, suficiente pra nunca vazar um 6º botão nem quebrar em 4. */
+@media (max-width: 1200px) {
+    #sb { width: 280px; }
+}
 .sb-box { background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
 #sb .sb-box h2 { font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 10px; text-align: left !important; }
 .sb-hr { display: none; } 
@@ -600,17 +612,8 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 
 .bg { margin-bottom: 1.5rem; }
 .bg h3 { font-family: var(--font-display); font-size: 11px; font-weight: 800; color: var(--text-main); margin-bottom: .5rem; text-transform: uppercase; line-height: 1.4; }
-.gn { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
-.nb { width: 100%; aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-white); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
-
-/* Abaixo de 1200px de largura de janela, a grade de navegação de questões
-   cai de 10 para 5 colunas — #sb fica fixo em 500px independente da
-   largura da tela (não encolhe sozinho), então o gatilho certo é a
-   viewport, não o próprio #sb; menos colunas = botões maiores/mais
-   legíveis quando o resto da tela já está mais apertado. */
-@media (max-width: 1200px) {
-    .gn { grid-template-columns: repeat(5, 1fr); }
-}
+.gn { display: flex; flex-wrap: wrap; gap: 6px; }
+.nb { width: 36px; height: 36px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-white); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
 .nb.at { background: var(--app-primary); color: var(--bg-white); border-color: var(--app-primary); }
 .nb.ok { background: var(--success); color: var(--bg-white); border-color: var(--success); }
 .nb.er { background: var(--danger); color: var(--bg-white); border-color: var(--danger); }
