@@ -2371,6 +2371,35 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.revisaoJurisprudencia) ──
+                    // Mesmíssimo formato/problema/política de flashcards_runtime.revisao e
+                    // praticar_caderno_runtime.revisaoQuestoes: dicionário achatado
+                    // {id_ficha → {intervaloDias, proximaRevisao, ultimaClassificacao}}, quem
+                    // vence em caso de conflito é o de MAIOR intervaloDias.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'revisaoJurisprudencia' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idFicha => {
+                            const remoto = objImportado[subChave][idFicha];
+                            const local = objLocal[subChave][idFicha];
+                            if (!remoto || typeof remoto !== 'object') return;
+
+                            if (local === undefined) {
+                                objLocal[subChave][idFicha] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
+                                objLocal[subChave][idFicha] = remoto;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: PRATICAR CADERNO (praticar_caderno_runtime.revisaoQuestoes) ──
                     // Mesmíssimo formato/problema/política do caso acima (flashcards_runtime.revisao),
                     // só que a chave usada aqui é id_q+'_'+sim_id de questões do caderno_erros.
@@ -16341,13 +16370,20 @@ window.carregarEsquemasOficiais = async function() {
        modo não faz sentido — o usuário volta pra "Por Temas" primeiro). */
     #jurisprudencia-modal .jur-col-desabilitada { opacity:0.4; pointer-events:none; }
 
-    #jurisprudencia-modal .jur-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:#f8fafc; }
+    #jurisprudencia-modal .jur-toolbar { flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:#f8fafc; }
+    #jurisprudencia-modal .jur-toolbar-linha1 { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; }
     #jurisprudencia-modal .jur-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
     #jurisprudencia-modal .jur-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #jurisprudencia-modal .jur-tb-btn.ativa:hover { color:#fff; }
     #jurisprudencia-modal .jur-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    /* 2ª linha da toolbar — os 3 filtros adicionais (Tribunal/Sistemática/
+       Ano), compactos, populados dinamicamente com os valores distintos já
+       presentes no escopo atual (matéria/divisão selecionada). */
+    #jurisprudencia-modal .jur-toolbar-linha2 { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-top:4px; border-top:1px dashed var(--border-color); }
+    #jurisprudencia-modal .jur-filtro-mini { display:flex; align-items:center; gap:5px; font-size:9.5px; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
+    #jurisprudencia-modal .jur-filtro-mini select { font-size:10.5px; font-weight:600; text-transform:none; color:var(--text-main); padding:3px 6px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); max-width:160px; }
 
     #jurisprudencia-modal .jur-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
     #jurisprudencia-modal .jur-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; align-content:start; padding:2px; }
@@ -16367,20 +16403,113 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-btn-excluir:hover { color:var(--danger); }
     #jurisprudencia-modal .jur-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
     #jurisprudencia-modal .jur-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
+
+    /* Abas do topo: "Navegar" (grade L1/L2 acima) + Difícil/Médio/Fácil
+       (repetição espaçada) — mesmo padrão visual de #section-flashcards. */
+    #jurisprudencia-modal .fc-tabs { display:flex; gap:4px; padding:0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #jurisprudencia-modal .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
+    #jurisprudencia-modal .fc-tab:hover { color:var(--app-primary); }
+    #jurisprudencia-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+
+    #jurisprudencia-modal .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    #jurisprudencia-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #jurisprudencia-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #jurisprudencia-modal .fc-pill:hover { border-color:var(--app-primary); }
+    #jurisprudencia-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #jurisprudencia-modal .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #jurisprudencia-modal .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #jurisprudencia-modal .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+    #jurisprudencia-modal .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #jurisprudencia-modal .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #jurisprudencia-modal span[id^="jur-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #jurisprudencia-modal .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+
+    /* Card de estudo (abas de dificuldade + popup "Baralho de Cards") — mais
+       largo/alto que o .fc-card de Flashcards, pois jurisprudência tem
+       tese+resumo (texto longo, não cabe num cartão pequeno). Compartilhado
+       com #modal-jurisprudencia-baralho via seletor combinado. */
+    #jurisprudencia-modal .jur-estudo-card, #modal-jurisprudencia-baralho .jur-estudo-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
+    #jurisprudencia-modal .jur-estudo-titulo, #modal-jurisprudencia-baralho .jur-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
+    #jurisprudencia-modal .jur-estudo-meta, #modal-jurisprudencia-baralho .jur-estudo-meta { font-size:11px; color:var(--text-muted); }
+    #jurisprudencia-modal .jur-estudo-label, #modal-jurisprudencia-baralho .jur-estudo-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:6px; }
+    #jurisprudencia-modal .jur-estudo-texto, #modal-jurisprudencia-baralho .jur-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); white-space:pre-wrap; }
+
+    #jurisprudencia-modal .fc-card-revisao-status, #modal-jurisprudencia-baralho .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
+    #jurisprudencia-modal .fc-card-revisao-acoes, #modal-jurisprudencia-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    #jurisprudencia-modal .fc-rev-btn, #modal-jurisprudencia-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
+    #jurisprudencia-modal .fc-rev-dificil, #modal-jurisprudencia-baralho .fc-rev-dificil { color:#991b1b; border-color:#fecaca; }
+    #jurisprudencia-modal .fc-rev-dificil:hover, #modal-jurisprudencia-baralho .fc-rev-dificil:hover { background:#fee2e2; }
+    #jurisprudencia-modal .fc-rev-medio, #modal-jurisprudencia-baralho .fc-rev-medio { color:#92400e; border-color:#fde68a; }
+    #jurisprudencia-modal .fc-rev-medio:hover, #modal-jurisprudencia-baralho .fc-rev-medio:hover { background:#fef3c7; }
+    #jurisprudencia-modal .fc-rev-facil, #modal-jurisprudencia-baralho .fc-rev-facil { color:#166534; border-color:#bbf7d0; }
+    #jurisprudencia-modal .fc-rev-facil:hover, #modal-jurisprudencia-baralho .fc-rev-facil:hover { background:#dcfce7; }
+    #jurisprudencia-modal .fc-rev-dificil.ativa, #modal-jurisprudencia-baralho .fc-rev-dificil.ativa { background:#dc2626; border-color:#dc2626; color:#fff; }
+    #jurisprudencia-modal .fc-rev-dificil.ativa:hover, #modal-jurisprudencia-baralho .fc-rev-dificil.ativa:hover { background:#b91c1c; }
+    #jurisprudencia-modal .fc-rev-medio.ativa, #modal-jurisprudencia-baralho .fc-rev-medio.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #jurisprudencia-modal .fc-rev-medio.ativa:hover, #modal-jurisprudencia-baralho .fc-rev-medio.ativa:hover { background:#b45309; }
+    #jurisprudencia-modal .fc-rev-facil.ativa, #modal-jurisprudencia-baralho .fc-rev-facil.ativa { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #jurisprudencia-modal .fc-rev-facil.ativa:hover, #modal-jurisprudencia-baralho .fc-rev-facil.ativa:hover { background:#15803d; }
 </style>
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🗂️ Baralho: Todos</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as fichas da disciplina selecionada na barra lateral" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🗂️ Baralho: Disciplina</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar todas as fichas PESSOAIS em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
+        <div class="fc-tabs">
+            <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
+            <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
+            <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Médio</button>
+            <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+        </div>
         <div class="fc-grid" id="jur-grid">
             <div class="fc-col" id="jur-col-materias"></div>
             <div class="fc-col" id="jur-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
             <div class="fc-col" id="jur-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+
+        <div class="fc-aba-revisao" id="jur-aba-dificil" style="display:none;">
+            <div class="fc-pills" id="jur-pills-dificil"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('dificil')">🔀 Embaralhar</button>
+            </div>
+            <div id="jur-corpo-dificil"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('dificil', -1)">‹</button>
+                <span id="jur-posicao-dificil">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('dificil', 1)">›</button>
+            </div>
+        </div>
+
+        <div class="fc-aba-revisao" id="jur-aba-medio" style="display:none;">
+            <div class="fc-pills" id="jur-pills-medio"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('medio')">🔀 Embaralhar</button>
+            </div>
+            <div id="jur-corpo-medio"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('medio', -1)">‹</button>
+                <span id="jur-posicao-medio">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('medio', 1)">›</button>
+            </div>
+        </div>
+
+        <div class="fc-aba-revisao" id="jur-aba-facil" style="display:none;">
+            <div class="fc-pills" id="jur-pills-facil"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('facil')">🔀 Embaralhar</button>
+            </div>
+            <div id="jur-corpo-facil"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('facil', -1)">‹</button>
+                <span id="jur-posicao-facil">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('facil', 1)">›</button>
+            </div>
         </div>
     </div>
 </div>
@@ -16440,22 +16569,59 @@ window.carregarEsquemasOficiais = async function() {
     </div>
 </div>
 
+<!-- MODAL: Baralho de Cards de Jurisprudência (Todos | Disciplina selecionada)
+     — popup .mo/.mdl em cima de #jurisprudencia-modal, mesmo padrão de
+     navegação 1-a-1 (embaralhar + ‹› + classificação Difícil/Médio/Fácil) já
+     usado em #modal-flashcard, reaproveitando window.RepeticaoEspacada. -->
+<div id="modal-jurisprudencia-baralho" class="mo">
+<style>
+    #modal-jurisprudencia-baralho { z-index: 10000; } /* mesma correção de z-index já aplicada aos outros popups desta seção */
+    #modal-jurisprudencia-baralho .mdl { max-width:700px; width:95%; max-height:90vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
+    #modal-jurisprudencia-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+</style>
+    <div class="mdl">
+        <div class="fc-popup-header">🗂️ <span id="jur-baralho-titulo"></span> — Baralho de Jurisprudência</div>
+
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+        </div>
+
+        <div id="jur-baralho-corpo"></div>
+
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.anteriorBaralho()">‹</button>
+            <span id="jur-baralho-posicao">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.proximoBaralho()">›</button>
+        </div>
+
+        <div class="fc-popup-footer">
+            <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.fecharBaralho()">Fechar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ── PARSER DE IMPORTAÇÃO EM MASSA DE JURISPRUDÊNCIA ──
-// Validado isoladamente (fora do index.html) contra o texto real de
-// referência (3 fichas, 2 divisões) e contra um caso de ficha malformada
-// (sem a linha "Tribunal:") no meio de fichas válidas, confirmando que o
-// fragmento órfão não vaza pra dentro das fichas vizinhas.
+// Robusto tanto a texto com quebra de parágrafo (linha em branco entre
+// campos) quanto a texto "corrido" (só quebra de linha simples, sem linha
+// em branco) — trabalha por LINHA (não por parágrafo), usando os próprios
+// rótulos como pontos de corte. Os marcadores "### L2:" são localizados em
+// QUALQUER lugar do texto (não exigem estar no início de uma linha), o que
+// corrige o bug original: no texto colado corrido, o 2º marcador em diante
+// não tinha uma quebra de linha antes dele, e o split antigo (ancorado a
+// "^") simplesmente não os reconhecia. Validado isoladamente contra: (1) o
+// texto original com quebra de parágrafo, (2) o mesmo texto corrido, sem
+// nenhuma linha em branco entre campos, e (3) uma ficha malformada (sem
+// "Tribunal:") no meio de fichas válidas — nos 3 casos, nenhum campo vaza
+// entre fichas vizinhas e nenhuma ficha fica sem L2 identificado.
 function jurNormalizarTexto(texto) {
     // Rótulos podem vir com ** (negrito) ou * (itálico) markdown — como
     // asterisco não é usado literalmente em nenhum outro lugar desse
     // conteúdo, remover TODOS de uma vez resolve os dois casos ao mesmo
     // tempo, sem precisar de regex separada pra ** vs *.
-    return texto.replace(/\*/g, '');
-}
-
-function jurDividirEmParagrafos(texto) {
-    return texto.split(/\n\s*\n+/).map(function(p) { return p.trim(); }).filter(function(p) { return p.length > 0; });
+    return (texto || '').replace(/\*/g, '');
 }
 
 const JUR_RE_TRIBUNAL = /^Tribunal:\s*(.+?)\s*\|\s*Órgão:\s*(.+)$/i;
@@ -16465,17 +16631,34 @@ const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
-const JUR_RE_L2_MARCADOR = /^###\s*L2:\s*(.+)$/m;
 const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
+const JUR_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g; // NÃO ancorado a início de linha — acha o marcador mesmo sem \n antes dele
 
-function jurClassificarParagrafo(p) {
-    if (JUR_RE_TRIBUNAL.test(p)) return 'tribunal';
-    if (JUR_RE_PROCESSO.test(p)) return 'processo';
-    if (JUR_RE_SISTEMATICA.test(p)) return 'sistematica';
-    if (JUR_RE_TESE.test(p)) return 'tese';
-    if (JUR_RE_RESUMO.test(p)) return 'resumo';
-    if (JUR_RE_COMOCOBRAR.test(p)) return 'comocobrar';
-    if (JUR_RE_CONEXOES.test(p)) return 'conexoes';
+// Só "como pode ser cobrado" precisa engolir linhas subsequentes não
+// rotuladas (seus sub-itens "Objetiva:/Discursiva/Oral:", sempre
+// descartados). Generalizar esse comportamento pra tese/resumo/conexões
+// (tentando lidar com parágrafos quebrados em várias linhas) foi tentado e
+// causou um bug real: uma ficha órfã vizinha (sem "Tribunal:") era engolida
+// como "continuação" da ficha anterior, sobrescrevendo processo/relator/
+// data dela. Mantido restrito só ao caso necessário e testado.
+const JUR_CAMPOS_ACUMULAVEIS = { comocobrar: true };
+
+function jurRemoverLinhasGrupo(texto) {
+    return texto.split('\n').filter(function(linha) { return !JUR_RE_GRUPO.test(linha.trim()); }).join('\n');
+}
+
+function jurDividirEmLinhas(texto) {
+    return texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+}
+
+function jurClassificarLinha(l) {
+    if (JUR_RE_TRIBUNAL.test(l)) return 'tribunal';
+    if (JUR_RE_PROCESSO.test(l)) return 'processo';
+    if (JUR_RE_SISTEMATICA.test(l)) return 'sistematica';
+    if (JUR_RE_TESE.test(l)) return 'tese';
+    if (JUR_RE_RESUMO.test(l)) return 'resumo';
+    if (JUR_RE_COMOCOBRAR.test(l)) return 'comocobrar';
+    if (JUR_RE_CONEXOES.test(l)) return 'conexoes';
     return null;
 }
 
@@ -16483,56 +16666,70 @@ function jurCriarFichaVazia() {
     return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tese: '', resumo: '', conexoes: '' };
 }
 
-function jurAplicarCampoNaFicha(ficha, tipo, paragrafo) {
+function jurAplicarCampoNaLinha(ficha, tipo, linha) {
     let m;
     if (tipo === 'tribunal') {
-        m = JUR_RE_TRIBUNAL.exec(paragrafo);
+        m = JUR_RE_TRIBUNAL.exec(linha);
         ficha.tribunal = m[1].trim();
         ficha.orgao = m[2].trim();
     } else if (tipo === 'processo') {
-        m = JUR_RE_PROCESSO.exec(paragrafo);
+        m = JUR_RE_PROCESSO.exec(linha);
         ficha.processo = m[1].trim();
         ficha.relator = m[2].trim();
         ficha.dataJulgado = m[5] + '-' + m[4] + '-' + m[3]; // ISO AAAA-MM-DD
     } else if (tipo === 'sistematica') {
-        m = JUR_RE_SISTEMATICA.exec(paragrafo);
+        m = JUR_RE_SISTEMATICA.exec(linha);
         ficha.sistematica = m[1].trim();
     } else if (tipo === 'tese') {
-        m = JUR_RE_TESE.exec(paragrafo);
+        m = JUR_RE_TESE.exec(linha);
         ficha.tese = m[1].trim();
     } else if (tipo === 'resumo') {
-        m = JUR_RE_RESUMO.exec(paragrafo);
+        m = JUR_RE_RESUMO.exec(linha);
         ficha.resumo = m[1].trim();
     } else if (tipo === 'conexoes') {
-        m = JUR_RE_CONEXOES.exec(paragrafo);
+        m = JUR_RE_CONEXOES.exec(linha);
         ficha.conexoes = m[1].trim();
     }
     // 'comocobrar' -> intencionalmente não faz nada (campo descartado).
 }
 
-// Varre os parágrafos de UMA divisão já isolada, extraindo fichas válidas
-// (título seguido de "Tribunal:") e contando fragmentos órfãos (parágrafos
-// reconhecidos como campo, mas fora de qualquer ficha com Tribunal) como
+// Varre as linhas de UMA divisão já isolada, extraindo fichas válidas
+// (título seguido de "Tribunal:") e contando fragmentos órfãos (linhas
+// reconhecidas como campo, mas fora de qualquer ficha com Tribunal) como
 // "malformadas" — sem deixar esses fragmentos vazarem pra dentro da ficha
 // vizinha válida.
-function jurParsearParagrafosDivisao(paragrafos) {
+function jurParsearLinhasDivisao(linhas) {
     let fichas = [];
     let malformadas = 0;
     let i = 0;
     let emRunOrfao = false;
 
-    while (i < paragrafos.length) {
-        let tipo = jurClassificarParagrafo(paragrafos[i]);
+    while (i < linhas.length) {
+        let tipo = jurClassificarLinha(linhas[i]);
 
-        if (tipo === null && i + 1 < paragrafos.length && jurClassificarParagrafo(paragrafos[i + 1]) === 'tribunal') {
+        if (tipo === null && i + 1 < linhas.length && jurClassificarLinha(linhas[i + 1]) === 'tribunal') {
             emRunOrfao = false;
             let ficha = jurCriarFichaVazia();
-            ficha.titulo = paragrafos[i].trim();
+            ficha.titulo = linhas[i].trim();
             let j = i + 1;
-            while (j < paragrafos.length) {
-                let tipoJ = jurClassificarParagrafo(paragrafos[j]);
-                if (tipoJ === null) break;
-                jurAplicarCampoNaFicha(ficha, tipoJ, paragrafos[j]);
+            let ultimoTipo = null;
+            while (j < linhas.length) {
+                let tipoJ = jurClassificarLinha(linhas[j]);
+                if (tipoJ === null) {
+                    // Guarda de segurança: só continua "dentro" do bloco
+                    // "como pode ser cobrado" se a linha seguinte não
+                    // parecer o início de uma ficha nova (pro caso de
+                    // CONEXÕES ter sido omitido antes da próxima ficha).
+                    let proximoTipo = (j + 1 < linhas.length) ? jurClassificarLinha(linhas[j + 1]) : null;
+                    let provavelNovoTitulo = (proximoTipo === 'tribunal');
+                    if (!provavelNovoTitulo && JUR_CAMPOS_ACUMULAVEIS[ultimoTipo]) {
+                        j++;
+                        continue;
+                    }
+                    break;
+                }
+                jurAplicarCampoNaLinha(ficha, tipoJ, linhas[j]);
+                ultimoTipo = tipoJ;
                 j++;
             }
             fichas.push(ficha);
@@ -16549,21 +16746,42 @@ function jurParsearParagrafosDivisao(paragrafos) {
 }
 
 function parsearImportacaoJurisprudencia(textoBruto) {
-    let texto = jurNormalizarTexto(textoBruto || '');
-    texto = texto.split('\n').filter(function(linha) { return !JUR_RE_GRUPO.test(linha.trim()); }).join('\n');
+    let texto = jurNormalizarTexto(textoBruto);
+    texto = jurRemoverLinhasGrupo(texto);
 
-    let blocos = texto.split(/(?=^###\s*L2:)/m);
+    // Acha TODOS os marcadores "### L2:" em qualquer lugar do texto — não
+    // exige estarem no início de uma linha, corrigindo o caso de texto
+    // colado corrido (sem quebra antes do 2º marcador em diante).
+    let marcadores = [];
+    let m;
+    JUR_RE_L2_GLOBAL.lastIndex = 0;
+    while ((m = JUR_RE_L2_GLOBAL.exec(texto)) !== null) {
+        marcadores.push({ divisao: m[1].trim(), matchStart: m.index, matchEnd: m.index + m[0].length });
+    }
+
     let porDivisao = {};
     let totalFichas = 0;
     let totalMalformadas = 0;
+    let totalSemL2 = 0; // fichas com Tribunal: encontradas fora de qualquer "### L2:" válido — NUNCA importadas
 
-    blocos.forEach(function(bloco) {
-        let mMarcador = JUR_RE_L2_MARCADOR.exec(bloco);
-        if (!mMarcador) return; // texto antes do 1º marcador (se houver) é ignorado
-        let divisao = mMarcador[1].trim();
-        let restante = bloco.slice(bloco.indexOf(mMarcador[0]) + mMarcador[0].length);
-        let paragrafos = jurDividirEmParagrafos(restante);
-        let r = jurParsearParagrafosDivisao(paragrafos);
+    let semL2Texto = marcadores.length > 0 ? texto.slice(0, marcadores[0].matchStart) : texto;
+    jurDividirEmLinhas(semL2Texto).forEach(function(l) { if (jurClassificarLinha(l) === 'tribunal') totalSemL2++; });
+
+    marcadores.forEach(function(marcador, idx) {
+        let inicio = marcador.matchEnd;
+        let fim = (idx + 1 < marcadores.length) ? marcadores[idx + 1].matchStart : texto.length;
+        let divisao = marcador.divisao;
+
+        // Guarda defensiva — nunca deveria disparar na prática (o regex já
+        // exige texto após "L2:"), mas garante que uma ficha JAMAIS entra
+        // sem um nome de divisão confiável.
+        if (!divisao) {
+            jurDividirEmLinhas(texto.slice(inicio, fim)).forEach(function(l) { if (jurClassificarLinha(l) === 'tribunal') totalSemL2++; });
+            return;
+        }
+
+        let linhas = jurDividirEmLinhas(texto.slice(inicio, fim));
+        let r = jurParsearLinhasDivisao(linhas);
         if (!porDivisao[divisao]) porDivisao[divisao] = { fichas: [], malformadas: 0 };
         porDivisao[divisao].fichas = porDivisao[divisao].fichas.concat(r.fichas);
         porDivisao[divisao].malformadas += r.malformadas;
@@ -16571,7 +16789,7 @@ function parsearImportacaoJurisprudencia(textoBruto) {
         totalMalformadas += r.malformadas;
     });
 
-    return { porDivisao: porDivisao, totalFichas: totalFichas, totalMalformadas: totalMalformadas };
+    return { porDivisao: porDivisao, totalFichas: totalFichas, totalMalformadas: totalMalformadas, totalSemL2: totalSemL2 };
 }
 
 // ── JURISPRUDÊNCIA — modal (mesmo padrão de #esquemas-modal/#caderno-modal),
@@ -16586,10 +16804,31 @@ function parsearImportacaoJurisprudencia(textoBruto) {
 window.JURISPRUDENCIA_RUNTIME = {
     fichas: {},
     ocultos: {},
+    // Repetição espaçada por ficha — mesmo formato/fórmula de
+    // flashcards_runtime.revisao e praticar_caderno_runtime.revisaoQuestoes,
+    // via window.RepeticaoEspacada (helper puramente funcional, sem
+    // acoplamento a nenhuma seção específica). { "<id_ficha>": {intervaloDias,
+    // proximaRevisao, ultimaClassificacao} }.
+    revisaoJurisprudencia: {},
     STORAGE_KEY: 'tjpe_v1__jurisprudencia_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
     _bootstrapped: false,
+
+    // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
+    // 'dificil'|'medio'|'facil' (revisão, mesmo padrão de Flashcards/Praticar
+    // Caderno). _estadosAba guarda o pool/ordem/índice de cada aba de
+    // dificuldade, independente da navegação L1/L2 da aba "grade".
+    _abaAtiva: 'grade',
+    _estadosAba: {
+        dificil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        medio: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        facil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+    },
+    // Popup "Baralho de Cards" (Todos | Disciplina selecionada) — mesmo
+    // padrão de FLASHCARDS_RUNTIME._popupState (embaralhar + ‹› + navegação
+    // sequencial), sem "flip" (fichas não têm frente/verso).
+    _baralhoState: null, // { escopo:'todos'|'materia', cardsBase, ordemChaves, indiceAtual }
 
     _mostrarOcultos: false,
     _ocultarOficiais: false,
@@ -16598,11 +16837,18 @@ window.JURISPRUDENCIA_RUNTIME = {
     _modoExibicao: 'temas', // 'temas' | 'data'
     _resultadoPreVisualizado: null, // guarda o parse entre "Pré-visualizar" e "Confirmar"
 
+    // Filtros adicionais (2ª linha da toolbar) — vazio = "Todos". Combinam
+    // entre si e com ocultos/oficiais/modo de exibição.
+    _filtroTribunal: '',
+    _filtroSistematica: '',
+    _filtroAno: '',
+
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        this.revisaoJurisprudencia = (bruto && typeof bruto.revisaoJurisprudencia === 'object' && !Array.isArray(bruto.revisaoJurisprudencia)) ? bruto.revisaoJurisprudencia : {};
         this._bootstrapped = true;
     },
 
@@ -16612,7 +16858,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: this.fichas, ocultos: this.ocultos }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: this.fichas, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
         }
@@ -16736,11 +16982,37 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (this._ocultarOficiais) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
+        if (this._filtroTribunal) {
+            lista = lista.filter(function(par) { return par.item.tribunal === self._filtroTribunal; });
+        }
+        if (this._filtroSistematica) {
+            lista = lista.filter(function(par) { return par.item.sistematica === self._filtroSistematica; });
+        }
+        if (this._filtroAno) {
+            lista = lista.filter(function(par) { return (par.item.dataJulgado || '').slice(0, 4) === self._filtroAno; });
+        }
         if (this._modoExibicao === 'data') {
             lista = lista.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         }
         return lista;
     },
+
+    // Valores distintos de tribunal/sistemática/ano no escopo atual
+    // (matéria/divisão selecionada), pra popular os 3 <select> — dinâmico,
+    // reflete só o que existe de verdade nos dados carregados, não uma
+    // lista fixa. Calculado ANTES de aplicar os próprios filtros (senão o
+    // usuário nunca conseguiria voltar pra uma opção já filtrada fora).
+    _valoresDistintosParaFiltros: function() {
+        let base = this._fichasParaExibir();
+        let tribunais = Array.from(new Set(base.map(function(p) { return p.item.tribunal; }).filter(Boolean))).sort();
+        let sistematicas = Array.from(new Set(base.map(function(p) { return p.item.sistematica; }).filter(Boolean))).sort();
+        let anos = Array.from(new Set(base.map(function(p) { return (p.item.dataJulgado || '').slice(0, 4); }).filter(Boolean))).sort().reverse();
+        return { tribunais: tribunais, sistematicas: sistematicas, anos: anos };
+    },
+
+    filtrarTribunal: function(valor) { this._filtroTribunal = valor; this._renderGradeCards(); },
+    filtrarSistematica: function(valor) { this._filtroSistematica = valor; this._renderGradeCards(); },
+    filtrarAno: function(valor) { this._filtroAno = valor; this._renderGradeCards(); },
 
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
     toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
@@ -16814,7 +17086,22 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '</div>' +
                 '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button>';
         }
-        return '<div class="jur-toolbar">' + htmlAcoes + '</div>';
+
+        let self = this;
+        let distintos = this._valoresDistintosParaFiltros();
+        function opcoes(valores, valorAtual) {
+            return '<option value="">Todos</option>' + valores.map(function(v) {
+                return '<option value="' + self._escapar(v) + '"' + (v === valorAtual ? ' selected' : '') + '>' + self._escapar(v) + '</option>';
+            }).join('');
+        }
+        let htmlFiltrosSecundarios =
+            '<div class="jur-toolbar-linha2">' +
+                '<label class="jur-filtro-mini">Tribunal <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarTribunal(this.value)">' + opcoes(distintos.tribunais, this._filtroTribunal) + '</select></label>' +
+                '<label class="jur-filtro-mini">Sistemática <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarSistematica(this.value)">' + opcoes(distintos.sistematicas, this._filtroSistematica) + '</select></label>' +
+                '<label class="jur-filtro-mini">Ano <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarAno(this.value)">' + opcoes(distintos.anos, this._filtroAno) + '</select></label>' +
+            '</div>';
+
+        return '<div class="jur-toolbar"><div class="jur-toolbar-linha1">' + htmlAcoes + '</div>' + htmlFiltrosSecundarios + '</div>';
     },
 
     _renderGradeCards: function() {
@@ -16939,7 +17226,8 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         if (saida.totalFichas === 0) {
             previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão "Tribunal: X | Órgão: Y".' +
-                (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem a linha "Tribunal:".)' : '');
+                (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem a linha "Tribunal:".)' : '') +
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
             previewEl.style.display = 'block';
             btnConfirmar.disabled = true;
             return;
@@ -16951,7 +17239,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         }).join('');
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
-            (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') + ':</div>' + linhas;
+            (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') +
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
         previewEl.style.display = 'block';
         btnConfirmar.disabled = false;
     },
@@ -17007,6 +17296,358 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-pessoal.json', 'application/json');
+    },
+
+    // ── REPETIÇÃO ESPAÇADA (Difícil/Médio/Fácil) — mesma fórmula de
+    // Flashcards/Praticar Caderno via window.RepeticaoEspacada, aplicada por
+    // id de ficha. ──
+
+    _vencidoJur: function(id) {
+        return window.RepeticaoEspacada.vencido(this.revisaoJurisprudencia[id]);
+    },
+
+    _aplicarClassificacaoJur: function(id, nivel) {
+        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisaoJurisprudencia[id]);
+        if (novo === null) delete this.revisaoJurisprudencia[id]; else this.revisaoJurisprudencia[id] = novo;
+        this.salvar();
+    },
+
+    _statusRevisaoJurTexto: function(id) {
+        let r = this.revisaoJurisprudencia[id];
+        if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
+        let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
+        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
+        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
+        let vencidoTxt = this._vencidoJur(id) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
+        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
+    },
+
+    // Mesmo padrão "Desmarcar X" de Flashcards/Praticar Caderno: o botão do
+    // MESMO nível já ativo troca o rótulo pra deixar explícito que o clique
+    // remove a classificação (toggle). onclickPara por padrão chama
+    // marcarBaralho() (popup "Baralho de Cards"); as abas de dificuldade
+    // passam sua própria onclickPara (marcarNaAba).
+    _botoesRevisaoJurHtml: function(id, opts) {
+        opts = opts || {};
+        let desmarcarNivel = opts.desmarcarNivel || null;
+        let onclickPara = opts.onclickPara || function(nivel) {
+            return "window.JURISPRUDENCIA_RUNTIME.marcarBaralho('" + nivel + "')";
+        };
+        let atual = this.revisaoJurisprudencia[id] ? this.revisaoJurisprudencia[id].ultimaClassificacao : null;
+        let niveis = [
+            { chave: 'dificil', rotulo: '🔴 Difícil', rotuloDesmarcar: '🔴 Desmarcar Difícil' },
+            { chave: 'medio', rotulo: '🟡 Médio', rotuloDesmarcar: '🟡 Desmarcar Médio' },
+            { chave: 'facil', rotulo: '🟢 Fácil', rotuloDesmarcar: '🟢 Desmarcar Fácil' }
+        ];
+        return niveis.map(function(n) {
+            let classeAtiva = (atual === n.chave) ? ' ativa' : '';
+            let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
+            return '<button class="fc-rev-btn fc-rev-' + n.chave + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
+        }).join('');
+    },
+
+    // Bloco de conteúdo da ficha (título + meta + tese + resumo, sem truncar)
+    // — compartilhado entre o popup "Baralho de Cards" e as abas de
+    // dificuldade. CONEXÕES fica de fora aqui (cartão de estudo foca no
+    // essencial pra revisão; texto completo com conexões continua só no
+    // popup "Ver", acessível pela grade).
+    _htmlCartaoFichaEstudo: function(item) {
+        let metaPartes = [item.tribunal, item.orgao, item.processo, item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        return '<div class="jur-estudo-card">' +
+            '<div class="jur-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
+            '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
+            '<div class="jur-estudo-label">Tese Fixada / Decisão</div>' +
+            '<div class="jur-estudo-texto">' + this._escapar(item.tese || '—') + '</div>' +
+            '<div class="jur-estudo-label">Resumo do Caso</div>' +
+            '<div class="jur-estudo-texto">' + this._escapar(item.resumo || '—') + '</div>' +
+        '</div>';
+    },
+
+    // ── POPUP "BARALHO DE CARDS" (Todos | Disciplina selecionada) ──
+    // Mesmo padrão de FLASHCARDS_RUNTIME._popupState/abrirPopupBaralho: pool
+    // fixo (cardsBase) + ordemChaves (respeita embaralhar) + índice atual.
+    // Sem "flip" — fichas de jurisprudência não têm frente/verso.
+
+    _todasFichasVisiveis: function() {
+        let self = this;
+        let resultado = [];
+        Object.keys(this.fichas).forEach(function(chave) {
+            (self.fichas[chave] || []).forEach(function(f) { if (!self.ocultos[f.id]) resultado.push(f); });
+        });
+        return resultado;
+    },
+
+    abrirBaralhoTodos: function() {
+        this._garantirCarregado();
+        this._abrirBaralho('todos', 'Todas as Fichas', this._todasFichasVisiveis());
+    },
+
+    abrirBaralhoMateria: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let fichas = [];
+        Object.keys(this.fichas).forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            (self.fichas[chave] || []).forEach(function(f) { if (!self.ocultos[f.id]) fichas.push(f); });
+        });
+        this._abrirBaralho('materia', this._materiaSelecionada, fichas);
+    },
+
+    _abrirBaralho: function(escopo, titulo, fichas) {
+        this._baralhoState = {
+            escopo: escopo,
+            cardsBase: fichas,
+            ordemChaves: fichas.map(function(f) { return f.id; }),
+            indiceAtual: 0
+        };
+        document.getElementById('jur-baralho-titulo').textContent = titulo;
+        document.getElementById('modal-jurisprudencia-baralho').classList.add('open');
+        this.renderBaralho();
+        document.addEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    fecharBaralho: function() {
+        document.getElementById('modal-jurisprudencia-baralho').classList.remove('open');
+        document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    _handlerTecladoBaralho: function(e) {
+        if (!document.getElementById('modal-jurisprudencia-baralho').classList.contains('open')) return;
+        if (e.key === 'ArrowLeft') window.JURISPRUDENCIA_RUNTIME.anteriorBaralho();
+        else if (e.key === 'ArrowRight') window.JURISPRUDENCIA_RUNTIME.proximoBaralho();
+    },
+
+    _deckBaralhoAtual: function() {
+        let s = this._baralhoState;
+        if (!s) return [];
+        return s.ordemChaves
+            .map(function(id) { return s.cardsBase.find(function(f) { return f.id === id; }); })
+            .filter(Boolean);
+    },
+
+    _fichaBaralhoAtual: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length === 0) return null;
+        if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
+        if (s.indiceAtual < 0) s.indiceAtual = 0;
+        return deck[s.indiceAtual];
+    },
+
+    embaralharBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this.renderBaralho();
+    },
+
+    proximoBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + 1) % deck.length;
+        this.renderBaralho();
+    },
+
+    anteriorBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual - 1 + deck.length) % deck.length;
+        this.renderBaralho();
+    },
+
+    // Classifica o card ATUAL do popup — não remove da navegação corrente
+    // (mesmo espírito do popup "Navegar" de Flashcards: não é filtrado por
+    // estado, só as abas Difícil/Médio/Fácil são).
+    marcarBaralho: function(nivel) {
+        let card = this._fichaBaralhoAtual();
+        if (!card) return;
+        this._aplicarClassificacaoJur(card.id, nivel);
+        this.renderBaralho();
+    },
+
+    renderBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        let corpo = document.getElementById('jur-baralho-corpo');
+        let posEl = document.getElementById('jur-baralho-posicao');
+        let deck = this._deckBaralhoAtual();
+
+        if (deck.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha aqui ainda.</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._fichaBaralhoAtual();
+        corpo.innerHTML = this._htmlCartaoFichaEstudo(card) +
+            '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoJurTexto(card.id)) + '</div>' +
+            '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
+    },
+
+    // ── ABAS "🔴 DIFÍCIL" / "🟡 MÉDIO" / "🟢 FÁCIL" ──
+    // Mesmo padrão de FLASHCARDS_RUNTIME/PRATICAR_CADERNO_RUNTIME: navegador
+    // 1-a-1 inline (não modal) sobre fichas VENCIDAS cuja última
+    // classificação bate com a aba, com pílulas de matéria pra filtrar.
+
+    trocarAba: function(aba) {
+        this._abaAtiva = aba;
+        document.querySelectorAll('#jurisprudencia-modal .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
+        let tabEl = document.getElementById('jur-tab-' + aba);
+        if (tabEl) tabEl.classList.add('ativa');
+        let idsPorAba = { grade: 'jur-grid', dificil: 'jur-aba-dificil', medio: 'jur-aba-medio', facil: 'jur-aba-facil' };
+        Object.keys(idsPorAba).forEach(function(a) {
+            let el = document.getElementById(idsPorAba[a]);
+            if (!el) return;
+            el.style.display = (a !== aba) ? 'none' : (a === 'grade' ? 'grid' : 'flex');
+        });
+        if (aba === 'dificil' || aba === 'medio' || aba === 'facil') this.renderAbaRevisao(aba);
+    },
+
+    // Sem cache — mesmo raciocínio de Flashcards/Praticar Caderno: volume
+    // esperado (jurisprudência pessoal + oficial, não um catálogo enorme)
+    // torna uma varredura completa a cada troca de aba/pílula rápida o
+    // bastante.
+    listarFichasPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        let resultado = [];
+        materias.forEach(function(materia) {
+            let prefixo = materia + ' > ';
+            Object.keys(self.fichas).sort().forEach(function(chave) {
+                if (chave.indexOf(prefixo) !== 0) return;
+                (self.fichas[chave] || []).forEach(function(f) {
+                    let r = self.revisaoJurisprudencia[f.id];
+                    if (r && r.ultimaClassificacao === classificacaoAlvo && window.RepeticaoEspacada.vencido(r)) resultado.push(f);
+                });
+            });
+        });
+        return resultado;
+    },
+
+    _contarPorMateriaJur: function(classificacaoAlvo) {
+        let self = this;
+        let mapa = {};
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
+            let n = self.listarFichasPorClassificacaoVencida(mat.nivel_1, classificacaoAlvo).length;
+            if (n > 0) mapa[mat.nivel_1] = n;
+        });
+        return mapa;
+    },
+
+    renderAbaRevisao: function(aba) {
+        let s = this._estadosAba[aba];
+        let pool = this.listarFichasPorClassificacaoVencida(s.materiaFiltro, aba);
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(f) { return f.id; });
+        s.indiceAtual = 0;
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+    },
+
+    _renderPillsAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let contagens = this._contarPorMateriaJur(aba);
+        let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
+        let pillsEl = document.getElementById('jur-pills-' + aba);
+        if (!pillsEl) return;
+        let materiasOrdenadas = Object.keys(contagens).sort();
+        pillsEl.innerHTML =
+            '<button class="fc-pill' + (!s.materiaFiltro ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarAba(\'' + aba + '\', null)">Todas (' + total + ')</button>' +
+            materiasOrdenadas.map(function(mat) {
+                return '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarAba(\'' + aba + '\', \'' + mat.replace(/'/g, "\\'") + '\')">' + mat + ' (' + contagens[mat] + ')</button>';
+            }).join('');
+    },
+
+    filtrarAba: function(aba, materia) {
+        let s = this._estadosAba[aba];
+        s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    embaralharAba: function(aba) {
+        let s = this._estadosAba[aba];
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this._renderCorpoAba(aba);
+    },
+
+    navegarAba: function(aba, delta) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + delta + s.ordemChaves.length) % s.ordemChaves.length;
+        this._renderCorpoAba(aba);
+    },
+
+    _fichaAtualDaAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length === 0) return null;
+        let id = s.ordemChaves[s.indiceAtual];
+        return s.pool.find(function(f) { return f.id === id; }) || null;
+    },
+
+    _renderCorpoAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let corpo = document.getElementById('jur-corpo-' + aba);
+        let posEl = document.getElementById('jur-posicao-' + aba);
+        if (!corpo) return;
+
+        if (s.ordemChaves.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nada vencido nessa classificação agora — tudo em dia!</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._fichaAtualDaAba(aba);
+        let origem = [card.materiaL1, card.divisaoL2].filter(function(x) { return !!x; }).join(' — ');
+
+        // O botão da classificação ATUAL do card (sempre a própria aba, já
+        // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
+        // com .ativa, e com o rótulo "Desmarcar X" — clicar nele já desmarca.
+        let botoes = this._botoesRevisaoJurHtml(card.id, {
+            desmarcarNivel: aba,
+            onclickPara: function(nivel) { return "window.JURISPRUDENCIA_RUNTIME.marcarNaAba('" + aba + "', '" + nivel + "')"; }
+        });
+
+        corpo.innerHTML =
+            '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
+            this._htmlCartaoFichaEstudo(card) +
+            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
+    },
+
+    // Classifica o card atual da aba e remove SÓ ELE do pool corrente — a
+    // navegação avança pro próximo automaticamente. Sai do pool SEMPRE,
+    // mesmo se a nova classificação for igual à aba atual (a data de
+    // vencimento sempre muda).
+    marcarNaAba: function(aba, classificacao) {
+        let s = this._estadosAba[aba];
+        let card = this._fichaAtualDaAba(aba);
+        if (!card) return;
+        this._aplicarClassificacaoJur(card.id, classificacao);
+
+        let idMarcado = card.id;
+        s.ordemChaves = s.ordemChaves.filter(function(id) { return id !== idMarcado; });
+        s.pool = s.pool.filter(function(f) { return f.id !== idMarcado; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
     }
 };
 
