@@ -6243,6 +6243,8 @@ window.PRATICAR_CADERNO_RUNTIME = {
     #section-materiais .mat-card-footer { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px; }
     #section-materiais .mat-btn-abrir { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--app-primary); background:none; color:var(--app-primary); cursor:pointer; }
     #section-materiais .mat-btn-abrir:hover { background:#eef2ff; }
+    #section-materiais .mat-btn-editar { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:none; color:var(--text-muted); cursor:pointer; }
+    #section-materiais .mat-btn-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #section-materiais .mat-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #section-materiais .mat-btn-excluir:hover { color:var(--danger); }
     /* Etiqueta discreta — vermelho sobre branco, mesmo padrão usado na
@@ -6315,6 +6317,8 @@ window.MATERIAIS_RUNTIME = {
     _ocultarOficiais: false, // esconde TODOS os materiais origem_oficial, independente de ocultos
     _modoSelecao: false,
     _selecionados: {},    // {"<id_material>": true} — só durante o modo seleção
+    _editandoId: null,    // id do material sendo editado no modal — null = criando um novo
+    _editandoChave: null,
 
     TIPOS: [
         { chave: 'jurisprudencia', rotulo: 'Jurisprudência' },
@@ -6595,12 +6599,14 @@ window.MATERIAIS_RUNTIME = {
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="mat-selo-oficial" title="Material oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="mat-selo-oculto">🙈 Oculto</span>' : '';
-            // Materiais oficiais não são excluíveis pelo usuário — só quem
-            // publica o JSON no repositório consegue mudar (mesma regra das
-            // baterias oficiais). Não há edição implementada pra nenhum
-            // material ainda, então "não editável" já vale por padrão.
+            // Materiais oficiais não são excluíveis/editáveis pelo usuário —
+            // só quem publica o JSON no repositório consegue mudar (mesma
+            // regra das baterias oficiais).
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="mat-btn-excluir" onclick="window.MATERIAIS_RUNTIME.excluirMaterial(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir material">🗑️</button>'
+                : '';
+            let btnEditarHtml = (!self._modoSelecao && podeExcluir)
+                ? '<button class="mat-btn-editar" onclick="window.MATERIAIS_RUNTIME.abrirModalEditar(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Editar material">✏️ Editar</button>'
                 : '';
             let materialBaseHtml = item.materialBase ? '<div class="mat-card-base">Material base: ' + self._escapar(item.materialBase) + '</div>' : '';
 
@@ -6618,6 +6624,7 @@ window.MATERIAIS_RUNTIME = {
                 '<div class="mat-card-desc">' + self._escapar(item.descricao) + '</div>' +
                 materialBaseHtml +
                 '<div class="mat-card-footer">' +
+                    btnEditarHtml +
                     '<button class="mat-btn-abrir" onclick="window.MATERIAIS_RUNTIME.abrirPdf(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')">Abrir</button>' +
                 '</div>' +
             '</div>';
@@ -6645,6 +6652,9 @@ window.MATERIAIS_RUNTIME = {
 
     abrirModalNovo: function() {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
+        this._editandoId = null;
+        this._editandoChave = null;
+        document.getElementById('mat-modal-cabecalho').textContent = '📎 Novo Material';
         let selTipo = document.getElementById('mat-form-tipo');
         selTipo.innerHTML = this.TIPOS.map(function(t) { return '<option value="' + t.chave + '">' + t.rotulo + '</option>'; }).join('');
         document.getElementById('mat-form-titulo').value = '';
@@ -6656,8 +6666,30 @@ window.MATERIAIS_RUNTIME = {
         setTimeout(function() { let t = document.getElementById('mat-form-titulo'); if (t) t.focus(); }, 50);
     },
 
+    // Materiais oficiais nunca chegam aqui (o botão ✏️ nem é renderizado
+    // pra eles), mas a função ainda assim confirma o item antes de editar.
+    abrirModalEditar: function(chave, id) {
+        let item = (this.materiais[chave] || []).find(function(m) { return m.id === id; });
+        if (!item || item.origem_oficial) return;
+        this._editandoId = id;
+        this._editandoChave = chave;
+        document.getElementById('mat-modal-cabecalho').textContent = '✏️ Editar Material';
+        let selTipo = document.getElementById('mat-form-tipo');
+        selTipo.innerHTML = this.TIPOS.map(function(t) { return '<option value="' + t.chave + '">' + t.rotulo + '</option>'; }).join('');
+        selTipo.value = item.tipo;
+        document.getElementById('mat-form-titulo').value = item.titulo || '';
+        document.getElementById('mat-form-descricao').value = item.descricao || '';
+        document.getElementById('mat-form-url').value = item.urlPdf || '';
+        document.getElementById('mat-form-materialbase').value = item.materialBase || '';
+        document.getElementById('mat-form-erro').style.display = 'none';
+        document.getElementById('modal-materiais-novo').classList.add('open');
+        setTimeout(function() { let t = document.getElementById('mat-form-titulo'); if (t) t.focus(); }, 50);
+    },
+
     fecharModalNovo: function() {
         document.getElementById('modal-materiais-novo').classList.remove('open');
+        this._editandoId = null;
+        this._editandoChave = null;
     },
 
     salvarNovoMaterial: function() {
@@ -6679,17 +6711,29 @@ window.MATERIAIS_RUNTIME = {
             return;
         }
 
-        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        if (!Array.isArray(this.materiais[chave])) this.materiais[chave] = [];
-        this.materiais[chave].push({
-            id: 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-            tipo: tipo,
-            titulo: titulo,
-            descricao: descricao,
-            urlPdf: urlPdf,
-            materialBase: materialBase,
-            criadoEm: new Date().toISOString()
-        });
+        if (this._editandoId) {
+            let arr = this.materiais[this._editandoChave];
+            let item = arr && arr.find(function(m) { return m.id === window.MATERIAIS_RUNTIME._editandoId; });
+            if (item && !item.origem_oficial) {
+                item.tipo = tipo;
+                item.titulo = titulo;
+                item.descricao = descricao;
+                item.urlPdf = urlPdf;
+                item.materialBase = materialBase;
+            }
+        } else {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            if (!Array.isArray(this.materiais[chave])) this.materiais[chave] = [];
+            this.materiais[chave].push({
+                id: 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                tipo: tipo,
+                titulo: titulo,
+                descricao: descricao,
+                urlPdf: urlPdf,
+                materialBase: materialBase,
+                criadoEm: new Date().toISOString()
+            });
+        }
         this.salvar();
         this.fecharModalNovo();
         this._renderGradeCards();
@@ -6809,7 +6853,7 @@ window.carregarMateriaisOficiais = async function() {
      #modal-flashcard-bulk. -->
 <div id="modal-materiais-novo" class="mo">
     <div class="mdl">
-        <div class="fc-popup-header">📎 Novo Material</div>
+        <div class="fc-popup-header" id="mat-modal-cabecalho">📎 Novo Material</div>
         <div class="fc-form-campo">
             <label>Tipo</label>
             <select id="mat-form-tipo"></select>
