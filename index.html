@@ -1327,6 +1327,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
         <div class="nav-item hd-item" id="btn-nav-materiais" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-materiais'); tela('section-materiais'); if(window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
+        <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📊 ESQUEMAS E TABELAS</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -1868,6 +1869,9 @@ window.SALINHA_BACKUP = {
         // MATERIAIS
         'tjpe_v1__materiais_runtime',
 
+        // ESQUEMAS E TABELAS
+        'tjpe_v1__esquemas_runtime',
+
         // TEMA
         'tjpe_v1__cor_tema'
     ],
@@ -2238,6 +2242,59 @@ window.SALINHA_BACKUP = {
                         Object.keys(objImportado[subChave]).forEach(idMaterial => {
                             if (objImportado[subChave][idMaterial] && !objLocal[subChave][idMaterial]) {
                                 objLocal[subChave][idMaterial] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.esquemas) ──
+                    // Mesmíssima forma/problema/solução de materiais_runtime.materiais:
+                    // dicionário achatado {"MATÉRIA > Divisão" → array de esquemas}.
+                    // Desce 1 nível e mescla por id — união, mantém a versão local em
+                    // caso de mesmo id dos dois lados (esquemas pessoais nunca têm
+                    // origem_oficial, então isso nunca colide com conteúdo oficial).
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'esquemas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const esquemasImportados = objImportado[subChave][chaveL2];
+                            if (!Array.isArray(esquemasImportados)) return;
+                            if (!Array.isArray(objLocal[subChave][chaveL2])) {
+                                objLocal[subChave][chaveL2] = [];
+                            }
+                            esquemasImportados.forEach(esquema => {
+                                if (!esquema || !esquema.id) return;
+                                const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
+                                    return local && local.id === esquema.id;
+                                });
+                                if (!jaExiste) {
+                                    objLocal[subChave][chaveL2].push(esquema);
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.ocultos) ──
+                    // Mesma política de união pura (OR) de materiais_runtime.ocultos.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'ocultos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idEsquema => {
+                            if (objImportado[subChave][idEsquema] && !objLocal[subChave][idEsquema]) {
+                                objLocal[subChave][idEsquema] = true;
                                 entidadesInjetadas++;
                                 persistirChave = true;
                             }
@@ -15548,12 +15605,541 @@ window.triggerFileUpload = function(callback) {
     </div>
 </div>
 
+<!-- MODAL: Esquemas e Tabelas — mesmo contêiner .analytics-modal do Caderno
+     de Questões (não outro modal genérico), com navegação L1(matéria) >
+     L2(divisão) idêntica a Materiais, dentro do corpo. -->
+<div id="esquemas-modal" class="analytics-modal">
+<style>
+    #esquemas-modal .analytics-modal-content { padding: 0; }
+    #esquemas-modal .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #esquemas-modal .fc-col { overflow-y:auto; padding:10px; }
+    #esquemas-modal #esq-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
+    #esquemas-modal #esq-col-divisoes { border-right:1px solid var(--border-color); }
+    #esquemas-modal #esq-col-cards { background:#f8fafc; display:flex; flex-direction:column; overflow:hidden; }
+    #esquemas-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #esquemas-modal .fc-materia-item:hover { background:#eef2ff; }
+    #esquemas-modal .fc-materia-item.ativa { background:#e0e7ff; }
+    #esquemas-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #esquemas-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #esquemas-modal .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
+    #esquemas-modal .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
+    #esquemas-modal .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+
+    /* Toolbar — sem chips de categoria (não existe "tipo" fixo aqui, ao
+       contrário de Materiais), só ocultos/ocultar-oficiais/selecionar. */
+    #esquemas-modal .esq-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:#f8fafc; }
+    #esquemas-modal .esq-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #esquemas-modal .esq-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #esquemas-modal .esq-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #esquemas-modal .esq-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #esquemas-modal .esq-tb-btn.ativa:hover { color:#fff; }
+    #esquemas-modal .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #esquemas-modal .esq-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+
+    #esquemas-modal .esq-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
+    #esquemas-modal .esq-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; align-content:start; padding:2px; }
+
+    #esquemas-modal .esq-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; cursor:pointer; }
+    #esquemas-modal .esq-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    #esquemas-modal .esq-card-oculto { opacity:0.5; }
+    #esquemas-modal .esq-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+    #esquemas-modal .esq-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+    #esquemas-modal .esq-card-checkbox { cursor:pointer; flex-shrink:0; }
+    #esquemas-modal .esq-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    #esquemas-modal .esq-card-preview { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
+    #esquemas-modal .esq-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #esquemas-modal .esq-btn-excluir:hover { color:var(--danger); }
+    #esquemas-modal .esq-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
+    #esquemas-modal .esq-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
+    #esquemas-modal .esq-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
+    #esquemas-modal .esq-card-add:hover { background:#eef2ff; }
+</style>
+    <div class="analytics-modal-content">
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
+            <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
+        </div>
+        <div class="fc-grid" id="esq-grid">
+            <div class="fc-col" id="esq-col-materias"></div>
+            <div class="fc-col" id="esq-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="esq-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Editor de Esquema (popup em cima de #esquemas-modal, mesmo
+     padrão .mo/.mdl de #modal-materiais-novo) — usado tanto pra criar um
+     esquema novo quanto pra abrir um existente (editável se pessoal,
+     somente leitura se oficial). -->
+<div id="modal-esquema-editor" class="mo">
+<style>
+    #modal-esquema-editor .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-esquema-editor .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-esquema-editor .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-esquema-editor #esq-editor-corpo table { border-collapse:collapse; width:100%; margin:8px 0; }
+    #modal-esquema-editor #esq-editor-corpo table td { border:1px solid var(--border-color); padding:6px 8px; min-width:40px; }
+    #modal-esquema-editor #esq-editor-corpo[contenteditable="false"] { background:#f8fafc; color:var(--text-muted); }
+</style>
+    <div class="mdl" style="max-width:720px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header" id="esq-editor-cabecalho">Novo Esquema</div>
+            <button onclick="window.ESQUEMAS_RUNTIME.fecharEditor()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <input type="text" id="esq-form-titulo" placeholder="Título do esquema" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main);">
+        <div id="esq-editor-toolbar" style="display:flex; gap:6px;">
+            <button type="button" onclick="window.ESQUEMAS_RUNTIME.aplicarFormatacao('bold')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-weight:800;" title="Negrito">B</button>
+            <button type="button" onclick="window.ESQUEMAS_RUNTIME.aplicarFormatacao('italic')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-style:italic;" title="Itálico">I</button>
+            <button type="button" onclick="window.ESQUEMAS_RUNTIME.inserirTabela()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:700;" title="Inserir tabela 3x3">▦ Inserir Tabela</button>
+        </div>
+        <div id="esq-editor-corpo" contenteditable="true" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
+        <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
+            <button class="fc-footer-btn primario" id="esq-editor-btn-salvar" onclick="window.ESQUEMAS_RUNTIME.salvarEsquema()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── ESQUEMAS E TABELAS — modal (mesmo padrão de #caderno-modal), navegação
+// L1(matéria)>L2(divisão) idêntica a Materiais. Estrutura de dados:
+// esquemas: { "MATÉRIA > Divisão": [ {id, titulo, conteudoHtml, criadoEm,
+// origem_oficial?} ] }. IMPORTANTE: origem_oficial NUNCA é atribuído em
+// salvarEsquema() (criação/edição pessoal) — só importarEsquemaOficial()
+// (carregamento do JSON publicado no repositório) atribui esse campo. Um
+// esquema criado por um usuário fica só no tjpe_v1__esquemas_runtime dele
+// (localStorage + backup pessoal via Gist), sem nenhum caminho de código
+// que o torne "oficial" ou visível pra outra conta.
+window.ESQUEMAS_RUNTIME = {
+    esquemas: {},
+    ocultos: {},
+    STORAGE_KEY: 'tjpe_v1__esquemas_runtime',
+    _materiaSelecionada: null,
+    _divisaoSelecionada: null,
+    _bootstrapped: false,
+
+    _mostrarOcultos: false,
+    _ocultarOficiais: false,
+    _modoSelecao: false,
+    _selecionados: {},
+    _editandoId: null,
+    _editandoChave: null,
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.esquemas = (bruto && typeof bruto.esquemas === 'object' && !Array.isArray(bruto.esquemas)) ? bruto.esquemas : {};
+        this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        this._bootstrapped = true;
+    },
+
+    _garantirCarregado: function() {
+        if (!this._bootstrapped) this.carregar();
+    },
+
+    salvar: function() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos }));
+        } catch (e) {
+            console.warn('[ESQUEMAS] Falha ao salvar:', e);
+        }
+    },
+
+    init: function() {
+        this.carregar();
+        this.render();
+        if (typeof window.carregarEsquemasOficiais === 'function') {
+            window.carregarEsquemasOficiais().then(function() {
+                if (window.ESQUEMAS_RUNTIME._materiaSelecionada) window.ESQUEMAS_RUNTIME._renderGradeCards();
+            });
+        }
+    },
+
+    _chaveL2: function(materia, divisao) {
+        return materia + ' > ' + divisao;
+    },
+
+    _escapar: function(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    render: function() {
+        let colMaterias = document.getElementById('esq-col-materias');
+        if (!colMaterias) return;
+        let self = this;
+
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
+            return;
+        }
+
+        colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            let ativa = mat.nivel_1 === self._materiaSelecionada;
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+            '</div>';
+        }).join('');
+
+        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+    },
+
+    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = nivel1;
+        this._divisaoSelecionada = null;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#esq-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#esq-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === nivel1;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+        this._renderColunaDivisoes(nivel1);
+        this._renderGradeCards();
+    },
+
+    _renderColunaDivisoes: function(nivel1) {
+        let colDivisoes = document.getElementById('esq-col-divisoes');
+        if (!colDivisoes) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            return;
+        }
+
+        let self = this;
+        colDivisoes.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todas as divisões</span>' +
+            '</div>' +
+            mat.divisoes.map(function(div) {
+                let ativa = self._divisaoSelecionada === div.nivel_2;
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + div.nivel_2 + '</span>' +
+                '</div>';
+            }).join('');
+    },
+
+    selecionarDivisao: function(materia, divisao) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._renderColunaDivisoes(materia);
+        this._renderGradeCards();
+    },
+
+    _esquemasParaExibir: function() {
+        let self = this;
+        if (!this._materiaSelecionada) return [];
+        if (this._divisaoSelecionada) {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            return (this.esquemas[chave] || []).map(function(m) { return { item: m, chave: chave }; });
+        }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = [];
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) {
+                (self.esquemas[chave] || []).forEach(function(m) { resultado.push({ item: m, chave: chave }); });
+            }
+        });
+        return resultado;
+    },
+
+    _listaFiltrada: function() {
+        let self = this;
+        let lista = this._esquemasParaExibir();
+        if (!this._mostrarOcultos) {
+            lista = lista.filter(function(par) { return !self.ocultos[par.item.id]; });
+        }
+        if (this._ocultarOficiais) {
+            lista = lista.filter(function(par) { return !par.item.origem_oficial; });
+        }
+        return lista;
+    },
+
+    toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
+    toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
+
+    toggleModoSelecao: function() {
+        this._modoSelecao = !this._modoSelecao;
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    toggleSelecionado: function(id) {
+        if (this._selecionados[id]) delete this._selecionados[id]; else this._selecionados[id] = true;
+        this._renderGradeCards();
+    },
+
+    selecionarTodosVisiveis: function() {
+        let self = this;
+        this._listaFiltrada().forEach(function(par) { self._selecionados[par.item.id] = true; });
+        this._renderGradeCards();
+    },
+
+    ocultarSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { self.ocultos[id] = true; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    exibirSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { delete self.ocultos[id]; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    _renderToolbar: function() {
+        let qtdSel = Object.keys(this._selecionados).length;
+        let htmlAcoes;
+        if (this._modoSelecao) {
+            htmlAcoes =
+                '<div class="esq-tb-acoes-grupo">' +
+                    '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                '</div>' +
+                '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button>';
+        } else {
+            htmlAcoes =
+                '<div class="esq-tb-acoes-grupo">' +
+                    '<label class="esq-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
+                    '<button class="esq-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleOcultarOficiais()">Ocultar Oficiais</button>' +
+                '</div>' +
+                '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button>';
+        }
+        return '<div class="esq-toolbar">' + htmlAcoes + '</div>';
+    },
+
+    _renderGradeCards: function() {
+        let col = document.getElementById('esq-col-cards');
+        if (!col) return;
+        let self = this;
+
+        if (!this._materiaSelecionada) {
+            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+            return;
+        }
+
+        let lista = this._listaFiltrada();
+        let mostrarAdicionar = !!this._divisaoSelecionada && !this._modoSelecao;
+
+        let htmlCards = lista.map(function(par) {
+            let item = par.item;
+            let oculto = !!self.ocultos[item.id];
+            let selecionado = !!self._selecionados[item.id];
+            let podeExcluir = !item.origem_oficial;
+
+            let checkboxHtml = self._modoSelecao
+                ? '<input type="checkbox" class="esq-card-checkbox" onclick="event.stopPropagation();" ' + (selecionado ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
+                : '';
+            let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Esquema oficial">(Oficial)</span>' : '';
+            let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
+            let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
+                ? '<button class="esq-btn-excluir" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.excluirEsquema(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir esquema">🗑️</button>'
+                : '';
+
+            let previewTxt = (item.conteudoHtml || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+            if (previewTxt.length > 90) previewTxt = previewTxt.slice(0, 90) + '…';
+
+            let onclickCard = self._modoSelecao ? '' : (' onclick="window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
+
+            return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
+                '<div class="esq-card-tags">' +
+                    '<span class="esq-card-tags-esq">' + checkboxHtml + seloOficial + seloOculto + '</span>' +
+                    btnExcluirHtml +
+                '</div>' +
+                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
+                '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
+            '</div>';
+        }).join('');
+
+        let htmlAdicionar = mostrarAdicionar
+            ? '<div class="esq-card-add" onclick="window.ESQUEMAS_RUNTIME.abrirEditorNovo()">➕ Novo Esquema</div>'
+            : '';
+
+        let corpoHtml;
+        if (htmlCards || htmlAdicionar) {
+            corpoHtml = '<div class="esq-cards-grid">' + htmlCards + htmlAdicionar + '</div>';
+        } else if (this._divisaoSelecionada) {
+            corpoHtml = '<div class="fc-vazio-col">Nenhum esquema aqui ainda.</div>';
+        } else {
+            corpoHtml = '<div class="fc-vazio-col">Escolha uma divisão específica pra adicionar o primeiro esquema.</div>';
+        }
+
+        col.innerHTML = this._renderToolbar() + '<div class="esq-grade-scroll">' + corpoHtml + '</div>';
+    },
+
+    // ── EDITOR (criar / abrir existente) ──
+
+    abrirEditorNovo: function() {
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
+        this._editandoId = null;
+        this._editandoChave = null;
+
+        document.getElementById('esq-editor-cabecalho').textContent = 'Novo Esquema';
+        document.getElementById('esq-form-titulo').value = '';
+        document.getElementById('esq-form-titulo').readOnly = false;
+        let corpo = document.getElementById('esq-editor-corpo');
+        corpo.innerHTML = '';
+        corpo.contentEditable = 'true';
+        document.getElementById('esq-editor-toolbar').style.display = 'flex';
+        document.getElementById('esq-editor-somente-leitura-aviso').style.display = 'none';
+        document.getElementById('esq-editor-btn-salvar').style.display = 'inline-block';
+
+        document.getElementById('modal-esquema-editor').classList.add('open');
+        setTimeout(function() { document.getElementById('esq-form-titulo').focus(); }, 50);
+    },
+
+    abrirEditorExistente: function(chave, id) {
+        let item = (this.esquemas[chave] || []).find(function(e) { return e.id === id; });
+        if (!item) return;
+        this._editandoId = id;
+        this._editandoChave = chave;
+
+        let somenteLeitura = !!item.origem_oficial;
+        document.getElementById('esq-editor-cabecalho').textContent = somenteLeitura ? item.titulo : 'Editar Esquema';
+        document.getElementById('esq-form-titulo').value = item.titulo || '';
+        document.getElementById('esq-form-titulo').readOnly = somenteLeitura;
+        let corpo = document.getElementById('esq-editor-corpo');
+        corpo.innerHTML = item.conteudoHtml || '';
+        corpo.contentEditable = somenteLeitura ? 'false' : 'true';
+        document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
+        document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
+        document.getElementById('esq-editor-btn-salvar').style.display = somenteLeitura ? 'none' : 'inline-block';
+
+        document.getElementById('modal-esquema-editor').classList.add('open');
+    },
+
+    fecharEditor: function() {
+        document.getElementById('modal-esquema-editor').classList.remove('open');
+        this._editandoId = null;
+        this._editandoChave = null;
+    },
+
+    aplicarFormatacao: function(comando) {
+        document.getElementById('esq-editor-corpo').focus();
+        document.execCommand(comando, false, null);
+    },
+
+    inserirTabela: function() {
+        let corpo = document.getElementById('esq-editor-corpo');
+        corpo.focus();
+        let linha = '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
+        let html = '<table><tbody>' + linha + linha + linha + '</tbody></table><p><br></p>';
+        document.execCommand('insertHTML', false, html);
+    },
+
+    salvarEsquema: function() {
+        let titulo = (document.getElementById('esq-form-titulo').value || '').trim();
+        let conteudoHtml = document.getElementById('esq-editor-corpo').innerHTML;
+        if (!titulo) { alert('Informe um título.'); return; }
+
+        if (this._editandoId) {
+            let arr = this.esquemas[this._editandoChave];
+            let item = arr && arr.find(function(e) { return e.id === window.ESQUEMAS_RUNTIME._editandoId; });
+            if (item) {
+                item.titulo = titulo;
+                item.conteudoHtml = conteudoHtml;
+            }
+        } else {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            if (!Array.isArray(this.esquemas[chave])) this.esquemas[chave] = [];
+            this.esquemas[chave].push({
+                id: 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                titulo: titulo,
+                conteudoHtml: conteudoHtml,
+                criadoEm: new Date().toISOString()
+                // Deliberadamente SEM origem_oficial — criação pessoal nunca
+                // atribui esse campo (ver nota no topo do arquivo).
+            });
+        }
+        this.salvar();
+        this.fecharEditor();
+        this._renderGradeCards();
+    },
+
+    excluirEsquema: function(chave, id) {
+        if (!Array.isArray(this.esquemas[chave])) return;
+        let item = this.esquemas[chave].find(function(e) { return e.id === id; });
+        if (item && item.origem_oficial) return; // esquemas oficiais não são excluíveis pelo usuário
+        if (!confirm('Excluir este esquema?')) return;
+        this.esquemas[chave] = this.esquemas[chave].filter(function(e) { return e.id !== id; });
+        if (this.esquemas[chave].length === 0) delete this.esquemas[chave];
+        this.salvar();
+        this._renderGradeCards();
+    }
+};
+
+window.abrirEsquemasModal = function() {
+    const modal = document.getElementById('esquemas-modal');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    window.ESQUEMAS_RUNTIME.init();
+};
+
+window.fecharEsquemasModal = function() {
+    const modal = document.getElementById('esquemas-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+};
+
+// ── ESQUEMAS OFICIAIS — publicados no repositório, disponíveis pra todo
+// mundo automaticamente. Espelha importarMaterialOficial/carregarMateriais
+// Oficiais função-por-função: upsert por id, sem stub raso (conteúdo leve).
+window.importarEsquemaOficial = async function(url) {
+    try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Falha ao carregar esquemas oficiais.');
+        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, titulo, conteudoHtml, criadoEm} ] }
+
+        window.ESQUEMAS_RUNTIME._garantirCarregado();
+        const runtime = window.ESQUEMAS_RUNTIME;
+
+        Object.keys(dados).forEach(function(chaveL2) {
+            const itens = dados[chaveL2];
+            if (!Array.isArray(itens)) return;
+            if (!Array.isArray(runtime.esquemas[chaveL2])) runtime.esquemas[chaveL2] = [];
+            const arr = runtime.esquemas[chaveL2];
+
+            itens.forEach(function(item) {
+                if (!item || !item.id) return;
+                item.origem_oficial = true;
+                const idx = arr.findIndex(function(m) { return m.id === item.id; });
+                if (idx === -1) arr.push(item); else arr[idx] = item;
+            });
+        });
+
+        runtime.salvar();
+        console.log('[ESQUEMAS OFICIAIS] carregado:', url);
+    } catch (e) {
+        console.warn('[ESQUEMAS OFICIAIS] erro:', e);
+    }
+};
+
+window.carregarEsquemasOficiais = async function() {
+    window.ESQUEMAS_RUNTIME._garantirCarregado();
+
+    // Lista de arquivos publicados em dados/esquemas/ — adicione uma linha
+    // por arquivo novo conforme for publicando esquemas oficiais. Ex.:
+    //
+    //   await window.importarEsquemaOficial('dados/esquemas/direito-civil.json');
+    //   await window.importarEsquemaOficial('dados/esquemas/direito-penal.json');
+};
+</script>
+
 <script>
 
 window.__bootOficialPromise__ = (async function(){
    try {
       await window.carregarAcervosOficiais();
       if (typeof window.carregarMateriaisOficiais === 'function') await window.carregarMateriaisOficiais();
+      if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
 
       console.log(
          '[BOOT OFICIAL] concluído'
