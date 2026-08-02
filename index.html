@@ -430,7 +430,7 @@ body.saindo-da-pagina { opacity: 0; }
     background:linear-gradient(
         135deg,
         var(--app-primary),
-        #6366f1
+        color-mix(in srgb, var(--app-primary), white 30%)
     ) !important;
 
     color:white !important;
@@ -586,7 +586,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 #sim-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 #mc { flex: 1; padding: 15px 2rem 4rem; overflow-y: auto; min-width: 0; }
 
-#sb { width: 300px; max-width: 36vw; min-width: 200px; flex-shrink: 0; padding: 15px; overflow-y: auto; background: #f8fafc; border-left: 1px solid var(--border-color); transition: transform .25s ease; display: flex; flex-direction: column; gap: 15px; }
+#sb { width: 460px; max-width: 40vw; min-width: 200px; flex-shrink: 0; padding: 15px; overflow-y: auto; background: #f8fafc; border-left: 1px solid var(--border-color); transition: transform .25s ease; display: flex; flex-direction: column; gap: 15px; }
 .sb-box { background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
 #sb .sb-box h2 { font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 10px; text-align: left !important; }
 .sb-hr { display: none; } 
@@ -1457,7 +1457,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                             <button class="btn-voltar-coluna-vitrine" onclick="window.voltarColunaVitrineMobile('topicos')" style="padding-left:15px;">‹ Tópicos</button>
                             <div style="display:flex; border-bottom: 1px solid var(--border-color); flex-shrink:0;">
                                 <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Todas</button>
-                                <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria Selecionada</button>
+                                <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria</button>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding: 6px 15px; background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
                                 <div style="display:flex; gap:4px; flex-shrink:0;">
@@ -8145,7 +8145,8 @@ window.renderHomeDashboard = function() {
             });
         }
     });
-    
+    atualizarContadoresModoLista();
+
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
     
     if (colMaterias && listCE) {
@@ -8375,11 +8376,13 @@ window.filtrarProvasCE = function(materia, divisao) {
     window.__ultimoFiltroCE = { materia: materia, divisao: divisao };
     marcarModoListaAtivo('materia');
     renderizarListaBaterias(filtradas, headerHtml);
+    atualizarContadoresModoLista();
 };
 
 window.exibirTodasBaterias = function() {
     marcarModoListaAtivo('todas');
     renderizarListaBaterias(provasCE, 'TODAS AS BATERIAS');
+    atualizarContadoresModoLista();
 };
 
 window.exibirMateriaSelecionada = function() {
@@ -8434,7 +8437,29 @@ function marcarModoListaAtivo(modo) {
         btnMateria.style.borderBottomColor = (modo === 'materia') ? 'var(--app-primary)' : 'transparent';
     }
 }
-            
+
+// Mostra a quantidade total de baterias em "Exibir Todas" e a quantidade da
+// matéria/tópico atualmente selecionado(a) em "Exibir Matéria" — este último
+// reflete window.__ultimoFiltroCE mesmo quando "Todas" é a aba ativa no
+// momento, já que a seleção de matéria persiste entre as duas abas.
+function atualizarContadoresModoLista() {
+    let btnTodas = document.getElementById('btn-modo-todas');
+    let btnMateria = document.getElementById('btn-modo-materia');
+    if (btnTodas) btnTodas.textContent = 'Exibir Todas (' + provasCE.length + ')';
+    if (btnMateria) {
+        if (window.__ultimoFiltroCE) {
+            let qtd = provasCE.filter(function(p) {
+                let matchMat = p.materia === window.__ultimoFiltroCE.materia.toUpperCase();
+                let matchDiv = window.__ultimoFiltroCE.divisao ? (p.caminho_completo && p.caminho_completo.includes(window.__ultimoFiltroCE.divisao)) : true;
+                return matchMat && matchDiv;
+            }).length;
+            btnMateria.textContent = 'Exibir Matéria (' + qtd + ')';
+        } else {
+            btnMateria.textContent = 'Exibir Matéria';
+        }
+    }
+}
+
             // ESTADO PERSISTIDO: restaura o modo/matéria/tópico que estava ativo antes de sair da tela
             if (window.__modoListaAtivo === 'todas') {
                 window.exibirTodasBaterias();
