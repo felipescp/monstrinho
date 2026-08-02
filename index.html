@@ -4023,7 +4023,17 @@ window.CRONOGRAMA_RUNTIME = {
             { chave: 'materiais', rotulo: '📚 Materiais' }
         ];
         let htmlTabs = '<div class="crono-rel-tabs">' + abas.map(function(a) {
-            return '<button class="crono-rel-tab' + (a.chave === aba ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.trocarAbaRelacionados(\'' + a.chave + '\')">' + a.rotulo + '</button>';
+            // event.stopPropagation() é OBRIGATÓRIO aqui: trocarAbaRelacionados()
+            // substitui menu.innerHTML de forma síncrona, o que desanexa o
+            // <button> clicado (o e.target original) do DOM. Sem isso, quando o
+            // clique termina de borbulhar até o listener de "clique fora fecha"
+            // (document.addEventListener('click', ...) mais abaixo), a checagem
+            // menuRel.contains(e.target) falha (nó desanexado nunca é
+            // descendente de nada) e o painel fecha sozinho a cada troca de aba
+            // — mesmo o estado tendo sido salvo certo. Mesmo padrão já usado no
+            // botão de remover vínculo manual (removerSimuladoVinculado), que faz
+            // a mesma troca de innerHTML e por isso já tinha essa proteção.
+            return '<button class="crono-rel-tab' + (a.chave === aba ? ' ativa' : '') + '" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.trocarAbaRelacionados(\'' + a.chave + '\')">' + a.rotulo + '</button>';
         }).join('') + '</div>';
 
         let htmlCorpo;
