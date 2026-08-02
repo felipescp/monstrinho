@@ -112,6 +112,11 @@
 .nav-item.ram-item.active { color: #ffffff; border-bottom: 3px solid #ffffff; }
 .nav-item.hd-item { color: #94a3b8; }
 .nav-item.hd-item:hover { color: #f8fafc; }
+.nav-item-grupo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 0 !important; line-height: 1.1; cursor: default; }
+.nav-item-grupo .nav-sub-row { display: flex; gap: 8px; }
+.nav-item-grupo .nav-sub-item { font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; color: #64748b; cursor: pointer; transition: color 0.2s ease; }
+.nav-item-grupo .nav-sub-item:hover { color: #f8fafc; }
+.nav-item-grupo .nav-sub-sep { font-size: 9.5px; color: #475569; }
 
 /* Menu "Gerar Questões" — recolhido, expande em hover (ver PEDIDO 1) */
 .gerar-q-wrap { display: flex; align-items: center; }
@@ -1321,10 +1326,15 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
-        <div class="nav-item hd-item" id="btn-nav-resumos" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-resumos'); tela('section-resumos'); if(window.RESUMOS_RUNTIME) window.RESUMOS_RUNTIME.init();" style="cursor:pointer;" title="Resumos e Jurisprudência (em construção)">📚 RESUMOS/JURISPRUDÊNCIA</div>
-        <div class="nav-item hd-item" id="btn-nav-flashcards" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" style="cursor:pointer;" title="Flashcards de Axiomas">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-praticar" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" style="cursor:pointer;" title="Praticar Questões Marcadas">🎯 PRATICAR QUESTÕES MARCADAS</div>
-        <div class="nav-item hd-item" onclick="abrirCadernoModal()" style="cursor:pointer;" title="Caderno de Questões e Axiomas Salvos">📓 CADERNO DE QUESTÕES E AXIOMAS</div>
+        <div class="nav-item hd-item" id="btn-nav-resumos" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-resumos'); tela('section-resumos'); if(window.RESUMOS_RUNTIME) window.RESUMOS_RUNTIME.init();" style="cursor:pointer;" title="Materiais (em construção)">📚 MATERIAIS</div>
+        <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
+            <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
+            <span class="nav-sub-row">
+                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" title="Praticar Questões Marcadas">🎯 PRATICAR QUESTÕES</span>
+                <span class="nav-sub-sep">|</span>
+                <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" title="Flashcards de Axiomas">🗂️ PRATICAR AXIOMAS</span>
+            </span>
+        </div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
     </div>
 </nav>
@@ -13675,7 +13685,7 @@ window.encurtarAnoDataBR = function(dataBrLonga) {
 function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
     let materias = materiaFiltro ? [materiaFiltro] : Object.keys(dados);
     let exportandoTudo = !materiaFiltro;
-    let tituloDoc = (aba === 'erros' ? 'Caderno de Erros' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
+    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
 
     let linhas = ['# ' + tituloDoc, ''];
 
@@ -14877,7 +14887,7 @@ window.triggerFileUpload = function(callback) {
         </div>
 
         <div style="display:flex; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
-            <button id="btn-caderno-erros" onclick="window.mostrarAbaCaderno('erros')" style="flex:1; padding:10px; font-size:11px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom:2px solid var(--app-primary);">⭐ Caderno de Erros</button>
+            <button id="btn-caderno-erros" onclick="window.mostrarAbaCaderno('erros')" style="flex:1; padding:10px; font-size:11px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom:2px solid var(--app-primary);">⭐ Caderno de Questões</button>
             <button id="btn-caderno-axiomas" onclick="window.mostrarAbaCaderno('axiomas')" style="flex:1; padding:10px; font-size:11px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent;">📌 Caderno de Axiomas</button>
         </div>
 
