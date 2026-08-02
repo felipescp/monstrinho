@@ -2590,7 +2590,36 @@ window.SALINHA_BACKUP = {
                     }
 
                     const ok = await window.salvarSessaoAtiva({ sims: simsFiltrados, si: novoSi });
-                    if (ok) chavesMutadas++;
+                    if (ok) {
+                        chavesMutadas++;
+
+                        // ENVIO CIRÚRGICO DE CORREÇÃO — NÃO é reativação do
+                        // salvamento automático (periódico/fim-de-bateria
+                        // continuam desativados, ver verificarSalvamentoPeriodicoNuvem
+                        // e autoSave()). Sem isto, a aba fantasma removida
+                        // AQUI (só localmente) volta a existir no Gist remoto
+                        // pra sempre — a mesclagem aditiva de clube_simulado_auto
+                        // (acima) a reimporta em TODO carregamento seguinte,
+                        // esta verificação cruzada remove de novo, chavesMutadas
+                        // fica > 0 de novo, recarrega de novo: um ciclo que
+                        // nunca se estabiliza sozinho (era a causa dos 3
+                        // reloads seguidos reportados). Reaproveita
+                        // exportarNuvemSilenciosa() tal como já existe — mesmo
+                        // lock (__salvamentoNuvemEmAndamento) e retry em 409,
+                        // sem depender de nenhum gatilho automático recorrente.
+                        // Não chama location.reload() nem mexe no
+                        // SYNC_RELOAD_GUARD — é só um upload; quem decide se
+                        // recarrega (e se o guard permite) continua sendo
+                        // importarNuvemSilenciosa(), depois que este await
+                        // terminar. Sem token/gistId configurados,
+                        // exportarNuvemSilenciosa() já não faz nada sozinha
+                        // (mesma guarda interna de sempre).
+                        try {
+                            await window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa();
+                        } catch (e) {
+                            console.warn('[MERGE] Falha ao enviar correção da sessão ativa pra nuvem:', e);
+                        }
+                    }
                 }
             }
         } catch (e) {
