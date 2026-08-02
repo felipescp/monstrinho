@@ -600,8 +600,17 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 
 .bg { margin-bottom: 1.5rem; }
 .bg h3 { font-family: var(--font-display); font-size: 11px; font-weight: 800; color: var(--text-main); margin-bottom: .5rem; text-transform: uppercase; line-height: 1.4; }
-.gn { display: flex; flex-wrap: wrap; gap: 6px; }
-.nb { width: 36px; height: 36px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-white); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
+.gn { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+.nb { width: 100%; aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-white); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: 0.2s; }
+
+/* Abaixo de 1200px de largura de janela, a grade de navegação de questões
+   cai de 10 para 5 colunas — #sb fica fixo em 500px independente da
+   largura da tela (não encolhe sozinho), então o gatilho certo é a
+   viewport, não o próprio #sb; menos colunas = botões maiores/mais
+   legíveis quando o resto da tela já está mais apertado. */
+@media (max-width: 1200px) {
+    .gn { grid-template-columns: repeat(5, 1fr); }
+}
 .nb.at { background: var(--app-primary); color: var(--bg-white); border-color: var(--app-primary); }
 .nb.ok { background: var(--success); color: var(--bg-white); border-color: var(--success); }
 .nb.er { background: var(--danger); color: var(--bg-white); border-color: var(--danger); }
