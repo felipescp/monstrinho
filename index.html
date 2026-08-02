@@ -3312,9 +3312,19 @@ if(ri) {
     #section-cronograma .crono-mover-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
     #section-cronograma .crono-relacionados-btn { width:20px; height:20px; border-radius:6px; border:1px dashed var(--border-color); background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; padding:0; color:var(--text-muted); transition:0.2s; flex-shrink:0; opacity:1; }
     #section-cronograma .crono-relacionados-btn:hover { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); }
-    /* Sem NENHUM dos 5 tipos de conteúdo relacionado — ícone fosco, ainda
-       clicável (sem pointer-events:none), só menos chamativo. */
-    #section-cronograma .crono-relacionados-btn.sem-vinculo { opacity:0.35; }
+    /* Diferenciação por cor entre "tem conteúdo relacionado" e "vazio".
+       🔗 é um emoji colorido — testado empiricamente (screenshot em Chrome
+       headless) que `color` do CSS NÃO o recolore, em nenhum navegador
+       (o glifo vem já colorido da fonte de emoji do sistema). Por isso a
+       diferenciação vem do FUNDO/BORDA do botão (badge), não do ícone em
+       si — mesma paleta de verde "resolvido/sucesso" já usada nos badges
+       de bateria (_dadosVisuaisBateria: bg #dcfce7, borda #bbf7d0). */
+    #section-cronograma .crono-relacionados-btn:not(.sem-vinculo) { background:#dcfce7; border:1px solid #86efac; }
+    #section-cronograma .crono-relacionados-btn:not(.sem-vinculo):hover { background:#bbf7d0; border-color:#4ade80; }
+    /* Sem NENHUM dos 5 tipos de conteúdo relacionado — fundo branco/neutro
+       (sem o verde), ícone fosco, ainda clicável (sem pointer-events:none),
+       só menos chamativo. */
+    #section-cronograma .crono-relacionados-btn.sem-vinculo { background:var(--bg-white); opacity:0.35; }
     #section-cronograma .crono-relacionados-btn.sem-vinculo:hover { opacity:0.7; }
     #section-cronograma .crono-card-body { min-width:0; }
     #section-cronograma .crono-card-tags { display:flex; gap:3px; flex-wrap:wrap; margin-bottom:4px; }
@@ -3352,7 +3362,12 @@ if(ri) {
        #crono-simulados-menu/#crono-baralhos-menu (2 painéis separados) por
        UM painel só, com abas internas pros 5 tipos de conteúdo relacionado —
        mais largo que antes (340px) pra caber as 5 abas. */
-    #crono-relacionados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:340px; max-height:70vh; overflow:hidden; }
+    /* width: 420px — medido empiricamente (Chrome headless) que as 5 abas
+       (Baterias/Axiomas/Questões/Jurisp./Materiais) precisam de ~393px pra
+       caber numa linha só; 420px dá margem de sobra pra variação de
+       renderização de fonte entre navegadores/SOs. Em 340px (largura
+       anterior), "Materiais" quebrava pra 2ª linha. */
+    #crono-relacionados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:420px; max-height:70vh; overflow:hidden; }
     #crono-relacionados-menu .crono-sim-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); padding:12px 12px 6px 12px; flex-shrink:0; }
     #crono-relacionados-menu .crono-rel-tabs { display:flex; flex-wrap:wrap; gap:3px; padding:0 10px 8px 10px; flex-shrink:0; }
     #crono-relacionados-menu .crono-rel-tab { padding:4px 7px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-muted); cursor:pointer; white-space:nowrap; }
