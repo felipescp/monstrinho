@@ -6556,7 +6556,10 @@ window.MATERIAIS_RUNTIME = {
                     '<label class="mat-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.MATERIAIS_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
                     '<button class="mat-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleOcultarOficiais()">Ocultar Oficiais</button>' +
                 '</div>' +
-                '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Selecionar</button>';
+                '<div class="mat-tb-acoes-grupo">' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar todos os materiais PESSOAIS em JSON — pronto pra publicar em dados/materiais/">📤 Exportar Tudo</button>' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Selecionar</button>' +
+                '</div>';
         }
 
         return '<div class="mat-toolbar">' +
@@ -6703,6 +6706,37 @@ window.MATERIAIS_RUNTIME = {
         this._renderGradeCards();
     },
 
+    // Exporta TODOS os materiais PESSOAIS (de todas as matérias/divisões,
+    // não só a selecionada no momento) num único JSON, na mesma forma que
+    // importarMaterialOficial() espera — pronto pra salvar em
+    // dados/materiais/*.json e registrar em carregarMateriaisOficiais().
+    // Itens já oficiais ficam de fora (já estão publicados, reexportar
+    // seria redundante). urlPdf é exportado exatamente como foi digitado —
+    // inclusive caminhos relativos tipo "dados/materiais/pdfs/x.pdf", que
+    // resolvem certo tanto na visualização (iframe) quanto depois de
+    // publicado (URL relativa resolve contra a página que a usa).
+    exportarTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.materiais).sort().forEach(function(chave) {
+            let pessoais = (self.materiais[chave] || []).filter(function(m) { return !m.origem_oficial; });
+            if (pessoais.length > 0) {
+                resultado[chave] = pessoais;
+                total += pessoais.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum material pessoal pra exportar (só existem materiais oficiais aqui, ou nenhum material ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-pessoais.json', 'application/json');
+    },
+
     // ── MODAL "VISUALIZAR PDF" ──
 
     abrirPdf: function(chave, id) {
@@ -6790,7 +6824,7 @@ window.carregarMateriaisOficiais = async function() {
         </div>
         <div class="fc-form-campo">
             <label>URL do PDF</label>
-            <input type="text" id="mat-form-url" placeholder="https://...">
+            <input type="text" id="mat-form-url" placeholder="https://... ou caminho relativo, ex.: dados/materiais/pdfs/arquivo.pdf">
         </div>
         <div class="fc-form-campo">
             <label>Material base</label>
@@ -15669,7 +15703,10 @@ window.triggerFileUpload = function(callback) {
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
-            <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()" title="Exportar todos os esquemas PESSOAIS em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
+                <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
+            </div>
         </div>
         <div class="fc-grid" id="esq-grid">
             <div class="fc-col" id="esq-col-materias"></div>
@@ -16090,6 +16127,34 @@ window.ESQUEMAS_RUNTIME = {
         if (this.esquemas[chave].length === 0) delete this.esquemas[chave];
         this.salvar();
         this._renderGradeCards();
+    },
+
+    // Exporta TODOS os esquemas PESSOAIS (de todas as matérias/divisões, não
+    // só a selecionada no momento) num único JSON, na mesma forma que
+    // importarEsquemaOficial() espera — pronto pra salvar em
+    // dados/esquemas/*.json e registrar em carregarEsquemasOficiais(). Itens
+    // já oficiais ficam de fora (já estão publicados, reexportar seria
+    // redundante).
+    exportarTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            let pessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial; });
+            if (pessoais.length > 0) {
+                resultado[chave] = pessoais;
+                total += pessoais.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pessoal pra exportar (só existem esquemas oficiais aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-pessoais.json', 'application/json');
     }
 };
 
