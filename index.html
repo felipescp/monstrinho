@@ -1340,6 +1340,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMA</div>
         <div class="nav-item hd-item" id="btn-nav-materiais" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-materiais'); tela('section-materiais'); if(window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📊 ESQUEMAS E TABELAS</div>
+        <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -1884,6 +1885,9 @@ window.SALINHA_BACKUP = {
         // ESQUEMAS E TABELAS
         'tjpe_v1__esquemas_runtime',
 
+        // JURISPRUDÊNCIA
+        'tjpe_v1__jurisprudencia_runtime',
+
         // TEMA
         'tjpe_v1__cor_tema'
     ],
@@ -2307,6 +2311,59 @@ window.SALINHA_BACKUP = {
                         Object.keys(objImportado[subChave]).forEach(idEsquema => {
                             if (objImportado[subChave][idEsquema] && !objLocal[subChave][idEsquema]) {
                                 objLocal[subChave][idEsquema] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.fichas) ──
+                    // Mesmíssima forma/problema/solução de materiais_runtime.materiais e
+                    // esquemas_runtime.esquemas: dicionário achatado {"MATÉRIA > Divisão" →
+                    // array de fichas}. Desce 1 nível e mescla por id — união, mantém a
+                    // versão local em caso de mesmo id dos dois lados.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'fichas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const fichasImportadas = objImportado[subChave][chaveL2];
+                            if (!Array.isArray(fichasImportadas)) return;
+                            if (!Array.isArray(objLocal[subChave][chaveL2])) {
+                                objLocal[subChave][chaveL2] = [];
+                            }
+                            fichasImportadas.forEach(ficha => {
+                                if (!ficha || !ficha.id) return;
+                                const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
+                                    return local && local.id === ficha.id;
+                                });
+                                if (!jaExiste) {
+                                    objLocal[subChave][chaveL2].push(ficha);
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.ocultos) ──
+                    // Mesma política de união pura (OR) de materiais_runtime.ocultos /
+                    // esquemas_runtime.ocultos.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'ocultos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idFicha => {
+                            if (objImportado[subChave][idFicha] && !objLocal[subChave][idFicha]) {
+                                objLocal[subChave][idFicha] = true;
                                 entidadesInjetadas++;
                                 persistirChave = true;
                             }
@@ -16261,6 +16318,758 @@ window.carregarEsquemasOficiais = async function() {
 };
 </script>
 
+<!-- MODAL: Jurisprudência — mesmo padrão .analytics-modal do Caderno/Esquemas,
+     navegação L1(matéria)>L2(divisão) idêntica. -->
+<div id="jurisprudencia-modal" class="analytics-modal">
+<style>
+    #jurisprudencia-modal .analytics-modal-content { padding: 0; }
+    #jurisprudencia-modal .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #jurisprudencia-modal .fc-col { overflow-y:auto; padding:10px; }
+    #jurisprudencia-modal #jur-col-materias { background:#f8fafc; border-right:1px solid var(--border-color); }
+    #jurisprudencia-modal #jur-col-divisoes { border-right:1px solid var(--border-color); }
+    #jurisprudencia-modal #jur-col-cards { background:#f8fafc; display:flex; flex-direction:column; overflow:hidden; }
+    #jurisprudencia-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #jurisprudencia-modal .fc-materia-item:hover { background:#eef2ff; }
+    #jurisprudencia-modal .fc-materia-item.ativa { background:#e0e7ff; }
+    #jurisprudencia-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #jurisprudencia-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #jurisprudencia-modal .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
+    #jurisprudencia-modal .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
+    #jurisprudencia-modal .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+    /* Modo "Data do Julgado" — navegação L1/L2 fica visualmente desabilitada
+       (a lista já reflete o filtro atual; trocar de matéria/divisão nesse
+       modo não faz sentido — o usuário volta pra "Por Temas" primeiro). */
+    #jurisprudencia-modal .jur-col-desabilitada { opacity:0.4; pointer-events:none; }
+
+    #jurisprudencia-modal .jur-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:#f8fafc; }
+    #jurisprudencia-modal .jur-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #jurisprudencia-modal .jur-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #jurisprudencia-modal .jur-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #jurisprudencia-modal .jur-tb-btn.ativa:hover { color:#fff; }
+    #jurisprudencia-modal .jur-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+
+    #jurisprudencia-modal .jur-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
+    #jurisprudencia-modal .jur-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; align-content:start; padding:2px; }
+
+    #jurisprudencia-modal .jur-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:5px; cursor:pointer; }
+    #jurisprudencia-modal .jur-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    #jurisprudencia-modal .jur-card-oculto { opacity:0.5; }
+    #jurisprudencia-modal .jur-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+    #jurisprudencia-modal .jur-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+    #jurisprudencia-modal .jur-card-checkbox { cursor:pointer; flex-shrink:0; }
+    #jurisprudencia-modal .jur-tag-tribunal { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; }
+    #jurisprudencia-modal .jur-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    #jurisprudencia-modal .jur-card-meta { font-size:9.5px; color:var(--text-muted); }
+    #jurisprudencia-modal .jur-card-sistematica { font-size:9px; font-weight:700; color:#0891b2; background:#ecfeff; border:1px solid #a5f3fc; border-radius:99px; padding:1px 6px; width:fit-content; }
+    #jurisprudencia-modal .jur-card-tese { font-size:10.5px; color:var(--text-main); line-height:1.4; font-style:italic; }
+    #jurisprudencia-modal .jur-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #jurisprudencia-modal .jur-btn-excluir:hover { color:var(--danger); }
+    #jurisprudencia-modal .jur-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
+    #jurisprudencia-modal .jur-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
+</style>
+    <div class="analytics-modal-content">
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">⚖️ Jurisprudência</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar todas as fichas PESSOAIS em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
+                <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
+            </div>
+        </div>
+        <div class="fc-grid" id="jur-grid">
+            <div class="fc-col" id="jur-col-materias"></div>
+            <div class="fc-col" id="jur-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="jur-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Importar Jurisprudência em Massa — popup .mo/.mdl em cima de
+     #jurisprudencia-modal, mesmo padrão de #modal-esquema-editor. -->
+<div id="modal-jurisprudencia-importar" class="mo">
+<style>
+    #modal-jurisprudencia-importar { z-index: 10000; } /* mesma correção de z-index já aplicada a #modal-esquema-editor */
+    #modal-jurisprudencia-importar .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-importar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-jurisprudencia-importar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-jurisprudencia-importar .fc-footer-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-jurisprudencia-importar #jur-import-textarea { width:100%; min-height:220px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:monospace; font-size:11.5px; resize:vertical; box-sizing:border-box; }
+    #modal-jurisprudencia-importar #jur-import-preview { font-size:11.5px; line-height:1.6; background:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:10px; display:none; max-height:180px; overflow-y:auto; }
+    #modal-jurisprudencia-importar #jur-import-ajuda { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-jurisprudencia-importar #jur-import-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
+</style>
+    <div class="mdl" style="max-width:640px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
+            <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>, seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...").</div>
+        <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
+        <div id="jur-import-preview"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()">Cancelar</button>
+            <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.prevvisualizarImportacao()">Pré-visualizar</button>
+            <button class="fc-footer-btn primario" id="jur-import-btn-confirmar" onclick="window.JURISPRUDENCIA_RUNTIME.confirmarImportacao()" disabled>Confirmar Importação</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Ver Ficha de Jurisprudência (tese/resumo/conexões completos, sem
+     truncar) — popup .mo/.mdl. -->
+<div id="modal-jurisprudencia-ver" class="mo">
+<style>
+    #modal-jurisprudencia-ver { z-index: 10000; }
+    #modal-jurisprudencia-ver .fc-popup-header { font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main); line-height:1.3; }
+    #modal-jurisprudencia-ver .jur-ver-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:10px; margin-bottom:4px; }
+    #modal-jurisprudencia-ver .jur-ver-texto { font-size:12.5px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; }
+    #modal-jurisprudencia-ver .jur-ver-meta { font-size:11px; color:var(--text-muted); }
+</style>
+    <div class="mdl" style="max-width:640px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div class="fc-popup-header" id="jur-ver-titulo"></div>
+            <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharVer()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; flex-shrink:0;" title="Fechar">✖</button>
+        </div>
+        <div class="jur-ver-meta" id="jur-ver-meta"></div>
+        <div class="jur-ver-label">Tese Fixada / Decisão</div>
+        <div class="jur-ver-texto" id="jur-ver-tese"></div>
+        <div class="jur-ver-label">Resumo do Caso</div>
+        <div class="jur-ver-texto" id="jur-ver-resumo"></div>
+        <div class="jur-ver-label">Conexões</div>
+        <div class="jur-ver-texto" id="jur-ver-conexoes"></div>
+    </div>
+</div>
+
+<script>
+// ── PARSER DE IMPORTAÇÃO EM MASSA DE JURISPRUDÊNCIA ──
+// Validado isoladamente (fora do index.html) contra o texto real de
+// referência (3 fichas, 2 divisões) e contra um caso de ficha malformada
+// (sem a linha "Tribunal:") no meio de fichas válidas, confirmando que o
+// fragmento órfão não vaza pra dentro das fichas vizinhas.
+function jurNormalizarTexto(texto) {
+    // Rótulos podem vir com ** (negrito) ou * (itálico) markdown — como
+    // asterisco não é usado literalmente em nenhum outro lugar desse
+    // conteúdo, remover TODOS de uma vez resolve os dois casos ao mesmo
+    // tempo, sem precisar de regex separada pra ** vs *.
+    return texto.replace(/\*/g, '');
+}
+
+function jurDividirEmParagrafos(texto) {
+    return texto.split(/\n\s*\n+/).map(function(p) { return p.trim(); }).filter(function(p) { return p.length > 0; });
+}
+
+const JUR_RE_TRIBUNAL = /^Tribunal:\s*(.+?)\s*\|\s*Órgão:\s*(.+)$/i;
+const JUR_RE_PROCESSO = /^Processo:\s*(.+?)\s*\|\s*Relator:\s*(.+?)\s*\|\s*Data:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
+const JUR_RE_SISTEMATICA = /^Sistemática:\s*([\s\S]+)$/i;
+const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
+const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
+const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
+const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
+const JUR_RE_L2_MARCADOR = /^###\s*L2:\s*(.+)$/m;
+const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
+
+function jurClassificarParagrafo(p) {
+    if (JUR_RE_TRIBUNAL.test(p)) return 'tribunal';
+    if (JUR_RE_PROCESSO.test(p)) return 'processo';
+    if (JUR_RE_SISTEMATICA.test(p)) return 'sistematica';
+    if (JUR_RE_TESE.test(p)) return 'tese';
+    if (JUR_RE_RESUMO.test(p)) return 'resumo';
+    if (JUR_RE_COMOCOBRAR.test(p)) return 'comocobrar';
+    if (JUR_RE_CONEXOES.test(p)) return 'conexoes';
+    return null;
+}
+
+function jurCriarFichaVazia() {
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tese: '', resumo: '', conexoes: '' };
+}
+
+function jurAplicarCampoNaFicha(ficha, tipo, paragrafo) {
+    let m;
+    if (tipo === 'tribunal') {
+        m = JUR_RE_TRIBUNAL.exec(paragrafo);
+        ficha.tribunal = m[1].trim();
+        ficha.orgao = m[2].trim();
+    } else if (tipo === 'processo') {
+        m = JUR_RE_PROCESSO.exec(paragrafo);
+        ficha.processo = m[1].trim();
+        ficha.relator = m[2].trim();
+        ficha.dataJulgado = m[5] + '-' + m[4] + '-' + m[3]; // ISO AAAA-MM-DD
+    } else if (tipo === 'sistematica') {
+        m = JUR_RE_SISTEMATICA.exec(paragrafo);
+        ficha.sistematica = m[1].trim();
+    } else if (tipo === 'tese') {
+        m = JUR_RE_TESE.exec(paragrafo);
+        ficha.tese = m[1].trim();
+    } else if (tipo === 'resumo') {
+        m = JUR_RE_RESUMO.exec(paragrafo);
+        ficha.resumo = m[1].trim();
+    } else if (tipo === 'conexoes') {
+        m = JUR_RE_CONEXOES.exec(paragrafo);
+        ficha.conexoes = m[1].trim();
+    }
+    // 'comocobrar' -> intencionalmente não faz nada (campo descartado).
+}
+
+// Varre os parágrafos de UMA divisão já isolada, extraindo fichas válidas
+// (título seguido de "Tribunal:") e contando fragmentos órfãos (parágrafos
+// reconhecidos como campo, mas fora de qualquer ficha com Tribunal) como
+// "malformadas" — sem deixar esses fragmentos vazarem pra dentro da ficha
+// vizinha válida.
+function jurParsearParagrafosDivisao(paragrafos) {
+    let fichas = [];
+    let malformadas = 0;
+    let i = 0;
+    let emRunOrfao = false;
+
+    while (i < paragrafos.length) {
+        let tipo = jurClassificarParagrafo(paragrafos[i]);
+
+        if (tipo === null && i + 1 < paragrafos.length && jurClassificarParagrafo(paragrafos[i + 1]) === 'tribunal') {
+            emRunOrfao = false;
+            let ficha = jurCriarFichaVazia();
+            ficha.titulo = paragrafos[i].trim();
+            let j = i + 1;
+            while (j < paragrafos.length) {
+                let tipoJ = jurClassificarParagrafo(paragrafos[j]);
+                if (tipoJ === null) break;
+                jurAplicarCampoNaFicha(ficha, tipoJ, paragrafos[j]);
+                j++;
+            }
+            fichas.push(ficha);
+            i = j;
+        } else if (tipo !== null && tipo !== 'tribunal') {
+            if (!emRunOrfao) { malformadas++; emRunOrfao = true; }
+            i++;
+        } else {
+            i++;
+        }
+    }
+
+    return { fichas: fichas, malformadas: malformadas };
+}
+
+function parsearImportacaoJurisprudencia(textoBruto) {
+    let texto = jurNormalizarTexto(textoBruto || '');
+    texto = texto.split('\n').filter(function(linha) { return !JUR_RE_GRUPO.test(linha.trim()); }).join('\n');
+
+    let blocos = texto.split(/(?=^###\s*L2:)/m);
+    let porDivisao = {};
+    let totalFichas = 0;
+    let totalMalformadas = 0;
+
+    blocos.forEach(function(bloco) {
+        let mMarcador = JUR_RE_L2_MARCADOR.exec(bloco);
+        if (!mMarcador) return; // texto antes do 1º marcador (se houver) é ignorado
+        let divisao = mMarcador[1].trim();
+        let restante = bloco.slice(bloco.indexOf(mMarcador[0]) + mMarcador[0].length);
+        let paragrafos = jurDividirEmParagrafos(restante);
+        let r = jurParsearParagrafosDivisao(paragrafos);
+        if (!porDivisao[divisao]) porDivisao[divisao] = { fichas: [], malformadas: 0 };
+        porDivisao[divisao].fichas = porDivisao[divisao].fichas.concat(r.fichas);
+        porDivisao[divisao].malformadas += r.malformadas;
+        totalFichas += r.fichas.length;
+        totalMalformadas += r.malformadas;
+    });
+
+    return { porDivisao: porDivisao, totalFichas: totalFichas, totalMalformadas: totalMalformadas };
+}
+
+// ── JURISPRUDÊNCIA — modal (mesmo padrão de #esquemas-modal/#caderno-modal),
+// navegação L1(matéria)>L2(divisão). Estrutura de dados: fichas: {
+// "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, tribunal, orgao,
+// processo, relator, dataJulgado, sistematica, tese, resumo, conexoes,
+// origem_oficial?, criadoEm} ] }. Criação é SÓ via importação em massa (sem
+// formulário manual de 1 ficha — muitos campos, o parser resolve isso a
+// partir de texto colado). origem_oficial NUNCA é atribuído na importação
+// pessoal — só importarJurisprudenciaOficial() (JSON publicado no
+// repositório) atribui esse campo.
+window.JURISPRUDENCIA_RUNTIME = {
+    fichas: {},
+    ocultos: {},
+    STORAGE_KEY: 'tjpe_v1__jurisprudencia_runtime',
+    _materiaSelecionada: null,
+    _divisaoSelecionada: null,
+    _bootstrapped: false,
+
+    _mostrarOcultos: false,
+    _ocultarOficiais: false,
+    _modoSelecao: false,
+    _selecionados: {},
+    _modoExibicao: 'temas', // 'temas' | 'data'
+    _resultadoPreVisualizado: null, // guarda o parse entre "Pré-visualizar" e "Confirmar"
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
+        this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        this._bootstrapped = true;
+    },
+
+    _garantirCarregado: function() {
+        if (!this._bootstrapped) this.carregar();
+    },
+
+    salvar: function() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: this.fichas, ocultos: this.ocultos }));
+        } catch (e) {
+            console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
+        }
+    },
+
+    init: function() {
+        this.carregar();
+        this.render();
+        this._atualizarEstadoColunasNavegacao();
+        if (typeof window.carregarJurisprudenciaOficial === 'function') {
+            window.carregarJurisprudenciaOficial().then(function() {
+                if (window.JURISPRUDENCIA_RUNTIME._materiaSelecionada) window.JURISPRUDENCIA_RUNTIME._renderGradeCards();
+            });
+        }
+    },
+
+    _chaveL2: function(materia, divisao) {
+        return materia + ' > ' + divisao;
+    },
+
+    _escapar: function(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    _formatarDataBR: function(iso) {
+        if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '—';
+        let p = iso.split('-');
+        return p[2] + '/' + p[1] + '/' + p[0];
+    },
+
+    render: function() {
+        let colMaterias = document.getElementById('jur-col-materias');
+        if (!colMaterias) return;
+        let self = this;
+
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
+            return;
+        }
+
+        colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            let ativa = mat.nivel_1 === self._materiaSelecionada;
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+            '</div>';
+        }).join('');
+
+        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+    },
+
+    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = nivel1;
+        this._divisaoSelecionada = null;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#jur-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#jur-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === nivel1;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+        this._renderColunaDivisoes(nivel1);
+        this._renderGradeCards();
+    },
+
+    _renderColunaDivisoes: function(nivel1) {
+        let colDivisoes = document.getElementById('jur-col-divisoes');
+        if (!colDivisoes) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            return;
+        }
+
+        let self = this;
+        colDivisoes.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todas as divisões</span>' +
+            '</div>' +
+            mat.divisoes.map(function(div) {
+                let ativa = self._divisaoSelecionada === div.nivel_2;
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + div.nivel_2 + '</span>' +
+                '</div>';
+            }).join('');
+    },
+
+    selecionarDivisao: function(materia, divisao) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._renderColunaDivisoes(materia);
+        this._renderGradeCards();
+    },
+
+    _fichasParaExibir: function() {
+        let self = this;
+        if (!this._materiaSelecionada) return [];
+        if (this._divisaoSelecionada) {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            return (this.fichas[chave] || []).map(function(m) { return { item: m, chave: chave }; });
+        }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) {
+                (self.fichas[chave] || []).forEach(function(m) { resultado.push({ item: m, chave: chave }); });
+            }
+        });
+        return resultado;
+    },
+
+    // Aplica ocultos/ocultarOficiais (mesma lógica de Materiais/Esquemas) e,
+    // em modo "data", ordena por dataJulgado desc (mais recente primeiro) —
+    // sempre dentro do filtro atual de matéria/divisão.
+    _listaFiltrada: function() {
+        let self = this;
+        let lista = this._fichasParaExibir();
+        if (!this._mostrarOcultos) {
+            lista = lista.filter(function(par) { return !self.ocultos[par.item.id]; });
+        }
+        if (this._ocultarOficiais) {
+            lista = lista.filter(function(par) { return !par.item.origem_oficial; });
+        }
+        if (this._modoExibicao === 'data') {
+            lista = lista.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
+        }
+        return lista;
+    },
+
+    toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
+    toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
+
+    toggleModoSelecao: function() {
+        this._modoSelecao = !this._modoSelecao;
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    toggleSelecionado: function(id) {
+        if (this._selecionados[id]) delete this._selecionados[id]; else this._selecionados[id] = true;
+        this._renderGradeCards();
+    },
+
+    selecionarTodosVisiveis: function() {
+        let self = this;
+        this._listaFiltrada().forEach(function(par) { self._selecionados[par.item.id] = true; });
+        this._renderGradeCards();
+    },
+
+    ocultarSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { self.ocultos[id] = true; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    exibirSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { delete self.ocultos[id]; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    // "Por Temas" <-> "Data do Julgado" — botão único contextual, mesmo
+    // padrão de Expandir/Recolher Tudo do Caderno.
+    toggleModoExibicao: function() {
+        this._modoExibicao = (this._modoExibicao === 'temas') ? 'data' : 'temas';
+        this._atualizarEstadoColunasNavegacao();
+        this._renderGradeCards();
+    },
+
+    _atualizarEstadoColunasNavegacao: function() {
+        let desabilitar = this._modoExibicao === 'data';
+        ['jur-col-materias', 'jur-col-divisoes'].forEach(function(id) {
+            let el = document.getElementById(id);
+            if (el) el.classList.toggle('jur-col-desabilitada', desabilitar);
+        });
+    },
+
+    _renderToolbar: function() {
+        let qtdSel = Object.keys(this._selecionados).length;
+        let htmlAcoes;
+        if (this._modoSelecao) {
+            htmlAcoes =
+                '<div class="jur-tb-acoes-grupo">' +
+                    '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                '</div>' +
+                '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button>';
+        } else {
+            htmlAcoes =
+                '<div class="jur-tb-acoes-grupo">' +
+                    '<button class="jur-tb-btn' + (this._modoExibicao === 'data' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoExibicao()">' + (this._modoExibicao === 'data' ? 'Por Temas' : 'Data do Julgado') + '</button>' +
+                    '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
+                    '<button class="jur-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
+                '</div>' +
+                '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button>';
+        }
+        return '<div class="jur-toolbar">' + htmlAcoes + '</div>';
+    },
+
+    _renderGradeCards: function() {
+        let col = document.getElementById('jur-col-cards');
+        if (!col) return;
+        let self = this;
+
+        if (!this._materiaSelecionada) {
+            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+            return;
+        }
+
+        let lista = this._listaFiltrada();
+
+        let htmlCards = lista.map(function(par) {
+            let item = par.item;
+            let oculto = !!self.ocultos[item.id];
+            let selecionado = !!self._selecionados[item.id];
+            let podeExcluir = !item.origem_oficial;
+
+            let checkboxHtml = self._modoSelecao
+                ? '<input type="checkbox" class="jur-card-checkbox" onclick="event.stopPropagation();" ' + (selecionado ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
+                : '';
+            let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
+            let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
+            let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
+                ? '<button class="jur-btn-excluir" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.excluirFicha(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir ficha">🗑️</button>'
+                : '';
+
+            let teseTrunc = (item.tese || '').length > 130 ? item.tese.slice(0, 130) + '…' : (item.tese || '');
+            let metaPartes = [item.processo, item.relator, self._formatarDataBR(item.dataJulgado)].filter(function(x) { return !!x; });
+            let metaLinha = metaPartes.join(' · ');
+
+            let onclickCard = self._modoSelecao ? '' : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
+
+            return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
+                '<div class="jur-card-tags">' +
+                    '<span class="jur-card-tags-esq">' +
+                        checkboxHtml +
+                        '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
+                        seloOficial +
+                        seloOculto +
+                    '</span>' +
+                    btnExcluirHtml +
+                '</div>' +
+                '<div class="jur-card-titulo">' + self._escapar(item.titulo) + '</div>' +
+                '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
+                (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '') +
+                '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>' +
+            '</div>';
+        }).join('');
+
+        let corpoHtml;
+        if (htmlCards) {
+            corpoHtml = '<div class="jur-cards-grid">' + htmlCards + '</div>';
+        } else if (this._ocultarOficiais || this._mostrarOcultos || Object.keys(this.ocultos).length > 0) {
+            corpoHtml = '<div class="fc-vazio-col">Nenhuma ficha com esse filtro.</div>';
+        } else {
+            corpoHtml = '<div class="fc-vazio-col">Nenhuma ficha aqui ainda — use "📥 Importar em Massa".</div>';
+        }
+
+        col.innerHTML = this._renderToolbar() + '<div class="jur-grade-scroll">' + corpoHtml + '</div>';
+    },
+
+    // ── POPUP "VER FICHA" (tese/resumo/conexões completos) ──
+
+    abrirVer: function(chave, id) {
+        let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
+        if (!item) return;
+        document.getElementById('jur-ver-titulo').textContent = item.titulo || 'Ficha';
+        let metaPartes = [item.tribunal, item.orgao, item.processo, item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
+        document.getElementById('jur-ver-tese').textContent = item.tese || '—';
+        document.getElementById('jur-ver-resumo').textContent = item.resumo || '—';
+        document.getElementById('jur-ver-conexoes').textContent = item.conexoes || '—';
+        document.getElementById('modal-jurisprudencia-ver').classList.add('open');
+    },
+
+    fecharVer: function() {
+        document.getElementById('modal-jurisprudencia-ver').classList.remove('open');
+    },
+
+    excluirFicha: function(chave, id) {
+        if (!Array.isArray(this.fichas[chave])) return;
+        let item = this.fichas[chave].find(function(f) { return f.id === id; });
+        if (item && item.origem_oficial) return; // fichas oficiais não são excluíveis pelo usuário
+        if (!confirm('Excluir esta ficha de jurisprudência?')) return;
+        this.fichas[chave] = this.fichas[chave].filter(function(f) { return f.id !== id; });
+        if (this.fichas[chave].length === 0) delete this.fichas[chave];
+        this.salvar();
+        this._renderGradeCards();
+    },
+
+    // ── IMPORTAÇÃO EM MASSA ──
+
+    abrirModalImportar: function() {
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
+        document.getElementById('jur-import-textarea').value = '';
+        document.getElementById('jur-import-preview').style.display = 'none';
+        document.getElementById('jur-import-preview').innerHTML = '';
+        document.getElementById('jur-import-btn-confirmar').disabled = true;
+        this._resultadoPreVisualizado = null;
+        document.getElementById('modal-jurisprudencia-importar').classList.add('open');
+    },
+
+    fecharModalImportar: function() {
+        document.getElementById('modal-jurisprudencia-importar').classList.remove('open');
+        this._resultadoPreVisualizado = null;
+    },
+
+    _parsearImportacao: function(texto) {
+        return parsearImportacaoJurisprudencia(texto);
+    },
+
+    prevvisualizarImportacao: function() {
+        let texto = document.getElementById('jur-import-textarea').value || '';
+        let saida = this._parsearImportacao(texto);
+        this._resultadoPreVisualizado = saida;
+
+        let previewEl = document.getElementById('jur-import-preview');
+        let btnConfirmar = document.getElementById('jur-import-btn-confirmar');
+
+        if (saida.totalFichas === 0) {
+            previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão "Tribunal: X | Órgão: Y".' +
+                (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem a linha "Tribunal:".)' : '');
+            previewEl.style.display = 'block';
+            btnConfirmar.disabled = true;
+            return;
+        }
+
+        let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
+            let d = saida.porDivisao[div];
+            return '<div>• <strong>' + div + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+        }).join('');
+
+        previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
+            (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') + ':</div>' + linhas;
+        previewEl.style.display = 'block';
+        btnConfirmar.disabled = false;
+    },
+
+    confirmarImportacao: function() {
+        if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalFichas === 0) return;
+        let self = this;
+        let materiaAtual = this._materiaSelecionada;
+        let agora = new Date().toISOString();
+
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
+            let chave = self._chaveL2(materiaAtual, divisao);
+            if (!Array.isArray(self.fichas[chave])) self.fichas[chave] = [];
+            self._resultadoPreVisualizado.porDivisao[divisao].fichas.forEach(function(ficha) {
+                ficha.id = 'jur_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                ficha.materiaL1 = materiaAtual;
+                ficha.divisaoL2 = divisao;
+                ficha.criadoEm = agora;
+                // Deliberadamente SEM origem_oficial — importação pessoal
+                // nunca atribui esse campo.
+                self.fichas[chave].push(ficha);
+            });
+        });
+
+        this.salvar();
+        this._resultadoPreVisualizado = null;
+        this.fecharModalImportar();
+        this._renderColunaDivisoes(materiaAtual);
+        this._renderGradeCards();
+    },
+
+    // Exporta TODAS as fichas PESSOAIS (de todas as matérias/divisões, não
+    // só a selecionada no momento) num único JSON, na mesma forma que
+    // importarJurisprudenciaOficial() espera — pronto pra salvar em
+    // dados/jurisprudencia/*.json. Fichas já oficiais ficam de fora.
+    exportarTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            let pessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
+            if (pessoais.length > 0) {
+                resultado[chave] = pessoais;
+                total += pessoais.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhuma ficha pessoal pra exportar (só existem fichas oficiais aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-pessoal.json', 'application/json');
+    }
+};
+
+window.abrirJurisprudenciaModal = function() {
+    const modal = document.getElementById('jurisprudencia-modal');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    window.JURISPRUDENCIA_RUNTIME.init();
+};
+
+window.fecharJurisprudenciaModal = function() {
+    const modal = document.getElementById('jurisprudencia-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+};
+
+// ── JURISPRUDÊNCIA OFICIAL — publicada no repositório, disponível pra todo
+// mundo automaticamente. Espelha importarMaterialOficial/importarEsquemaOficial
+// função-por-função: upsert por id, sem stub raso (conteúdo leve).
+window.importarJurisprudenciaOficial = async function(url) {
+    try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Falha ao carregar jurisprudência oficial.');
+        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, ...} ] }
+
+        window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
+        const runtime = window.JURISPRUDENCIA_RUNTIME;
+
+        Object.keys(dados).forEach(function(chaveL2) {
+            const itens = dados[chaveL2];
+            if (!Array.isArray(itens)) return;
+            if (!Array.isArray(runtime.fichas[chaveL2])) runtime.fichas[chaveL2] = [];
+            const arr = runtime.fichas[chaveL2];
+
+            itens.forEach(function(item) {
+                if (!item || !item.id) return;
+                item.origem_oficial = true;
+                const idx = arr.findIndex(function(m) { return m.id === item.id; });
+                if (idx === -1) arr.push(item); else arr[idx] = item;
+            });
+        });
+
+        runtime.salvar();
+        console.log('[JURISPRUDÊNCIA OFICIAL] carregado:', url);
+    } catch (e) {
+        console.warn('[JURISPRUDÊNCIA OFICIAL] erro:', e);
+    }
+};
+
+window.carregarJurisprudenciaOficial = async function() {
+    window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
+
+    // Lista de arquivos publicados em dados/jurisprudencia/ — adicione uma
+    // linha por arquivo novo conforme for publicando jurisprudência
+    // oficial. Ex.:
+    //
+    //   await window.importarJurisprudenciaOficial('dados/jurisprudencia/direito-civil.json');
+    //   await window.importarJurisprudenciaOficial('dados/jurisprudencia/direito-penal.json');
+};
+</script>
+
 <script>
 
 window.__bootOficialPromise__ = (async function(){
@@ -16268,6 +17077,7 @@ window.__bootOficialPromise__ = (async function(){
       await window.carregarAcervosOficiais();
       if (typeof window.carregarMateriaisOficiais === 'function') await window.carregarMateriaisOficiais();
       if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
+      if (typeof window.carregarJurisprudenciaOficial === 'function') await window.carregarJurisprudenciaOficial();
 
       console.log(
          '[BOOT OFICIAL] concluído'
