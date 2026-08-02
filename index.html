@@ -3078,6 +3078,7 @@ if(ri) {
     #section-cronograma .crono-tag-alta { background:#ffedd5; color:#ea580c; border:1px solid #fdba74; }
     #section-cronograma .crono-tag-media { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; }
     #section-cronograma .crono-tag-baixa { background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; }
+    #section-cronograma .crono-tag-data { background:#f8fafc; color:#475569; border:1px solid var(--border-color); font-weight:600; }
     #section-cronograma .crono-card-topico { font-size:11px; font-weight:600; color:var(--text-main); line-height:1.35; margin-bottom:3px; }
     #section-cronograma .crono-card-justif { font-size:10px; color:var(--text-muted); line-height:1.35; font-style:italic; }
 
@@ -3330,6 +3331,7 @@ window.CRONOGRAMA_RUNTIME = {
                         topico: item.topico || '',
                         prioridade: item.prioridade || '',
                         justificativa: item.justificativa || '',
+                        data: item.data || '',
                         id_taxonomia: item.id_taxonomia,
                         metodo: item.metodo,
                         simuladosVinculados: item.simuladosVinculados,
@@ -3446,11 +3448,19 @@ window.CRONOGRAMA_RUNTIME = {
         let temVinculo = temAuto || temManual;
         let temBaralhos = this._baralhosAssociados(item).length > 0;
 
+        // "data" vem opcionalmente do JSON importado (por item, não por dia —
+        // ver processarImportacao). Só formata em BR quando é ISO "só-dia"
+        // inequívoco (YYYY-MM-DD); qualquer outro formato é exibido como veio,
+        // pra não arriscar interpretar errado (ex.: DD/MM/AAAA vira MM/DD via
+        // Date() nativo do JS e inverteria dia/mês silenciosamente).
+        let dataTxt = item.data ? (/^\d{4}-\d{2}-\d{2}$/.test(item.data) && typeof window.formatarDataBR === 'function' ? window.formatarDataBR(item.data) : item.data) : '';
+
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
             '<div class="crono-card-body">' +
                 '<div class="crono-card-tags">' +
                     '<span class="crono-tag" style="background:' + corMat.bg + '; color:' + corMat.texto + '; border:1px solid ' + corMat.borda + ';">' + (item.materia || '') + '</span>' +
                     '<span class="crono-tag crono-tag-' + classePrio + '">' + (item.prioridade || '') + '</span>' +
+                    (dataTxt ? '<span class="crono-tag crono-tag-data">📅 ' + dataTxt + '</span>' : '') +
                 '</div>' +
                 '<div class="crono-card-topico">' + (item.topico || '') + '</div>' +
                 '<div class="crono-card-justif">' + (item.justificativa || '') + '</div>' +
