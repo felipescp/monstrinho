@@ -15166,126 +15166,22 @@ window.ACERVO_OFICIAL_IDS = new Set(
    ).map(x => x.id)
 );
 
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-responsabilidadecivil.json',
-
-   );
-
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-obrigacoes.json',
-
-   );
-
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-controledeconstitucionalidade.json',
-
-   );
-   
-      await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-responsabilidadefatoevicio.json',
-
-   );   
-	
-      await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json',
-
-   );   
-    
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-lrf.json',
-
-   );
-   
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-respcivilambientalimpedimentoprescdecadencia.json',
-
-   );
-   
-   
-
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-coisas.json',
-
-   );
-
-      await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-sucessoes.json',
-
-   );
-
-     await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-concurso.json',
-
-   );
-
-   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json',
-
-   );
-	
-	   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-proccomumeecumpdesentenca.json',
-
-   );
-
-		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-daspenas.json',
-
-   );
-
-		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-prisao.json',
-
-   );
-
-   		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-tutelaprovisoria.json',
-
-   );
-
-   		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-licitacoes.json',
-
-   );
-
-		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-recuperacaojudicial.json',
-
-   );
-
-		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-direitosfundamentais.json',
-
-   );
-
-		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json',
-
-   );
-
- 		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-provas.json',
-
-   );  
-	
- 		   await window.importarAcervoOficial(
-      'dados/bateriasvf/grupo-ce-familia.json',
-
-   );  
-
-
-      await window.importarAcervoOficial(
-      'dados/playlists/playlists.json'
-   );
-
-
-   await window.importarAcervoOficial(
-      'dados/simulados/simulados.json'
-   );
-
-   await window.importarAcervoOficial(
-      'dados/provasanteriores/historico_provas_anteriores_backup.json'
-   );
+   // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
+   // Adicionar uma bateria oficial nova = 1 linha nova no .txt, sem tocar
+   // aqui. Espera sequencial (não paralelo) — mesmo padrão de antes, quando
+   // a lista de await estava hardcoded neste arquivo.
+   let manifestoTexto = '';
+   try {
+      const rManifesto = await fetch('dados/manifesto-baterias.txt');
+      if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+      else console.warn('[ACERVO OFICIAL] Falha ao carregar manifesto: HTTP', rManifesto.status);
+   } catch (e) {
+      console.warn('[ACERVO OFICIAL] Falha ao carregar manifesto:', e);
+   }
+   const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+   for (const caminho of caminhosManifesto) {
+      await window.importarAcervoOficial(caminho);
+   }
 
 
 // =========================================================
