@@ -3372,6 +3372,12 @@ if(ri) {
     #crono-relacionados-menu .crono-rel-tabs { display:flex; flex-wrap:wrap; gap:3px; padding:0 10px 8px 10px; flex-shrink:0; }
     #crono-relacionados-menu .crono-rel-tab { padding:4px 7px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-muted); cursor:pointer; white-space:nowrap; }
     #crono-relacionados-menu .crono-rel-tab:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    /* Tem conteúdo pra essa L2 — verde claro FIXO (não a cor do tema),
+       igual ao badge do 🔗 no card. Só quando NÃO é a aba ativa: a ativa
+       usa a cor do tema (var(--app-primary), mais forte), sem se misturar
+       com este verde — daí o :not(.ativa). */
+    #crono-relacionados-menu .crono-rel-tab.tem-conteudo:not(.ativa) { background:#dcfce7; border-color:#86efac; color:#166534; }
+    #crono-relacionados-menu .crono-rel-tab.tem-conteudo:not(.ativa):hover { background:#bbf7d0; border-color:#4ade80; }
     #crono-relacionados-menu .crono-rel-tab.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #crono-relacionados-menu .crono-rel-corpo { overflow-y:auto; flex:1; min-height:0; }
     #crono-relacionados-menu .crono-sim-secao-label { font-size:9px; font-weight:700; text-transform:uppercase; color:var(--text-muted); padding:8px 12px 4px 12px; flex-shrink:0; }
@@ -3705,26 +3711,13 @@ window.CRONOGRAMA_RUNTIME = {
         let classePrio = prio === 'CRITICA' ? 'critica' : prio === 'ALTA' ? 'alta' : prio === 'MEDIA' ? 'media' : 'baixa';
 
         // Ícone 🔗 fosco quando NENHUM dos 5 tipos de conteúdo relacionado
-        // bate com a matéria+divisão (L2) do card — Baterias, Praticar
-        // Axiomas (axiomas automáticos + baralhos manuais), Praticar
-        // Questões, Jurisprudência e Materiais. this._setChavesL2ComBaterias
+        // bate com a matéria+divisão (L2) do card. this._setChavesL2ComBaterias
         // vem pré-computado uma vez em render() (ver ali), evitando refiltrar
         // o catálogo inteiro de baterias pra cada card; os outros 4 tipos já
         // são indexados diretamente por chave L2 nos seus próprios runtimes
         // (dict lookup, barato o bastante pra calcular por card).
-        let loc = this._resolverL2doItem(item);
-        let chaveL2 = loc ? (loc.materia + ' > ' + loc.divisao) : null;
-
-        let temBaterias = !!(chaveL2 && this._setChavesL2ComBaterias && this._setChavesL2ComBaterias.has(chaveL2)) ||
-            (Array.isArray(item.simuladosVinculados) && item.simuladosVinculados.length > 0);
-        let temAxiomas = !!(loc && window.FLASHCARDS_RUNTIME && (
-            window.FLASHCARDS_RUNTIME.listarAxiomasDoL2(loc.materia, loc.divisao).length > 0 ||
-            window.FLASHCARDS_RUNTIME.listarBaralhosDoL2(loc.materia, loc.divisao).length > 0
-        ));
-        let temQuestoes = !!(loc && window.PRATICAR_CADERNO_RUNTIME && window.PRATICAR_CADERNO_RUNTIME.listarQuestoesDoL2(loc.materia, loc.divisao).length > 0);
-        let temFichas = !!(loc && window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME.fichasDoL2(loc.materia, loc.divisao).length > 0);
-        let temMateriais = !!(loc && window.MATERIAIS_RUNTIME && window.MATERIAIS_RUNTIME.materiaisDoL2(loc.materia, loc.divisao).length > 0);
-        let temAlgumRelacionado = temBaterias || temAxiomas || temQuestoes || temFichas || temMateriais;
+        let porTipo = this._relacionadosPorTipo(item);
+        let temAlgumRelacionado = porTipo.baterias || porTipo.axiomas || porTipo.questoes || porTipo.jurisprudencia || porTipo.materiais;
 
         // "data" vem opcionalmente do JSON importado (por item, não por dia —
         // ver processarImportacao). Só formata em BR quando é ISO "só-dia"
@@ -3942,6 +3935,27 @@ window.CRONOGRAMA_RUNTIME = {
         return window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(item.id_taxonomia);
     },
 
+    // Booleans "tem conteúdo desse tipo pra essa L2" — extraído de renderCard
+    // (que usava isso só pro ícone 🔗) pra reaproveitar também na cor das
+    // miniabas do painel (_renderConteudoPainelRelacionados), sem duplicar a
+    // mesma lógica em 2 lugares. As chaves batem 1:1 com abas[].chave.
+    _relacionadosPorTipo: function(item) {
+        let loc = this._resolverL2doItem(item);
+        let chaveL2 = loc ? (loc.materia + ' > ' + loc.divisao) : null;
+
+        let temBaterias = !!(chaveL2 && this._setChavesL2ComBaterias && this._setChavesL2ComBaterias.has(chaveL2)) ||
+            (Array.isArray(item.simuladosVinculados) && item.simuladosVinculados.length > 0);
+        let temAxiomas = !!(loc && window.FLASHCARDS_RUNTIME && (
+            window.FLASHCARDS_RUNTIME.listarAxiomasDoL2(loc.materia, loc.divisao).length > 0 ||
+            window.FLASHCARDS_RUNTIME.listarBaralhosDoL2(loc.materia, loc.divisao).length > 0
+        ));
+        let temQuestoes = !!(loc && window.PRATICAR_CADERNO_RUNTIME && window.PRATICAR_CADERNO_RUNTIME.listarQuestoesDoL2(loc.materia, loc.divisao).length > 0);
+        let temFichas = !!(loc && window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME.fichasDoL2(loc.materia, loc.divisao).length > 0);
+        let temMateriais = !!(loc && window.MATERIAIS_RUNTIME && window.MATERIAIS_RUNTIME.materiaisDoL2(loc.materia, loc.divisao).length > 0);
+
+        return { baterias: temBaterias, axiomas: temAxiomas, questoes: temQuestoes, jurisprudencia: temFichas, materiais: temMateriais };
+    },
+
     // Baterias do catálogo cuja matéria+divisão (L2) batem com a do card —
     // calculado na hora a cada abertura do painel, nunca persistido
     // (diferente da lista manual, que fica salva em item.simuladosVinculados).
@@ -4037,6 +4051,13 @@ window.CRONOGRAMA_RUNTIME = {
             { chave: 'jurisprudencia', rotulo: '⚖️ Jurisp.' },
             { chave: 'materiais', rotulo: '📚 Materiais' }
         ];
+        // Cor da miniaba reflete se aquele tipo tem conteúdo pra essa L2 —
+        // mesmo helper que decide o ícone 🔗 fosco/aceso (_relacionadosPorTipo),
+        // reaproveitado aqui pra não duplicar a lógica. .tem-conteudo usa um
+        // verde mais claro (fixo, não é a cor do tema) — .ativa continua com
+        // a cor do tema (var(--app-primary), mais forte), sem se misturar:
+        // o CSS de .tem-conteudo é escopado com :not(.ativa).
+        let porTipo = this._relacionadosPorTipo(item);
         let htmlTabs = '<div class="crono-rel-tabs">' + abas.map(function(a) {
             // event.stopPropagation() é OBRIGATÓRIO aqui: trocarAbaRelacionados()
             // substitui menu.innerHTML de forma síncrona, o que desanexa o
@@ -4048,7 +4069,8 @@ window.CRONOGRAMA_RUNTIME = {
             // — mesmo o estado tendo sido salvo certo. Mesmo padrão já usado no
             // botão de remover vínculo manual (removerSimuladoVinculado), que faz
             // a mesma troca de innerHTML e por isso já tinha essa proteção.
-            return '<button class="crono-rel-tab' + (a.chave === aba ? ' ativa' : '') + '" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.trocarAbaRelacionados(\'' + a.chave + '\')">' + a.rotulo + '</button>';
+            let classes = 'crono-rel-tab' + (a.chave === aba ? ' ativa' : '') + (porTipo[a.chave] ? ' tem-conteudo' : '');
+            return '<button class="' + classes + '" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.trocarAbaRelacionados(\'' + a.chave + '\')">' + a.rotulo + '</button>';
         }).join('') + '</div>';
 
         let htmlCorpo;
