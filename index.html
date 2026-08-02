@@ -6286,6 +6286,8 @@ window.PRATICAR_CADERNO_RUNTIME = {
     #section-materiais .fc-materia-item:hover { background:#eef2ff; }
     #section-materiais .fc-materia-item.ativa { background:#e0e7ff; }
     #section-materiais .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #section-materiais .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-materiais .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #section-materiais .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
     #section-materiais .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
     #section-materiais .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
@@ -6461,6 +6463,22 @@ window.MATERIAIS_RUNTIME = {
         return t || this.TIPOS[1]; // fallback: "Resumo"
     },
 
+    // Contagem bruta (ignora ocultos/filtro de tipo — é só indicação de
+    // volume, mesmo espírito de contarCardsDaMateria/contarCardsDoL2 do
+    // Flashcards) pros badges de quantidade no L1/L2.
+    _contarMateriaisDaMateria: function(materia) {
+        let self = this;
+        let total = 0;
+        let prefixo = materia + ' > ';
+        Object.keys(this.materiais).forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) total += (self.materiais[chave] || []).length;
+        });
+        return total;
+    },
+    _contarMateriaisDoL2: function(materia, divisao) {
+        return (this.materiais[this._chaveL2(materia, divisao)] || []).length;
+    },
+
     render: function() {
         let colMaterias = document.getElementById('mat-col-materias');
         if (!colMaterias) return;
@@ -6473,9 +6491,13 @@ window.MATERIAIS_RUNTIME = {
 
         colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
             let ativa = mat.nivel_1 === self._materiaSelecionada;
+            let n = self._contarMateriaisDaMateria(mat.nivel_1);
             return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
                 '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
-                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' +
+                    (n > 0 ? ('<span class="fc-materia-count">' + n + '</span>') : '') +
+                    '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '</span>' +
             '</div>';
         }).join('');
 
@@ -6506,14 +6528,16 @@ window.MATERIAIS_RUNTIME = {
         }
 
         let self = this;
+        let totalMateria = this._contarMateriaisDaMateria(nivel1);
         colDivisoes.innerHTML =
             '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
-                '<span>Todas as divisões</span>' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
             '</div>' +
             mat.divisoes.map(function(div) {
+                let n = self._contarMateriaisDoL2(nivel1, div.nivel_2);
                 let ativa = self._divisaoSelecionada === div.nivel_2;
                 return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + div.nivel_2 + '</span>' +
+                    '<span>' + div.nivel_2 + '</span><span class="fc-divisao-count">' + n + '</span>' +
                 '</div>';
             }).join('');
     },
@@ -15796,6 +15820,8 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-materia-item:hover { background:#eef2ff; }
     #esquemas-modal .fc-materia-item.ativa { background:#e0e7ff; }
     #esquemas-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #esquemas-modal .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #esquemas-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #esquemas-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
     #esquemas-modal .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
     #esquemas-modal .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
@@ -15949,6 +15975,22 @@ window.ESQUEMAS_RUNTIME = {
         return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     },
 
+    // Contagem bruta (ignora ocultos — é só indicação de volume, mesmo
+    // espírito de contarCardsDaMateria/contarCardsDoL2 do Flashcards) pros
+    // badges de quantidade no L1/L2.
+    _contarEsquemasDaMateria: function(materia) {
+        let self = this;
+        let total = 0;
+        let prefixo = materia + ' > ';
+        Object.keys(this.esquemas).forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) total += (self.esquemas[chave] || []).length;
+        });
+        return total;
+    },
+    _contarEsquemasDoL2: function(materia, divisao) {
+        return (this.esquemas[this._chaveL2(materia, divisao)] || []).length;
+    },
+
     render: function() {
         let colMaterias = document.getElementById('esq-col-materias');
         if (!colMaterias) return;
@@ -15961,9 +16003,13 @@ window.ESQUEMAS_RUNTIME = {
 
         colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
             let ativa = mat.nivel_1 === self._materiaSelecionada;
+            let n = self._contarEsquemasDaMateria(mat.nivel_1);
             return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
                 '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
-                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' +
+                    (n > 0 ? ('<span class="fc-materia-count">' + n + '</span>') : '') +
+                    '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '</span>' +
             '</div>';
         }).join('');
 
@@ -15994,14 +16040,16 @@ window.ESQUEMAS_RUNTIME = {
         }
 
         let self = this;
+        let totalMateria = this._contarEsquemasDaMateria(nivel1);
         colDivisoes.innerHTML =
             '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
-                '<span>Todas as divisões</span>' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
             '</div>' +
             mat.divisoes.map(function(div) {
+                let n = self._contarEsquemasDoL2(nivel1, div.nivel_2);
                 let ativa = self._divisaoSelecionada === div.nivel_2;
                 return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + div.nivel_2 + '</span>' +
+                    '<span>' + div.nivel_2 + '</span><span class="fc-divisao-count">' + n + '</span>' +
                 '</div>';
             }).join('');
     },
@@ -16361,6 +16409,8 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-materia-item:hover { background:#eef2ff; }
     #jurisprudencia-modal .fc-materia-item.ativa { background:#e0e7ff; }
     #jurisprudencia-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #jurisprudencia-modal .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #jurisprudencia-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #jurisprudencia-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
     #jurisprudencia-modal .fc-divisao-item:hover { color:var(--app-primary); background:#f8fafc; }
     #jurisprudencia-modal .fc-divisao-item.ativa { color:var(--app-primary); background:#eef2ff; }
@@ -16406,7 +16456,9 @@ window.carregarEsquemasOficiais = async function() {
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + Difícil/Médio/Fácil
        (repetição espaçada) — mesmo padrão visual de #section-flashcards. */
-    #jurisprudencia-modal .fc-tabs { display:flex; gap:4px; padding:0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #jurisprudencia-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #jurisprudencia-modal .jur-tabs-grupo { display:flex; gap:4px; }
+    #jurisprudencia-modal .jur-tabs-baralho { display:flex; align-items:center; gap:6px; }
     #jurisprudencia-modal .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #jurisprudencia-modal .fc-tab:hover { color:var(--app-primary); }
     #jurisprudencia-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
@@ -16454,18 +16506,22 @@ window.carregarEsquemasOficiais = async function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; gap:10px;">
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🗂️ Baralho: Todos</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as fichas da disciplina selecionada na barra lateral" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🗂️ Baralho: Disciplina</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar todas as fichas PESSOAIS em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
         <div class="fc-tabs">
-            <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
-            <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
-            <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Médio</button>
-            <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+            <div class="jur-tabs-grupo">
+                <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
+                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
+                <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Médio</button>
+                <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+            </div>
+            <div class="jur-tabs-baralho">
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as fichas da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
+            </div>
         </div>
         <div class="fc-grid" id="jur-grid">
             <div class="fc-col" id="jur-col-materias"></div>
@@ -16578,6 +16634,15 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho { z-index: 10000; } /* mesma correção de z-index já aplicada aos outros popups desta seção */
     #modal-jurisprudencia-baralho .mdl { max-width:700px; width:95%; max-height:90vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
     #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
+       estilo padrão de <button>/<span> do navegador (foi o bug reportado:
+       botões desestilizados no popup do Baralho). */
+    #modal-jurisprudencia-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-jurisprudencia-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-jurisprudencia-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #modal-jurisprudencia-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #modal-jurisprudencia-baralho #jur-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
     #modal-jurisprudencia-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
     #modal-jurisprudencia-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
 </style>
@@ -16889,6 +16954,22 @@ window.JURISPRUDENCIA_RUNTIME = {
         return p[2] + '/' + p[1] + '/' + p[0];
     },
 
+    // Contagem bruta (ignora ocultos/oficiais/filtros — é só indicação de
+    // volume, mesmo espírito de contarCardsDaMateria/contarCardsDoL2 do
+    // Flashcards) pros badges de quantidade no L1/L2.
+    _contarFichasDaMateria: function(materia) {
+        let self = this;
+        let total = 0;
+        let prefixo = materia + ' > ';
+        Object.keys(this.fichas).forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) total += (self.fichas[chave] || []).length;
+        });
+        return total;
+    },
+    _contarFichasDoL2: function(materia, divisao) {
+        return (this.fichas[this._chaveL2(materia, divisao)] || []).length;
+    },
+
     render: function() {
         let colMaterias = document.getElementById('jur-col-materias');
         if (!colMaterias) return;
@@ -16901,9 +16982,13 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
             let ativa = mat.nivel_1 === self._materiaSelecionada;
+            let n = self._contarFichasDaMateria(mat.nivel_1);
             return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
                 '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
-                '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' +
+                    (n > 0 ? ('<span class="fc-materia-count">' + n + '</span>') : '') +
+                    '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '</span>' +
             '</div>';
         }).join('');
 
@@ -16934,14 +17019,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         let self = this;
+        let totalMateria = this._contarFichasDaMateria(nivel1);
         colDivisoes.innerHTML =
             '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
-                '<span>Todas as divisões</span>' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
             '</div>' +
             mat.divisoes.map(function(div) {
+                let n = self._contarFichasDoL2(nivel1, div.nivel_2);
                 let ativa = self._divisaoSelecionada === div.nivel_2;
                 return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + div.nivel_2 + '</span>' +
+                    '<span>' + div.nivel_2 + '</span><span class="fc-divisao-count">' + n + '</span>' +
                 '</div>';
             }).join('');
     },
