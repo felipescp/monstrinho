@@ -1470,8 +1470,8 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                         <div id="col-baterias-wrapper" style="display:flex; flex-direction:column; overflow:hidden;">
                             <button class="btn-voltar-coluna-vitrine" onclick="window.voltarColunaVitrineMobile('topicos')" style="padding-left:15px;">‹ Tópicos</button>
                             <div style="display:flex; border-bottom: 1px solid var(--border-color); flex-shrink:0;">
-                                <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Todas</button>
-                                <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Matéria</button>
+                                <button id="btn-modo-todas" onclick="window.exibirTodasBaterias();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--app-primary); cursor:pointer; border-bottom: 2px solid var(--app-primary);">Exibir Todas</button>
+                                <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Matéria</button>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding: 6px 15px; background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
                                 <div style="display:flex; gap:4px; flex-shrink:0;">
@@ -7185,7 +7185,11 @@ window.MATERIAIS_RUNTIME = {
 // precisa de ACERVO_OFICIAL_FULL nem de stub em memória.
 window.importarMaterialOficial = async function(url) {
     try {
-        const r = await fetch(url);
+        // Cache-buster: sem isso, editar o CONTEÚDO de um material já
+        // publicado (mesmo nome de arquivo) fica preso no cache HTTP do
+        // GitHub Pages (max-age=600) até 10min depois de publicado — F5 na
+        // página não ajuda, só revalida o index.html, não este fetch().
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar materiais oficiais.');
         const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, tipo, titulo, descricao, urlPdf, materialBase?, criadoEm} ] }
 
@@ -7225,7 +7229,10 @@ window.carregarMateriaisOficiais = async function() {
     // pra baterias. Espera sequencial (não paralelo).
     let manifestoTexto = '';
     try {
-        const rManifesto = await fetch('dados/manifesto-materiais.txt');
+        // Cache-buster: mesmo motivo do fetch(url) em importarMaterialOficial
+        // — sem isso, uma linha nova no manifesto fica invisível por até
+        // 10min (max-age=600 do GitHub Pages), mesmo com F5 na página.
+        const rManifesto = await fetch('dados/manifesto-materiais.txt?v=' + Date.now());
         if (rManifesto.ok) manifestoTexto = await rManifesto.text();
         else console.warn('[MATERIAIS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
     } catch (e) {
@@ -9633,9 +9640,14 @@ atualizarContadoresModoLista();
                     window.avancarColunaVitrineMobile('baterias');
                 }
             } else {
-                let cabecalhoDireita = document.getElementById('header-filtro-ce');
-                if (cabecalhoDireita) cabecalhoDireita.innerHTML = 'AGUARDANDO SELEÇÃO';
-                listCE.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 10.5px; font-style: italic; line-height: 1.5;">Selecione um tópico no menu ao lado para<br>exibir as baterias focadas.</div>';
+                // Fresh load — sem estado anterior nesta sessão (nem "todas" nem
+                // matéria/tópico selecionado). Antes caía num placeholder vazio
+                // "AGUARDANDO SELEÇÃO" mesmo com o botão "Exibir Matéria" aparecendo
+                // como ativo (só o estilo hardcoded do HTML, nunca sincronizado por
+                // marcarModoListaAtivo nesse caminho) — usuário tinha que clicar em
+                // algo antes de ver qualquer bateria. Default agora é "Exibir Todas".
+                window.exibirTodasBaterias();
+                window.avancarColunaVitrineMobile('baterias');
             }
         }
     }
@@ -15205,7 +15217,11 @@ window.importarAcervoOficial = async function(url) {
 
     try {
 
-        const r = await fetch(url);
+        // Cache-buster: sem isso, editar uma bateria já publicada (mesmo
+        // nome de arquivo) fica presa no cache HTTP do GitHub Pages
+        // (max-age=600) por até 10min — F5 na página não ajuda, só
+        // revalida o index.html, não este fetch().
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
 
         if (!r.ok) {
             throw new Error(
@@ -15277,7 +15293,10 @@ window.ACERVO_OFICIAL_IDS = new Set(
    // a lista de await estava hardcoded neste arquivo.
    let manifestoTexto = '';
    try {
-      const rManifesto = await fetch('dados/manifesto-baterias.txt');
+      // Cache-buster: mesmo motivo do fetch(url) em importarAcervoOficial —
+      // sem isso, uma linha nova no manifesto fica invisível por até 10min
+      // (max-age=600 do GitHub Pages), mesmo com F5 na página.
+      const rManifesto = await fetch('dados/manifesto-baterias.txt?v=' + Date.now());
       if (rManifesto.ok) manifestoTexto = await rManifesto.text();
       else console.warn('[ACERVO OFICIAL] Falha ao carregar manifesto: HTTP', rManifesto.status);
    } catch (e) {
@@ -16514,7 +16533,11 @@ window.fecharEsquemasModal = function() {
 // Oficiais função-por-função: upsert por id, sem stub raso (conteúdo leve).
 window.importarEsquemaOficial = async function(url) {
     try {
-        const r = await fetch(url);
+        // Cache-buster: sem isso, editar um esquema já publicado (mesmo
+        // nome de arquivo) fica preso no cache HTTP do GitHub Pages
+        // (max-age=600) por até 10min — F5 na página não ajuda, só
+        // revalida o index.html, não este fetch().
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar esquemas oficiais.');
         const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, titulo, conteudoHtml, criadoEm} ] }
 
@@ -16551,7 +16574,10 @@ window.carregarEsquemasOficiais = async function() {
     // pra baterias. Espera sequencial (não paralelo).
     let manifestoTexto = '';
     try {
-        const rManifesto = await fetch('dados/manifesto-esquemas.txt');
+        // Cache-buster: mesmo motivo do fetch(url) em importarEsquemaOficial
+        // — sem isso, uma linha nova no manifesto fica invisível por até
+        // 10min (max-age=600 do GitHub Pages), mesmo com F5 na página.
+        const rManifesto = await fetch('dados/manifesto-esquemas.txt?v=' + Date.now());
         if (rManifesto.ok) manifestoTexto = await rManifesto.text();
         else console.warn('[ESQUEMAS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
     } catch (e) {
@@ -17936,7 +17962,11 @@ window.fecharJurisprudenciaModal = function() {
 // função-por-função: upsert por id, sem stub raso (conteúdo leve).
 window.importarJurisprudenciaOficial = async function(url) {
     try {
-        const r = await fetch(url);
+        // Cache-buster: sem isso, editar uma ficha já publicada (mesmo
+        // nome de arquivo) fica presa no cache HTTP do GitHub Pages
+        // (max-age=600) por até 10min — F5 na página não ajuda, só
+        // revalida o index.html, não este fetch().
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar jurisprudência oficial.');
         const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, ...} ] }
 
@@ -17974,7 +18004,10 @@ window.carregarJurisprudenciaOficial = async function() {
     // (não paralelo).
     let manifestoTexto = '';
     try {
-        const rManifesto = await fetch('dados/manifesto-jurisprudencia.txt');
+        // Cache-buster: mesmo motivo do fetch(url) em importarJurisprudenciaOficial
+        // — sem isso, uma linha nova no manifesto fica invisível por até
+        // 10min (max-age=600 do GitHub Pages), mesmo com F5 na página.
+        const rManifesto = await fetch('dados/manifesto-jurisprudencia.txt?v=' + Date.now());
         if (rManifesto.ok) manifestoTexto = await rManifesto.text();
         else console.warn('[JURISPRUDÊNCIA OFICIAL] Falha ao carregar manifesto: HTTP', rManifesto.status);
     } catch (e) {
