@@ -10075,6 +10075,21 @@ window.MAPA_TAXONOMIA = {};
             selMat.appendChild(opt);
 
             mat.divisoes.forEach(div => {
+                // Registra o id de NÍVEL 2 (divisão) também — não só o de nível
+                // 3 (tópico) como antes. Baterias agora exigem só L2 na
+                // criação (o L3 é granularidade só de questão, via campo
+                // "topico", nunca de bateria) — sem isto, id_taxonomia de L2
+                // não resolvia em resolverMateriaDivisaoPorTaxonomia() (voltava
+                // null), cegando o "Conteúdo Relacionado" do Cronograma e todo
+                // recurso que depende dele pra essas baterias. Aditivo: L2 e L3
+                // são espaços de id disjuntos (confirmado, 0 colisões), e
+                // resolverMateriaDivisaoPorTaxonomia só lê os 2 primeiros
+                // segmentos do caminho de qualquer forma — baterias antigas com
+                // L3 continuam resolvendo exatamente como antes.
+                window.MAPA_TAXONOMIA[div.id] = {
+                    materia: mat.nivel_1.toUpperCase(),
+                    caminho: `${mat.nivel_1} > ${div.nivel_2}`
+                };
                 div.topicos.forEach(top => {
                     window.MAPA_TAXONOMIA[top.id] = {
                         materia: mat.nivel_1.toUpperCase(),
