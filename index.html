@@ -6592,10 +6592,18 @@ window.PRATICAR_CADERNO_RUNTIME = {
     #modal-materiais-novo .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #modal-materiais-novo .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
 
-    /* Modal "Visualizar PDF" — quase tela cheia, iframe ocupa o resto. */
-    #modal-materiais-pdf .mdl { max-width:900px; width:95%; height:90vh; padding:16px; display:flex; flex-direction:column; gap:8px; }
+    /* Modal "Visualizar PDF" — tamanho padrão já perto do limite da
+       viewport (900px de max-width era estreito demais em telas largas,
+       mesmo o modal tendo "cara" de quase-tela-cheia). .mat-pdf-maximizado
+       (alternada pelo botão ⛶) reduz o respiro de .mo (padding:1rem, regra
+       base em todo .mo) e estica o .mdl praticamente borda a borda. */
+    #modal-materiais-pdf .mdl { max-width:1400px; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease; }
+    #modal-materiais-pdf.mat-pdf-maximizado { padding:0.4rem; }
+    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; width:99vw; height:99vh; }
     #modal-materiais-pdf .mat-pdf-header { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
     #modal-materiais-pdf .mat-pdf-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); }
+    #modal-materiais-pdf .mat-pdf-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-materiais-pdf .mat-pdf-maximizar:hover { color:var(--app-primary); }
     #modal-materiais-pdf .mat-pdf-fechar { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
     #modal-materiais-pdf .mat-pdf-fechar:hover { color:var(--danger); }
     #modal-materiais-pdf iframe { flex:1; width:100%; border:1px solid var(--border-color); border-radius:8px; background:#fff; }
@@ -6908,7 +6916,7 @@ window.MATERIAIS_RUNTIME = {
                     '<button class="mat-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleOcultarOficiais()">Ocultar Oficiais</button>' +
                 '</div>' +
                 '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar todos os materiais PESSOAIS em JSON — pronto pra publicar em dados/materiais/">📤 Exportar Tudo</button>' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar JSON pronto pra publicar em dados/materiais/">📤 Exportar Tudo</button>' +
                     '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Selecionar</button>' +
                 '</div>';
         }
@@ -7129,17 +7137,42 @@ window.MATERIAIS_RUNTIME = {
     },
 
     // ── MODAL "VISUALIZAR PDF" ──
+    // Tamanho padrão já bem maior que antes (900px -> quase a tela toda,
+    // ver CSS #modal-materiais-pdf .mdl) + botão "⛶ Maximizar" pra quem
+    // quiser ainda mais espaço (praticamente borda a borda). Cada abertura
+    // sempre começa no tamanho padrão (não maximizado) — maximizar é uma
+    // escolha por sessão de leitura, não uma preferência que persiste.
+
+    _pdfMaximizado: false,
 
     abrirPdf: function(chave, id) {
         let item = (this.materiais[chave] || []).find(function(m) { return m.id === id; });
         if (!item || !item.urlPdf) return;
+        this._pdfMaximizado = false;
+        document.getElementById('modal-materiais-pdf').classList.remove('mat-pdf-maximizado');
+        this._atualizarBotaoMaximizarPdf();
         document.getElementById('mat-pdf-titulo').textContent = item.titulo || 'Material';
         document.getElementById('mat-pdf-frame').src = item.urlPdf;
         document.getElementById('modal-materiais-pdf').classList.add('open');
     },
 
+    alternarMaximizarPdf: function() {
+        this._pdfMaximizado = !this._pdfMaximizado;
+        document.getElementById('modal-materiais-pdf').classList.toggle('mat-pdf-maximizado', this._pdfMaximizado);
+        this._atualizarBotaoMaximizarPdf();
+    },
+
+    _atualizarBotaoMaximizarPdf: function() {
+        let btn = document.getElementById('mat-pdf-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._pdfMaximizado ? '🗗' : '⛶';
+        btn.title = this._pdfMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+    },
+
     fecharPdf: function() {
         document.getElementById('modal-materiais-pdf').classList.remove('open');
+        document.getElementById('modal-materiais-pdf').classList.remove('mat-pdf-maximizado');
+        this._pdfMaximizado = false;
         document.getElementById('mat-pdf-frame').src = ''; // libera a memória do PDF carregado
     }
 };
@@ -7186,12 +7219,22 @@ window.importarMaterialOficial = async function(url) {
 window.carregarMateriaisOficiais = async function() {
     window.MATERIAIS_RUNTIME._garantirCarregado();
 
-    // Lista de arquivos publicados em dados/materiais/ — adicione uma linha
-    // por arquivo novo conforme for publicando materiais oficiais, mesmo
-    // padrão manual de carregarAcervosOficiais() pra baterias. Ex.:
-    //
-    //   await window.importarMaterialOficial('dados/materiais/direito-civil.json');
-    //   await window.importarMaterialOficial('dados/materiais/direito-penal.json');
+    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
+    // Publicar um material novo = 1 linha nova em dados/manifesto-materiais.txt,
+    // sem tocar em index.html — mesmo padrão de carregarAcervosOficiais()
+    // pra baterias. Espera sequencial (não paralelo).
+    let manifestoTexto = '';
+    try {
+        const rManifesto = await fetch('dados/manifesto-materiais.txt');
+        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+        else console.warn('[MATERIAIS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
+    } catch (e) {
+        console.warn('[MATERIAIS OFICIAIS] Falha ao carregar manifesto:', e);
+    }
+    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    for (const caminho of caminhosManifesto) {
+        await window.importarMaterialOficial(caminho);
+    }
 };
 </script>
 </section>
@@ -7235,7 +7278,10 @@ window.carregarMateriaisOficiais = async function() {
     <div class="mdl">
         <div class="mat-pdf-header">
             <div class="mat-pdf-titulo" id="mat-pdf-titulo"></div>
-            <button class="mat-pdf-fechar" onclick="window.MATERIAIS_RUNTIME.fecharPdf()" title="Fechar">✖</button>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                <button class="mat-pdf-maximizar" id="mat-pdf-btn-maximizar" onclick="window.MATERIAIS_RUNTIME.alternarMaximizarPdf()" title="Maximizar">⛶</button>
+                <button class="mat-pdf-fechar" onclick="window.MATERIAIS_RUNTIME.fecharPdf()" title="Fechar">✖</button>
+            </div>
         </div>
         <iframe id="mat-pdf-frame" src=""></iframe>
     </div>
@@ -16499,11 +16545,22 @@ window.importarEsquemaOficial = async function(url) {
 window.carregarEsquemasOficiais = async function() {
     window.ESQUEMAS_RUNTIME._garantirCarregado();
 
-    // Lista de arquivos publicados em dados/esquemas/ — adicione uma linha
-    // por arquivo novo conforme for publicando esquemas oficiais. Ex.:
-    //
-    //   await window.importarEsquemaOficial('dados/esquemas/direito-civil.json');
-    //   await window.importarEsquemaOficial('dados/esquemas/direito-penal.json');
+    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
+    // Publicar um esquema novo = 1 linha nova em dados/manifesto-esquemas.txt,
+    // sem tocar em index.html — mesmo padrão de carregarAcervosOficiais()
+    // pra baterias. Espera sequencial (não paralelo).
+    let manifestoTexto = '';
+    try {
+        const rManifesto = await fetch('dados/manifesto-esquemas.txt');
+        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+        else console.warn('[ESQUEMAS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
+    } catch (e) {
+        console.warn('[ESQUEMAS OFICIAIS] Falha ao carregar manifesto:', e);
+    }
+    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    for (const caminho of caminhosManifesto) {
+        await window.importarEsquemaOficial(caminho);
+    }
 };
 </script>
 
@@ -17910,12 +17967,23 @@ window.importarJurisprudenciaOficial = async function(url) {
 window.carregarJurisprudenciaOficial = async function() {
     window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
 
-    // Lista de arquivos publicados em dados/jurisprudencia/ — adicione uma
-    // linha por arquivo novo conforme for publicando jurisprudência
-    // oficial. Ex.:
-    //
-    //   await window.importarJurisprudenciaOficial('dados/jurisprudencia/direito-civil.json');
-    //   await window.importarJurisprudenciaOficial('dados/jurisprudencia/direito-penal.json');
+    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
+    // Publicar jurisprudência nova = 1 linha nova em
+    // dados/manifesto-jurisprudencia.txt, sem tocar em index.html — mesmo
+    // padrão de carregarAcervosOficiais() pra baterias. Espera sequencial
+    // (não paralelo).
+    let manifestoTexto = '';
+    try {
+        const rManifesto = await fetch('dados/manifesto-jurisprudencia.txt');
+        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+        else console.warn('[JURISPRUDÊNCIA OFICIAL] Falha ao carregar manifesto: HTTP', rManifesto.status);
+    } catch (e) {
+        console.warn('[JURISPRUDÊNCIA OFICIAL] Falha ao carregar manifesto:', e);
+    }
+    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    for (const caminho of caminhosManifesto) {
+        await window.importarJurisprudenciaOficial(caminho);
+    }
 };
 </script>
 
