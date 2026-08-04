@@ -71,7 +71,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_pes_ausencia",
-              "nivel_3": "Ausência e Domicílio"
+              "nivel_3": "Ausência e Domicílio",
+              "aliases": []
             },
             {
               "id": "civil_pes_juridicas",
@@ -248,7 +249,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_obrig_transmissao",
-              "nivel_3": "Transmissão das Obrigações"
+              "nivel_3": "Transmissão das Obrigações",
+              "aliases": []
             },
             {
               "id": "civil_obrig_adimplemento",
@@ -446,7 +448,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_reais_promitente",
-              "nivel_3": "Direito do Promitente Comprador (Adjudicação Compulsória)"
+              "nivel_3": "Direito do Promitente Comprador (Adjudicação Compulsória)",
+              "aliases": []
             }
           ]
         },
@@ -625,7 +628,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_suc_jacente",
-              "nivel_3": "Herança Jacente e Vacante"
+              "nivel_3": "Herança Jacente e Vacante",
+              "aliases": []
             },
             {
               "id": "civil_suc_partilha",
@@ -732,7 +736,8 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "civil_au_especies",
-              "nivel_3": "Promessa de Recompensa, Gestão de Negócios, Pagamento Indevido e Enriquecimento Sem Causa"
+              "nivel_3": "Promessa de Recompensa, Gestão de Negócios, Pagamento Indevido e Enriquecimento Sem Causa",
+              "aliases": []
             }
           ],
           "aliases": [
@@ -759,7 +764,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_cont_fase",
-              "nivel_3": "Fase Pré-Contratual e Contrato Preliminar"
+              "nivel_3": "Fase Pré-Contratual e Contrato Preliminar",
+              "aliases": []
             },
             {
               "id": "civil_cont_efeitos",
@@ -796,11 +802,13 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_esp_estimatorio",
-              "nivel_3": "Contrato Estimatório, Corretagem e Comissão"
+              "nivel_3": "Contrato Estimatório, Corretagem e Comissão",
+              "aliases": []
             },
             {
               "id": "civil_esp_transporte",
-              "nivel_3": "Transporte, Seguro e Jogo e Aposta"
+              "nivel_3": "Transporte, Seguro e Jogo e Aposta",
+              "aliases": []
             }
           ],
           "aliases": [
@@ -1194,7 +1202,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "pc_exec_extincao",
-              "nivel_3": "Suspensão e Extinção do Processo de Execução"
+              "nivel_3": "Suspensão e Extinção do Processo de Execução",
+              "aliases": []
             }
           ],
           "aliases": [
@@ -1282,7 +1291,8 @@ const TAXONOMIA_DADOS = {
                 "suspensão de segurança e liminar (lei 8.437/92)",
                 "intervenção da união (lei 9.469/97)",
                 "reexame necessário",
-                "prerrogativas e prazos"
+                "prerrogativas e prazos",
+                "Fazenda Pública em Juízo"
               ]
             },
             {
@@ -1471,7 +1481,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "cons_resp_desconsideracao",
-              "nivel_3": "Desconsideração da Personalidade Jurídica no CDC"
+              "nivel_3": "Desconsideração da Personalidade Jurídica no CDC",
+              "aliases": []
             }
           ]
         },
@@ -1511,7 +1522,8 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "cons_defesa_sindec",
-              "nivel_3": "Sanções Administrativas e Sistema Nacional de Defesa do Consumidor"
+              "nivel_3": "Sanções Administrativas e Sistema Nacional de Defesa do Consumidor",
+              "aliases": []
             },
             {
               "id": "cons_defesa_juizo",
@@ -1564,7 +1576,8 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "cons_jur_stf_stj",
-              "nivel_3": "Jurisprudência, Precedentes e Súmulas do STF e STJ em Matéria de Consumo"
+              "nivel_3": "Jurisprudência, Precedentes e Súmulas do STF e STJ em Matéria de Consumo",
+              "aliases": []
             }
           ]
         },
@@ -2523,14 +2536,9 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Interpretação e Aplicação da Norma Processual Penal",
               "aliases": [
                 "Lei Processual no Tempo",
-                "Lei Processual no Espaço",
-                "interpretação",
-                "Princípios e Aplicação da Lei no Tempo e no Espaço"
+                "Lei Processual no Espaço"
               ]
             }
-          ],
-          "aliases": [
-            "Princípios e Teoria da Lei Processual"
           ]
         },
         {
@@ -2543,12 +2551,7 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Características e Prazos",
                 "Arquivamento",
-                "Valor Probatório",
-                "indiciamento",
-                "pic",
-                "identificação criminal (lei 12.037/09)",
-                "infrações de repercussão interestadual (lei 10.446/02)",
-                "Inquérito Policial, ANPP e Outros Procedimentos"
+                "Valor Probatório"
               ]
             },
             {
@@ -2556,6 +2559,17 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Acordo de Não Persecução Penal (ANPP)",
               "aliases": [
                 "Pacote Anticrime"
+              ]
+            },
+            {
+              "id": "pp_invest_ip",
+              "nivel_3": "Inquérito Policial, ANPP e Outros Procedimentos",
+              "aliases": [
+                "indiciamento",
+                "arquivamento",
+                "pic",
+                "identificação criminal (lei 12.037/09)",
+                "infrações de repercussão interestadual (lei 10.446/02)"
               ]
             }
           ]
@@ -2570,12 +2584,7 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Denúncia e Queixa",
                 "Condições da Ação",
-                "Decadência e Perempção",
-                "denúncia",
-                "queixa-crime",
-                "decadência",
-                "perempção",
-                "Ação Penal (Pública e Privada) e Reparação Civil"
+                "Decadência e Perempção"
               ]
             },
             {
@@ -2583,7 +2592,17 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Ação Civil Ex Delicto",
               "aliases": [
                 "Reparação Civil",
-                "Efeitos Civis da Sentença Penal",
+                "Efeitos Civis da Sentença Penal"
+              ]
+            },
+            {
+              "id": "pp_acao_especies",
+              "nivel_3": "Ação Penal (Pública e Privada) e Reparação Civil",
+              "aliases": [
+                "denúncia",
+                "queixa-crime",
+                "decadência",
+                "perempção",
                 "fixação de valor mínimo para indenização",
                 "efeitos civis da sentença penal absolutória"
               ]
@@ -2604,9 +2623,7 @@ const TAXONOMIA_DADOS = {
                 "Lugar da Infração e Domicílio",
                 "Conexão e Continência",
                 "Foro por Prerrogativa de Função",
-                "Prevenção",
-                "foro por prerrogativa",
-                "Fixação, Modificação (Conexão/Continência) e Conflitos"
+                "Prevenção"
               ]
             },
             {
@@ -2617,12 +2634,26 @@ const TAXONOMIA_DADOS = {
                 "Restituição de Coisas Apreendidas",
                 "Medidas Assecuratórias (Sequestro, Arresto)",
                 "Incidente de Insanidade Mental",
-                "Incidente de Falsidade",
+                "Incidente de Falsidade"
+              ]
+            },
+            {
+              "id": "pp_jurisdicao_comp",
+              "nivel_3": "Fixação, Modificação (Conexão/Continência) e Conflitos",
+              "aliases": [
+                "prevenção",
+                "foro por prerrogativa"
+              ]
+            },
+            {
+              "id": "pp_jurisdicao_incid",
+              "nivel_3": "Exceções, Restituição de Coisas Apreendidas e Medidas Assecuratórias",
+              "aliases": [
                 "sequestro",
                 "arresto",
                 "incidente de insanidade",
                 "questões prejudiciais homogêneas e heterogêneas",
-                "Exceções, Restituição de Coisas Apreendidas e Medidas Assecuratórias"
+                "incidente de falsidade"
               ]
             }
           ]
@@ -2637,9 +2668,7 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Ônus da Prova",
                 "Provas Ilícitas",
-                "Sistemas de Valoração",
-                "standard probatório (além da dúvida razoável / íntima convicção)",
-                "Teoria Geral da Prova, Ônus e Cadeia de Custódia"
+                "Sistemas de Valoração"
               ]
             },
             {
@@ -2650,12 +2679,26 @@ const TAXONOMIA_DADOS = {
                 "Interrogatório e Confissão",
                 "Prova Testemunhal",
                 "Reconhecimento de Pessoas e Coisas",
-                "Acareação e Documentos",
+                "Acareação e Documentos"
+              ]
+            },
+            {
+              "id": "pp_provas_teoria",
+              "nivel_3": "Teoria Geral da Prova, Ônus e Cadeia de Custódia",
+              "aliases": [
+                "provas ilícitas",
+                "sistemas de valoração",
+                "standard probatório (além da dúvida razoável / íntima convicção)"
+              ]
+            },
+            {
+              "id": "pp_provas_meios",
+              "nivel_3": "Meios de Prova (Testemunhal, Pericial, Interrogatório)",
+              "aliases": [
                 "confissão",
                 "reconhecimento",
                 "corpo de delito",
-                "programa de proteção a testemunhas (lei 9.807/99)",
-                "Meios de Prova (Testemunhal, Pericial, Interrogatório)"
+                "programa de proteção a testemunhas (lei 9.807/99)"
               ]
             },
             {
@@ -2679,12 +2722,7 @@ const TAXONOMIA_DADOS = {
               "id": "pp_suj_atores",
               "nivel_3": "Juiz, MP, Acusado e Defensor",
               "aliases": [
-                "Impedimento e Suspeição",
-                "impedimento",
-                "suspeição",
-                "atribuições",
-                "competências do juiz das garantias",
-                "Juiz, MP, Acusado, Defensor, Ofendido e Assistente"
+                "Impedimento e Suspeição"
               ]
             },
             {
@@ -2692,8 +2730,18 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Assistentes e Auxiliares da Justiça",
               "aliases": [
                 "Direitos do Ofendido",
-                "Assistente de Acusação",
-                "direitos do ofendido (art. 201 do cpp)"
+                "Assistente de Acusação"
+              ]
+            },
+            {
+              "id": "pp_sujeitos_atores",
+              "nivel_3": "Juiz, MP, Acusado, Defensor, Ofendido e Assistente",
+              "aliases": [
+                "impedimento",
+                "suspeição",
+                "atribuições",
+                "direitos do ofendido (art. 201 do cpp)",
+                "competências do juiz das garantias"
               ]
             }
           ]
@@ -2714,21 +2762,33 @@ const TAXONOMIA_DADOS = {
               "id": "pp_pris_preventiva",
               "nivel_3": "Prisão Preventiva e Prisão Temporária",
               "aliases": [
-                "Requisitos e Prazos",
-                "requisitos",
-                "prisão domiciliar",
-                "prisão especial",
-                "Prisões Provisórias (Flagrante, Preventiva e Temporária)"
+                "Requisitos e Prazos"
               ]
             },
             {
               "id": "pp_pris_cautelares",
               "nivel_3": "Medidas Cautelares Diversas e Liberdade Provisória",
               "aliases": [
-                "Fiança",
+                "Fiança"
+              ]
+            },
+            {
+              "id": "pp_prisoes_prov",
+              "nivel_3": "Prisões Provisórias (Flagrante, Preventiva e Temporária)",
+              "aliases": [
+                "audiência de custódia",
+                "requisitos",
+                "prisão domiciliar",
+                "prisão especial"
+              ]
+            },
+            {
+              "id": "pp_prisoes_cautelares",
+              "nivel_3": "Medidas Cautelares Diversas da Prisão e Liberdade Provisória",
+              "aliases": [
+                "fiança",
                 "tornozeleira eletrônica",
-                "art. 319",
-                "Medidas Cautelares Diversas da Prisão e Liberdade Provisória"
+                "art. 319"
               ]
             }
           ]
@@ -2742,11 +2802,7 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Citações e Intimações",
               "aliases": [
                 "Citação por Edital",
-                "Suspensão do Processo (Art. 366)",
-                "citação por hora certa",
-                "carta rogatória",
-                "suspensão do processo e da prescrição (art. 366)",
-                "Comunicação dos Atos (Citação, Intimação) e Prazos"
+                "Suspensão do Processo (Art. 366)"
               ]
             },
             {
@@ -2759,6 +2815,25 @@ const TAXONOMIA_DADOS = {
                 "absolvição",
                 "efeitos da sentença",
                 "Sentença, Coisa Julgada (Emendatio/Mutatio Libelli)"
+              ]
+            },
+            {
+              "id": "pp_atos_comunic",
+              "nivel_3": "Comunicação dos Atos (Citação, Intimação) e Prazos",
+              "aliases": [
+                "citação por edital",
+                "citação por hora certa",
+                "carta rogatória",
+                "suspensão do processo e da prescrição (art. 366)"
+              ]
+            },
+            {
+              "id": "pp_atos_nulidades",
+              "nivel_3": "Teoria das Nulidades no Processo Penal",
+              "aliases": [
+                "nulidade absoluta",
+                "nulidade relativa",
+                "prejuízo"
               ]
             }
           ],
@@ -2797,6 +2872,7 @@ const TAXONOMIA_DADOS = {
               "id": "pp_proc_especiais",
               "nivel_3": "Procedimentos Especiais (Drogas, Funcionário Público, Honra)",
               "aliases": [
+                "Competência Originária dos Tribunais",
                 "Crimes de Responsabilidade de Funcionário Público",
                 "Crimes contra a Honra",
                 "ritos especiais",
@@ -2827,20 +2903,20 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Nulidades",
               "aliases": [
                 "Princípio do Prejuízo",
-                "Nulidade Absoluta e Relativa",
-                "nulidade absoluta",
-                "nulidade relativa",
-                "prejuízo",
-                "Teoria das Nulidades no Processo Penal"
+                "Nulidade Absoluta e Relativa"
               ]
             },
             {
               "id": "pp_rec_teoria",
-              "nivel_3": "Teoria Geral dos Recursos e Efeitos",
+              "nivel_3": "Teoria Geral dos Recursos e Ações Autônomas",
               "aliases": [
+                "Habeas Corpus",
+                "Revisão Criminal",
+                "Mandado de Segurança Criminal",
                 "juízo de admissibilidade",
                 "efeito suspensivo",
-                "efeito devolutivo"
+                "efeito devolutivo",
+                "Teoria Geral dos Recursos e Efeitos"
               ]
             },
             {
@@ -2880,15 +2956,16 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Direitos, Deveres e Disciplina",
               "aliases": [
                 "Faltas Disciplinares",
-                "Regime Disciplinar Diferenciado (RDD)",
-                "falta grave",
-                "procedimento disciplinar",
-                "Direitos, Deveres e Disciplina (Faltas, RDD e Sanções)"
+                "Regime Disciplinar Diferenciado (RDD)"
               ]
             },
             {
               "id": "pp_exec_regimes",
-              "nivel_3": "Regimes, Progressão e Regressão"
+              "nivel_3": "Regimes, Progressão e Regressão",
+              "aliases": [
+                "Livramento Condicional",
+                "Saídas Temporárias"
+              ]
             },
             {
               "id": "pp_exec_incidentes",
@@ -2896,14 +2973,7 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Remição e Detração",
                 "Conversões",
-                "Medidas de Segurança",
-                "agravo em execução",
-                "cálculo de pena",
-                "trabalho do preso",
-                "execução de medida de segurança",
-                "exame de cessação de periculosidade",
-                "desinternação",
-                "Incidentes da Execução (Progressão, Regressão, Remição e Detração)"
+                "Medidas de Segurança"
               ]
             },
             {
@@ -2912,6 +2982,26 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "juízo da execução",
                 "conselho penitenciário"
+              ]
+            },
+            {
+              "id": "pp_exec_disc",
+              "nivel_3": "Direitos, Deveres e Disciplina (Faltas, RDD e Sanções)",
+              "aliases": [
+                "falta grave",
+                "procedimento disciplinar"
+              ]
+            },
+            {
+              "id": "pp_exec_incid",
+              "nivel_3": "Incidentes da Execução (Progressão, Regressão, Remição e Detração)",
+              "aliases": [
+                "agravo em execução",
+                "cálculo de pena",
+                "trabalho do preso",
+                "execução de medida de segurança",
+                "exame de cessação de periculosidade",
+                "desinternação"
               ]
             },
             {
@@ -2977,6 +3067,20 @@ const TAXONOMIA_DADOS = {
                 "Audiência de Custódia (Resolução nº 213/2015)",
                 "Proteção de Dados (Resolução nº 427/2021)",
                 "Reconhecimento de Pessoas (Resolução nº 484/2022)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pp_teoria",
+          "nivel_2": "Princípios e Teoria da Lei Processual",
+          "topicos": [
+            {
+              "id": "pp_teoria_princ",
+              "nivel_3": "Princípios e Aplicação da Lei no Tempo e no Espaço",
+              "aliases": [
+                "sistemas processuais",
+                "interpretação"
               ]
             }
           ]
@@ -3378,7 +3482,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "eleitoral_coligacoes",
-              "nivel_3": "Coligações e Convenções para Escolha de Candidatos"
+              "nivel_3": "Coligações e Convenções para Escolha de Candidatos",
+              "aliases": []
             }
           ]
         },
@@ -3410,11 +3515,13 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "eleitoral_financiamento",
-              "nivel_3": "Arrecadação, Aplicação de Recursos e Prestação de Contas"
+              "nivel_3": "Arrecadação, Aplicação de Recursos e Prestação de Contas",
+              "aliases": []
             },
             {
               "id": "eleitoral_pesquisas",
-              "nivel_3": "Pesquisas e Testes Pré-Eleitorais"
+              "nivel_3": "Pesquisas e Testes Pré-Eleitorais",
+              "aliases": []
             },
             {
               "id": "eleitoral_propaganda",
@@ -3476,7 +3583,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "eleitoral_jurisprudencia",
-              "nivel_3": "Jurisprudência dos Tribunais Superiores em Matéria Eleitoral"
+              "nivel_3": "Jurisprudência dos Tribunais Superiores em Matéria Eleitoral",
+              "aliases": []
             },
             {
               "id": "ele_proc_cand",
@@ -3932,11 +4040,13 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "emp_fal_transnacional",
-              "nivel_3": "Insolvência Transnacional"
+              "nivel_3": "Insolvência Transnacional",
+              "aliases": []
             },
             {
               "id": "emp_fal_liquidacao",
-              "nivel_3": "Intervenção e Liquidação Extrajudicial de Instituições Financeiras (Lei nº 6.024/74)"
+              "nivel_3": "Intervenção e Liquidação Extrajudicial de Instituições Financeiras (Lei nº 6.024/74)",
+              "aliases": []
             }
           ],
           "aliases": [
@@ -4127,7 +4237,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "emp_cont_alienacao",
-              "nivel_3": "Alienação Fiduciária em Garantia (Decreto-Lei nº 911/1969)"
+              "nivel_3": "Alienação Fiduciária em Garantia (Decreto-Lei nº 911/1969)",
+              "aliases": []
             },
             {
               "id": "emp_cont_arrendamento",
@@ -4929,7 +5040,8 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "amb_esp_biomas",
-              "nivel_3": "Lei da Mata Atlântica (Lei nº 11.428/06) e Proteção de Outros Biomas"
+              "nivel_3": "Lei da Mata Atlântica (Lei nº 11.428/06) e Proteção de Outros Biomas",
+              "aliases": []
             }
           ]
         },
@@ -5598,386 +5710,6 @@ const TAXONOMIA_DADOS = {
       ]
     },
     {
-      "id": "humanistica_dh",
-      "nivel_1": "Noções Gerais de Direito, Formação Humanística e Direitos Humanos",
-      "divisoes": [
-        {
-          "id": "hum_leg_estadual",
-          "nivel_2": "Legislação Estadual de Pernambuco",
-          "topicos": [
-            {
-              "id": "hum_leg_pe_estatutos",
-              "nivel_3": "Estatutos e Códigos Judiciários",
-              "aliases": [
-                "Estatuto dos Servidores Públicos de PE (Lei nº 6.123/1968)",
-                "Código de Organização Judiciária de PE (LC nº 100/2007)"
-              ]
-            },
-            {
-              "id": "hum_leg_pe_custas",
-              "nivel_3": "Custas, Taxa Judiciária e Previdência",
-              "aliases": [
-                "Regime jurídico da taxa judiciária (Lei nº 17.116/2020)",
-                "Sistema de Previdência Social dos Servidores (LC nº 28/2000)"
-              ]
-            },
-            {
-              "id": "hum_leg_pe_const",
-              "nivel_3": "Constituição Estadual e Regimento",
-              "aliases": [
-                "Constituição do Estado de Pernambuco",
-                "Regimento interno do Tribunal de Justiça de Pernambuco (TJPE)"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_sociologia",
-          "nivel_2": "Sociologia do Direito",
-          "topicos": [
-            {
-              "id": "hum_soc_administracao",
-              "nivel_3": "Sociologia da Administração Judiciária",
-              "aliases": [
-                "Aspectos gerenciais",
-                "Gestão de pessoas e economia"
-              ]
-            },
-            {
-              "id": "hum_soc_relacoes",
-              "nivel_3": "Relações Sociais e Comunicação",
-              "aliases": [
-                "Controle social e o Direito",
-                "Transformações sociais",
-                "Direito, Comunicação Social e opinião pública"
-              ]
-            },
-            {
-              "id": "hum_soc_conflitos",
-              "nivel_3": "Conflitos Sociais",
-              "aliases": [
-                "Sistemas não judiciais de composição de litígios",
-                "Mecanismos de resolução"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_psicologia",
-          "nivel_2": "Psicologia Judiciária",
-          "topicos": [
-            {
-              "id": "hum_psi_comunicacao",
-              "nivel_3": "Psicologia e Comunicação",
-              "aliases": [
-                "Relacionamento interpessoal",
-                "Relacionamento do magistrado com a sociedade e a mídia"
-              ]
-            },
-            {
-              "id": "hum_psi_problemas",
-              "nivel_3": "Problemas Atuais com Reflexos no Direito",
-              "aliases": [
-                "Assédio moral",
-                "Assédio sexual"
-              ]
-            },
-            {
-              "id": "hum_psi_conflitos",
-              "nivel_3": "Teoria do Conflito e Verdade Judicial",
-              "aliases": [
-                "Mecanismos autocompositivos",
-                "Técnicas de negociação e mediação",
-                "Processo psicológico, comportamento de partes e testemunhas"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_etica",
-          "nivel_2": "Ética e Estatuto Jurídico da Magistratura Nacional",
-          "topicos": [
-            {
-              "id": "hum_etica_regime",
-              "nivel_3": "Regime Jurídico, Direitos e Deveres",
-              "aliases": [
-                "Carreiras, ingresso, promoções e remoções",
-                "Integridade pessoal, honra e decoro",
-                "Cortesia e prudência do Juiz"
-              ]
-            },
-            {
-              "id": "hum_etica_codigo",
-              "nivel_3": "Código de Ética da Magistratura Nacional",
-              "aliases": [
-                "Ilícitos éticos e sanções",
-                "O papel da cordialidade na prestação jurisdicional"
-              ]
-            },
-            {
-              "id": "hum_etica_controles",
-              "nivel_3": "Administração, Controles e Responsabilidade",
-              "aliases": [
-                "Sistemas de controle interno (Corregedorias, Ouvidorias, CNJ)",
-                "Responsabilidade administrativa, civil e criminal",
-                "Administração judicial e planejamento estratégico"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_filosofia",
-          "nivel_2": "Filosofia do Direito",
-          "topicos": [
-            {
-              "id": "hum_fil_justica",
-              "nivel_3": "O Conceito de Justiça e de Direito",
-              "aliases": [
-                "Justiça como valor universal e jurídico-político",
-                "Equidade",
-                "Direito e Moral"
-              ]
-            },
-            {
-              "id": "hum_fil_interpretacao",
-              "nivel_3": "Interpretação do Direito",
-              "aliases": [
-                "A lógica do razoável",
-                "Superação do raciocínio lógico-dedutivo"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_teoria_geral",
-          "nivel_2": "Teoria Geral do Direito e da Política",
-          "topicos": [
-            {
-              "id": "hum_tgd_direito",
-              "nivel_3": "Direito Objetivo, Subjetivo e Fontes",
-              "aliases": [
-                "Princípios gerais de Direito",
-                "Jurisprudência e Súmula vinculante"
-              ]
-            },
-            {
-              "id": "hum_tgd_eficacia",
-              "nivel_3": "Eficácia da Lei no Tempo",
-              "aliases": [
-                "Conflito de normas jurídicas no tempo"
-              ]
-            },
-            {
-              "id": "hum_tgd_politica",
-              "nivel_3": "Política e Ideologias",
-              "aliases": [
-                "Conceito de política",
-                "Política e Direito"
-              ]
-            },
-            {
-              "id": "hum_tgd_onu_agenda",
-              "nivel_3": "ONU e Agenda 2030",
-              "aliases": [
-                "Declaração Universal dos Direitos do Homem (DUDH)",
-                "Agenda 2030 e os 17 ODS"
-              ]
-            },
-            {
-              "id": "hum_tgd_genero",
-              "nivel_3": "Gênero e Protocolo de Julgamento",
-              "aliases": [
-                "Gênero e Patriarcado",
-                "Gênero e Raça",
-                "Protocolo de Julgamento com perspectiva de gênero (CNJ)"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_digital",
-          "nivel_2": "Direito Digital",
-          "topicos": [
-            {
-              "id": "hum_dig_judiciario",
-              "nivel_3": "Transformação Digital no Poder Judiciário",
-              "aliases": [
-                "4ª Revolução industrial",
-                "Inteligência Artificial e Direito",
-                "Ciência de dados, jurimetria e audiências virtuais"
-              ]
-            },
-            {
-              "id": "hum_dig_penal",
-              "nivel_3": "Persecução Penal e Novas Tecnologias",
-              "aliases": [
-                "Crimes virtuais e cibersegurança",
-                "Deepweb e Darkweb",
-                "Provas digitais e criptomoedas"
-              ]
-            },
-            {
-              "id": "hum_dig_contratos_dados",
-              "nivel_3": "Contratos Inteligentes e Proteção de Dados",
-              "aliases": [
-                "Blockchain e algoritmos",
-                "LGPD e proteção de dados pessoais"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_pragmatismo_economia",
-          "nivel_2": "Pragmatismo, Análise Econômica e Economia Comportamental",
-          "topicos": [
-            {
-              "id": "hum_pec_pragmatismo",
-              "nivel_3": "Função Judicial e Pragmatismo",
-              "aliases": [
-                "Consequencialismo, Antifundacionalismo",
-                "Racionalismo, Empirismo e Utilitarismo"
-              ]
-            },
-            {
-              "id": "hum_pec_aed",
-              "nivel_3": "Análise Econômica do Direito",
-              "aliases": [
-                "Eficiência processual e racionalidade econômica",
-                "Demandas frívolas",
-                "Precedentes, segurança jurídica e coisa julgada"
-              ]
-            },
-            {
-              "id": "hum_pec_comportamental",
-              "nivel_3": "Economia Comportamental e Governança",
-              "aliases": [
-                "Heurística e vieses cognitivos",
-                "Governança corporativa e Compliance no Brasil",
-                "Whistleblower"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "hum_antidiscriminacao",
-          "nivel_2": "Direito da Antidiscriminação",
-          "topicos": [
-            {
-              "id": "hum_antid_conceitos",
-              "nivel_3": "Conceitos e Modalidades de Discriminação",
-              "aliases": [
-                "Racismo, Sexismo, Intolerância Religiosa, LGBTQIA+fobia",
-                "Legislação antidiscriminação nacional e internacional"
-              ]
-            },
-            {
-              "id": "hum_antid_acoes_povos",
-              "nivel_3": "Ações Afirmativas e Povos Tradicionais",
-              "aliases": [
-                "Direitos dos Povos indígenas",
-                "Direitos das comunidades tradicionais"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "direitos_humanos",
-          "nivel_2": "Direitos Humanos",
-          "topicos": [
-            {
-              "id": "dh_teoria_sistemas",
-              "nivel_3": "Teoria Geral e Sistemas de Proteção",
-              "aliases": [
-                "Sistema global de proteção",
-                "Sistema regional interamericano"
-              ]
-            },
-            {
-              "id": "dh_aplicacao_brasil",
-              "nivel_3": "Aplicação e Controle de Convencionalidade",
-              "aliases": [
-                "Controle de convencionalidade",
-                "Relação entre o direito internacional e o direito brasileiro",
-                "Os direitos humanos na CF/1988 e a jurisprudência do STF"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "dh_teoria",
-          "nivel_2": "Teoria Geral e Fundamentos",
-          "topicos": [
-            {
-              "id": "dh_teo_fund",
-              "nivel_3": "Histórico, Fundamentos e Características (Universalidade, Indivisibilidade)",
-              "aliases": [
-                "gerações/dimensões de direitos",
-                "relativismo cultural",
-                "efetividade",
-                "interseccionalidade",
-                "teoria crítica e decolonialidade"
-              ]
-            },
-            {
-              "id": "dh_teo_incorp",
-              "nivel_3": "Incorporação de Tratados, Status Normativo e IDC",
-              "aliases": [
-                "supralegalidade",
-                "bloco de constitucionalidade",
-                "incidente de deslocamento de competência"
-              ]
-            },
-            {
-              "id": "dh_teo_convenc",
-              "nivel_3": "Controle de Convencionalidade e Diálogo das Cortes",
-              "aliases": [
-                "pro persona",
-                "margem de apreciação nacional"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "dh_onu",
-          "nivel_2": "Sistema Global (ONU)",
-          "topicos": [
-            {
-              "id": "dh_onu_dudh",
-              "nivel_3": "Declaração Universal dos Direitos Humanos (DUDH)",
-              "aliases": [
-                "carta internacional dos direitos humanos"
-              ]
-            },
-            {
-              "id": "dh_onu_pactos",
-              "nivel_3": "Pactos Internacionais (PIDCP e PIDESC) e Comitês",
-              "aliases": [
-                "protocolos facultativos",
-                "comitê de direitos humanos"
-              ]
-            },
-            {
-              "id": "dh_onu_extrac",
-              "nivel_3": "Mecanismos Extraconvencionais (Conselho de DH e RPU)",
-              "aliases": [
-                "revisão periódica universal",
-                "relatores especiais"
-              ]
-            },
-            {
-              "id": "dh_onu_tpi",
-              "nivel_3": "Direito Internacional Penal e Tribunal Penal Internacional (TPI)",
-              "aliases": [
-                "estatuto de roma",
-                "tribunal de nuremberg",
-                "crimes contra a humanidade"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "agrario",
       "nivel_1": "Direito Agrário",
       "divisoes": [
@@ -6352,6 +6084,386 @@ const TAXONOMIA_DADOS = {
                 "regimento interno",
                 "sessões do tribunal pleno e turmas",
                 "súmulas locais do tj"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "humanistica_dh",
+      "nivel_1": "Noções Gerais de Direito, Formação Humanística e Direitos Humanos",
+      "divisoes": [
+        {
+          "id": "hum_leg_estadual",
+          "nivel_2": "Legislação Estadual de Pernambuco",
+          "topicos": [
+            {
+              "id": "hum_leg_pe_estatutos",
+              "nivel_3": "Estatutos e Códigos Judiciários",
+              "aliases": [
+                "Estatuto dos Servidores Públicos de PE (Lei nº 6.123/1968)",
+                "Código de Organização Judiciária de PE (LC nº 100/2007)"
+              ]
+            },
+            {
+              "id": "hum_leg_pe_custas",
+              "nivel_3": "Custas, Taxa Judiciária e Previdência",
+              "aliases": [
+                "Regime jurídico da taxa judiciária (Lei nº 17.116/2020)",
+                "Sistema de Previdência Social dos Servidores (LC nº 28/2000)"
+              ]
+            },
+            {
+              "id": "hum_leg_pe_const",
+              "nivel_3": "Constituição Estadual e Regimento",
+              "aliases": [
+                "Constituição do Estado de Pernambuco",
+                "Regimento interno do Tribunal de Justiça de Pernambuco (TJPE)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_sociologia",
+          "nivel_2": "Sociologia do Direito",
+          "topicos": [
+            {
+              "id": "hum_soc_administracao",
+              "nivel_3": "Sociologia da Administração Judiciária",
+              "aliases": [
+                "Aspectos gerenciais",
+                "Gestão de pessoas e economia"
+              ]
+            },
+            {
+              "id": "hum_soc_relacoes",
+              "nivel_3": "Relações Sociais e Comunicação",
+              "aliases": [
+                "Controle social e o Direito",
+                "Transformações sociais",
+                "Direito, Comunicação Social e opinião pública"
+              ]
+            },
+            {
+              "id": "hum_soc_conflitos",
+              "nivel_3": "Conflitos Sociais",
+              "aliases": [
+                "Sistemas não judiciais de composição de litígios",
+                "Mecanismos de resolução"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_psicologia",
+          "nivel_2": "Psicologia Judiciária",
+          "topicos": [
+            {
+              "id": "hum_psi_comunicacao",
+              "nivel_3": "Psicologia e Comunicação",
+              "aliases": [
+                "Relacionamento interpessoal",
+                "Relacionamento do magistrado com a sociedade e a mídia"
+              ]
+            },
+            {
+              "id": "hum_psi_problemas",
+              "nivel_3": "Problemas Atuais com Reflexos no Direito",
+              "aliases": [
+                "Assédio moral",
+                "Assédio sexual"
+              ]
+            },
+            {
+              "id": "hum_psi_conflitos",
+              "nivel_3": "Teoria do Conflito e Verdade Judicial",
+              "aliases": [
+                "Mecanismos autocompositivos",
+                "Técnicas de negociação e mediação",
+                "Processo psicológico, comportamento de partes e testemunhas"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_etica",
+          "nivel_2": "Ética e Estatuto Jurídico da Magistratura Nacional",
+          "topicos": [
+            {
+              "id": "hum_etica_regime",
+              "nivel_3": "Regime Jurídico, Direitos e Deveres",
+              "aliases": [
+                "Carreiras, ingresso, promoções e remoções",
+                "Integridade pessoal, honra e decoro",
+                "Cortesia e prudência do Juiz"
+              ]
+            },
+            {
+              "id": "hum_etica_codigo",
+              "nivel_3": "Código de Ética da Magistratura Nacional",
+              "aliases": [
+                "Ilícitos éticos e sanções",
+                "O papel da cordialidade na prestação jurisdicional"
+              ]
+            },
+            {
+              "id": "hum_etica_controles",
+              "nivel_3": "Administração, Controles e Responsabilidade",
+              "aliases": [
+                "Sistemas de controle interno (Corregedorias, Ouvidorias, CNJ)",
+                "Responsabilidade administrativa, civil e criminal",
+                "Administração judicial e planejamento estratégico"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_filosofia",
+          "nivel_2": "Filosofia do Direito",
+          "topicos": [
+            {
+              "id": "hum_fil_justica",
+              "nivel_3": "O Conceito de Justiça e de Direito",
+              "aliases": [
+                "Justiça como valor universal e jurídico-político",
+                "Equidade",
+                "Direito e Moral"
+              ]
+            },
+            {
+              "id": "hum_fil_interpretacao",
+              "nivel_3": "Interpretação do Direito",
+              "aliases": [
+                "A lógica do razoável",
+                "Superação do raciocínio lógico-dedutivo"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_teoria_geral",
+          "nivel_2": "Teoria Geral do Direito e da Política",
+          "topicos": [
+            {
+              "id": "hum_tgd_direito",
+              "nivel_3": "Direito Objetivo, Subjetivo e Fontes",
+              "aliases": [
+                "Princípios gerais de Direito",
+                "Jurisprudência e Súmula vinculante"
+              ]
+            },
+            {
+              "id": "hum_tgd_eficacia",
+              "nivel_3": "Eficácia da Lei no Tempo",
+              "aliases": [
+                "Conflito de normas jurídicas no tempo"
+              ]
+            },
+            {
+              "id": "hum_tgd_politica",
+              "nivel_3": "Política e Ideologias",
+              "aliases": [
+                "Conceito de política",
+                "Política e Direito"
+              ]
+            },
+            {
+              "id": "hum_tgd_onu_agenda",
+              "nivel_3": "ONU e Agenda 2030",
+              "aliases": [
+                "Declaração Universal dos Direitos do Homem (DUDH)",
+                "Agenda 2030 e os 17 ODS"
+              ]
+            },
+            {
+              "id": "hum_tgd_genero",
+              "nivel_3": "Gênero e Protocolo de Julgamento",
+              "aliases": [
+                "Gênero e Patriarcado",
+                "Gênero e Raça",
+                "Protocolo de Julgamento com perspectiva de gênero (CNJ)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_digital",
+          "nivel_2": "Direito Digital",
+          "topicos": [
+            {
+              "id": "hum_dig_judiciario",
+              "nivel_3": "Transformação Digital no Poder Judiciário",
+              "aliases": [
+                "4ª Revolução industrial",
+                "Inteligência Artificial e Direito",
+                "Ciência de dados, jurimetria e audiências virtuais"
+              ]
+            },
+            {
+              "id": "hum_dig_penal",
+              "nivel_3": "Persecução Penal e Novas Tecnologias",
+              "aliases": [
+                "Crimes virtuais e cibersegurança",
+                "Deepweb e Darkweb",
+                "Provas digitais e criptomoedas"
+              ]
+            },
+            {
+              "id": "hum_dig_contratos_dados",
+              "nivel_3": "Contratos Inteligentes e Proteção de Dados",
+              "aliases": [
+                "Blockchain e algoritmos",
+                "LGPD e proteção de dados pessoais"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_pragmatismo_economia",
+          "nivel_2": "Pragmatismo, Análise Econômica e Economia Comportamental",
+          "topicos": [
+            {
+              "id": "hum_pec_pragmatismo",
+              "nivel_3": "Função Judicial e Pragmatismo",
+              "aliases": [
+                "Consequencialismo, Antifundacionalismo",
+                "Racionalismo, Empirismo e Utilitarismo"
+              ]
+            },
+            {
+              "id": "hum_pec_aed",
+              "nivel_3": "Análise Econômica do Direito",
+              "aliases": [
+                "Eficiência processual e racionalidade econômica",
+                "Demandas frívolas",
+                "Precedentes, segurança jurídica e coisa julgada"
+              ]
+            },
+            {
+              "id": "hum_pec_comportamental",
+              "nivel_3": "Economia Comportamental e Governança",
+              "aliases": [
+                "Heurística e vieses cognitivos",
+                "Governança corporativa e Compliance no Brasil",
+                "Whistleblower"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hum_antidiscriminacao",
+          "nivel_2": "Direito da Antidiscriminação",
+          "topicos": [
+            {
+              "id": "hum_antid_conceitos",
+              "nivel_3": "Conceitos e Modalidades de Discriminação",
+              "aliases": [
+                "Racismo, Sexismo, Intolerância Religiosa, LGBTQIA+fobia",
+                "Legislação antidiscriminação nacional e internacional"
+              ]
+            },
+            {
+              "id": "hum_antid_acoes_povos",
+              "nivel_3": "Ações Afirmativas e Povos Tradicionais",
+              "aliases": [
+                "Direitos dos Povos indígenas",
+                "Direitos das comunidades tradicionais"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "direitos_humanos",
+          "nivel_2": "Direitos Humanos",
+          "topicos": [
+            {
+              "id": "dh_teoria_sistemas",
+              "nivel_3": "Teoria Geral e Sistemas de Proteção",
+              "aliases": [
+                "Sistema global de proteção",
+                "Sistema regional interamericano"
+              ]
+            },
+            {
+              "id": "dh_aplicacao_brasil",
+              "nivel_3": "Aplicação e Controle de Convencionalidade",
+              "aliases": [
+                "Controle de convencionalidade",
+                "Relação entre o direito internacional e o direito brasileiro",
+                "Os direitos humanos na CF/1988 e a jurisprudência do STF"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dh_teoria",
+          "nivel_2": "Teoria Geral e Fundamentos",
+          "topicos": [
+            {
+              "id": "dh_teo_fund",
+              "nivel_3": "Histórico, Fundamentos e Características (Universalidade, Indivisibilidade)",
+              "aliases": [
+                "gerações/dimensões de direitos",
+                "relativismo cultural",
+                "efetividade",
+                "interseccionalidade",
+                "teoria crítica e decolonialidade"
+              ]
+            },
+            {
+              "id": "dh_teo_incorp",
+              "nivel_3": "Incorporação de Tratados, Status Normativo e IDC",
+              "aliases": [
+                "supralegalidade",
+                "bloco de constitucionalidade",
+                "incidente de deslocamento de competência"
+              ]
+            },
+            {
+              "id": "dh_teo_convenc",
+              "nivel_3": "Controle de Convencionalidade e Diálogo das Cortes",
+              "aliases": [
+                "pro persona",
+                "margem de apreciação nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dh_onu",
+          "nivel_2": "Sistema Global (ONU)",
+          "topicos": [
+            {
+              "id": "dh_onu_dudh",
+              "nivel_3": "Declaração Universal dos Direitos Humanos (DUDH)",
+              "aliases": [
+                "carta internacional dos direitos humanos"
+              ]
+            },
+            {
+              "id": "dh_onu_pactos",
+              "nivel_3": "Pactos Internacionais (PIDCP e PIDESC) e Comitês",
+              "aliases": [
+                "protocolos facultativos",
+                "comitê de direitos humanos"
+              ]
+            },
+            {
+              "id": "dh_onu_extrac",
+              "nivel_3": "Mecanismos Extraconvencionais (Conselho de DH e RPU)",
+              "aliases": [
+                "revisão periódica universal",
+                "relatores especiais"
+              ]
+            },
+            {
+              "id": "dh_onu_tpi",
+              "nivel_3": "Direito Internacional Penal e Tribunal Penal Internacional (TPI)",
+              "aliases": [
+                "estatuto de roma",
+                "tribunal de nuremberg",
+                "crimes contra a humanidade"
               ]
             }
           ]
