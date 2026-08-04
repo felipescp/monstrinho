@@ -729,91 +729,6 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        },
-        {
-          "id": "civil_atos_unilaterais",
-          "nivel_2": "Atos Unilaterais",
-          "topicos": [
-            {
-              "id": "civil_au_especies",
-              "nivel_3": "Promessa de Recompensa, Gestão de Negócios, Pagamento Indevido e Enriquecimento Sem Causa",
-              "aliases": []
-            }
-          ],
-          "aliases": [
-            "Promessa de Recompensa",
-            "Gestão de Negócios",
-            "Pagamento Indevido",
-            "Enriquecimento Sem Causa",
-            "Atos Unilaterais"
-          ]
-        },
-        {
-          "id": "civil_contratos_geral",
-          "nivel_2": "Contratos em Geral",
-          "topicos": [
-            {
-              "id": "civil_cont_teoria",
-              "nivel_3": "Teoria Geral, Princípios, Formação e Extinção",
-              "aliases": [
-                "boa-fé objetiva",
-                "função social",
-                "resolução por onerosidade",
-                "exceção do contrato não cumprido"
-              ]
-            },
-            {
-              "id": "civil_cont_fase",
-              "nivel_3": "Fase Pré-Contratual e Contrato Preliminar",
-              "aliases": []
-            },
-            {
-              "id": "civil_cont_efeitos",
-              "nivel_3": "Efeitos dos Contratos e Relatividade",
-              "aliases": [
-                "estipulação em favor de terceiro",
-                "promessa de fato de terceiro",
-                "contrato com pessoa a declarar"
-              ]
-            },
-            {
-              "id": "civil_cont_vicios",
-              "nivel_3": "Vícios Redibitórios e Evicção",
-              "aliases": [
-                "garantias contratuais"
-              ]
-            },
-            {
-              "id": "civil_esp_venda",
-              "nivel_3": "Compra e Venda, Doação, Empréstimo (Mútuo/Comodato)",
-              "aliases": [
-                "troca",
-                "pacto de retrovenda",
-                "venda a contento"
-              ]
-            },
-            {
-              "id": "civil_esp_servicos",
-              "nivel_3": "Locação, Prestação de Serviços, Empreitada e Fiança",
-              "aliases": [
-                "mandato",
-                "transação"
-              ]
-            },
-            {
-              "id": "civil_esp_estimatorio",
-              "nivel_3": "Contrato Estimatório, Corretagem e Comissão",
-              "aliases": []
-            },
-            {
-              "id": "civil_esp_transporte",
-              "nivel_3": "Transporte, Seguro e Jogo e Aposta",
-              "aliases": []
-            }
-          ],
-          "aliases": [
-            "Contratos em Espécie"
-          ]
         }
       ]
     },
@@ -1961,48 +1876,6 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        },
-        {
-          "id": "eca_justica",
-          "nivel_2": "Justiça da Infância e Infrações",
-          "topicos": [
-            {
-              "id": "eca_jus_proc",
-              "nivel_3": "Competência, Procedimentos e Recursos no ECA",
-              "aliases": [
-                "procedimento de apuração de irregularidade em entidade",
-                "apelação no eca",
-                "prazos recursais (10 dias)",
-                "efeitos dos recursos"
-              ]
-            },
-            {
-              "id": "eca_jus_escuta",
-              "nivel_3": "Sistema de Garantia de Direitos de Menores Vítimas (Lei nº 13.431/17)",
-              "aliases": [
-                "escuta especializada",
-                "depoimento especial",
-                "revitimização"
-              ]
-            },
-            {
-              "id": "eca_jus_tutela",
-              "nivel_3": "Tutela Coletiva e Atuação do Ministério Público",
-              "aliases": [
-                "ação civil pública no eca",
-                "multas administrativas"
-              ]
-            },
-            {
-              "id": "eca_jus_crimes",
-              "nivel_3": "Crimes e Infrações Administrativas previstos no ECA",
-              "aliases": [
-                "corrupção de menores",
-                "venda de bebida alcoólica",
-                "multa administrativa"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -2419,6 +2292,11 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
+          "id": "penal_especial_outros",
+          "nivel_2": "Penal Especial: Outros Crimes",
+          "topicos": []
+        },
+        {
           "id": "penal_especial",
           "nivel_2": "Legislação Penal Especial",
           "topicos": [
@@ -2483,32 +2361,6 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Lei de Licitações"
               ]
-            }
-          ]
-        },
-        {
-          "id": "div_1779236676904",
-          "nivel_2": "Legislação Penal Especial",
-          "topicos": [
-            {
-              "id": "top_1779236690352",
-              "nivel_3": "Lei de Abuso de Autoridade (Lei nº 13.869/19)"
-            },
-            {
-              "id": "top_1779236690968",
-              "nivel_3": "Crimes em Licitações e Contratos (Arts. 178 a 183-B do CP / Lei 14.133)"
-            },
-            {
-              "id": "top_1779236691560",
-              "nivel_3": "Lei de Lavagem de Capitais (Lei nº 9.613/98)"
-            },
-            {
-              "id": "top_1779236692952",
-              "nivel_3": "Organização Criminosa (Lei nº 12.850/13)"
-            },
-            {
-              "id": "top_1779236693503",
-              "nivel_3": "Lei Maria da Penha: Aspectos Penais (Lei nº 11.340/06)"
             }
           ]
         }
@@ -3070,20 +2922,6 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        },
-        {
-          "id": "pp_teoria",
-          "nivel_2": "Princípios e Teoria da Lei Processual",
-          "topicos": [
-            {
-              "id": "pp_teoria_princ",
-              "nivel_3": "Princípios e Aplicação da Lei no Tempo e no Espaço",
-              "aliases": [
-                "sistemas processuais",
-                "interpretação"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -3134,6 +2972,38 @@ const TAXONOMIA_DADOS = {
           ],
           "aliases": [
             "Teoria da Constituição"
+          ]
+        },
+        {
+          "id": "const_controle",
+          "nivel_2": "Controle de Constitucionalidade",
+          "topicos": [
+            {
+              "id": "const_controle_concentrado_difuso",
+              "nivel_3": "Sistemas e Instrumentos de Controle",
+              "aliases": [
+                "Controle difuso e concentrado",
+                "ADI, ADC e ADPF",
+                "Inconstitucionalidade por omissão",
+                "Efeitos da declaração"
+              ]
+            },
+            {
+              "id": "const_controle_difuso",
+              "nivel_3": "Teoria Geral e Controle Difuso",
+              "aliases": [
+                "reserva de plenário",
+                "súmula vinculante"
+              ]
+            },
+            {
+              "id": "const_controle_concentrado",
+              "nivel_3": "Controle Concentrado (ADI, ADC, ADO, ADPF)",
+              "aliases": [
+                "ações objetivas",
+                "modulação de efeitos"
+              ]
+            }
           ]
         },
         {
@@ -3302,58 +3172,6 @@ const TAXONOMIA_DADOS = {
             "Advocacia e Defensoria Pública",
             "Advocacia Pública",
             "Funções Essenciais à Justiça"
-          ]
-        },
-        {
-          "id": "const_controle",
-          "nivel_2": "Controle de Constitucionalidade",
-          "topicos": [
-            {
-              "id": "const_controle_concentrado_difuso",
-              "nivel_3": "Sistemas e Instrumentos de Controle",
-              "aliases": [
-                "Controle difuso e concentrado",
-                "ADI, ADC e ADPF",
-                "Inconstitucionalidade por omissão",
-                "Efeitos da declaração"
-              ]
-            },
-            {
-              "id": "const_controle_difuso",
-              "nivel_3": "Teoria Geral e Controle Difuso",
-              "aliases": [
-                "reserva de plenário",
-                "súmula vinculante"
-              ]
-            },
-            {
-              "id": "const_controle_concentrado",
-              "nivel_3": "Controle Concentrado (ADI, ADC, ADO, ADPF)",
-              "aliases": [
-                "ações objetivas",
-                "modulação de efeitos"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "const_temas_especiais",
-          "nivel_2": "Temas Especiais",
-          "topicos": [
-            {
-              "id": "const_pcd",
-              "nivel_3": "Convenção Internacional sobre os Direitos das Pessoas com Deficiência",
-              "aliases": [
-                "Estatuto da Pessoa com Deficiência"
-              ]
-            },
-            {
-              "id": "const_indigenas",
-              "nivel_3": "Marco temporal indígena",
-              "aliases": [
-                "Direitos dos Povos Indígenas"
-              ]
-            }
           ]
         },
         {
@@ -3729,34 +3547,6 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        },
-        {
-          "id": "ele_ilicitos",
-          "nivel_2": "Ilícitos Eleitorais",
-          "topicos": [
-            {
-              "id": "ele_ili_crimes",
-              "nivel_3": "Crimes Eleitorais e Processo Penal Eleitoral",
-              "aliases": [
-                "boca de urna",
-                "transporte irregular de eleitores",
-                "corrupção eleitoral",
-                "falsidade ideológica eleitoral (art. 350 do ce)",
-                "inscrição fraudulenta de eleitor",
-                "denunciação caluniosa eleitoral",
-                "calúnia, difamação e injúria eleitoral"
-              ]
-            },
-            {
-              "id": "ele_ili_condutas",
-              "nivel_3": "Condutas Vedadas aos Agentes Públicos e Abuso de Poder",
-              "aliases": [
-                "abuso de poder econômico",
-                "abuso de poder político",
-                "uso da máquina pública"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -4089,27 +3879,6 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
-          "id": "emp_legislacao_especial",
-          "nivel_2": "Legislação Especial",
-          "topicos": [
-            {
-              "id": "emp_leg_mep_epp",
-              "nivel_3": "Microempresa e Empresa de Pequeno Porte (LC nº 123/2006)",
-              "aliases": [
-                "Tratamento diferenciado e favorecido",
-                "Simples nacional"
-              ]
-            },
-            {
-              "id": "emp_leg_agronegocio",
-              "nivel_3": "Títulos do Agronegócio (Lei nº 11.076/2004)",
-              "aliases": [
-                "CDA e WA"
-              ]
-            }
-          ]
-        },
-        {
           "id": "emp_societario_teoria",
           "nivel_2": "Direito Societário: Teoria Geral e Tipos Menores",
           "topicos": [
@@ -4245,6 +4014,27 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Arrendamento Mercantil (Leasing - Lei nº 6.099/74) e Contratos Bancários",
               "aliases": [
                 "patrimônio rural em afetação (lei do agro)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "emp_legislacao_especial",
+          "nivel_2": "Legislação Especial",
+          "topicos": [
+            {
+              "id": "emp_leg_mep_epp",
+              "nivel_3": "Microempresa e Empresa de Pequeno Porte (LC nº 123/2006)",
+              "aliases": [
+                "Tratamento diferenciado e favorecido",
+                "Simples nacional"
+              ]
+            },
+            {
+              "id": "emp_leg_agronegocio",
+              "nivel_3": "Títulos do Agronegócio (Lei nº 11.076/2004)",
+              "aliases": [
+                "CDA e WA"
               ]
             }
           ]
@@ -6087,6 +5877,11 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
+        },
+        {
+          "id": "resolucoes_institucionais",
+          "nivel_2": "Resoluções e Diplomas Institucionais",
+          "topicos": []
         }
       ]
     },
@@ -6096,7 +5891,7 @@ const TAXONOMIA_DADOS = {
       "divisoes": [
         {
           "id": "hum_leg_estadual",
-          "nivel_2": "Legislação Estadual de Pernambuco",
+          "nivel_2": "Legislação Estadual",
           "topicos": [
             {
               "id": "hum_leg_pe_estatutos",
@@ -6393,13 +6188,7 @@ const TAXONOMIA_DADOS = {
                 "Relação entre o direito internacional e o direito brasileiro",
                 "Os direitos humanos na CF/1988 e a jurisprudência do STF"
               ]
-            }
-          ]
-        },
-        {
-          "id": "dh_teoria",
-          "nivel_2": "Teoria Geral e Fundamentos",
-          "topicos": [
+            },
             {
               "id": "dh_teo_fund",
               "nivel_3": "Histórico, Fundamentos e Características (Universalidade, Indivisibilidade)",
