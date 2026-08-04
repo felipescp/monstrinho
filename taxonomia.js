@@ -71,8 +71,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_pes_ausencia",
-              "nivel_3": "Ausência e Domicílio",
-              "aliases": []
+              "nivel_3": "Ausência e Domicílio"
             },
             {
               "id": "civil_pes_juridicas",
@@ -249,8 +248,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_obrig_transmissao",
-              "nivel_3": "Transmissão das Obrigações",
-              "aliases": []
+              "nivel_3": "Transmissão das Obrigações"
             },
             {
               "id": "civil_obrig_adimplemento",
@@ -448,8 +446,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_reais_promitente",
-              "nivel_3": "Direito do Promitente Comprador (Adjudicação Compulsória)",
-              "aliases": []
+              "nivel_3": "Direito do Promitente Comprador (Adjudicação Compulsória)"
             }
           ]
         },
@@ -628,8 +625,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_suc_jacente",
-              "nivel_3": "Herança Jacente e Vacante",
-              "aliases": []
+              "nivel_3": "Herança Jacente e Vacante"
             },
             {
               "id": "civil_suc_partilha",
@@ -736,8 +732,7 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "civil_au_especies",
-              "nivel_3": "Promessa de Recompensa, Gestão de Negócios, Pagamento Indevido e Enriquecimento Sem Causa",
-              "aliases": []
+              "nivel_3": "Promessa de Recompensa, Gestão de Negócios, Pagamento Indevido e Enriquecimento Sem Causa"
             }
           ],
           "aliases": [
@@ -764,8 +759,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_cont_fase",
-              "nivel_3": "Fase Pré-Contratual e Contrato Preliminar",
-              "aliases": []
+              "nivel_3": "Fase Pré-Contratual e Contrato Preliminar"
             },
             {
               "id": "civil_cont_efeitos",
@@ -802,13 +796,11 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "civil_esp_estimatorio",
-              "nivel_3": "Contrato Estimatório, Corretagem e Comissão",
-              "aliases": []
+              "nivel_3": "Contrato Estimatório, Corretagem e Comissão"
             },
             {
               "id": "civil_esp_transporte",
-              "nivel_3": "Transporte, Seguro e Jogo e Aposta",
-              "aliases": []
+              "nivel_3": "Transporte, Seguro e Jogo e Aposta"
             }
           ],
           "aliases": [
@@ -1202,8 +1194,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "pc_exec_extincao",
-              "nivel_3": "Suspensão e Extinção do Processo de Execução",
-              "aliases": []
+              "nivel_3": "Suspensão e Extinção do Processo de Execução"
             }
           ],
           "aliases": [
@@ -1291,8 +1282,7 @@ const TAXONOMIA_DADOS = {
                 "suspensão de segurança e liminar (lei 8.437/92)",
                 "intervenção da união (lei 9.469/97)",
                 "reexame necessário",
-                "prerrogativas e prazos",
-                "Fazenda Pública em Juízo"
+                "prerrogativas e prazos"
               ]
             },
             {
@@ -1481,8 +1471,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "cons_resp_desconsideracao",
-              "nivel_3": "Desconsideração da Personalidade Jurídica no CDC",
-              "aliases": []
+              "nivel_3": "Desconsideração da Personalidade Jurídica no CDC"
             }
           ]
         },
@@ -1522,8 +1511,7 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "cons_defesa_sindec",
-              "nivel_3": "Sanções Administrativas e Sistema Nacional de Defesa do Consumidor",
-              "aliases": []
+              "nivel_3": "Sanções Administrativas e Sistema Nacional de Defesa do Consumidor"
             },
             {
               "id": "cons_defesa_juizo",
@@ -1576,8 +1564,7 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "cons_jur_stf_stj",
-              "nivel_3": "Jurisprudência, Precedentes e Súmulas do STF e STJ em Matéria de Consumo",
-              "aliases": []
+              "nivel_3": "Jurisprudência, Precedentes e Súmulas do STF e STJ em Matéria de Consumo"
             }
           ]
         },
@@ -2536,9 +2523,14 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Interpretação e Aplicação da Norma Processual Penal",
               "aliases": [
                 "Lei Processual no Tempo",
-                "Lei Processual no Espaço"
+                "Lei Processual no Espaço",
+                "interpretação",
+                "Princípios e Aplicação da Lei no Tempo e no Espaço"
               ]
             }
+          ],
+          "aliases": [
+            "Princípios e Teoria da Lei Processual"
           ]
         },
         {
@@ -2551,7 +2543,12 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Características e Prazos",
                 "Arquivamento",
-                "Valor Probatório"
+                "Valor Probatório",
+                "indiciamento",
+                "pic",
+                "identificação criminal (lei 12.037/09)",
+                "infrações de repercussão interestadual (lei 10.446/02)",
+                "Inquérito Policial, ANPP e Outros Procedimentos"
               ]
             },
             {
@@ -2559,17 +2556,6 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Acordo de Não Persecução Penal (ANPP)",
               "aliases": [
                 "Pacote Anticrime"
-              ]
-            },
-            {
-              "id": "pp_invest_ip",
-              "nivel_3": "Inquérito Policial, ANPP e Outros Procedimentos",
-              "aliases": [
-                "indiciamento",
-                "arquivamento",
-                "pic",
-                "identificação criminal (lei 12.037/09)",
-                "infrações de repercussão interestadual (lei 10.446/02)"
               ]
             }
           ]
@@ -2584,7 +2570,12 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Denúncia e Queixa",
                 "Condições da Ação",
-                "Decadência e Perempção"
+                "Decadência e Perempção",
+                "denúncia",
+                "queixa-crime",
+                "decadência",
+                "perempção",
+                "Ação Penal (Pública e Privada) e Reparação Civil"
               ]
             },
             {
@@ -2592,17 +2583,7 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Ação Civil Ex Delicto",
               "aliases": [
                 "Reparação Civil",
-                "Efeitos Civis da Sentença Penal"
-              ]
-            },
-            {
-              "id": "pp_acao_especies",
-              "nivel_3": "Ação Penal (Pública e Privada) e Reparação Civil",
-              "aliases": [
-                "denúncia",
-                "queixa-crime",
-                "decadência",
-                "perempção",
+                "Efeitos Civis da Sentença Penal",
                 "fixação de valor mínimo para indenização",
                 "efeitos civis da sentença penal absolutória"
               ]
@@ -2623,7 +2604,9 @@ const TAXONOMIA_DADOS = {
                 "Lugar da Infração e Domicílio",
                 "Conexão e Continência",
                 "Foro por Prerrogativa de Função",
-                "Prevenção"
+                "Prevenção",
+                "foro por prerrogativa",
+                "Fixação, Modificação (Conexão/Continência) e Conflitos"
               ]
             },
             {
@@ -2634,26 +2617,12 @@ const TAXONOMIA_DADOS = {
                 "Restituição de Coisas Apreendidas",
                 "Medidas Assecuratórias (Sequestro, Arresto)",
                 "Incidente de Insanidade Mental",
-                "Incidente de Falsidade"
-              ]
-            },
-            {
-              "id": "pp_jurisdicao_comp",
-              "nivel_3": "Fixação, Modificação (Conexão/Continência) e Conflitos",
-              "aliases": [
-                "prevenção",
-                "foro por prerrogativa"
-              ]
-            },
-            {
-              "id": "pp_jurisdicao_incid",
-              "nivel_3": "Exceções, Restituição de Coisas Apreendidas e Medidas Assecuratórias",
-              "aliases": [
+                "Incidente de Falsidade",
                 "sequestro",
                 "arresto",
                 "incidente de insanidade",
                 "questões prejudiciais homogêneas e heterogêneas",
-                "incidente de falsidade"
+                "Exceções, Restituição de Coisas Apreendidas e Medidas Assecuratórias"
               ]
             }
           ]
@@ -2668,7 +2637,9 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Ônus da Prova",
                 "Provas Ilícitas",
-                "Sistemas de Valoração"
+                "Sistemas de Valoração",
+                "standard probatório (além da dúvida razoável / íntima convicção)",
+                "Teoria Geral da Prova, Ônus e Cadeia de Custódia"
               ]
             },
             {
@@ -2679,26 +2650,12 @@ const TAXONOMIA_DADOS = {
                 "Interrogatório e Confissão",
                 "Prova Testemunhal",
                 "Reconhecimento de Pessoas e Coisas",
-                "Acareação e Documentos"
-              ]
-            },
-            {
-              "id": "pp_provas_teoria",
-              "nivel_3": "Teoria Geral da Prova, Ônus e Cadeia de Custódia",
-              "aliases": [
-                "provas ilícitas",
-                "sistemas de valoração",
-                "standard probatório (além da dúvida razoável / íntima convicção)"
-              ]
-            },
-            {
-              "id": "pp_provas_meios",
-              "nivel_3": "Meios de Prova (Testemunhal, Pericial, Interrogatório)",
-              "aliases": [
+                "Acareação e Documentos",
                 "confissão",
                 "reconhecimento",
                 "corpo de delito",
-                "programa de proteção a testemunhas (lei 9.807/99)"
+                "programa de proteção a testemunhas (lei 9.807/99)",
+                "Meios de Prova (Testemunhal, Pericial, Interrogatório)"
               ]
             },
             {
@@ -2722,7 +2679,12 @@ const TAXONOMIA_DADOS = {
               "id": "pp_suj_atores",
               "nivel_3": "Juiz, MP, Acusado e Defensor",
               "aliases": [
-                "Impedimento e Suspeição"
+                "Impedimento e Suspeição",
+                "impedimento",
+                "suspeição",
+                "atribuições",
+                "competências do juiz das garantias",
+                "Juiz, MP, Acusado, Defensor, Ofendido e Assistente"
               ]
             },
             {
@@ -2730,18 +2692,8 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Assistentes e Auxiliares da Justiça",
               "aliases": [
                 "Direitos do Ofendido",
-                "Assistente de Acusação"
-              ]
-            },
-            {
-              "id": "pp_sujeitos_atores",
-              "nivel_3": "Juiz, MP, Acusado, Defensor, Ofendido e Assistente",
-              "aliases": [
-                "impedimento",
-                "suspeição",
-                "atribuições",
-                "direitos do ofendido (art. 201 do cpp)",
-                "competências do juiz das garantias"
+                "Assistente de Acusação",
+                "direitos do ofendido (art. 201 do cpp)"
               ]
             }
           ]
@@ -2762,33 +2714,21 @@ const TAXONOMIA_DADOS = {
               "id": "pp_pris_preventiva",
               "nivel_3": "Prisão Preventiva e Prisão Temporária",
               "aliases": [
-                "Requisitos e Prazos"
+                "Requisitos e Prazos",
+                "requisitos",
+                "prisão domiciliar",
+                "prisão especial",
+                "Prisões Provisórias (Flagrante, Preventiva e Temporária)"
               ]
             },
             {
               "id": "pp_pris_cautelares",
               "nivel_3": "Medidas Cautelares Diversas e Liberdade Provisória",
               "aliases": [
-                "Fiança"
-              ]
-            },
-            {
-              "id": "pp_prisoes_prov",
-              "nivel_3": "Prisões Provisórias (Flagrante, Preventiva e Temporária)",
-              "aliases": [
-                "audiência de custódia",
-                "requisitos",
-                "prisão domiciliar",
-                "prisão especial"
-              ]
-            },
-            {
-              "id": "pp_prisoes_cautelares",
-              "nivel_3": "Medidas Cautelares Diversas da Prisão e Liberdade Provisória",
-              "aliases": [
-                "fiança",
+                "Fiança",
                 "tornozeleira eletrônica",
-                "art. 319"
+                "art. 319",
+                "Medidas Cautelares Diversas da Prisão e Liberdade Provisória"
               ]
             }
           ]
@@ -2802,7 +2742,11 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Citações e Intimações",
               "aliases": [
                 "Citação por Edital",
-                "Suspensão do Processo (Art. 366)"
+                "Suspensão do Processo (Art. 366)",
+                "citação por hora certa",
+                "carta rogatória",
+                "suspensão do processo e da prescrição (art. 366)",
+                "Comunicação dos Atos (Citação, Intimação) e Prazos"
               ]
             },
             {
@@ -2815,25 +2759,6 @@ const TAXONOMIA_DADOS = {
                 "absolvição",
                 "efeitos da sentença",
                 "Sentença, Coisa Julgada (Emendatio/Mutatio Libelli)"
-              ]
-            },
-            {
-              "id": "pp_atos_comunic",
-              "nivel_3": "Comunicação dos Atos (Citação, Intimação) e Prazos",
-              "aliases": [
-                "citação por edital",
-                "citação por hora certa",
-                "carta rogatória",
-                "suspensão do processo e da prescrição (art. 366)"
-              ]
-            },
-            {
-              "id": "pp_atos_nulidades",
-              "nivel_3": "Teoria das Nulidades no Processo Penal",
-              "aliases": [
-                "nulidade absoluta",
-                "nulidade relativa",
-                "prejuízo"
               ]
             }
           ],
@@ -2872,7 +2797,6 @@ const TAXONOMIA_DADOS = {
               "id": "pp_proc_especiais",
               "nivel_3": "Procedimentos Especiais (Drogas, Funcionário Público, Honra)",
               "aliases": [
-                "Competência Originária dos Tribunais",
                 "Crimes de Responsabilidade de Funcionário Público",
                 "Crimes contra a Honra",
                 "ritos especiais",
@@ -2903,20 +2827,20 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Nulidades",
               "aliases": [
                 "Princípio do Prejuízo",
-                "Nulidade Absoluta e Relativa"
+                "Nulidade Absoluta e Relativa",
+                "nulidade absoluta",
+                "nulidade relativa",
+                "prejuízo",
+                "Teoria das Nulidades no Processo Penal"
               ]
             },
             {
               "id": "pp_rec_teoria",
-              "nivel_3": "Teoria Geral dos Recursos e Ações Autônomas",
+              "nivel_3": "Teoria Geral dos Recursos e Efeitos",
               "aliases": [
-                "Habeas Corpus",
-                "Revisão Criminal",
-                "Mandado de Segurança Criminal",
                 "juízo de admissibilidade",
                 "efeito suspensivo",
-                "efeito devolutivo",
-                "Teoria Geral dos Recursos e Efeitos"
+                "efeito devolutivo"
               ]
             },
             {
@@ -2956,16 +2880,15 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Direitos, Deveres e Disciplina",
               "aliases": [
                 "Faltas Disciplinares",
-                "Regime Disciplinar Diferenciado (RDD)"
+                "Regime Disciplinar Diferenciado (RDD)",
+                "falta grave",
+                "procedimento disciplinar",
+                "Direitos, Deveres e Disciplina (Faltas, RDD e Sanções)"
               ]
             },
             {
               "id": "pp_exec_regimes",
-              "nivel_3": "Regimes, Progressão e Regressão",
-              "aliases": [
-                "Livramento Condicional",
-                "Saídas Temporárias"
-              ]
+              "nivel_3": "Regimes, Progressão e Regressão"
             },
             {
               "id": "pp_exec_incidentes",
@@ -2973,7 +2896,14 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Remição e Detração",
                 "Conversões",
-                "Medidas de Segurança"
+                "Medidas de Segurança",
+                "agravo em execução",
+                "cálculo de pena",
+                "trabalho do preso",
+                "execução de medida de segurança",
+                "exame de cessação de periculosidade",
+                "desinternação",
+                "Incidentes da Execução (Progressão, Regressão, Remição e Detração)"
               ]
             },
             {
@@ -2982,26 +2912,6 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "juízo da execução",
                 "conselho penitenciário"
-              ]
-            },
-            {
-              "id": "pp_exec_disc",
-              "nivel_3": "Direitos, Deveres e Disciplina (Faltas, RDD e Sanções)",
-              "aliases": [
-                "falta grave",
-                "procedimento disciplinar"
-              ]
-            },
-            {
-              "id": "pp_exec_incid",
-              "nivel_3": "Incidentes da Execução (Progressão, Regressão, Remição e Detração)",
-              "aliases": [
-                "agravo em execução",
-                "cálculo de pena",
-                "trabalho do preso",
-                "execução de medida de segurança",
-                "exame de cessação de periculosidade",
-                "desinternação"
               ]
             },
             {
@@ -3067,20 +2977,6 @@ const TAXONOMIA_DADOS = {
                 "Audiência de Custódia (Resolução nº 213/2015)",
                 "Proteção de Dados (Resolução nº 427/2021)",
                 "Reconhecimento de Pessoas (Resolução nº 484/2022)"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "pp_teoria",
-          "nivel_2": "Princípios e Teoria da Lei Processual",
-          "topicos": [
-            {
-              "id": "pp_teoria_princ",
-              "nivel_3": "Princípios e Aplicação da Lei no Tempo e no Espaço",
-              "aliases": [
-                "sistemas processuais",
-                "interpretação"
               ]
             }
           ]
@@ -3482,8 +3378,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "eleitoral_coligacoes",
-              "nivel_3": "Coligações e Convenções para Escolha de Candidatos",
-              "aliases": []
+              "nivel_3": "Coligações e Convenções para Escolha de Candidatos"
             }
           ]
         },
@@ -3515,13 +3410,11 @@ const TAXONOMIA_DADOS = {
           "topicos": [
             {
               "id": "eleitoral_financiamento",
-              "nivel_3": "Arrecadação, Aplicação de Recursos e Prestação de Contas",
-              "aliases": []
+              "nivel_3": "Arrecadação, Aplicação de Recursos e Prestação de Contas"
             },
             {
               "id": "eleitoral_pesquisas",
-              "nivel_3": "Pesquisas e Testes Pré-Eleitorais",
-              "aliases": []
+              "nivel_3": "Pesquisas e Testes Pré-Eleitorais"
             },
             {
               "id": "eleitoral_propaganda",
@@ -3583,8 +3476,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "eleitoral_jurisprudencia",
-              "nivel_3": "Jurisprudência dos Tribunais Superiores em Matéria Eleitoral",
-              "aliases": []
+              "nivel_3": "Jurisprudência dos Tribunais Superiores em Matéria Eleitoral"
             },
             {
               "id": "ele_proc_cand",
@@ -4040,13 +3932,11 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "emp_fal_transnacional",
-              "nivel_3": "Insolvência Transnacional",
-              "aliases": []
+              "nivel_3": "Insolvência Transnacional"
             },
             {
               "id": "emp_fal_liquidacao",
-              "nivel_3": "Intervenção e Liquidação Extrajudicial de Instituições Financeiras (Lei nº 6.024/74)",
-              "aliases": []
+              "nivel_3": "Intervenção e Liquidação Extrajudicial de Instituições Financeiras (Lei nº 6.024/74)"
             }
           ],
           "aliases": [
@@ -4237,8 +4127,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "emp_cont_alienacao",
-              "nivel_3": "Alienação Fiduciária em Garantia (Decreto-Lei nº 911/1969)",
-              "aliases": []
+              "nivel_3": "Alienação Fiduciária em Garantia (Decreto-Lei nº 911/1969)"
             },
             {
               "id": "emp_cont_arrendamento",
@@ -5040,8 +4929,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "amb_esp_biomas",
-              "nivel_3": "Lei da Mata Atlântica (Lei nº 11.428/06) e Proteção de Outros Biomas",
-              "aliases": []
+              "nivel_3": "Lei da Mata Atlântica (Lei nº 11.428/06) e Proteção de Outros Biomas"
             }
           ]
         },
