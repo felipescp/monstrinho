@@ -8032,11 +8032,13 @@ window.inicializarTaxonomiaModuloPlaylist = function(selMateria, selTopico) {
             materiaObj.divisoes.forEach(div => {
                 let optgroup = document.createElement('optgroup');
                 optgroup.label = div.nivel_2;
-                
+
+                // Bateria só exige L2: todas as opções de um mesmo grupo (L3, exibido
+                // apenas pra facilitar a busca visual) compartilham o value do L2 pai.
                 if(div.topicos) {
                     div.topicos.forEach(top => {
                         let opt = document.createElement('option');
-                        opt.value = top.id;
+                        opt.value = div.id;
                         opt.textContent = top.nivel_3;
                         optgroup.appendChild(opt);
                     });
@@ -10331,10 +10333,12 @@ window.popularSelectTopicos = function() {
         matData.divisoes.forEach(div => {
             let optGroup = document.createElement('optgroup');
             optGroup.label = div.nivel_2; // Divisão como agrupador visual
-            
+
+            // Bateria só exige L2: todas as opções de um mesmo grupo (L3, exibido
+            // apenas pra facilitar a busca visual) compartilham o value do L2 pai.
             div.topicos.forEach(top => {
                 let opt = document.createElement('option');
-                opt.value = top.id;
+                opt.value = div.id;
                 opt.textContent = top.nivel_3;
                 optGroup.appendChild(opt);
             });
@@ -16659,10 +16663,17 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-card-meta { font-size:9.5px; color:var(--text-muted); }
     #jurisprudencia-modal .jur-card-sistematica { font-size:9px; font-weight:700; color:#0891b2; background:#ecfeff; border:1px solid #a5f3fc; border-radius:99px; padding:1px 6px; width:fit-content; }
     #jurisprudencia-modal .jur-card-tese { font-size:10.5px; color:var(--text-main); line-height:1.4; font-style:italic; }
+    /* Discreto mas visível, sem abrir o popup — não compete com tese/meta. */
+    #jurisprudencia-modal .jur-card-data-consulta { font-size:8.5px; color:var(--text-muted); opacity:0.75; }
     #jurisprudencia-modal .jur-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #jurisprudencia-modal .jur-btn-excluir:hover { color:var(--danger); }
     #jurisprudencia-modal .jur-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
     #jurisprudencia-modal .jur-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
+    /* "⚠️ Superado" — visível na grade sem precisar abrir o popup (selo +
+       tratamento do card), cor de alerta (âmbar) distinta do vermelho já
+       usado por "(Oficial)". */
+    #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
+    #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + Difícil/Médio/Fácil
        (repetição espaçada) — mesmo padrão visual de #section-flashcards. */
@@ -16819,6 +16830,11 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-ver .jur-ver-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:10px; margin-bottom:4px; }
     #modal-jurisprudencia-ver .jur-ver-texto { font-size:12.5px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; }
     #modal-jurisprudencia-ver .jur-ver-meta { font-size:11px; color:var(--text-muted); }
+    /* Bloco "Marcar como Superado" — só aparece pra fichas PESSOAIS (mesma
+       regra de bloqueio de excluir/editar; fichas oficiais não mostram isto). */
+    #modal-jurisprudencia-ver .jur-ver-superado-bloco { margin-top:10px; padding:8px 10px; border:1px solid #fbbf24; background:#fffbeb; border-radius:6px; display:flex; flex-direction:column; gap:6px; }
+    #modal-jurisprudencia-ver .jur-ver-superado-toggle { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:#92400e; cursor:pointer; user-select:none; }
+    #modal-jurisprudencia-ver .jur-ver-superado-input { font-size:11.5px; padding:6px 8px; border:1px solid #fbbf24; border-radius:4px; background:#fff; color:var(--text-main); outline:none; }
 </style>
     <div class="mdl" style="max-width:640px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:6px; overflow-y:auto;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
@@ -16826,6 +16842,7 @@ window.carregarEsquemasOficiais = async function() {
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharVer()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; flex-shrink:0;" title="Fechar">✖</button>
         </div>
         <div class="jur-ver-meta" id="jur-ver-meta"></div>
+        <div id="jur-ver-superado"></div>
         <div class="jur-ver-label">Tese Fixada / Decisão</div>
         <div class="jur-ver-texto" id="jur-ver-tese"></div>
         <div class="jur-ver-label">Resumo do Caso</div>
@@ -16906,6 +16923,7 @@ const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
+const JUR_RE_DATACONSULTA = /^DATA DA CONSULTA:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
 const JUR_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g; // NÃO ancorado a início de linha — acha o marcador mesmo sem \n antes dele
 
@@ -16934,11 +16952,12 @@ function jurClassificarLinha(l) {
     if (JUR_RE_RESUMO.test(l)) return 'resumo';
     if (JUR_RE_COMOCOBRAR.test(l)) return 'comocobrar';
     if (JUR_RE_CONEXOES.test(l)) return 'conexoes';
+    if (JUR_RE_DATACONSULTA.test(l)) return 'dataconsulta';
     return null;
 }
 
 function jurCriarFichaVazia() {
-    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tese: '', resumo: '', conexoes: '' };
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tese: '', resumo: '', conexoes: '', dataConsulta: '' };
 }
 
 function jurAplicarCampoNaLinha(ficha, tipo, linha) {
@@ -16964,6 +16983,9 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
     } else if (tipo === 'conexoes') {
         m = JUR_RE_CONEXOES.exec(linha);
         ficha.conexoes = m[1].trim();
+    } else if (tipo === 'dataconsulta') {
+        m = JUR_RE_DATACONSULTA.exec(linha);
+        ficha.dataConsulta = m[3] + '-' + m[2] + '-' + m[1]; // ISO AAAA-MM-DD
     }
     // 'comocobrar' -> intencionalmente não faz nada (campo descartado).
 }
@@ -17111,6 +17133,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     _selecionados: {},
     _modoExibicao: 'temas', // 'temas' | 'data'
     _resultadoPreVisualizado: null, // guarda o parse entre "Pré-visualizar" e "Confirmar"
+    _verAtual: null, // {chave, id} da ficha aberta no popup "Ver" — usado por alternarSuperado/atualizarSupersedidoPor
 
     // Filtros adicionais (2ª linha da toolbar) — vazio = "Todos". Combinam
     // entre si e com ocultos/oficiais/modo de exibição.
@@ -17162,6 +17185,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '—';
         let p = iso.split('-');
         return p[2] + '/' + p[1] + '/' + p[0];
+    },
+
+    // 'vigente' é o default pra fichas novas (o parser de importação NUNCA
+    // grava este campo — nasce ausente) e pras já existentes antes deste
+    // recurso (também ausente). Só passa a existir de fato no objeto quando
+    // o usuário marca "Superado" manualmente (ou, no futuro, a automação via
+    // MCP). Fallback lido aqui, sem migração/escrita silenciosa no storage.
+    _statusAtual: function(item) {
+        return (item && item.statusAtual) || 'vigente';
     },
 
     // Contagem bruta (ignora ocultos/oficiais/filtros — é só indicação de
@@ -17427,12 +17459,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             let oculto = !!self.ocultos[item.id];
             let selecionado = !!self._selecionados[item.id];
             let podeExcluir = !item.origem_oficial;
+            let superado = self._statusAtual(item) === 'superado';
 
             let checkboxHtml = self._modoSelecao
                 ? '<input type="checkbox" class="jur-card-checkbox" onclick="event.stopPropagation();" ' + (selecionado ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
+            let seloSuperado = superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="jur-btn-excluir" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.excluirFicha(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir ficha">🗑️</button>'
                 : '';
@@ -17443,13 +17477,14 @@ window.JURISPRUDENCIA_RUNTIME = {
 
             let onclickCard = self._modoSelecao ? '' : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
-            return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
+            return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + (superado ? ' jur-card-superado' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="jur-card-tags">' +
                     '<span class="jur-card-tags-esq">' +
                         checkboxHtml +
                         '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
                         seloOficial +
                         seloOculto +
+                        seloSuperado +
                     '</span>' +
                     btnExcluirHtml +
                 '</div>' +
@@ -17457,6 +17492,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
                 (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '') +
                 '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>' +
+                (item.dataConsulta ? '<div class="jur-card-data-consulta">Consultado em ' + self._formatarDataBR(item.dataConsulta) + '</div>' : '') +
             '</div>';
         }).join('');
 
@@ -17477,9 +17513,12 @@ window.JURISPRUDENCIA_RUNTIME = {
     abrirVer: function(chave, id) {
         let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
         if (!item) return;
+        this._verAtual = { chave: chave, id: id };
         document.getElementById('jur-ver-titulo').textContent = item.titulo || 'Ficha';
         let metaPartes = [item.tribunal, item.orgao, item.processo, item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
         document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
+        this._renderBlocoSuperado(item);
         document.getElementById('jur-ver-tese').textContent = item.tese || '—';
         document.getElementById('jur-ver-resumo').textContent = item.resumo || '—';
         document.getElementById('jur-ver-conexoes').textContent = item.conexoes || '—';
@@ -17488,6 +17527,46 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     fecharVer: function() {
         document.getElementById('modal-jurisprudencia-ver').classList.remove('open');
+        this._verAtual = null;
+    },
+
+    // Bloco "Marcar como Superado" do popup "Ver Ficha" — só pra fichas
+    // PESSOAIS (mesma regra de bloqueio de excluirFicha: origem_oficial
+    // nunca é editável pelo usuário). O campo de texto só aparece quando
+    // marcado, mas o valor digitado anteriormente não é apagado ao
+    // desmarcar (fica guardado no objeto, caso o usuário marque de novo).
+    _renderBlocoSuperado: function(item) {
+        let alvo = document.getElementById('jur-ver-superado');
+        if (!alvo) return;
+        if (item.origem_oficial) { alvo.innerHTML = ''; return; }
+
+        let superado = this._statusAtual(item) === 'superado';
+        alvo.innerHTML = '<div class="jur-ver-superado-bloco">' +
+            '<label class="jur-ver-superado-toggle"><input type="checkbox" ' + (superado ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.alternarSuperado(this.checked)"> ⚠️ Marcar como Superado</label>' +
+            (superado ? '<input type="text" class="jur-ver-superado-input" placeholder="Superado por (nº do processo ou id da ficha mais nova)..." value="' + this._escapar(item.supersedidoPor || '') + '" onchange="window.JURISPRUDENCIA_RUNTIME.atualizarSupersedidoPor(this.value)">' : '') +
+        '</div>';
+    },
+
+    alternarSuperado: function(marcado) {
+        if (!this._verAtual) return;
+        let chave = this._verAtual.chave, id = this._verAtual.id;
+        let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
+        if (!item || item.origem_oficial) return;
+        item.statusAtual = marcado ? 'superado' : 'vigente';
+        this.salvar();
+        this._renderBlocoSuperado(item);
+        this._renderGradeCards();
+    },
+
+    atualizarSupersedidoPor: function(valor) {
+        if (!this._verAtual) return;
+        let chave = this._verAtual.chave, id = this._verAtual.id;
+        let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
+        if (!item || item.origem_oficial) return;
+        let limpo = (valor || '').trim();
+        if (limpo) item.supersedidoPor = limpo; else delete item.supersedidoPor;
+        this.salvar();
+        this._renderGradeCards();
     },
 
     excluirFicha: function(chave, id) {
