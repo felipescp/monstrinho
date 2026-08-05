@@ -6860,9 +6860,18 @@ window.MATERIAIS_RUNTIME = {
         return lista;
     },
 
-    toggleFiltroTipo: function(tipo) {
-        let idx = this._filtroTipos.indexOf(tipo);
-        if (idx === -1) this._filtroTipos.push(tipo); else this._filtroTipos.splice(idx, 1);
+    // Alterna um GRUPO de tipos de uma vez (chip "Resumo/Revisão" alterna
+    // ['resumo','revisao'] juntos; os demais chips passam um grupo de 1
+    // elemento). Estado ligado/desligado é por grupo — evita o botão da
+    // grade filtrar por 1 tipo mas o card individual ainda mostrar o outro.
+    toggleFiltroTipoGrupo: function(tipos) {
+        let self = this;
+        let algumAtivo = tipos.some(function(t) { return self._filtroTipos.indexOf(t) !== -1; });
+        if (algumAtivo) {
+            this._filtroTipos = this._filtroTipos.filter(function(t) { return tipos.indexOf(t) === -1; });
+        } else {
+            tipos.forEach(function(t) { if (self._filtroTipos.indexOf(t) === -1) self._filtroTipos.push(t); });
+        }
         this._renderGradeCards();
     },
 
@@ -6918,10 +6927,23 @@ window.MATERIAIS_RUNTIME = {
 
     _renderToolbar: function() {
         let self = this;
+        // Chips de filtro — Resumo e Revisão aparecem como UM ÚNICO botão
+        // "Resumo/Revisão" (mesma unificação já feita no rótulo do painel
+        // "Conteúdo Relacionado" do Cronograma); os demais tipos continuam
+        // 1 chip cada. O material individual continua guardando seu tipo
+        // original ('resumo' ou 'revisao') — só a navegação por chip agrupa.
+        let CHIPS_FILTRO_TIPO = [
+            { rotulo: 'Jurisprudência', tipos: ['jurisprudencia'] },
+            { rotulo: 'Resumo/Revisão', tipos: ['resumo', 'revisao'] },
+            { rotulo: 'Esquema', tipos: ['esquema'] },
+            { rotulo: 'Infográfico', tipos: ['infografico'] },
+            { rotulo: 'Slides', tipos: ['slides'] }
+        ];
         let chipsHtml = '<span class="mat-filtro-pill' + (this._filtroTipos.length === 0 ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.limparFiltroTipo()">Todos</span>' +
-            this.TIPOS.map(function(t) {
-                let ativa = self._filtroTipos.indexOf(t.chave) !== -1;
-                return '<span class="mat-filtro-pill' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleFiltroTipo(\'' + t.chave + '\')">' + t.rotulo + '</span>';
+            CHIPS_FILTRO_TIPO.map(function(c) {
+                let ativa = c.tipos.some(function(t) { return self._filtroTipos.indexOf(t) !== -1; });
+                let tiposAttr = c.tipos.map(function(t) { return "'" + t + "'"; }).join(',');
+                return '<span class="mat-filtro-pill' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleFiltroTipoGrupo([' + tiposAttr + '])">' + c.rotulo + '</span>';
             }).join('');
 
         let qtdSel = Object.keys(this._selecionados).length;
