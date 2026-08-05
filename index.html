@@ -3713,7 +3713,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
     },
 
-    renderCard: function(item, dia) {
+    renderCard: function(item, dia, ocultarData) {
         let corMat = this.corMateria(item.materia);
         let prioSemAcento = (item.prioridade || '').toUpperCase().normalize('NFD');
         let prio = '';
@@ -3737,7 +3737,10 @@ window.CRONOGRAMA_RUNTIME = {
         // inequívoco (YYYY-MM-DD); qualquer outro formato é exibido como veio,
         // pra não arriscar interpretar errado (ex.: DD/MM/AAAA vira MM/DD via
         // Date() nativo do JS e inverteria dia/mês silenciosamente).
-        let dataTxt = item.data ? (/^\d{4}-\d{2}-\d{2}$/.test(item.data) && typeof window.formatarDataBR === 'function' ? window.formatarDataBR(item.data) : item.data) : '';
+        // Ocultada na visão Dias (ocultarData=true): a data já aparece uma
+        // vez no cabeçalho da coluna do dia — repeti-la em cada card seria
+        // duplicação. No Kanban (sem cabeçalho por dia) ela continua aqui.
+        let dataTxt = (!ocultarData && item.data) ? (/^\d{4}-\d{2}-\d{2}$/.test(item.data) && typeof window.formatarDataBR === 'function' ? window.formatarDataBR(item.data) : item.data) : '';
 
         return '<div class="crono-card' + (item.status === 'finalizado' ? ' finalizado' : '') + '" draggable="true" data-id="' + item.id + '" ondragstart="window.CRONOGRAMA_RUNTIME.iniciarArraste(event, \'' + dia + '\', \'' + item.id + '\')" ondragend="window.CRONOGRAMA_RUNTIME.finalizarArraste(event)">' +
             '<div class="crono-card-body">' +
@@ -3776,7 +3779,7 @@ window.CRONOGRAMA_RUNTIME = {
                     '<span><span class="crono-day-name">' + nomeDia + '</span>' + (dataDia ? '<span class="crono-day-date">· ' + dataDia + '</span>' : '') + '</span>' +
                     '<span class="crono-day-count">' + itens.length + '</span>' +
                 '</div>' +
-                '<div class="crono-day-body" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNoDia(event, \'' + dia + '\')">' + (itens.length ? itens.map(function(it) { return self.renderCard(it, dia); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">Nenhum item</div>') + '</div>' +
+                '<div class="crono-day-body" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNoDia(event, \'' + dia + '\')">' + (itens.length ? itens.map(function(it) { return self.renderCard(it, dia, true); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">Nenhum item</div>') + '</div>' +
             '</div>';
         }).join('') + '</div>';
     },
