@@ -3387,6 +3387,18 @@ if(ri) {
     #crono-relacionados-menu .crono-sim-item-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main); font-weight:600; cursor:pointer; }
     #crono-relacionados-menu .crono-sim-item-remover { flex-shrink:0; border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:2px 4px; }
     #crono-relacionados-menu .crono-sim-item-remover:hover { color:var(--danger); }
+    /* Etiqueta de tipo na aba "Materiais" — vários materiais aqui têm o
+       MESMO título (ex.: "Resumo" e "Revisão" do mesmo tema), sem isto não
+       dava pra distinguir qual é qual sem abrir. Mesmas cores de
+       #section-materiais .mat-tag-*; Resumo e Revisão aparecem unificados
+       aqui como um só rótulo "Resumo/Revisão". */
+    #crono-relacionados-menu .crono-mat-tag { flex-shrink:0; font-size:8.5px; font-weight:800; padding:1px 6px; border-radius:99px; white-space:nowrap; }
+    #crono-relacionados-menu .crono-mat-tag-jurisprudencia { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
+    #crono-relacionados-menu .crono-mat-tag-resumo,
+    #crono-relacionados-menu .crono-mat-tag-revisao { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; }
+    #crono-relacionados-menu .crono-mat-tag-esquema { background:#dcfce7; color:#16a34a; border:1px solid #86efac; }
+    #crono-relacionados-menu .crono-mat-tag-infografico { background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; }
+    #crono-relacionados-menu .crono-mat-tag-slides { background:#fce7f3; color:#db2777; border:1px solid #f9a8d4; }
     #crono-relacionados-menu .crono-sim-vazio { padding:6px 12px 10px 12px; font-size:10px; color:var(--text-muted); font-style:italic; }
     #crono-relacionados-menu .crono-sim-add-btn { margin:8px 12px 12px 12px; padding:7px; border-radius:6px; border:1px dashed var(--app-primary); background:none; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; }
     #crono-relacionados-menu .crono-sim-add-btn:hover { background:#eef2ff; }
@@ -4199,10 +4211,23 @@ window.CRONOGRAMA_RUNTIME = {
         let chaveL2 = loc.materia + ' > ' + loc.divisao;
         let materiaEsc = loc.materia.replace(/'/g, "\\'");
         let divisaoEsc = loc.divisao.replace(/'/g, "\\'");
+        // Rótulos por tipo (mesmas chaves de MATERIAIS_RUNTIME.TIPOS) — Resumo
+        // e Revisão unificados num só rótulo "Resumo/Revisão" aqui.
+        let ETIQUETAS_TIPO_MATERIAL = {
+            jurisprudencia: 'Jurisprudência',
+            resumo: 'Resumo/Revisão',
+            revisao: 'Resumo/Revisão',
+            esquema: 'Esquema',
+            infografico: 'Infográfico',
+            slides: 'Slides'
+        };
         return '<div class="crono-sim-lista" style="max-height:220px;">' + materiais.map(function(m) {
             let chaveEsc = chaveL2.replace(/'/g, "\\'");
+            let rotuloTipo = ETIQUETAS_TIPO_MATERIAL[m.tipo];
+            let etiquetaHtml = rotuloTipo ? ('<span class="crono-mat-tag crono-mat-tag-' + m.tipo + '">' + rotuloTipo + '</span>') : '';
             return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-materiais\'); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
                 '<span class="crono-sim-item-nome">📚 ' + (m.titulo || '(sem título)') + '</span>' +
+                etiquetaHtml +
             '</div>';
         }).join('') + '</div>';
     },
