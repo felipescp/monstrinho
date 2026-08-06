@@ -3416,6 +3416,12 @@ if(ri) {
     #section-cronograma .crono-week-tab.crono-week-check-medio:not(.ativa) { background:#4ade80; border-color:#22c55e; color:#fff; }
     #section-cronograma .crono-week-tab.crono-week-check-completo:not(.ativa) { background:#15803d; border-color:#166534; color:#fff; }
 
+    #section-cronograma .crono-controls-direita { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    /* Campo de busca ao vivo (expressões nos cards da semana ativa) —
+       pequeno, à esquerda do toggle Dias/Kanban. */
+    #section-cronograma .crono-busca-input { font-size:11px; padding:5px 10px; border:1px solid var(--border-color); border-radius:99px; width:130px; outline:none; background:var(--bg-white); color:var(--text-main); }
+    #section-cronograma .crono-busca-input:focus { border-color:var(--app-primary); width:170px; }
+
     #section-cronograma .crono-view-toggle { display:flex; gap:4px; background:#eef2ff; border:1px solid var(--border-color); border-radius:99px; padding:3px; width:fit-content; flex-shrink:0; }
     #section-cronograma .crono-view-btn { font-family:var(--font-display); font-size:11px; font-weight:700; padding:5px 14px; border:none; border-radius:99px; background:none; color:var(--text-muted); cursor:pointer; }
     #section-cronograma .crono-view-btn.ativa { background:var(--bg-white); color:var(--text-main); }
@@ -3551,6 +3557,7 @@ window.CRONOGRAMA_RUNTIME = {
     activePlannerId: null,
     viewModo: 'dias', // 'dias' | 'kanban' — não persiste, reseta a cada carregamento da tela
     dragOrigem: null, // { dia, id } do card sendo arrastado — null quando não há arraste em andamento
+    _buscaTexto: '', // filtro ao vivo por expressão nos cards (tópico/justificativa/matéria) da semana ativa — não persiste
     STORAGE_KEY: 'tjpe_v1__cronograma_runtime',
     PALETA_CORES: ['#4f46e5', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#db2777'],
     // Pares fundo pastel + texto saturado da MESMA família de cor — mesmo
@@ -3898,47 +3905,66 @@ window.CRONOGRAMA_RUNTIME = {
         '</div>';
     },
 
+    // Busca ao vivo por expressão nos cards da semana ativa (tópico,
+    // justificativa e matéria) — case/acento-insensível, mesma técnica de
+    // normalização de renderCard (NFD + REGEX_DIACRITICOS global já
+    // existente no arquivo). Vazio = bate com tudo (sem filtro).
+    _itemBateBusca: function(item) {
+        let termo = (this._buscaTexto || '').trim();
+        if (!termo) return true;
+        let normalizar = function(s) { return (s || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, ''); };
+        let termoNorm = normalizar(termo);
+        let alvo = normalizar((item.topico || '') + ' ' + (item.justificativa || '') + ' ' + (item.materia || ''));
+        return alvo.indexOf(termoNorm) !== -1;
+    },
+
     renderDias: function(diasSemana) {
         let self = this;
         let ordemDias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+        let temBusca = !!(this._buscaTexto || '').trim();
         // Sempre as 7 colunas (mesmo sem itens) — útil pra planejar a semana
         // inteira, incluindo dias livres, não só os que já têm algo.
         return '<div class="crono-days-grid">' + ordemDias.map(function(dia) {
-            let itens = diasSemana[dia] || [];
+            let itensOriginais = diasSemana[dia] || [];
+            let itens = itensOriginais.filter(function(it) { return self._itemBateBusca(it); });
             let nomeDia = dia.charAt(0).toUpperCase() + dia.slice(1);
             // Data vem por item (não por dia — ver renderCard), mas todo item
-            // de um mesmo dia carrega a mesma data; usa o primeiro como fonte
-            // pra mostrar uma vez só no cabeçalho da coluna.
-            let dataDia = itens.length && itens[0].data
-                ? (/^\d{4}-\d{2}-\d{2}$/.test(itens[0].data) && typeof window.formatarDataBR === 'function' ? window.formatarDataBR(itens[0].data) : itens[0].data)
+            // de um mesmo dia carrega a mesma data; usa o primeiro dos
+            // ITENS ORIGINAIS (não do filtrado) pra o cabeçalho não sumir
+            // só porque a busca não bateu em nenhum item desse dia.
+            let dataDia = itensOriginais.length && itensOriginais[0].data
+                ? (/^\d{4}-\d{2}-\d{2}$/.test(itensOriginais[0].data) && typeof window.formatarDataBR === 'function' ? window.formatarDataBR(itensOriginais[0].data) : itensOriginais[0].data)
                 : '';
+            let vazioTxt = temBusca && itensOriginais.length ? 'Nenhum resultado' : 'Nenhum item';
             return '<div class="crono-day-col">' +
                 '<div class="crono-day-header">' +
                     '<span><span class="crono-day-name">' + nomeDia + '</span>' + (dataDia ? '<span class="crono-day-date">· ' + dataDia + '</span>' : '') + '</span>' +
                     '<span class="crono-day-count">' + itens.length + '</span>' +
                 '</div>' +
-                '<div class="crono-day-body" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNoDia(event, \'' + dia + '\')">' + (itens.length ? itens.map(function(it) { return self.renderCard(it, dia, true); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">Nenhum item</div>') + '</div>' +
+                '<div class="crono-day-body" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNoDia(event, \'' + dia + '\')">' + (itens.length ? itens.map(function(it) { return self.renderCard(it, dia, true); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:11px; padding:8px 0;">' + vazioTxt + '</div>') + '</div>' +
             '</div>';
         }).join('') + '</div>';
     },
 
     renderKanban: function(diasSemana) {
         let self = this;
+        let temBusca = !!(this._buscaTexto || '').trim();
         let todos = [];
         Object.keys(diasSemana).forEach(function(dia) {
-            diasSemana[dia].forEach(function(it) { todos.push({ item: it, dia: dia }); });
+            diasSemana[dia].forEach(function(it) { if (self._itemBateBusca(it)) todos.push({ item: it, dia: dia }); });
         });
         let pendentes = todos.filter(function(t) { return t.item.status !== 'finalizado'; });
         let finalizados = todos.filter(function(t) { return t.item.status === 'finalizado'; });
 
         function coluna(titulo, cor, lista) {
+            let vazioTxt = temBusca ? 'Nenhum resultado' : 'Vazio';
             return '<div class="crono-kanban-col">' +
                 '<div class="crono-kanban-col-header">' +
                     '<span class="crono-kanban-dot" style="background:' + cor + ';"></span>' +
                     '<span class="crono-kanban-title">' + titulo + '</span>' +
                     '<span class="crono-kanban-count">' + lista.length + '</span>' +
                 '</div>' +
-                '<div class="crono-kanban-body">' + (lista.length ? lista.map(function(t) { return self.renderCard(t.item, t.dia); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">Vazio</div>') + '</div>' +
+                '<div class="crono-kanban-body">' + (lista.length ? lista.map(function(t) { return self.renderCard(t.item, t.dia); }).join('') : '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:10px;">' + vazioTxt + '</div>') + '</div>' +
             '</div>';
         }
 
@@ -4681,22 +4707,51 @@ window.CRONOGRAMA_RUNTIME = {
             return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '"><span class="crono-week-tab-num">' + numero + '</span>' + contagemHtml + '</div>';
         }).join('') + '</div>';
 
+        // Busca fica à esquerda do toggle Dias/Kanban, os dois num mesmo
+        // grupo (canto direito da fita). Input tem id fixo e SÓ é
+        // regenerado por um render() completo (troca de semana/view/drag) —
+        // digitar aciona filtrarBusca(), que re-renderiza só #crono-corpo,
+        // preservando o próprio <input> (senão perderia o foco a cada tecla).
+        let htmlBusca = '<input type="text" id="crono-busca-input" class="crono-busca-input" placeholder="🔍 Buscar..." value="' + this._escaparAtributo(this._buscaTexto) + '" oninput="window.CRONOGRAMA_RUNTIME.filtrarBusca(this.value)">';
+
         let htmlViewToggle = '<div class="crono-view-toggle">' +
             '<button class="crono-view-btn' + (this.viewModo === 'dias' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'dias\')">📅 Dias</button>' +
             '<button class="crono-view-btn' + (this.viewModo === 'kanban' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'kanban\')">📋 Kanban</button>' +
         '</div>';
 
-        let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlViewToggle + '</div>';
+        let htmlDireita = '<div class="crono-controls-direita">' + htmlBusca + htmlViewToggle + '</div>';
 
-        // Pré-computado uma vez por passada de render() — renderCard lê
+        let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlDireita + '</div>';
+
+        contentEl.innerHTML = htmlControlsRow + '<div id="crono-corpo">' + this._renderCorpo() + '</div>';
+    },
+
+    _escaparAtributo: function(s) {
+        return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    },
+
+    // Recalcula só o corpo (grade de dias ou kanban) da semana ativa —
+    // fatorado pra fora de render() pra ser reaproveitado por filtrarBusca()
+    // sem precisar reconstruir a fita de semanas/toggle/input de busca.
+    _renderCorpo: function() {
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return '';
+        let semanaAtiva = this.getSemanaAtiva(ativo);
+        // Pré-computado uma vez por passada — renderCard lê
         // this._setChavesL2ComBaterias em vez de resolver o catálogo
         // inteiro de novo pra cada card da semana.
         this._setChavesL2ComBaterias = this._construirSetChavesL2ComBaterias();
-
         let diasSemana = ativo.planejamento[semanaAtiva] || {};
-        let htmlCorpo = this.viewModo === 'kanban' ? this.renderKanban(diasSemana) : this.renderDias(diasSemana);
+        return this.viewModo === 'kanban' ? this.renderKanban(diasSemana) : this.renderDias(diasSemana);
+    },
 
-        contentEl.innerHTML = htmlControlsRow + htmlCorpo;
+    // Chamada a cada tecla no campo de busca — atualiza só #crono-corpo,
+    // preservando foco/cursor do <input> (um render() completo destruiria e
+    // recriaria o próprio input a cada tecla digitada).
+    filtrarBusca: function(valor) {
+        this._buscaTexto = valor || '';
+        let corpoEl = document.getElementById('crono-corpo');
+        if (corpoEl) corpoEl.innerHTML = this._renderCorpo();
     }
 };
 
@@ -16888,6 +16943,8 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-card-data-consulta { font-size:8.5px; color:var(--text-muted); opacity:0.75; }
     #jurisprudencia-modal .jur-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #jurisprudencia-modal .jur-btn-excluir:hover { color:var(--danger); }
+    #jurisprudencia-modal .jur-btn-ocultar { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #jurisprudencia-modal .jur-btn-ocultar:hover { color:var(--app-primary); }
     #jurisprudencia-modal .jur-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
     #jurisprudencia-modal .jur-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
     /* "⚠️ Superado" — visível na grade sem precisar abrir o popup (selo +
@@ -16949,7 +17006,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar todas as fichas PESSOAIS em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar as fichas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
@@ -16963,6 +17020,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="jur-tabs-baralho">
                 <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
                 <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as fichas da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">🗂️ Baralho: Divisão/Tópico</button>
             </div>
         </div>
         <div class="fc-grid" id="jur-grid">
@@ -17688,6 +17746,12 @@ window.JURISPRUDENCIA_RUNTIME = {
             let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
             let seloSuperado = superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '';
+            // Ocultar é preferência PESSOAL de visibilidade (não edita o
+            // conteúdo) — ao contrário de Editar/Excluir, disponível pra
+            // fichas oficiais também.
+            let btnOcultarHtml = !self._modoSelecao
+                ? '<button class="jur-btn-ocultar" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleOcultarFicha(\'' + item.id + '\')" title="' + (oculto ? 'Exibir ficha' : 'Ocultar ficha') + '">' + (oculto ? '👁️' : '🙈') + '</button>'
+                : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="jur-btn-excluir" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.excluirFicha(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir ficha">🗑️</button>'
                 : '';
@@ -17707,6 +17771,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                         seloOculto +
                         seloSuperado +
                     '</span>' +
+                    btnOcultarHtml +
                     btnExcluirHtml +
                 '</div>' +
                 '<div class="jur-card-titulo">' + self._escapar(item.titulo) + '</div>' +
@@ -17786,6 +17851,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!item || item.origem_oficial) return;
         let limpo = (valor || '').trim();
         if (limpo) item.supersedidoPor = limpo; else delete item.supersedidoPor;
+        this.salvar();
+        this._renderGradeCards();
+    },
+
+    // Toggle individual de visibilidade (o botão 🙈/👁️ do card) — disponível
+    // pra fichas oficiais também, já que ocultar é preferência pessoal e não
+    // altera o conteúdo (mesmo mecanismo de ocultos já usado pelo modo de
+    // seleção em massa, só que pra 1 ficha de cada vez, sem precisar entrar
+    // em "Selecionar").
+    toggleOcultarFicha: function(id) {
+        if (this.ocultos[id]) delete this.ocultos[id]; else this.ocultos[id] = true;
         this.salvar();
         this._renderGradeCards();
     },
@@ -17878,17 +17954,22 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderGradeCards();
     },
 
-    // Exporta TODAS as fichas PESSOAIS (de todas as matérias/divisões, não
-    // só a selecionada no momento) num único JSON, na mesma forma que
+    // Exporta as fichas PESSOAIS só da DISCIPLINA (matéria/L1) selecionada
+    // na barra lateral — não mais todas de uma vez. Mesma forma que
     // importarJurisprudenciaOficial() espera — pronto pra salvar em
-    // dados/jurisprudencia/*.json. Fichas já oficiais ficam de fora.
+    // dados/jurisprudencia/*.json, 1 arquivo por disciplina (mesmo padrão
+    // já usado em baterias/materiais/esquemas: cada exportação vira 1 linha
+    // nova em manifesto-jurisprudencia.txt). Fichas já oficiais ficam de fora.
     exportarTudo: function() {
         this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
         let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
         let resultado = {};
         let total = 0;
 
         Object.keys(this.fichas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
             let pessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
             if (pessoais.length > 0) {
                 resultado[chave] = pessoais;
@@ -17897,11 +17978,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         });
 
         if (total === 0) {
-            alert('Nenhuma ficha pessoal pra exportar (só existem fichas oficiais aqui, ou nenhuma ficha ainda).');
+            alert('Nenhuma ficha pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem fichas oficiais aqui, ou nenhuma ficha ainda).');
             return;
         }
 
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-pessoal.json', 'application/json');
+        let slug = this._materiaSelecionada.toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + slug + '.json', 'application/json');
     },
 
     // ── REPETIÇÃO ESPAÇADA (Difícil/Médio/Fácil) — mesma fórmula de
@@ -17999,6 +18083,17 @@ window.JURISPRUDENCIA_RUNTIME = {
             (self.fichas[chave] || []).forEach(function(f) { if (!self.ocultos[f.id]) fichas.push(f); });
         });
         this._abrirBaralho('materia', this._materiaSelecionada, fichas);
+    },
+
+    // Baralho restrito à divisão (L2) selecionada — mesma fichasDoL2() já
+    // usada pelo Cronograma pra listar "Conteúdo Relacionado" (já filtra
+    // ocultos). Existe porque algumas disciplinas têm centenas de fichas, e
+    // "Baralho: Disciplina" mistura todas as divisões de uma vez.
+    abrirBaralhoDivisao: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        let fichas = this.fichasDoL2(this._materiaSelecionada, this._divisaoSelecionada);
+        this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, fichas);
     },
 
     _abrirBaralho: function(escopo, titulo, fichas) {
