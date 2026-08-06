@@ -1952,6 +1952,64 @@ window.SALINHA_BACKUP = {
         }
     },
 
+    // Mescla item a item (por id) dentro de um planner de cronograma que já
+    // existe nos dois lados — sem isso, o caso especial de "planners" abaixo
+    // só sabia injetar abas 100% novas e ignorava por completo qualquer aba
+    // já conhecida, então marcar itens como feitos ou preencher notas num
+    // computador nunca chegava aos outros. "Feito" nunca regride (favorece
+    // progresso) e campos de texto só entram se o lado local ainda tá vazio
+    // — não há timestamp por item pra decidir um "vencedor" mais fino que isso.
+    mergePlanejamentoCronograma: function(plannerLocal, plannerRemoto) {
+        let mudancas = 0;
+        if (!plannerRemoto || typeof plannerRemoto.planejamento !== 'object') return 0;
+        if (!plannerLocal.planejamento || typeof plannerLocal.planejamento !== 'object') plannerLocal.planejamento = {};
+
+        Object.keys(plannerRemoto.planejamento).forEach(function(semana) {
+            const diasRemoto = plannerRemoto.planejamento[semana];
+            if (!diasRemoto || typeof diasRemoto !== 'object') return;
+            if (!plannerLocal.planejamento[semana] || typeof plannerLocal.planejamento[semana] !== 'object') {
+                plannerLocal.planejamento[semana] = {};
+            }
+            const diasLocal = plannerLocal.planejamento[semana];
+
+            Object.keys(diasRemoto).forEach(function(dia) {
+                const itensRemoto = diasRemoto[dia];
+                if (!Array.isArray(itensRemoto)) return;
+                if (!Array.isArray(diasLocal[dia])) diasLocal[dia] = [];
+                const itensLocal = diasLocal[dia];
+
+                itensRemoto.forEach(function(itemRemoto) {
+                    if (!itemRemoto || !itemRemoto.id) return;
+                    const itemLocal = itensLocal.find(function(it) { return it && it.id === itemRemoto.id; });
+
+                    if (!itemLocal) {
+                        itensLocal.push(itemRemoto);
+                        mudancas++;
+                        return;
+                    }
+
+                    if (itemRemoto.feitas && !itemLocal.feitas) {
+                        itemLocal.feitas = true;
+                        itemLocal.status = 'finalizado';
+                        mudancas++;
+                    }
+                    if (itemRemoto.resolvidas && !itemLocal.resolvidas) {
+                        itemLocal.resolvidas = true;
+                        mudancas++;
+                    }
+                    ['link', 'link2', 'axiomasText', 'resolucao'].forEach(function(campo) {
+                        if (!itemLocal[campo] && itemRemoto[campo]) {
+                            itemLocal[campo] = itemRemoto[campo];
+                            mudancas++;
+                        }
+                    });
+                });
+            });
+        });
+
+        return mudancas;
+    },
+
     aplicarPayloadMerge: async function(jsonString) {
         const importado = JSON.parse(jsonString);
 
@@ -2114,16 +2172,14 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
-                    // ── CASO ESPECIAL: CRONOGRAMA (cronograma_runtime.planners) ──
-                    // planners é um dicionário {id → cronograma}, não um array —
-                    // a ESTRATÉGIA B genérica só copia a sub-chave inteira se
-                    // objLocal.planners nunca existiu, o que quase nunca é
-                    // verdade (mesmo vazio, já existe {}) — descartaria em
-                    // silêncio os cronogramas importados. Mescla por id de
-                    // planner (união): cronogramas com id novo entram, os que
-                    // já existem localmente com o mesmo id são preservados
-                    // (não sobrescreve), igual ao padrão de arquivo morto.
-                    if (chaveSemPrefixoMerge === 'cronograma_runtime' && subChave === 'planners' &&
+                    // ── CASO ESPECIAL: CRONOGRAMA (cronograma_runtime.excluidos) ──
+                    // Lápide de exclusões { plannerId → data ISO }, dict achatado —
+                    // mesma política de união pura (OR) de *_runtime.ocultos: se
+                    // qualquer lado já marcou aquele planner como excluído, o
+                    // resultado mesclado mantém a exclusão; nunca "reaparece" por
+                    // causa do merge. Precisa ser resolvida ANTES do caso de
+                    // "planners" abaixo (é lido de objLocal.excluidos ali).
+                    if (chaveSemPrefixoMerge === 'cronograma_runtime' && subChave === 'excluidos' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -2131,12 +2187,69 @@ window.SALINHA_BACKUP = {
                         }
 
                         Object.keys(objImportado[subChave]).forEach(plannerId => {
-                            if (objLocal[subChave][plannerId] === undefined) {
+                            if (objImportado[subChave][plannerId] && !objLocal[subChave][plannerId]) {
                                 objLocal[subChave][plannerId] = objImportado[subChave][plannerId];
                                 entidadesInjetadas++;
                                 persistirChave = true;
                             }
                         });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: CRONOGRAMA (cronograma_runtime.planners) ──
+                    // planners é um dicionário {id → cronograma}, não um array —
+                    // a ESTRATÉGIA B genérica só copia a sub-chave inteira se
+                    // objLocal.planners nunca existiu, o que quase nunca é
+                    // verdade (mesmo vazio, já existe {}) — descartaria em
+                    // silêncio os cronogramas importados. Regras:
+                    //  1) plannerId presente na lápide de exclusões (de QUALQUER
+                    //     lado) nunca entra e é removido se já existir local —
+                    //     sem isso, excluir um cronograma num computador nunca
+                    //     se propagava, ele voltava pra sempre no próximo merge.
+                    //  2) id novo (não excluído) entra por inteiro.
+                    //  3) id já existente nos dois lados: antes ficava congelado
+                    //     (ignorado por completo); agora mescla item a item via
+                    //     mergePlanejamentoCronograma, senão edições feitas num
+                    //     computador nunca chegavam aos outros.
+                    if (chaveSemPrefixoMerge === 'cronograma_runtime' && subChave === 'planners' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        const excluidosRemoto = (objImportado.excluidos && typeof objImportado.excluidos === 'object') ? objImportado.excluidos : {};
+                        const excluidosLocal = (objLocal.excluidos && typeof objLocal.excluidos === 'object') ? objLocal.excluidos : {};
+                        const idsExcluidos = {};
+                        Object.keys(excluidosRemoto).forEach(id => { idsExcluidos[id] = true; });
+                        Object.keys(excluidosLocal).forEach(id => { idsExcluidos[id] = true; });
+
+                        Object.keys(objImportado[subChave]).forEach(plannerId => {
+                            if (idsExcluidos[plannerId]) return; // excluído em algum lado — nunca reinjeta
+
+                            if (objLocal[subChave][plannerId] === undefined) {
+                                objLocal[subChave][plannerId] = objImportado[subChave][plannerId];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                                return;
+                            }
+
+                            const mudancas = this.mergePlanejamentoCronograma(objLocal[subChave][plannerId], objImportado[subChave][plannerId]);
+                            if (mudancas > 0) {
+                                entidadesInjetadas += mudancas;
+                                persistirChave = true;
+                            }
+                        });
+
+                        // Cobre o caso em que o planner excluído remotamente
+                        // ainda existia localmente antes da lápide chegar.
+                        Object.keys(idsExcluidos).forEach(id => {
+                            if (objLocal[subChave][id] !== undefined) {
+                                delete objLocal[subChave][id];
+                                persistirChave = true;
+                            }
+                        });
+
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
@@ -3452,11 +3565,16 @@ window.CRONOGRAMA_RUNTIME = {
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.planners = (bruto && typeof bruto.planners === 'object') ? bruto.planners : {};
         this.activePlannerId = (bruto && bruto.activePlannerId) || null;
+        // Lápide de exclusões { plannerId → data ISO da exclusão } — sem isso,
+        // o merge de backup na nuvem (aplicarPayloadMerge, só sabe ADICIONAR
+        // planners ausentes) reinjeta pra sempre qualquer cronograma que já
+        // tenha subido à nuvem antes de ser excluído localmente.
+        this.excluidos = (bruto && typeof bruto.excluidos === 'object') ? bruto.excluidos : {};
     },
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos }));
         } catch (e) {
             console.warn('[CRONOGRAMA] Falha ao salvar:', e);
         }
@@ -3535,6 +3653,9 @@ window.CRONOGRAMA_RUNTIME = {
         // válido agora (tela de "Carregar Novo Cronograma"), não precisa
         // impedir chegar nele por exclusão.
         if (!confirm('Excluir o cronograma "' + this.planners[id].nome + '" permanentemente?')) return;
+
+        if (!this.excluidos) this.excluidos = {};
+        this.excluidos[id] = new Date().toISOString();
 
         delete this.planners[id];
         if (this.activePlannerId === id) {
