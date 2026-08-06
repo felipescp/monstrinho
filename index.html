@@ -3283,7 +3283,10 @@ if(ri) {
 
     #section-cronograma .crono-week-tabs { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
     #section-cronograma .crono-week-tabs-label { font-family:var(--font-display); font-size:11px; font-weight:700; color:var(--text-muted); margin-right:2px; }
-    #section-cronograma .crono-week-tab { padding:5px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-muted); }
+    #section-cronograma .crono-week-tab { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:4px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; line-height:1.15; cursor:pointer; color:var(--text-muted); }
+    /* "(feitos/total)" — mesmo cálculo do "X% (feitos/total)" do título do
+       cronograma, só que por semana e sem o %, em letra bem menor. */
+    #section-cronograma .crono-week-tab-count { font-size:8px; font-weight:600; opacity:0.8; }
     #section-cronograma .crono-week-tab.ativa { background:var(--app-primary); color:#fff; border-color:var(--app-primary); }
     /* Progresso de checks da semana — só em abas NÃO ativas (a ativa
        mantém sempre a cor do tema, mesmo padrão já usado nas miniabas do
@@ -4545,7 +4548,8 @@ window.CRONOGRAMA_RUNTIME = {
                 else if (prog.feitos > prog.total / 2) classeProgresso = ' crono-week-check-medio';
                 else classeProgresso = ' crono-week-check-leve';
             }
-            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '">' + numero + '</div>';
+            let contagemHtml = prog.total > 0 ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
+            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '"><span class="crono-week-tab-num">' + numero + '</span>' + contagemHtml + '</div>';
         }).join('') + '</div>';
 
         let htmlViewToggle = '<div class="crono-view-toggle">' +
