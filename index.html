@@ -1344,7 +1344,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
-                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();" title="Praticar Questões Marcadas">PRATICAR: 🗂️ QUESTÕES</span>
+                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); "title=" Questões Marcadas">PRATICAR: 🗂️ QUESTÕES</span>
                 <span class="nav-sub-sep">|</span>
                 <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" title="Flashcards de Axiomas"> 🗂️ AXIOMAS</span>
             </span>
@@ -3285,6 +3285,12 @@ if(ri) {
     #section-cronograma .crono-week-tabs-label { font-family:var(--font-display); font-size:11px; font-weight:700; color:var(--text-muted); margin-right:2px; }
     #section-cronograma .crono-week-tab { padding:5px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-muted); }
     #section-cronograma .crono-week-tab.ativa { background:var(--app-primary); color:#fff; border-color:var(--app-primary); }
+    /* Progresso de checks da semana — só em abas NÃO ativas (a ativa
+       mantém sempre a cor do tema, mesmo padrão já usado nas miniabas do
+       painel "Conteúdo Relacionado"). */
+    #section-cronograma .crono-week-tab.crono-week-check-leve:not(.ativa) { background:#dcfce7; border-color:#86efac; color:#166534; }
+    #section-cronograma .crono-week-tab.crono-week-check-medio:not(.ativa) { background:#4ade80; border-color:#22c55e; color:#fff; }
+    #section-cronograma .crono-week-tab.crono-week-check-completo:not(.ativa) { background:#15803d; border-color:#166534; color:#fff; }
 
     #section-cronograma .crono-view-toggle { display:flex; gap:4px; background:#eef2ff; border:1px solid var(--border-color); border-radius:99px; padding:3px; width:fit-content; flex-shrink:0; }
     #section-cronograma .crono-view-btn { font-family:var(--font-display); font-size:11px; font-weight:700; padding:5px 14px; border:none; border-radius:99px; background:none; color:var(--text-muted); cursor:pointer; }
@@ -4460,6 +4466,21 @@ window.CRONOGRAMA_RUNTIME = {
         return { total: total, feitos: feitos, pct: total > 0 ? Math.round(feitos / total * 100) : 0 };
     },
 
+    // Mesmo cálculo de calcularProgressoPlanner, mas restrito a UMA semana
+    // (todos os dias dela) — usado pra colorir a aba da semana na fita
+    // "Semanas:" conforme o quanto já foi marcado como feito.
+    calcularProgressoSemana: function(ativo, semana) {
+        let total = 0, feitos = 0;
+        let dias = (ativo && ativo.planejamento && ativo.planejamento[semana]) || {};
+        Object.keys(dias).forEach(function(dia) {
+            (dias[dia] || []).forEach(function(item) {
+                total++;
+                if (item && item.feitas === true) feitos++;
+            });
+        });
+        return { total: total, feitos: feitos };
+    },
+
     render: function() {
         let tabsEl = document.getElementById('crono-tabs');
         let contentEl = document.getElementById('crono-content');
@@ -4514,7 +4535,17 @@ window.CRONOGRAMA_RUNTIME = {
 
         let htmlWeekTabs = '<div class="crono-week-tabs"><span class="crono-week-tabs-label">Semanas:</span>' + semanasOrdenadas.map(function(s) {
             let numero = s.replace('semana_', '');
-            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '">(' + numero + ')</div>';
+            // Cor da aba reflete o quanto da semana já foi marcado como
+            // feito: algum check -> verde claro; mais da metade -> verde
+            // comum; todos -> verde escuro. Sem checks, sem cor especial.
+            let prog = self.calcularProgressoSemana(ativo, s);
+            let classeProgresso = '';
+            if (prog.total > 0 && prog.feitos > 0) {
+                if (prog.feitos === prog.total) classeProgresso = ' crono-week-check-completo';
+                else if (prog.feitos > prog.total / 2) classeProgresso = ' crono-week-check-medio';
+                else classeProgresso = ' crono-week-check-leve';
+            }
+            return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '">' + numero + '</div>';
         }).join('') + '</div>';
 
         let htmlViewToggle = '<div class="crono-view-toggle">' +
