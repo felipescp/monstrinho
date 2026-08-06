@@ -2848,6 +2848,12 @@ window.SALINHA_GIST_SYNC = {
     NOME_ARQUIVO: 'monstrinho-backup.json',
     PREFIXO_PARTE: 'monstrinho-backup.part',
     TAMANHO_MAX_PARTE: 700000, // ~700KB por parte — margem de segurança sob o limite de 1MB do Gist
+    // Acima disso, a trava (__salvamentoNuvemEmAndamento) é considerada
+    // abandonada e liberada sozinha — sem isso, um fetch() que nunca resolve
+    // (aba foi pra segundo plano/o notebook dormiu no meio de um upload,
+    // conexão caiu sem erro) trava "☁️⬆️ Salvar" pra sempre, mesmo horas
+    // depois, porque o finally que zera a trava nunca chega a rodar.
+    LOCK_NUVEM_EXPIRA_MS: 45000,
 
     getToken: function() {
         return localStorage.getItem('tjpe_v1__salinha_github_token') || '';
@@ -2892,11 +2898,12 @@ exportarNuvem: async function(botao) {
         // hoje (ver verificarSalvamentoPeriodicoNuvem), protege contra dois
         // salvamentos manuais disparados em cliques duplos, e já deixa a
         // corrida com o automático coberta pro dia em que for reativado.
-        if (window.__salvamentoNuvemEmAndamento) {
+        if (window.__salvamentoNuvemEmAndamento && (Date.now() - (window.__salvamentoNuvemEmAndamentoDesde || 0)) < this.LOCK_NUVEM_EXPIRA_MS) {
             alert('Já existe uma sincronização com a nuvem em andamento — aguarde alguns segundos e tente de novo.');
             return;
         }
         window.__salvamentoNuvemEmAndamento = true;
+        window.__salvamentoNuvemEmAndamentoDesde = Date.now();
 
         let htmlOriginal = null;
         if (botao) {
@@ -3137,9 +3144,10 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
     let token = this.getToken();
     let gistId = this.getGistId();
     if (!token || !gistId) return;
-    if (window.__salvamentoNuvemEmAndamento) return; // outro salvamento (manual ou automático) já em curso
+    if (window.__salvamentoNuvemEmAndamento && (Date.now() - (window.__salvamentoNuvemEmAndamentoDesde || 0)) < this.LOCK_NUVEM_EXPIRA_MS) return; // outro salvamento (manual ou automático) já em curso
 
     window.__salvamentoNuvemEmAndamento = true;
+    window.__salvamentoNuvemEmAndamentoDesde = Date.now();
     try {
         let payload = await window.SALINHA_BACKUP.construirPayload();
         let conteudo = JSON.stringify(payload, null, 2);
