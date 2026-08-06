@@ -3421,6 +3421,14 @@ if(ri) {
        pequeno, à esquerda do toggle Dias/Kanban. */
     #section-cronograma .crono-busca-input { font-size:11px; padding:5px 10px; border:1px solid var(--border-color); border-radius:99px; width:130px; outline:none; background:var(--bg-white); color:var(--text-main); }
     #section-cronograma .crono-busca-input:focus { border-color:var(--app-primary); width:170px; }
+    /* Resumo global (todas as semanas, não só a exibida) — some quando a
+       busca está vazia; "Nenhum resultado..." e cada pill de semana
+       compartilham a classe .crono-busca-global só quando há termo. */
+    #section-cronograma .crono-busca-global { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); background:#eef2ff; border:1px solid var(--border-color); border-radius:8px; padding:6px 10px; margin-bottom:10px; }
+    #section-cronograma .crono-busca-global-pills { display:flex; flex-wrap:wrap; gap:5px; }
+    #section-cronograma .crono-busca-global-pill { font-family:var(--font-display); font-size:10px; font-weight:700; padding:3px 9px; border-radius:99px; border:1px solid var(--app-primary); background:var(--bg-white); color:var(--app-primary); cursor:pointer; white-space:nowrap; }
+    #section-cronograma .crono-busca-global-pill:hover { background:var(--app-primary); color:#fff; }
+    #section-cronograma .crono-busca-global-pill.ativa { background:var(--app-primary); color:#fff; }
 
     #section-cronograma .crono-view-toggle { display:flex; gap:4px; background:#eef2ff; border:1px solid var(--border-color); border-radius:99px; padding:3px; width:fit-content; flex-shrink:0; }
     #section-cronograma .crono-view-btn { font-family:var(--font-display); font-size:11px; font-weight:700; padding:5px 14px; border:none; border-radius:99px; background:none; color:var(--text-muted); cursor:pointer; }
@@ -4723,7 +4731,9 @@ window.CRONOGRAMA_RUNTIME = {
 
         let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlDireita + '</div>';
 
-        contentEl.innerHTML = htmlControlsRow + '<div id="crono-corpo">' + this._renderCorpo() + '</div>';
+        contentEl.innerHTML = htmlControlsRow +
+            '<div id="crono-busca-global-container">' + this._renderResultadosGlobais() + '</div>' +
+            '<div id="crono-corpo">' + this._renderCorpo() + '</div>';
     },
 
     _escaparAtributo: function(s) {
@@ -4745,13 +4755,67 @@ window.CRONOGRAMA_RUNTIME = {
         return this.viewModo === 'kanban' ? this.renderKanban(diasSemana) : this.renderDias(diasSemana);
     },
 
-    // Chamada a cada tecla no campo de busca — atualiza só #crono-corpo,
-    // preservando foco/cursor do <input> (um render() completo destruiria e
-    // recriaria o próprio input a cada tecla digitada).
+    // Varre TODAS as semanas do cronograma ativo (não só a exibida no
+    // momento) contando quantos itens batem com a busca, agrupado por
+    // semana — resolve o caso relatado: com centenas de cards espalhados
+    // em várias semanas, filtrar só a semana visível não bastava pra saber
+    // "quantas vezes e onde" um termo aparece.
+    _resultadosBuscaGlobal: function() {
+        let self = this;
+        let ativo = this.planners[this.activePlannerId];
+        let resultado = { total: 0, porSemana: {} };
+        let termo = (this._buscaTexto || '').trim();
+        if (!ativo || !termo) return resultado;
+        Object.keys(ativo.planejamento).forEach(function(semana) {
+            Object.keys(ativo.planejamento[semana]).forEach(function(dia) {
+                (ativo.planejamento[semana][dia] || []).forEach(function(item) {
+                    if (self._itemBateBusca(item)) {
+                        resultado.total++;
+                        resultado.porSemana[semana] = (resultado.porSemana[semana] || 0) + 1;
+                    }
+                });
+            });
+        });
+        return resultado;
+    },
+
+    // Barra de resumo global — some quando a busca está vazia. Cada pill
+    // "Semana N (qtd)" chama mudarSemana() (já existente) pra pular direto
+    // pra lá; como _buscaTexto persiste entre semanas, a grade da semana de
+    // destino já chega filtrada pelo mesmo termo (renderDias/renderKanban).
+    _renderResultadosGlobais: function() {
+        let termo = (this._buscaTexto || '').trim();
+        if (!termo) return '';
+        let r = this._resultadosBuscaGlobal();
+        if (r.total === 0) {
+            return '<div class="crono-busca-global">Nenhum resultado em todo o cronograma pra "' + this._escaparAtributo(termo) + '".</div>';
+        }
+        let semanaAtiva = this.getSemanaAtiva(this.planners[this.activePlannerId]);
+        let semanasOrdenadas = Object.keys(r.porSemana).sort(function(a, b) {
+            return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
+        });
+        let qtdSemanas = semanasOrdenadas.length;
+        let pills = semanasOrdenadas.map(function(s) {
+            let numero = s.replace('semana_', '');
+            let ativa = s === semanaAtiva;
+            return '<span class="crono-busca-global-pill' + (ativa ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" title="Ir para a Semana ' + numero + '">Semana ' + numero + ' (' + r.porSemana[s] + ')</span>';
+        }).join('');
+        return '<div class="crono-busca-global">' +
+            '<strong>' + r.total + '</strong> resultado' + (r.total === 1 ? '' : 's') + ' em ' + qtdSemanas + ' semana' + (qtdSemanas === 1 ? '' : 's') + ':' +
+            '<span class="crono-busca-global-pills">' + pills + '</span>' +
+        '</div>';
+    },
+
+    // Chamada a cada tecla no campo de busca — atualiza #crono-corpo (grade
+    // da semana ativa) e #crono-busca-global (contagem em TODAS as
+    // semanas), preservando foco/cursor do <input> (um render() completo
+    // destruiria e recriaria o próprio input a cada tecla digitada).
     filtrarBusca: function(valor) {
         this._buscaTexto = valor || '';
         let corpoEl = document.getElementById('crono-corpo');
         if (corpoEl) corpoEl.innerHTML = this._renderCorpo();
+        let globalEl = document.getElementById('crono-busca-global-container');
+        if (globalEl) globalEl.innerHTML = this._renderResultadosGlobais();
     }
 };
 
