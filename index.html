@@ -9230,9 +9230,17 @@ function g(id){return document.getElementById(id);}
 // que estes 4 escaparam da primeira versão (só em tela()). Mesmo formato
 // de token pessoal do GitHub (40 caracteres), checagem só de formato, sem
 // chamada de rede.
-window.exigirTokenValido = function() {
+// Variante muda (sem alert) — usada no boot pra decidir se restaura a
+// última seção/bateria em andamento SEM incomodar quem só está abrindo o
+// site; o alert só deve aparecer quando o usuário de fato TENTA entrar em
+// algo, não passivamente ao carregar a página.
+window.temTokenValido = function() {
     let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    if (!tokenCadastrado || tokenCadastrado.length !== 40) {
+    return !!(tokenCadastrado && tokenCadastrado.length === 40);
+};
+
+window.exigirTokenValido = function() {
+    if (!window.temTokenValido()) {
         alert('Insira um token válido em ⚙️.');
         return false;
     }
@@ -10629,7 +10637,8 @@ else if (auditId) {
             restaurouComSucesso &&
             typeof SIMS !== 'undefined' &&
             SIMS.length > 0 &&
-            SIMS[SI]
+            SIMS[SI] &&
+            window.temTokenValido() // sem token, não tenta reabrir a bateria em andamento sozinho no boot — cairia no alert sem o usuário ter clicado em nada
         ) {
             tela('tela-simulado');
 
@@ -10657,7 +10666,7 @@ else if (auditId) {
                 'section-materiais': function() { if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init(); }
             };
 
-            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule)) {
+            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule) && window.temTokenValido()) {
                 tela(activeModule);
                 renderTabs();
                 SECOES_RESTAURAVEIS[activeModule]();
