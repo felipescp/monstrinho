@@ -5922,27 +5922,27 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     // Classifica o card ATUAL do popup (funciona em ambos os modos, axiomas
-    // e baralho — sempre os 3 botões juntos aqui). Não remove o card da
-    // navegação corrente: o popup de "Navegar" não é filtrado por estado,
-    // só as abas Difícil/Médio/Fácil são.
-    marcarDificilAtual: function() {
-        let card = this._cardAtual();
-        if (!card) return;
-        this.marcarDificil(card.chave);
-        this.renderPopup();
-    },
+    // e baralho) e remove ele do deck corrente — a navegação avança pro
+    // próximo automaticamente (mesmo padrão de marcarNaAba, nas abas de
+    // dificuldade). É aqui, no popup de navegação livre, que a
+    // classificação inicial acontece; as abas de dificuldade são só a fila
+    // de revisão dos que já vencerem.
+    marcarDificilAtual: function() { this._marcarPopupAtual('dificil'); },
+    marcarMedioAtual: function() { this._marcarPopupAtual('medio'); },
+    marcarFacilAtual: function() { this._marcarPopupAtual('facil'); },
 
-    marcarMedioAtual: function() {
+    _marcarPopupAtual: function(nivel) {
+        let s = this._popupState;
         let card = this._cardAtual();
-        if (!card) return;
-        this.marcarMedio(card.chave);
-        this.renderPopup();
-    },
+        if (!card || !s) return;
+        this._aplicarClassificacao(card.chave, nivel);
 
-    marcarFacilAtual: function() {
-        let card = this._cardAtual();
-        if (!card) return;
-        this.marcarFacil(card.chave);
+        let chaveMarcada = card.chave;
+        s.ordemChaves = s.ordemChaves.filter(function(ch) { return ch !== chaveMarcada; });
+        s.cardsBase = s.cardsBase.filter(function(c) { return c.chave !== chaveMarcada; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+        s.flipado = false;
+
         this.renderPopup();
     },
 
@@ -6783,29 +6783,24 @@ window.PRATICAR_CADERNO_RUNTIME = {
         this._renderCorpo(contexto);
     },
 
+    // Classificar sempre remove o card do pool corrente (a data de
+    // vencimento sempre muda) e avança pro próximo automaticamente —
+    // inclusive em "Navegar", que é onde a classificação inicial acontece;
+    // as abas de dificuldade são só a fila de revisão dos que já vencerem.
+    // _getEstado() já unifica _estadoNavegar e _estadosAba[contexto] no
+    // mesmo formato {pool, ordemChaves, indiceAtual}.
     classificar: function(contexto, nivel) {
         let card = this._getCardAtual(contexto);
         if (!card) return;
         this._aplicarClassificacao(card.chave, nivel);
 
-        if (contexto === 'navegar') {
-            // Navegar não filtra por estado — o card continua no pool, só
-            // reseta a resposta revelada e re-renderiza (mostra o status novo).
-            this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
-            this._renderCorpo('navegar');
-            return;
-        }
-
-        // Abas de dificuldade: classificar sempre remove o card do pool
-        // corrente (a data de vencimento sempre muda), mesmo se a nova
-        // classificação for igual à aba atual.
-        let s = this._estadosAba[contexto];
+        let s = this._getEstado(contexto);
         let chaveMarcada = card.chave;
         s.ordemChaves = s.ordemChaves.filter(function(ch) { return ch !== chaveMarcada; });
         s.pool = s.pool.filter(function(c) { return c.chave !== chaveMarcada; });
         if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
         this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
-        this._renderPillsAba(contexto);
+        if (contexto !== 'navegar') this._renderPillsAba(contexto);
         this._renderCorpo(contexto);
     },
 
@@ -18602,13 +18597,23 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.renderBaralho();
     },
 
-    // Classifica o card ATUAL do popup — não remove da navegação corrente
-    // (mesmo espírito do popup "Navegar" de Flashcards: não é filtrado por
-    // estado, só as abas Difícil/Médio/Fácil são).
+    // Classifica o card ATUAL do popup e remove ele do deck corrente — a
+    // navegação avança pro próximo automaticamente (mesmo padrão de
+    // marcarNaAba, nas abas de dificuldade). Sai do deck SEMPRE, mesmo se a
+    // classificação escolhida repetir uma anterior — é aqui, no baralho de
+    // navegação livre (Todos/Disciplina/Divisão), que a classificação
+    // inicial acontece; as abas de dificuldade são só a fila de revisão.
     marcarBaralho: function(nivel) {
+        let s = this._baralhoState;
         let card = this._fichaBaralhoAtual();
-        if (!card) return;
+        if (!card || !s) return;
         this._aplicarClassificacaoJur(card.id, nivel);
+
+        let idMarcado = card.id;
+        s.ordemChaves = s.ordemChaves.filter(function(id) { return id !== idMarcado; });
+        s.cardsBase = s.cardsBase.filter(function(f) { return f.id !== idMarcado; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+
         this.renderBaralho();
     },
 
