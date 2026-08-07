@@ -9222,6 +9222,23 @@ var blockCenSb = false; // Flag de segurança
 
 function g(id){return document.getElementById(id);}
 
+// Portão de acesso único — checado por tela() (seções) e por cada modal de
+// topo (Tabelas/Esquemas, Jurisprudência, Caderno de Questões e Axiomas,
+// Estatísticas), já que esses 4 nunca passam por tela() (são divs .active
+// próprios, abertos direto pelo onclick do item de nav). Centralizado aqui
+// pra um 5º ponto de entrada futuro não escapar da trava de novo, do jeito
+// que estes 4 escaparam da primeira versão (só em tela()). Mesmo formato
+// de token pessoal do GitHub (40 caracteres), checagem só de formato, sem
+// chamada de rede.
+window.exigirTokenValido = function() {
+    let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
+    if (!tokenCadastrado || tokenCadastrado.length !== 40) {
+        alert('Insira um token válido em ⚙️.');
+        return false;
+    }
+    return true;
+};
+
 function tela(id) {
 
     // Blindagem contra repaint redundante
@@ -9229,17 +9246,7 @@ function tela(id) {
         return;
     }
 
-    // Mesmo portão de acesso que já existia só pra abrir baterias
-    // (iniciarSimuladoDaVitrine), agora estendido pra QUALQUER seção —
-    // nenhuma tela (nem a Vitrine) fica visível sem um token cadastrado em
-    // ⚙️ (formato de token pessoal do GitHub: 40 caracteres). Checagem só
-    // de formato, sem chamada de rede. A topbar fica fora de qualquer
-    // .tela, então ⚙️ continua acessível pra cadastrar o token.
-    let tokenCadastradoTela = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    if (!tokenCadastradoTela || tokenCadastradoTela.length !== 40) {
-        alert('Insira um token válido em ⚙️.');
-        return;
-    }
+    if (!window.exigirTokenValido()) return;
 
     window.__TELA_ATIVA__ = id;
 
@@ -15111,6 +15118,7 @@ window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 50
    ========================================== */
 
 function openAnalyticsModal() {
+    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('analytics-modal');
     let frame = document.getElementById('analytics-frame');
 
@@ -15163,6 +15171,7 @@ function closeAnalyticsModal() {
 // ── CADERNO DE QUESTÕES SALVAS (nativo, sem depender de página externa) ──
 
 function abrirCadernoModal() {
+    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('caderno-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -16892,6 +16901,7 @@ window.ESQUEMAS_RUNTIME = {
 };
 
 window.abrirEsquemasModal = function() {
+    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -18538,6 +18548,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 };
 
 window.abrirJurisprudenciaModal = function() {
+    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
     modal.classList.add('active');
