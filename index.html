@@ -2690,15 +2690,36 @@ window.SALINHA_BACKUP = {
                             entidadesInjetadas++;
                             mudouSessaoAtiva = true;
                         } else {
-                            // Mesma aba dos dois lados: só substitui se a nuvem
-                            // tiver estritamente mais respostas que a local —
-                            // senão um F5 no computador "atrasado" sobrescreveria
-                            // progresso mais avançado feito em outro computador.
-                            let respostasLocais = Object.keys((simLocalExistente.dados && simLocalExistente.dados.res) || {}).length;
-                            let respostasNuvem = Object.keys((simImportado.dados && simImportado.dados.res) || {}).length;
-                            if (respostasNuvem > respostasLocais) {
-                                let indice = objLocal.sims.indexOf(simLocalExistente);
-                                objLocal.sims[indice] = simImportado;
+                            // Mesma aba dos dois lados: mescla as respostas
+                            // POR QUESTÃO (união em cima de dados.res, chave =
+                            // id da questão) em vez de comparar a CONTAGEM
+                            // bruta e trocar o objeto sim inteiro. A heurística
+                            // antiga ("nuvem tem mais respostas no total, troca
+                            // tudo") comparava quantidade, não conjunto — a
+                            // nuvem podia ter mais respostas só porque eram de
+                            // um snapshot mais antigo com um conjunto DIFERENTE
+                            // de questões respondidas, e a troca completa
+                            // apagava silenciosamente respostas que só
+                            // existiam localmente. Isso disparava sozinho num
+                            // F5 comum (importarNuvemSilenciosa roda no boot),
+                            // mesmo na mesma máquina/sessão, minutos depois de
+                            // responder — era essa troca inteira, não a
+                            // mesclagem em si, que "desmarcava" questões.
+                            // União nunca remove uma resposta local: só
+                            // preenche id de questão que a nuvem tem e a local
+                            // ainda não tinha.
+                            if (!simLocalExistente.dados) simLocalExistente.dados = {};
+                            let resLocal = simLocalExistente.dados.res || {};
+                            let resNuvem = (simImportado.dados && simImportado.dados.res) || {};
+                            let entrouResposta = false;
+                            Object.keys(resNuvem).forEach(function(idQ) {
+                                if (resLocal[idQ] === undefined && resNuvem[idQ] !== undefined) {
+                                    resLocal[idQ] = resNuvem[idQ];
+                                    entrouResposta = true;
+                                }
+                            });
+                            if (entrouResposta) {
+                                simLocalExistente.dados.res = resLocal;
                                 entidadesInjetadas++;
                                 mudouSessaoAtiva = true;
                             }
