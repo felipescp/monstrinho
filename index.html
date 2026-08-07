@@ -9246,7 +9246,11 @@ function tela(id) {
         return;
     }
 
-    if (!window.exigirTokenValido()) return;
+    // tela-home (Vitrine) fica de fora do portão — é onde as baterias são
+    // listadas, e a exibição da lista pode ficar livre; só ENTRAR numa
+    // bateria exige token (checagem própria em iniciarSimuladoDaVitrine).
+    // As demais seções continuam exigindo token pra sequer abrir.
+    if (id !== 'tela-home' && !window.exigirTokenValido()) return;
 
     window.__TELA_ATIVA__ = id;
 
