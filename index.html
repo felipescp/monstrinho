@@ -1445,7 +1445,9 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             <!-- COLUNA 1: Baterias Focadas (Com Taxonomia) -->
             <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
                 <div class="v-acc-header" style="cursor:default; background: #f8fafc; flex-shrink: 0; padding: 8px 15px;">
-                    <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F</div>
+                    <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F
+                        <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 8px; font-size:9px; font-weight:800; text-transform:uppercase; border:1px solid var(--border-color); border-radius:4px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-left:4px;">Ocultar Oficiais</button>
+                    </div>
                     <div style="position: relative;">
     <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
     
@@ -2383,18 +2385,53 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.excluidos) ──
+                    // Lápide de exclusões { id → data ISO }, dict achatado — mesma
+                    // política de união pura (OR) de *_runtime.ocultos: se qualquer
+                    // lado já marcou aquele esquema como excluído, o resultado
+                    // mesclado mantém a exclusão; nunca "reaparece" por causa do
+                    // merge. Precisa ser resolvida ANTES do caso de "esquemas"
+                    // abaixo (é lido de objLocal.excluidos/objImportado.excluidos ali).
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'excluidos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idEsquema => {
+                            if (objImportado[subChave][idEsquema] && !objLocal[subChave][idEsquema]) {
+                                objLocal[subChave][idEsquema] = objImportado[subChave][idEsquema];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.esquemas) ──
                     // Mesmíssima forma/problema/solução de materiais_runtime.materiais:
                     // dicionário achatado {"MATÉRIA > Divisão" → array de esquemas}.
                     // Desce 1 nível e mescla por id — união, mantém a versão local em
                     // caso de mesmo id dos dois lados (esquemas pessoais nunca têm
                     // origem_oficial, então isso nunca colide com conteúdo oficial).
+                    // Respeita a lápide de exclusões (dos dois lados): id excluído
+                    // nunca entra e é removido se já existir local — sem isso,
+                    // excluir um esquema pessoal nunca se propagava, ele voltava
+                    // pra sempre no próximo merge (mesmo bug já corrigido em
+                    // cronograma_runtime.planners).
                     if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'esquemas' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
                             objLocal[subChave] = {};
                         }
+
+                        const excluidosRemoto = (objImportado.excluidos && typeof objImportado.excluidos === 'object') ? objImportado.excluidos : {};
+                        const excluidosLocal = (objLocal.excluidos && typeof objLocal.excluidos === 'object') ? objLocal.excluidos : {};
+                        const idsExcluidos = {};
+                        Object.keys(excluidosRemoto).forEach(id => { idsExcluidos[id] = true; });
+                        Object.keys(excluidosLocal).forEach(id => { idsExcluidos[id] = true; });
 
                         Object.keys(objImportado[subChave]).forEach(chaveL2 => {
                             const esquemasImportados = objImportado[subChave][chaveL2];
@@ -2403,7 +2440,7 @@ window.SALINHA_BACKUP = {
                                 objLocal[subChave][chaveL2] = [];
                             }
                             esquemasImportados.forEach(esquema => {
-                                if (!esquema || !esquema.id) return;
+                                if (!esquema || !esquema.id || idsExcluidos[esquema.id]) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
                                     return local && local.id === esquema.id;
                                 });
@@ -2414,6 +2451,18 @@ window.SALINHA_BACKUP = {
                                 }
                             });
                         });
+
+                        if (Object.keys(idsExcluidos).length > 0) {
+                            Object.keys(objLocal[subChave]).forEach(chaveL2 => {
+                                const antes = objLocal[subChave][chaveL2].length;
+                                objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
+                                    return !(item && idsExcluidos[item.id]);
+                                });
+                                if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
+                                if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                            });
+                        }
+
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
@@ -9631,7 +9680,7 @@ window.renderHomeDashboard = function() {
         const colMaterias = document.getElementById('col-materias');
     const colTopicos = document.getElementById('col-topicos');
     const listCE = document.getElementById('lista-provas-ce');
-    const provasCE = [];
+    let provasCE = [];
     acervo.forEach(function(p) {
         if (p.tipo === 'ce') {
             provasCE.push(p);
@@ -9652,6 +9701,17 @@ window.renderHomeDashboard = function() {
             });
         }
     });
+
+    // "Ocultar Oficiais" GLOBAL (botão no topo do painel, ao lado do título
+    // "Baterias V/F") — diferente do toggle da coluna 3 (window.__ocultarOficiaisBaterias__,
+    // que só filtra a LISTA renderizada por renderizarListaBaterias, deixando
+    // as contagens da coluna de matérias intocadas). Aqui o filtro é aplicado
+    // na origem, em provasCE, ANTES de qualquer contagem/renderização — então
+    // colMaterias, colTopicos e a lista da coluna 3 todos refletem só as
+    // baterias pessoais. Não persiste entre reloads (mesmo padrão do outro).
+    if (window.__ocultarOficiaisGlobalVitrine__) {
+        provasCE = provasCE.filter(function(p) { return !p.origem_oficial; });
+    }
 
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
     
@@ -9945,6 +10005,29 @@ function marcarBotaoOcultarOficiaisAtivo() {
     let btn = document.getElementById('btn-ocultar-oficiais-baterias');
     if (!btn) return;
     let ativo = !!window.__ocultarOficiaisBaterias__;
+    btn.style.color = ativo ? '#fff' : 'var(--text-muted)';
+    btn.style.background = ativo ? 'var(--app-primary)' : 'var(--bg-white)';
+    btn.style.borderColor = ativo ? 'var(--app-primary)' : 'var(--border-color)';
+}
+
+// Botão do topo do painel (ao lado de "Baterias V/F") — ocultar oficiais
+// GLOBALMENTE (contagens da coluna de matérias inclusive), diferente do
+// toggle da coluna 3 acima (esse só filtra a lista renderizada, sem tocar
+// nas contagens). Reaproveita renderHomeDashboard() inteiro pra recalcular
+// as 3 colunas sob o novo filtro — a própria função já restaura sozinha o
+// modo/matéria/tópico que estava ativo antes (bloco "ESTADO PERSISTIDO" no
+// fim dela), então o usuário não perde onde estava navegando.
+window.toggleOcultarOficiaisGlobalVitrine = function() {
+    window.__ocultarOficiaisGlobalVitrine__ = !window.__ocultarOficiaisGlobalVitrine__;
+    marcarBotaoOcultarOficiaisGlobalAtivo();
+    window.renderHomeDashboard();
+};
+
+function marcarBotaoOcultarOficiaisGlobalAtivo() {
+    let btn = document.getElementById('btn-ocultar-oficiais-vitrine');
+    if (!btn) return;
+    let ativo = !!window.__ocultarOficiaisGlobalVitrine__;
+    btn.textContent = ativo ? 'Exibir Oficiais' : 'Ocultar Oficiais';
     btn.style.color = ativo ? '#fff' : 'var(--text-muted)';
     btn.style.background = ativo ? 'var(--app-primary)' : 'var(--bg-white)';
     btn.style.borderColor = ativo ? 'var(--app-primary)' : 'var(--border-color)';
@@ -16438,6 +16521,8 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()" title="Exportar todos os esquemas PESSOAIS em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()" title="Exportar os esquemas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()" title="Exportar os esquemas PESSOAIS do tópico (divisão) selecionado em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tópico</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
             </div>
         </div>
@@ -16519,6 +16604,12 @@ window.ESQUEMAS_RUNTIME = {
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.esquemas = (bruto && typeof bruto.esquemas === 'object' && !Array.isArray(bruto.esquemas)) ? bruto.esquemas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        // Lápide de exclusões { id → data ISO } — sem isso, o merge de backup
+        // na nuvem (aplicarPayloadMerge, só sabe ADICIONAR esquemas ausentes)
+        // reinjeta pra sempre qualquer esquema pessoal que já tenha subido à
+        // nuvem antes de ser excluído localmente (mesmo bug já corrigido em
+        // cronograma_runtime.planners, ver excluirPlanner).
+        this.excluidos = (bruto && typeof bruto.excluidos === 'object' && !Array.isArray(bruto.excluidos)) ? bruto.excluidos : {};
         this._bootstrapped = true;
     },
 
@@ -16528,7 +16619,7 @@ window.ESQUEMAS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos }));
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
         }
@@ -16878,6 +16969,8 @@ window.ESQUEMAS_RUNTIME = {
         let item = this.esquemas[chave].find(function(e) { return e.id === id; });
         if (item && item.origem_oficial) return; // esquemas oficiais não são excluíveis pelo usuário
         if (!confirm('Excluir este esquema?')) return;
+        if (!this.excluidos) this.excluidos = {};
+        this.excluidos[id] = new Date().toISOString();
         this.esquemas[chave] = this.esquemas[chave].filter(function(e) { return e.id !== id; });
         if (this.esquemas[chave].length === 0) delete this.esquemas[chave];
         this.salvar();
@@ -16910,6 +17003,61 @@ window.ESQUEMAS_RUNTIME = {
         }
 
         downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-pessoais.json', 'application/json');
+    },
+
+    // Exporta os esquemas PESSOAIS só da DISCIPLINA (matéria/L1) selecionada
+    // na barra lateral — mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarTudo()
+    // (lá o botão equivalente chama-se "Exportar Disciplina").
+    exportarDisciplina: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let pessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial && !self.ocultos[e.id]; });
+            if (pessoais.length > 0) {
+                resultado[chave] = pessoais;
+                total += pessoais.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem esquemas oficiais/ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+    },
+
+    // Exporta os esquemas PESSOAIS só do TÓPICO (divisão/L2) selecionado —
+    // granularidade que a Jurisprudência ainda não tem (lá só existe o nível
+    // de disciplina); construída aqui no mesmo padrão de exportarDisciplina.
+    exportarTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let pessoais = (this.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial && !self.ocultos[e.id]; });
+
+        if (pessoais.length === 0) {
+            alert('Nenhum esquema pessoal pra exportar em "' + chave + '" (só existem esquemas oficiais/ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        let resultado = {};
+        resultado[chave] = pessoais;
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    },
+
+    // Slug de nome de arquivo — mesmo algoritmo de JURISPRUDENCIA_RUNTIME._slugTexto.
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
 };
 
