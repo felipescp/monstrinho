@@ -7310,7 +7310,9 @@ window.MATERIAIS_RUNTIME = {
                     '<button class="mat-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleOcultarOficiais()">Ocultar Oficiais</button>' +
                 '</div>' +
                 '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar JSON pronto pra publicar em dados/materiais/">📤 Exportar Tudo</button>' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar todos os materiais visíveis (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Tudo</button>' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarDisciplina()" title="Exportar os materiais visíveis da disciplina selecionada (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Disciplina</button>' +
+                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTopico()" title="Exportar os materiais visíveis do tópico selecionado (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Tópico</button>' +
                     '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Selecionar</button>' +
                 '</div>';
         }
@@ -7499,15 +7501,20 @@ window.MATERIAIS_RUNTIME = {
         this._renderGradeCards();
     },
 
-    // Exporta TODOS os materiais PESSOAIS (de todas as matérias/divisões,
-    // não só a selecionada no momento) num único JSON, na mesma forma que
+    // Exporta TODOS os materiais VISÍVEIS (de todas as matérias/divisões, não
+    // só a selecionada no momento) num único JSON, na mesma forma que
     // importarMaterialOficial() espera — pronto pra salvar em
     // dados/materiais/*.json e registrar em carregarMateriaisOficiais().
-    // Itens já oficiais ficam de fora (já estão publicados, reexportar
-    // seria redundante). urlPdf é exportado exatamente como foi digitado —
-    // inclusive caminhos relativos tipo "dados/materiais/pdfs/x.pdf", que
-    // resolvem certo tanto na visualização (iframe) quanto depois de
-    // publicado (URL relativa resolve contra a página que a usa).
+    // Diferente de Esquemas/Jurisprudência (que só exportam PESSOAIS, porque
+    // lá cada usuário publica o próprio conteúdo pro repositório): aqui o
+    // objetivo é um snapshot completo do que está visível, então oficiais
+    // entram também. Só o que está OCULTO (ocultos[id], visibilidade pessoal)
+    // fica de fora — ocultar é como "remover" um oficial da própria vista
+    // sem afetar o catálogo compartilhado, e isso vale pra exportação também.
+    // urlPdf é exportado exatamente como foi digitado — inclusive caminhos
+    // relativos tipo "dados/materiais/pdfs/x.pdf", que resolvem certo tanto
+    // na visualização (iframe) quanto depois de publicado (URL relativa
+    // resolve contra a página que a usa).
     exportarTudo: function() {
         this._garantirCarregado();
         let self = this;
@@ -7515,19 +7522,73 @@ window.MATERIAIS_RUNTIME = {
         let total = 0;
 
         Object.keys(this.materiais).sort().forEach(function(chave) {
-            let pessoais = (self.materiais[chave] || []).filter(function(m) { return !m.origem_oficial; });
-            if (pessoais.length > 0) {
-                resultado[chave] = pessoais;
-                total += pessoais.length;
+            let visiveis = (self.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
             }
         });
 
         if (total === 0) {
-            alert('Nenhum material pessoal pra exportar (só existem materiais oficiais aqui, ou nenhum material ainda).');
+            alert('Nenhum material pra exportar (só existem materiais ocultos aqui, ou nenhum material ainda).');
             return;
         }
 
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-pessoais.json', 'application/json');
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-tudo.json', 'application/json');
+    },
+
+    // Exporta os materiais VISÍVEIS só da DISCIPLINA (matéria/L1) selecionada
+    // na barra lateral — mesmo padrão de ESQUEMAS_RUNTIME/JURISPRUDENCIA_RUNTIME.
+    // exportarDisciplina(), mas incluindo oficiais (ver nota em exportarTudo acima).
+    exportarDisciplina: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.materiais).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let visiveis = (self.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum material pra exportar em "' + this._materiaSelecionada + '" (só existem materiais ocultos aqui, ou nenhum material ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+    },
+
+    // Exporta os materiais VISÍVEIS só do TÓPICO (divisão/L2) selecionado.
+    exportarTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
+
+        if (visiveis.length === 0) {
+            alert('Nenhum material pra exportar em "' + chave + '" (só existem materiais ocultos aqui, ou nenhum material ainda).');
+            return;
+        }
+
+        let resultado = {};
+        resultado[chave] = visiveis;
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    },
+
+    // Slug de nome de arquivo — mesmo algoritmo de ESQUEMAS_RUNTIME._slugTexto/
+    // JURISPRUDENCIA_RUNTIME._slugTexto.
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     },
 
     // ── MODAL "VISUALIZAR PDF" ──
