@@ -16997,6 +16997,10 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-card-oculto { opacity:0.5; }
     #jurisprudencia-modal .jur-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
     #jurisprudencia-modal .jur-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+    /* Ocultar + Excluir precisam ficar juntos NUM SÓ filho flex de
+       .jur-card-tags — senão "justify-content:space-between" trata os 2
+       botões como itens separados e empurra "Ocultar" pro meio do card. */
+    #jurisprudencia-modal .jur-card-tags-dir { display:flex; align-items:center; gap:2px; flex-shrink:0; }
     #jurisprudencia-modal .jur-card-checkbox { cursor:pointer; flex-shrink:0; }
     #jurisprudencia-modal .jur-tag-tribunal { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; }
     #jurisprudencia-modal .jur-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
@@ -17017,7 +17021,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
-    /* Abas do topo: "Navegar" (grade L1/L2 acima) + Difícil/Médio/Fácil
+    /* Abas do topo: "Navegar" (grade L1/L2 acima) + Muito Importante/Importante/Regular
        (repetição espaçada) — mesmo padrão visual de #section-flashcards. */
     #jurisprudencia-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #jurisprudencia-modal .jur-tabs-grupo { display:flex; gap:4px; }
@@ -17071,15 +17075,16 @@ window.carregarEsquemasOficiais = async function() {
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar as fichas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas visíveis (pessoais + oficiais, respeitando os filtros atuais) em Markdown, agrupadas por tópico — pronto pra virar documento de revisão ou gerar questões" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar .md</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
         <div class="fc-tabs">
             <div class="jur-tabs-grupo">
                 <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
-                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
-                <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Médio</button>
-                <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Muito Importante</button>
+                <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Importante</button>
+                <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Regular</button>
             </div>
             <div class="jur-tabs-baralho">
                 <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
@@ -17097,6 +17102,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-pills" id="jur-pills-dificil"></div>
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('dificil')">🔀 Embaralhar</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar as fichas desta aba (Muito Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
             </div>
             <div id="jur-corpo-dificil"></div>
             <div class="fc-popup-nav">
@@ -17110,6 +17116,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-pills" id="jur-pills-medio"></div>
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('medio')">🔀 Embaralhar</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('medio')" title="Exportar as fichas desta aba (Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
             </div>
             <div id="jur-corpo-medio"></div>
             <div class="fc-popup-nav">
@@ -17123,6 +17130,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-pills" id="jur-pills-facil"></div>
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('facil')">🔀 Embaralhar</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar as fichas desta aba (Regular) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
             </div>
             <div id="jur-corpo-facil"></div>
             <div class="fc-popup-nav">
@@ -17835,8 +17843,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                         seloOculto +
                         seloSuperado +
                     '</span>' +
-                    btnOcultarHtml +
-                    btnExcluirHtml +
+                    '<span class="jur-card-tags-dir">' + btnOcultarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
                 '<div class="jur-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
@@ -18018,12 +18025,24 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderGradeCards();
     },
 
+    // Slug ASCII reaproveitado por exportarTudo/exportarMarkdown/
+    // exportarMarkdownAba pro nome do arquivo (ex.: "Direito Civil" ->
+    // "direito-civil").
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    },
+
     // Exporta as fichas PESSOAIS só da DISCIPLINA (matéria/L1) selecionada
     // na barra lateral — não mais todas de uma vez. Mesma forma que
     // importarJurisprudenciaOficial() espera — pronto pra salvar em
     // dados/jurisprudencia/*.json, 1 arquivo por disciplina (mesmo padrão
     // já usado em baterias/materiais/esquemas: cada exportação vira 1 linha
-    // nova em manifesto-jurisprudencia.txt). Fichas já oficiais ficam de fora.
+    // nova em manifesto-jurisprudencia.txt). Fichas já oficiais ficam de
+    // fora. Fichas OCULTAS também ficam de fora — é assim que "ocultar" vira
+    // um "excluir" seguro pro admin: oculta o que não quer mais, exporta o
+    // resto, e o arquivo publicado já sai "higienizado".
     exportarTudo: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
@@ -18034,7 +18053,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         Object.keys(this.fichas).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let pessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
+            let pessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial && !self.ocultos[f.id]; });
             if (pessoais.length > 0) {
                 resultado[chave] = pessoais;
                 total += pessoais.length;
@@ -18042,17 +18061,96 @@ window.JURISPRUDENCIA_RUNTIME = {
         });
 
         if (total === 0) {
-            alert('Nenhuma ficha pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem fichas oficiais aqui, ou nenhuma ficha ainda).');
+            alert('Nenhuma ficha pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem fichas oficiais/ocultas aqui, ou nenhuma ficha ainda).');
             return;
         }
 
-        let slug = this._materiaSelecionada.toLowerCase()
-            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
-            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + slug + '.json', 'application/json');
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
     },
 
-    // ── REPETIÇÃO ESPAÇADA (Difícil/Médio/Fácil) — mesma fórmula de
+    // ── EXPORTAÇÃO EM MARKDOWN (documento de revisão / insumo pra gerar
+    // questões) — diferente de exportarTudo (JSON, só pessoais, pra
+    // publicar no repositório): aqui entram TODAS as fichas visíveis
+    // (pessoais + oficiais), porque o objetivo é reunir o que o usuário
+    // está efetivamente estudando, não curar o acervo. Fichas OCULTAS
+    // continuam de fora em qualquer exportação (mesmo raciocínio de
+    // exportarTudo). ──
+
+    // Gerador compartilhado — recebe uma lista PLANA de fichas (já
+    // filtrada por quem chamou: grade principal ou uma aba de
+    // classificação) e agrupa por matéria (materiaL1) > divisão
+    // (divisaoL2), sempre presentes na ficha desde a importação/edição.
+    _gerarMarkdownFichas: function(fichas, tituloDoc) {
+        let self = this;
+        let visiveis = fichas.filter(function(f) { return f && !self.ocultos[f.id]; });
+        if (visiveis.length === 0) return null;
+
+        let porMateria = {};
+        visiveis.forEach(function(f) {
+            let mat = f.materiaL1 || '(Sem matéria)';
+            let div = f.divisaoL2 || '(Sem divisão)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][div]) porMateria[mat][div] = [];
+            porMateria[mat][div].push(f);
+        });
+
+        let linhas = [];
+        if (tituloDoc) { linhas.push('# ' + tituloDoc, ''); }
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            linhas.push('## ' + mat, '');
+            Object.keys(porMateria[mat]).sort().forEach(function(div) {
+                linhas.push('### ' + div, '');
+                porMateria[mat][div].forEach(function(f) {
+                    linhas.push('#### ' + (f.titulo || '(sem título)'), '');
+                    let meta1 = [f.tribunal ? '**Tribunal:** ' + f.tribunal : '', f.orgao ? '**Órgão:** ' + f.orgao : ''].filter(Boolean).join(' · ');
+                    if (meta1) linhas.push(meta1, '');
+                    let meta2 = [
+                        f.processo ? '**Processo:** ' + f.processo : '',
+                        f.relator ? '**Relator:** ' + f.relator : '',
+                        f.dataJulgado ? '**Data:** ' + self._formatarDataBR(f.dataJulgado) : ''
+                    ].filter(Boolean).join(' · ');
+                    if (meta2) linhas.push(meta2, '');
+                    if (f.sistematica) linhas.push('**Sistemática:** ' + f.sistematica, '');
+                    if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', f.tese, '');
+                    if (f.resumo) linhas.push('**Resumo do Caso:**', '', f.resumo, '');
+                    if (f.conexoes) linhas.push('**Conexões:**', '', f.conexoes, '');
+                    linhas.push('---', '');
+                });
+            });
+        });
+
+        return linhas.join('\n');
+    },
+
+    // Botão da grade principal — exporta as fichas ATUALMENTE VISÍVEIS
+    // (respeitando os filtros de tribunal/sistemática/ano/ocultos/oficiais
+    // já aplicados na tela), agrupadas por divisão dentro da disciplina.
+    exportarMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let fichas = this._listaFiltrada().map(function(par) { return par.item; });
+        let md = this._gerarMarkdownFichas(fichas, this._materiaSelecionada);
+        if (!md) { alert('Nenhuma ficha visível pra exportar (considerando os filtros atuais).'); return; }
+        downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Botões dentro de cada aba de classificação (Muito Importante/
+    // Importante/Regular) — exporta só o POOL atual da aba (já respeita a
+    // pílula de matéria selecionada ali, se houver).
+    exportarMarkdownAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
+        let SLUGS_ABA = { dificil: 'muito-importante', medio: 'importante', facil: 'regular' };
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let md = this._gerarMarkdownFichas(s.pool || [], titulo);
+        if (!md) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // ── REPETIÇÃO ESPAÇADA (Muito Importante/Importante/Regular) — mesma fórmula de
     // Flashcards/Praticar Caderno via window.RepeticaoEspacada, aplicada por
     // id de ficha. ──
 
@@ -18069,7 +18167,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     _statusRevisaoJurTexto: function(id) {
         let r = this.revisaoJurisprudencia[id];
         if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
-        let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
+        let rotulos = { dificil: '🔴 Muito Importante', medio: '🟡 Importante', facil: '🟢 Regular' };
         let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
         let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
         let vencidoTxt = this._vencidoJur(id) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
@@ -18088,10 +18186,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             return "window.JURISPRUDENCIA_RUNTIME.marcarBaralho('" + nivel + "')";
         };
         let atual = this.revisaoJurisprudencia[id] ? this.revisaoJurisprudencia[id].ultimaClassificacao : null;
+        // Rótulos próprios da Jurisprudência (diferente de Flashcards/
+        // Praticar Caderno): "Difícil/Médio/Fácil" não fazia sentido pra
+        // julgados — trocado por Muito Importante/Importante/Regular.
+        // Chaves internas (dificil/medio/facil) e cores continuam as mesmas.
         let niveis = [
-            { chave: 'dificil', rotulo: '🔴 Difícil', rotuloDesmarcar: '🔴 Desmarcar Difícil' },
-            { chave: 'medio', rotulo: '🟡 Médio', rotuloDesmarcar: '🟡 Desmarcar Médio' },
-            { chave: 'facil', rotulo: '🟢 Fácil', rotuloDesmarcar: '🟢 Desmarcar Fácil' }
+            { chave: 'dificil', rotulo: '🔴 Muito Importante', rotuloDesmarcar: '🔴 Desmarcar Muito Importante' },
+            { chave: 'medio', rotulo: '🟡 Importante', rotuloDesmarcar: '🟡 Desmarcar Importante' },
+            { chave: 'facil', rotulo: '🟢 Regular', rotuloDesmarcar: '🟢 Desmarcar Regular' }
         ];
         return niveis.map(function(n) {
             let classeAtiva = (atual === n.chave) ? ' ativa' : '';
