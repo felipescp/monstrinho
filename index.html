@@ -16541,12 +16541,38 @@ window.triggerFileUpload = function(callback) {
             <button onclick="window.ESQUEMAS_RUNTIME.fecharEditor()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
         <input type="text" id="esq-form-titulo" placeholder="Título do esquema" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main);">
-        <div id="esq-editor-toolbar" style="display:flex; gap:6px;">
+        <div id="esq-editor-toolbar" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
             <button type="button" onclick="window.ESQUEMAS_RUNTIME.aplicarFormatacao('bold')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-weight:800;" title="Negrito">B</button>
             <button type="button" onclick="window.ESQUEMAS_RUNTIME.aplicarFormatacao('italic')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-style:italic;" title="Itálico">I</button>
+            <button type="button" onclick="window.ESQUEMAS_RUNTIME.aplicarFormatacao('underline')" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; text-decoration:underline;" title="Sublinhado">S</button>
+            <select onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarFonte(this.value); this.selectedIndex=0;" title="Fonte" style="padding:6px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:700; color:var(--text-main);">
+                <option value="">Fonte</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="'Times New Roman'">Times New Roman</option>
+                <option value="'Courier New'">Courier New</option>
+                <option value="Verdana">Verdana</option>
+            </select>
+            <select onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarTamanhoFonte(this.value); this.selectedIndex=0;" title="Tamanho da fonte" style="padding:6px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:700; color:var(--text-main);">
+                <option value="">Tamanho</option>
+                <option value="11">Pequeno</option>
+                <option value="13">Normal</option>
+                <option value="16">Médio</option>
+                <option value="20">Grande</option>
+                <option value="28">Enorme</option>
+            </select>
+            <label title="Cor da fonte" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">A
+                <input type="color" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarCorFonte(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
+            </label>
+            <label title="Marca-texto" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">🖍️
+                <input type="color" value="#fff59d" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarMarcaTexto(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
+            </label>
             <button type="button" onclick="window.ESQUEMAS_RUNTIME.inserirTabela()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:700;" title="Inserir tabela 3x3">▦ Inserir Tabela</button>
+            <label title="Cor de fundo da célula — clique dentro de uma célula da tabela antes de escolher a cor" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">▦
+                <input type="color" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarCorFundoCelula(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
+            </label>
         </div>
-        <div id="esq-editor-corpo" contenteditable="true" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
+        <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
         <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
@@ -16906,6 +16932,87 @@ window.ESQUEMAS_RUNTIME = {
     aplicarFormatacao: function(comando) {
         document.getElementById('esq-editor-corpo').focus();
         document.execCommand(comando, false, null);
+    },
+
+    // Os controles de fonte/tamanho/cor são <select>/<input type="color">,
+    // não <button> — abrir a lista ou o seletor nativo de cor tira o foco
+    // do editor e a seleção de texto se perde antes do onchange disparar.
+    // _salvarSelecao() (onmousedown de cada controle + onmouseup/onkeyup do
+    // próprio editor) guarda o Range atual; _restaurarSelecao() devolve ele
+    // pro editor logo antes de cada execCommand, senão a formatação cai no
+    // vazio (ou no cursor errado) em vez de aplicar no texto selecionado.
+    _ultimaSelecao: null,
+    _salvarSelecao: function() {
+        let sel = window.getSelection();
+        if (sel.rangeCount === 0) return;
+        let range = sel.getRangeAt(0);
+        let corpo = document.getElementById('esq-editor-corpo');
+        if (corpo && corpo.contains(range.commonAncestorContainer)) {
+            this._ultimaSelecao = range;
+        }
+    },
+    _restaurarSelecao: function() {
+        let corpo = document.getElementById('esq-editor-corpo');
+        corpo.focus();
+        if (this._ultimaSelecao) {
+            let sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(this._ultimaSelecao);
+        }
+    },
+
+    aplicarFonte: function(fonte) {
+        if (!fonte) return;
+        this._restaurarSelecao();
+        document.execCommand('fontName', false, fonte);
+    },
+
+    // execCommand('fontSize') só aceita a escala fixa 1-7 do HTML — pra
+    // tamanho em px de verdade, aplica o maior nível (7, sempre vira
+    // <font size="7">) e troca essas tags pelo font-size real via CSS.
+    aplicarTamanhoFonte: function(tamanhoPx) {
+        if (!tamanhoPx) return;
+        this._restaurarSelecao();
+        document.execCommand('fontSize', false, '7');
+        let corpo = document.getElementById('esq-editor-corpo');
+        corpo.querySelectorAll('font[size="7"]').forEach(function(el) {
+            el.removeAttribute('size');
+            el.style.fontSize = tamanhoPx + 'px';
+        });
+    },
+
+    aplicarCorFonte: function(cor) {
+        this._restaurarSelecao();
+        document.execCommand('foreColor', false, cor);
+    },
+
+    // hiliteColor é o comando "certo" pra marca-texto, mas o Chrome nem
+    // sempre o suporta — backColor é o fallback que produz o mesmo efeito
+    // visual (fundo colorido atrás do texto selecionado) nesse caso.
+    aplicarMarcaTexto: function(cor) {
+        this._restaurarSelecao();
+        if (document.queryCommandSupported && document.queryCommandSupported('hiliteColor')) {
+            document.execCommand('hiliteColor', false, cor);
+        } else {
+            document.execCommand('backColor', false, cor);
+        }
+    },
+
+    // Diferente das outras: não é formatação de TEXTO selecionado, é a
+    // célula (<td>/<th>) INTEIRA onde o cursor está — sobe a árvore a
+    // partir do ponto salvo até achar a célula mais próxima.
+    aplicarCorFundoCelula: function(cor) {
+        let corpo = document.getElementById('esq-editor-corpo');
+        let no = this._ultimaSelecao ? this._ultimaSelecao.startContainer : null;
+        let celula = no ? (no.nodeType === 3 ? no.parentElement : no) : null;
+        while (celula && celula !== corpo && celula.tagName !== 'TD' && celula.tagName !== 'TH') {
+            celula = celula.parentElement;
+        }
+        if (!celula || celula === corpo) {
+            alert('Clique dentro de uma célula da tabela antes de escolher a cor de fundo.');
+            return;
+        }
+        celula.style.backgroundColor = cor;
     },
 
     inserirTabela: function() {
