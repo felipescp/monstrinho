@@ -4924,6 +4924,7 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #section-flashcards .fc-tab:hover { color:var(--app-primary); }
     #section-flashcards .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+    #section-flashcards .fc-tab-count { opacity:0.65; font-weight:600; }
 
     #section-flashcards .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-flashcards .fc-col { overflow-y:auto; padding:10px; }
@@ -5007,9 +5008,9 @@ document.addEventListener('click', function(e) {
 
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="fc-tab-navegar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
-        <button class="fc-tab" id="fc-tab-dificil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
-        <button class="fc-tab" id="fc-tab-medio" onclick="window.FLASHCARDS_RUNTIME.trocarAba('medio')">🟡 Médio</button>
-        <button class="fc-tab" id="fc-tab-facil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+        <button class="fc-tab" id="fc-tab-dificil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="fc-tab-dificil-count"></span></button>
+        <button class="fc-tab" id="fc-tab-medio" onclick="window.FLASHCARDS_RUNTIME.trocarAba('medio')">🟡 Médio <span class="fc-tab-count" id="fc-tab-medio-count"></span></button>
+        <button class="fc-tab" id="fc-tab-facil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('facil')">🟢 Fácil <span class="fc-tab-count" id="fc-tab-facil-count"></span></button>
     </div>
 
     <div class="fc-grid" id="fc-aba-navegar">
@@ -5230,6 +5231,18 @@ window.FLASHCARDS_RUNTIME = {
         this.carregar();
         this.render();
         if (this._abaAtiva !== 'navegar') this.renderAbaRevisao(this._abaAtiva);
+        this._atualizarContagensAbas();
+    },
+
+    // Contagem total (todas as matérias) por nível, exibida direto no rótulo
+    // de cada aba — ex.: "🔴 Difícil (22)". Chamada sempre que uma
+    // classificação muda (Navegar ou dentro das próprias abas).
+    _atualizarContagensAbas: function() {
+        let self = this;
+        ['dificil', 'medio', 'facil'].forEach(function(aba) {
+            let el = document.getElementById('fc-tab-' + aba + '-count');
+            if (el) el.textContent = '(' + self.listarCardsPorClassificacao(null, aba).length + ')';
+        });
     },
 
     // Formato antigo (pré-baralhos) tinha manuais[chaveL2] como array de
@@ -5887,6 +5900,7 @@ window.FLASHCARDS_RUNTIME = {
         s.flipado = false;
 
         this.renderPopup();
+        this._atualizarContagensAbas();
     },
 
     // ── CRUD DE CARD (só modo 'baralho' — axiomas não editam/excluem aqui) ──
@@ -6198,6 +6212,7 @@ window.FLASHCARDS_RUNTIME = {
 
         this._renderPillsAba(aba);
         this._renderCorpoAba(aba);
+        this._atualizarContagensAbas();
     }
 };
 </script>
@@ -6213,6 +6228,7 @@ window.FLASHCARDS_RUNTIME = {
     #section-praticar-caderno .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #section-praticar-caderno .fc-tab:hover { color:var(--app-primary); }
     #section-praticar-caderno .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+    #section-praticar-caderno .fc-tab-count { opacity:0.65; font-weight:600; }
 
     #section-praticar-caderno .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-praticar-caderno .fc-col { overflow-y:auto; padding:10px; }
@@ -6271,9 +6287,9 @@ window.FLASHCARDS_RUNTIME = {
 
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="pc-tab-navegar" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
-        <button class="fc-tab" id="pc-tab-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('dificil')">🔴 Difícil</button>
-        <button class="fc-tab" id="pc-tab-medio" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('medio')">🟡 Médio</button>
-        <button class="fc-tab" id="pc-tab-facil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('facil')">🟢 Fácil</button>
+        <button class="fc-tab" id="pc-tab-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="pc-tab-dificil-count"></span></button>
+        <button class="fc-tab" id="pc-tab-medio" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('medio')">🟡 Médio <span class="fc-tab-count" id="pc-tab-medio-count"></span></button>
+        <button class="fc-tab" id="pc-tab-facil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('facil')">🟢 Fácil <span class="fc-tab-count" id="pc-tab-facil-count"></span></button>
     </div>
 
     <div class="fc-grid" id="pc-aba-navegar">
@@ -6392,6 +6408,18 @@ window.PRATICAR_CADERNO_RUNTIME = {
         this.carregar();
         this.render();
         if (this._abaAtiva !== 'navegar') this.renderAbaRevisao(this._abaAtiva);
+        this._atualizarContagensAbas();
+    },
+
+    // Contagem total (todas as matérias) por nível, exibida direto no rótulo
+    // de cada aba — ex.: "🔴 Difícil (22)". Chamada sempre que uma
+    // classificação muda (Navegar ou dentro das próprias abas).
+    _atualizarContagensAbas: function() {
+        let self = this;
+        ['dificil', 'medio', 'facil'].forEach(function(aba) {
+            let el = document.getElementById('pc-tab-' + aba + '-count');
+            if (el) el.textContent = '(' + self.listarQuestoesPorClassificacao(null, aba).length + ')';
+        });
     },
 
     _escapar: function(s) {
@@ -6679,6 +6707,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
         if (contexto !== 'navegar') this._renderPillsAba(contexto);
         this._renderCorpo(contexto);
+        this._atualizarContagensAbas();
     },
 
     _aplicarClassificacao: function(chave, nivel) {
@@ -17171,6 +17200,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #jurisprudencia-modal .fc-tab:hover { color:var(--app-primary); }
     #jurisprudencia-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+    #jurisprudencia-modal .fc-tab-count { opacity:0.65; font-weight:600; }
 
     #jurisprudencia-modal .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #jurisprudencia-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
@@ -17224,9 +17254,9 @@ window.carregarEsquemasOficiais = async function() {
         <div class="fc-tabs">
             <div class="jur-tabs-grupo">
                 <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
-                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Muito Importante</button>
-                <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Importante</button>
-                <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Regular</button>
+                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Muito Importante <span class="fc-tab-count" id="jur-tab-dificil-count"></span></button>
+                <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Importante <span class="fc-tab-count" id="jur-tab-medio-count"></span></button>
+                <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Regular <span class="fc-tab-count" id="jur-tab-facil-count"></span></button>
             </div>
             <div class="jur-tabs-baralho">
                 <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
@@ -17660,11 +17690,23 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.carregar();
         this.render();
         this._atualizarEstadoColunasNavegacao();
+        this._atualizarContagensAbas();
         if (typeof window.carregarJurisprudenciaOficial === 'function') {
             window.carregarJurisprudenciaOficial().then(function() {
                 if (window.JURISPRUDENCIA_RUNTIME._materiaSelecionada) window.JURISPRUDENCIA_RUNTIME._renderGradeCards();
             });
         }
+    },
+
+    // Contagem total (todas as matérias) por nível, exibida direto no rótulo
+    // de cada aba — ex.: "🔴 Muito Importante (22)". Chamada sempre que uma
+    // classificação muda (Baralho ou dentro das próprias abas).
+    _atualizarContagensAbas: function() {
+        let self = this;
+        ['dificil', 'medio', 'facil'].forEach(function(aba) {
+            let el = document.getElementById('jur-tab-' + aba + '-count');
+            if (el) el.textContent = '(' + self.listarFichasPorClassificacao(null, aba).length + ')';
+        });
     },
 
     _chaveL2: function(materia, divisao) {
@@ -18484,6 +18526,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
 
         this.renderBaralho();
+        this._atualizarContagensAbas();
     },
 
     renderBaralho: function() {
@@ -18661,6 +18704,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         this._renderPillsAba(aba);
         this._renderCorpoAba(aba);
+        this._atualizarContagensAbas();
     }
 };
 
