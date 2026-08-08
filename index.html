@@ -2298,12 +2298,12 @@ window.SALINHA_BACKUP = {
                     }
 
                     // ── CASO ESPECIAL: FLASHCARDS (flashcards_runtime.revisao) ──
-                    // Dicionário achatado {chaveEstavel → {intervaloDias, proximaRevisao,
-                    // ultimaClassificacao}}, não array — mesmo problema: a ESTRATÉGIA B
-                    // genérica só copiaria a sub-chave inteira se objLocal.revisao nunca
-                    // tivesse existido. Quando os dois lados já têm progresso pro MESMO
-                    // card, quem vence é o de MAIOR intervaloDias (reflete quem revisou
-                    // mais vezes esse card, em vez de local ou importado ganharem sempre).
+                    // Dicionário achatado {chaveEstavel → {ultimaClassificacao}}, não
+                    // array — mesmo problema: a ESTRATÉGIA B genérica só copiaria a
+                    // sub-chave inteira se objLocal.revisao nunca tivesse existido.
+                    // Sem mais critério de "quem revisou mais" (não guardamos mais
+                    // intervalo/data) — política agora é a mesma de ocultos/fichas:
+                    // união pura, mantém a versão local em caso de mesmo card dos 2 lados.
                     if (chaveSemPrefixoMerge === 'flashcards_runtime' && subChave === 'revisao' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2319,9 +2319,6 @@ window.SALINHA_BACKUP = {
                             if (local === undefined) {
                                 objLocal[subChave][chaveCard] = remoto;
                                 entidadesInjetadas++;
-                                persistirChave = true;
-                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
-                                objLocal[subChave][chaveCard] = remoto;
                                 persistirChave = true;
                             }
                         });
@@ -2362,12 +2359,11 @@ window.SALINHA_BACKUP = {
                     }
 
                     // ── CASO ESPECIAL: MATERIAIS (materiais_runtime.ocultos) ──
-                    // Dict achatado {"<id_material>": true} — diferente de
-                    // flashcards_runtime.revisao (que compara intervaloDias pra
-                    // decidir quem vence), aqui não existe "versão mais autoritativa":
-                    // é um flag booleano de visibilidade pessoal. Política: união pura
-                    // (OR) — se qualquer um dos lados já ocultou aquele id, o resultado
-                    // mesclado mantém oculto; nunca "reaparece" por causa do merge.
+                    // Dict achatado {"<id_material>": true} — não existe "versão mais
+                    // autoritativa": é um flag booleano de visibilidade pessoal.
+                    // Política: união pura (OR) — se qualquer um dos lados já ocultou
+                    // aquele id, o resultado mesclado mantém oculto; nunca "reaparece"
+                    // por causa do merge.
                     if (chaveSemPrefixoMerge === 'materiais_runtime' && subChave === 'ocultos' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2541,8 +2537,8 @@ window.SALINHA_BACKUP = {
                     // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.revisaoJurisprudencia) ──
                     // Mesmíssimo formato/problema/política de flashcards_runtime.revisao e
                     // praticar_caderno_runtime.revisaoQuestoes: dicionário achatado
-                    // {id_ficha → {intervaloDias, proximaRevisao, ultimaClassificacao}}, quem
-                    // vence em caso de conflito é o de MAIOR intervaloDias.
+                    // {id_ficha → {ultimaClassificacao}}. União pura, mantém a versão
+                    // local em caso de mesma ficha classificada dos 2 lados.
                     if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'revisaoJurisprudencia' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2558,9 +2554,6 @@ window.SALINHA_BACKUP = {
                             if (local === undefined) {
                                 objLocal[subChave][idFicha] = remoto;
                                 entidadesInjetadas++;
-                                persistirChave = true;
-                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
-                                objLocal[subChave][idFicha] = remoto;
                                 persistirChave = true;
                             }
                         });
@@ -2585,9 +2578,6 @@ window.SALINHA_BACKUP = {
                             if (local === undefined) {
                                 objLocal[subChave][chaveCard] = remoto;
                                 entidadesInjetadas++;
-                                persistirChave = true;
-                            } else if (typeof local === 'object' && (remoto.intervaloDias || 0) > (local.intervaloDias || 0)) {
-                                objLocal[subChave][chaveCard] = remoto;
                                 persistirChave = true;
                             }
                         });
@@ -4969,10 +4959,6 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #section-flashcards .fc-corpo-aba { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
     #section-flashcards .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
-    #section-flashcards .fc-proximos { width:100%; max-width:480px; margin-top:4px; }
-    #section-flashcards .fc-proximos:empty { margin-top:0; }
-    #section-flashcards .fc-proximos-titulo { font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; text-align:center; border-top:1px dashed var(--border-color); padding-top:10px; margin-bottom:6px; }
-    #section-flashcards .fc-proximo-item { font-size:10.5px; color:var(--text-muted); opacity:0.55; padding:4px 8px; text-align:center; pointer-events:none; }
 
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
@@ -5043,7 +5029,6 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-dificil">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('dificil', 1)">›</button>
         </div>
-        <div class="fc-proximos" id="fc-proximos-dificil"></div>
     </div>
 
     <div class="fc-aba-revisao" id="fc-aba-medio" style="display:none;">
@@ -5057,7 +5042,6 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-medio">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('medio', 1)">›</button>
         </div>
-        <div class="fc-proximos" id="fc-proximos-medio"></div>
     </div>
 
     <div class="fc-aba-revisao" id="fc-aba-facil" style="display:none;">
@@ -5071,7 +5055,6 @@ document.addEventListener('click', function(e) {
             <span id="fc-posicao-facil">0 / 0</span>
             <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.navegarAba('facil', 1)">›</button>
         </div>
-        <div class="fc-proximos" id="fc-proximos-facil"></div>
     </div>
 
 <div id="modal-flashcard" class="mo">
@@ -5146,81 +5129,44 @@ document.addEventListener('click', function(e) {
 // - 🔴 Difícil / 🟡 Médio / 🟢 Fácil: visão por MATÉRIA (pílulas de
 //   filtro, "Todas" + 1 por matéria com card nesse estado), navegador
 //   1-a-1 inline (não modal) sobre TODOS os cards (axiomas+manuais,
-//   qualquer L2/matéria) VENCIDOS (proximaRevisao <= hoje) cuja última
-//   classificação bate com a aba. Cards nunca classificados não aparecem
-//   aqui. O botão do MESMO nível da aba atual (ex.: "Difícil" dentro da
-//   aba Difícil) some rotulado como "Desmarcar X" — clicar nele remove a
-//   classificação (toggle). Classificar um card sempre o remove do pool
-//   corrente, mesmo se a nova classificação for igual à aba atual (a data
-//   de vencimento sempre muda). Abaixo do navegador 1-a-1, uma lista
-//   esmaecida e não-interativa mostra os cards já classificados nesse
-//   nível mas ainda não vencidos — confirmação visual de que "pegou".
+//   qualquer L2/matéria) classificados nesse nível. Cards nunca
+//   classificados não aparecem aqui. O botão do MESMO nível da aba atual
+//   (ex.: "Difícil" dentro da aba Difícil) some rotulado como "Desmarcar X"
+//   — clicar nele remove a classificação (toggle). Classificar um card
+//   sempre o remove do pool corrente, mesmo se a nova classificação for
+//   igual à aba atual.
 //
 // manuais[chaveL2] = [ { id, nome, cards:[{id,frente,verso}], criadoEm }, ... ]
-// revisao = { "<chave>": { intervaloDias, proximaRevisao, ultimaClassificacao } }
-// — chave = id do axioma (id_q+'_'+sim_id) ou id do card manual.
-// ultimaClassificacao: 'dificil'|'medio'|'facil', ausente = nunca revisado.
-// Fórmulas: Difícil -> intervalo=1 sempre; Médio -> intervalo atual (ou 1)
-// * 3; Fácil -> intervalo atual (ou 1) * 9. Se Médio/Fácil ultrapassarem
-// 180, reinicia o ciclo pro valor-base daquele nível (3 ou 9) em vez de
-// travar em 180.
+// revisao = { "<chave>": { ultimaClassificacao } } — chave = id do axioma
+// (id_q+'_'+sim_id) ou id do card manual. ultimaClassificacao:
+// 'dificil'|'medio'|'facil', ausente = nunca classificado. Puro sistema de
+// distribuição/etiqueta — sem agendamento nem repetição espaçada.
 // =========================================================================
 // =========================================================================
-// window.RepeticaoEspacada — matemática de repetição espaçada de 3 níveis
-// (Difícil/Médio/Fácil), compartilhada entre FLASHCARDS_RUNTIME (revisao,
-// por card) e PRATICAR_CADERNO_RUNTIME (revisaoQuestoes, por questão) — a
-// mesma fórmula não fica duplicada em dois lugares. Puramente funcional:
-// não guarda estado, só recebe o estado atual e devolve o próximo.
+// window.ClassificacaoCards — toggle dos 3 níveis (Difícil/Médio/Fácil, ou
+// Muito Importante/Importante/Regular em Jurisprudência), compartilhado
+// entre FLASHCARDS_RUNTIME (revisao, por card), PRATICAR_CADERNO_RUNTIME
+// (revisaoQuestoes, por questão) e JURISPRUDENCIA_RUNTIME
+// (revisaoJurisprudencia, por ficha) — a mesma regra de toggle não fica
+// duplicada em 3 lugares. Puramente funcional: não guarda estado, só
+// recebe o estado atual e devolve o próximo. Puro sistema de distribuição
+// (a que "página"/aba um card pertence) — sem datas, sem agendamento.
 // =========================================================================
-window.RepeticaoEspacada = {
-    hojeISO: function() {
-        let d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    },
-
-    somarDiasISO: function(dias) {
-        let d = new Date();
-        d.setDate(d.getDate() + dias);
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    },
-
-    // Vencido: já foi classificado alguma vez E a data de revisão chegou/passou.
-    // "estado" é o valor bruto de revisao[chave] (ou revisaoQuestoes[chave]) —
-    // undefined/null (nunca classificado) NÃO conta como vencido.
-    vencido: function(estado) {
-        return !!(estado && estado.proximaRevisao && estado.proximaRevisao <= this.hojeISO());
-    },
-
+window.ClassificacaoCards = {
     // nivel: 'dificil'|'medio'|'facil'. estadoAtual: o valor atual (ou
     // undefined/null, se nunca classificado). Retorna o NOVO estado
-    // {intervaloDias, proximaRevisao, ultimaClassificacao}, ou `null` se o
-    // clique deve DESMARCAR (toggle: nivel clicado já é a classificação
-    // atual — chamador deve apagar a entrada nesse caso).
-    //
-    // Difícil: reset fixo pra 1 dia, não importa o intervalo anterior.
-    // Médio: intervalo atual (ou 1, se nunca teve) * 3. Fácil: * 9. Se
-    // Médio/Fácil ultrapassarem 180, NÃO trava em 180 — reinicia o ciclo
-    // pro valor-base daquele nível (3 ou 9), criando uma repetição em vez
-    // de travar parado em 180 pra sempre.
+    // {ultimaClassificacao: nivel}, ou `null` se o clique deve DESMARCAR
+    // (toggle: nivel clicado já é a classificação atual — chamador deve
+    // apagar a entrada nesse caso).
     calcularProximo: function(nivel, estadoAtual) {
         if (estadoAtual && estadoAtual.ultimaClassificacao === nivel) return null;
-
-        if (nivel === 'dificil') {
-            let intervalo = 1;
-            return { intervaloDias: intervalo, proximaRevisao: this.somarDiasISO(intervalo), ultimaClassificacao: 'dificil' };
-        }
-
-        let base = (estadoAtual && estadoAtual.intervaloDias) ? estadoAtual.intervaloDias : 1;
-        let multiplicador = nivel === 'medio' ? 3 : 9;
-        let calculado = Math.max(base, 1) * multiplicador;
-        let intervalo = calculado > 180 ? multiplicador : calculado;
-        return { intervaloDias: intervalo, proximaRevisao: this.somarDiasISO(intervalo), ultimaClassificacao: nivel };
+        return { ultimaClassificacao: nivel };
     }
 };
 
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
-    revisao: {}, // { "<chave>": { intervaloDias, proximaRevisao (ISO só-data ou null) } } — repetição espaçada, substitui favoritos
+    revisao: {}, // { "<chave>": { ultimaClassificacao } } — puro sistema de distribuição, substitui favoritos
     STORAGE_KEY: 'tjpe_v1__flashcards_runtime',
 
     _materiaSelecionada: null,
@@ -5408,17 +5354,14 @@ window.FLASHCARDS_RUNTIME = {
         return this.listarAxiomasDaMateria(materia).length + totalManual;
     },
 
-    // ── REPETIÇÃO ESPAÇADA (3 níveis: Difícil / Médio / Fácil) ──
-    // Matemática vive em window.RepeticaoEspacada (compartilhada com
-    // PRATICAR_CADERNO_RUNTIME) — aqui só aplica no dict local (this.revisao,
-    // por chave de card) e persiste.
-
-    _vencido: function(chave) {
-        return window.RepeticaoEspacada.vencido(this.revisao[chave]);
-    },
+    // ── CLASSIFICAÇÃO (3 níveis: Difícil / Médio / Fácil) ──
+    // Toggle vive em window.ClassificacaoCards (compartilhado com
+    // PRATICAR_CADERNO_RUNTIME e JURISPRUDENCIA_RUNTIME) — aqui só aplica
+    // no dict local (this.revisao, por chave de card) e persiste. Puro
+    // sistema de distribuição: sem datas, sem agendamento.
 
     _aplicarClassificacao: function(chave, nivel) {
-        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisao[chave]);
+        let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisao[chave]);
         if (novo === null) delete this.revisao[chave]; else this.revisao[chave] = novo;
         this.salvar();
     },
@@ -5989,18 +5932,15 @@ window.FLASHCARDS_RUNTIME = {
 
     // ── RENDER DO POPUP ──
 
-    // Rótulo de status pra exibir junto do card (última classificação +
-    // próxima data + intervalo, ou "ainda não classificado") — usado só no
-    // popup de Navegar; as abas Difícil/Médio/Fácil não mostram esse texto
-    // (o estado já é óbvio pelo fato do card estar naquela aba).
+    // Rótulo de status pra exibir junto do card (classificação atual, ou
+    // "ainda não classificado") — usado só no popup de Navegar; as abas
+    // Difícil/Médio/Fácil não mostram esse texto (o estado já é óbvio pelo
+    // fato do card estar naquela aba).
     _statusRevisaoTexto: function(chave) {
         let r = this.revisao[chave];
         if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
         let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
-        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
-        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
-        let vencidoTxt = this._vencido(chave) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
-        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
+        return 'Classificado como: ' + (rotulos[r.ultimaClassificacao] || r.ultimaClassificacao);
     },
 
     // Gera o HTML dos 3 botões de classificação (ou 2, se opts.esconder
@@ -6089,21 +6029,20 @@ window.FLASHCARDS_RUNTIME = {
     },
 
     // Varre caderno_axiomas + manuais de uma matéria (ou de TODAS, se
-    // materiaFiltro for null) e retorna só os cards VENCIDOS (proximaRevisao
-    // <= hoje) cuja ultimaClassificacao bate com a aba. Cards nunca
-    // classificados nunca aparecem aqui (só ficam acessíveis via Navegar).
-    // Sem cache — dado o volume esperado (flashcards pessoais, não um
-    // catálogo grande), uma varredura completa a cada troca de aba/pílula
-    // já é rápida o bastante (mesmo padrão de _lerCadernoAxiomas, que
-    // também relê do zero a cada chamada).
-    listarCardsPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
+    // materiaFiltro for null) e retorna os cards cuja ultimaClassificacao
+    // bate com a aba. Cards nunca classificados nunca aparecem aqui (só
+    // ficam acessíveis via Navegar). Sem cache — dado o volume esperado
+    // (flashcards pessoais, não um catálogo grande), uma varredura
+    // completa a cada troca de aba/pílula já é rápida o bastante (mesmo
+    // padrão de _lerCadernoAxiomas, que também relê do zero a cada chamada).
+    listarCardsPorClassificacao: function(materiaFiltro, classificacaoAlvo) {
         this._garantirCarregado();
         let self = this;
         let resultado = [];
         let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
         let bate = function(chave) {
             let r = self.revisao[chave];
-            return !!(r && r.ultimaClassificacao === classificacaoAlvo && self._vencido(chave));
+            return !!(r && r.ultimaClassificacao === classificacaoAlvo);
         };
         materias.forEach(function(materia) {
             self.listarAxiomasDaMateria(materia).forEach(function(c) {
@@ -6116,39 +6055,6 @@ window.FLASHCARDS_RUNTIME = {
                     }
                 });
             });
-        });
-        return resultado;
-    },
-
-    // Oposto de listarCardsPorClassificacaoVencida(): cards já classificados
-    // nesse nível cuja proximaRevisao ainda está no futuro. Usado só pra
-    // preview passiva (lista esmaecida) — confirma que a classificação
-    // "pegou" e está na fila, mesmo sem poder revisar ainda. Ordenado pela
-    // data de disponibilidade (mais cedo primeiro).
-    listarCardsClassificadosNaoVencidos: function(materiaFiltro, classificacaoAlvo) {
-        this._garantirCarregado();
-        let self = this;
-        let resultado = [];
-        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
-        let bate = function(chave) {
-            let r = self.revisao[chave];
-            return !!(r && r.ultimaClassificacao === classificacaoAlvo && r.proximaRevisao && !self._vencido(chave));
-        };
-        materias.forEach(function(materia) {
-            self.listarAxiomasDaMateria(materia).forEach(function(c) {
-                if (bate(c.chave)) resultado.push(c);
-            });
-            self.listarBaralhosDaMateria(materia).forEach(function(b) {
-                (b.deck.cards || []).forEach(function(c) {
-                    if (bate(c.id)) {
-                        resultado.push({ tipo: 'manual', chave: c.id, id: c.id, frente: c.frente, verso: c.verso, materia: materia, divisao: b.divisao, deckNome: b.deck.nome });
-                    }
-                });
-            });
-        });
-        resultado.sort(function(a, b) {
-            let ra = self.revisao[a.chave], rb = self.revisao[b.chave];
-            return (ra.proximaRevisao || '').localeCompare(rb.proximaRevisao || '');
         });
         return resultado;
     },
@@ -6158,7 +6064,7 @@ window.FLASHCARDS_RUNTIME = {
         let mapa = {};
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
         TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
-            let n = self.listarCardsPorClassificacaoVencida(mat.nivel_1, classificacaoAlvo).length;
+            let n = self.listarCardsPorClassificacao(mat.nivel_1, classificacaoAlvo).length;
             if (n > 0) mapa[mat.nivel_1] = n;
         });
         return mapa;
@@ -6168,44 +6074,13 @@ window.FLASHCARDS_RUNTIME = {
     // Usada ao abrir a aba e ao trocar de pílula (índice deve voltar a 0).
     renderAbaRevisao: function(aba) {
         let s = this._estadosAba[aba];
-        let pool = this.listarCardsPorClassificacaoVencida(s.materiaFiltro, aba);
+        let pool = this.listarCardsPorClassificacao(s.materiaFiltro, aba);
         s.pool = pool;
         s.ordemChaves = pool.map(function(c) { return c.chave; });
         s.indiceAtual = 0;
         s.flipado = false;
         this._renderPillsAba(aba);
         this._renderCorpoAba(aba);
-        this._renderProximosAba(aba);
-    },
-
-    // Lista secundária esmaecida e não-interativa (pointer-events:none —
-    // ver CSS .fc-proximo-item), abaixo do navegador principal: cards já
-    // classificados nesse nível, mas ainda não vencidos. Só recalculada nos
-    // pontos que mudam QUAL card está classificado nesse nível especificamente
-    // (troca de aba, troca de pílula) — classificar/desmarcar um card do pool
-    // vencido corrente sempre muda ele pra outro nível ou remove a
-    // classificação, nunca faz ele "aparecer" na lista de não-vencidos desta
-    // mesma aba, então marcarNaAba() não precisa chamar isso de novo.
-    _renderProximosAba: function(aba) {
-        let s = this._estadosAba[aba];
-        let el = document.getElementById('fc-proximos-' + aba);
-        if (!el) return;
-        let self = this;
-        let lista = this.listarCardsClassificadosNaoVencidos(s.materiaFiltro, aba);
-        if (lista.length === 0) {
-            el.innerHTML = '';
-            return;
-        }
-        el.innerHTML =
-            '<div class="fc-proximos-titulo">Já classificados, aguardando a data (' + lista.length + ')</div>' +
-            lista.map(function(c) {
-                let texto = c.tipo === 'axioma' ? c.texto : c.frente;
-                let previewBruto = (texto || '').trim();
-                let preview = self._escapar(previewBruto.length > 60 ? previewBruto.slice(0, 60) + '…' : previewBruto);
-                let r = self.revisao[c.chave];
-                let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
-                return '<div class="fc-proximo-item">' + preview + ' — disponível em ' + dataTxt + '</div>';
-            }).join('');
     },
 
     _renderPillsAba: function(aba) {
@@ -6267,7 +6142,7 @@ window.FLASHCARDS_RUNTIME = {
         let posEl = document.getElementById('fc-posicao-' + aba);
         if (!corpo) return;
         if (s.ordemChaves.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">Nada vencido nessa classificação agora — tudo em dia!</div>';
+            corpo.innerHTML = '<div class="fc-vazio">Nenhum card classificado aqui ainda.</div>';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -6475,8 +6350,10 @@ window.FLASHCARDS_RUNTIME = {
 // botões de classificação. Responder de novo (trocar de card ou pílula)
 // reseta esse estado efêmero — nada disso é persistido, só a classificação.
 //
-// revisaoQuestoes = { "<id_q>_<sim_id>": {intervaloDias, proximaRevisao, ultimaClassificacao} }
-// Fórmula em window.RepeticaoEspacada (compartilhada com FLASHCARDS_RUNTIME).
+// revisaoQuestoes = { "<id_q>_<sim_id>": {ultimaClassificacao} } — puro
+// sistema de distribuição/etiqueta, sem agendamento. Toggle em
+// window.ClassificacaoCards (compartilhado com FLASHCARDS_RUNTIME e
+// JURISPRUDENCIA_RUNTIME).
 // =========================================================================
 window.PRATICAR_CADERNO_RUNTIME = {
     revisaoQuestoes: {},
@@ -6685,7 +6562,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
     // Sem cache — mesmo raciocínio do Flashcards: volume esperado (Caderno
     // pessoal, não um catálogo grande) torna uma varredura completa a cada
     // troca de aba/pílula rápida o bastante.
-    listarQuestoesPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
+    listarQuestoesPorClassificacao: function(materiaFiltro, classificacaoAlvo) {
         this._garantirCarregado();
         let self = this;
         let erros = this._lerCadernoErros();
@@ -6694,7 +6571,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         materias.forEach(function(materia) {
             self.listarQuestoesDaMateria(materia).forEach(function(q) {
                 let r = self.revisaoQuestoes[q.chave];
-                if (r && r.ultimaClassificacao === classificacaoAlvo && window.RepeticaoEspacada.vencido(r)) resultado.push(q);
+                if (r && r.ultimaClassificacao === classificacaoAlvo) resultado.push(q);
             });
         });
         return resultado;
@@ -6705,7 +6582,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         let mapa = {};
         let erros = this._lerCadernoErros();
         Object.keys(erros).forEach(function(mat) {
-            let n = self.listarQuestoesPorClassificacaoVencida(mat, classificacaoAlvo).length;
+            let n = self.listarQuestoesPorClassificacao(mat, classificacaoAlvo).length;
             if (n > 0) mapa[mat] = n;
         });
         return mapa;
@@ -6713,7 +6590,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
 
     renderAbaRevisao: function(aba) {
         let s = this._estadosAba[aba];
-        let pool = this.listarQuestoesPorClassificacaoVencida(s.materiaFiltro, aba);
+        let pool = this.listarQuestoesPorClassificacao(s.materiaFiltro, aba);
         s.pool = pool;
         s.ordemChaves = pool.map(function(q) { return q.chave; });
         s.indiceAtual = 0;
@@ -6805,7 +6682,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
     },
 
     _aplicarClassificacao: function(chave, nivel) {
-        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisaoQuestoes[chave]);
+        let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoQuestoes[chave]);
         if (novo === null) delete this.revisaoQuestoes[chave]; else this.revisaoQuestoes[chave] = novo;
         this.salvar();
     },
@@ -6814,10 +6691,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         let r = this.revisaoQuestoes[chave];
         if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
         let rotulos = { dificil: '🔴 Difícil', medio: '🟡 Médio', facil: '🟢 Fácil' };
-        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
-        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
-        let vencidoTxt = window.RepeticaoEspacada.vencido(r) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
-        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
+        return 'Classificado como: ' + (rotulos[r.ultimaClassificacao] || r.ultimaClassificacao);
     },
 
     // Mesmo padrão "Desmarcar X" do Flashcards: o botão do MESMO nível da
@@ -6848,7 +6722,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         let s = this._getEstado(contexto);
 
         if (!s || s.ordemChaves.length === 0) {
-            let msg = contexto === 'navegar' ? 'Nenhuma questão salva aqui ainda.' : 'Nada vencido nessa classificação agora — tudo em dia!';
+            let msg = contexto === 'navegar' ? 'Nenhuma questão salva aqui ainda.' : 'Nenhuma questão classificada aqui ainda.';
             corpo.innerHTML = '<div class="fc-vazio">' + msg + '</div>';
             if (posEl) posEl.textContent = '0 / 0';
             return;
@@ -15393,13 +15267,14 @@ function slugCaderno(str) {
 }
 
 // Formata data ISO 8601 -> DD/MM/AA (ex.: 27/07/26). Usado em qualquer lugar
-// que exiba "Criada em"/"Resolvida em" de uma bateria, e também as datas de
-// repetição espaçada dos Flashcards (proximaRevisao). "—" se ausente/inválida.
+// que exiba "Criada em"/"Resolvida em" de uma bateria, e também datas
+// "só-dia" como dataJulgado/dataConsulta da Jurisprudência. "—" se
+// ausente/inválida.
 window.formatarDataBR = function(isoString) {
     if (!isoString) return '—';
     let d;
     if (/^\d{4}-\d{2}-\d{2}$/.test(isoString)) {
-        // Data "só-dia" (sem hora/fuso), ex.: proximaRevisao dos Flashcards.
+        // Data "só-dia" (sem hora/fuso), ex.: dataJulgado da Jurisprudência.
         // new Date("YYYY-MM-DD") é interpretado como meia-noite UTC pelo
         // spec — em fusos negativos (Brasil, UTC-3) isso exibiria o dia
         // ANTERIOR ao real. Construindo em hora local explicitamente evita
@@ -17472,8 +17347,9 @@ window.carregarEsquemasOficiais = async function() {
 
 <!-- MODAL: Baralho de Cards de Jurisprudência (Todos | Disciplina selecionada)
      — popup .mo/.mdl em cima de #jurisprudencia-modal, mesmo padrão de
-     navegação 1-a-1 (embaralhar + ‹› + classificação Difícil/Médio/Fácil) já
-     usado em #modal-flashcard, reaproveitando window.RepeticaoEspacada. -->
+     navegação 1-a-1 (embaralhar + ‹› + classificação Muito Importante/
+     Importante/Regular) já usado em #modal-flashcard, reaproveitando
+     window.ClassificacaoCards. -->
 <div id="modal-jurisprudencia-baralho" class="mo">
 <style>
     #modal-jurisprudencia-baralho { z-index: 10000; } /* mesma correção de z-index já aplicada aos outros popups desta seção */
@@ -17719,11 +17595,11 @@ function parsearImportacaoJurisprudencia(textoBruto) {
 window.JURISPRUDENCIA_RUNTIME = {
     fichas: {},
     ocultos: {},
-    // Repetição espaçada por ficha — mesmo formato/fórmula de
+    // Classificação por ficha — mesmo formato/toggle de
     // flashcards_runtime.revisao e praticar_caderno_runtime.revisaoQuestoes,
-    // via window.RepeticaoEspacada (helper puramente funcional, sem
-    // acoplamento a nenhuma seção específica). { "<id_ficha>": {intervaloDias,
-    // proximaRevisao, ultimaClassificacao} }.
+    // via window.ClassificacaoCards (helper puramente funcional, sem
+    // acoplamento a nenhuma seção específica). { "<id_ficha>":
+    // {ultimaClassificacao} } — puro sistema de distribuição, sem agendamento.
     revisaoJurisprudencia: {},
     STORAGE_KEY: 'tjpe_v1__jurisprudencia_runtime',
     _materiaSelecionada: null,
@@ -18417,16 +18293,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
     },
 
-    // ── REPETIÇÃO ESPAÇADA (Muito Importante/Importante/Regular) — mesma fórmula de
-    // Flashcards/Praticar Caderno via window.RepeticaoEspacada, aplicada por
-    // id de ficha. ──
-
-    _vencidoJur: function(id) {
-        return window.RepeticaoEspacada.vencido(this.revisaoJurisprudencia[id]);
-    },
+    // ── CLASSIFICAÇÃO (Muito Importante/Importante/Regular) — mesmo toggle de
+    // Flashcards/Praticar Caderno via window.ClassificacaoCards, aplicado por
+    // id de ficha. Puro sistema de distribuição: sem agendamento. ──
 
     _aplicarClassificacaoJur: function(id, nivel) {
-        let novo = window.RepeticaoEspacada.calcularProximo(nivel, this.revisaoJurisprudencia[id]);
+        let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoJurisprudencia[id]);
         if (novo === null) delete this.revisaoJurisprudencia[id]; else this.revisaoJurisprudencia[id] = novo;
         this.salvar();
     },
@@ -18435,10 +18307,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let r = this.revisaoJurisprudencia[id];
         if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
         let rotulos = { dificil: '🔴 Muito Importante', medio: '🟡 Importante', facil: '🟢 Regular' };
-        let rotulo = rotulos[r.ultimaClassificacao] || r.ultimaClassificacao;
-        let dataTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(r.proximaRevisao) : r.proximaRevisao;
-        let vencidoTxt = this._vencidoJur(id) ? 'vencido, devido hoje' : ('próxima revisão: ' + dataTxt);
-        return 'Última: ' + rotulo + ' · ' + vencidoTxt + ' · intervalo ' + r.intervaloDias + 'd';
+        return 'Classificado como: ' + (rotulos[r.ultimaClassificacao] || r.ultimaClassificacao);
     },
 
     // Mesmo padrão "Desmarcar X" de Flashcards/Praticar Caderno: o botão do
@@ -18661,7 +18530,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // esperado (jurisprudência pessoal + oficial, não um catálogo enorme)
     // torna uma varredura completa a cada troca de aba/pílula rápida o
     // bastante.
-    listarFichasPorClassificacaoVencida: function(materiaFiltro, classificacaoAlvo) {
+    listarFichasPorClassificacao: function(materiaFiltro, classificacaoAlvo) {
         this._garantirCarregado();
         let self = this;
         let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
@@ -18672,7 +18541,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 if (chave.indexOf(prefixo) !== 0) return;
                 (self.fichas[chave] || []).forEach(function(f) {
                     let r = self.revisaoJurisprudencia[f.id];
-                    if (r && r.ultimaClassificacao === classificacaoAlvo && window.RepeticaoEspacada.vencido(r)) resultado.push(f);
+                    if (r && r.ultimaClassificacao === classificacaoAlvo) resultado.push(f);
                 });
             });
         });
@@ -18684,7 +18553,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let mapa = {};
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
         TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
-            let n = self.listarFichasPorClassificacaoVencida(mat.nivel_1, classificacaoAlvo).length;
+            let n = self.listarFichasPorClassificacao(mat.nivel_1, classificacaoAlvo).length;
             if (n > 0) mapa[mat.nivel_1] = n;
         });
         return mapa;
@@ -18692,7 +18561,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     renderAbaRevisao: function(aba) {
         let s = this._estadosAba[aba];
-        let pool = this.listarFichasPorClassificacaoVencida(s.materiaFiltro, aba);
+        let pool = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
         s.pool = pool;
         s.ordemChaves = pool.map(function(f) { return f.id; });
         s.indiceAtual = 0;
@@ -18751,7 +18620,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!corpo) return;
 
         if (s.ordemChaves.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">Nada vencido nessa classificação agora — tudo em dia!</div>';
+            corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha classificada aqui ainda.</div>';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
