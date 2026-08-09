@@ -4104,20 +4104,21 @@ window.CRONOGRAMA_RUNTIME = {
         input.click();
     },
 
-    // Valida o formato esperado ({ "semana_1": { "segunda": [...], ... }, ... }),
-    // expande cada item pro formato de runtime (id único + campos de
-    // progresso zerados) e cria um cronograma NOVO com o resultado — nunca
-    // sobrescreve um cronograma existente.
-    processarImportacao: function(bruto) {
+    // Valida o formato esperado ({ "semana_1": { "segunda": [...], ... }, ... }).
+    // Compartilhada entre processarImportacao (cronograma novo) e
+    // processarComplemento (+ semanas num cronograma existente) — mesmo
+    // shape de arquivo nos dois casos. Retorna as chaves de semana (ordem
+    // original do objeto) se válido, ou null já com o alert() mostrado.
+    _validarFormatoPlanejamento: function(bruto) {
         if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) {
             alert('Formato inválido. Esperado um objeto com chaves "semana_1", "semana_2" etc., cada uma contendo os dias da semana como listas de itens.');
-            return;
+            return null;
         }
 
         let chavesSemana = Object.keys(bruto);
         if (chavesSemana.length === 0 || !chavesSemana.every(function(k) { return /^semana_\d+$/.test(k); })) {
             alert('Formato inválido. Esperado um objeto com chaves no formato "semana_1", "semana_2" etc.');
-            return;
+            return null;
         }
 
         for (let i = 0; i < chavesSemana.length; i++) {
@@ -4125,47 +4126,65 @@ window.CRONOGRAMA_RUNTIME = {
             let dias = bruto[semana];
             if (!dias || typeof dias !== 'object' || Array.isArray(dias)) {
                 alert('Formato inválido em "' + semana + '": esperado um objeto com os dias da semana.');
-                return;
+                return null;
             }
             let nomesDias = Object.keys(dias);
             for (let j = 0; j < nomesDias.length; j++) {
                 if (!Array.isArray(dias[nomesDias[j]])) {
                     alert('Formato inválido em "' + semana + '.' + nomesDias[j] + '": esperado uma lista (array) de itens.');
-                    return;
+                    return null;
                 }
             }
         }
+
+        return chavesSemana;
+    },
+
+    // Expande os itens crus de um dia pro formato de runtime (id único +
+    // campos de progresso zerados) — usa a CHAVE DE SEMANA DE DESTINO no id
+    // (não a original do arquivo), pra IDs ficarem únicos mesmo quando
+    // processarComplemento renumera as semanas importadas.
+    _expandirItensDia: function(itensBrutos, semanaChave, dia) {
+        return itensBrutos.map(function(item, indice) {
+            return {
+                id: semanaChave + '_' + dia + '_' + indice,
+                materia: item.materia || '',
+                topico: item.topico || '',
+                prioridade: item.prioridade || '',
+                justificativa: item.justificativa || '',
+                data: item.data || '',
+                id_taxonomia: item.id_taxonomia,
+                metodo: item.metodo,
+                simuladosVinculados: item.simuladosVinculados,
+                status: 'pendente',
+                feitas: false,
+                resolvidas: false,
+                link: '',
+                link2: '',
+                axiomasText: '',
+                resolucao: ''
+            };
+        });
+    },
+
+    // Expande cada item pro formato de runtime e cria um cronograma NOVO com
+    // o resultado — nunca sobrescreve um cronograma existente.
+    processarImportacao: function(bruto) {
+        let chavesSemana = this._validarFormatoPlanejamento(bruto);
+        if (!chavesSemana) return;
 
         let nome = prompt('Nome do novo cronograma:', 'Cronograma Importado');
         if (nome === null) return; // cancelou o prompt
         nome = nome.trim() || 'Cronograma Importado';
 
+        let self = this;
         let planejamento = {};
         let totalItens = 0;
         chavesSemana.forEach(function(semana) {
             planejamento[semana] = {};
             Object.keys(bruto[semana]).forEach(function(dia) {
-                planejamento[semana][dia] = bruto[semana][dia].map(function(item, indice) {
-                    totalItens++;
-                    return {
-                        id: semana + '_' + dia + '_' + indice,
-                        materia: item.materia || '',
-                        topico: item.topico || '',
-                        prioridade: item.prioridade || '',
-                        justificativa: item.justificativa || '',
-                        data: item.data || '',
-                        id_taxonomia: item.id_taxonomia,
-                        metodo: item.metodo,
-                        simuladosVinculados: item.simuladosVinculados,
-                        status: 'pendente',
-                        feitas: false,
-                        resolvidas: false,
-                        link: '',
-                        link2: '',
-                        axiomasText: '',
-                        resolucao: ''
-                    };
-                });
+                planejamento[semana][dia] = self._expandirItensDia(bruto[semana][dia], semana, dia);
+                totalItens += planejamento[semana][dia].length;
             });
         });
 
@@ -4176,6 +4195,92 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
 
         alert('Cronograma "' + nome + '" importado: ' + chavesSemana.length + ' semana(s), ' + totalItens + ' item(ns).');
+    },
+
+    // ── ETAPA 2b: COMPLEMENTAR CRONOGRAMA EXISTENTE (+ SEMANAS) ──
+    // Mesmo arquivo/formato de processarImportacao, mas em vez de criar um
+    // cronograma novo, ANEXA as semanas do arquivo ao final do cronograma
+    // ATIVO. O arquivo sempre parte de "semana_1" (é o mesmo formato usado
+    // pra criar do zero) — por isso as semanas importadas são renumeradas
+    // pra continuar depois da maior semana já existente, em vez de usar os
+    // números do arquivo direto (que colidiriam/sobrescreveriam as semanas
+    // atuais do cronograma em andamento).
+    carregarComplementoJSON: function() {
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) {
+            alert('Nenhum cronograma ativo pra complementar. Crie ou selecione um cronograma primeiro.');
+            return;
+        }
+
+        let input = document.getElementById('crono-complemento-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.id = 'crono-complemento-input';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.addEventListener('change', function(e) {
+                let file = e.target.files[0];
+                if (!file) return;
+                let reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        let bruto = JSON.parse(ev.target.result);
+                        window.CRONOGRAMA_RUNTIME.processarComplemento(bruto);
+                    } catch (err) {
+                        alert('Não foi possível ler o arquivo: ' + err.message);
+                    } finally {
+                        e.target.value = '';
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+        input.click();
+    },
+
+    processarComplemento: function(bruto) {
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) {
+            alert('Nenhum cronograma ativo pra complementar.');
+            return;
+        }
+
+        let chavesSemana = this._validarFormatoPlanejamento(bruto);
+        if (!chavesSemana) return;
+
+        let semanasAtuais = Object.keys(ativo.planejamento);
+        let maiorAtual = semanasAtuais.reduce(function(max, chave) {
+            let n = parseInt(chave.replace('semana_', ''), 10) || 0;
+            return Math.max(max, n);
+        }, 0);
+
+        // Ordena pelo NÚMERO original da semana no arquivo (não pela ordem
+        // das chaves do objeto, que o JSON não garante), pra preservar a
+        // ordem relativa entre elas ao renumerar.
+        let chavesOrdenadas = chavesSemana.slice().sort(function(a, b) {
+            return (parseInt(a.replace('semana_', ''), 10) || 0) - (parseInt(b.replace('semana_', ''), 10) || 0);
+        });
+
+        let self = this;
+        let novasChaves = [];
+        let totalItens = 0;
+        chavesOrdenadas.forEach(function(semanaOriginal, indice) {
+            let novaChave = 'semana_' + (maiorAtual + indice + 1);
+            novasChaves.push(novaChave);
+            ativo.planejamento[novaChave] = {};
+            Object.keys(bruto[semanaOriginal]).forEach(function(dia) {
+                ativo.planejamento[novaChave][dia] = self._expandirItensDia(bruto[semanaOriginal][dia], novaChave, dia);
+                totalItens += ativo.planejamento[novaChave][dia].length;
+            });
+        });
+
+        ativo.semanaAtiva = novasChaves[0]; // pula direto pra primeira semana nova
+        this.salvar();
+        this.render();
+
+        alert('Cronograma "' + ativo.nome + '" complementado: +' + novasChaves.length + ' semana(s) (' + novasChaves[0] + ' a ' + novasChaves[novasChaves.length - 1] + '), ' + totalItens + ' item(ns) novo(s).');
     },
 
     // ── ETAPA 3: VISUAL DE CARDS ──
@@ -5064,7 +5169,8 @@ window.CRONOGRAMA_RUNTIME = {
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') +
-            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Novo Cronograma</div>';
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Novo Cronograma</div>' +
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas ao cronograma ativo, a partir de um arquivo JSON no mesmo formato" style="font-size:11px;">➕ Complementar (+ Semanas)</div>';
 
         let ativo = this.planners[this.activePlannerId];
         if (!ativo) {
