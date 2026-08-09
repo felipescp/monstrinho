@@ -3365,10 +3365,19 @@ window.SALINHA_GITHUB_OAUTH = {
             let lista = await resp.json();
             let nomeArquivo = window.SALINHA_GIST_SYNC.NOME_ARQUIVO;
             let prefixoParte = window.SALINHA_GIST_SYNC.PREFIXO_PARTE;
-            let candidato = lista.find(function(g) {
+            // Uma conta pode ter MAIS DE UM gist nesse formato (ex.: o
+            // desenvolvedor testando em vários dispositivos, ou tokens
+            // emprestados pra outras pessoas — nesse caso não tem como saber
+            // qual é "o certo" só pelo nome do arquivo). Não confia na ordem
+            // que o GitHub devolveu — ordena explicitamente pelo mais
+            // recentemente atualizado, que é a melhor aproximação disponível
+            // de "o backup em uso agora".
+            let candidatos = lista.filter(function(g) {
                 let nomes = Object.keys(g.files || {});
                 return nomes.some(function(n) { return n === nomeArquivo || n.indexOf(prefixoParte) === 0; });
             });
+            candidatos.sort(function(a, b) { return new Date(b.updated_at) - new Date(a.updated_at); });
+            let candidato = candidatos[0];
             return { ok: true, gistId: candidato ? candidato.id : '' };
         } catch (e) {
             console.warn('[GITHUB OAUTH] Erro de rede ao listar gists da conta:', e);
