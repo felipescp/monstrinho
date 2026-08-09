@@ -64,13 +64,14 @@ sem precisar mexer em mais nada por usuário.
 ## Migração dos 3 usuários atuais (quando quiserem trocar)
 
 Não é obrigatório — quem quiser continuar com o token manual (⚙️) pode.
-Para quem quiser migrar para o próprio login:
+Para quem quiser migrar para o próprio login, não precisa de backup/restore
+manual: os dados do app sempre viveram no navegador da pessoa (nunca
+dependeram do token nem do Gist), então basta:
 
-1. **Antes de trocar**: menu **📁 Arquivo → 📤 Backup** (salva um `.json`
-   local com tudo).
-2. Clicar em "🔑 Entrar com GitHub" e autorizar com a conta PRÓPRIA da
-   pessoa (não a sua).
-3. Importar o `.json` salvo no passo 1: **📁 Arquivo → 📥 Restaurar** (ou
-   **Merge**, se preferir mesclar em vez de substituir).
-4. Clicar em "☁️⬆️ Salvar" — cria um Gist novo, na conta da própria pessoa,
-   já com os dados restaurados.
+1. Clicar em "🔑 Entrar com GitHub" e autorizar com a conta PRÓPRIA da
+   pessoa (não a sua). O app detecta sozinho que essa conta ainda não tem
+   nenhum backup e limpa qualquer Gist antigo (o compartilhado, da sua
+   conta) que tivesse ficado configurado — evita tentar sobrescrever um
+   Gist que não é dela.
+2. Clicar em "☁️⬆️ Salvar" — cria um Gist novo, na conta da própria pessoa,
+   já com os dados que estavam no navegador dela.

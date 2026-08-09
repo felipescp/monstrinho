@@ -1294,7 +1294,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.configurar()" class="b1" style="height:26px; font-size:9.5px; width:26px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Configurar token do GitHub pra sincronização em nuvem">⚙️</button>
-                <button onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente">🔑 Entrar com GitHub</button>
+                <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente">🔑 Entrar com GitHub</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
 
@@ -1429,6 +1429,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         </button>
 
         <button
+            id="btn-github-oauth-mobile"
             onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()"
             class="b1"
             style="
@@ -2975,6 +2976,8 @@ window.SALINHA_GIST_SYNC = {
         );
         if (novoToken === null) return;
         localStorage.setItem('tjpe_v1__salinha_github_token', novoToken.trim());
+        localStorage.removeItem('tjpe_v1__salinha_github_username'); // token mudou — nome em cache pode ser de outra conta
+        if (window.SALINHA_GITHUB_OAUTH) window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(novoToken.trim());
 
         let gistIdAtual = this.getGistId();
         let novoGistId = prompt(
@@ -3304,12 +3307,10 @@ window.SALINHA_GITHUB_OAUTH = {
 
             if (dados.access_token) {
                 localStorage.setItem('tjpe_v1__salinha_github_token', dados.access_token);
-                statusEl.textContent = '✅ Conectado! Fechando...';
                 this._pararPolling();
-                setTimeout(function() {
-                    window.SALINHA_GITHUB_OAUTH.fecharModal();
-                    alert('Login com GitHub concluído! Use "☁️⬆️ Salvar" pra criar seu backup na nuvem.');
-                }, 1200);
+                statusEl.textContent = '✅ Conectado! Procurando backup na nuvem...';
+                this._atualizarNomeUsuarioCache(dados.access_token); // não bloqueia — só troca o texto do botão quando voltar
+                this._concluirLoginComAutoLoad(dados.access_token);
                 return;
             }
 
@@ -3338,8 +3339,135 @@ window.SALINHA_GITHUB_OAUTH = {
             statusEl.textContent = 'Falha de conexão — tentando de novo...';
             this._agendarProximaChecagem();
         }
+    },
+
+    // Ao logar pela conta própria da pessoa (em vez do token distribuído
+    // manualmente), não existe ainda um gist_id salvo neste navegador — o
+    // ⚙️ sempre pediu esse ID junto do token, mas aqui só temos o token.
+    // Por isso procura entre os gists da própria conta um que já bata com o
+    // formato de backup do Monstrinho (mesmo nome de arquivo/prefixo de
+    // partes usado por exportarNuvem()), pra achar automaticamente um
+    // backup pré-existente (ex.: login feito antes noutro aparelho).
+    // Retorna { ok, gistId } em vez de só a string — "não achei nada" (ok:
+    // true, gistId vazio) precisa ficar DIFERENTE de "não consegui nem
+    // checar" (ok: false), senão uma falha de rede/permissão vira, pro
+    // usuário, a mensagem enganosa de "essa conta não tem backup".
+    _descobrirGistExistente: async function(token) {
+        try {
+            let resp = await fetch('https://api.github.com/gists?per_page=100', {
+                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+            });
+            if (!resp.ok) {
+                let corpoErro = await resp.text().catch(function() { return ''; });
+                console.warn('[GITHUB OAUTH] Falha ao listar gists da conta (HTTP ' + resp.status + '): ' + corpoErro);
+                return { ok: false, gistId: '' };
+            }
+            let lista = await resp.json();
+            let nomeArquivo = window.SALINHA_GIST_SYNC.NOME_ARQUIVO;
+            let prefixoParte = window.SALINHA_GIST_SYNC.PREFIXO_PARTE;
+            let candidato = lista.find(function(g) {
+                let nomes = Object.keys(g.files || {});
+                return nomes.some(function(n) { return n === nomeArquivo || n.indexOf(prefixoParte) === 0; });
+            });
+            return { ok: true, gistId: candidato ? candidato.id : '' };
+        } catch (e) {
+            console.warn('[GITHUB OAUTH] Erro de rede ao listar gists da conta:', e);
+            return { ok: false, gistId: '' };
+        }
+    },
+
+    // Auto-load: ao terminar o login, carrega sozinho o backup da nuvem se
+    // achar um (sem exigir clique em "☁️⬇️ Carregar"). O salvamento
+    // continua manual, a critério do usuário, como sempre foi — só o
+    // carregamento inicial deixa de depender de um clique extra aqui.
+    _concluirLoginComAutoLoad: async function(token) {
+        let statusEl = document.getElementById('oauth-status');
+        // Sempre redescobre pela conta que ACABOU de logar — nunca reaproveita
+        // cegamente um gist_id que já estivesse salvo neste navegador. Esse
+        // valor pode ter vindo do fluxo antigo ⚙️ (aponta pro gist de OUTRA
+        // conta, a do desenvolvedor) — tentar escrever nele com o token novo
+        // dá 403 (só o dono edita um gist, mesmo sabendo o ID). Um GET
+        // /gists a mais por login é barato; a alternativa é migração quebrada.
+        let resultado = await this._descobrirGistExistente(token);
+        let gistId = resultado.gistId;
+        if (resultado.ok) {
+            // Só mexe no que está salvo localmente quando a checagem teve
+            // SUCESSO — numa falha de rede/permissão, não apaga um gist_id
+            // que já funcionava só porque não deu pra confirmar agora.
+            if (gistId) {
+                localStorage.setItem('tjpe_v1__salinha_github_gist_id', gistId);
+            } else {
+                localStorage.removeItem('tjpe_v1__salinha_github_gist_id');
+            }
+        } else {
+            gistId = window.SALINHA_GIST_SYNC.getGistId(); // mantém o que já tinha, se houver
+        }
+        if (statusEl) {
+            statusEl.textContent = gistId ? '✅ Conectado! Carregando backup da nuvem...' : '✅ Conectado! (conta nova, ainda sem backup)';
+        }
+        setTimeout(function() {
+            window.SALINHA_GITHUB_OAUTH.fecharModal();
+            if (gistId) {
+                // Mesma rotina que o boot (F5) já usa pra carregar em
+                // silêncio: mescla o que achar e, se houver algo novo,
+                // recarrega a página sozinha — por isso nenhum alert() aqui,
+                // pra não sobrepor um reload que pode acontecer logo em seguida.
+                window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
+            } else if (resultado.ok) {
+                alert('Login com GitHub concluído! Essa conta ainda não tem nenhum backup — use "☁️⬆️ Salvar" quando quiser criar um.');
+            } else {
+                alert('Login com GitHub concluído, mas não consegui verificar se já existe backup na nuvem (falha ao falar com a API do GitHub — veja o console, F12, pra mais detalhes). Se você já salvou antes nesta conta, tente de novo em vez de clicar direto em "☁️⬆️ Salvar", pra não arriscar duplicar.');
+            }
+        }, 900);
+    },
+
+    // Mostra de quem é o token atual no(s) botão(ões) "🔑" — sem isso, depois
+    // de logar o botão continuava com o texto "Entrar com GitHub" pra sempre,
+    // sem nenhum jeito de confirmar visualmente que o login funcionou.
+    _CHAVE_USERNAME_CACHE: 'tjpe_v1__salinha_github_username',
+
+    atualizarBotaoLogin: function() {
+        let nome = localStorage.getItem(this._CHAVE_USERNAME_CACHE) || '';
+        let texto = nome ? ('🔑 ' + (nome.length > 14 ? nome.slice(0, 14) + '…' : nome)) : '🔑 Entrar com GitHub';
+        let titulo = nome ? ('Logado no GitHub como ' + nome + ' — clique pra trocar de conta ou reconectar') : 'Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente';
+        ['btn-github-oauth-desktop', 'btn-github-oauth-mobile'].forEach(function(id) {
+            let el = document.getElementById(id);
+            if (el) { el.textContent = texto; el.title = titulo; }
+        });
+    },
+
+    // Busca o login (nome de usuário) dono do token atual e guarda em cache
+    // local — evita bater na API do GitHub de novo a cada F5 só pra mostrar
+    // o nome no botão. Silencioso de propósito: se falhar, o botão só volta
+    // a mostrar "Entrar com GitHub" — não é motivo pra interromper nada.
+    _atualizarNomeUsuarioCache: async function(token) {
+        try {
+            let resp = await fetch('https://api.github.com/user', {
+                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+            });
+            if (!resp.ok) { console.warn('[GITHUB OAUTH] Falha ao buscar usuário logado (HTTP ' + resp.status + ')'); return; }
+            let dados = await resp.json();
+            if (dados.login) {
+                localStorage.setItem(this._CHAVE_USERNAME_CACHE, dados.login);
+                this.atualizarBotaoLogin();
+            }
+        } catch (e) {
+            console.warn('[GITHUB OAUTH] Erro de rede ao buscar usuário logado:', e);
+        }
     }
 };
+
+window.addEventListener('load', function() {
+    window.SALINHA_GITHUB_OAUTH.atualizarBotaoLogin();
+    // Token já existia (de um login/configuração anterior a este recurso)
+    // mas o nome ainda não foi buscado nenhuma vez nesta máquina — busca uma
+    // vez só, pra parar de mostrar "Entrar com GitHub" com alguém já logado.
+    let tokenAtual = window.SALINHA_GIST_SYNC.getToken();
+    let nomeCache = localStorage.getItem(window.SALINHA_GITHUB_OAUTH._CHAVE_USERNAME_CACHE);
+    if (tokenAtual && !nomeCache) {
+        window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(tokenAtual);
+    }
+});
 
 // Envia uma parte do backup com retry automático em 409 (conflito de
 // escrita concorrente no Gist — ex.: um salvamento manual e um automático
