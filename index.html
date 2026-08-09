@@ -1294,6 +1294,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.configurar()" class="b1" style="height:26px; font-size:9.5px; width:26px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Configurar token do GitHub pra sincronização em nuvem">⚙️</button>
+                <button onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente">🔑 Entrar com GitHub</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
 
@@ -1427,8 +1428,46 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             ⚙️
         </button>
 
+        <button
+            onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()"
+            class="b1"
+            style="
+                height:26px;
+                font-size:9.5px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-main);
+            "
+            title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente"
+        >
+            🔑 Entrar com GitHub
+        </button>
+
     </div>
 
+</div>
+
+<!-- MODAL: Login com GitHub (Device Flow) — alternativa ao botão ⚙️ (token
+     colado à mão), que continua existindo e funcionando normalmente. Ver
+     window.SALINHA_GITHUB_OAUTH e cloudflare-worker/worker.js. -->
+<div id="modal-github-oauth" class="mo">
+<style>
+    #modal-github-oauth { z-index: 10000; }
+    #modal-github-oauth .mdl { max-width:420px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; text-align:center; box-sizing:border-box; }
+    #modal-github-oauth .oauth-codigo { font-family:monospace; font-size:26px; font-weight:800; letter-spacing:4px; color:var(--app-primary); background:#eef2ff; border-radius:8px; padding:14px; word-break:break-all; }
+    #modal-github-oauth .oauth-status { font-size:12px; color:var(--text-muted); min-height:16px; }
+</style>
+    <div class="mdl">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header" style="font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main);">🔑 Entrar com GitHub</div>
+            <button onclick="window.SALINHA_GITHUB_OAUTH.fecharModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div style="font-size:12px; color:var(--text-main);">Abra o link abaixo e digite o código pra autorizar o Monstrinho a usar seus próprios Gists (backup pessoal — só seu, ninguém mais tem acesso):</div>
+        <div class="oauth-codigo" id="oauth-codigo">——</div>
+        <a id="oauth-link" href="#" target="_blank" rel="noopener" style="font-size:13px; font-weight:700; color:var(--app-primary); word-break:break-all;"></a>
+        <div class="oauth-status" id="oauth-status"></div>
+        <button class="fc-footer-btn" style="padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main);" onclick="window.SALINHA_GITHUB_OAUTH.iniciarLogin()">🔄 Tentar de novo / Gerar novo código</button>
+    </div>
 </div>
 
 <!-- TELA 1: HOME DO ALUNO (Vitrine) -->
@@ -3155,6 +3194,149 @@ exportarNuvem: async function(botao) {
                 botao.innerHTML = htmlOriginal;
                 botao.disabled = false;
             }
+        }
+    }
+};
+
+// =========================================================================
+// LOGIN COM GITHUB (Device Flow) — alternativa ao botão ⚙️ (token colado à
+// mão). NÃO substitui nada: os dois convivem. O único ponto de contato é
+// que, ao concluir, este fluxo escreve no MESMÍSSIMO localStorage
+// ('tjpe_v1__salinha_github_token') que SALINHA_GIST_SYNC.getToken() já lê
+// — então exportarNuvem()/importarNuvem() etc. continuam funcionando sem
+// nenhuma alteração, não importa qual dos dois caminhos colocou o token ali.
+//
+// Depende de um Cloudflare Worker próprio (ver cloudflare-worker/worker.js)
+// só pra contornar o bloqueio de CORS do GitHub nesses 2 endpoints — sem
+// ele, WORKER_URL fica vazio e o botão avisa que ainda não está configurado
+// (sem quebrar nada; ⚙️ continua sendo o caminho válido até lá).
+// =========================================================================
+window.SALINHA_GITHUB_OAUTH = {
+    // PREENCHER depois de publicar o Worker na Cloudflare — ex.:
+    // 'https://monstrinho-oauth.SEU-SUBDOMINIO.workers.dev'
+    WORKER_URL: 'https://monstrinho.felipescp.workers.dev',
+
+    _polling: null, // { deviceCode, intervaloMs, expiraEm, timeoutId }
+
+    _pararPolling: function() {
+        if (this._polling && this._polling.timeoutId) clearTimeout(this._polling.timeoutId);
+        this._polling = null;
+    },
+
+    abrirModal: function() {
+        if (!this.WORKER_URL) {
+            alert('O login automático com GitHub ainda não foi configurado neste site. Use o botão ⚙️ com um token, normalmente, por enquanto.');
+            return;
+        }
+        document.getElementById('oauth-codigo').textContent = '——';
+        let linkEl = document.getElementById('oauth-link');
+        linkEl.href = '#';
+        linkEl.textContent = '';
+        document.getElementById('oauth-status').textContent = '';
+        document.getElementById('modal-github-oauth').classList.add('open');
+        this.iniciarLogin();
+    },
+
+    fecharModal: function() {
+        document.getElementById('modal-github-oauth').classList.remove('open');
+        this._pararPolling();
+    },
+
+    iniciarLogin: async function() {
+        this._pararPolling();
+        let statusEl = document.getElementById('oauth-status');
+        statusEl.textContent = 'Solicitando código ao GitHub...';
+        try {
+            let resp = await fetch(this.WORKER_URL + '/device/code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            let dados = await resp.json();
+            if (!resp.ok || dados.error) throw new Error(dados.error_description || dados.error || ('HTTP ' + resp.status));
+
+            document.getElementById('oauth-codigo').textContent = dados.user_code;
+            let linkEl = document.getElementById('oauth-link');
+            let destino = dados.verification_uri_complete || dados.verification_uri;
+            linkEl.href = destino;
+            linkEl.textContent = destino;
+            statusEl.textContent = 'Aguardando você autorizar no GitHub...';
+
+            this._polling = {
+                deviceCode: dados.device_code,
+                intervaloMs: (dados.interval || 5) * 1000,
+                expiraEm: Date.now() + (dados.expires_in || 900) * 1000,
+                timeoutId: null
+            };
+            this._agendarProximaChecagem();
+        } catch (e) {
+            statusEl.textContent = 'Erro ao iniciar login: ' + e.message;
+        }
+    },
+
+    _agendarProximaChecagem: function() {
+        let self = this;
+        if (!this._polling) return;
+        this._polling.timeoutId = setTimeout(function() { self._checarAutorizacao(); }, this._polling.intervaloMs);
+    },
+
+    // Segue a tabela de erros documentada pelo GitHub pro polling do device
+    // flow: authorization_pending (normal, continua tentando), slow_down
+    // (aumenta o intervalo e continua), expired_token/access_denied (para
+    // de vez, precisa clicar "Tentar de novo").
+    _checarAutorizacao: async function() {
+        if (!this._polling) return;
+        let statusEl = document.getElementById('oauth-status');
+
+        if (Date.now() > this._polling.expiraEm) {
+            statusEl.textContent = 'O código expirou. Clique em "Tentar de novo".';
+            this._pararPolling();
+            return;
+        }
+
+        try {
+            let resp = await fetch(this.WORKER_URL + '/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_code: this._polling.deviceCode })
+            });
+            let dados = await resp.json();
+
+            if (dados.access_token) {
+                localStorage.setItem('tjpe_v1__salinha_github_token', dados.access_token);
+                statusEl.textContent = '✅ Conectado! Fechando...';
+                this._pararPolling();
+                setTimeout(function() {
+                    window.SALINHA_GITHUB_OAUTH.fecharModal();
+                    alert('Login com GitHub concluído! Use "☁️⬆️ Salvar" pra criar seu backup na nuvem.');
+                }, 1200);
+                return;
+            }
+
+            if (dados.error === 'authorization_pending') {
+                this._agendarProximaChecagem();
+                return;
+            }
+            if (dados.error === 'slow_down') {
+                this._polling.intervaloMs += 5000;
+                this._agendarProximaChecagem();
+                return;
+            }
+            if (dados.error === 'expired_token') {
+                statusEl.textContent = 'O código expirou. Clique em "Tentar de novo".';
+                this._pararPolling();
+                return;
+            }
+            if (dados.error === 'access_denied') {
+                statusEl.textContent = 'Login cancelado no GitHub.';
+                this._pararPolling();
+                return;
+            }
+            statusEl.textContent = 'Erro: ' + (dados.error_description || dados.error || 'desconhecido');
+            this._pararPolling();
+        } catch (e) {
+            statusEl.textContent = 'Falha de conexão — tentando de novo...';
+            this._agendarProximaChecagem();
         }
     }
 };
