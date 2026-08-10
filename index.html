@@ -3799,6 +3799,11 @@ if(ri) {
     #section-cronograma .crono-week-tab.crono-week-check-leve:not(.ativa) { background:#dcfce7; border-color:#86efac; color:#166534; }
     #section-cronograma .crono-week-tab.crono-week-check-medio:not(.ativa) { background:#4ade80; border-color:#22c55e; color:#fff; }
     #section-cronograma .crono-week-tab.crono-week-check-completo:not(.ativa) { background:#15803d; border-color:#166534; color:#fff; }
+    /* Botão de complementar semanas — mesma forma/tamanho da miniaba de
+       semana (pertence visualmente à mesma fita), mas tracejado e na cor do
+       app, pra ficar claro que não é uma semana existente, e sim uma ação. */
+    #section-cronograma .crono-week-tab-add { border-style:dashed; border-color:var(--app-primary); color:var(--app-primary); font-weight:700; font-size:9px; line-height:1.3; padding:3px 8px; }
+    #section-cronograma .crono-week-tab-add:hover { background:#eef2ff; }
 
     #section-cronograma .crono-controls-direita { display:flex; align-items:center; gap:8px; flex-shrink:0; }
     /* Campo de busca ao vivo (expressões nos cards da semana ativa) —
@@ -5169,8 +5174,7 @@ window.CRONOGRAMA_RUNTIME = {
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') +
-            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Novo Cronograma</div>' +
-            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas ao cronograma ativo, a partir de um arquivo JSON no mesmo formato" style="font-size:11px;">➕ Complementar (+ Semanas)</div>';
+            '<div class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarCronogramaJSON()" title="Carregar cronograma de um arquivo JSON" style="font-size:11px;">⬆️ Carregar Novo Cronograma</div>';
 
         let ativo = this.planners[this.activePlannerId];
         if (!ativo) {
@@ -5203,7 +5207,9 @@ window.CRONOGRAMA_RUNTIME = {
             }
             let contagemHtml = prog.total > 0 ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
             return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '"><span class="crono-week-tab-num">' + numero + '</span>' + contagemHtml + '</div>';
-        }).join('') + '</div>';
+        }).join('') +
+            '<div class="crono-week-tab crono-week-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas a este cronograma, a partir de um arquivo JSON no mesmo formato">➕<br>Adicionar<br>Semanas</div>' +
+        '</div>';
 
         // Busca fica à esquerda do toggle Dias/Kanban, os dois num mesmo
         // grupo (canto direito da fita). Input tem id fixo e SÓ é
