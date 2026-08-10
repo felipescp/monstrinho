@@ -11471,7 +11471,7 @@ function parsDisc(txt){
   D.tituloCabecalho = '';
   D.metadadosGlobais = '';
   
-  var qEmCurso=null,fase='fora',pendenteCabecalho=null;
+  var qEmCurso=null,fase='fora';
 
   var RE_TITULO   = /^(?:#\s*)?T[IÍ]TULO\s*:\s*(.+)/i;
   var RE_META     = /^(?:#\s*)?METADADOS\s*:\s*(.+)/i;
@@ -11482,12 +11482,52 @@ function parsDisc(txt){
   var RE_TAG      = /^\[([A-Za-záàãâéêíóôõúüçÁÀÃÂÉÊÍÓÔÕÚÜÇ\s]+)\]\s*/;
   var RE_TOPICO   = /^T[óo]pico\s*:\s*\[?(.+?)\]?$/i;
   var RE_FONTE    = /^Fonte\s*:\s*\[?(.+?)\]?$/i;
-  var RE_AXIOMA   = /^Axioma\s*:\s*\[?(.+?)\]?$/i; 
+  var RE_AXIOMA   = /^Axioma\s*:\s*\[?(.+?)\]?$/i;
+  // Quantas linhas (não-vazias) o parser tolera de "ruído" entre o fim de
+  // uma explicação e o próximo marcador real (QUESTÃO/BLOCO/TÍTULO/PROVA/
+  // METADADOS), antes de considerar que é mesmo continuação legítima de
+  // texto. Calibrado pelo tamanho real dos blocos de transição entre lotes
+  // do Gemini (comando "GERAR LOTE", aviso "Lote concluído", chrome do
+  // chat, "Instructions" etc. somam ~10-15 linhas) com folga.
+  var JANELA_RUIDO_LINHAS = 40;
 
   function isGab(l){ return /^(?:Gabarito\s*(?:Oficial)?\s*:|Resposta\s*:)/i.test(l)||/^\[([VFABCDE])\]$/i.test(l); }
   function isExp(l){ return /^(?:Explica[çc][aã]o\s*:|\[(?:IN)?CORRETO\])/i.test(l); }
   function proxNaoVazia(from){ for(var j=from+1;j<linhas.length;j++){if(linhas[j].trim())return linhas[j].trim();}return ''; }
+  function ehMarcadorForte(l){ return RE_Q.test(l) || RE_BL_HEADER.test(l) || RE_TITULO.test(l) || RE_PROVA.test(l) || RE_META.test(l); }
+  // Verdadeiro se, dentro das próximas `janela` linhas não-vazias a partir
+  // de `desde`, aparecer um marcador real — usado pra distinguir "texto de
+  // transição entre questões" (chat/UI, comandos ecoados) de continuação
+  // de fato da explicação em andamento.
+  function hMarcadorNosProximos(desde, janela){
+    var vistos=0;
+    for(var j=desde+1;j<linhas.length && vistos<janela;j++){
+      var lj=linhas[j].trim();
+      if(!lj) continue;
+      vistos++;
+      if(ehMarcadorForte(lj)) return true;
+    }
+    return false;
+  }
   function novoBloco(nome){ blocoAtual={nome:nome||C.nome||'Geral',questoes:[]}; blocos.push(blocoAtual); }
+  // Verdadeiro se, a partir da linha seguinte, aparecer OUTRO "BLOCO:" (ou o
+  // texto acabar) ANTES de qualquer "QUESTÃO" real — sinal de que esse
+  // "BLOCO:" faz parte de uma LISTA/recapitulação de planejamento (o Gem
+  // costuma recitar o mapa de blocos antes de gerar o conteúdo, e ecoar de
+  // novo o nome do bloco atual antes de cada lote), não de um cabeçalho de
+  // seção de verdade. Os campos reais vêm sempre em sequência direta
+  // (BLOCO: -> QUESTÃO ...), nunca isolados — por isso um "BLOCO:" sem
+  // nenhuma questão antes do próximo "BLOCO:" é descartado, evitando blocos
+  // vazios e duplicados na barra lateral.
+  function blocoEIsolado(desde){
+    for(var j=desde+1;j<linhas.length;j++){
+      var lj=linhas[j].trim();
+      if(!lj) continue;
+      if(RE_Q.test(lj)) return false;
+      if(RE_BL_HEADER.test(lj)) return true;
+    }
+    return true;
+  }
   
   function normGab(raw){
     raw=raw.trim().toUpperCase();
@@ -11540,12 +11580,25 @@ function parsDisc(txt){
     if(mProv && !D.tituloCabecalho){ D.tituloCabecalho = mProv[2].trim(); continue; }
 
     var mB = l.match(RE_BL_HEADER);
-    if(mB){ finalizarQuestao(); novoBloco(mB[1].trim()); continue; }
+    if(mB){
+      if(blocoEIsolado(i)) continue; // isolado (lista/recapitulação) — não é cabeçalho real, ignora
+      var nomeBloco = mB[1].trim();
+      // Bug conhecido do gerador: às vezes ele reafirma o nome do bloco ao
+      // continuar o MESMO tema num lote seguinte, mesmo instruído a indicar
+      // só na primeira vez — repetição idêntica e sequenciada do bloco que
+      // já está ativo. Nesse caso não é um bloco novo, é continuação: só
+      // fecha a questão em andamento (se houver) e segue no mesmo bloco,
+      // sem duplicar (senão vira 2 blocos de 10 questões em vez de 1 de 20).
+      if(blocoAtual && blocoAtual.nome.trim().toLowerCase() === nomeBloco.toLowerCase()){
+        finalizarQuestao();
+        continue;
+      }
+      finalizarQuestao(); novoBloco(nomeBloco); continue;
+    }
 
     var mQ = l.match(RE_Q);
     if(mQ){
       finalizarQuestao();
-      if(pendenteCabecalho){novoBloco(pendenteCabecalho);pendenteCabecalho=null;}
       var nOrig = mQ[1];
       var enI = mQ[2].trim();
       var tax = null;
@@ -11608,11 +11661,24 @@ if(qEmCurso){
       }
       if(fase==='explicacao' || fase==='gabarito'){
         var prox=proxNaoVazia(i);
-        if(RE_Q.test(prox) || RE_BL_HEADER.test(prox) || RE_TITULO.test(prox) || RE_PROVA.test(prox) || RE_META.test(prox)){finalizarQuestao();pendenteCabecalho=l;continue;}
+        if(ehMarcadorForte(prox)){finalizarQuestao();continue;}
+        // A próxima linha não é, ela mesma, um marcador — mas se um
+        // marcador real aparece um pouco mais à frente (dentro da janela),
+        // é sinal de que entramos em texto de transição/interface entre
+        // questões (comando "GERAR LOTE" ecoado, aviso "Lote concluído",
+        // chrome do chat etc.), não em continuação legítima da explicação.
+        // Descarta em vez de anexar.
+        if(hMarcadorNosProximos(i, JANELA_RUIDO_LINHAS)){finalizarQuestao();continue;}
         qEmCurso.explicacao.push(l); fase='explicacao'; continue;
       }
     }
-    pendenteCabecalho=l;
+    // Linha fora de uma questão em andamento e que não bateu com nenhum dos
+    // marcadores estruturais acima (BLOCO/TÍTULO/PROVA/METADADOS/QUESTÃO) —
+    // ex.: chrome do chat, comandos "GERAR LOTE" ecoados, avisos de
+    // transição entre lotes. Ignorada de propósito: só os campos indicados
+    // (QUESTÃO/Gabarito/Tópico/Fonte/Axioma/Explicação) e os marcadores
+    // estruturais têm efeito no resultado — o resto nunca vira nome de
+    // bloco nem conteúdo de questão.
   }
   finalizarQuestao(); return blocos;
 }
