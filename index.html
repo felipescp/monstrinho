@@ -2521,6 +2521,52 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.revisaoEsquemas) ──
+                    // Mesmíssimo formato/problema/política de
+                    // jurisprudencia_runtime.revisaoJurisprudencia: dicionário achatado
+                    // {id_esquema → {ultimaClassificacao}} (estrelas 1-3). União pura,
+                    // mantém a versão local em caso de mesmo esquema classificado dos 2 lados.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'revisaoEsquemas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idEsquema => {
+                            const remoto = objImportado[subChave][idEsquema];
+                            const local = objLocal[subChave][idEsquema];
+                            if (!remoto || typeof remoto !== 'object') return;
+
+                            if (local === undefined) {
+                                objLocal[subChave][idEsquema] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.visualizados) ──
+                    // Mesma política de união pura (OR) de esquemas_runtime.ocultos —
+                    // "já vi esse" é uma flag pessoal, nunca "desmarca" por causa do merge.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'visualizados' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idEsquema => {
+                            if (objImportado[subChave][idEsquema] && !objLocal[subChave][idEsquema]) {
+                                objLocal[subChave][idEsquema] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.fichas) ──
                     // Mesmíssima forma/problema/solução de materiais_runtime.materiais e
                     // esquemas_runtime.esquemas: dicionário achatado {"MATÉRIA > Divisão" →
@@ -16993,6 +17039,54 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
     #esquemas-modal .esq-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
     #esquemas-modal .esq-card-add:hover { background:#eef2ff; }
+
+    /* Visualizado + estrelas no CARD da grade normal — linha discreta no
+       rodapé do card, separada do resto por um traço pontilhado. */
+    #esquemas-modal .esq-card-classificacao { display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:6px; margin-top:2px; border-top:1px dashed #f1f5f9; }
+    #esquemas-modal .esq-btn-visualizado, #modal-esquemas-baralho .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+    #esquemas-modal .esq-btn-visualizado:hover, #modal-esquemas-baralho .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #esquemas-modal .esq-btn-visualizado.ativo, #modal-esquemas-baralho .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    #esquemas-modal .esq-estrelas { display:flex; gap:1px; flex-shrink:0; }
+    #esquemas-modal .esq-estrela { font-size:15px; line-height:1; border:none; background:none; cursor:pointer; color:#e2e8f0; padding:0 1px; }
+    #esquemas-modal .esq-estrela.preenchida { color:#f59e0b; }
+    #esquemas-modal .esq-estrela:hover { color:#f59e0b; }
+
+    /* Abas do topo: "Navegar" (grade L1/L2 acima) + 1/2/3 Estrelas —
+       mesmo padrão visual de #jurisprudencia-modal/#section-flashcards. */
+    #esquemas-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #esquemas-modal .esq-tabs-grupo { display:flex; gap:4px; }
+    #esquemas-modal .esq-tabs-baralho { display:flex; align-items:center; gap:6px; }
+    #esquemas-modal .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
+    #esquemas-modal .fc-tab:hover { color:var(--app-primary); }
+    #esquemas-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+    #esquemas-modal .fc-tab-count { opacity:0.65; font-weight:600; }
+
+    #esquemas-modal .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    #esquemas-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #esquemas-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #esquemas-modal .fc-pill:hover { border-color:var(--app-primary); }
+    #esquemas-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #esquemas-modal .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #esquemas-modal .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #esquemas-modal .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+    #esquemas-modal .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #esquemas-modal .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #esquemas-modal span[id^="esq-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #esquemas-modal .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+
+    /* Cartão de estudo (abas de estrela + popup Baralho) — compartilhado
+       com #modal-esquemas-baralho via seletor combinado, mesmo padrão de
+       #jurisprudencia-modal .jur-estudo-card. */
+    #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
+    #esquemas-modal .esq-estudo-titulo, #modal-esquemas-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
+    #esquemas-modal .esq-estudo-texto, #modal-esquemas-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
+
+    #esquemas-modal .fc-card-revisao-acoes, #modal-esquemas-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    #esquemas-modal .fc-rev-btn, #modal-esquemas-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
+    #esquemas-modal .fc-rev-estrela, #modal-esquemas-baralho .fc-rev-estrela { color:#92400e; border-color:#fde68a; }
+    #esquemas-modal .fc-rev-estrela:hover, #modal-esquemas-baralho .fc-rev-estrela:hover { background:#fef3c7; }
+    #esquemas-modal .fc-rev-estrela.ativa, #modal-esquemas-baralho .fc-rev-estrela.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #esquemas-modal .fc-rev-estrela.ativa:hover, #modal-esquemas-baralho .fc-rev-estrela.ativa:hover { background:#b45309; }
 </style>
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
@@ -17005,10 +17099,100 @@ window.triggerFileUpload = function(callback) {
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
             </div>
         </div>
+        <div class="fc-tabs">
+            <div class="esq-tabs-grupo">
+                <button class="fc-tab ativa" id="esq-tab-grade" onclick="window.ESQUEMAS_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
+                <button class="fc-tab" id="esq-tab-1" onclick="window.ESQUEMAS_RUNTIME.trocarAba('1')">⭐ 1 Estrela <span class="fc-tab-count" id="esq-tab-1-count"></span></button>
+                <button class="fc-tab" id="esq-tab-2" onclick="window.ESQUEMAS_RUNTIME.trocarAba('2')">⭐⭐ 2 Estrelas <span class="fc-tab-count" id="esq-tab-2-count"></span></button>
+                <button class="fc-tab" id="esq-tab-3" onclick="window.ESQUEMAS_RUNTIME.trocarAba('3')">⭐⭐⭐ 3 Estrelas <span class="fc-tab-count" id="esq-tab-3-count"></span></button>
+            </div>
+            <div class="esq-tabs-baralho">
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODOS os esquemas">🗂️ Baralho: Todos</button>
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com os esquemas da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">🗂️ Baralho: Tópico</button>
+            </div>
+        </div>
         <div class="fc-grid" id="esq-grid">
             <div class="fc-col" id="esq-col-materias"></div>
             <div class="fc-col" id="esq-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
             <div class="fc-col" id="esq-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+
+        <div class="fc-aba-revisao" id="esq-aba-1" style="display:none;">
+            <div class="fc-pills" id="esq-pills-1"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('1')">🔀 Embaralhar</button>
+            </div>
+            <div id="esq-corpo-1"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('1', -1)">‹</button>
+                <span id="esq-posicao-1">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('1', 1)">›</button>
+            </div>
+        </div>
+
+        <div class="fc-aba-revisao" id="esq-aba-2" style="display:none;">
+            <div class="fc-pills" id="esq-pills-2"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('2')">🔀 Embaralhar</button>
+            </div>
+            <div id="esq-corpo-2"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('2', -1)">‹</button>
+                <span id="esq-posicao-2">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('2', 1)">›</button>
+            </div>
+        </div>
+
+        <div class="fc-aba-revisao" id="esq-aba-3" style="display:none;">
+            <div class="fc-pills" id="esq-pills-3"></div>
+            <div class="fc-popup-toolbar">
+                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('3')">🔀 Embaralhar</button>
+            </div>
+            <div id="esq-corpo-3"></div>
+            <div class="fc-popup-nav">
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('3', -1)">‹</button>
+                <span id="esq-posicao-3">0 / 0</span>
+                <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('3', 1)">›</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Baralho de Esquemas (Todos | Disciplina | Tópico) — popup .mo/.mdl
+     em cima de #esquemas-modal, mesmo padrão de navegação 1-a-1 (embaralhar +
+     ‹› + classificação por estrelas) já usado em #modal-jurisprudencia-baralho. -->
+<div id="modal-esquemas-baralho" class="mo">
+<style>
+    #modal-esquemas-baralho { z-index: 10000; }
+    #modal-esquemas-baralho .mdl { max-width:700px; width:95%; max-height:90vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #modal-esquemas-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #modal-esquemas-baralho #esq-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #modal-esquemas-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    #modal-esquemas-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
+    #modal-esquemas-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+</style>
+    <div class="mdl">
+        <div class="fc-popup-header">🗂️ <span id="esq-baralho-titulo"></span> — Baralho de Esquemas</div>
+
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+        </div>
+
+        <div id="esq-baralho-corpo"></div>
+
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.anteriorBaralho()">‹</button>
+            <span id="esq-baralho-posicao">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.proximoBaralho()">›</button>
+        </div>
+
+        <div class="fc-popup-footer">
+            <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharBaralho()">Fechar</button>
         </div>
     </div>
 </div>
@@ -17278,6 +17462,17 @@ function parsearImportacaoEsquemas(textoBruto) {
 window.ESQUEMAS_RUNTIME = {
     esquemas: {},
     ocultos: {},
+    // Classificação por estrelas (1 a 3, ordem de importância) — mesmo
+    // formato/toggle de flashcards_runtime.revisao e
+    // jurisprudencia_runtime.revisaoJurisprudencia, via
+    // window.ClassificacaoCards. { "<id>": { ultimaClassificacao: '1'|'2'|'3' } }
+    // — puro sistema de distribuição/etiqueta, sem agendamento nem repetição
+    // espaçada: um esquema classificado com N estrelas fica na seção de N
+    // estrelas até o usuário reclassificar, nunca some sozinho.
+    revisaoEsquemas: {},
+    // "Já vi esse esquema" — flag pessoal simples, independente da
+    // classificação por estrelas. Mesmo padrão de ocultos: {"<id>": true}.
+    visualizados: {},
     STORAGE_KEY: 'tjpe_v1__esquemas_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
@@ -17290,6 +17485,21 @@ window.ESQUEMAS_RUNTIME = {
     _editandoId: null,
     _editandoChave: null,
 
+    // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
+    // '1'|'2'|'3' (seções por estrela, mesmo padrão de
+    // JURISPRUDENCIA_RUNTIME/PRATICAR_CADERNO_RUNTIME). _estadosAba guarda
+    // o pool/ordem/índice de cada aba de estrela, independente da navegação
+    // L1/L2 da aba "grade".
+    _abaAtiva: 'grade',
+    _estadosAba: {
+        '1': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '2': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '3': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+    },
+    // Popup "Baralho de Esquemas" (Todos | Disciplina | Divisão/Tópico) —
+    // mesmo padrão de JURISPRUDENCIA_RUNTIME._baralhoState.
+    _baralhoState: null,
+
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
@@ -17301,6 +17511,8 @@ window.ESQUEMAS_RUNTIME = {
         // nuvem antes de ser excluído localmente (mesmo bug já corrigido em
         // cronograma_runtime.planners, ver excluirPlanner).
         this.excluidos = (bruto && typeof bruto.excluidos === 'object' && !Array.isArray(bruto.excluidos)) ? bruto.excluidos : {};
+        this.revisaoEsquemas = (bruto && typeof bruto.revisaoEsquemas === 'object' && !Array.isArray(bruto.revisaoEsquemas)) ? bruto.revisaoEsquemas : {};
+        this.visualizados = (bruto && typeof bruto.visualizados === 'object' && !Array.isArray(bruto.visualizados)) ? bruto.visualizados : {};
         this._bootstrapped = true;
     },
 
@@ -17310,7 +17522,7 @@ window.ESQUEMAS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados }));
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
         }
@@ -17319,6 +17531,7 @@ window.ESQUEMAS_RUNTIME = {
     init: function() {
         this.carregar();
         this.render();
+        this._atualizarContagensAbas();
         if (typeof window.carregarEsquemasOficiais === 'function') {
             window.carregarEsquemasOficiais().then(function() {
                 if (window.ESQUEMAS_RUNTIME._materiaSelecionada) window.ESQUEMAS_RUNTIME._renderGradeCards();
@@ -17446,7 +17659,19 @@ window.ESQUEMAS_RUNTIME = {
         if (this._ocultarOficiais) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
+        // Ordem decrescente por estrelas (3★ primeiro, depois 2★, 1★, e por
+        // último não classificado) — pedido explícito: o usuário indica a
+        // importância e a grade reflete isso na ordem, sem precisar abrir
+        // uma aba separada. .slice() pra não mutar o array já guardado.
+        lista = lista.slice().sort(function(a, b) {
+            return self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id);
+        });
         return lista;
+    },
+
+    _estrelasAtuais: function(id) {
+        let r = this.revisaoEsquemas[id];
+        return r ? (parseInt(r.ultimaClassificacao, 10) || 0) : 0;
     },
 
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
@@ -17540,6 +17765,19 @@ window.ESQUEMAS_RUNTIME = {
 
             let onclickCard = self._modoSelecao ? '' : (' onclick="window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
+            // Visualizado + estrelas — clique pára aqui (event.stopPropagation)
+            // pra não abrir o editor junto. Clicar na MESMA estrela já
+            // marcada desmarca (window.ClassificacaoCards, mesmo toggle
+            // usado nas abas/baralho); clicar numa estrela diferente troca
+            // direto pra aquele nível.
+            let idEsc = item.id.replace(/'/g, "\\'");
+            let visualizado = !!self.visualizados[item.id];
+            let estrelasAtuais = self._estrelasAtuais(item.id);
+            let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.ESQUEMAS_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
+            let estrelasHtml = '<span class="esq-estrelas">' + [1, 2, 3].map(function(n) {
+                return '<button class="esq-estrela' + (estrelasAtuais >= n ? ' preenchida' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.marcarEstrelasCard(\'' + idEsc + '\', ' + n + ');" title="' + n + ' estrela' + (n > 1 ? 's' : '') + '">★</button>';
+            }).join('') + '</span>';
+
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + seloOficial + seloOculto + '</span>' +
@@ -17547,6 +17785,7 @@ window.ESQUEMAS_RUNTIME = {
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
+                '<div class="esq-card-classificacao">' + btnVisualizado + estrelasHtml + '</div>' +
             '</div>';
         }).join('');
 
@@ -17564,6 +17803,405 @@ window.ESQUEMAS_RUNTIME = {
         }
 
         col.innerHTML = this._renderToolbar() + '<div class="esq-grade-scroll">' + corpoHtml + '</div>';
+    },
+
+    // ── CLASSIFICAÇÃO POR ESTRELAS (1 a 3) — mesmo toggle de
+    // Flashcards/Praticar Caderno/Jurisprudência via window.ClassificacaoCards,
+    // aplicado por id de esquema. Puro sistema de distribuição: sem
+    // agendamento, sem repetição espaçada — um esquema fica na sua seção de
+    // estrela até ser reclassificado manualmente. ──
+
+    _aplicarClassificacaoEsq: function(id, nivel) {
+        let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoEsquemas[id]);
+        if (novo === null) delete this.revisaoEsquemas[id]; else this.revisaoEsquemas[id] = novo;
+        this.salvar();
+    },
+
+    // Clique direto numa estrela do CARD na grade normal: sempre define
+    // aquele nível (ou desmarca se já era esse o nível — mesmo toggle de
+    // calcularProximo), diferente do clique dentro de uma aba/baralho de
+    // estrela (que também avança/remove do pool corrente).
+    marcarEstrelasCard: function(id, nivel) {
+        this._aplicarClassificacaoEsq(id, String(nivel));
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+    },
+
+    toggleVisualizado: function(id) {
+        if (this.visualizados[id]) delete this.visualizados[id]; else this.visualizados[id] = true;
+        this.salvar();
+    },
+
+    _botoesRevisaoEsqHtml: function(id, opts) {
+        opts = opts || {};
+        let desmarcarNivel = opts.desmarcarNivel || null;
+        let onclickPara = opts.onclickPara || function(nivel) {
+            return "window.ESQUEMAS_RUNTIME.marcarBaralho('" + nivel + "')";
+        };
+        let atual = this.revisaoEsquemas[id] ? this.revisaoEsquemas[id].ultimaClassificacao : null;
+        let niveis = [
+            { chave: '1', rotulo: '⭐ 1 Estrela', rotuloDesmarcar: '⭐ Desmarcar' },
+            { chave: '2', rotulo: '⭐⭐ 2 Estrelas', rotuloDesmarcar: '⭐⭐ Desmarcar' },
+            { chave: '3', rotulo: '⭐⭐⭐ 3 Estrelas', rotuloDesmarcar: '⭐⭐⭐ Desmarcar' }
+        ];
+        return niveis.map(function(n) {
+            let classeAtiva = (atual === n.chave) ? ' ativa' : '';
+            let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
+            return '<button class="fc-rev-btn fc-rev-estrela' + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
+        }).join('');
+    },
+
+    // Acha em qual chave ("MATÉRIA > Divisão") um esquema mora, pra mostrar
+    // a origem no cartão de estudo (abas/baralho) — esquemas não guardam
+    // matéria/divisão duplicada no próprio item (diferente das fichas de
+    // Jurisprudência), só existem dentro de this.esquemas[chave]. Varredura
+    // simples, mesmo raciocínio "sem cache" de Flashcards/Praticar/Jurisprudência
+    // (volume pessoal, não um catálogo enorme).
+    _localizarChavePorId: function(id) {
+        let self = this;
+        let chaves = Object.keys(this.esquemas);
+        for (let i = 0; i < chaves.length; i++) {
+            if ((self.esquemas[chaves[i]] || []).some(function(e) { return e.id === id; })) return chaves[i];
+        }
+        return null;
+    },
+
+    // Bloco de conteúdo do esquema (título + HTML rico) — compartilhado
+    // entre o popup "Baralho de Esquemas" e as abas de estrela. conteudoHtml
+    // é inserido sem escapar (mesmo tratamento de abrirEditorExistente,
+    // que já joga esse mesmo HTML dentro de contenteditable) — é HTML de
+    // verdade, produzido pelo próprio editor, não texto puro.
+    _htmlCartaoEsquemaEstudo: function(item) {
+        return '<div class="esq-estudo-card">' +
+            '<div class="esq-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
+            '<div class="esq-estudo-texto">' + (item.conteudoHtml || '<em>Sem conteúdo ainda.</em>') + '</div>' +
+        '</div>';
+    },
+
+    // ── ABAS "⭐ 1 ESTRELA" / "⭐⭐ 2 ESTRELAS" / "⭐⭐⭐ 3 ESTRELAS" ──
+    // Mesmo padrão de JURISPRUDENCIA_RUNTIME: navegador 1-a-1 inline (não
+    // modal) sobre esquemas cuja classificação atual bate com a aba, com
+    // pílulas de matéria pra filtrar.
+
+    trocarAba: function(aba) {
+        this._abaAtiva = aba;
+        document.querySelectorAll('#esquemas-modal .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
+        let tabEl = document.getElementById('esq-tab-' + aba);
+        if (tabEl) tabEl.classList.add('ativa');
+        let idsPorAba = { grade: 'esq-grid', '1': 'esq-aba-1', '2': 'esq-aba-2', '3': 'esq-aba-3' };
+        Object.keys(idsPorAba).forEach(function(a) {
+            let el = document.getElementById(idsPorAba[a]);
+            if (!el) return;
+            el.style.display = (a !== aba) ? 'none' : (a === 'grade' ? 'grid' : 'flex');
+        });
+        if (aba === '1' || aba === '2' || aba === '3') this.renderAbaRevisao(aba);
+    },
+
+    // Sem cache — mesmo raciocínio de Flashcards/Praticar/Jurisprudência:
+    // volume esperado (esquemas pessoais + oficiais, não um catálogo
+    // enorme) torna uma varredura completa a cada troca de aba/pílula
+    // rápida o bastante.
+    listarEsquemasPorClassificacao: function(materiaFiltro, classificacaoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        let resultado = [];
+        materias.forEach(function(materia) {
+            let prefixo = materia + ' > ';
+            Object.keys(self.esquemas).sort().forEach(function(chave) {
+                if (chave.indexOf(prefixo) !== 0) return;
+                (self.esquemas[chave] || []).forEach(function(e) {
+                    let r = self.revisaoEsquemas[e.id];
+                    if (r && r.ultimaClassificacao === classificacaoAlvo) resultado.push(e);
+                });
+            });
+        });
+        return resultado;
+    },
+
+    _contarPorMateriaEsq: function(classificacaoAlvo) {
+        let self = this;
+        let mapa = {};
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
+            let n = self.listarEsquemasPorClassificacao(mat.nivel_1, classificacaoAlvo).length;
+            if (n > 0) mapa[mat.nivel_1] = n;
+        });
+        return mapa;
+    },
+
+    renderAbaRevisao: function(aba) {
+        let s = this._estadosAba[aba];
+        let pool = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(e) { return e.id; });
+        s.indiceAtual = 0;
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+    },
+
+    _renderPillsAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let contagens = this._contarPorMateriaEsq(aba);
+        let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
+        let pillsEl = document.getElementById('esq-pills-' + aba);
+        if (!pillsEl) return;
+        let materiasOrdenadas = Object.keys(contagens).sort();
+        pillsEl.innerHTML =
+            '<button class="fc-pill' + (!s.materiaFiltro ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarAba(\'' + aba + '\', null)">Todas (' + total + ')</button>' +
+            materiasOrdenadas.map(function(mat) {
+                return '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarAba(\'' + aba + '\', \'' + mat.replace(/'/g, "\\'") + '\')">' + mat + ' (' + contagens[mat] + ')</button>';
+            }).join('');
+    },
+
+    filtrarAba: function(aba, materia) {
+        let s = this._estadosAba[aba];
+        s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    embaralharAba: function(aba) {
+        let s = this._estadosAba[aba];
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this._renderCorpoAba(aba);
+    },
+
+    navegarAba: function(aba, delta) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + delta + s.ordemChaves.length) % s.ordemChaves.length;
+        this._renderCorpoAba(aba);
+    },
+
+    _itemAtualDaAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length === 0) return null;
+        let id = s.ordemChaves[s.indiceAtual];
+        return s.pool.find(function(e) { return e.id === id; }) || null;
+    },
+
+    _renderCorpoAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let corpo = document.getElementById('esq-corpo-' + aba);
+        let posEl = document.getElementById('esq-posicao-' + aba);
+        if (!corpo) return;
+
+        if (s.ordemChaves.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema classificado aqui ainda.</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._itemAtualDaAba(aba);
+        let origem = this._localizarChavePorId(card.id) || '';
+
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.ESQUEMAS_RUNTIME._renderCorpoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+
+        // O botão da classificação ATUAL do card (sempre a própria aba, já
+        // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
+        // com .ativa, e com o rótulo "Desmarcar X" — clicar nele já desmarca.
+        let botoes = this._botoesRevisaoEsqHtml(card.id, {
+            desmarcarNivel: aba,
+            onclickPara: function(nivel) { return "window.ESQUEMAS_RUNTIME.marcarNaAba('" + aba + "', '" + nivel + "')"; }
+        });
+
+        corpo.innerHTML =
+            '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
+            this._htmlCartaoEsquemaEstudo(card) +
+            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
+            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
+    },
+
+    // Classifica o card atual da aba e remove SÓ ELE do pool corrente — a
+    // navegação avança pro próximo automaticamente. Sai do pool se a nova
+    // classificação for DIFERENTE da aba atual (deixou de pertencer a essa
+    // seção); marcar o MESMO nível de novo é o toggle de "desmarcar"
+    // (calcularProximo), que também tira do pool — nos dois casos o
+    // esquema não desaparece do app, só sai desta lista em memória; reabrir
+    // a aba do zero sempre reflete a classificação atual de verdade.
+    marcarNaAba: function(aba, classificacao) {
+        let s = this._estadosAba[aba];
+        let card = this._itemAtualDaAba(aba);
+        if (!card) return;
+        this._aplicarClassificacaoEsq(card.id, classificacao);
+
+        let idMarcado = card.id;
+        s.ordemChaves = s.ordemChaves.filter(function(id) { return id !== idMarcado; });
+        s.pool = s.pool.filter(function(e) { return e.id !== idMarcado; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+        this._atualizarContagensAbas();
+    },
+
+    // Contagem total (todas as matérias) por nível, exibida direto no
+    // rótulo de cada aba — ex.: "⭐⭐⭐ 3 Estrelas (12)". Chamada sempre que
+    // uma classificação muda (Baralho, abas ou clique direto no card).
+    _atualizarContagensAbas: function() {
+        let self = this;
+        ['1', '2', '3'].forEach(function(aba) {
+            let el = document.getElementById('esq-tab-' + aba + '-count');
+            if (el) el.textContent = '(' + self.listarEsquemasPorClassificacao(null, aba).length + ')';
+        });
+    },
+
+    // ── BARALHO (Todos | Disciplina | Divisão/Tópico) ──
+    // Popup de navegação livre 1-a-1 (embaralhar + ‹›), mesmo padrão de
+    // JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos/Materia/Divisao. Diferente
+    // das abas de estrela: classificar um card aqui NÃO remove ele do
+    // deck (só reflete a nova estrela e continua no mesmo lugar) — o
+    // objetivo deste baralho é folhear e ir classificando tudo sem perder
+    // a posição, não é uma fila de revisão que se esvazia.
+
+    _todosEsquemasVisiveis: function() {
+        let self = this;
+        let resultado = [];
+        Object.keys(this.esquemas).forEach(function(chave) {
+            (self.esquemas[chave] || []).forEach(function(e) { if (!self.ocultos[e.id]) resultado.push(e); });
+        });
+        return resultado;
+    },
+
+    abrirBaralhoTodos: function() {
+        this._garantirCarregado();
+        this._abrirBaralho('todos', 'Todos os Esquemas', this._todosEsquemasVisiveis());
+    },
+
+    abrirBaralhoMateria: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let itens = [];
+        Object.keys(this.esquemas).forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            (self.esquemas[chave] || []).forEach(function(e) { if (!self.ocultos[e.id]) itens.push(e); });
+        });
+        this._abrirBaralho('materia', this._materiaSelecionada, itens);
+    },
+
+    abrirBaralhoDivisao: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let itens = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+        this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, itens);
+    },
+
+    _abrirBaralho: function(escopo, titulo, itens) {
+        this._baralhoState = {
+            escopo: escopo,
+            cardsBase: itens,
+            ordemChaves: itens.map(function(e) { return e.id; }),
+            indiceAtual: 0
+        };
+        document.getElementById('esq-baralho-titulo').textContent = titulo;
+        document.getElementById('modal-esquemas-baralho').classList.add('open');
+        this.renderBaralho();
+        document.addEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    fecharBaralho: function() {
+        document.getElementById('modal-esquemas-baralho').classList.remove('open');
+        document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    _handlerTecladoBaralho: function(e) {
+        if (!document.getElementById('modal-esquemas-baralho').classList.contains('open')) return;
+        if (e.key === 'ArrowLeft') window.ESQUEMAS_RUNTIME.anteriorBaralho();
+        else if (e.key === 'ArrowRight') window.ESQUEMAS_RUNTIME.proximoBaralho();
+    },
+
+    _deckBaralhoAtual: function() {
+        let s = this._baralhoState;
+        if (!s) return [];
+        return s.ordemChaves
+            .map(function(id) { return s.cardsBase.find(function(e) { return e.id === id; }); })
+            .filter(Boolean);
+    },
+
+    _itemBaralhoAtual: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length === 0) return null;
+        if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
+        if (s.indiceAtual < 0) s.indiceAtual = 0;
+        return deck[s.indiceAtual];
+    },
+
+    embaralharBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this.renderBaralho();
+    },
+
+    proximoBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + 1) % deck.length;
+        this.renderBaralho();
+    },
+
+    anteriorBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual - 1 + deck.length) % deck.length;
+        this.renderBaralho();
+    },
+
+    marcarBaralho: function(nivel) {
+        let card = this._itemBaralhoAtual();
+        if (!card) return;
+        this._aplicarClassificacaoEsq(card.id, nivel);
+        this.renderBaralho();
+        this._atualizarContagensAbas();
+    },
+
+    toggleVisualizadoBaralho: function() {
+        let card = this._itemBaralhoAtual();
+        if (!card) return;
+        this.toggleVisualizado(card.id);
+        this.renderBaralho();
+    },
+
+    renderBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        let corpo = document.getElementById('esq-baralho-corpo');
+        let posEl = document.getElementById('esq-baralho-posicao');
+        let deck = this._deckBaralhoAtual();
+
+        if (deck.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema aqui ainda.</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._itemBaralhoAtual();
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizadoBaralho()">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+
+        corpo.innerHTML = this._htmlCartaoEsquemaEstudo(card) +
+            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
+            '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoEsqHtml(card.id, null) + '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },
 
     // ── EDITOR (criar / abrir existente) ──
