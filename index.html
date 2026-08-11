@@ -17069,7 +17069,8 @@ window.triggerFileUpload = function(callback) {
                 <input type="color" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarCorFundoCelula(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
             </label>
         </div>
-        <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
+        <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onpaste="window.ESQUEMAS_RUNTIME._colarComMarkdown(event)" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
+        <div style="font-size:10px; color:var(--text-muted);">💡 Cole um trecho em Markdown (títulos com #, **negrito**, listas com -, tabelas com |) que ele já entra formatado.</div>
         <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
@@ -17518,6 +17519,100 @@ window.ESQUEMAS_RUNTIME = {
         let linha = '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
         let html = '<table><tbody>' + linha + linha + linha + '</tbody></table><p><br></p>';
         document.execCommand('insertHTML', false, html);
+    },
+
+    // Deixa colar Markdown puro (ex.: trecho extraído de PDF e convertido
+    // pra .md, pra evitar a bagunça de colar o PDF direto) e já entra
+    // formatado no editor, em vez de aparecer com os símbolos # ** - |
+    // literais. Só intercepta quando a origem NÃO mandou HTML de verdade —
+    // colar de Word/Google Docs/outro trecho do próprio app continua com o
+    // comportamento nativo de sempre, sem passar pelo conversor.
+    _colarComMarkdown: function(event) {
+        let dt = event.clipboardData || window.clipboardData;
+        if (!dt) return; // sem clipboardData -> deixa o navegador cuidar
+        let html = dt.getData('text/html');
+        let texto = dt.getData('text/plain');
+        if (html && html.trim()) return; // origem já mandou HTML — comportamento nativo, intocado
+        if (!texto) return;
+        event.preventDefault();
+        document.execCommand('insertHTML', false, window.ESQUEMAS_RUNTIME._markdownParaHtml(texto));
+    },
+
+    // Conversor Markdown -> HTML compacto, sem dependência externa (app é
+    // um único arquivo). Cobre o que costuma sobrar de uma conversão
+    // PDF -> Markdown: títulos, negrito/itálico, código inline, links,
+    // listas (ordenadas/não ordenadas), citação, linha horizontal e
+    // TABELAS (o uso mais comum nesta seção). Não é um parser CommonMark
+    // completo — cobre os casos reais, não markdown aninhado/exótico.
+    _markdownParaHtml: function(md) {
+        function escaparHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function inline(s) {
+            s = escaparHtml(s);
+            s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+            s = s.replace(/\*\*(.+?)\*\*|__(.+?)__/g, function(m, a, b) { return '<strong>' + (a || b) + '</strong>'; });
+            s = s.replace(/(?<!\*)\*([^*]+?)\*(?!\*)|(?<!_)_([^_]+?)_(?!_)/g, function(m, a, b) { return '<em>' + (a || b) + '</em>'; });
+            s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+            return s;
+        }
+
+        let linhas = String(md || '').replace(/\r\n/g, '\n').split('\n');
+        let html = [];
+        let listaAberta = null; // 'ul' | 'ol' | null
+        function fecharLista() { if (listaAberta) { html.push('</' + listaAberta + '>'); listaAberta = null; } }
+
+        let i = 0;
+        while (i < linhas.length) {
+            let lt = linhas[i].trim();
+
+            // Tabela: linha "| a | b |" seguida da separadora "|---|---|"
+            if (/^\|.*\|$/.test(lt) && linhas[i + 1] && /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/.test((linhas[i + 1] || '').trim())) {
+                fecharLista();
+                let cabecalho = lt.split('|').slice(1, -1).map(function(c) { return c.trim(); });
+                html.push('<table><thead><tr>' + cabecalho.map(function(c) { return '<th>' + inline(c) + '</th>'; }).join('') + '</tr></thead><tbody>');
+                i += 2;
+                while (i < linhas.length && /^\|.*\|$/.test(linhas[i].trim())) {
+                    let celulas = linhas[i].trim().split('|').slice(1, -1).map(function(c) { return c.trim(); });
+                    html.push('<tr>' + celulas.map(function(c) { return '<td>' + inline(c) + '</td>'; }).join('') + '</tr>');
+                    i++;
+                }
+                html.push('</tbody></table>');
+                continue;
+            }
+
+            let mH = lt.match(/^(#{1,6})\s+(.*)$/);
+            if (mH) { fecharLista(); let n = mH[1].length; html.push('<h' + n + '>' + inline(mH[2]) + '</h' + n + '>'); i++; continue; }
+
+            if (/^(-{3,}|\*{3,}|_{3,})$/.test(lt)) { fecharLista(); html.push('<hr>'); i++; continue; }
+
+            if (/^>\s?/.test(lt)) {
+                fecharLista();
+                let partes = [];
+                while (i < linhas.length && /^>\s?/.test(linhas[i].trim())) { partes.push(linhas[i].trim().replace(/^>\s?/, '')); i++; }
+                html.push('<blockquote>' + inline(partes.join(' ')) + '</blockquote>');
+                continue;
+            }
+
+            let mUl = lt.match(/^[-*+]\s+(.*)$/);
+            if (mUl) {
+                if (listaAberta !== 'ul') { fecharLista(); html.push('<ul>'); listaAberta = 'ul'; }
+                html.push('<li>' + inline(mUl[1]) + '</li>'); i++; continue;
+            }
+
+            let mOl = lt.match(/^\d+[.)]\s+(.*)$/);
+            if (mOl) {
+                if (listaAberta !== 'ol') { fecharLista(); html.push('<ol>'); listaAberta = 'ol'; }
+                html.push('<li>' + inline(mOl[1]) + '</li>'); i++; continue;
+            }
+
+            fecharLista();
+            if (!lt) { i++; continue; }
+            html.push('<p>' + inline(lt) + '</p>');
+            i++;
+        }
+        fecharLista();
+        return html.join('');
     },
 
     salvarEsquema: function() {
