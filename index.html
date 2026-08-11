@@ -16998,6 +16998,7 @@ window.triggerFileUpload = function(callback) {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div style="display:flex; align-items:center; gap:10px;">
+                <button onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()" title="Importar esquemas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
                 <button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()" title="Exportar todos os esquemas PESSOAIS em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
                 <button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()" title="Exportar os esquemas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
                 <button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()" title="Exportar os esquemas PESSOAIS do tópico (divisão) selecionado em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tópico</button>
@@ -17079,6 +17080,36 @@ window.triggerFileUpload = function(callback) {
     </div>
 </div>
 
+<!-- MODAL: Importar Esquemas em Massa — popup .mo/.mdl em cima de
+     #esquemas-modal, mesmo padrão de #modal-jurisprudencia-importar. -->
+<div id="modal-esquema-importar" class="mo">
+<style>
+    #modal-esquema-importar { z-index: 10000; }
+    #modal-esquema-importar .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-esquema-importar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-esquema-importar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-esquema-importar .fc-footer-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-esquema-importar #esq-import-textarea { width:100%; min-height:220px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:monospace; font-size:11.5px; resize:vertical; box-sizing:border-box; }
+    #modal-esquema-importar #esq-import-preview { font-size:11.5px; line-height:1.6; background:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:10px; display:none; max-height:180px; overflow-y:auto; }
+    #modal-esquema-importar #esq-import-ajuda { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-esquema-importar #esq-import-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
+</style>
+    <div class="mdl" style="max-width:640px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📥 Importar Esquemas em Massa</div>
+            <button onclick="window.ESQUEMAS_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>, seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA".</div>
+        <textarea id="esq-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
+        <div id="esq-import-preview"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharModalImportar()">Cancelar</button>
+            <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.prevvisualizarImportacao()">Pré-visualizar</button>
+            <button class="fc-footer-btn primario" id="esq-import-btn-confirmar" onclick="window.ESQUEMAS_RUNTIME.confirmarImportacao()" disabled>Confirmar Importação</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ── ESQUEMAS E TABELAS — modal (mesmo padrão de #caderno-modal), navegação
 // L1(matéria)>L2(divisão) idêntica a Materiais. Estrutura de dados:
@@ -17089,6 +17120,161 @@ window.triggerFileUpload = function(callback) {
 // esquema criado por um usuário fica só no tjpe_v1__esquemas_runtime dele
 // (localStorage + backup pessoal via Gist), sem nenhum caminho de código
 // que o torne "oficial" ou visível pra outra conta.
+
+// ── PARSER DE IMPORTAÇÃO EM MASSA DE ESQUEMAS ──
+// Mesmo princípio do parser de Jurisprudência (parsearImportacaoJurisprudencia):
+// trabalha por LINHA, usando os próprios rótulos como pontos de corte —
+// robusto tanto a texto com parágrafos separados por linha em branco quanto
+// a texto "corrido". Marcadores "### L2:" localizados em qualquer lugar do
+// texto (não exigem estar no início de uma linha).
+//
+// Formato esperado por ficha (7 linhas, cada campo em UMA linha física):
+//   [L1 - L2 — linha de conferência humana, ignorada pelo parser]
+//   [Título do esquema]
+//   Subtema: ... | Tipo: ...
+//   Referência: ...
+//   CORPO: <html de uma linha>
+//   ALERTA: ...
+//   FONTE: ... | Data da curadoria: DD/MM/AAAA
+//
+// Diferença central pro parser de Jurisprudência: lá o título é a ÚNICA
+// linha não rotulada antes do primeiro campo (Tribunal:); aqui são DUAS
+// (linha de conferência + título) antes do primeiro campo (Subtema:) — por
+// isso a detecção de início de ficha olha 2 linhas à frente, não 1.
+function esqNormalizarTexto(texto) {
+    return (texto || '').replace(/\*/g, ''); // rótulos podem vir em **negrito** markdown
+}
+
+const ESQ_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g;
+const ESQ_RE_SUBTEMA = /^Subtema:\s*(.+?)\s*\|\s*Tipo:\s*(.+)$/i;
+const ESQ_RE_REFERENCIA = /^Refer[eê]ncia:\s*([\s\S]+)$/i;
+const ESQ_RE_CORPO = /^CORPO:\s*([\s\S]+)$/i;
+const ESQ_RE_ALERTA = /^ALERTA:\s*([\s\S]+)$/i;
+const ESQ_RE_FONTE = /^FONTE:\s*(.+?)\s*\|\s*Data da curadoria:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
+
+function esqDividirEmLinhas(texto) {
+    return texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+}
+
+function esqClassificarLinha(l) {
+    if (ESQ_RE_SUBTEMA.test(l)) return 'subtema';
+    if (ESQ_RE_REFERENCIA.test(l)) return 'referencia';
+    if (ESQ_RE_CORPO.test(l)) return 'corpo';
+    if (ESQ_RE_ALERTA.test(l)) return 'alerta';
+    if (ESQ_RE_FONTE.test(l)) return 'fonte';
+    return null;
+}
+
+function esqCriarFichaVazia() {
+    return { linhaConferencia: '', titulo: '', subtema: '', tipo: '', referencia: '', corpo: '', alerta: '', fonte: '', dataCuradoria: '' };
+}
+
+function esqAplicarCampoNaLinha(ficha, tipo, linha) {
+    let m;
+    if (tipo === 'subtema') {
+        m = ESQ_RE_SUBTEMA.exec(linha);
+        ficha.subtema = m[1].trim();
+        ficha.tipo = m[2].trim();
+    } else if (tipo === 'referencia') {
+        m = ESQ_RE_REFERENCIA.exec(linha);
+        ficha.referencia = m[1].trim();
+    } else if (tipo === 'corpo') {
+        m = ESQ_RE_CORPO.exec(linha);
+        ficha.corpo = m[1].trim();
+    } else if (tipo === 'alerta') {
+        m = ESQ_RE_ALERTA.exec(linha);
+        ficha.alerta = m[1].trim();
+    } else if (tipo === 'fonte') {
+        m = ESQ_RE_FONTE.exec(linha);
+        ficha.fonte = m[1].trim();
+        ficha.dataCuradoria = m[4] + '-' + m[3] + '-' + m[2]; // ISO AAAA-MM-DD
+    }
+}
+
+// Varre as linhas de UMA divisão já isolada. Início de ficha = 2 linhas não
+// rotuladas seguidas de "Subtema:". Fichas sem CORPO (a linha mais fácil de
+// sair faltando ao colar) são descartadas e contam como malformadas — uma
+// ficha sem corpo não serve pra nada na section.
+function esqParsearLinhasDivisao(linhas) {
+    let fichas = [];
+    let malformadas = 0;
+    let i = 0;
+    let emRunOrfao = false;
+
+    while (i < linhas.length) {
+        let tipo = esqClassificarLinha(linhas[i]);
+
+        if (tipo === null && i + 2 < linhas.length &&
+            esqClassificarLinha(linhas[i + 1]) === null &&
+            esqClassificarLinha(linhas[i + 2]) === 'subtema') {
+            emRunOrfao = false;
+            let ficha = esqCriarFichaVazia();
+            ficha.linhaConferencia = linhas[i];
+            ficha.titulo = linhas[i + 1];
+            let j = i + 2;
+            while (j < linhas.length) {
+                let tipoJ = esqClassificarLinha(linhas[j]);
+                if (tipoJ === null) break;
+                esqAplicarCampoNaLinha(ficha, tipoJ, linhas[j]);
+                j++;
+            }
+            if (ficha.titulo && ficha.corpo) { fichas.push(ficha); } else { malformadas++; }
+            i = j;
+        } else if (tipo !== null) {
+            if (!emRunOrfao) { malformadas++; emRunOrfao = true; }
+            i++;
+        } else {
+            i++;
+        }
+    }
+
+    return { fichas: fichas, malformadas: malformadas };
+}
+
+function parsearImportacaoEsquemas(textoBruto) {
+    let texto = esqNormalizarTexto(textoBruto);
+
+    let marcadores = [];
+    let m;
+    ESQ_RE_L2_GLOBAL.lastIndex = 0;
+    while ((m = ESQ_RE_L2_GLOBAL.exec(texto)) !== null) {
+        marcadores.push({ divisao: m[1].trim(), matchStart: m.index, matchEnd: m.index + m[0].length });
+    }
+
+    let porDivisao = {};
+    let totalFichas = 0;
+    let totalMalformadas = 0;
+    let totalSemL2 = 0; // fichas com "Subtema:" encontradas fora de qualquer "### L2:" válido — NUNCA importadas
+
+    function contarOrfasSemL2(trecho) {
+        esqDividirEmLinhas(trecho).forEach(function(l) { if (esqClassificarLinha(l) === 'subtema') totalSemL2++; });
+    }
+
+    let semL2Texto = marcadores.length > 0 ? texto.slice(0, marcadores[0].matchStart) : texto;
+    contarOrfasSemL2(semL2Texto);
+
+    marcadores.forEach(function(marcador, idx) {
+        let inicio = marcador.matchEnd;
+        let fim = (idx + 1 < marcadores.length) ? marcadores[idx + 1].matchStart : texto.length;
+        let divisao = marcador.divisao;
+
+        if (!divisao) {
+            contarOrfasSemL2(texto.slice(inicio, fim));
+            return;
+        }
+
+        let linhas = esqDividirEmLinhas(texto.slice(inicio, fim));
+        let r = esqParsearLinhasDivisao(linhas);
+        if (!porDivisao[divisao]) porDivisao[divisao] = { fichas: [], malformadas: 0 };
+        porDivisao[divisao].fichas = porDivisao[divisao].fichas.concat(r.fichas);
+        porDivisao[divisao].malformadas += r.malformadas;
+        totalFichas += r.fichas.length;
+        totalMalformadas += r.malformadas;
+    });
+
+    return { porDivisao: porDivisao, totalFichas: totalFichas, totalMalformadas: totalMalformadas, totalSemL2: totalSemL2 };
+}
+
 window.ESQUEMAS_RUNTIME = {
     esquemas: {},
     ocultos: {},
@@ -17654,6 +17840,114 @@ window.ESQUEMAS_RUNTIME = {
         this.esquemas[chave] = this.esquemas[chave].filter(function(e) { return e.id !== id; });
         if (this.esquemas[chave].length === 0) delete this.esquemas[chave];
         this.salvar();
+        this._renderGradeCards();
+    },
+
+    // ── IMPORTAÇÃO EM MASSA (mesmo padrão de JURISPRUDENCIA_RUNTIME) ──
+    // Requer só a MATÉRIA (L1) selecionada — a DIVISÃO (L2) de cada ficha
+    // vem do marcador "### L2:" dentro do próprio texto colado, podendo
+    // conter várias divisões diferentes num único lote.
+    abrirModalImportar: function() {
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
+        document.getElementById('esq-import-textarea').value = '';
+        document.getElementById('esq-import-preview').style.display = 'none';
+        document.getElementById('esq-import-preview').innerHTML = '';
+        document.getElementById('esq-import-btn-confirmar').disabled = true;
+        this._resultadoPreVisualizado = null;
+        document.getElementById('modal-esquema-importar').classList.add('open');
+    },
+
+    fecharModalImportar: function() {
+        document.getElementById('modal-esquema-importar').classList.remove('open');
+        this._resultadoPreVisualizado = null;
+    },
+
+    _parsearImportacao: function(texto) {
+        return parsearImportacaoEsquemas(texto);
+    },
+
+    prevvisualizarImportacao: function() {
+        let texto = document.getElementById('esq-import-textarea').value || '';
+        let saida = this._parsearImportacao(texto);
+        this._resultadoPreVisualizado = saida;
+
+        let previewEl = document.getElementById('esq-import-preview');
+        let btnConfirmar = document.getElementById('esq-import-btn-confirmar');
+
+        if (saida.totalFichas === 0) {
+            previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão de 7 linhas por ficha (conferência, título, "Subtema: ... | Tipo: ...", "Referência:", "CORPO:", "ALERTA:", "FONTE: ... | Data da curadoria: DD/MM/AAAA").' +
+                (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem "Subtema:"/"CORPO:" válidos.)' : '') +
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
+            previewEl.style.display = 'block';
+            btnConfirmar.disabled = true;
+            return;
+        }
+
+        let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
+            let d = saida.porDivisao[div];
+            return '<div>• <strong>' + div + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+        }).join('');
+
+        previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
+            (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') +
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
+        previewEl.style.display = 'block';
+        btnConfirmar.disabled = false;
+    },
+
+    // Compõe o conteudoHtml final a partir dos campos separados que o
+    // parser extraiu — o modelo de dados de Esquemas só tem {titulo,
+    // conteudoHtml} (o corpo é renderizado direto como innerHTML do card),
+    // então subtema/tipo/referência/alerta/fonte entram como um cabeçalho
+    // e um rodapé em volta do CORPO (que já vem em HTML). Campos de texto
+    // puro são escapados (this._escapar) — só o CORPO já é HTML de verdade.
+    _montarConteudoHtmlImportado: function(ficha) {
+        let self = this;
+        let partes = [];
+        let meta = [];
+        if (ficha.subtema) meta.push('<strong>Subtema:</strong> ' + self._escapar(ficha.subtema));
+        if (ficha.tipo) meta.push('<strong>Tipo:</strong> ' + self._escapar(ficha.tipo));
+        if (ficha.referencia) meta.push('<strong>Ref.:</strong> ' + self._escapar(ficha.referencia));
+        if (meta.length) partes.push('<div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">' + meta.join(' · ') + '</div>');
+
+        partes.push(ficha.corpo);
+
+        if (ficha.alerta) {
+            partes.push('<blockquote style="border-left:3px solid #f59e0b; background:#fffbeb; padding:8px 12px; margin:10px 0; font-size:12.5px;">⚠ ' + self._escapar(ficha.alerta) + '</blockquote>');
+        }
+        if (ficha.fonte || ficha.dataCuradoria) {
+            let rodape = [];
+            if (ficha.fonte) rodape.push('Fonte: ' + self._escapar(ficha.fonte));
+            if (ficha.dataCuradoria) rodape.push('Curadoria: ' + window.formatarDataBR(ficha.dataCuradoria));
+            partes.push('<div style="font-size:10px; color:var(--text-muted); margin-top:8px;">' + rodape.join(' · ') + '</div>');
+        }
+        return partes.join('');
+    },
+
+    confirmarImportacao: function() {
+        if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalFichas === 0) return;
+        let self = this;
+        let materiaAtual = this._materiaSelecionada;
+        let agora = new Date().toISOString();
+
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
+            let chave = self._chaveL2(materiaAtual, divisao);
+            if (!Array.isArray(self.esquemas[chave])) self.esquemas[chave] = [];
+            self._resultadoPreVisualizado.porDivisao[divisao].fichas.forEach(function(ficha) {
+                self.esquemas[chave].push({
+                    id: 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                    titulo: ficha.titulo,
+                    conteudoHtml: self._montarConteudoHtmlImportado(ficha),
+                    criadoEm: agora
+                    // Deliberadamente SEM origem_oficial — importação pessoal
+                    // nunca atribui esse campo.
+                });
+            });
+        });
+
+        this.salvar();
+        this._resultadoPreVisualizado = null;
+        this.fecharModalImportar();
         this._renderGradeCards();
     },
 
