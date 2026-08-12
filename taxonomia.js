@@ -2457,7 +2457,7 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
-          "id": "div_1786563697444",
+          "id": "pp_execucao",
           "nivel_2": "Lei de Execução Penal (Lei nº Lei nº 7.210/1984)",
           "topicos": []
         }
@@ -2897,77 +2897,6 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
-          "id": "pp_execucao",
-          "nivel_2": "Execução Penal (Lei nº 7.210/1984)",
-          "topicos": [
-            {
-              "id": "pp_exec_direitos",
-              "nivel_3": "Direitos, Deveres e Disciplina",
-              "aliases": [
-                "Faltas Disciplinares",
-                "Regime Disciplinar Diferenciado (RDD)"
-              ]
-            },
-            {
-              "id": "pp_exec_regimes",
-              "nivel_3": "Regimes, Progressão e Regressão",
-              "aliases": [
-                "Livramento Condicional",
-                "Saídas Temporárias"
-              ]
-            },
-            {
-              "id": "pp_exec_incidentes",
-              "nivel_3": "Incidentes da Execução",
-              "aliases": [
-                "Remição e Detração",
-                "Conversões",
-                "Medidas de Segurança"
-              ]
-            },
-            {
-              "id": "pp_exec_teoria",
-              "nivel_3": "Teoria Geral, Órgãos da Execução e Estabelecimentos Penais",
-              "aliases": [
-                "juízo da execução",
-                "conselho penitenciário"
-              ]
-            },
-            {
-              "id": "pp_exec_disc",
-              "nivel_3": "Direitos, Deveres e Disciplina (Faltas, RDD e Sanções)",
-              "aliases": [
-                "falta grave",
-                "procedimento disciplinar"
-              ]
-            },
-            {
-              "id": "pp_exec_incid",
-              "nivel_3": "Incidentes da Execução (Progressão, Regressão, Remição e Detração)",
-              "aliases": [
-                "agravo em execução",
-                "cálculo de pena",
-                "trabalho do preso",
-                "execução de medida de segurança",
-                "exame de cessação de periculosidade",
-                "desinternação"
-              ]
-            },
-            {
-              "id": "pp_exec_saidas",
-              "nivel_3": "Saídas Antecipadas, Livramento Condicional e Anistia/Indulto",
-              "aliases": [
-                "permissão de saída",
-                "saída temporária",
-                "indulto natalino"
-              ]
-            }
-          ],
-          "aliases": [
-            "Execução Penal (Lei 7.210/84)"
-          ]
-        },
-        {
           "id": "pp_legislacao_especial",
           "nivel_2": "Legislação Processual Penal Especial",
           "topicos": [
@@ -3016,20 +2945,6 @@ const TAXONOMIA_DADOS = {
                 "Audiência de Custódia (Resolução nº 213/2015)",
                 "Proteção de Dados (Resolução nº 427/2021)",
                 "Reconhecimento de Pessoas (Resolução nº 484/2022)"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "pp_teoria",
-          "nivel_2": "Princípios e Teoria da Lei Processual",
-          "topicos": [
-            {
-              "id": "pp_teoria_princ",
-              "nivel_3": "Princípios e Aplicação da Lei no Tempo e no Espaço",
-              "aliases": [
-                "sistemas processuais",
-                "interpretação"
               ]
             }
           ]
