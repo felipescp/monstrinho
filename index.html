@@ -3021,7 +3021,27 @@ window.SALINHA_GIST_SYNC = {
     // depois, porque o finally que zera a trava nunca chega a rodar.
     LOCK_NUVEM_EXPIRA_MS: 45000,
 
+    // Token separado do login via GitHub (OAuth) e token separado do campo
+    // manual ⚙️ — antes os dois liam/escreviam a MESMA chave
+    // ('tjpe_v1__salinha_github_token'), o que parecia conveniente ("os
+    // dois convivem") mas na prática significava que limpar o campo do ⚙️
+    // apagava sua sessão do login com GitHub também (e derrubava o nome no
+    // botão 🔑 no F5 seguinte), já que era literalmente o mesmo valor. Com
+    // ⚙️ marcado pra ser extinto (login via GitHub vira o único caminho),
+    // getToken() prioriza o token de OAuth quando existe — só cai pro
+    // manual se nunca foi feito login. exportarNuvem/importarNuvem etc.
+    // continuam chamando só getToken(), sem saber (nem precisar saber) de
+    // qual das duas origens o token realmente veio.
+    _CHAVE_TOKEN_OAUTH: 'tjpe_v1__salinha_github_oauth_token',
+
     getToken: function() {
+        return localStorage.getItem(this._CHAVE_TOKEN_OAUTH) || localStorage.getItem('tjpe_v1__salinha_github_token') || '';
+    },
+
+    // Só o valor colado manualmente em ⚙️ — usado pelo próprio configurar()
+    // (prompt de edição e novo valor), pra nunca ler/mostrar/sobrescrever o
+    // token de OAuth por engano.
+    getTokenManual: function() {
         return localStorage.getItem('tjpe_v1__salinha_github_token') || '';
     },
 
@@ -3030,15 +3050,26 @@ window.SALINHA_GIST_SYNC = {
     },
 
     configurar: function() {
-        let tokenAtual = this.getToken();
+        // getTokenManual() (não getToken()) — o prompt só mostra/edita o
+        // token colado à mão, nunca o de OAuth, mesmo que este último seja
+        // o que está realmente em uso agora (getToken() prioriza ele).
+        let tokenAtual = this.getTokenManual();
         let novoToken = prompt(
-            'Cole seu token de acesso pessoal do GitHub (Settings → Developer settings → Personal access tokens), com permissão apenas de "gist":',
+            'Cole seu token de acesso pessoal do GitHub (Settings → Developer settings → Personal access tokens), com permissão apenas de "gist":\n\n(Se você já fez login pelo botão 🔑 Entrar com GitHub, pode deixar isso em branco — o login já cuida da sincronização, este campo é só o método antigo, mantido por enquanto.)',
             tokenAtual
         );
         if (novoToken === null) return;
         localStorage.setItem('tjpe_v1__salinha_github_token', novoToken.trim());
-        localStorage.removeItem('tjpe_v1__salinha_github_username'); // token mudou — nome em cache pode ser de outra conta
-        if (window.SALINHA_GITHUB_OAUTH) window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(novoToken.trim());
+
+        // Nome em cache no botão 🔑 só é mexido aqui se NÃO houver login de
+        // OAuth ativo — com OAuth logado, a identidade mostrada é a da
+        // conta logada, e o campo manual (mesmo mudando) não deve mais
+        // derrubá-la (era exatamente isso que apagava o login ao limpar ⚙️).
+        if (window.SALINHA_GITHUB_OAUTH && !localStorage.getItem(this._CHAVE_TOKEN_OAUTH)) {
+            localStorage.removeItem('tjpe_v1__salinha_github_username'); // token manual mudou — nome em cache pode ser de outra conta
+            if (novoToken.trim()) window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(novoToken.trim());
+            window.SALINHA_GITHUB_OAUTH.atualizarBotaoLogin();
+        }
 
         let gistIdAtual = this.getGistId();
         let novoGistId = prompt(
@@ -3263,12 +3294,15 @@ exportarNuvem: async function(botao) {
 };
 
 // =========================================================================
-// LOGIN COM GITHUB (Device Flow) — alternativa ao botão ⚙️ (token colado à
-// mão). NÃO substitui nada: os dois convivem. O único ponto de contato é
-// que, ao concluir, este fluxo escreve no MESMÍSSIMO localStorage
-// ('tjpe_v1__salinha_github_token') que SALINHA_GIST_SYNC.getToken() já lê
-// — então exportarNuvem()/importarNuvem() etc. continuam funcionando sem
-// nenhuma alteração, não importa qual dos dois caminhos colocou o token ali.
+// LOGIN COM GITHUB (Device Flow) — ⚙️ (token colado à mão) está com os dias
+// contados; este é o caminho que deve virar o único. Os dois convivem por
+// enquanto, mas em chaves de localStorage SEPARADAS (_CHAVE_TOKEN_OAUTH vs
+// 'tjpe_v1__salinha_github_token') — antes eram a MESMA chave, o que
+// parecia conveniente mas significava que limpar o campo do ⚙️ apagava a
+// sessão de login também. SALINHA_GIST_SYNC.getToken() prioriza o token de
+// OAuth e cai pro manual só se nunca fez login — então
+// exportarNuvem()/importarNuvem() etc. continuam funcionando sem alteração,
+// não importa qual dos dois caminhos colocou o token ali.
 //
 // Depende de um Cloudflare Worker próprio (ver cloudflare-worker/worker.js)
 // só pra contornar o bloqueio de CORS do GitHub nesses 2 endpoints — sem
@@ -3367,7 +3401,10 @@ window.SALINHA_GITHUB_OAUTH = {
             let dados = await resp.json();
 
             if (dados.access_token) {
-                localStorage.setItem('tjpe_v1__salinha_github_token', dados.access_token);
+                // Chave PRÓPRIA do OAuth (não a mesma do campo manual ⚙️) —
+                // ver comentário em SALINHA_GIST_SYNC.getToken()/_CHAVE_TOKEN_OAUTH.
+                // Limpar o token colado à mão em ⚙️ nunca mais derruba este login.
+                localStorage.setItem(window.SALINHA_GIST_SYNC._CHAVE_TOKEN_OAUTH, dados.access_token);
                 this._pararPolling();
                 statusEl.textContent = '✅ Conectado! Procurando backup na nuvem...';
                 this._atualizarNomeUsuarioCache(dados.access_token); // não bloqueia — só troca o texto do botão quando voltar
@@ -9779,43 +9816,12 @@ var blockCenSb = false; // Flag de segurança
 
 function g(id){return document.getElementById(id);}
 
-// Portão de acesso único — checado por tela() (seções) e por cada modal de
-// topo (Tabelas/Esquemas, Jurisprudência, Caderno de Questões e Axiomas,
-// Estatísticas), já que esses 4 nunca passam por tela() (são divs .active
-// próprios, abertos direto pelo onclick do item de nav). Centralizado aqui
-// pra um 5º ponto de entrada futuro não escapar da trava de novo, do jeito
-// que estes 4 escaparam da primeira versão (só em tela()). Mesmo formato
-// de token pessoal do GitHub (40 caracteres), checagem só de formato, sem
-// chamada de rede.
-// Variante muda (sem alert) — usada no boot pra decidir se restaura a
-// última seção/bateria em andamento SEM incomodar quem só está abrindo o
-// site; o alert só deve aparecer quando o usuário de fato TENTA entrar em
-// algo, não passivamente ao carregar a página.
-window.temTokenValido = function() {
-    let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    return !!(tokenCadastrado && tokenCadastrado.length === 40);
-};
-
-window.exigirTokenValido = function() {
-    if (!window.temTokenValido()) {
-        alert('Insira um token válido em ⚙️.');
-        return false;
-    }
-    return true;
-};
-
 function tela(id) {
 
     // Blindagem contra repaint redundante
     if (window.__TELA_ATIVA__ === id) {
         return;
     }
-
-    // tela-home (Vitrine) fica de fora do portão — é onde as baterias são
-    // listadas, e a exibição da lista pode ficar livre; só ENTRAR numa
-    // bateria exige token (checagem própria em iniciarSimuladoDaVitrine).
-    // As demais seções continuam exigindo token pra sequer abrir.
-    if (id !== 'tela-home' && !window.exigirTokenValido()) return;
 
     window.__TELA_ATIVA__ = id;
 
@@ -11228,8 +11234,7 @@ else if (auditId) {
             restaurouComSucesso &&
             typeof SIMS !== 'undefined' &&
             SIMS.length > 0 &&
-            SIMS[SI] &&
-            window.temTokenValido() // sem token, não tenta reabrir a bateria em andamento sozinho no boot — cairia no alert sem o usuário ter clicado em nada
+            SIMS[SI]
         ) {
             tela('tela-simulado');
 
@@ -11257,7 +11262,7 @@ else if (auditId) {
                 'section-materiais': function() { if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init(); }
             };
 
-            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule) && window.temTokenValido()) {
+            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule)) {
                 tela(activeModule);
                 renderTabs();
                 SECOES_RESTAURAVEIS[activeModule]();
@@ -15788,7 +15793,6 @@ window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 50
    ========================================== */
 
 function openAnalyticsModal() {
-    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('analytics-modal');
     let frame = document.getElementById('analytics-frame');
 
@@ -15841,7 +15845,6 @@ function closeAnalyticsModal() {
 // ── CADERNO DE QUESTÕES SALVAS (nativo, sem depender de página externa) ──
 
 function abrirCadernoModal() {
-    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('caderno-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -18725,7 +18728,6 @@ window.ESQUEMAS_RUNTIME = {
 };
 
 window.abrirEsquemasModal = function() {
-    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -20391,7 +20393,6 @@ window.JURISPRUDENCIA_RUNTIME = {
 };
 
 window.abrirJurisprudenciaModal = function() {
-    if (!window.exigirTokenValido()) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
     modal.classList.add('active');
