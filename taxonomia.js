@@ -818,7 +818,7 @@ const TAXONOMIA_DADOS = {
       ]
     },
     {
-      "id": "pc_especial",
+      "id": "proc_civil",
       "nivel_1": "Direito Processual Civil",
       "divisoes": [
         {
@@ -1330,12 +1330,7 @@ const TAXONOMIA_DADOS = {
         {
           "id": "div_1786556855082",
           "nivel_2": "Legislação Processual Civil Especial",
-          "topicos": [
-            {
-              "id": "top_1786557506956",
-              "nivel_3": "Outras"
-            }
-          ]
+          "topicos": []
         }
       ]
     },
@@ -2415,7 +2410,7 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "penal_esp_org",
-              "nivel_3": "Organização Criminosa e Lavagem de Capitais",
+              "nivel_3": "Organização Criminosa (Lei nº 12.850/13)",
               "aliases": [
                 "Lei 12.850/13",
                 "Delação Premiada",
@@ -2433,36 +2428,31 @@ const TAXONOMIA_DADOS = {
             },
             {
               "id": "penal_esp_abuso",
-              "nivel_3": "Abuso de Autoridade (Lei 13.869/19) e Licitações",
-              "aliases": [
-                "Lei de Licitações"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "div_1779236676904",
-          "nivel_2": "Legislação Penal Especial",
-          "topicos": [
-            {
-              "id": "top_1779236690352",
-              "nivel_3": "Lei de Abuso de Autoridade (Lei nº 13.869/19)"
+              "nivel_3": "Abuso de Autoridade (Lei 13.869/19)"
             },
             {
-              "id": "top_1779236690968",
+              "id": "top_1786562526771",
               "nivel_3": "Crimes em Licitações e Contratos (Arts. 178 a 183-B do CP / Lei 14.133)"
             },
             {
-              "id": "top_1779236691560",
+              "id": "top_1786562541539",
               "nivel_3": "Lei de Lavagem de Capitais (Lei nº 9.613/98)"
             },
             {
-              "id": "top_1779236692952",
-              "nivel_3": "Organização Criminosa (Lei nº 12.850/13)"
+              "id": "top_1786562572910",
+              "nivel_3": "Lei Maria da Penha e Henry Borel: Aspectos Penais (Lei nº 11.340/06)"
             },
             {
-              "id": "top_1779236693503",
-              "nivel_3": "Lei Maria da Penha: Aspectos Penais (Lei nº 11.340/06)"
+              "id": "top_1786562659298",
+              "nivel_3": "Lei Antiterrorismo"
+            },
+            {
+              "id": "top_1786562723774",
+              "nivel_3": "Lei Antifacção (Lei nº 15.358/2026)"
+            },
+            {
+              "id": "top_1786562770290",
+              "nivel_3": "Outros"
             }
           ]
         }
