@@ -818,7 +818,7 @@ const TAXONOMIA_DADOS = {
       ]
     },
     {
-      "id": "proc_civil",
+      "id": "pc_especial",
       "nivel_1": "Direito Processual Civil",
       "divisoes": [
         {
@@ -1330,7 +1330,12 @@ const TAXONOMIA_DADOS = {
         {
           "id": "div_1786556855082",
           "nivel_2": "Legislação Processual Civil Especial",
-          "topicos": []
+          "topicos": [
+            {
+              "id": "top_1786557506956",
+              "nivel_3": "Outras"
+            }
+          ]
         }
       ]
     },
