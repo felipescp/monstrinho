@@ -2455,6 +2455,11 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Outros"
             }
           ]
+        },
+        {
+          "id": "div_1786563697444",
+          "nivel_2": "Lei de Execução Penal (Lei nº Lei nº 7.210/1984)",
+          "topicos": []
         }
       ]
     },
