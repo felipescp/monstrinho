@@ -17075,6 +17075,11 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-tb-btn.ativa:hover { color:#fff; }
     #esquemas-modal .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
     #esquemas-modal .esq-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    /* Swatches de filtro por cor na toolbar — mesma bolinha do seletor do
+       modal de etiquetas, só que menor e sem o "criar nova" ao redor. */
+    #esquemas-modal .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #esquemas-modal .esq-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #esquemas-modal .esq-etq-swatch-filtro { width:16px; height:16px; }
 
     #esquemas-modal .esq-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
     #esquemas-modal .esq-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; align-content:start; padding:2px; }
@@ -17089,6 +17094,10 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-card-preview { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
     #esquemas-modal .esq-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #esquemas-modal .esq-btn-excluir:hover { color:var(--danger); }
+    /* Etiqueta colorida no CARD — lado esquerdo do cabeçalho
+       (.esq-card-tags-esq), extremo oposto do botão de excluir (à direita,
+       .esq-btn-excluir), conforme referência visual anexada pelo usuário. */
+    #esquemas-modal .esq-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
     #esquemas-modal .esq-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
     #esquemas-modal .esq-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
     #esquemas-modal .esq-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
@@ -17348,6 +17357,53 @@ window.triggerFileUpload = function(callback) {
     </div>
 </div>
 
+<!-- MODAL: Gerenciar/Aplicar Etiquetas — popup .mo/.mdl em cima de
+     #esquemas-modal, mesmo padrão de #modal-esquema-importar. Serve pros
+     dois casos (mesmo HTML, controlado por _modalEtiquetasModoAplicar):
+     gerenciar (criar/excluir etiquetas) quando aberto pelo botão da
+     toolbar normal, ou aplicar aos selecionados quando aberto a partir do
+     modo seleção. -->
+<div id="modal-esquema-etiquetas" class="mo">
+<style>
+    #modal-esquema-etiquetas { z-index: 10000; }
+    #modal-esquema-etiquetas .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-esquema-etiquetas .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-esquema-etiquetas .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-esquema-etiquetas .esq-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-esquema-etiquetas .esq-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-esquema-etiquetas .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-esquema-etiquetas .esq-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #modal-esquema-etiquetas .esq-btn-excluir:hover { color:var(--danger); }
+    #modal-esquema-etiquetas .esq-etq-pill { font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    #modal-esquema-etiquetas .esq-etq-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #modal-esquema-etiquetas #esq-etq-nome { flex:1; min-width:140px; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-esquema-etiquetas .esq-etq-paleta { display:flex; gap:6px; flex-wrap:wrap; }
+    #modal-esquema-etiquetas .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #modal-esquema-etiquetas .esq-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #modal-esquema-etiquetas .esq-etq-swatch-filtro { width:16px; height:16px; }
+    #modal-esquema-etiquetas .esq-etq-lista { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+    #modal-esquema-etiquetas .esq-etq-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; }
+    #modal-esquema-etiquetas .esq-etq-vazio { font-size:11px; color:var(--text-muted); font-style:italic; padding:10px 0; text-align:center; }
+</style>
+    <div class="mdl" style="max-width:440px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header" id="esq-etq-titulo">🏷️ Gerenciar Etiquetas</div>
+            <button onclick="window.ESQUEMAS_RUNTIME.fecharModalEtiquetas()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="esq-etq-remover-acao"></div>
+        <div id="esq-etq-lista" class="esq-etq-lista"></div>
+        <div style="border-top:1px dashed var(--border-color); padding-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Nova etiqueta</div>
+            <div class="esq-etq-form">
+                <input type="text" id="esq-etq-nome" placeholder="Nome da etiqueta">
+                <button class="fc-footer-btn primario" onclick="window.ESQUEMAS_RUNTIME.criarEtiqueta()">Criar</button>
+            </div>
+            <input type="hidden" id="esq-etq-cor-selecionada">
+            <div id="esq-etq-paleta-container"></div>
+        </div>
+    </div>
+</div>
+
 <script>
 // ── ESQUEMAS E TABELAS — modal (mesmo padrão de #caderno-modal), navegação
 // L1(matéria)>L2(divisão) idêntica a Materiais. Estrutura de dados:
@@ -17527,6 +17583,17 @@ window.ESQUEMAS_RUNTIME = {
     // "Já vi esse esquema" — flag pessoal simples, independente da
     // classificação por estrelas. Mesmo padrão de ocultos: {"<id>": true}.
     visualizados: {},
+    // Etiquetas coloridas (nomeáveis, paleta fixa de 10 cores) — duas
+    // estruturas separadas, mesmo espírito de ocultos/visualizados (mapas
+    // planos, não campos dentro do próprio esquema):
+    //   etiquetas: { "<idEtiqueta>": {id, nome, cor} } — definições, globais
+    //   pra todas as matérias/divisões (uma etiqueta "Cair na prova" serve
+    //   pra qualquer esquema, não é escopada por L1/L2).
+    //   etiquetaPorEsquema: { "<idEsquema>": "<idEtiqueta>" } — atribuição.
+    //   No máximo UMA etiqueta por esquema (o card mostra 1 pill só).
+    etiquetas: {},
+    etiquetaPorEsquema: {},
+    PALETA_ETIQUETAS: ['#eab308', '#f97316', '#b91c1c', '#db2777', '#9333ea', '#16a34a', '#14b8a6', '#2563eb', '#1e293b', '#6b7280'],
     STORAGE_KEY: 'tjpe_v1__esquemas_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
@@ -17538,6 +17605,8 @@ window.ESQUEMAS_RUNTIME = {
     _selecionados: {},
     _editandoId: null,
     _editandoChave: null,
+    _filtroCor: '', // '' = todas as cores; senão, um dos valores de PALETA_ETIQUETAS
+    _modalEtiquetasModoAplicar: false, // true = clicar numa etiqueta APLICA aos selecionados, em vez de só gerenciar
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
     // '1'|'2'|'3' (seções por estrela, mesmo padrão de
@@ -17567,6 +17636,8 @@ window.ESQUEMAS_RUNTIME = {
         this.excluidos = (bruto && typeof bruto.excluidos === 'object' && !Array.isArray(bruto.excluidos)) ? bruto.excluidos : {};
         this.revisaoEsquemas = (bruto && typeof bruto.revisaoEsquemas === 'object' && !Array.isArray(bruto.revisaoEsquemas)) ? bruto.revisaoEsquemas : {};
         this.visualizados = (bruto && typeof bruto.visualizados === 'object' && !Array.isArray(bruto.visualizados)) ? bruto.visualizados : {};
+        this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
+        this.etiquetaPorEsquema = (bruto && typeof bruto.etiquetaPorEsquema === 'object' && !Array.isArray(bruto.etiquetaPorEsquema)) ? bruto.etiquetaPorEsquema : {};
         this._bootstrapped = true;
     },
 
@@ -17576,7 +17647,7 @@ window.ESQUEMAS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema }));
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
         }
@@ -17713,6 +17784,12 @@ window.ESQUEMAS_RUNTIME = {
         if (this._ocultarOficiais) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
+        if (this._filtroCor) {
+            lista = lista.filter(function(par) {
+                let et = self.etiquetas[self.etiquetaPorEsquema[par.item.id]];
+                return et && et.cor === self._filtroCor;
+            });
+        }
         // Ordem decrescente por estrelas (3★ primeiro, depois 2★, 1★, e por
         // último não classificado) — pedido explícito: o usuário indica a
         // importância e a grade reflete isso na ordem, sem precisar abrir
@@ -17764,6 +17841,131 @@ window.ESQUEMAS_RUNTIME = {
         this._renderGradeCards();
     },
 
+    // ── ETIQUETAS (coloridas, nomeáveis, paleta fixa de 10 cores) ──
+    abrirModalEtiquetas: function(modoAplicar) {
+        this._modalEtiquetasModoAplicar = !!modoAplicar;
+        document.getElementById('esq-etq-nome').value = '';
+        document.getElementById('esq-etq-cor-selecionada').value = this.PALETA_ETIQUETAS[0];
+        this._renderModalEtiquetas();
+        document.getElementById('modal-esquema-etiquetas').classList.add('open');
+    },
+
+    fecharModalEtiquetas: function() {
+        document.getElementById('modal-esquema-etiquetas').classList.remove('open');
+    },
+
+    _renderModalEtiquetas: function() {
+        let self = this;
+        let tituloEl = document.getElementById('esq-etq-titulo');
+        let qtdSel = Object.keys(this._selecionados).length;
+        tituloEl.textContent = this._modalEtiquetasModoAplicar
+            ? '🏷️ Aplicar Etiqueta (' + qtdSel + ' selecionado' + (qtdSel === 1 ? '' : 's') + ')'
+            : '🏷️ Gerenciar Etiquetas';
+
+        let paletaHtml = '<div class="esq-etq-paleta">' + this.PALETA_ETIQUETAS.map(function(cor, i) {
+            return '<span class="esq-etq-swatch' + (i === 0 ? ' selecionada' : '') + '" data-cor="' + cor + '" style="background:' + cor + ';" onclick="window.ESQUEMAS_RUNTIME._selecionarCorNovaEtiqueta(this)"></span>';
+        }).join('') + '</div>';
+
+        let idsExistentes = Object.keys(this.etiquetas).sort(function(a, b) {
+            return (self.etiquetas[a].nome || '').localeCompare(self.etiquetas[b].nome || '');
+        });
+
+        let listaHtml = idsExistentes.length === 0
+            ? '<div class="esq-etq-vazio">Nenhuma etiqueta criada ainda.</div>'
+            : idsExistentes.map(function(id) {
+                let et = self.etiquetas[id];
+                let acaoHtml = self._modalEtiquetasModoAplicar
+                    ? '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarEtiquetaAosSelecionados(\'' + id + '\')">Aplicar</button>'
+                    : '<button class="esq-btn-excluir" onclick="window.ESQUEMAS_RUNTIME.excluirEtiqueta(\'' + id + '\')" title="Excluir etiqueta">🗑️</button>';
+                return '<div class="esq-etq-item">' +
+                    '<span class="esq-etq-pill" style="background:' + et.cor + ';">' + self._escapar(et.nome) + '</span>' +
+                    acaoHtml +
+                '</div>';
+            }).join('');
+
+        let removerHtml = this._modalEtiquetasModoAplicar
+            ? '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.removerEtiquetaDosSelecionados()">🚫 Remover etiqueta dos selecionados</button>'
+            : '';
+
+        document.getElementById('esq-etq-lista').innerHTML = listaHtml;
+        document.getElementById('esq-etq-remover-acao').innerHTML = removerHtml;
+        document.getElementById('esq-etq-paleta-container').innerHTML = paletaHtml;
+    },
+
+    _selecionarCorNovaEtiqueta: function(el) {
+        let container = el.parentElement;
+        Array.prototype.forEach.call(container.children, function(c) { c.classList.remove('selecionada'); });
+        el.classList.add('selecionada');
+        document.getElementById('esq-etq-cor-selecionada').value = el.getAttribute('data-cor');
+    },
+
+    criarEtiqueta: function() {
+        let nome = (document.getElementById('esq-etq-nome').value || '').trim();
+        let cor = document.getElementById('esq-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        if (!nome) { alert('Dê um nome pra etiqueta.'); return; }
+        let id = 'etq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        this.etiquetas[id] = { id: id, nome: nome, cor: cor };
+        this.salvar();
+        document.getElementById('esq-etq-nome').value = '';
+        this._renderModalEtiquetas();
+    },
+
+    excluirEtiqueta: function(id) {
+        if (!this.etiquetas[id]) return;
+        if (!confirm('Excluir a etiqueta "' + this.etiquetas[id].nome + '"? Ela será removida de todos os esquemas que a usam.')) return;
+        let self = this;
+        delete this.etiquetas[id];
+        Object.keys(this.etiquetaPorEsquema).forEach(function(idEsquema) {
+            if (self.etiquetaPorEsquema[idEsquema] === id) delete self.etiquetaPorEsquema[idEsquema];
+        });
+        if (this._filtroCor && !Object.keys(this.etiquetas).some(function(k) { return self.etiquetas[k].cor === self._filtroCor; })) {
+            this._filtroCor = ''; // a cor filtrada não pertence a nenhuma etiqueta restante
+        }
+        this.salvar();
+        this._renderModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    aplicarEtiquetaAosSelecionados: function(idEtiqueta) {
+        if (!this.etiquetas[idEtiqueta]) return;
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idEsquema) { self.etiquetaPorEsquema[idEsquema] = idEtiqueta; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    removerEtiquetaDosSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idEsquema) { delete self.etiquetaPorEsquema[idEsquema]; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    filtrarPorCor: function(cor) {
+        this._filtroCor = (this._filtroCor === cor) ? '' : cor; // clicar na cor já ativa limpa o filtro
+        this._renderGradeCards();
+    },
+
+    _renderFiltroCores: function() {
+        let self = this;
+        if (Object.keys(this.etiquetas).length === 0) return ''; // sem etiquetas criadas, sem filtro pra mostrar
+        let coresEmUso = [];
+        Object.keys(this.etiquetas).forEach(function(id) {
+            let cor = self.etiquetas[id].cor;
+            if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
+        });
+        let swatches = this.PALETA_ETIQUETAS.filter(function(c) { return coresEmUso.indexOf(c) !== -1; }).map(function(cor) {
+            return '<span class="esq-etq-swatch esq-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.ESQUEMAS_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
+        }).join('');
+        return '<div class="esq-tb-acoes-grupo"><span class="esq-toggle-ocultos">Cor:</span>' + swatches + '</div>';
+    },
+
     _renderToolbar: function() {
         let qtdSel = Object.keys(this._selecionados).length;
         let htmlAcoes;
@@ -17771,6 +17973,7 @@ window.ESQUEMAS_RUNTIME = {
             htmlAcoes =
                 '<div class="esq-tb-acoes-grupo">' +
                     '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalEtiquetas(true)">🏷️ Aplicar Etiqueta' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
@@ -17780,6 +17983,8 @@ window.ESQUEMAS_RUNTIME = {
                 '<div class="esq-tb-acoes-grupo">' +
                     '<label class="esq-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
                     '<button class="esq-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
+                    '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
+                    this._renderFiltroCores() +
                 '</div>' +
                 '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button>';
         }
@@ -17810,6 +18015,13 @@ window.ESQUEMAS_RUNTIME = {
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Esquema oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
+            let etiquetaDoItem = self.etiquetas[self.etiquetaPorEsquema[item.id]];
+            // Fica no lado ESQUERDO do cabeçalho (.esq-card-tags-esq), extremo
+            // oposto do botão de excluir (que fica à direita) — pedido
+            // explícito do usuário, com referência visual anexada.
+            let etiquetaHtml = etiquetaDoItem
+                ? '<span class="esq-etq-pill esq-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
+                : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="esq-btn-excluir" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.excluirEsquema(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir esquema">🗑️</button>'
                 : '';
@@ -17834,7 +18046,7 @@ window.ESQUEMAS_RUNTIME = {
 
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="esq-card-tags">' +
-                    '<span class="esq-card-tags-esq">' + checkboxHtml + seloOficial + seloOculto + '</span>' +
+                    '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
                     btnExcluirHtml +
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
