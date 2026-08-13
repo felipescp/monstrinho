@@ -17698,11 +17698,23 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
+    // Retorna true/false (sucesso ou falha) — chamadores que acabaram de
+    // criar/importar conteúdo (salvarEsquema, confirmarImportacao) usam
+    // isso pra avisar o usuário na hora, em vez de deixar a falha
+    // silenciosa (só console.warn) — que é exatamente o cenário reportado:
+    // "salvei mas não persistiu nem localmente nem no backup". O backup na
+    // nuvem lê direto do localStorage (SALINHA_BACKUP.construirPayload),
+    // então uma escrita local que falha (ex.: cota de armazenamento do
+    // navegador estourada — comum depois de uma importação em massa grande)
+    // também deixa o backup sem o conteúdo novo, mesmo sem nenhum erro
+    // visível até agora.
     salvar: function() {
         try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
+            return true;
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
+            return false;
         }
     },
 
@@ -18947,9 +18959,12 @@ window.ESQUEMAS_RUNTIME = {
                 // atribui esse campo (ver nota no topo do arquivo).
             });
         }
-        this.salvar();
+        let salvouComSucesso = this.salvar();
         this.fecharEditor();
         this._renderGradeCards();
+        if (!salvouComSucesso) {
+            alert('⚠️ O esquema NÃO foi salvo — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço, comum depois de importações grandes). Ele continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Tente liberar espaço (ex.: exportar e depois ocultar/excluir esquemas antigos, ou limpar dados de outros sites no navegador) e salvar de novo.');
+        }
     },
 
     excluirEsquema: function(chave, id) {
@@ -19067,10 +19082,14 @@ window.ESQUEMAS_RUNTIME = {
             });
         });
 
-        this.salvar();
+        let salvouComSucesso = this.salvar();
+        let totalImportado = this._resultadoPreVisualizado.totalFichas;
         this._resultadoPreVisualizado = null;
         this.fecharModalImportar();
         this._renderGradeCards();
+        if (!salvouComSucesso) {
+            alert('⚠️ As ' + totalImportado + ' ficha(s) foram processadas, mas NÃO foram salvas — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço, muito comum logo depois de uma importação grande como esta). Elas continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Libere espaço (exporte e ocultar/exclua esquemas antigos, ou limpe dados de outros sites no navegador) antes de importar de novo.');
+        }
     },
 
     // Exporta TODOS os esquemas PESSOAIS (de todas as matérias/divisões, não
