@@ -2385,6 +2385,13 @@ window.SALINHA_BACKUP = {
                     // dicionário achatado {"MATÉRIA > Divisão" → array de materiais}.
                     // Desce 1 nível e mescla os materiais por id — união, mantém a
                     // versão local em caso de mesmo id dos dois lados.
+                    // Materiais OFICIAIS (origem_oficial) nunca entram nem sobrevivem
+                    // no resultado — são conteúdo do repositório, sempre buscados de
+                    // novo via carregarMateriaisOficiais() a cada load; deixá-los
+                    // aqui só duplica conteúdo no localStorage/backup sem necessidade
+                    // (mesma causa raiz do QuotaExceededError já corrigido em
+                    // esquemas_runtime.esquemas — a limpeza abaixo também cura
+                    // progressivamente qualquer um que tenha sobrado de antes).
                     if (chaveSemPrefixoMerge === 'materiais_runtime' && subChave === 'materiais' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2399,7 +2406,7 @@ window.SALINHA_BACKUP = {
                                 objLocal[subChave][chaveL2] = [];
                             }
                             materiaisImportados.forEach(material => {
-                                if (!material || !material.id) return;
+                                if (!material || !material.id || material.origem_oficial) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
                                     return local && local.id === material.id;
                                 });
@@ -2410,6 +2417,16 @@ window.SALINHA_BACKUP = {
                                 }
                             });
                         });
+
+                        Object.keys(objLocal[subChave]).forEach(chaveL2 => {
+                            const antes = objLocal[subChave][chaveL2].length;
+                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
+                                return item && !item.origem_oficial;
+                            });
+                            if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
+                            if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                        });
+
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
@@ -2464,13 +2481,24 @@ window.SALINHA_BACKUP = {
                     // Mesmíssima forma/problema/solução de materiais_runtime.materiais:
                     // dicionário achatado {"MATÉRIA > Divisão" → array de esquemas}.
                     // Desce 1 nível e mescla por id — união, mantém a versão local em
-                    // caso de mesmo id dos dois lados (esquemas pessoais nunca têm
-                    // origem_oficial, então isso nunca colide com conteúdo oficial).
+                    // caso de mesmo id dos dois lados.
                     // Respeita a lápide de exclusões (dos dois lados): id excluído
                     // nunca entra e é removido se já existir local — sem isso,
                     // excluir um esquema pessoal nunca se propagava, ele voltava
                     // pra sempre no próximo merge (mesmo bug já corrigido em
                     // cronograma_runtime.planners).
+                    // Esquemas OFICIAIS (origem_oficial) NUNCA entram aqui nem
+                    // sobrevivem no resultado — ao contrário do que um comentário
+                    // anterior desta função assumia, eles CHEGAM a aparecer em
+                    // objLocal/objImportado (ESQUEMAS_RUNTIME.salvar() os incluía
+                    // antes de ser corrigido, e um backup antigo na nuvem pode
+                    // ainda tê-los). São conteúdo do repositório, sempre buscados
+                    // de novo via carregarEsquemasOficiais() a cada load — deixá-los
+                    // aqui só duplica HTML grande no localStorage a cada merge, sem
+                    // necessidade, e foi exatamente isso que estourou a cota
+                    // (QuotaExceededError ao persistir esquemas_runtime). A limpeza
+                    // abaixo remove qualquer um que tenha sobrado de antes desta
+                    // correção — auto-cura progressiva, sem precisar de migração.
                     if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'esquemas' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2491,7 +2519,7 @@ window.SALINHA_BACKUP = {
                                 objLocal[subChave][chaveL2] = [];
                             }
                             esquemasImportados.forEach(esquema => {
-                                if (!esquema || !esquema.id || idsExcluidos[esquema.id]) return;
+                                if (!esquema || !esquema.id || idsExcluidos[esquema.id] || esquema.origem_oficial) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
                                     return local && local.id === esquema.id;
                                 });
@@ -2503,16 +2531,14 @@ window.SALINHA_BACKUP = {
                             });
                         });
 
-                        if (Object.keys(idsExcluidos).length > 0) {
-                            Object.keys(objLocal[subChave]).forEach(chaveL2 => {
-                                const antes = objLocal[subChave][chaveL2].length;
-                                objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
-                                    return !(item && idsExcluidos[item.id]);
-                                });
-                                if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
-                                if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                        Object.keys(objLocal[subChave]).forEach(chaveL2 => {
+                            const antes = objLocal[subChave][chaveL2].length;
+                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
+                                return item && !idsExcluidos[item.id] && !item.origem_oficial;
                             });
-                        }
+                            if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
+                            if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                        });
 
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
@@ -2587,6 +2613,13 @@ window.SALINHA_BACKUP = {
                     // esquemas_runtime.esquemas: dicionário achatado {"MATÉRIA > Divisão" →
                     // array de fichas}. Desce 1 nível e mescla por id — união, mantém a
                     // versão local em caso de mesmo id dos dois lados.
+                    // Fichas OFICIAIS (origem_oficial) nunca entram nem sobrevivem no
+                    // resultado — são conteúdo do repositório, sempre buscadas de novo
+                    // via carregarJurisprudenciaOficial() a cada load; deixá-las aqui só
+                    // duplica conteúdo no localStorage/backup sem necessidade (mesma
+                    // causa raiz do QuotaExceededError já corrigido em
+                    // esquemas_runtime.esquemas — a limpeza abaixo também cura
+                    // progressivamente qualquer uma que tenha sobrado de antes).
                     if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'fichas' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -2601,7 +2634,7 @@ window.SALINHA_BACKUP = {
                                 objLocal[subChave][chaveL2] = [];
                             }
                             fichasImportadas.forEach(ficha => {
-                                if (!ficha || !ficha.id) return;
+                                if (!ficha || !ficha.id || ficha.origem_oficial) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
                                     return local && local.id === ficha.id;
                                 });
@@ -2612,6 +2645,16 @@ window.SALINHA_BACKUP = {
                                 }
                             });
                         });
+
+                        Object.keys(objLocal[subChave]).forEach(chaveL2 => {
+                            const antes = objLocal[subChave][chaveL2].length;
+                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
+                                return item && !item.origem_oficial;
+                            });
+                            if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
+                            if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                        });
+
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
@@ -3668,7 +3711,6 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
             body: JSON.stringify(corpoLimpeza)
         });
 
-        console.log('[GIST SYNC] Salvamento periódico silencioso concluído.');
     } catch (err) {
         console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
     } finally {
@@ -8169,7 +8211,6 @@ window.importarMaterialOficial = async function(url) {
         });
 
         runtime.salvar();
-        console.log('[MATERIAIS OFICIAIS] carregado:', url);
     } catch (e) {
         console.warn('[MATERIAIS OFICIAIS] erro:', e);
     }
@@ -8517,12 +8558,6 @@ window.importarRuntime = function(runtime){
 
    try {
 
-      console.log(
-   '[IMPORTAR RUNTIME]',
-   runtime
-);
-
-
 if(
    !window.validarRuntime(runtime)
 ){
@@ -8724,14 +8759,6 @@ window.SimuladosEngine = {
 
                             var htmlCard = window.buildCardSimulado(item, false, qtdQ, disciplinasHtml, m);
                             container.insertAdjacentHTML('beforeend', htmlCard);
-                            
-                            // INSTRUMENTAÇÃO 1: Log de Inserção Imediata
-                            console.log("[PATCH] Card inserido:", item.id);
-                            
-                            // INSTRUMENTAÇÃO 2: Verificação Temporal Isolação
-                            setTimeout(function() {
-                               console.log("[CHECK]", !!document.getElementById('card-' + item.id));
-                            }, 1000);
                         });
                     }
                     
@@ -9109,7 +9136,6 @@ window.ProvasEngine = {
                     }, 200);
                 }
             });
-            console.log('[MUTATION COLETIVA] Fluxo de exclusão de provas finalizado.');
         }
     }
 };
@@ -9134,7 +9160,6 @@ window.executarPatchVisualSimulados = function() {
             }, 200);
         }
     });
-    console.log('[SUCESSO] Patch visual de exclusão aplicado na coluna de Simulados.');
 };
 
 window.executarPatchVisualPlaylists = function() {
@@ -9160,7 +9185,6 @@ window.executarPatchVisualPlaylists = function() {
             el.remove();
         }, 200);
     });
-    console.log('[SUCESSO] Patch visual de exclusão aplicado na coluna de Playlists.');
 };
 
 var tempoInicioQuestao = null;
@@ -10064,14 +10088,12 @@ window.enxertarNovoCardFactual = function(item) {
             var scrollAtual = window.scrollY;
             cardExistente.outerHTML = htmlCard;
             window.scrollTo(0, scrollAtual);
-            console.log('[MUTATION FACTUAL] Card atualizado via Edição In-Place:', item.id);
         } catch (e) {
             console.error('[MUTATION FACTUAL] Erro no outerHTML swap da Edição:', e);
         }
     } else {
         try {
             container.insertAdjacentHTML('beforeend', htmlCard);
-            console.log('[MUTATION FACTUAL] Card injetado via Criação Avulsa:', item.id);
         } catch (e) {
             console.error('[MUTATION FACTUAL] Erro na injeção do novo card:', e);
         }
@@ -10429,15 +10451,21 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     // 4. Linha 2 — Estilo / Criada em / Resolvida em ("—" quando ausente)
                     // Ordem de prioridade: finalizadaEm (novo, exato) -> data do
                     // Planner via simulados_avulsos (antigo, mas sempre existiu) -> "—".
+                    // Guarda typeof: formatarDataBR() é definida num <script> mais
+                    // abaixo no arquivo — se o dashboard renderizar cedo demais no
+                    // boot (ex.: continuação de uma Promise que resolve antes desse
+                    // bloco ter rodado), a chamada direta quebrava com "is not a
+                    // function" (Uncaught TypeError). Mesmo padrão de guarda já
+                    // usado alguns milhares de linhas acima nesta função.
                     let resolvidaEmTxt = '—';
                     if (isResolvido) {
                         if (arquivoMorto[p.id].finalizadaEm) {
-                            resolvidaEmTxt = window.formatarDataBR(arquivoMorto[p.id].finalizadaEm);
+                            resolvidaEmTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(arquivoMorto[p.id].finalizadaEm) : '—';
                         } else if (mapaDataResolucaoPlanner[p.id]) {
-                            resolvidaEmTxt = window.encurtarAnoDataBR(mapaDataResolucaoPlanner[p.id]);
+                            resolvidaEmTxt = (typeof window.encurtarAnoDataBR === 'function') ? window.encurtarAnoDataBR(mapaDataResolucaoPlanner[p.id]) : '—';
                         }
                     }
-                    let criadaEmTxt = window.formatarDataBR(p.dataCriacao);
+                    let criadaEmTxt = (typeof window.formatarDataBR === 'function') ? window.formatarDataBR(p.dataCriacao) : '—';
                     let estiloTxt = p.estilo || '—';
                     let iaTxt = p.iaUtilizada || '—';
                     // Etiqueta discreta — mesmo padrão visual usado nos cards
@@ -10819,7 +10847,6 @@ justify-content:center; font-family: var(--font-display); font-weight: 800; curs
 
         // --- COLUNA CENTRAL: SIMULADOS INÉDITOS (PREMIUM) ---
 window.renderizarSimuladosIneditos = function() {
-    console.log('🧪 RENDERIZANDO VITRINE');
     let fBancaSI = document.getElementById('v-filtro-banca') ? document.getElementById('v-filtro-banca').value : '';
     let fCarreiraSI = document.getElementById('v-filtro-carreira') ? document.getElementById('v-filtro-carreira').value : '';
     let fAnoSI = document.getElementById('v-filtro-ano') ? document.getElementById('v-filtro-ano').value.trim() : '';
@@ -10877,13 +10904,6 @@ window.renderizarSimuladosIneditos = function() {
     let arquivoMorto = window.lerArquivoMorto();
 
     let htmlSimulados = ineditosFiltrados.map(p => {
-        console.log('🧪 CARD GERADO', {
-    id: p.id,
-    emAndamento: (window.SIMS || []).some(sim =>
-        sim?.cfg?.id === p.id &&
-        !sim?.dados?.fin?.finalizado
-    )
-});
         let isResolvido = !!arquivoMorto[p.id];
         let qtdQ = 0;
         let arrayDisciplinas = [];
@@ -12393,13 +12413,7 @@ function trocarTab(i, forceQuestao){
     if(forceQuestao || !s.stats){
         const modoRevisaoAtual = !!(forceQuestao && s.stats);
 MODO_REVISAO = modoRevisaoAtual;
-console.log({
-   aba: s.cfg.nome,
-   forceQuestao,
-   stats: !!s.stats,
-   modoRevisaoAtual
-});
-       tela('tela-simulado'); 
+       tela('tela-simulado');
         renderSim(); 
         renderNav();
         if(QA) setQA(QA); 
@@ -14562,8 +14576,6 @@ window.patchCardResolvido = function(id) {
         // 9. RESTAURAÇÃO DE SCROLL VISUAL: Neutralização de microjump
         window.scrollTo(0, scrollAtual);
 
-        console.log('[SUCESSO 2D.1] Patch longitudinal aplicado in-place para o ID:', id);
-
     } catch (e) {
         console.error('[ERRO CRÍTICO FASE 2D.1]', e);
     }
@@ -14675,7 +14687,6 @@ function exportarErrosTxt(idx){
 // =========================================================
 
 function refazerErradas(idx){
-    console.log('REFazerErradas DISPAROU');
   var h=HIST[idx];if(!h)return;
   var questoes=[];
   h.dados.blocos.forEach(function(b){
@@ -14699,9 +14710,7 @@ function refazerErradas(idx){
   var novoC=JSON.parse(JSON.stringify(h.cfg));
   novoC.nome=nomeNovo;
   var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
-console.log('ANTES PUSH', SIMS.length);
   SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
-console.log('DEPOIS PUSH', SIMS.length);
   var novoSI=SIMS.length-1;
   autoSave();
   trocarTab(novoSI);
@@ -15219,7 +15228,6 @@ window.excluirSimuladoIndividual = function(id) {
         setTimeout(function() {
             elCard.remove();
         }, 200);
-        console.log('[MUTATION INDIVIDUAL] Card expurgado visualmente:', id);
     } else {
         console.warn('[MUTATION INDIVIDUAL] O card', id, 'foi apagado do banco, mas não estava no DOM.');
     }
@@ -15426,15 +15434,6 @@ document.addEventListener('click', () => {
 
 window.abrirResultadoHistorico = function(id) {
 
-    console.log(
-        '[ABRIR_RESULTADO_HISTORICO]',
-        {
-            id,
-            simsAntes: SIMS.length,
-            siAntes: SI
-        }
-    );
-
     // 1. Limpa eventuais modais sobrepostos
     document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
 
@@ -15467,31 +15466,11 @@ window.abrirResultadoHistorico = function(id) {
 
 if (idxExistente >= 0) {
 
-    console.log(
-        '[RESULTADO_JA_ABERTO]',
-        idxExistente
-    );
-
     trocarTab(idxExistente);
 
 } else {
 
-    console.log(
-        '[PUSH_RESULTADO]',
-        {
-            simsAntes: SIMS.length,
-            id: id
-        }
-    );
-
     SIMS.push(snap);
-
-    console.log(
-        '[PUSH_RESULTADO_OK]',
-        {
-            simsDepois: SIMS.length
-        }
-    );
 
     trocarTab(SIMS.length - 1);
 }
@@ -19124,12 +19103,13 @@ window.ESQUEMAS_RUNTIME = {
         }
     },
 
-    // Exporta TODOS os esquemas PESSOAIS (de todas as matérias/divisões, não
-    // só a selecionada no momento) num único JSON, na mesma forma que
-    // importarEsquemaOficial() espera — pronto pra salvar em
-    // dados/esquemas/*.json e registrar em carregarEsquemasOficiais(). Itens
-    // já oficiais ficam de fora (já estão publicados, reexportar seria
-    // redundante).
+    // Exporta TODOS os esquemas VISÍVEIS (de todas as matérias/divisões, não
+    // só a selecionada no momento) num único JSON — pessoais E oficiais
+    // juntos. Só ficam de fora os OCULTOS (é assim que "ocultar" vira um
+    // "excluir" seguro: oculta o que não quer mais, exporta o resto). Útil
+    // pra usar o exportado como insumo externo (gerar questões, editar em
+    // massa) — não é mais só o fluxo de "publicar no repositório", que é o
+    // único caso em que reexportar oficiais seria redundante.
     exportarTudo: function() {
         this._garantirCarregado();
         let self = this;
@@ -19137,24 +19117,25 @@ window.ESQUEMAS_RUNTIME = {
         let total = 0;
 
         Object.keys(this.esquemas).sort().forEach(function(chave) {
-            let pessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial; });
-            if (pessoais.length > 0) {
-                resultado[chave] = pessoais;
-                total += pessoais.length;
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
             }
         });
 
         if (total === 0) {
-            alert('Nenhum esquema pessoal pra exportar (só existem esquemas oficiais aqui, ou nenhum esquema ainda).');
+            alert('Nenhum esquema pra exportar (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
             return;
         }
 
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-pessoais.json', 'application/json');
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-tudo.json', 'application/json');
     },
 
-    // Exporta os esquemas PESSOAIS só da DISCIPLINA (matéria/L1) selecionada
-    // na barra lateral — mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarTudo()
-    // (lá o botão equivalente chama-se "Exportar Disciplina").
+    // Exporta os esquemas VISÍVEIS (pessoais + oficiais, só não os ocultos)
+    // da DISCIPLINA (matéria/L1) selecionada na barra lateral — mesmo
+    // padrão de JURISPRUDENCIA_RUNTIME.exportarTudo() (lá o botão
+    // equivalente chama-se "Exportar Disciplina").
     exportarDisciplina: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
@@ -19165,38 +19146,39 @@ window.ESQUEMAS_RUNTIME = {
 
         Object.keys(this.esquemas).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let pessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial && !self.ocultos[e.id]; });
-            if (pessoais.length > 0) {
-                resultado[chave] = pessoais;
-                total += pessoais.length;
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
             }
         });
 
         if (total === 0) {
-            alert('Nenhum esquema pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem esquemas oficiais/ocultos aqui, ou nenhum esquema ainda).');
+            alert('Nenhum esquema pra exportar em "' + this._materiaSelecionada + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
             return;
         }
 
         downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
     },
 
-    // Exporta os esquemas PESSOAIS só do TÓPICO (divisão/L2) selecionado —
-    // granularidade que a Jurisprudência ainda não tem (lá só existe o nível
-    // de disciplina); construída aqui no mesmo padrão de exportarDisciplina.
+    // Exporta os esquemas VISÍVEIS (pessoais + oficiais, só não os ocultos)
+    // só do TÓPICO (divisão/L2) selecionado — granularidade que a
+    // Jurisprudência ainda não tem (lá só existe o nível de disciplina);
+    // construída aqui no mesmo padrão de exportarDisciplina.
     exportarTopico: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let pessoais = (this.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial && !self.ocultos[e.id]; });
+        let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
 
-        if (pessoais.length === 0) {
-            alert('Nenhum esquema pessoal pra exportar em "' + chave + '" (só existem esquemas oficiais/ocultos aqui, ou nenhum esquema ainda).');
+        if (visiveis.length === 0) {
+            alert('Nenhum esquema pra exportar em "' + chave + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
             return;
         }
 
         let resultado = {};
-        resultado[chave] = pessoais;
+        resultado[chave] = visiveis;
         downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
     },
 
@@ -19254,7 +19236,6 @@ window.importarEsquemaOficial = async function(url) {
         });
 
         runtime.salvar();
-        console.log('[ESQUEMAS OFICIAIS] carregado:', url);
     } catch (e) {
         console.warn('[ESQUEMAS OFICIAIS] erro:', e);
     }
@@ -20400,15 +20381,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     },
 
-    // Exporta as fichas PESSOAIS só da DISCIPLINA (matéria/L1) selecionada
-    // na barra lateral — não mais todas de uma vez. Mesma forma que
-    // importarJurisprudenciaOficial() espera — pronto pra salvar em
-    // dados/jurisprudencia/*.json, 1 arquivo por disciplina (mesmo padrão
-    // já usado em baterias/materiais/esquemas: cada exportação vira 1 linha
-    // nova em manifesto-jurisprudencia.txt). Fichas já oficiais ficam de
-    // fora. Fichas OCULTAS também ficam de fora — é assim que "ocultar" vira
-    // um "excluir" seguro pro admin: oculta o que não quer mais, exporta o
-    // resto, e o arquivo publicado já sai "higienizado".
+    // Exporta as fichas VISÍVEIS (pessoais + oficiais) da DISCIPLINA
+    // (matéria/L1) selecionada na barra lateral. Só ficam de fora as
+    // OCULTAS — é assim que "ocultar" vira um "excluir" seguro: oculta o
+    // que não quer mais, exporta o resto. Inclui oficiais de propósito: útil
+    // como insumo externo (gerar questões, editar/reclassificar em massa),
+    // não só pro fluxo de publicar no repositório (onde reexportar um
+    // oficial sem alterações seria redundante, mas isso cabe ao usuário
+    // decidir, não ao botão restringir).
     exportarTudo: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
@@ -20419,15 +20399,15 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         Object.keys(this.fichas).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let pessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial && !self.ocultos[f.id]; });
-            if (pessoais.length > 0) {
-                resultado[chave] = pessoais;
-                total += pessoais.length;
+            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
             }
         });
 
         if (total === 0) {
-            alert('Nenhuma ficha pessoal pra exportar em "' + this._materiaSelecionada + '" (só existem fichas oficiais/ocultas aqui, ou nenhuma ficha ainda).');
+            alert('Nenhuma ficha pra exportar em "' + this._materiaSelecionada + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
             return;
         }
 
@@ -20935,7 +20915,6 @@ window.importarJurisprudenciaOficial = async function(url) {
         });
 
         runtime.salvar();
-        console.log('[JURISPRUDÊNCIA OFICIAL] carregado:', url);
     } catch (e) {
         console.warn('[JURISPRUDÊNCIA OFICIAL] erro:', e);
     }
