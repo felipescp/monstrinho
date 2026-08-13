@@ -17109,10 +17109,15 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-btn-visualizado, #modal-esquemas-baralho .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
     #esquemas-modal .esq-btn-visualizado:hover, #modal-esquemas-baralho .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .esq-btn-visualizado.ativo, #modal-esquemas-baralho .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
-    #esquemas-modal .esq-estrelas { display:flex; gap:1px; flex-shrink:0; }
+    /* row-reverse + DOM gerado em ordem [3,2,1] (ver estrelasHtml) é o que
+       permite o hover em cascata só com CSS: passar o mouse na estrela N
+       acende ela e todas as ANTERIORES (1..N), não só a que está sob o
+       cursor. O seletor "~" pega os irmãos DEPOIS no DOM — como o DOM está
+       invertido, isso corresponde às estrelas ANTES visualmente. */
+    #esquemas-modal .esq-estrelas { display:flex; flex-direction:row-reverse; gap:1px; flex-shrink:0; }
     #esquemas-modal .esq-estrela { font-size:15px; line-height:1; border:none; background:none; cursor:pointer; color:#e2e8f0; padding:0 1px; }
     #esquemas-modal .esq-estrela.preenchida { color:#f59e0b; }
-    #esquemas-modal .esq-estrela:hover { color:#f59e0b; }
+    #esquemas-modal .esq-estrela:hover, #esquemas-modal .esq-estrela:hover ~ .esq-estrela { color:#f59e0b; }
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + 1/2/3 Estrelas —
        mesmo padrão visual de #jurisprudencia-modal/#section-flashcards. */
@@ -17140,7 +17145,10 @@ window.triggerFileUpload = function(callback) {
     /* Cartão de estudo (abas de estrela + popup Baralho) — compartilhado
        com #modal-esquemas-baralho via seletor combinado, mesmo padrão de
        #jurisprudencia-modal .jur-estudo-card. */
-    #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
+    /* Mesma cor de fundo do card normal da grade (var(--bg-white), quase
+       sempre branco) — um fundo cinza/azulado por trás do conteúdo do
+       esquema (tabelas, linhas coloridas) lavava o contraste dessas cores. */
+    #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
     #esquemas-modal .esq-estudo-titulo, #modal-esquemas-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #esquemas-modal .esq-estudo-texto, #modal-esquemas-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
 
@@ -17381,6 +17389,8 @@ window.triggerFileUpload = function(callback) {
     #modal-esquema-etiquetas .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
     #modal-esquema-etiquetas .esq-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
     #modal-esquema-etiquetas .esq-etq-swatch-filtro { width:16px; height:16px; }
+    #modal-esquema-etiquetas .esq-etq-swatch-add { background:var(--bg-white); border:1px dashed var(--app-primary); color:var(--app-primary); font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1; }
+    #modal-esquema-etiquetas .esq-etq-swatch-add:hover { background:#eef2ff; }
     #modal-esquema-etiquetas .esq-etq-lista { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
     #modal-esquema-etiquetas .esq-etq-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; }
     #modal-esquema-etiquetas .esq-etq-vazio { font-size:11px; color:var(--text-muted); font-style:italic; padding:10px 0; text-align:center; }
@@ -17399,7 +17409,40 @@ window.triggerFileUpload = function(callback) {
                 <button class="fc-footer-btn primario" onclick="window.ESQUEMAS_RUNTIME.criarEtiqueta()">Criar</button>
             </div>
             <input type="hidden" id="esq-etq-cor-selecionada">
+            <input type="color" id="esq-etq-cor-picker" style="position:absolute; width:0; height:0; opacity:0; pointer-events:none;" onchange="window.ESQUEMAS_RUNTIME.adicionarCorCustomizada(this.value)">
             <div id="esq-etq-paleta-container"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Transferir Esquemas Selecionados pra outra Disciplina > Tópico —
+     popup .mo/.mdl em cima de #esquemas-modal. -->
+<div id="modal-esquema-transferir" class="mo">
+<style>
+    #modal-esquema-transferir { z-index: 10000; }
+    #modal-esquema-transferir .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-esquema-transferir .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-esquema-transferir .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-esquema-transferir select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-esquema-transferir label { font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px; }
+</style>
+    <div class="mdl" style="max-width:400px; width:95%; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📦 Transferir Selecionados</div>
+            <button onclick="window.ESQUEMAS_RUNTIME.fecharModalTransferir()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">Move os esquemas marcados pra outra disciplina/tópico. A etiqueta (se houver) não é levada — ela é uma organização do tópico de origem.</div>
+        <div>
+            <label for="esq-transferir-materia">Disciplina de destino</label>
+            <select id="esq-transferir-materia" onchange="window.ESQUEMAS_RUNTIME.atualizarDivisoesTransferir()"></select>
+        </div>
+        <div>
+            <label for="esq-transferir-divisao">Tópico de destino</label>
+            <select id="esq-transferir-divisao"><option value="">Selecione a disciplina primeiro</option></select>
+        </div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharModalTransferir()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.ESQUEMAS_RUNTIME.confirmarTransferencia()">Transferir</button>
         </div>
     </div>
 </div>
@@ -17583,17 +17626,25 @@ window.ESQUEMAS_RUNTIME = {
     // "Já vi esse esquema" — flag pessoal simples, independente da
     // classificação por estrelas. Mesmo padrão de ocultos: {"<id>": true}.
     visualizados: {},
-    // Etiquetas coloridas (nomeáveis, paleta fixa de 10 cores) — duas
-    // estruturas separadas, mesmo espírito de ocultos/visualizados (mapas
-    // planos, não campos dentro do próprio esquema):
-    //   etiquetas: { "<idEtiqueta>": {id, nome, cor} } — definições, globais
-    //   pra todas as matérias/divisões (uma etiqueta "Cair na prova" serve
-    //   pra qualquer esquema, não é escopada por L1/L2).
-    //   etiquetaPorEsquema: { "<idEsquema>": "<idEtiqueta>" } — atribuição.
-    //   No máximo UMA etiqueta por esquema (o card mostra 1 pill só).
+    // Etiquetas coloridas (nomeáveis) — ESCOPADAS POR TÓPICO (chave L2), de
+    // propósito: um tópico como "Legislação Penal Especial" pode reunir
+    // dezenas de leis diferentes num monte só de cards, e a etiqueta serve
+    // pra organizar esse monte por dentro — não é uma taxonomia global do
+    // sistema nem por disciplina inteira.
+    //   etiquetas: { "<chaveL2>": { "<idEtiqueta>": {id, nome, cor} } } —
+    //   definições, uma "página" de etiquetas por tópico. A mesma etiqueta
+    //   "Cair na prova" criada em Direito Penal > X não aparece nem se
+    //   aplica em Direito Civil > Y — são espaços de nomes separados.
+    //   etiquetaPorEsquema: { "<idEsquema>": "<idEtiqueta>" } — atribuição,
+    //   plano/flat (ids de esquema já são únicos no sistema todo, sem risco
+    //   de colisão entre tópicos). No máximo UMA etiqueta por esquema.
     etiquetas: {},
     etiquetaPorEsquema: {},
     PALETA_ETIQUETAS: ['#eab308', '#f97316', '#b91c1c', '#db2777', '#9333ea', '#16a34a', '#14b8a6', '#2563eb', '#1e293b', '#6b7280'],
+    // Cores extras adicionadas pelo usuário via "+ Adicionar Cor" (color
+    // picker nativo) — além das 10 fixas, globais (a paleta de cores
+    // disponíveis é do sistema; só as ETIQUETAS em si são por tópico).
+    coresCustomizadas: [],
     STORAGE_KEY: 'tjpe_v1__esquemas_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
@@ -17605,7 +17656,8 @@ window.ESQUEMAS_RUNTIME = {
     _selecionados: {},
     _editandoId: null,
     _editandoChave: null,
-    _filtroCor: '', // '' = todas as cores; senão, um dos valores de PALETA_ETIQUETAS
+    _filtroCor: '', // '' = todas as cores; senão, uma cor da paleta (fixa ou customizada)
+    _mostrarFiltroCor: false, // toggle do botão "Classificar por Cor"
     _modalEtiquetasModoAplicar: false, // true = clicar numa etiqueta APLICA aos selecionados, em vez de só gerenciar
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -17638,6 +17690,7 @@ window.ESQUEMAS_RUNTIME = {
         this.visualizados = (bruto && typeof bruto.visualizados === 'object' && !Array.isArray(bruto.visualizados)) ? bruto.visualizados : {};
         this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
         this.etiquetaPorEsquema = (bruto && typeof bruto.etiquetaPorEsquema === 'object' && !Array.isArray(bruto.etiquetaPorEsquema)) ? bruto.etiquetaPorEsquema : {};
+        this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
         this._bootstrapped = true;
     },
 
@@ -17647,7 +17700,7 @@ window.ESQUEMAS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
         }
@@ -17786,7 +17839,8 @@ window.ESQUEMAS_RUNTIME = {
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
-                let et = self.etiquetas[self.etiquetaPorEsquema[par.item.id]];
+                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
+                let et = etiquetasDoTopico[self.etiquetaPorEsquema[par.item.id]];
                 return et && et.cor === self._filtroCor;
             });
         }
@@ -17841,8 +17895,26 @@ window.ESQUEMAS_RUNTIME = {
         this._renderGradeCards();
     },
 
-    // ── ETIQUETAS (coloridas, nomeáveis, paleta fixa de 10 cores) ──
+    // ── ETIQUETAS (coloridas, nomeáveis, ESCOPADAS POR TÓPICO) ──
+    // Chave do "espaço de etiquetas" atual — exige uma disciplina E um
+    // tópico ESPECÍFICO selecionados (não "Todas as divisões"), já que
+    // etiqueta é ferramenta de organização interna do tópico, não do
+    // sistema. Retorna null quando não há um tópico específico ativo.
+    _chaveEtiquetas: function() {
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) return null;
+        return this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+    },
+
+    _etiquetasDoTopicoAtual: function() {
+        let chave = this._chaveEtiquetas();
+        return chave ? (this.etiquetas[chave] || {}) : {};
+    },
+
     abrirModalEtiquetas: function(modoAplicar) {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de gerenciar etiquetas — elas organizam um tópico por dentro, não o sistema inteiro.');
+            return;
+        }
         this._modalEtiquetasModoAplicar = !!modoAplicar;
         document.getElementById('esq-etq-nome').value = '';
         document.getElementById('esq-etq-cor-selecionada').value = this.PALETA_ETIQUETAS[0];
@@ -17858,22 +17930,29 @@ window.ESQUEMAS_RUNTIME = {
         let self = this;
         let tituloEl = document.getElementById('esq-etq-titulo');
         let qtdSel = Object.keys(this._selecionados).length;
+        let chave = this._chaveEtiquetas();
+        let sufixoTopico = chave ? (' — ' + chave) : '';
         tituloEl.textContent = this._modalEtiquetasModoAplicar
-            ? '🏷️ Aplicar Etiqueta (' + qtdSel + ' selecionado' + (qtdSel === 1 ? '' : 's') + ')'
-            : '🏷️ Gerenciar Etiquetas';
+            ? '🏷️ Aplicar Etiqueta (' + qtdSel + ' selecionado' + (qtdSel === 1 ? '' : 's') + ')' + sufixoTopico
+            : '🏷️ Etiquetas do tópico' + sufixoTopico;
 
-        let paletaHtml = '<div class="esq-etq-paleta">' + this.PALETA_ETIQUETAS.map(function(cor, i) {
-            return '<span class="esq-etq-swatch' + (i === 0 ? ' selecionada' : '') + '" data-cor="' + cor + '" style="background:' + cor + ';" onclick="window.ESQUEMAS_RUNTIME._selecionarCorNovaEtiqueta(this)"></span>';
-        }).join('') + '</div>';
+        let corSelecionadaAtual = document.getElementById('esq-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        let paletaHtml = '<div class="esq-etq-paleta">' + todasAsCores.map(function(cor) {
+            return '<span class="esq-etq-swatch' + (cor === corSelecionadaAtual ? ' selecionada' : '') + '" data-cor="' + cor + '" style="background:' + cor + ';" onclick="window.ESQUEMAS_RUNTIME._selecionarCorNovaEtiqueta(this)"></span>';
+        }).join('') +
+            '<span class="esq-etq-swatch esq-etq-swatch-add" title="Adicionar cor" onclick="document.getElementById(\'esq-etq-cor-picker\').click()">+</span>' +
+        '</div>';
 
-        let idsExistentes = Object.keys(this.etiquetas).sort(function(a, b) {
-            return (self.etiquetas[a].nome || '').localeCompare(self.etiquetas[b].nome || '');
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        let idsExistentes = Object.keys(etiquetasTopico).sort(function(a, b) {
+            return (etiquetasTopico[a].nome || '').localeCompare(etiquetasTopico[b].nome || '');
         });
 
         let listaHtml = idsExistentes.length === 0
-            ? '<div class="esq-etq-vazio">Nenhuma etiqueta criada ainda.</div>'
+            ? '<div class="esq-etq-vazio">Nenhuma etiqueta criada ainda neste tópico.</div>'
             : idsExistentes.map(function(id) {
-                let et = self.etiquetas[id];
+                let et = etiquetasTopico[id];
                 let acaoHtml = self._modalEtiquetasModoAplicar
                     ? '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarEtiquetaAosSelecionados(\'' + id + '\')">Aplicar</button>'
                     : '<button class="esq-btn-excluir" onclick="window.ESQUEMAS_RUNTIME.excluirEtiqueta(\'' + id + '\')" title="Excluir etiqueta">🗑️</button>';
@@ -17899,27 +17978,49 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-etq-cor-selecionada').value = el.getAttribute('data-cor');
     },
 
+    // Disparado pelo <input type="color" id="esq-etq-cor-picker"> oculto,
+    // acionado pelo swatch "+" — permite ir além das 10 cores fixas.
+    // Guardada em coresCustomizadas (lista global de cores disponíveis,
+    // não por tópico — só as ETIQUETAS em si são escopadas por tópico).
+    adicionarCorCustomizada: function(cor) {
+        if (!cor) return;
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        if (todasAsCores.indexOf(cor) === -1) {
+            this.coresCustomizadas.push(cor);
+            this.salvar();
+        }
+        document.getElementById('esq-etq-cor-selecionada').value = cor;
+        this._renderModalEtiquetas();
+    },
+
     criarEtiqueta: function() {
+        let chave = this._chaveEtiquetas();
+        if (!chave) return;
         let nome = (document.getElementById('esq-etq-nome').value || '').trim();
         let cor = document.getElementById('esq-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
         if (!nome) { alert('Dê um nome pra etiqueta.'); return; }
         let id = 'etq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-        this.etiquetas[id] = { id: id, nome: nome, cor: cor };
+        if (!this.etiquetas[chave]) this.etiquetas[chave] = {};
+        this.etiquetas[chave][id] = { id: id, nome: nome, cor: cor };
         this.salvar();
         document.getElementById('esq-etq-nome').value = '';
         this._renderModalEtiquetas();
     },
 
     excluirEtiqueta: function(id) {
-        if (!this.etiquetas[id]) return;
-        if (!confirm('Excluir a etiqueta "' + this.etiquetas[id].nome + '"? Ela será removida de todos os esquemas que a usam.')) return;
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][id]) return;
+        if (!confirm('Excluir a etiqueta "' + this.etiquetas[chave][id].nome + '"? Ela será removida de todos os esquemas deste tópico que a usam.')) return;
         let self = this;
-        delete this.etiquetas[id];
+        let corRemovida = this.etiquetas[chave][id].cor;
+        delete this.etiquetas[chave][id];
+        if (Object.keys(this.etiquetas[chave]).length === 0) delete this.etiquetas[chave];
         Object.keys(this.etiquetaPorEsquema).forEach(function(idEsquema) {
             if (self.etiquetaPorEsquema[idEsquema] === id) delete self.etiquetaPorEsquema[idEsquema];
         });
-        if (this._filtroCor && !Object.keys(this.etiquetas).some(function(k) { return self.etiquetas[k].cor === self._filtroCor; })) {
-            this._filtroCor = ''; // a cor filtrada não pertence a nenhuma etiqueta restante
+        if (this._filtroCor === corRemovida) {
+            let aindaExiste = Object.keys(this.etiquetas[chave] || {}).some(function(k) { return self.etiquetas[chave][k].cor === corRemovida; });
+            if (!aindaExiste) this._filtroCor = ''; // a cor filtrada não pertence a mais nenhuma etiqueta deste tópico
         }
         this.salvar();
         this._renderModalEtiquetas();
@@ -17927,7 +18028,8 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     aplicarEtiquetaAosSelecionados: function(idEtiqueta) {
-        if (!this.etiquetas[idEtiqueta]) return;
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][idEtiqueta]) return;
         let self = this;
         Object.keys(this._selecionados).forEach(function(idEsquema) { self.etiquetaPorEsquema[idEsquema] = idEtiqueta; });
         this.salvar();
@@ -17952,18 +18054,116 @@ window.ESQUEMAS_RUNTIME = {
         this._renderGradeCards();
     },
 
+    // Botão "🎨 Classificar por Cor" — mostra/esconde a fileira de swatches
+    // com as cores em uso NESTE tópico (não em todo o sistema). Fechar o
+    // filtro também limpa a cor escolhida (sai do modo "filtrado").
+    toggleFiltroCor: function() {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de classificar por cor.');
+            return;
+        }
+        this._mostrarFiltroCor = !this._mostrarFiltroCor;
+        if (!this._mostrarFiltroCor) this._filtroCor = '';
+        this._renderGradeCards();
+    },
+
+    // Retorna só o CONTEÚDO (sem embrulho .esq-tb-acoes-grupo próprio) —
+    // é encaixado dentro do grupo de botões já existente na toolbar, logo
+    // depois de "🎨 Classificar por Cor".
     _renderFiltroCores: function() {
+        if (!this._mostrarFiltroCor) return '';
         let self = this;
-        if (Object.keys(this.etiquetas).length === 0) return ''; // sem etiquetas criadas, sem filtro pra mostrar
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        if (Object.keys(etiquetasTopico).length === 0) {
+            return '<span class="esq-toggle-ocultos">Nenhuma etiqueta neste tópico ainda.</span>';
+        }
         let coresEmUso = [];
-        Object.keys(this.etiquetas).forEach(function(id) {
-            let cor = self.etiquetas[id].cor;
+        Object.keys(etiquetasTopico).forEach(function(id) {
+            let cor = etiquetasTopico[id].cor;
             if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
         });
-        let swatches = this.PALETA_ETIQUETAS.filter(function(c) { return coresEmUso.indexOf(c) !== -1; }).map(function(cor) {
+        let swatches = coresEmUso.map(function(cor) {
             return '<span class="esq-etq-swatch esq-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.ESQUEMAS_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
         }).join('');
-        return '<div class="esq-tb-acoes-grupo"><span class="esq-toggle-ocultos">Cor:</span>' + swatches + '</div>';
+        return '<span class="esq-toggle-ocultos">Cor:</span>' + swatches;
+    },
+
+    // ── TRANSFERIR SELECIONADOS PRA OUTRA DISCIPLINA > TÓPICO ──
+    abrirModalTransferir: function() {
+        if (Object.keys(this._selecionados).length === 0) return;
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            alert('Taxonomia não carregada — não é possível listar disciplinas/tópicos de destino.');
+            return;
+        }
+        let selMateria = document.getElementById('esq-transferir-materia');
+        selMateria.innerHTML = '<option value="">Selecione...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            return '<option value="' + mat.nivel_1.replace(/"/g, '&quot;') + '">' + mat.nivel_1 + '</option>';
+        }).join('');
+        document.getElementById('esq-transferir-divisao').innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+        document.getElementById('modal-esquema-transferir').classList.add('open');
+    },
+
+    fecharModalTransferir: function() {
+        document.getElementById('modal-esquema-transferir').classList.remove('open');
+    },
+
+    atualizarDivisoesTransferir: function() {
+        let materia = document.getElementById('esq-transferir-materia').value;
+        let selDiv = document.getElementById('esq-transferir-divisao');
+        if (!materia) { selDiv.innerHTML = '<option value="">Selecione a disciplina primeiro</option>'; return; }
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            selDiv.innerHTML = '<option value="">Nenhum tópico cadastrado</option>';
+            return;
+        }
+        selDiv.innerHTML = '<option value="">Selecione...</option>' + mat.divisoes.map(function(div) {
+            return '<option value="' + div.nivel_2.replace(/"/g, '&quot;') + '">' + div.nivel_2 + '</option>';
+        }).join('');
+    },
+
+    // Move os esquemas selecionados pra outra chave ("MATÉRIA > Divisão"),
+    // não importa em qual chave cada um esteja atualmente. A etiqueta
+    // atribuída (se houver) é removida na transferência — ela pertence ao
+    // ESPAÇO DE ETIQUETAS do tópico de origem (ver _chaveEtiquetas) e não
+    // faz sentido automaticamente no tópico de destino.
+    confirmarTransferencia: function() {
+        let materia = document.getElementById('esq-transferir-materia').value;
+        let divisao = document.getElementById('esq-transferir-divisao').value;
+        if (!materia || !divisao) { alert('Escolha a disciplina e o tópico de destino.'); return; }
+        let chaveDestino = this._chaveL2(materia, divisao);
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        let itensMovidos = [];
+
+        Object.keys(this.esquemas).forEach(function(chaveOrigem) {
+            if (chaveOrigem === chaveDestino) return;
+            let restantes = [];
+            (self.esquemas[chaveOrigem] || []).forEach(function(item) {
+                if (idsSelecionados.indexOf(item.id) !== -1) {
+                    itensMovidos.push(item);
+                    if (self.etiquetaPorEsquema[item.id]) delete self.etiquetaPorEsquema[item.id];
+                } else {
+                    restantes.push(item);
+                }
+            });
+            if (restantes.length === 0) delete self.esquemas[chaveOrigem]; else self.esquemas[chaveOrigem] = restantes;
+        });
+
+        if (itensMovidos.length === 0) {
+            alert('Nenhum dos selecionados foi movido (já estavam no destino escolhido).');
+            return;
+        }
+
+        if (!Array.isArray(this.esquemas[chaveDestino])) this.esquemas[chaveDestino] = [];
+        this.esquemas[chaveDestino] = this.esquemas[chaveDestino].concat(itensMovidos);
+
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalTransferir();
+        this._renderColunaDivisoes(this._materiaSelecionada);
+        this._renderGradeCards();
+        alert(itensMovidos.length + ' esquema(s) transferido(s) para "' + chaveDestino + '".');
     },
 
     _renderToolbar: function() {
@@ -17974,6 +18174,7 @@ window.ESQUEMAS_RUNTIME = {
                 '<div class="esq-tb-acoes-grupo">' +
                     '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalEtiquetas(true)">🏷️ Aplicar Etiqueta' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
@@ -17984,6 +18185,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<label class="esq-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
                     '<button class="esq-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
                     '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
+                    '<button class="esq-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     this._renderFiltroCores() +
                 '</div>' +
                 '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button>';
@@ -17995,6 +18197,15 @@ window.ESQUEMAS_RUNTIME = {
         let col = document.getElementById('esq-col-cards');
         if (!col) return;
         let self = this;
+
+        // Preserva a posição de rolagem entre re-renders — sem isso, cada
+        // clique num checkbox durante a seleção múltipla substitui o
+        // innerHTML inteiro (recriando .esq-grade-scroll do zero), sempre
+        // voltando pro topo e exigindo um "vai e volta" pra marcar o
+        // próximo card. Vale pra qualquer re-render (marcar estrela,
+        // visualizado, filtro de cor), não só seleção.
+        let scrollAnterior = col.querySelector('.esq-grade-scroll');
+        let posicaoScroll = scrollAnterior ? scrollAnterior.scrollTop : 0;
 
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
@@ -18015,7 +18226,7 @@ window.ESQUEMAS_RUNTIME = {
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Esquema oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
-            let etiquetaDoItem = self.etiquetas[self.etiquetaPorEsquema[item.id]];
+            let etiquetaDoItem = (self.etiquetas[par.chave] || {})[self.etiquetaPorEsquema[item.id]];
             // Fica no lado ESQUERDO do cabeçalho (.esq-card-tags-esq), extremo
             // oposto do botão de excluir (que fica à direita) — pedido
             // explícito do usuário, com referência visual anexada.
@@ -18040,7 +18251,11 @@ window.ESQUEMAS_RUNTIME = {
             let visualizado = !!self.visualizados[item.id];
             let estrelasAtuais = self._estrelasAtuais(item.id);
             let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.ESQUEMAS_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
-            let estrelasHtml = '<span class="esq-estrelas">' + [1, 2, 3].map(function(n) {
+            // Ordem [3,2,1] no DOM (não [1,2,3]) — junto com flex-direction:
+            // row-reverse no CSS, é isso que faz o hover em cascata (ver
+            // comentário na regra .esq-estrela do <style>). Visualmente
+            // continua aparecendo 1, 2, 3 da esquerda pra direita.
+            let estrelasHtml = '<span class="esq-estrelas">' + [3, 2, 1].map(function(n) {
                 return '<button class="esq-estrela' + (estrelasAtuais >= n ? ' preenchida' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.marcarEstrelasCard(\'' + idEsc + '\', ' + n + ');" title="' + n + ' estrela' + (n > 1 ? 's' : '') + '">★</button>';
             }).join('') + '</span>';
 
@@ -18069,6 +18284,9 @@ window.ESQUEMAS_RUNTIME = {
         }
 
         col.innerHTML = this._renderToolbar() + '<div class="esq-grade-scroll">' + corpoHtml + '</div>';
+
+        let novoScroll = col.querySelector('.esq-grade-scroll');
+        if (novoScroll) novoScroll.scrollTop = posicaoScroll;
     },
 
     // ── CLASSIFICAÇÃO POR ESTRELAS (1 a 3) — mesmo toggle de
