@@ -7593,7 +7593,11 @@ window.MATERIAIS_RUNTIME = {
         // (ou o boot ainda não tinha terminado), re-renderiza depois.
         if (typeof window.carregarMateriaisOficiais === 'function') {
             window.carregarMateriaisOficiais().then(function() {
-                if (window.MATERIAIS_RUNTIME._materiaSelecionada) window.MATERIAIS_RUNTIME._renderGradeCards();
+                // render() (não só _renderGradeCards()) — mesma correção de
+                // ESQUEMAS_RUNTIME.init(): a contagem por disciplina na barra
+                // lateral só é montada uma vez, antes dos oficiais chegarem, e
+                // nunca era recalculada depois.
+                window.MATERIAIS_RUNTIME.render();
             });
         }
     },
@@ -17043,6 +17047,12 @@ window.triggerFileUpload = function(callback) {
      L2(divisão) idêntica a Materiais, dentro do corpo. -->
 <div id="esquemas-modal" class="analytics-modal">
 <style>
+    /* Cabeçalho ganhou muitos botões (Importar + 3 pares JSON/MD de
+       exportação) — a regra base (.analytics-modal-header) é de altura
+       fixa e sem quebra, o que faria os botões estourarem a largura do
+       modal. Sobrescrita só aqui, sem mexer nos outros modais que usam a
+       mesma classe base. */
+    #esquemas-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
     #esquemas-modal .analytics-modal-content { padding: 0; }
     #esquemas-modal .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #esquemas-modal .fc-col { overflow-y:auto; padding:10px; }
@@ -17159,9 +17169,12 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()" title="Importar esquemas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()" title="Exportar todos os esquemas PESSOAIS em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo</button>
-                <button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()" title="Exportar os esquemas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
-                <button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()" title="Exportar os esquemas PESSOAIS do tópico (divisão) selecionado em JSON — pronto pra publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tópico</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()" title="Exportar todos os esquemas visíveis (pessoais + oficiais, exceto ocultos) em JSON — pronto pra reimportar/publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tudo (.json)</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()" title="Exportar todos os esquemas visíveis (pessoais + oficiais, exceto ocultos) em Markdown — mais fácil de colar direto numa IA" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Tudo (.md)</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()" title="Exportar os esquemas visíveis (pessoais + oficiais, exceto ocultos) da disciplina selecionada em JSON — pronto pra reimportar/publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina (.json)</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()" title="Exportar os esquemas visíveis (pessoais + oficiais, exceto ocultos) da disciplina selecionada em Markdown — mais fácil de colar direto numa IA" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Disciplina (.md)</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()" title="Exportar os esquemas visíveis (pessoais + oficiais, exceto ocultos) do tópico (divisão) selecionado em JSON — pronto pra reimportar/publicar em dados/esquemas/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Tópico (.json)</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()" title="Exportar os esquemas visíveis (pessoais + oficiais, exceto ocultos) do tópico (divisão) selecionado em Markdown — mais fácil de colar direto numa IA" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Tópico (.md)</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">✕</button>
             </div>
         </div>
@@ -17735,7 +17748,17 @@ window.ESQUEMAS_RUNTIME = {
         this._atualizarContagensAbas();
         if (typeof window.carregarEsquemasOficiais === 'function') {
             window.carregarEsquemasOficiais().then(function() {
-                if (window.ESQUEMAS_RUNTIME._materiaSelecionada) window.ESQUEMAS_RUNTIME._renderGradeCards();
+                // render() (não só _renderGradeCards()) — os oficiais só chegam
+                // DEPOIS desta Promise resolver, mas a contagem de cada
+                // disciplina na barra lateral (fc-materia-count) é montada uma
+                // única vez, em render(), lá em cima — sem recalcular aqui, os
+                // números ficavam travados na contagem só-pessoal do momento em
+                // que o modal abriu (por isso pareciam "aleatórios": dependia de
+                // quão rápido a rede respondia em relação a quando o usuário
+                // olhava a tela). render() já re-seleciona a matéria ativa no
+                // final (this.selecionarMateria(this._materiaSelecionada, true)),
+                // o que cobre _renderColunaDivisoes() e _renderGradeCards() juntos.
+                window.ESQUEMAS_RUNTIME.render();
             });
         }
     },
@@ -19182,6 +19205,99 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
     },
 
+    // Gerador compartilhado de .md — recebe o mesmo formato {chave: [itens]}
+    // que os 3 exportarXxx() (JSON) já montam, só muda o formato de saída.
+    // O conteudoHtml de cada esquema (tabelas, listas) entra cru, sem
+    // conversão — Markdown aceita HTML embutido normalmente, e é exatamente
+    // isso que uma IA precisa pra ler a estrutura (tabela = tabela) sem
+    // exigir um conversor HTML→MD só pra isso.
+    _gerarMarkdownEsquemas: function(porChave, tituloDoc) {
+        let linhas = [];
+        if (tituloDoc) { linhas.push('# ' + tituloDoc, ''); }
+
+        Object.keys(porChave).sort().forEach(function(chave) {
+            linhas.push('## ' + chave, '');
+            porChave[chave].forEach(function(item) {
+                linhas.push('### ' + (item.titulo || '(sem título)'), '');
+                if (item.origem_oficial) linhas.push('_(Oficial)_', '');
+                linhas.push(item.conteudoHtml || '(sem conteúdo)', '');
+                linhas.push('---', '');
+            });
+        });
+
+        return linhas.join('\n');
+    },
+
+    // Mesmo escopo/filtro de exportarTudo() (JSON) — só troca o formato de
+    // saída. Dois botões lado a lado, mesma seleção de conteúdo.
+    exportarTudoMarkdown: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pra exportar (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(this._gerarMarkdownEsquemas(resultado, 'Esquemas — Tudo'), 'esquemas-tudo.md', 'text/markdown');
+    },
+
+    // Mesmo escopo/filtro de exportarDisciplina() (JSON) — só troca o
+    // formato de saída.
+    exportarDisciplinaMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pra exportar em "' + this._materiaSelecionada + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(this._gerarMarkdownEsquemas(resultado, this._materiaSelecionada), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Mesmo escopo/filtro de exportarTopico() (JSON) — só troca o formato
+    // de saída.
+    exportarTopicoMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+
+        if (visiveis.length === 0) {
+            alert('Nenhum esquema pra exportar em "' + chave + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        let resultado = {};
+        resultado[chave] = visiveis;
+        downloadArquivo(this._gerarMarkdownEsquemas(resultado, chave), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.md', 'text/markdown');
+    },
+
     // Slug de nome de arquivo — mesmo algoritmo de JURISPRUDENCIA_RUNTIME._slugTexto.
     _slugTexto: function(texto) {
         return (texto || '').toLowerCase()
@@ -19270,6 +19386,10 @@ window.carregarEsquemasOficiais = async function() {
      navegação L1(matéria)>L2(divisão) idêntica. -->
 <div id="jurisprudencia-modal" class="analytics-modal">
 <style>
+    /* Mesma sobrescrita de #esquemas-modal — cabeçalho com mais botões do
+       que a altura fixa da classe base (.analytics-modal-header) comporta
+       numa linha só. Escopado só aqui, não afeta outros modais. */
+    #jurisprudencia-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
     #jurisprudencia-modal .analytics-modal-content { padding: 0; }
     #jurisprudencia-modal .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #jurisprudencia-modal .fc-col { overflow-y:auto; padding:10px; }
@@ -19392,8 +19512,9 @@ window.carregarEsquemasOficiais = async function() {
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar as fichas PESSOAIS da disciplina selecionada em JSON — pronto pra publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas visíveis (pessoais + oficiais, respeitando os filtros atuais) em Markdown, agrupadas por tópico — pronto pra virar documento de revisão ou gerar questões" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar .md</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar as fichas visíveis (pessoais + oficiais, exceto ocultas) da disciplina selecionada em JSON — pronto pra reimportar/publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina (.json)</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()" title="Exportar as fichas visíveis (pessoais + oficiais, exceto ocultas) da disciplina selecionada em Markdown — mais fácil de colar direto numa IA" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Disciplina (.md)</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
@@ -19855,7 +19976,11 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._atualizarContagensAbas();
         if (typeof window.carregarJurisprudenciaOficial === 'function') {
             window.carregarJurisprudenciaOficial().then(function() {
-                if (window.JURISPRUDENCIA_RUNTIME._materiaSelecionada) window.JURISPRUDENCIA_RUNTIME._renderGradeCards();
+                // render() (não só _renderGradeCards()) — mesma correção de
+                // ESQUEMAS_RUNTIME.init()/MATERIAIS_RUNTIME.init(): a contagem
+                // por disciplina na barra lateral só é montada uma vez, antes
+                // das fichas oficiais chegarem, e nunca era recalculada depois.
+                window.JURISPRUDENCIA_RUNTIME.render();
             });
         }
     },
@@ -20412,6 +20537,28 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+    },
+
+    // Mesmo escopo de exportarTudo() (disciplina selecionada, pessoais +
+    // oficiais, exceto ocultas) — só troca o formato de saída pra Markdown,
+    // reaproveitando _gerarMarkdownFichas (que já filtra ocultos sozinho).
+    exportarDisciplinaMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let fichas = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            fichas = fichas.concat(this.fichas[chave] || []);
+        }, this);
+
+        let md = this._gerarMarkdownFichas(fichas, this._materiaSelecionada);
+        if (!md) {
+            alert('Nenhuma ficha pra exportar em "' + this._materiaSelecionada + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
     },
 
     // ── EXPORTAÇÃO EM MARKDOWN (documento de revisão / insumo pra gerar
