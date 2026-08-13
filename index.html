@@ -18884,9 +18884,35 @@ window.ESQUEMAS_RUNTIME = {
     _colarComMarkdown: function(event) {
         let dt = event.clipboardData || window.clipboardData;
         if (!dt) return; // sem clipboardData -> deixa o navegador cuidar
+
+        // Veto de imagens: nunca embutir imagem no conteúdo. Um print
+        // colado vira dado embutido (base64) de centenas de KB a poucos MB
+        // de texto — persiste local e replica no backup na nuvem a cada
+        // salvamento, sendo hoje o maior risco real de estourar a cota do
+        // localStorage (ver decisão de vetar).
+        let temArquivoImagem = dt.files && Array.prototype.some.call(dt.files, function(f) { return f.type.indexOf('image/') === 0; });
+        if (!temArquivoImagem && dt.items) {
+            temArquivoImagem = Array.prototype.some.call(dt.items, function(it) { return it.kind === 'file' && it.type.indexOf('image/') === 0; });
+        }
+        if (temArquivoImagem) {
+            event.preventDefault();
+            alert('Colar imagens aqui não é permitido — elas inflam demais o armazenamento (um print pode virar vários MB de texto embutido). Salve a imagem à parte ou transcreva o conteúdo em texto.');
+            return;
+        }
+
         let html = dt.getData('text/html');
         let texto = dt.getData('text/plain');
-        if (html && html.trim()) return; // origem já mandou HTML — comportamento nativo, intocado
+
+        if (html && html.trim()) {
+            if (/<img[^>]*>/i.test(html)) {
+                event.preventDefault();
+                let semImagens = html.replace(/<img[^>]*>/gi, '');
+                document.execCommand('insertHTML', false, semImagens);
+                alert('O conteúdo colado continha imagens — elas foram removidas automaticamente (colar imagens não é permitido aqui).');
+            }
+            return; // origem já mandou HTML — comportamento nativo, intocado (exceto <img>, já tratado acima)
+        }
+
         if (!texto) return;
         event.preventDefault();
         document.execCommand('insertHTML', false, window.ESQUEMAS_RUNTIME._markdownParaHtml(texto));
