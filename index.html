@@ -7519,11 +7519,27 @@ window.MATERIAIS_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
+    // Materiais OFICIAIS nunca são gravados aqui — importarMaterialOficial()
+    // já os funde de novo em this.materiais a cada carregamento (buscados
+    // do repositório, dados/materiais/*.json), então persisti-los aqui só
+    // duplicaria esse conteúdo no localStorage E no backup na nuvem (que
+    // lê o valor salvo aqui direto) sem necessidade — foi exatamente isso
+    // que estourou a cota de armazenamento em Esquemas. Só os campos
+    // PESSOAIS sobre um material oficial (ex.: ocultos) continuam salvos,
+    // já que vivem à parte, num mapa por id, não dentro do próprio item.
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ materiais: this.materiais, ocultos: this.ocultos }));
+            let self = this;
+            let materiaisPessoais = {};
+            Object.keys(this.materiais).forEach(function(chave) {
+                let apenasPessoais = (self.materiais[chave] || []).filter(function(m) { return !m.origem_oficial; });
+                if (apenasPessoais.length > 0) materiaisPessoais[chave] = apenasPessoais;
+            });
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ materiais: materiaisPessoais, ocultos: this.ocultos }));
+            return true;
         } catch (e) {
             console.warn('[MATERIAIS] Falha ao salvar:', e);
+            return false;
         }
     },
 
@@ -17708,9 +17724,25 @@ window.ESQUEMAS_RUNTIME = {
     // navegador estourada — comum depois de uma importação em massa grande)
     // também deixa o backup sem o conteúdo novo, mesmo sem nenhum erro
     // visível até agora.
+    //
+    // Esquemas OFICIAIS nunca são gravados aqui — importarEsquemaOficial()
+    // já os funde de novo em this.esquemas a cada carregamento (buscados
+    // do repositório, dados/esquemas/*.json), então persisti-los aqui só
+    // duplicaria esse conteúdo (às vezes grande, cheio de tabelas HTML) no
+    // localStorage E no backup na nuvem sem necessidade nenhuma — foi
+    // exatamente isso que estourou a cota (confirmado no console: "[MERGE]
+    // Falha ao persistir tjpe_v1__esquemas_runtime... QuotaExceededError").
+    // Só os campos PESSOAIS sobre um esquema oficial (estrelas, visualizado,
+    // etiqueta, oculto) continuam salvos — vivem à parte, em mapas por id.
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: this.esquemas, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
+            let self = this;
+            let esquemasPessoais = {};
+            Object.keys(this.esquemas).forEach(function(chave) {
+                let apenasPessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial; });
+                if (apenasPessoais.length > 0) esquemasPessoais[chave] = apenasPessoais;
+            });
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: esquemasPessoais, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
@@ -19811,11 +19843,27 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
+    // Fichas OFICIAIS nunca são gravadas aqui — importarJurisprudenciaOficial()
+    // já as funde de novo em this.fichas a cada carregamento (buscadas do
+    // repositório, dados/jurisprudencia/*.json), então persisti-las aqui só
+    // duplicaria esse conteúdo no localStorage E no backup na nuvem (que lê
+    // o valor salvo aqui direto) sem necessidade — mesmo problema que
+    // estourou a cota de armazenamento em Esquemas. Só os campos PESSOAIS
+    // sobre uma ficha oficial (classificação, oculto) continuam salvos —
+    // vivem à parte, em mapas por id, não dentro da própria ficha.
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: this.fichas, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
+            let self = this;
+            let fichasPessoais = {};
+            Object.keys(this.fichas).forEach(function(chave) {
+                let apenasPessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
+                if (apenasPessoais.length > 0) fichasPessoais[chave] = apenasPessoais;
+            });
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
+            return true;
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
+            return false;
         }
     },
 
