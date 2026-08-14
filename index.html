@@ -1864,6 +1864,21 @@ window.__arquivoMortoPromise__ = (async function() {
 // (pode aguardar). Por isso não precisa de cache síncrono: lerSessaoAtiva
 // é assíncrona de ponta a ponta, sempre. Mesma regra de nunca apagar a
 // origem antes de confirmar, e mesmo fallback pra modo só-memória.
+//
+// REDUNDÂNCIA DELIBERADA (localStorage como rede de segurança do
+// IndexedDB, não só like durante a migração): um caso real de perda de
+// progresso foi rastreado a este cenário — IndexedDB falha em abrir num
+// boot específico (ex.: logo após um desligamento abrupto do computador,
+// antes do navegador terminar sua própria recuperação), e como a cópia em
+// localStorage já tinha sido apagada por __migrarSessaoAtivaSeNecessario__
+// (a migração antiga não deixava rastro nenhum depois de confirmada),
+// lerSessaoAtiva() não tinha pra onde cair e devolvia null — a sessão
+// parecia "zerada" mesmo com os dados intactos dentro do IndexedDB.
+// A partir de agora, salvarSessaoAtiva() sempre grava as DUAS cópias
+// (IndexedDB continua sendo a fonte primária/mais rápida de ler; o
+// localStorage é só o seguro), e a migração NUNCA apaga
+// CHAVE_SESSAO_ATIVA — só a chave verdadeiramente legada, sem o prefixo
+// tjpe_v1__, que nada mais lê.
 window.CHAVE_SESSAO_ATIVA = 'tjpe_v1__clube_simulado_auto';
 window.CHAVE_SESSAO_ATIVA_LEGADA = 'clube_simulado_auto';
 window.CHAVE_SESSAO_ATIVA_IDB = 'clube_simulado_auto';
@@ -1872,7 +1887,9 @@ window.lerSessaoAtiva = async function() {
     let valor = await idbGet(window.CHAVE_SESSAO_ATIVA_IDB);
     if (valor !== undefined) return valor;
 
-    // Ainda não migrado — lê a origem atual sem apagar nada
+    // IndexedDB não respondeu (indisponível nesta sessão/aba, ou
+    // transitoriamente falhou em abrir neste boot) — cai pra rede de
+    // segurança do localStorage em vez de considerar "sem sessão".
     let bruto = localStorage.getItem(window.CHAVE_SESSAO_ATIVA);
     if (bruto === null) bruto = localStorage.getItem(window.CHAVE_SESSAO_ATIVA_LEGADA);
     if (!bruto) return null;
@@ -1880,7 +1897,18 @@ window.lerSessaoAtiva = async function() {
 };
 
 window.salvarSessaoAtiva = function(dados) {
-    if (!window._idbDisponivel) return Promise.resolve(false); // só memória, nunca reescreve localStorage
+    // Cópia redundante no localStorage, sempre — best-effort, nunca deve
+    // impedir a gravação no IndexedDB (fonte primária) se falhar por
+    // qualquer motivo (ex.: cota do dispositivo). Ver comentário acima:
+    // sem isto, uma falha transitória do IndexedDB num boot futuro perde
+    // a sessão inteira, mesmo com os dados intactos ali dentro.
+    try {
+        localStorage.setItem(window.CHAVE_SESSAO_ATIVA, JSON.stringify(dados));
+    } catch (e) {
+        console.warn('[SESSÃO ATIVA] Falha ao gravar a cópia de segurança no localStorage:', e);
+    }
+
+    if (!window._idbDisponivel) return Promise.resolve(false); // sem IndexedDB nesta sessão — a cópia acima é a única persistência real
     return idbSet(window.CHAVE_SESSAO_ATIVA_IDB, dados).then(function(ok) {
         if (!ok) console.warn('[SESSÃO ATIVA] Falha ao persistir no IndexedDB.');
         return ok;
@@ -1888,15 +1916,16 @@ window.salvarSessaoAtiva = function(dados) {
 };
 
 // Migração oportunista: da primeira vez que uma leitura encontrar a sessão
-// ainda na origem antiga (localStorage), tenta gravar no IndexedDB e só
-// apaga a origem depois de confirmar — nunca antes.
+// ainda na origem antiga (localStorage), tenta gravar no IndexedDB — a
+// cópia em CHAVE_SESSAO_ATIVA NÃO é mais apagada depois (ver redundância
+// deliberada acima); só a chave realmente legada (sem o prefixo
+// tjpe_v1__, de antes da migração de namespace) é removida.
 window.__migrarSessaoAtivaSeNecessario__ = async function(dadosLidos) {
     if (!dadosLidos || !window._idbDisponivel) return;
     const jaEstavaNoIdb = (await idbGet(window.CHAVE_SESSAO_ATIVA_IDB)) !== undefined;
     if (jaEstavaNoIdb) return;
     const ok = await window.salvarSessaoAtiva(dadosLidos);
     if (ok) {
-        try { localStorage.removeItem(window.CHAVE_SESSAO_ATIVA); } catch (e) {}
         try { localStorage.removeItem(window.CHAVE_SESSAO_ATIVA_LEGADA); } catch (e) {}
     }
 };
