@@ -42,6 +42,14 @@ Antes de modificar código, o agente deve:
 
 Não inferir arquitetura apenas a partir do nome de um arquivo ou função.
 
+A profundidade da investigação deve ser proporcional ao risco e ao escopo da tarefa.
+
+Correções simples e localizadas não exigem auditoria arquitetural ampla quando suas
+dependências e efeitos estão claramente delimitados.
+
+Não usar este documento como justificativa para adiar indefinidamente uma alteração
+simples e bem definida.
+
 ---
 
 # 3. NATUREZA DO PROJETO
@@ -505,6 +513,33 @@ Cada subsistema pode possuir:
 Antes de modificar um runtime, identificar seu contrato de persistência
 e seus consumidores.
 
+## Bootstrap lazy dos runtimes
+
+Alguns runtimes utilizam bootstrap lazy por meio de `_garantirCarregado()`.
+
+Ao realizar testes, scripts de diagnóstico ou manipulações programáticas
+de um runtime, NÃO presumir que atribuir diretamente uma propriedade do
+runtime seja suficiente.
+
+Exemplo conceitual:
+
+    rt.esquemas = {...}
+
+Se o runtime ainda considerar `_bootstrapped === false`, uma chamada
+posterior a `_garantirCarregado()` poderá executar `carregar()` e
+substituir silenciosamente o estado atribuído manualmente.
+
+Antes de manipular diretamente o estado de um runtime:
+
+1. verificar `_bootstrapped`;
+2. verificar `_garantirCarregado()`;
+3. verificar `carregar()`;
+4. compreender a origem efetiva do estado;
+5. somente então executar o teste ou alteração.
+
+Essa regra é especialmente importante para scripts de diagnóstico e
+testes executados fora do fluxo normal da interface.
+
 ---
 
 # 16. IMPORTAÇÃO E EXPORTAÇÃO
@@ -622,7 +657,16 @@ Não fazer commit ou push automaticamente, salvo se o usuário solicitar.
 
 ---
 
-# 20. ALTERAÇÕES EM index.html
+# 20. ALTERAÇÕES EM ARQUIVOS HTML COM JAVASCRIPT INLINE
+
+O projeto utiliza JavaScript inline em seus principais arquivos HTML,
+especialmente:
+
+- `index.html`;
+- `dashboard.html`;
+- `planner.HTML`.
+
+As mesmas cautelas de validação aplicam-se aos três.
 
 `index.html` é um arquivo monolítico grande, com aproximadamente 21 mil
 linhas e múltiplos blocos de script.
