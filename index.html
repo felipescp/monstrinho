@@ -4155,7 +4155,7 @@ if(ri) {
        caber numa linha só; 420px dá margem de sobra pra variação de
        renderização de fonte entre navegadores/SOs. Em 340px (largura
        anterior), "Materiais" quebrava pra 2ª linha. */
-    #crono-relacionados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:420px; max-height:70vh; overflow:hidden; }
+    #crono-relacionados-menu { position:fixed; display:none; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:9999; width:540px; max-width:95vw; max-height:70vh; overflow:hidden; }
     #crono-relacionados-menu .crono-sim-titulo { font-family:var(--font-display); font-size:11px; font-weight:800; color:var(--text-main); padding:12px 12px 6px 12px; flex-shrink:0; }
     #crono-relacionados-menu .crono-rel-tabs { display:flex; flex-wrap:wrap; gap:3px; padding:0 10px 8px 10px; flex-shrink:0; }
     #crono-relacionados-menu .crono-rel-tab { padding:4px 7px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-muted); cursor:pointer; white-space:nowrap; }
@@ -5105,9 +5105,11 @@ window.CRONOGRAMA_RUNTIME = {
 
     // Aba "⚖️ Jurisprudência" — fichas dessa L2 (JURISPRUDENCIA_RUNTIME.
     // fichasDoL2, novo método, mesmo formato de chave "MATÉRIA > Divisão"
-    // usado nos outros 3 tipos indexados por dict). #jurisprudencia-modal
-    // é um modal de topo (fora de qualquer .tela), então NÃO precisa de
-    // tela() antes — abre por cima de qualquer seção ativa.
+    // usado nos outros 3 tipos indexados por dict). O clique abre o
+    // BARALHO do tópico (visão de estudo, 1 ficha por vez), já na posição
+    // da ficha clicada — não o modal de navegação completo (essa é a
+    // visualização certa aqui, ao contrário de Materiais, cujo destino é
+    // realmente abrir um PDF específico).
     _renderAbaJurisprudencia: function(item) {
         let loc = this._resolverL2doItem(item);
         if (!loc || !window.JURISPRUDENCIA_RUNTIME) {
@@ -5118,10 +5120,10 @@ window.CRONOGRAMA_RUNTIME = {
             return '<div class="crono-sim-vazio">Nenhuma ficha de jurisprudência para essa matéria/divisão.</div>';
         }
         let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
-        let chaveL2 = loc.materia + ' > ' + loc.divisao;
+        let materiaEsc = loc.materia.replace(/'/g, "\\'");
+        let divisaoEsc = loc.divisao.replace(/'/g, "\\'");
         return '<div class="crono-sim-lista" style="max-height:220px;">' + fichas.map(function(f) {
-            let chaveEsc = chaveL2.replace(/'/g, "\\'");
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirJurisprudenciaModal(); window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + chaveEsc + '\', \'' + f.id + '\');" title="' + escaparAspas(f.titulo) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDoTopico(\'' + materiaEsc + '\', \'' + divisaoEsc + '\', \'' + f.id + '\');" title="' + escaparAspas(f.titulo) + '">' +
                 '<span class="crono-sim-item-nome">⚖️ ' + (f.titulo || '(sem título)') + '</span>' +
             '</div>';
         }).join('') + '</div>';
@@ -5167,10 +5169,9 @@ window.CRONOGRAMA_RUNTIME = {
 
     // Aba "📄 Esquemas" — esquemas/tabelas dessa L2 (ESQUEMAS_RUNTIME.
     // esquemasDoL2, mesmo formato de chave "MATÉRIA > Divisão" dos outros
-    // 2 tipos indexados por dict). #esquemas-modal é um modal de topo
-    // (fora de qualquer .tela) — abrirEsquemasModal() antes só garante que
-    // ele esteja aberto por baixo do editor, mesmo padrão de
-    // abrirJurisprudenciaModal()+abrirVer() na aba Jurisprudência.
+    // 2 tipos indexados por dict). Mesma decisão da aba Jurisprudência: o
+    // clique abre o BARALHO do tópico (visão de estudo), já na posição do
+    // esquema clicado — não o editor.
     _renderAbaEsquemas: function(item) {
         let loc = this._resolverL2doItem(item);
         if (!loc || !window.ESQUEMAS_RUNTIME) {
@@ -5181,10 +5182,10 @@ window.CRONOGRAMA_RUNTIME = {
             return '<div class="crono-sim-vazio">Nenhum esquema/tabela para essa matéria/divisão.</div>';
         }
         let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
-        let chaveL2 = loc.materia + ' > ' + loc.divisao;
+        let materiaEsc = loc.materia.replace(/'/g, "\\'");
+        let divisaoEsc = loc.divisao.replace(/'/g, "\\'");
         return '<div class="crono-sim-lista" style="max-height:220px;">' + esquemas.map(function(e) {
-            let chaveEsc = chaveL2.replace(/'/g, "\\'");
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirEsquemasModal(); window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + chaveEsc + '\', \'' + e.id + '\');" title="' + escaparAspas(e.titulo) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.ESQUEMAS_RUNTIME.abrirBaralhoDoTopico(\'' + materiaEsc + '\', \'' + divisaoEsc + '\', \'' + e.id + '\');" title="' + escaparAspas(e.titulo) + '">' +
                 '<span class="crono-sim-item-nome">📄 ' + (e.titulo || '(sem título)') + '</span>' +
             '</div>';
         }).join('') + '</div>';
@@ -18807,6 +18808,24 @@ window.ESQUEMAS_RUNTIME = {
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, itens);
     },
 
+    // Entrada direta pro baralho de uma L2 vinda de FORA da seção (painel
+    // "Conteúdo Relacionado" do Cronograma) — seleciona a matéria/divisão
+    // (mesmo estado que a navegação normal da barra lateral usaria) e
+    // reaproveita abrirBaralhoDivisao(), depois pula pro card clicado em
+    // vez de sempre abrir no primeiro. O baralho é a visão de estudo
+    // (1 card por vez, sem precisar rolar) — é o destino certo pra "ver
+    // esse conteúdo", diferente do editor (abrirEditorExistente), que é
+    // pra edição pontual.
+    abrirBaralhoDoTopico: function(materia, divisao, idItemInicial) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this.abrirBaralhoDivisao();
+        if (this._baralhoState && idItemInicial) {
+            let idx = this._baralhoState.ordemChaves.indexOf(idItemInicial);
+            if (idx !== -1) { this._baralhoState.indiceAtual = idx; this.renderBaralho(); }
+        }
+    },
+
     _abrirBaralho: function(escopo, titulo, itens) {
         this._baralhoState = {
             escopo: escopo,
@@ -21010,6 +21029,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
         let fichas = this.fichasDoL2(this._materiaSelecionada, this._divisaoSelecionada);
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, fichas);
+    },
+
+    // Entrada direta pro baralho de uma L2 vinda de FORA da seção (painel
+    // "Conteúdo Relacionado" do Cronograma) — mesmo padrão de
+    // ESQUEMAS_RUNTIME.abrirBaralhoDoTopico.
+    abrirBaralhoDoTopico: function(materia, divisao, idItemInicial) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this.abrirBaralhoDivisao();
+        if (this._baralhoState && idItemInicial) {
+            let idx = this._baralhoState.ordemChaves.indexOf(idItemInicial);
+            if (idx !== -1) { this._baralhoState.indiceAtual = idx; this.renderBaralho(); }
+        }
     },
 
     _abrirBaralho: function(escopo, titulo, fichas) {
