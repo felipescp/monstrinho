@@ -2101,8 +2101,37 @@ window.SALINHA_BACKUP = {
         return mudancas;
     },
 
+    // Tenta o JSON.parse normal; se falhar especificamente com "lixo depois
+    // de um JSON válido" (Unexpected non-whitespace character after JSON at
+    // position N — sintoma de partes órfãs sobrando no Gist, ver
+    // exportarNuvem()/exportarNuvemSilenciosa(): upload das partes novas e
+    // limpeza das antigas são 2 requisições separadas, não atômicas; se a
+    // segunda nunca rodar — aba fechada, rede caiu — sobra lixo colado no
+    // fim do backup válido), recupera cortando exatamente na posição que o
+    // próprio parser reportou como "aqui o JSON válido já tinha terminado".
+    // Isso destrava o carregamento sem esperar um salvamento limpo
+    // completo (que só a próxima "☁️⬆️ Salvar" bem-sucedida, do início ao
+    // fim, resolveria de vez).
+    _parseJsonComRecuperacao: function(jsonString) {
+        try {
+            return { obj: JSON.parse(jsonString), recuperado: false };
+        } catch (erroOriginal) {
+            const m = /Unexpected non-whitespace character after JSON at position (\d+)/.exec(erroOriginal.message || '');
+            if (!m) throw erroOriginal;
+            const posicao = parseInt(m[1], 10);
+            try {
+                const obj = JSON.parse(jsonString.slice(0, posicao));
+                console.warn('[MERGE] Backup continha lixo sobrando após um JSON válido (posição ' + posicao + ' de ' + jsonString.length + ') — provável parte órfã de um envio anterior interrompido no Gist. Recuperado usando só a parte válida; um novo "☁️⬆️ Salvar" completo deve limpar as sobras na nuvem.', erroOriginal);
+                return { obj: obj, recuperado: true };
+            } catch (erroRecuperacao) {
+                throw erroOriginal; // a tentativa de recuperação também não é JSON válido — desiste, erro original é mais informativo
+            }
+        }
+    },
+
     aplicarPayloadMerge: async function(jsonString) {
-        const importado = JSON.parse(jsonString);
+        const resultadoParse = this._parseJsonComRecuperacao(jsonString);
+        const importado = resultadoParse.obj;
 
         const STORAGE_KEY_ATIVO_LOCAL = typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'tjpe_v1__monstrinho_factual_db';
         const LEGACY_KEY_ATIVO_LOCAL = typeof LEGACY_STORAGE_KEY !== 'undefined' ? LEGACY_STORAGE_KEY : 'tjpe_v1__cordeiro_factual_db';
@@ -3059,7 +3088,7 @@ window.SALINHA_BACKUP = {
             notificarMutacaoAoDashboard();
         }
 
-        return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas, chavesComErro: chavesComErro };
+        return { chavesMutadas: chavesMutadas, entidadesInjetadas: entidadesInjetadas, chavesComErro: chavesComErro, recuperadoDeCorrupcao: resultadoParse.recuperado };
     },
 
     aplicarPayload: async function(jsonString) {
@@ -3421,14 +3450,22 @@ exportarNuvem: async function(botao) {
             }
 
             let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+            // Aviso adicional sempre que o parser precisou descartar lixo
+            // sobrando no fim do backup (partes órfãs no Gist, de um envio
+            // anterior interrompido) — o merge em si funcionou, mas vale
+            // avisar pra pessoa saber que a nuvem ainda tem sobras e
+            // considerar "☁️⬆️ Salvar" de novo pra limpar de vez.
+            let avisoRecuperacao = resultado.recuperadoDeCorrupcao
+                ? '\n\n⚠️ O backup na nuvem tinha dados sobrando de um envio anterior interrompido — foi recuperado usando só a parte íntegra. Recomendo clicar em "☁️⬆️ Salvar" novamente daqui a pouco pra limpar essas sobras na nuvem.'
+                : '';
             if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
                 // Algumas chaves foram calculadas em memória mas NÃO foram
                 // salvas de verdade (ex.: localStorage.setItem estourando a
                 // cota do dispositivo) — nunca mostrar "sucesso" nesse caso,
                 // senão o usuário acha que importou tudo e na real perdeu parte.
-                alert('Backup mesclado PARCIALMENTE — algo não coube no armazenamento deste dispositivo.\n\nChaves sincronizadas com sucesso: ' + resultado.chavesMutadas + '\nNovas entidades encontradas: ' + resultado.entidadesInjetadas + '\n\n⚠️ NÃO foi possível salvar: ' + resultado.chavesComErro.join(', ') + '\n\nProvável falta de espaço livre neste dispositivo (comum em celulares). Tente liberar espaço — ex.: limpar cache/dados de outros sites no navegador — e importe de novo.');
+                alert('Backup mesclado PARCIALMENTE — algo não coube no armazenamento deste dispositivo.\n\nChaves sincronizadas com sucesso: ' + resultado.chavesMutadas + '\nNovas entidades encontradas: ' + resultado.entidadesInjetadas + '\n\n⚠️ NÃO foi possível salvar: ' + resultado.chavesComErro.join(', ') + '\n\nProvável falta de espaço livre neste dispositivo (comum em celulares). Tente liberar espaço — ex.: limpar cache/dados de outros sites no navegador — e importe de novo.' + avisoRecuperacao);
             } else {
-                alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas);
+                alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas + avisoRecuperacao);
             }
             location.reload();
         } catch (err) {
