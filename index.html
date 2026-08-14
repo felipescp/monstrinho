@@ -17219,6 +17219,9 @@ window.triggerFileUpload = function(callback) {
        contrário de Materiais), só ocultos/ocultar-oficiais/selecionar. */
     #esquemas-modal .esq-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:#f8fafc; }
     #esquemas-modal .esq-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #esquemas-modal .esq-tb-busca-grupo { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    #esquemas-modal .esq-tb-busca { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:10px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; width:150px; }
+    #esquemas-modal .esq-tb-busca:focus { outline:none; border-color:var(--app-primary); }
     #esquemas-modal .esq-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #esquemas-modal .esq-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .esq-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -17397,21 +17400,31 @@ window.triggerFileUpload = function(callback) {
     #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
     #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #modal-esquemas-baralho #esq-baralho-busca { flex:1; max-width:280px; padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; }
-    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; display:flex; }
+    /* flex-direction:column é essencial aqui — sem isso, o card (único
+       filho) fica sujeito ao eixo padrão (row) de um flex container, o
+       que nunca deveria importar com 1 filho só, mas em alguns navegadores
+       um único filho num flex row ainda recebe cross-axis stretch
+       incorreto quando o pai também tem min-height:0; explícito por
+       segurança. */
+    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; display:flex; flex-direction:column; }
     #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-esquemas-baralho #esq-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-esquemas-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
-    #modal-esquemas-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; flex-shrink:0; }
+    /* Rodapé: "Marcar como visualizado" + estrelas ficam discretos, na
+       mesma linha do Fechar (à esquerda dele) — não mais dentro da área
+       de visualização do card, onde atrapalhavam a leitura do conteúdo. */
+    #modal-esquemas-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; align-items:center; gap:8px; justify-content:space-between; border-top:1px solid var(--border-color); padding-top:12px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-esquemas-baralho #esq-baralho-acoes { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #modal-esquemas-baralho #esq-baralho-acoes .esq-btn-visualizado,
+    #modal-esquemas-baralho #esq-baralho-acoes .fc-rev-btn { padding:3px 8px; font-size:9.5px; }
 </style>
     <div class="mdl">
         <div class="fc-popup-header">🗂️ <span id="esq-baralho-titulo"></span> — Baralho de Esquemas</div>
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
-            <input type="text" id="esq-baralho-busca" placeholder="🔎 Buscar por título..." oninput="window.ESQUEMAS_RUNTIME.filtrarBaralho(this.value)">
         </div>
 
         <div id="esq-baralho-corpo"></div>
@@ -17423,6 +17436,7 @@ window.triggerFileUpload = function(callback) {
         </div>
 
         <div class="fc-popup-footer">
+            <div class="fc-card-revisao-acoes" id="esq-baralho-acoes"></div>
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharBaralho()">Fechar</button>
         </div>
     </div>
@@ -17818,6 +17832,7 @@ window.ESQUEMAS_RUNTIME = {
     _editandoChave: null,
     _filtroCor: '', // '' = todas as cores; senão, uma cor da paleta (fixa ou customizada)
     _mostrarFiltroCor: false, // toggle do botão "Classificar por Cor"
+    _filtroBusca: '', // texto do campo de busca por título, na barra de ferramentas da grade (ao lado de "Selecionar")
     _modalEtiquetasModoAplicar: false, // true = clicar numa etiqueta APLICA aos selecionados, em vez de só gerenciar
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -17936,6 +17951,19 @@ window.ESQUEMAS_RUNTIME = {
         return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     },
 
+    _normalizarBusca: function(texto) {
+        return (texto || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+    },
+
+    // Busca por título na grade (barra de ferramentas, ao lado de
+    // "Selecionar") — atualiza só a grade de cards, não a barra de
+    // ferramentas inteira, pra não recriar o <input> a cada tecla (o que
+    // derrubaria o foco/cursor no meio da digitação).
+    filtrarEsquemasGrade: function(texto) {
+        this._filtroBusca = texto || '';
+        this._renderGradeCards();
+    },
+
     // Contagem bruta (ignora ocultos — é só indicação de volume, mesmo
     // espírito de contarCardsDaMateria/contarCardsDoL2 do Flashcards) pros
     // badges de quantidade no L1/L2.
@@ -18047,6 +18075,10 @@ window.ESQUEMAS_RUNTIME = {
         }
         if (this._ocultarOficiais) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
+        }
+        if (this._filtroBusca && this._filtroBusca.trim()) {
+            let alvo = this._normalizarBusca(this._filtroBusca);
+            lista = lista.filter(function(par) { return self._normalizarBusca(par.item.titulo).indexOf(alvo) !== -1; });
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
@@ -18423,6 +18455,13 @@ window.ESQUEMAS_RUNTIME = {
 
     _renderToolbar: function() {
         let qtdSel = Object.keys(this._selecionados).length;
+        // Ao lado do botão Selecionar/Cancelar (pedido explícito) — busca
+        // por título entre os cards da grade, não do baralho. O valor
+        // reflete _filtroBusca a cada render (em vez de só existir no
+        // DOM) pra sobreviver ao innerHTML inteiro sendo recriado; o
+        // foco/cursor durante a digitação é preservado à parte, em
+        // _renderGradeCards().
+        let htmlBusca = '<input type="text" id="esq-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar por título..." value="' + this._escapar(this._filtroBusca) + '" oninput="window.ESQUEMAS_RUNTIME.filtrarEsquemasGrade(this.value)">';
         let htmlAcoes;
         if (this._modoSelecao) {
             htmlAcoes =
@@ -18434,7 +18473,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button>';
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             htmlAcoes =
                 '<div class="esq-tb-acoes-grupo">' +
@@ -18444,7 +18483,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     this._renderFiltroCores() +
                 '</div>' +
-                '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button>';
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
         return '<div class="esq-toolbar">' + htmlAcoes + '</div>';
     },
@@ -18462,6 +18501,15 @@ window.ESQUEMAS_RUNTIME = {
         // visualizado, filtro de cor), não só seleção.
         let scrollAnterior = col.querySelector('.esq-grade-scroll');
         let posicaoScroll = scrollAnterior ? scrollAnterior.scrollTop : 0;
+
+        // Preserva foco + posição do cursor do campo de busca entre
+        // re-renders — filtrarEsquemasGrade() chama este método a cada
+        // tecla digitada (pra grade refletir o filtro ao vivo), e como
+        // _renderToolbar() reconstrói o <input> do zero a cada vez, sem
+        // isto o foco cairia a cada caractere, tornando impossível digitar.
+        let inputBuscaAnterior = document.getElementById('esq-busca-grade');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
@@ -18543,6 +18591,14 @@ window.ESQUEMAS_RUNTIME = {
 
         let novoScroll = col.querySelector('.esq-grade-scroll');
         if (novoScroll) novoScroll.scrollTop = posicaoScroll;
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('esq-busca-grade');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
     },
 
     // ── CLASSIFICAÇÃO POR ESTRELAS (1 a 3) — mesmo toggle de
@@ -18860,12 +18916,9 @@ window.ESQUEMAS_RUNTIME = {
             escopo: escopo,
             cardsBase: itens,
             ordemChaves: itens.map(function(e) { return e.id; }),
-            indiceAtual: 0,
-            filtro: ''
+            indiceAtual: 0
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
-        let inputBusca = document.getElementById('esq-baralho-busca');
-        if (inputBusca) inputBusca.value = '';
         document.getElementById('modal-esquemas-baralho').classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
@@ -18874,22 +18927,6 @@ window.ESQUEMAS_RUNTIME = {
     fecharBaralho: function() {
         document.getElementById('modal-esquemas-baralho').classList.remove('open');
         document.removeEventListener('keydown', this._handlerTecladoBaralho);
-    },
-
-    // Filtra o baralho por título sem tocar em cardsBase/ordemChaves (que
-    // seguem guardando o deck INTEIRO) — _deckBaralhoAtual() aplica o
-    // filtro por cima a cada leitura, então limpar a busca volta a
-    // mostrar tudo, na mesma ordem (embaralhada ou não) de antes.
-    filtrarBaralho: function(texto) {
-        let s = this._baralhoState;
-        if (!s) return;
-        s.filtro = texto || '';
-        s.indiceAtual = 0;
-        this.renderBaralho();
-    },
-
-    _normalizarBuscaBaralho: function(texto) {
-        return (texto || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -18901,15 +18938,9 @@ window.ESQUEMAS_RUNTIME = {
     _deckBaralhoAtual: function() {
         let s = this._baralhoState;
         if (!s) return [];
-        let deck = s.ordemChaves
+        return s.ordemChaves
             .map(function(id) { return s.cardsBase.find(function(e) { return e.id === id; }); })
             .filter(Boolean);
-        if (s.filtro && s.filtro.trim()) {
-            let self = this;
-            let alvo = this._normalizarBuscaBaralho(s.filtro);
-            deck = deck.filter(function(item) { return self._normalizarBuscaBaralho(item.titulo).indexOf(alvo) !== -1; });
-        }
-        return deck;
     },
 
     _itemBaralhoAtual: function() {
@@ -18967,11 +18998,13 @@ window.ESQUEMAS_RUNTIME = {
         let s = this._baralhoState;
         if (!s) return;
         let corpo = document.getElementById('esq-baralho-corpo');
+        let acoesEl = document.getElementById('esq-baralho-acoes');
         let posEl = document.getElementById('esq-baralho-posicao');
         let deck = this._deckBaralhoAtual();
 
         if (deck.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">' + (s.filtro && s.filtro.trim() ? 'Nenhum esquema encontrado para "' + this._escapar(s.filtro) + '".' : 'Nenhum esquema aqui ainda.') + '</div>';
+            corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema aqui ainda.</div>';
+            if (acoesEl) acoesEl.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -18980,9 +19013,12 @@ window.ESQUEMAS_RUNTIME = {
         let visualizado = !!this.visualizados[card.id];
         let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizadoBaralho()">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
 
-        corpo.innerHTML = this._htmlCartaoEsquemaEstudo(card) +
-            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
-            '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoEsqHtml(card.id, null) + '</div>';
+        // O card ocupa a área de visualização sozinho — visualizado/estrelas
+        // saem daqui e vão pro rodapé (#esq-baralho-acoes, ao lado de
+        // Fechar), discretos, pra não invadir o espaço de leitura do
+        // conteúdo (pedido explícito, depois de invadirem antes).
+        corpo.innerHTML = this._htmlCartaoEsquemaEstudo(card);
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoEsqHtml(card.id, null);
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },
