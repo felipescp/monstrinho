@@ -2608,6 +2608,84 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.etiquetaPorEsquema) ──
+                    // Atribuição achatada {id_esquema → id_etiqueta}. Sem este caso
+                    // especial, cai na ESTRATÉGIA B genérica, que só copia a sub-chave
+                    // INTEIRA quando ela nunca existiu localmente — como salvar() sempre
+                    // grava esta chave (mesmo vazia, {}), a partir do 1º salvamento local
+                    // ela deixa de ser undefined pra sempre, e nenhuma etiqueta atribuída
+                    // só do lado remoto voltaria a entrar num merge seguinte. Mesma
+                    // política de "só preenche o que falta" das flags achatadas acima.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'etiquetaPorEsquema' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idEsquema => {
+                            if (objImportado[subChave][idEsquema] && !objLocal[subChave][idEsquema]) {
+                                objLocal[subChave][idEsquema] = objImportado[subChave][idEsquema];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.etiquetas) ──
+                    // Dicionário aninhado {chaveL2 → {id_etiqueta → {id,nome,cor}}} — as
+                    // próprias DEFINIÇÕES de etiqueta (nome/cor), por tópico. Mesmo motivo
+                    // do caso acima (a ESTRATÉGIA B genérica nunca mais copiaria isto
+                    // depois do 1º salvamento local) — mas aqui é preciso descer 2 níveis:
+                    // une por chaveL2 e, dentro dela, por id_etiqueta.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'etiquetas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const etiquetasRemotas = objImportado[subChave][chaveL2];
+                            if (!etiquetasRemotas || typeof etiquetasRemotas !== 'object') return;
+
+                            if (!objLocal[subChave][chaveL2] || typeof objLocal[subChave][chaveL2] !== 'object') {
+                                objLocal[subChave][chaveL2] = {};
+                            }
+
+                            Object.keys(etiquetasRemotas).forEach(idEtiqueta => {
+                                if (etiquetasRemotas[idEtiqueta] && !objLocal[subChave][chaveL2][idEtiqueta]) {
+                                    objLocal[subChave][chaveL2][idEtiqueta] = etiquetasRemotas[idEtiqueta];
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.coresCustomizadas) ──
+                    // Array de strings de cor cruas (ex. "#a1b2c3"), sem id/uid/hash/
+                    // codigo — a ESTRATÉGIA A genérica (que casa itens por essas
+                    // propriedades) nunca reconheceria nenhuma delas e descartaria todas
+                    // silenciosamente (item sem id cai no "if (!itemId) return;"). União
+                    // por valor direto, sem duplicar.
+                    if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'coresCustomizadas' &&
+                        Array.isArray(objImportado[subChave])) {
+
+                        if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
+
+                        objImportado[subChave].forEach(cor => {
+                            if (cor && objLocal[subChave].indexOf(cor) === -1) {
+                                objLocal[subChave].push(cor);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.fichas) ──
                     // Mesmíssima forma/problema/solução de materiais_runtime.materiais e
                     // esquemas_runtime.esquemas: dicionário achatado {"MATÉRIA > Divisão" →
@@ -17162,7 +17240,13 @@ window.triggerFileUpload = function(callback) {
     /* Mesma cor de fundo do card normal da grade (var(--bg-white), quase
        sempre branco) — um fundo cinza/azulado por trás do conteúdo do
        esquema (tabelas, linhas coloridas) lavava o contraste dessas cores. */
-    #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
+    #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+    #esquemas-modal .esq-estudo-card { max-width:640px; max-height:46vh; }
+    /* Baralho: usa toda a altura que sobrar dentro do popup (ver
+       #modal-esquemas-baralho #esq-baralho-corpo, com flex:1) em vez de um
+       teto fixo em vh — objetivo é evitar rolagem na maioria dos casos,
+       já que os cards de Esquemas costumam ter bastante conteúdo. */
+    #modal-esquemas-baralho .esq-estudo-card { max-width:680px; height:100%; }
     #esquemas-modal .esq-estudo-titulo, #modal-esquemas-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #esquemas-modal .esq-estudo-texto, #modal-esquemas-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
 
@@ -17178,9 +17262,9 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
-                <details class="esq-export-menu"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button></div></details>
-                <details class="esq-export-menu"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button></div></details>
-                <details class="esq-export-menu"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button></div></details>
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">&#x2715;</button>
             </div>
@@ -17251,15 +17335,17 @@ window.triggerFileUpload = function(callback) {
 <div id="modal-esquemas-baralho" class="mo">
 <style>
     #modal-esquemas-baralho { z-index: 10000; }
-    #modal-esquemas-baralho .mdl { max-width:700px; width:95%; max-height:90vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
-    #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
-    #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-esquemas-baralho .mdl { max-width:740px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
+    #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #modal-esquemas-baralho #esq-baralho-busca { flex:1; max-width:280px; padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; }
+    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; display:flex; }
+    #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-esquemas-baralho #esq-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
-    #modal-esquemas-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
-    #modal-esquemas-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
+    #modal-esquemas-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
+    #modal-esquemas-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
 </style>
     <div class="mdl">
@@ -17267,6 +17353,7 @@ window.triggerFileUpload = function(callback) {
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+            <input type="text" id="esq-baralho-busca" placeholder="🔎 Buscar por título..." oninput="window.ESQUEMAS_RUNTIME.filtrarBaralho(this.value)">
         </div>
 
         <div id="esq-baralho-corpo"></div>
@@ -17948,6 +18035,50 @@ window.ESQUEMAS_RUNTIME = {
         this._renderGradeCards();
     },
 
+    excluirSelecionados: function() {
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        if (idsSelecionados.length === 0) return;
+
+        let idsOficiais = {};
+        idsSelecionados.forEach(function(id) {
+            Object.keys(self.esquemas).forEach(function(chave) {
+                let item = (self.esquemas[chave] || []).find(function(e) { return e.id === id; });
+                if (item && item.origem_oficial) idsOficiais[id] = true;
+            });
+        });
+        let idsExcluiveis = idsSelecionados.filter(function(id) { return !idsOficiais[id]; });
+        let qtdOficiais = Object.keys(idsOficiais).length;
+
+        if (idsExcluiveis.length === 0) {
+            alert('Os itens selecionados são oficiais e não podem ser excluídos.');
+            return;
+        }
+
+        let aviso = 'Excluir permanentemente ' + idsExcluiveis.length + ' esquema(s) selecionado(s)? Esta ação não pode ser desfeita.';
+        if (qtdOficiais > 0) aviso += '\n\n(' + qtdOficiais + ' item(ns) oficial(is) selecionado(s) será(ão) ignorado(s) — oficiais não podem ser excluídos por aqui.)';
+        if (!confirm(aviso)) return;
+
+        if (!this.excluidos) this.excluidos = {};
+        let idsParaExcluir = {};
+        idsExcluiveis.forEach(function(id) { idsParaExcluir[id] = true; });
+
+        Object.keys(this.esquemas).forEach(function(chave) {
+            let restantes = self.esquemas[chave].filter(function(e) {
+                if (!idsParaExcluir[e.id]) return true;
+                self.excluidos[e.id] = new Date().toISOString();
+                return false;
+            });
+            if (restantes.length === 0) delete self.esquemas[chave];
+            else self.esquemas[chave] = restantes;
+        });
+
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+    },
+
     // ── ETIQUETAS (coloridas, nomeáveis, ESCOPADAS POR TÓPICO) ──
     // Chave do "espaço de etiquetas" atual — exige uma disciplina E um
     // tópico ESPECÍFICO selecionados (não "Todas as divisões"), já que
@@ -18230,6 +18361,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button>';
         } else {
@@ -18639,9 +18771,12 @@ window.ESQUEMAS_RUNTIME = {
             escopo: escopo,
             cardsBase: itens,
             ordemChaves: itens.map(function(e) { return e.id; }),
-            indiceAtual: 0
+            indiceAtual: 0,
+            filtro: ''
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
+        let inputBusca = document.getElementById('esq-baralho-busca');
+        if (inputBusca) inputBusca.value = '';
         document.getElementById('modal-esquemas-baralho').classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
@@ -18650,6 +18785,22 @@ window.ESQUEMAS_RUNTIME = {
     fecharBaralho: function() {
         document.getElementById('modal-esquemas-baralho').classList.remove('open');
         document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    // Filtra o baralho por título sem tocar em cardsBase/ordemChaves (que
+    // seguem guardando o deck INTEIRO) — _deckBaralhoAtual() aplica o
+    // filtro por cima a cada leitura, então limpar a busca volta a
+    // mostrar tudo, na mesma ordem (embaralhada ou não) de antes.
+    filtrarBaralho: function(texto) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtro = texto || '';
+        s.indiceAtual = 0;
+        this.renderBaralho();
+    },
+
+    _normalizarBuscaBaralho: function(texto) {
+        return (texto || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -18661,9 +18812,15 @@ window.ESQUEMAS_RUNTIME = {
     _deckBaralhoAtual: function() {
         let s = this._baralhoState;
         if (!s) return [];
-        return s.ordemChaves
+        let deck = s.ordemChaves
             .map(function(id) { return s.cardsBase.find(function(e) { return e.id === id; }); })
             .filter(Boolean);
+        if (s.filtro && s.filtro.trim()) {
+            let self = this;
+            let alvo = this._normalizarBuscaBaralho(s.filtro);
+            deck = deck.filter(function(item) { return self._normalizarBuscaBaralho(item.titulo).indexOf(alvo) !== -1; });
+        }
+        return deck;
     },
 
     _itemBaralhoAtual: function() {
@@ -18725,7 +18882,7 @@ window.ESQUEMAS_RUNTIME = {
         let deck = this._deckBaralhoAtual();
 
         if (deck.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema aqui ainda.</div>';
+            corpo.innerHTML = '<div class="fc-vazio">' + (s.filtro && s.filtro.trim() ? 'Nenhum esquema encontrado para "' + this._escapar(s.filtro) + '".' : 'Nenhum esquema aqui ainda.') + '</div>';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
