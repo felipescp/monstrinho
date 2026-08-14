@@ -4894,8 +4894,9 @@ window.CRONOGRAMA_RUNTIME = {
         let temQuestoes = !!(loc && window.PRATICAR_CADERNO_RUNTIME && window.PRATICAR_CADERNO_RUNTIME.listarQuestoesDoL2(loc.materia, loc.divisao).length > 0);
         let temFichas = !!(loc && window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME.fichasDoL2(loc.materia, loc.divisao).length > 0);
         let temMateriais = !!(loc && window.MATERIAIS_RUNTIME && window.MATERIAIS_RUNTIME.materiaisDoL2(loc.materia, loc.divisao).length > 0);
+        let temEsquemas = !!(loc && window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME.esquemasDoL2(loc.materia, loc.divisao).length > 0);
 
-        return { baterias: temBaterias, axiomas: temAxiomas, questoes: temQuestoes, jurisprudencia: temFichas, materiais: temMateriais };
+        return { baterias: temBaterias, axiomas: temAxiomas, questoes: temQuestoes, jurisprudencia: temFichas, materiais: temMateriais, esquemas: temEsquemas };
     },
 
     // Baterias do catálogo cuja matéria+divisão (L2) batem com a do card —
@@ -4991,7 +4992,8 @@ window.CRONOGRAMA_RUNTIME = {
             { chave: 'axiomas', rotulo: '🗂️ Axiomas' },
             { chave: 'questoes', rotulo: '📓 Questões' },
             { chave: 'jurisprudencia', rotulo: '⚖️ Jurisp.' },
-            { chave: 'materiais', rotulo: '📚 Materiais' }
+            { chave: 'materiais', rotulo: '📚 Materiais' },
+            { chave: 'esquemas', rotulo: '📄 Esquemas' }
         ];
         // Cor da miniaba reflete se aquele tipo tem conteúdo pra essa L2 —
         // mesmo helper que decide o ícone 🔗 fosco/aceso (_relacionadosPorTipo),
@@ -5020,6 +5022,7 @@ window.CRONOGRAMA_RUNTIME = {
         else if (aba === 'questoes') htmlCorpo = this._renderAbaQuestoes(item);
         else if (aba === 'jurisprudencia') htmlCorpo = this._renderAbaJurisprudencia(item);
         else if (aba === 'materiais') htmlCorpo = this._renderAbaMateriais(item);
+        else if (aba === 'esquemas') htmlCorpo = this._renderAbaEsquemas(item);
         else htmlCorpo = this._renderAbaBaterias(item, itemId);
 
         return '<div class="crono-sim-titulo">🔗 Conteúdo Relacionado</div>' + htmlTabs + '<div class="crono-rel-corpo">' + htmlCorpo + '</div>';
@@ -5158,6 +5161,31 @@ window.CRONOGRAMA_RUNTIME = {
             return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-materiais\'); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
                 '<span class="crono-sim-item-nome">📚 ' + (m.titulo || '(sem título)') + '</span>' +
                 etiquetaHtml +
+            '</div>';
+        }).join('') + '</div>';
+    },
+
+    // Aba "📄 Esquemas" — esquemas/tabelas dessa L2 (ESQUEMAS_RUNTIME.
+    // esquemasDoL2, mesmo formato de chave "MATÉRIA > Divisão" dos outros
+    // 2 tipos indexados por dict). #esquemas-modal é um modal de topo
+    // (fora de qualquer .tela) — abrirEsquemasModal() antes só garante que
+    // ele esteja aberto por baixo do editor, mesmo padrão de
+    // abrirJurisprudenciaModal()+abrirVer() na aba Jurisprudência.
+    _renderAbaEsquemas: function(item) {
+        let loc = this._resolverL2doItem(item);
+        if (!loc || !window.ESQUEMAS_RUNTIME) {
+            return '<div class="crono-sim-vazio">Card sem taxonomia — sem correspondência automática.</div>';
+        }
+        let esquemas = window.ESQUEMAS_RUNTIME.esquemasDoL2(loc.materia, loc.divisao);
+        if (esquemas.length === 0) {
+            return '<div class="crono-sim-vazio">Nenhum esquema/tabela para essa matéria/divisão.</div>';
+        }
+        let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
+        let chaveL2 = loc.materia + ' > ' + loc.divisao;
+        return '<div class="crono-sim-lista" style="max-height:220px;">' + esquemas.map(function(e) {
+            let chaveEsc = chaveL2.replace(/'/g, "\\'");
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirEsquemasModal(); window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + chaveEsc + '\', \'' + e.id + '\');" title="' + escaparAspas(e.titulo) + '">' +
+                '<span class="crono-sim-item-nome">📄 ' + (e.titulo || '(sem título)') + '</span>' +
             '</div>';
         }).join('') + '</div>';
     },
@@ -17859,6 +17887,19 @@ window.ESQUEMAS_RUNTIME = {
 
     _chaveL2: function(materia, divisao) {
         return materia + ' > ' + divisao;
+    },
+
+    // Esquemas VISÍVEIS (exclui ocultos) dessa L2 — usado por fora da seção
+    // (card do Cronograma) pra listar conteúdo relacionado. Mesmo padrão de
+    // MATERIAIS_RUNTIME.materiaisDoL2/JURISPRUDENCIA_RUNTIME.fichasDoL2:
+    // método público, parametrizado, sem depender de
+    // _materiaSelecionada/_divisaoSelecionada (que só fazem sentido pra
+    // navegação interna da própria seção). Inclui oficiais — a regra é só
+    // "está oculto ou não", igual aos outros dois.
+    esquemasDoL2: function(materia, divisao) {
+        this._garantirCarregado();
+        let self = this;
+        return (this.esquemas[this._chaveL2(materia, divisao)] || []).filter(function(e) { return !self.ocultos[e.id]; });
     },
 
     _escapar: function(str) {
