@@ -136,14 +136,15 @@
 
 /* #barra-nav (a "‹ INÍCIO" isolada, revelada antes pelo toggle ⚙/× flutuante)
    fica sempre oculta no mobile agora — .topbar-mobile-fixa (Início + Salvar +
-   Carregar + ⚙️) é a única barra que deve aparecer em telas ≤700px, em
-   qualquer tela e independente de body.top-aberto. */
+   Carregar + Entrar com GitHub) é a única barra que deve aparecer em telas
+   ≤700px, em qualquer tela e independente de body.top-aberto. */
 @media(max-width:700px) { #barra-nav { display: none !important; } }
 body.force-mobile #barra-nav { display: none !important; }
 
 /* Mesmo quando o menu (top-aberto) revela #barra-nav no mobile, "Gerar
    Questões" e a paleta de cores do tema ficam de fora — ganha espaço e
-   a topbar-mobile-fixa (Início/Salvar/Carregar/⚙️) já cobre o essencial. */
+   a topbar-mobile-fixa (Início/Salvar/Carregar/Entrar com GitHub) já cobre
+   o essencial. */
 @media (max-width:700px) { .gerar-q-wrap, #seletor-cor-tema { display: none !important; } }
 body.force-mobile .gerar-q-wrap, body.force-mobile #seletor-cor-tema { display: none !important; }
 
@@ -1308,8 +1309,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
-                <button onclick="window.SALINHA_GIST_SYNC.configurar()" class="b1" style="height:26px; font-size:9.5px; width:26px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Configurar token do GitHub pra sincronização em nuvem">⚙️</button>
-                <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente">🔑 Entrar com GitHub</button>
+                <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login com GitHub — único método de sincronização em nuvem">🔑 Entrar com GitHub</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
 
@@ -1428,22 +1428,6 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
         </button>
 
         <button
-            onclick="window.SALINHA_GIST_SYNC.configurar()"
-            class="b1"
-            style="
-                height:26px;
-                font-size:9.5px;
-                background:var(--bg-white);
-                border:1px solid var(--border-color);
-                color:var(--text-muted);
-                width:26px;
-            "
-            title="Configurar token do GitHub pra sincronização em nuvem"
-        >
-            ⚙️
-        </button>
-
-        <button
             id="btn-github-oauth-mobile"
             onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()"
             class="b1"
@@ -1454,7 +1438,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 border:1px solid var(--border-color);
                 color:var(--text-main);
             "
-            title="Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente"
+            title="Login com GitHub — único método de sincronização em nuvem"
         >
             🔑 Entrar com GitHub
         </button>
@@ -1463,9 +1447,10 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 </div>
 
-<!-- MODAL: Login com GitHub (Device Flow) — alternativa ao botão ⚙️ (token
-     colado à mão), que continua existindo e funcionando normalmente. Ver
-     window.SALINHA_GITHUB_OAUTH e cloudflare-worker/worker.js. -->
+<!-- MODAL: Login com GitHub (Device Flow) — único método de
+     autenticação/sincronização em nuvem (o antigo campo manual de token
+     foi removido). Ver window.SALINHA_GITHUB_OAUTH e
+     cloudflare-worker/worker.js. -->
 <div id="modal-github-oauth" class="mo">
 <style>
     #modal-github-oauth { z-index: 10000; }
@@ -3200,66 +3185,19 @@ window.SALINHA_GIST_SYNC = {
     // depois, porque o finally que zera a trava nunca chega a rodar.
     LOCK_NUVEM_EXPIRA_MS: 45000,
 
-    // Token separado do login via GitHub (OAuth) e token separado do campo
-    // manual ⚙️ — antes os dois liam/escreviam a MESMA chave
-    // ('tjpe_v1__salinha_github_token'), o que parecia conveniente ("os
-    // dois convivem") mas na prática significava que limpar o campo do ⚙️
-    // apagava sua sessão do login com GitHub também (e derrubava o nome no
-    // botão 🔑 no F5 seguinte), já que era literalmente o mesmo valor. Com
-    // ⚙️ marcado pra ser extinto (login via GitHub vira o único caminho),
-    // getToken() prioriza o token de OAuth quando existe — só cai pro
-    // manual se nunca foi feito login. exportarNuvem/importarNuvem etc.
-    // continuam chamando só getToken(), sem saber (nem precisar saber) de
-    // qual das duas origens o token realmente veio.
+    // Login com GitHub (OAuth) é o ÚNICO caminho de autenticação — o campo
+    // manual ⚙️ (token colado à mão) e configurar() foram removidos.
+    // getToken() só lê a chave do OAuth; exportarNuvem/importarNuvem etc.
+    // continuam chamando só getToken(), sem precisar saber de onde o token
+    // veio.
     _CHAVE_TOKEN_OAUTH: 'tjpe_v1__salinha_github_oauth_token',
 
     getToken: function() {
-        return localStorage.getItem(this._CHAVE_TOKEN_OAUTH) || localStorage.getItem('tjpe_v1__salinha_github_token') || '';
-    },
-
-    // Só o valor colado manualmente em ⚙️ — usado pelo próprio configurar()
-    // (prompt de edição e novo valor), pra nunca ler/mostrar/sobrescrever o
-    // token de OAuth por engano.
-    getTokenManual: function() {
-        return localStorage.getItem('tjpe_v1__salinha_github_token') || '';
+        return localStorage.getItem(this._CHAVE_TOKEN_OAUTH) || '';
     },
 
     getGistId: function() {
         return localStorage.getItem('tjpe_v1__salinha_github_gist_id') || '';
-    },
-
-    configurar: function() {
-        // getTokenManual() (não getToken()) — o prompt só mostra/edita o
-        // token colado à mão, nunca o de OAuth, mesmo que este último seja
-        // o que está realmente em uso agora (getToken() prioriza ele).
-        let tokenAtual = this.getTokenManual();
-        let novoToken = prompt(
-            'Cole seu token de acesso pessoal do GitHub (Settings → Developer settings → Personal access tokens), com permissão apenas de "gist":\n\n(Se você já fez login pelo botão 🔑 Entrar com GitHub, pode deixar isso em branco — o login já cuida da sincronização, este campo é só o método antigo, mantido por enquanto.)',
-            tokenAtual
-        );
-        if (novoToken === null) return;
-        localStorage.setItem('tjpe_v1__salinha_github_token', novoToken.trim());
-
-        // Nome em cache no botão 🔑 só é mexido aqui se NÃO houver login de
-        // OAuth ativo — com OAuth logado, a identidade mostrada é a da
-        // conta logada, e o campo manual (mesmo mudando) não deve mais
-        // derrubá-la (era exatamente isso que apagava o login ao limpar ⚙️).
-        if (window.SALINHA_GITHUB_OAUTH && !localStorage.getItem(this._CHAVE_TOKEN_OAUTH)) {
-            localStorage.removeItem('tjpe_v1__salinha_github_username'); // token manual mudou — nome em cache pode ser de outra conta
-            if (novoToken.trim()) window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(novoToken.trim());
-            window.SALINHA_GITHUB_OAUTH.atualizarBotaoLogin();
-        }
-
-        let gistIdAtual = this.getGistId();
-        let novoGistId = prompt(
-            'Se este é o SEGUNDO computador (ou mais), cole aqui o ID do Gist que apareceu no aviso de sucesso do primeiro computador.\n\nSe este é o PRIMEIRO computador (ainda não existe backup em nenhum lugar), deixe como está — o ID é criado sozinho no primeiro "☁️⬆️ Salvar".',
-            gistIdAtual
-        );
-        if (novoGistId !== null) {
-            localStorage.setItem('tjpe_v1__salinha_github_gist_id', novoGistId.trim());
-        }
-
-        alert('Configuração salva neste computador. Use "☁️⬆️ Salvar" ou "☁️⬇️ Carregar" agora.');
     },
 
     dividirEmPartes: function(texto, tamanhoMax) {
@@ -3293,7 +3231,7 @@ exportarNuvem: async function(botao) {
         try {
             let token = this.getToken();
             if (!token) {
-                alert('Configure primeiro o token do GitHub (botão ⚙️).');
+                alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
                 return;
             }
 
@@ -3368,12 +3306,12 @@ exportarNuvem: async function(botao) {
             mostrarModal({
                 titulo: '☁️ Backup enviado com sucesso',
                 mensagemHtml: true,
+                // Login com GitHub descobre o Gist sozinho por conta (ver
+                // _descobrirGistExistente) — não precisa mais copiar/colar
+                // nenhum ID entre dispositivos, então o campo de cópia saiu
+                // daqui junto com o fluxo antigo do ⚙️.
                 mensagem:
-                    '<div>Pra usar sua conta em outro computador ou celular: clique em "⚙️" naquele dispositivo, cole o mesmo token, e quando pedir o ID do Gist, cole este aqui. Depois disso, feito uma única vez, "☁️⬇️ Carregar" já traz seus dados automaticamente..</div>' +
-                    '<div style="display:flex; gap:6px; margin-top:12px;">' +
-                        '<input id="campo-gist-id-copia" type="text" value="' + gistId + '" readonly onclick="this.select();" style="flex:1; min-width:0; font-family:monospace; font-size:12px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#f8fafc;">' +
-                        '<button type="button" onclick="document.getElementById(\'campo-gist-id-copia\').select(); navigator.clipboard.writeText(\'' + gistId + '\'); this.textContent=\'✓ Copiado\';" style="padding:8px 12px; border-radius:6px; border:none; background:var(--app-primary); color:white; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">📋 Copiar</button>' +
-                    '</div>',
+                    '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>',
                 botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
             });
         } catch (err) {
@@ -3400,7 +3338,7 @@ exportarNuvem: async function(botao) {
             let token = this.getToken();
             let gistId = this.getGistId();
             if (!token) {
-                alert('Configure primeiro o token do GitHub (botão ⚙️).');
+                alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
                 return;
             }
             if (!gistId) {
@@ -3481,20 +3419,15 @@ exportarNuvem: async function(botao) {
 };
 
 // =========================================================================
-// LOGIN COM GITHUB (Device Flow) — ⚙️ (token colado à mão) está com os dias
-// contados; este é o caminho que deve virar o único. Os dois convivem por
-// enquanto, mas em chaves de localStorage SEPARADAS (_CHAVE_TOKEN_OAUTH vs
-// 'tjpe_v1__salinha_github_token') — antes eram a MESMA chave, o que
-// parecia conveniente mas significava que limpar o campo do ⚙️ apagava a
-// sessão de login também. SALINHA_GIST_SYNC.getToken() prioriza o token de
-// OAuth e cai pro manual só se nunca fez login — então
-// exportarNuvem()/importarNuvem() etc. continuam funcionando sem alteração,
-// não importa qual dos dois caminhos colocou o token ali.
+// LOGIN COM GITHUB (Device Flow) — único método de autenticação/
+// sincronização em nuvem. O campo manual ⚙️ (token colado à mão) e
+// configurar() foram removidos; SALINHA_GIST_SYNC.getToken() só lê o token
+// de OAuth (_CHAVE_TOKEN_OAUTH) agora.
 //
 // Depende de um Cloudflare Worker próprio (ver cloudflare-worker/worker.js)
 // só pra contornar o bloqueio de CORS do GitHub nesses 2 endpoints — sem
-// ele, WORKER_URL fica vazio e o botão avisa que ainda não está configurado
-// (sem quebrar nada; ⚙️ continua sendo o caminho válido até lá).
+// ele, WORKER_URL fica vazio e o botão avisa que o login ainda não foi
+// configurado neste site (não há mais fallback manual pra esse caso).
 // =========================================================================
 window.SALINHA_GITHUB_OAUTH = {
     // PREENCHER depois de publicar o Worker na Cloudflare — ex.:
@@ -3510,7 +3443,7 @@ window.SALINHA_GITHUB_OAUTH = {
 
     abrirModal: function() {
         if (!this.WORKER_URL) {
-            alert('O login automático com GitHub ainda não foi configurado neste site. Use o botão ⚙️ com um token, normalmente, por enquanto.');
+            alert('O login com GitHub ainda não foi configurado neste site. Fale com quem administra o Monstrinho.');
             return;
         }
         document.getElementById('oauth-codigo').textContent = '——';
@@ -3588,9 +3521,7 @@ window.SALINHA_GITHUB_OAUTH = {
             let dados = await resp.json();
 
             if (dados.access_token) {
-                // Chave PRÓPRIA do OAuth (não a mesma do campo manual ⚙️) —
-                // ver comentário em SALINHA_GIST_SYNC.getToken()/_CHAVE_TOKEN_OAUTH.
-                // Limpar o token colado à mão em ⚙️ nunca mais derruba este login.
+                // Ver comentário em SALINHA_GIST_SYNC.getToken()/_CHAVE_TOKEN_OAUTH.
                 localStorage.setItem(window.SALINHA_GIST_SYNC._CHAVE_TOKEN_OAUTH, dados.access_token);
                 this._pararPolling();
                 statusEl.textContent = '✅ Conectado! Procurando backup na nuvem...';
@@ -3626,10 +3557,9 @@ window.SALINHA_GITHUB_OAUTH = {
         }
     },
 
-    // Ao logar pela conta própria da pessoa (em vez do token distribuído
-    // manualmente), não existe ainda um gist_id salvo neste navegador — o
-    // ⚙️ sempre pediu esse ID junto do token, mas aqui só temos o token.
-    // Por isso procura entre os gists da própria conta um que já bata com o
+    // Ao logar pela conta própria da pessoa, não existe ainda um gist_id
+    // salvo neste navegador — só temos o token. Por isso procura entre os
+    // gists da própria conta um que já bata com o
     // formato de backup do Monstrinho (mesmo nome de arquivo/prefixo de
     // partes usado por exportarNuvem()), pra achar automaticamente um
     // backup pré-existente (ex.: login feito antes noutro aparelho).
@@ -3678,10 +3608,11 @@ window.SALINHA_GITHUB_OAUTH = {
         let statusEl = document.getElementById('oauth-status');
         // Sempre redescobre pela conta que ACABOU de logar — nunca reaproveita
         // cegamente um gist_id que já estivesse salvo neste navegador. Esse
-        // valor pode ter vindo do fluxo antigo ⚙️ (aponta pro gist de OUTRA
-        // conta, a do desenvolvedor) — tentar escrever nele com o token novo
-        // dá 403 (só o dono edita um gist, mesmo sabendo o ID). Um GET
-        // /gists a mais por login é barato; a alternativa é migração quebrada.
+        // valor pode ter vindo do antigo fluxo manual, hoje removido (aponta
+        // pro gist de OUTRA conta, a do desenvolvedor) — tentar escrever
+        // nele com o token novo dá 403 (só o dono edita um gist, mesmo
+        // sabendo o ID). Um GET /gists a mais por login é barato; a
+        // alternativa é migração quebrada.
         let resultado = await this._descobrirGistExistente(token);
         let gistId = resultado.gistId;
         if (resultado.ok) {
@@ -3723,7 +3654,7 @@ window.SALINHA_GITHUB_OAUTH = {
     atualizarBotaoLogin: function() {
         let nome = localStorage.getItem(this._CHAVE_USERNAME_CACHE) || '';
         let texto = nome ? ('🔑 ' + (nome.length > 14 ? nome.slice(0, 14) + '…' : nome)) : '🔑 Entrar com GitHub';
-        let titulo = nome ? ('Logado no GitHub como ' + nome + ' — clique pra trocar de conta ou reconectar') : 'Login automático com GitHub (Em teste) — alternativa ao token colado no ⚙️, que continua funcionando normalmente';
+        let titulo = nome ? ('Logado no GitHub como ' + nome + ' — clique pra trocar de conta ou reconectar') : 'Login com GitHub — único método de sincronização em nuvem';
         ['btn-github-oauth-desktop', 'btn-github-oauth-mobile'].forEach(function(id) {
             let el = document.getElementById(id);
             if (el) { el.textContent = texto; el.title = titulo; }
@@ -15681,13 +15612,14 @@ if (idxExistente >= 0) {
 
 window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
 
-    // Bloqueia abertura de bateria sem token cadastrado em ⚙️ (formato de
-    // token pessoal clássico do GitHub: 40 caracteres). Checagem só de
-    // formato, sem chamada de rede — não confirma que o token é aceito
-    // pelo GitHub, só que tem cara de token de verdade.
+    // Bloqueia abertura de bateria sem login com GitHub feito — só checa
+    // presença do token (sem chamada de rede, não confirma que é aceito
+    // pelo GitHub). Sem checagem de tamanho fixo: tokens OAuth (gho_...)
+    // não têm o mesmo formato do antigo token pessoal clássico de 40
+    // caracteres que essa checagem media antes.
     let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    if (!tokenCadastrado || tokenCadastrado.length !== 40) {
-        alert('Insira um token válido em ⚙️.');
+    if (!tokenCadastrado) {
+        alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
         return;
     }
 
