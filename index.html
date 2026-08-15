@@ -17343,8 +17343,17 @@ window.triggerFileUpload = function(callback) {
     /* Baralho: usa toda a altura que sobrar dentro do popup (ver
        #modal-esquemas-baralho #esq-baralho-corpo, com flex:1) em vez de um
        teto fixo em vh — objetivo é evitar rolagem na maioria dos casos,
-       já que os cards de Esquemas costumam ter bastante conteúdo. */
-    #modal-esquemas-baralho .esq-estudo-card { max-width:680px; height:100%; }
+       já que os cards de Esquemas costumam ter bastante conteúdo. flex:1
+       (não height:100%) porque agora #esq-baralho-corpo pode ter 2 filhos
+       (o rótulo de origem opcional + o card) — com flex:1 o card ocupa só
+       o que sobra depois do rótulo, em vez de tentar ser 100% e estourar. */
+    #modal-esquemas-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
+    /* Rótulo "MATÉRIA > Divisão" do card ATUAL, só nos escopos Todos/
+       Disciplina do baralho (ver renderBaralho) — precisa da própria
+       regra porque #modal-esquemas-baralho não é descendente de
+       #esquemas-modal (é outro modal de topo), então a regra logo acima
+       não alcança aqui. */
+    #modal-esquemas-baralho .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; flex-shrink:0; }
     #esquemas-modal .esq-estudo-titulo, #modal-esquemas-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #esquemas-modal .esq-estudo-texto, #modal-esquemas-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
     /* Mesmas linhas de tabela do editor (#esq-editor-corpo) — sem isto,
@@ -19059,11 +19068,22 @@ window.ESQUEMAS_RUNTIME = {
         let visualizado = !!this.visualizados[card.id];
         let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizadoBaralho()">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
 
+        // Nos escopos "Todos"/"Disciplina" o baralho mistura vários
+        // tópicos (e, em "Todos", várias disciplinas) — o cabeçalho fixo
+        // não diz de onde é o card ATUAL, o que atrapalha a orientação ao
+        // navegar. Em "Tópico" (escopo === 'divisao') isso já é igual pra
+        // todo card do deck (mostrado no cabeçalho, fixo), então não
+        // repete aqui. Mesmo padrão .fc-card-origem já usado nas abas de
+        // estrela (_renderCorpoAba).
+        let htmlOrigem = (s.escopo !== 'divisao')
+            ? '<div class="fc-card-origem">' + this._escapar(this._localizarChavePorId(card.id) || '') + '</div>'
+            : '';
+
         // O card ocupa a área de visualização sozinho — visualizado/estrelas
         // saem daqui e vão pro rodapé (#esq-baralho-acoes, ao lado de
         // Fechar), discretos, pra não invadir o espaço de leitura do
         // conteúdo (pedido explícito, depois de invadirem antes).
-        corpo.innerHTML = this._htmlCartaoEsquemaEstudo(card);
+        corpo.innerHTML = htmlOrigem + this._htmlCartaoEsquemaEstudo(card);
         if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoEsqHtml(card.id, null);
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
@@ -20055,6 +20075,11 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-jurisprudencia-baralho #jur-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    /* Rótulo "Matéria — Divisão" da ficha ATUAL, só nos escopos Todos/
+       Disciplina do baralho (ver renderBaralho) — precisa da própria
+       regra porque #modal-jurisprudencia-baralho não é descendente de
+       #jurisprudencia-modal (é outro modal de topo). */
+    #modal-jurisprudencia-baralho .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
     #modal-jurisprudencia-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
     #modal-jurisprudencia-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
 </style>
@@ -21258,7 +21283,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         let card = this._fichaBaralhoAtual();
-        corpo.innerHTML = this._htmlCartaoFichaEstudo(card) +
+
+        // Nos escopos "Todos"/"Disciplina" o baralho mistura vários
+        // tópicos (e, em "Todos", várias disciplinas) — o cabeçalho fixo
+        // não diz de onde é a ficha ATUAL, o que atrapalha a orientação ao
+        // navegar. Em "Tópico" (escopo === 'divisao') isso já é igual pra
+        // toda ficha do deck (mostrado no cabeçalho, fixo), então não
+        // repete aqui. Mesmo padrão .fc-card-origem já usado nas abas de
+        // dificuldade (_renderCorpoAba).
+        let htmlOrigem = (s.escopo !== 'divisao')
+            ? '<div class="fc-card-origem">' + this._escapar([card.materiaL1, card.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
+            : '';
+
+        corpo.innerHTML = htmlOrigem + this._htmlCartaoFichaEstudo(card) +
             '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoJurTexto(card.id)) + '</div>' +
             '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</div>';
 
