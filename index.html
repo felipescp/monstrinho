@@ -3703,26 +3703,43 @@ window.addEventListener('load', function() {
     }
 });
 
-// Envia uma parte do backup com retry automático em 409 (conflito de
-// escrita concorrente no Gist — ex.: um salvamento manual e um automático
-// tocando o mesmo Gist quase ao mesmo tempo). 3 tentativas, com espera
-// CRESCENTE entre elas (800ms, 1600ms) pra dar tempo do outro processo
-// terminar. Compartilhado por exportarNuvem() e exportarNuvemSilenciosa().
+// Envia uma parte do backup com retry automático em dois cenários — 3
+// tentativas, com espera CRESCENTE entre elas (800ms, 1600ms) pra dar tempo
+// do outro processo/rede se recuperar:
+//  1) 409 (conflito de escrita concorrente no Gist — ex.: um salvamento
+//     manual e um automático tocando o mesmo Gist quase ao mesmo tempo);
+//  2) falha de REDE (fetch() lança exceção — "Failed to fetch": offline,
+//     Wi-Fi oscilou, VPN reconectou, notebook acordou de suspensão no meio
+//     do envio). Antes só o caso 1 tinha retry — o fetch() ficava fora de
+//     qualquer try/catch, então uma única oscilação de rede no meio de até
+//     12 partes sequenciais abortava o backup inteiro na hora, sem nenhuma
+//     nova tentativa, justamente no tipo de falha mais transitório e mais
+//     fácil de superar tentando de novo.
+// Compartilhado por exportarNuvem() e exportarNuvemSilenciosa().
 window.SALINHA_GIST_SYNC._enviarParteComRetry = async function(gistId, token, nomeArquivo, conteudoParte) {
     const MAX_TENTATIVAS = 3;
     let corpoParte = { files: {} };
     corpoParte.files[nomeArquivo] = { content: conteudoParte };
 
     for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
-        let resposta = await fetch('https://api.github.com/gists/' + gistId, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': 'token ' + token,
-                'Accept': 'application/vnd.github+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(corpoParte)
-        });
+        let resposta;
+        try {
+            resposta = await fetch('https://api.github.com/gists/' + gistId, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(corpoParte)
+            });
+        } catch (erroRede) {
+            if (tentativa < MAX_TENTATIVAS) {
+                await new Promise(function(resolve) { setTimeout(resolve, 800 * tentativa); });
+                continue;
+            }
+            throw new Error('Falha de rede (' + erroRede.message + ') após ' + MAX_TENTATIVAS + ' tentativas');
+        }
 
         if (resposta.ok) return resposta;
 
