@@ -1275,13 +1275,15 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </head>
 <body>
 
-<!-- OVERLAY: "Carregando última versão salva" — só aparece no PRIMEIRO boot
-     de um navegador/computador que nunca abriu o Monstrinho antes (ver
-     tjpe_v1__ja_usado_neste_navegador, gravado uma única vez logo no início
-     do boot). F5 e sessões seguintes no mesmo navegador nunca mostram isto,
-     mesmo com sincronização automática rodando por baixo — só a primeira
-     vez, quando a tela ainda não tem nenhuma aba própria pra mostrar
-     enquanto a busca na nuvem (pode levar 10s+) acontece. -->
+<!-- OVERLAY: "Carregando última versão salva" — aparece na 1ª abertura do
+     DIA em cada navegador/computador (ver tjpe_v1__ultimo_uso_local, uma
+     data ISO comparada por dia local, atualizada em toda abertura — não é
+     "primeira vez da vida", é "ainda não abriu hoje aqui"). Cobre o caso
+     real: trocar de computador (ou voltar depois de um tempo) com abas de
+     uma versão salva antiga na tela, enquanto a sincronização busca por
+     baixo o que mudou noutro lugar — sem isso, o usuário fica sem entender
+     por que nada atualiza por 10-15s. F5 e reaberturas dentro do MESMO dia,
+     no mesmo navegador, nunca mostram isto — aí é só atualização simples. -->
 <div id="overlay-carregando-nuvem" style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(15,23,42,0.92); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:24px;">
     <div style="width:36px; height:36px; border:3px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; animation:overlay-carregando-nuvem-spin 0.8s linear infinite;"></div>
     <div style="font-size:14px; font-weight:700; max-width:320px;">Aguarde... Realizando o carregamento da última versão salva.</div>
@@ -3936,23 +3938,36 @@ function esconderOverlayCarregandoNuvem() {
     if (el) el.style.display = 'none';
 }
 
+// Compara só ano/mês/dia NO FUSO LOCAL — "mesmo dia" pro usuário é o
+// calendário dele, não um corte de 24h corridas a partir de um horário
+// arbitrário.
+function _mesmoDiaLocal(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 window.addEventListener('load', function() {
-    // Overlay "Aguarde... carregando a última versão salva" — só na
-    // PRIMEIRA vez que este navegador/computador abre o Monstrinho. A
-    // marca (tjpe_v1__ja_usado_neste_navegador) é gravada aqui, uma única
-    // vez, ANTES de decidir se mostra o overlay — assim qualquer F5 ou
-    // sessão seguinte, no mesmo navegador, já encontra a marca e nunca
-    // mais aciona isso, mesmo que a sincronização automática continue
-    // rodando (silenciosa) por baixo em todo carregamento, como sempre foi.
-    // localStorage não é compartilhado entre navegadores/computadores
-    // diferentes — é exatamente por isso que ele serve como sinal de
-    // "primeira vez aqui": só está vazio onde de fato nunca abriu antes.
-    let primeiraVezNesteNavegador = !localStorage.getItem('tjpe_v1__ja_usado_neste_navegador');
-    try { localStorage.setItem('tjpe_v1__ja_usado_neste_navegador', '1'); } catch (e) {}
+    // Overlay "Aguarde... carregando a última versão salva" — dispara
+    // quando este navegador/computador ainda NÃO foi usado HOJE (1ª
+    // abertura do dia aqui), não só na primeira vez da vida inteira. É
+    // exatamente o cenário que gera confusão: abrir de outro computador (ou
+    // voltar depois de um tempo) com abas de uma versão salva antiga,
+    // enquanto a sincronização (10-15s) busca por baixo o que mudou noutro
+    // lugar, sem nenhum aviso de que algo está acontecendo. F5 e reaberturas
+    // dentro do MESMO dia, no mesmo navegador, não mostram — aí sim é só
+    // atualização simples, sem motivo pra alarme. A marca
+    // (tjpe_v1__ultimo_uso_local, uma data ISO) é atualizada em TODA
+    // abertura, não uma vez só — por isso o gatilho é "dia diferente do
+    // último uso", nunca "primeira vez".
+    let agora = new Date();
+    let ultimoUsoBruto = null;
+    try { ultimoUsoBruto = localStorage.getItem('tjpe_v1__ultimo_uso_local'); } catch (e) {}
+    let ultimoUso = ultimoUsoBruto ? new Date(ultimoUsoBruto) : null;
+    let primeiraVezHojeNesteNavegador = !(ultimoUso && !isNaN(ultimoUso.getTime()) && _mesmoDiaLocal(ultimoUso, agora));
+    try { localStorage.setItem('tjpe_v1__ultimo_uso_local', agora.toISOString()); } catch (e) {}
 
     let temSyncConfigurado = !!(window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken() && window.SALINHA_GIST_SYNC.getGistId());
 
-    if (primeiraVezNesteNavegador && temSyncConfigurado) {
+    if (primeiraVezHojeNesteNavegador && temSyncConfigurado) {
         mostrarOverlayCarregandoNuvem();
         window.SALINHA_GIST_SYNC.importarNuvemSilenciosa().finally(function() {
             // Se a sincronização encontrou algo novo, a própria
