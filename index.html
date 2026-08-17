@@ -873,8 +873,12 @@ body.force-mobile.top-aberto .nav-hd-zone { display: none !important; } /* Escon
     body.top-aberto #barra2 { display: flex !important; }
     body.top-aberto .nav-hd-zone { display: none !important; } /* Limpeza tática */
 
-    /* 4. Barra Lateral vira Gaveta */
-    #sb { position: fixed; top: 0; right: 0; bottom: 0; width: 85vw; max-width: 320px; z-index: 250; transform: translateX(100%); border-left: none; box-shadow: -4px 0 24px rgba(0,0,0,.15); transition: transform .25s ease; }
+    /* 4. Barra Lateral vira Gaveta — max-width 280px (não 320px) pelo
+       mesmo cálculo do breakpoint de 1200px acima (5×36 + 4×6 = 204px de
+       botões + 60px de padding duplo = 264px mínimo pra 5 colunas; 320px
+       já dava espaço de sobra pra um 6º botão entrar, quebrando a simetria
+       relatada no mobile). */
+    #sb { position: fixed; top: 0; right: 0; bottom: 0; width: 85vw; max-width: 280px; z-index: 250; transform: translateX(100%); border-left: none; box-shadow: -4px 0 24px rgba(0,0,0,.15); transition: transform .25s ease; }
     #sb.open { transform: translateX(0); }
     #sb-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 240; backdrop-filter: blur(2px); }
     #sb-overlay.open { display: block; }
@@ -894,7 +898,10 @@ body.force-mobile.top-aberto .nav-hd-zone { display: none !important; } /* Escon
     .tela { zoom: 1.2; }
 }
 
-body.force-mobile #sb { position: fixed; top: 0; bottom: 0; width: 320px; right: -340px; z-index: 250; border-left: none; background: var(--bg-white); box-shadow: -4px 0 24px rgba(0,0,0,.15); transition: right 0.25s ease; transform: none; }
+/* width 280px (não 320px) — mesmo motivo do #sb dentro de @media(max-width:700px)
+   acima: garante 5 colunas de botões numerados, nunca 6. right:-300px
+   (largura + 20px) mantém a gaveta escondida fora da tela quando fechada. */
+body.force-mobile #sb { position: fixed; top: 0; bottom: 0; width: 280px; right: -300px; z-index: 250; border-left: none; background: var(--bg-white); box-shadow: -4px 0 24px rgba(0,0,0,.15); transition: right 0.25s ease; transform: none; }
 body.force-mobile #sb.open { right: 0; }
 body.force-mobile #sb-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 240; backdrop-filter: blur(2px); }
 body.force-mobile #sb-overlay.open { display: block; }
