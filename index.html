@@ -9339,13 +9339,11 @@ window.ProvasEngine = {
                     // 1. Gravação exclusiva no Catálogo Factual
                     localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(Array.from(mapa.values())));
                     
-                    // 2. UNIFICAÇÃO DA COLUNA 4: Enxerto localizado síncrono para cada item novo
-                    if (Array.isArray(novosItens)) {
-                        novosItens.forEach(function(item) {
-                            if (item && typeof window.enxertarNovoCardFactual === 'function') {
-                                window.enxertarNovoCardFactual(item);
-                            }
-                        });
+                    // renderHomeDashboard() em vez do antigo enxerto por item —
+                    // aquele visava containers de uma Vitrine de 4 colunas que
+                    // não existe mais (ver nota em salvarProvaNoAcervo).
+                    if (typeof window.renderHomeDashboard === 'function') {
+                        window.renderHomeDashboard();
                     }
 
                     alert('Provas anteriores importadas com sucesso!');
@@ -10282,101 +10280,6 @@ window.buildCardPlaylist = function(p) {
            '</div>';
 };
 
-// =========================================================================
-// ENXERTADOR GLOBAL POLIMÓRFICO (COLUNAS 2, 3 e 4)
-// =========================================================================
-window.enxertarNovoCardFactual = function(item) {
-    if (!item || !item.id) return;
-    
-    var m = item.metadados_mc || {};
-    var isSimulado = m.classificacao && m.classificacao.toUpperCase().includes('SIMULADO');
-    var isPlaylist = item.tipo === 'pl' || item.is_playlist === true;
-    
-    // =========================================================================
-    // VALIDAR EMPIRICAMENTE NO CONSOLE: document.getElementById('lista-playlists')
-    // Se o contêiner divergir, altere a string abaixo para evitar falha silenciosa.
-    // =========================================================================
-    var containerId = '';
-    if (isPlaylist) {
-        containerId = 'lista-playlists';        // Coluna 3
-    } else if (isSimulado) {
-        containerId = 'lista-provas-mc';         // Coluna 2
-    } else {
-        containerId = 'lista-provas-anteriores'; // Coluna 4
-    }
-    
-    var container = document.getElementById(containerId);
-    if (!container) {
-        console.error('[MUTATION FACTUAL] Erro: Contêiner alvo não mapeado no DOM:', containerId);
-        return;
-    }
-
-    // Encapsulamento de geração de HTML via Helpers Soberanos
-    var htmlCard = '';
-    if (isPlaylist) {
-        if (typeof window.buildCardPlaylist === 'function') {
-            htmlCard = window.buildCardPlaylist(item);
-        } else {
-            console.error('[MUTATION FACTUAL] Helper window.buildCardPlaylist ausente.');
-        }
-    } else {
-        var qtdQ = 0;
-        var arrayDisciplinas = [];
-        if (item.dados && Array.isArray(item.dados.blocos)) {
-            item.dados.blocos.forEach(function(b) {
-                var qLen = Array.isArray(b.questoes) ? b.questoes.length : 0;
-                qtdQ += qLen;
-                if (qLen > 0) arrayDisciplinas.push('• ' + b.nome + ' (' + qLen + ')');
-            });
-        }
-        var disciplinasHtml = arrayDisciplinas.join(' ');
-
-        var isResolvido = false;
-        try {
-            var longitudinal = JSON.parse(localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || '{}');
-            if (Array.isArray(longitudinal.historico_provas_anteriores)) {
-                isResolvido = longitudinal.historico_provas_anteriores.some(function(h) {
-                    return h && (h.id_original === item.id || h.id === item.id);
-                });
-            }
-        } catch(e) {}
-
-        if (isSimulado) {
-            if (typeof window.buildCardSimulado === 'function') {
-                htmlCard = window.buildCardSimulado(item, isResolvido, qtdQ, disciplinasHtml, m);
-            }
-        } else {
-            // CORREÇÃO ARQUITETURAL: Nomenclatura unificada sem fallback morto
-            if (typeof window.buildCardProvaAnterior === 'function') {
-                var clickAcao = "window.iniciarProvaDaVitrine('" + item.id + "')";
-                htmlCard = window.buildCardProvaAnterior(item, isResolvido, m, clickAcao);
-            } else {
-                console.error('[MUTATION FACTUAL] Helper window.buildCardProvaAnterior ausente.');
-            }
-        }
-    }
-
-    if (!htmlCard) return;
-
-    // Interceptador de Destino (Append para criação, Swap para edição)
-    var cardExistente = document.getElementById('card-' + item.id);
-    if (cardExistente) {
-        try {
-            var scrollAtual = window.scrollY;
-            cardExistente.outerHTML = htmlCard;
-            window.scrollTo(0, scrollAtual);
-        } catch (e) {
-            console.error('[MUTATION FACTUAL] Erro no outerHTML swap da Edição:', e);
-        }
-    } else {
-        try {
-            container.insertAdjacentHTML('beforeend', htmlCard);
-        } catch (e) {
-            console.error('[MUTATION FACTUAL] Erro na injeção do novo card:', e);
-        }
-    }
-};
-
 // =========================================================
 // RUNTIME ATIVO (SESSÃO DO USUÁRIO)
 // =========================================================
@@ -10751,7 +10654,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     let etiquetaOficial = p.origem_oficial ? `<span style="font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; margin-right:4px;">(Oficial)</span>` : '';
 
 return `
-<div style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
+<div id="card-${p.id}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
      onmouseover="this.style.background='#f1f5f9'"
      onmouseout="this.style.background='transparent'"
      onclick="${clickAcao}">
@@ -12367,13 +12270,18 @@ localStorage.setItem(
         if(typeof window.cancelarEdicaoAcervo === 'function') window.cancelarEdicaoAcervo();
         
         // Retorna o fundo para a Vitrine (Tira o app do limbo)
-        tela('tela-home'); 
-        
-        // Substituição do nó-folha: DOM Patch localizado substitui repaint global destrutivo
-        if (typeof window.enxertarNovoCardFactual === 'function') {
-            window.enxertarNovoCardFactual(novaPlaylist);
+        tela('tela-home');
+
+        // renderHomeDashboard() em vez do antigo "enxerto localizado" —
+        // aquele patch cirúrgico só sabia inserir em #lista-provas-mc/
+        // #lista-playlists/#lista-provas-anteriores, containers de uma
+        // Vitrine de 4 colunas que não existe mais (só sobrou o painel
+        // Baterias V/F, #lista-provas-ce) — então toda playlist criada
+        // falhava em silêncio (só console.error) e exigia F5 pra aparecer.
+        if (typeof window.renderHomeDashboard === 'function') {
+            window.renderHomeDashboard();
         }
-       
+
         return; // MATA a função aqui para não rodar a lógica antiga abaixo!
     }
 
@@ -12483,12 +12391,13 @@ if (isEdicao) {
         if(typeof window.cancelarEdicaoAcervo === 'function') window.cancelarEdicaoAcervo();
         
         // Restaura a visão da Vitrine (Tira o app do limbo)
-        tela('tela-home'); 
-        
-        // Manda a Vitrine buscar a nova prova no banco e desenhar os cards
-        // Substituição do nó-folha: DOM Patch localizado substitui repaint global
-        if (typeof window.enxertarNovoCardFactual === 'function') {
-            window.enxertarNovoCardFactual(novaProva);
+        tela('tela-home');
+
+        // renderHomeDashboard() em vez do antigo "enxerto localizado" (ver
+        // nota equivalente na rota de playlist, algumas linhas acima) —
+        // mesmo motivo: os containers que ele visava não existem mais.
+        if (typeof window.renderHomeDashboard === 'function') {
+            window.renderHomeDashboard();
         }
         
     } else {
@@ -15463,6 +15372,19 @@ window.deletarSimuladoAcervo = function(id) {
 // ==========================================
 // 🛡️ MOTOR DE EXCLUSÃO INDIVIDUAL (RESTAURADO E BLINDADO)
 // ==========================================
+// Única definição de excluirSimuladoIndividual — havia uma segunda,
+// redefinindo window.excluirSimuladoIndividual mais abaixo no arquivo (por
+// isso essa daqui nunca rodava: a última atribuição sempre vence). A outra
+// localizava o card a excluir varrendo `[onclick*="'ID'"]` + .closest() por
+// substring de padding — na lista de Baterias V/F isso batia primeiro no
+// próprio card (cujo onclick também contém o id) e, como o card em si não
+// tinha padding correspondente, o closest() escalava até o CONTAINER da
+// lista inteira (#lista-provas-ce, que tem "padding: 10px") e removia ele
+// inteiro — sumindo com TODAS as baterias de uma vez, exigindo F5 pra
+// voltar (o container removido nunca mais existia pra re-render escrever
+// nele). Removida; esta versão usa id="card-<id>" direto (ver
+// renderizarListaBaterias), sem ambiguidade nenhuma, e de quebra já limpava
+// playlists/sessão ativa que a outra não limpava.
 window.excluirSimuladoIndividual = function(id) {
     if (!confirm('Excluir definitivamente esta bateria/playlist do catálogo? (Esta ação não afeta o histórico de resoluções já gravadas)')) return;
 
@@ -17092,36 +17014,6 @@ window.exportarAcervoJson = function() {
     }
     
     downloadArquivo(JSON.stringify(acervo, null, 2), `acervo-salinha-${Date.now()}.json`, 'application/json');
-};
-
-window.excluirSimuladoIndividual = function(id) {
-    if(confirm("Tem certeza que deseja excluir este item permanentemente?")) {
-        // 1. Mutação do Banco de Dados (Background)
-        let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-        acervo = acervo.filter(s => s.id !== id);
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
-        
-        // 2. Destruição Cirúrgica do Nó no DOM (Sem F5 / Sem Render)
-        // Busca qualquer gatilho de botão que contenha o ID do item
-        let triggers = document.querySelectorAll(`[onclick*="'${id}'"]`);
-        if (triggers.length > 0) {
-            // Varre até a raiz estrutural do card (cobre as 4 colunas)
-            let card = triggers[0].closest('div[style*="padding: 10px"], div[style*="padding: 4px 8px"]');
-            if (card) {
-                // Animação de colapso visual para UX
-                card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.95)';
-                
-                setTimeout(() => { 
-                    card.remove(); 
-                }, 200);
-                return; // Operação concluída com sucesso sem perturbar a interface
-            }
-        }
-        
-        console.warn("[AUDITORIA] Falha ao localizar o card no DOM. Recarregamento necessário.");
-    }
 };
 
 /* ==========================================
