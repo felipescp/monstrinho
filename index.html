@@ -20034,7 +20034,13 @@ window.carregarEsquemasOficiais = async function() {
        largo/alto que o .fc-card de Flashcards, pois jurisprudência tem
        tese+resumo (texto longo, não cabe num cartão pequeno). Compartilhado
        com #modal-jurisprudencia-baralho via seletor combinado. */
-    #jurisprudencia-modal .jur-estudo-card, #modal-jurisprudencia-baralho .jur-estudo-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; max-width:640px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; max-height:46vh; overflow-y:auto; }
+    #jurisprudencia-modal .jur-estudo-card, #modal-jurisprudencia-baralho .jur-estudo-card { background:#eef2ff; border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+    #jurisprudencia-modal .jur-estudo-card { max-width:640px; max-height:46vh; }
+    /* Baralho: tamanho FIXO igual ao de Esquemas (680px de largura,
+       flex:1 pra sempre ocupar a altura toda disponível) — pedido
+       explícito de uniformização; antes, cada ficha dava um tamanho de
+       card diferente (encolhe-pro-conteúdo até o teto de 46vh). */
+    #modal-jurisprudencia-baralho .jur-estudo-card { max-width:680px; flex:1; min-height:0; }
     #jurisprudencia-modal .jur-estudo-titulo, #modal-jurisprudencia-baralho .jur-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #jurisprudencia-modal .jur-estudo-meta, #modal-jurisprudencia-baralho .jur-estudo-meta { font-size:11px; color:var(--text-muted); }
     #jurisprudencia-modal .jur-estudo-label, #modal-jurisprudencia-baralho .jur-estudo-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:6px; }
@@ -20199,7 +20205,10 @@ window.carregarEsquemasOficiais = async function() {
 <div id="modal-jurisprudencia-baralho" class="mo">
 <style>
     #modal-jurisprudencia-baralho { z-index: 10000; } /* mesma correção de z-index já aplicada aos outros popups desta seção */
-    #modal-jurisprudencia-baralho .mdl { max-width:700px; width:95%; max-height:90vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    /* Mesmas dimensões fixas do #modal-esquemas-baralho — tamanho
+       uniformizado entre as duas seções (pedido explícito), em vez de
+       cada popup ter sua própria medida. */
+    #modal-jurisprudencia-baralho .mdl { max-width:740px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
     #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
        estilo padrão de <button>/<span> do navegador (foi o bug reportado:
@@ -20209,7 +20218,12 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
     #modal-jurisprudencia-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-jurisprudencia-baralho #jur-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
-    #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
+    #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
+    /* Corpo do baralho preenche toda a altura que sobrar no popup (mesmo
+       padrão de #esq-baralho-corpo) — sem isto, o card interno (mesmo já
+       com flex:1) não tem um pai flex pra crescer, e o popup inteiro
+       encolhe pro tamanho do conteúdo em vez de ficar fixo. */
+    #modal-jurisprudencia-baralho #jur-baralho-corpo { flex:1; min-height:0; display:flex; flex-direction:column; }
     /* Rótulo "Matéria — Divisão" da ficha ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-jurisprudencia-baralho não é descendente de
