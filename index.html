@@ -3264,6 +3264,49 @@ window.SALINHA_GIST_SYNC = {
         return partes;
     },
 
+    // Codifica o JSON do backup em base64 ANTES de dividir em partes —
+    // corrige o erro "Bad control character in string literal" ao
+    // importar. Causa raiz: dividirEmPartes() corta a string em pontos
+    // arbitrários (por índice de caractere), podendo cair no meio de uma
+    // sequência de escape ("\n" vira "\" numa parte e "n" na próxima) ou de
+    // um par substituto UTF-16 (emoji cortado ao meio). A concatenação das
+    // partes por si só é inofensiva, mas o caminho de importação de partes
+    // GRANDES busca o conteúdo via raw_url (fetch().text() num endpoint
+    // separado do da API), que decodifica bytes por conta própria — e esse
+    // "\" órfão ou par substituto quebrado pode sair diferente do que
+    // entrou. Com o payload inteiro em base64 (alfabeto puramente ASCII,
+    // sem \, sem caracteres de controle, sem substitutos), não existe mais
+    // sequência nenhuma pra cortar ao meio — e atob()/o decoder de base64
+    // do navegador ignora silenciosamente qualquer espaço/quebra de linha
+    // estranha que porventura entre num limite de parte, então mesmo uma
+    // normalização de texto do lado do GitHub deixa de conseguir corromper
+    // o conteúdo.
+    _utf8ParaBase64: function(str) {
+        let bytes = new TextEncoder().encode(str);
+        let binario = '';
+        for (let i = 0; i < bytes.length; i++) binario += String.fromCharCode(bytes[i]);
+        return btoa(binario);
+    },
+
+    _base64ParaUtf8: function(b64) {
+        let binario = atob(b64);
+        let bytes = new Uint8Array(binario.length);
+        for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+        return new TextDecoder().decode(bytes);
+    },
+
+    // Decodifica o conteúdo reconstruído do Gist — tenta base64 primeiro
+    // (formato novo); se não for base64 válido (InvalidCharacterError),
+    // cai pro texto puro (formato antigo, backups salvos antes desta
+    // correção), mantendo compatibilidade com o que já está salvo na nuvem.
+    _decodificarConteudoNuvem: function(conteudoBruto) {
+        try {
+            return this._base64ParaUtf8(conteudoBruto);
+        } catch (e) {
+            return conteudoBruto;
+        }
+    },
+
 exportarNuvem: async function(botao) {
         // Lock compartilhado com exportarNuvemSilenciosa() — mesmo desativada
         // hoje (ver verificarSalvamentoPeriodicoNuvem), protege contra dois
@@ -3292,7 +3335,7 @@ exportarNuvem: async function(botao) {
 
             let payload = await window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
-            let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
+            let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
             let gistId = this.getGistId();
             let eraNovoGist = !gistId;
 
@@ -3442,7 +3485,7 @@ exportarNuvem: async function(botao) {
                 throw new Error('Backup não encontrado dentro do Gist.');
             }
 
-            let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+            let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
             // Aviso adicional sempre que o parser precisou descartar lixo
             // sobrando no fim do backup (partes órfãs no Gist, de um envio
             // anterior interrompido) — o merge em si funcionou, mas vale
@@ -3864,7 +3907,7 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
     try {
         let payload = await window.SALINHA_BACKUP.construirPayload();
         let conteudo = JSON.stringify(payload, null, 2);
-        let partes = this.dividirEmPartes(conteudo, this.TAMANHO_MAX_PARTE);
+        let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
 
         let nomesAntigos = [];
         let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
@@ -4014,7 +4057,7 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
             return;
         }
 
-        let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(conteudoCompleto);
+        let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
         if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
             // "Silenciosa" não deve virar alert() interrompendo a página no
             // load — mas o erro não pode ficar 100% invisível também, então
