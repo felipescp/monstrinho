@@ -1560,6 +1560,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                                 <div id="grupo-toolbar-baterias-selecao" style="display:none; gap:4px; flex-shrink:0;">
                                     <button id="btn-selecionar-todas-baterias" onclick="window.selecionarTodasBateriasVisiveis()" title="Marca todas as baterias visíveis na lista atual" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Selecionar Todas</button>
                                     <button id="btn-exportar-selecionadas-baterias" onclick="window.exportarBateriasSelecionadas()" title="Exporta as baterias marcadas num JSON — mesma modalidade de 'Exportar Grupo', apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--app-primary); border-radius:5px; background:var(--app-primary); color:#fff; cursor:pointer;">Exportar Selecionadas</button>
+                                    <button id="btn-excluir-selecionadas-baterias" onclick="window.excluirBateriasSelecionadas()" title="Exclui permanentemente as baterias marcadas" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--danger); border-radius:5px; background:var(--bg-white); color:var(--danger); cursor:pointer;">Excluir Selecionadas</button>
                                 </div>
                                 <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
                             </div>
@@ -10851,6 +10852,40 @@ window.exportarBateriasSelecionadas = function() {
     let grupo = acervo.filter(function(p) { return p && idsSet.has(p.id); });
     if (grupo.length === 0) { alert('Nenhuma das baterias selecionadas foi encontrada no acervo.'); return; }
     downloadArquivo(JSON.stringify(grupo, null, 2), `grupo-selecionadas-${Date.now()}.json`, 'application/json');
+};
+
+// Exclusão em lote das marcadas — mesma purga de 3 passos de
+// excluirSimuladoIndividual (acervo + playlists + sessão ativa), só que
+// pra um conjunto de ids de uma vez em vez de um só, com uma única
+// confirmação. Sai do modo seleção e reaplica a view corrente pra
+// redesenhar a lista sem as excluídas.
+window.excluirBateriasSelecionadas = function() {
+    let ids = Object.keys(window.__selecionadosBaterias__ || {});
+    if (ids.length === 0) { alert('Nenhuma bateria selecionada.'); return; }
+    if (!confirm('⚠️ Excluir permanentemente ' + ids.length + ' bateria(s) selecionada(s)? (Não afeta o histórico de resoluções já gravadas)')) return;
+
+    let idsSet = new Set(ids);
+
+    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    acervo = acervo.filter(function(p) { return !(p && idsSet.has(p.id)); });
+    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
+
+    let playlistsRuntime = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
+    playlistsRuntime = playlistsRuntime.filter(function(p) { return !(p && idsSet.has(p.id)); });
+    localStorage.setItem('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsRuntime));
+
+    try {
+        let simRuntime = JSON.parse(localStorage.getItem('tjpe_v1__clube_simulado_auto') || '{}');
+        if (Array.isArray(simRuntime.sims)) {
+            simRuntime.sims = simRuntime.sims.filter(function(s) { return !(s && idsSet.has(s.id)); });
+            localStorage.setItem('tjpe_v1__clube_simulado_auto', JSON.stringify(simRuntime));
+        }
+    } catch (e) {}
+
+    window.__selecionadosBaterias__ = {};
+    window.__modoSelecaoBaterias__ = false;
+    marcarBotaoSelecaoBateriasAtivo();
+    window.renderHomeDashboard();
 };
 
 function marcarBotaoSelecaoBateriasAtivo() {
