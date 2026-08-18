@@ -1319,6 +1319,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login com GitHub — único método de sincronização em nuvem">🔑 Entrar com GitHub</button>
+                <button id="btn-github-logout-desktop" onclick="window.SALINHA_GITHUB_OAUTH.sair()" class="b1" style="display:none; height:26px; width:26px; font-size:11px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Sair da conta do GitHub neste navegador">✕</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
 
@@ -1366,17 +1367,17 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 
 </div>
     <div class="nav-hd-zone">
-        <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item" id="btn-nav-materiais" onclick="localStorage.setItem('tjpe_v1__salinha_active_module', 'section-materiais'); tela('section-materiais'); if(window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
+        <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
+        <div class="nav-item hd-item" id="btn-nav-materiais" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-materiais'); tela('section-materiais'); if(window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
                 <span class="nav-sub-label">PRATICAR:</span>
-                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); "title=" Questões Marcadas">🏹 QUESTÕES</span>
+                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); "title=" Questões Marcadas">🏹 QUESTÕES</span>
                 <span class="nav-sub-sep">|</span>
-                <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" title="Flashcards de Axiomas"> 🏹 AXIOMAS</span>
+                <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" title="Flashcards de Axiomas"> 🏹 AXIOMAS</span>
             </span>
         </div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
@@ -1450,6 +1451,24 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
             title="Login com GitHub — único método de sincronização em nuvem"
         >
             🔑 Entrar com GitHub
+        </button>
+
+        <button
+            id="btn-github-logout-mobile"
+            onclick="window.SALINHA_GITHUB_OAUTH.sair()"
+            class="b1"
+            style="
+                display:none;
+                height:26px;
+                width:26px;
+                font-size:11px;
+                background:var(--bg-white);
+                border:1px solid var(--border-color);
+                color:var(--text-muted);
+            "
+            title="Sair da conta do GitHub neste navegador"
+        >
+            ✕
         </button>
 
     </div>
@@ -2096,23 +2115,50 @@ window.SALINHA_BACKUP = {
     },
 
     // Tenta o JSON.parse normal; se falhar especificamente com "lixo depois
-    // de um JSON válido" (Unexpected non-whitespace character after JSON at
-    // position N — sintoma de partes órfãs sobrando no Gist, ver
+    // de um JSON válido" — sintoma de partes órfãs sobrando no Gist, ver
     // exportarNuvem()/exportarNuvemSilenciosa(): upload das partes novas e
     // limpeza das antigas são 2 requisições separadas, não atômicas; se a
     // segunda nunca rodar — aba fechada, rede caiu — sobra lixo colado no
-    // fim do backup válido), recupera cortando exatamente na posição que o
+    // fim do backup válido —, recupera cortando exatamente na posição que o
     // próprio parser reportou como "aqui o JSON válido já tinha terminado".
     // Isso destrava o carregamento sem esperar um salvamento limpo
     // completo (que só a próxima "☁️⬆️ Salvar" bem-sucedida, do início ao
     // fim, resolveria de vez).
+    //
+    // A MENSAGEM desse erro varia por motor de JS — cada navegador frasea
+    // diferente, e só o Chrome/V8 dá uma posição absoluta pronta pra usar:
+    //   V8 (Chrome/Edge):  "...after JSON at position 8351209 (line 21 column 2)"
+    //   SpiderMonkey (Firefox): "...after JSON data at line 21 column 2 of the JSON data" — SEM posição absoluta
+    // Testado com o erro real reportado nos dois motores; se for outro
+    // motor/formato desconhecido (ex. Safari), cai no catch de fora sem
+    // fingir recuperação — mesma garantia de sempre.
+    _posicaoDoErroDeJsonSobrando: function(mensagemErro, jsonString) {
+        const mensagem = mensagemErro || '';
+
+        const mV8 = /after JSON at position (\d+)/.exec(mensagem);
+        if (mV8) return parseInt(mV8[1], 10);
+
+        const mFirefox = /after JSON data at line (\d+) column (\d+)/i.exec(mensagem);
+        if (mFirefox) {
+            const linhaAlvo = parseInt(mFirefox[1], 10);
+            const colunaAlvo = parseInt(mFirefox[2], 10);
+            const linhas = jsonString.split('\n');
+            let offset = 0;
+            for (let i = 0; i < linhaAlvo - 1 && i < linhas.length; i++) {
+                offset += linhas[i].length + 1; // +1 pela quebra de linha removida pelo split
+            }
+            return offset + (colunaAlvo - 1);
+        }
+
+        return null;
+    },
+
     _parseJsonComRecuperacao: function(jsonString) {
         try {
             return { obj: JSON.parse(jsonString), recuperado: false };
         } catch (erroOriginal) {
-            const m = /Unexpected non-whitespace character after JSON at position (\d+)/.exec(erroOriginal.message || '');
-            if (!m) throw erroOriginal;
-            const posicao = parseInt(m[1], 10);
+            const posicao = this._posicaoDoErroDeJsonSobrando(erroOriginal.message, jsonString);
+            if (posicao === null) throw erroOriginal;
             try {
                 const obj = JSON.parse(jsonString.slice(0, posicao));
                 console.warn('[MERGE] Backup continha lixo sobrando após um JSON válido (posição ' + posicao + ' de ' + jsonString.length + ') — provável parte órfã de um envio anterior interrompido no Gist. Recuperado usando só a parte válida; um novo "☁️⬆️ Salvar" completo deve limpar as sobras na nuvem.', erroOriginal);
@@ -3668,6 +3714,30 @@ window.SALINHA_GITHUB_OAUTH = {
             let el = document.getElementById(id);
             if (el) { el.textContent = texto; el.title = titulo; }
         });
+        // Botão "✕ Sair" só aparece logado — antes não existia nenhum jeito
+        // de sair sem apagar localStorage manualmente pelo DevTools.
+        ['btn-github-logout-desktop', 'btn-github-logout-mobile'].forEach(function(id) {
+            let el = document.getElementById(id);
+            if (el) el.style.display = nome ? '' : 'none';
+        });
+    },
+
+    // Esquece o login deste navegador (token OAuth + nome em cache + gist_id
+    // associado) — não apaga nada na nuvem nem localmente além disso; os
+    // dados continuam salvos no Gist da conta, só não fica mais acessível
+    // sem entrar de novo. Limpa gist_id também: se a pessoa logar depois com
+    // OUTRA conta, não pode arriscar reaproveitar um gist_id de conta
+    // diferente (escrever nele dá 403 — só o dono edita — mas ainda assim
+    // não deveria nem tentar; _descobrirGistExistente descobre de novo, pela
+    // conta nova, no próximo login).
+    sair: function() {
+        let nome = localStorage.getItem(this._CHAVE_USERNAME_CACHE) || '';
+        if (!confirm('Sair da conta' + (nome ? ' (' + nome + ')' : '') + ' do GitHub neste navegador?\n\nSeus dados continuam salvos na nuvem — você pode entrar de novo quando quiser.')) return;
+        localStorage.removeItem(window.SALINHA_GIST_SYNC._CHAVE_TOKEN_OAUTH); // chave pertence a SALINHA_GIST_SYNC, não a este módulo
+        localStorage.removeItem(this._CHAVE_USERNAME_CACHE);
+        localStorage.removeItem('tjpe_v1__salinha_github_gist_id');
+        this.atualizarBotaoLogin();
+        alert('Você saiu da conta do GitHub neste navegador.');
     },
 
     // Busca o login (nome de usuário) dono do token atual e guarda em cache
@@ -3689,6 +3759,23 @@ window.SALINHA_GITHUB_OAUTH = {
             console.warn('[GITHUB OAUTH] Erro de rede ao buscar usuário logado:', e);
         }
     }
+};
+
+// =========================================================================
+// BLOQUEIO DE SEÇÃO POR LOGIN — toda seção de conteúdo (Jurisprudência,
+// Esquemas, Materiais, Cronograma, Caderno de Erros/Axiomas, Praticar
+// Caderno, Flashcards, Estatísticas) exige GitHub logado pra abrir. Abrir
+// uma bateria específica já tinha esse bloqueio (iniciarSimuladoDaVitrine);
+// isto estende a mesma regra pras demais seções, de forma centralizada —
+// um único ponto de verdade pro que "logado" significa, em vez de checar
+// window.SALINHA_GIST_SYNC.getToken() espalhado em cada função de abertura.
+// A vitrine inicial (lista de baterias) continua livre pra visualizar —
+// só ABRIR uma bateria específica, ou entrar numa seção de conteúdo, exige
+// login.
+window.exigirLoginParaSecao = function() {
+    if (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken()) return true;
+    alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub") para acessar esta seção.');
+    return false;
 };
 
 window.addEventListener('load', function() {
@@ -11445,7 +11532,7 @@ else if (auditId) {
                 'section-materiais': function() { if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init(); }
             };
 
-            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule)) {
+            if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule) && window.exigirLoginParaSecao && window.exigirLoginParaSecao()) {
                 tela(activeModule);
                 renderTabs();
                 SECOES_RESTAURAVEIS[activeModule]();
@@ -15936,6 +16023,7 @@ window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 50
    ========================================== */
 
 function openAnalyticsModal() {
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('analytics-modal');
     let frame = document.getElementById('analytics-frame');
 
@@ -15988,6 +16076,7 @@ function closeAnalyticsModal() {
 // ── CADERNO DE QUESTÕES SALVAS (nativo, sem depender de página externa) ──
 
 function abrirCadernoModal() {
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('caderno-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -19692,6 +19781,7 @@ window.ESQUEMAS_RUNTIME = {
 };
 
 window.abrirEsquemasModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
     modal.classList.add('active');
@@ -21432,6 +21522,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 };
 
 window.abrirJurisprudenciaModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
     modal.classList.add('active');
