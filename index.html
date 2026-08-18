@@ -1516,6 +1516,7 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                     <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F
                         <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-left:4px;">Ocultar Oficiais</button>
                     </div>
+                    <button id="btn-selecionar-baterias" onclick="event.stopPropagation(); window.toggleModoSelecaoBaterias()" title="Selecionar baterias específicas pra exportar num grupo — mesma modalidade de 'Exportar Grupo' (kebab ⋮), apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-right:8px;">Selecionar</button>
                     <div style="position: relative;">
     <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
     
@@ -1549,10 +1550,14 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
                                 <button id="btn-modo-materia" onclick="window.exibirMateriaSelecionada();" style="flex:1; padding:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; border:none; background:transparent; color:var(--text-muted); cursor:pointer; border-bottom: 2px solid transparent;">Exibir Matéria</button>
                             </div>
                             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding: 6px 15px; background: #fafafa; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
-                                <div style="display:flex; gap:4px; flex-shrink:0;">
+                                <div id="grupo-toolbar-baterias-normal" style="display:flex; gap:4px; flex-shrink:0;">
                                     <button id="btn-ordenar-az" onclick="window.ordenarListaBaterias('az')" title="Ordenar por nome" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">A-Z</button>
                                     <button id="btn-ordenar-data" onclick="window.ordenarListaBaterias('data')" title="Ordenar por data de criação (mais recente primeiro)" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Por Data</button>
                                     <button id="btn-ocultar-oficiais-baterias" onclick="window.toggleOcultarOficiaisBaterias()" title="Ocultar baterias oficiais da lista" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Ocultar Oficiais</button>
+                                </div>
+                                <div id="grupo-toolbar-baterias-selecao" style="display:none; gap:4px; flex-shrink:0;">
+                                    <button id="btn-selecionar-todas-baterias" onclick="window.selecionarTodasBateriasVisiveis()" title="Marca todas as baterias visíveis na lista atual" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Selecionar Todas</button>
+                                    <button id="btn-exportar-selecionadas-baterias" onclick="window.exportarBateriasSelecionadas()" title="Exporta as baterias marcadas num JSON — mesma modalidade de 'Exportar Grupo', apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--app-primary); border-radius:5px; background:var(--app-primary); color:#fff; cursor:pointer;">Exportar Selecionadas</button>
                                 </div>
                                 <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
                             </div>
@@ -10653,18 +10658,31 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     // baterias oficiais na mesma linha de metadados.
                     let etiquetaOficial = p.origem_oficial ? `<span style="font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; margin-right:4px;">(Oficial)</span>` : '';
 
+                    // Modo seleção (botão "Selecionar" no cabeçalho do painel) —
+                    // mesmo padrão de Materiais/Esquemas: card ganha checkbox,
+                    // clicar nele (em vez de abrir a bateria) alterna a marcação,
+                    // e o kebab por linha some pra não competir com o clique.
+                    let modoSelecao = !!window.__modoSelecaoBaterias__;
+                    let selecionado = modoSelecao && !!(window.__selecionadosBaterias__ && window.__selecionadosBaterias__[p.id]);
+                    let checkboxHtml = modoSelecao
+                        ? `<input type="checkbox" onclick="event.stopPropagation();" ${selecionado ? 'checked' : ''} onchange="window.toggleSelecionadoBateria('${p.id}')" style="margin-right:2px; flex-shrink:0; cursor:pointer;">`
+                        : '';
+                    let onclickCard = modoSelecao ? `window.toggleSelecionadoBateria('${p.id}')` : clickAcao;
+                    let kebabHtml = modoSelecao ? '' : `<button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>`;
+
 return `
-<div id="card-${p.id}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
+<div id="card-${p.id}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;${selecionado ? ' background:#eef2ff;' : ''}"
      onmouseover="this.style.background='#f1f5f9'"
-     onmouseout="this.style.background='transparent'"
-     onclick="${clickAcao}">
+     onmouseout="this.style.background='${selecionado ? '#eef2ff' : 'transparent'}'"
+     onclick="${onclickCard}">
 
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; min-width: 0;">
         <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+            ${checkboxHtml}
             <span style="font-size: 10px; font-weight: 700; color: ${corTitulo};">
                 ${p.nome}
             </span>
-            <button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>
+            ${kebabHtml}
         </div>
 
         <div style="flex-shrink: 0; margin-left: 10px; display:flex; align-items:center; gap:6px;">
@@ -10769,6 +10787,90 @@ function marcarBotaoOcultarOficiaisGlobalAtivo() {
     btn.style.color = ativo ? '#fff' : 'var(--text-muted)';
     btn.style.background = ativo ? 'var(--app-primary)' : 'var(--bg-white)';
     btn.style.borderColor = ativo ? 'var(--app-primary)' : 'var(--border-color)';
+}
+
+// ── SELEÇÃO EM LOTE (Baterias V/F) ──
+// Botão "Selecionar" no cabeçalho do painel (ao lado esquerdo do kebab ⋮) —
+// mesmo espírito de "Exportar Grupo" (kebab), mas pra um SUBCONJUNTO
+// escolhido a dedo em vez do tipo 'ce' inteiro. Mesmo padrão de modo de
+// seleção já usado em Materiais/Esquemas (checkbox no card, toolbar troca
+// pra "Selecionar Todas"/"Exportar Selecionadas"), adaptado aqui como
+// funções globais porque a lista de baterias não vive num objeto _RUNTIME
+// como aqueles dois módulos.
+window.__modoSelecaoBaterias__ = false;
+window.__selecionadosBaterias__ = {};
+
+window.toggleModoSelecaoBaterias = function() {
+    window.__modoSelecaoBaterias__ = !window.__modoSelecaoBaterias__;
+    window.__selecionadosBaterias__ = {};
+    marcarBotaoSelecaoBateriasAtivo();
+    // Reaplica a view corrente (Todas ou Matéria/Tópico) pra redesenhar os
+    // cards já com/sem checkbox — mesmo padrão de ordenarListaBaterias()/
+    // toggleOcultarOficiaisBaterias() acima.
+    if (window.__modoListaAtivo === 'todas') {
+        window.exibirTodasBaterias();
+    } else if (window.__ultimoFiltroCE) {
+        window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+    }
+};
+
+window.toggleSelecionadoBateria = function(id) {
+    if (window.__selecionadosBaterias__[id]) delete window.__selecionadosBaterias__[id];
+    else window.__selecionadosBaterias__[id] = true;
+    atualizarContadorSelecaoBaterias();
+    // O checkbox já reflete o clique sozinho (é o próprio elemento do
+    // evento) — só o destaque de fundo do card precisa de um toque manual,
+    // sem re-renderizar a lista inteira a cada marcação.
+    let card = document.getElementById('card-' + id);
+    if (card) card.style.background = window.__selecionadosBaterias__[id] ? '#eef2ff' : 'transparent';
+};
+
+window.selecionarTodasBateriasVisiveis = function() {
+    let container = document.getElementById('lista-provas-ce');
+    if (!container) return;
+    container.querySelectorAll('[id^="card-"]').forEach(function(el) {
+        window.__selecionadosBaterias__[el.id.slice('card-'.length)] = true;
+    });
+    if (window.__modoListaAtivo === 'todas') {
+        window.exibirTodasBaterias();
+    } else if (window.__ultimoFiltroCE) {
+        window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+    }
+};
+
+// Mesma modalidade de window.exportarGrupoJson (array cru dos itens do
+// acervo, sem envelope) — só troca o filtro de "tipo inteiro" pra "ids
+// marcados", pra ficar apto ao mesmo repositório de grupos oficiais.
+window.exportarBateriasSelecionadas = function() {
+    let ids = Object.keys(window.__selecionadosBaterias__ || {});
+    if (ids.length === 0) { alert('Nenhuma bateria selecionada.'); return; }
+    let idsSet = new Set(ids);
+    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let grupo = acervo.filter(function(p) { return p && idsSet.has(p.id); });
+    if (grupo.length === 0) { alert('Nenhuma das baterias selecionadas foi encontrada no acervo.'); return; }
+    downloadArquivo(JSON.stringify(grupo, null, 2), `grupo-selecionadas-${Date.now()}.json`, 'application/json');
+};
+
+function marcarBotaoSelecaoBateriasAtivo() {
+    let ativo = !!window.__modoSelecaoBaterias__;
+    let btnHeader = document.getElementById('btn-selecionar-baterias');
+    if (btnHeader) {
+        btnHeader.textContent = ativo ? 'Cancelar' : 'Selecionar';
+        btnHeader.style.color = ativo ? '#fff' : 'var(--text-muted)';
+        btnHeader.style.background = ativo ? 'var(--app-primary)' : 'var(--bg-white)';
+        btnHeader.style.borderColor = ativo ? 'var(--app-primary)' : 'var(--border-color)';
+    }
+    let grupoNormal = document.getElementById('grupo-toolbar-baterias-normal');
+    let grupoSelecao = document.getElementById('grupo-toolbar-baterias-selecao');
+    if (grupoNormal) grupoNormal.style.display = ativo ? 'none' : 'flex';
+    if (grupoSelecao) grupoSelecao.style.display = ativo ? 'flex' : 'none';
+    atualizarContadorSelecaoBaterias();
+}
+
+function atualizarContadorSelecaoBaterias() {
+    let qtd = Object.keys(window.__selecionadosBaterias__ || {}).length;
+    let btnExportar = document.getElementById('btn-exportar-selecionadas-baterias');
+    if (btnExportar) btnExportar.textContent = 'Exportar Selecionadas' + (qtd ? ' (' + qtd + ')' : '');
 }
 
 function marcarBotaoOrdenacaoAtivo() {
