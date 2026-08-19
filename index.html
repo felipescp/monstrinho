@@ -16601,6 +16601,55 @@ function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
     return linhas.join('\n');
 }
 
+// HTML estilizado do Caderno (Erros ou Axiomas) — mesmo dado/nesting de
+// gerarMarkdownCaderno, emitindo as classes .doc-* compartilhadas (ver
+// gerarDocumentoHtmlEstilizado, perto de downloadArquivo) em vez de Markdown.
+function gerarHtmlCaderno(aba, dados, materiaFiltro) {
+    let materias = materiaFiltro ? [materiaFiltro] : Object.keys(dados);
+    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
+
+    let totalItens = 0;
+    materias.forEach(function(mat) {
+        let topicos = dados[mat];
+        if (!topicos) return;
+        Object.keys(topicos).forEach(function(top) { totalItens += topicos[top].length; });
+    });
+
+    let corpo = '<div class="doc-titulo">' + escapeHtmlCaderno(tituloDoc) + '</div>';
+    corpo += '<div class="doc-resumo">' + totalItens + ' item(ns) em ' + materias.length + ' matéria(s).</div>';
+
+    materias.forEach(function(mat) {
+        let topicos = dados[mat];
+        if (!topicos) return;
+        corpo += '<div class="doc-materia">' + escapeHtmlCaderno(mat) + '</div>';
+
+        Object.keys(topicos).forEach(function(top) {
+            corpo += '<div class="doc-divisao">' + escapeHtmlCaderno(top) + '</div>';
+
+            topicos[top].forEach(function(item) {
+                corpo += '<div class="doc-card">';
+                corpo += '<div class="doc-card-titulo">' + escapeHtmlCaderno(item.enunciado || '') + '</div>';
+
+                if (aba === 'erros') {
+                    let vf = item.gabarito === 'V';
+                    let fBadge = item.gabarito === 'F';
+                    let badgeClasse = vf ? 'doc-badge-v' : (fBadge ? 'doc-badge-f' : '');
+                    let badgeTexto = vf ? '✅ Verdadeiro' : (fBadge ? '❌ Falso' : escapeHtmlCaderno(item.gabarito || '?'));
+                    corpo += '<div class="doc-meta"><span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span>' +
+                        (item.motivoErro ? '<span><b>Motivo do erro:</b> ' + escapeHtmlCaderno(item.motivoErro) + '</span>' : '') + '</div>';
+                    if (item.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + escapeHtmlCaderno(item.explicacao) + '</div>';
+                } else {
+                    corpo += '<div class="doc-callout-label">Axioma</div><div class="doc-callout">📌 ' + escapeHtmlCaderno(item.axioma || '') + '</div>';
+                }
+
+                corpo += '</div>';
+            });
+        });
+    });
+
+    return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
+}
+
 window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
     let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
     let dbPlanner = {};
@@ -16623,6 +16672,56 @@ window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
     let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.md') : (prefixo + '-completo.md');
 
     downloadArquivo(md, nomeArquivo, 'text/markdown');
+};
+
+// Mesmo escopo/filtro de exportarCadernoMarkdown — emite o dado bruto em JSON.
+window.exportarCadernoJson = function(aba, materiaFiltro) {
+    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
+
+    let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
+
+    if (materiaFiltro) {
+        if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
+            alert('Nenhuma questão salva nesta matéria ainda.');
+            return;
+        }
+    } else if (Object.keys(dados).length === 0) {
+        alert('Caderno vazio — nada para exportar.');
+        return;
+    }
+
+    let resultado = materiaFiltro ? { [materiaFiltro]: dados[materiaFiltro] } : dados;
+    let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
+    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.json') : (prefixo + '-completo.json');
+
+    downloadArquivo(JSON.stringify(resultado, null, 2), nomeArquivo, 'application/json');
+};
+
+// Mesmo escopo/filtro de exportarCadernoMarkdown — emite HTML estilizado.
+window.exportarCadernoHtml = function(aba, materiaFiltro) {
+    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
+
+    let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
+
+    if (materiaFiltro) {
+        if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
+            alert('Nenhuma questão salva nesta matéria ainda.');
+            return;
+        }
+    } else if (Object.keys(dados).length === 0) {
+        alert('Caderno vazio — nada para exportar.');
+        return;
+    }
+
+    let htmlDoc = gerarHtmlCaderno(aba, dados, materiaFiltro);
+    let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
+    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.html') : (prefixo + '-completo.html');
+
+    downloadArquivo(htmlDoc, nomeArquivo, 'text/html');
 };
 
 window.mostrarAbaCaderno = function(aba) {
@@ -16653,7 +16752,10 @@ window.mostrarAbaCaderno = function(aba) {
     }
 
     let html = '<div style="display:flex; justify-content:flex-end; align-items:center; gap:16px; margin-bottom:14px;">' +
-'<button onclick="window.exportarCadernoMarkdown(\'' + aba + '\')" title="Exportar todas as matérias desta aba em Markdown" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📤 Exportar Tudo</button>' +
+        '<span style="font-size:0.68rem; font-weight:700; color:var(--text-muted);">Exportar Tudo:</span>' +
+'<button onclick="window.exportarCadernoJson(\'' + aba + '\')" title="Exportar todas as matérias desta aba em JSON" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📤 .json</button>' +
+'<button onclick="window.exportarCadernoMarkdown(\'' + aba + '\')" title="Exportar todas as matérias desta aba em Markdown" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📄 .md</button>' +
+'<button onclick="window.exportarCadernoHtml(\'' + aba + '\')" title="Exportar todas as matérias desta aba em HTML estilizado" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">🎨 .html</button>' +
         '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
 '<button onclick="window.alternarTudoCaderno(this)" data-expandido="false" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;">Expandir Tudo ▼</button>' +
         '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
@@ -16673,6 +16775,7 @@ window.mostrarAbaCaderno = function(aba) {
                 <span style="display:flex; align-items:center; gap:9px;">
                     <span style="font-size:10px; font-weight:700; color:var(--text-muted); background:#e2e8f0; padding:2px 8px; border-radius:10px;">${totalMateria}</span>
                     <button onclick="event.stopPropagation(); window.exportarCadernoMarkdown('${aba}', '${escapeAttrCaderno(mat)}')" title="Exportar esta matéria em Markdown" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">📤</button>
+                    <button onclick="event.stopPropagation(); window.exportarCadernoHtml('${aba}', '${escapeAttrCaderno(mat)}')" title="Exportar esta matéria em HTML estilizado" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">🎨</button>
                     <span class="caderno-acc-seta" style="font-size:11px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
                 </span>
             </div>
