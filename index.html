@@ -12185,6 +12185,11 @@ function parsDisc(txt){
   var RE_TOPICO   = /^T[óo]pico\s*:\s*\[?(.+?)\]?$/i;
   var RE_FONTE    = /^Fonte\s*:\s*\[?(.+?)\]?$/i;
   var RE_AXIOMA   = /^Axioma\s*:\s*\[?(.+?)\]?$/i;
+  // Resíduo de citação do Gemini (grounding), ex.: "...segurança)[cite: 1, 2, 3]."
+  // O prompt já instrui o modelo a não usar essas referências, mas às vezes
+  // falha — removido aqui (junto com o espaço que sobraria antes dele) como
+  // rede de segurança, aplicado a enunciado/explicação/alternativas/axioma.
+  var RE_CITE     = /\s*\[cite:\s*[\d,\s]+\]/gi;
   // Quantas linhas (não-vazias) o parser tolera de "ruído" entre o fim de
   // uma explicação e o próximo marcador real (QUESTÃO/BLOCO/TÍTULO/PROVA/
   // METADADOS), antes de considerar que é mesmo continuação legítima de
@@ -12251,18 +12256,18 @@ function parsDisc(txt){
 
   function finalizarQuestao(){
     if(!qEmCurso||!qEmCurso.gabarito)return;
-    var en=qEmCurso.enunciado.join(' ').trim();if(!en)return;
-    var ex=qEmCurso.explicacao.length?qEmCurso.explicacao.join(' ').trim():null;
+    var en=qEmCurso.enunciado.join(' ').trim().replace(RE_CITE,'');if(!en)return;
+    var ex=qEmCurso.explicacao.length?qEmCurso.explicacao.join(' ').trim().replace(RE_CITE,''):null;
     if(!blocoAtual)novoBloco(C.nome||'Geral');
-    
+
     if (qEmCurso.alternativas.length > 0) C.tipo = 'mc';
 
     qi++;
     blocoAtual.questoes.push({
       id:qi, numOrig: qEmCurso.numOrig, enunciado:en, gabarito:qEmCurso.gabarito,
       explicacao:ex, taxonomia:qEmCurso.taxonomia||null,
-      topico:qEmCurso.topico, fonte:qEmCurso.fonte, axioma:qEmCurso.axioma,
-      alternativas:qEmCurso.alternativas.length?qEmCurso.alternativas:null,
+      topico:qEmCurso.topico, fonte:qEmCurso.fonte, axioma:qEmCurso.axioma?qEmCurso.axioma.replace(RE_CITE,''):qEmCurso.axioma,
+      alternativas:qEmCurso.alternativas.length?qEmCurso.alternativas.map(function(a){return a.replace(RE_CITE,'');}):null,
       bn:blocoAtual.nome
     });
     qEmCurso=null;fase='fora';
