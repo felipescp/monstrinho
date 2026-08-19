@@ -5813,6 +5813,8 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-tab:hover { color:var(--app-primary); }
     #section-flashcards .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
     #section-flashcards .fc-tab-count { opacity:0.65; font-weight:600; }
+    #section-flashcards .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
+    #section-flashcards .fc-tab-export-btn:hover { opacity:1; }
 
     #section-flashcards .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-flashcards .fc-col { overflow-y:auto; padding:10px; }
@@ -5897,8 +5899,14 @@ document.addEventListener('click', function(e) {
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="fc-tab-navegar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
         <button class="fc-tab" id="fc-tab-dificil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="fc-tab-dificil-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar MD: axiomas Difícil">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarHtmlAba('dificil')" title="Exportar HTML estilizado: axiomas Difícil">🎨</button>
         <button class="fc-tab" id="fc-tab-medio" onclick="window.FLASHCARDS_RUNTIME.trocarAba('medio')">🟡 Médio <span class="fc-tab-count" id="fc-tab-medio-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarMarkdownAba('medio')" title="Exportar MD: axiomas Médio">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarHtmlAba('medio')" title="Exportar HTML estilizado: axiomas Médio">🎨</button>
         <button class="fc-tab" id="fc-tab-facil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('facil')">🟢 Fácil <span class="fc-tab-count" id="fc-tab-facil-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarMarkdownAba('facil')" title="Exportar MD: axiomas Fácil">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.FLASHCARDS_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: axiomas Fácil">🎨</button>
     </div>
 
     <div class="fc-grid" id="fc-aba-navegar">
@@ -7005,6 +7013,117 @@ window.FLASHCARDS_RUNTIME = {
         this.renderAbaRevisao(aba);
     },
 
+    // ── EXPORTAÇÃO EM MARKDOWN — botão 📤 ao lado de cada aba de dificuldade,
+    // mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarMarkdownAba: exporta só
+    // o POOL atual da aba (já respeita a pílula de matéria selecionada). ──
+
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    },
+
+    // Agrupa os cards (axiomas automáticos + baralhos manuais, já misturados
+    // no pool por listarCardsPorClassificacao) por matéria > divisão — ambos
+    // já vêm carimbados no próprio item.
+    _gerarMarkdownCards: function(cards, tituloDoc) {
+        if (!cards || cards.length === 0) return null;
+        let porMateria = {};
+        cards.forEach(function(c) {
+            let mat = c.materia || '(Sem matéria)';
+            let div = c.divisao || '(Sem divisão)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][div]) porMateria[mat][div] = [];
+            porMateria[mat][div].push(c);
+        });
+
+        let linhas = [];
+        if (tituloDoc) linhas.push('# ' + tituloDoc, '');
+        linhas.push('_' + cards.length + ' card(s) em ' + Object.keys(porMateria).length + ' matéria(s)._', '');
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            linhas.push('## ' + mat, '');
+            Object.keys(porMateria[mat]).sort().forEach(function(div) {
+                linhas.push('### ' + div, '');
+                porMateria[mat][div].forEach(function(c) {
+                    if (c.tipo === 'manual') {
+                        linhas.push('**P:** ' + (c.frente || '(sem frente)'), '');
+                        if (c.verso) linhas.push('**R:** ' + c.verso, '');
+                    } else {
+                        linhas.push('- 💡 ' + (c.texto || '(sem texto)'), '');
+                    }
+                    linhas.push('---', '');
+                });
+            });
+        });
+        return linhas.join('\n');
+    },
+
+    // Mesmo dado de _gerarMarkdownCards, emitindo HTML estilizado — reusa o
+    // template/CSS compartilhado em gerarDocumentoHtmlEstilizado (ver
+    // downloadArquivo).
+    _gerarHtmlCards: function(cards, tituloDoc) {
+        if (!cards || cards.length === 0) return null;
+        let self = this;
+        let porMateria = {};
+        cards.forEach(function(c) {
+            let mat = c.materia || '(Sem matéria)';
+            let div = c.divisao || '(Sem divisão)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][div]) porMateria[mat][div] = [];
+            porMateria[mat][div].push(c);
+        });
+
+        let corpo = '';
+        if (tituloDoc) corpo += '<div class="doc-titulo">' + self._escapar(tituloDoc) + '</div>';
+        corpo += '<div class="doc-resumo">' + cards.length + ' card(s) em ' + Object.keys(porMateria).length + ' matéria(s).</div>';
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+            Object.keys(porMateria[mat]).sort().forEach(function(div) {
+                corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
+                porMateria[mat][div].forEach(function(c) {
+                    corpo += '<div class="doc-card">';
+                    if (c.tipo === 'manual') {
+                        corpo += '<div class="doc-card-titulo">' + self._escapar(c.frente || '(sem frente)') + '</div>';
+                        if (c.verso) corpo += '<div class="doc-callout">' + self._escapar(c.verso) + '</div>';
+                    } else {
+                        corpo += '<div class="doc-card-titulo">💡 ' + self._escapar(c.texto || '(sem texto)') + '</div>';
+                    }
+                    corpo += '</div>';
+                });
+            });
+        });
+
+        return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
+    },
+
+    exportarMarkdownAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Difícil', medio: 'Médio', facil: 'Fácil' };
+        let SLUGS_ABA = { dificil: 'dificil', medio: 'medio', facil: 'facil' };
+        let titulo = 'Axiomas — ' + (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let md = this._gerarMarkdownCards(s.pool || [], titulo);
+        if (!md) { alert('Nenhum axioma/card nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(md, 'axiomas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // Botão 🎨 ao lado de cada aba de dificuldade — mesmo escopo de
+    // exportarMarkdownAba, emitindo HTML estilizado.
+    exportarHtmlAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Difícil', medio: 'Médio', facil: 'Fácil' };
+        let SLUGS_ABA = { dificil: 'dificil', medio: 'medio', facil: 'facil' };
+        let titulo = 'Axiomas — ' + (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let htmlDoc = this._gerarHtmlCards(s.pool || [], titulo);
+        if (!htmlDoc) { alert('Nenhum axioma/card nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(htmlDoc, 'axiomas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
+    },
+
     embaralharAba: function(aba) {
         let s = this._estadosAba[aba];
         for (let i = s.ordemChaves.length - 1; i > 0; i--) {
@@ -7117,6 +7236,8 @@ window.FLASHCARDS_RUNTIME = {
     #section-praticar-caderno .fc-tab:hover { color:var(--app-primary); }
     #section-praticar-caderno .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
     #section-praticar-caderno .fc-tab-count { opacity:0.65; font-weight:600; }
+    #section-praticar-caderno .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
+    #section-praticar-caderno .fc-tab-export-btn:hover { opacity:1; }
 
     #section-praticar-caderno .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-praticar-caderno .fc-col { overflow-y:auto; padding:10px; }
@@ -7176,8 +7297,14 @@ window.FLASHCARDS_RUNTIME = {
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="pc-tab-navegar" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
         <button class="fc-tab" id="pc-tab-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="pc-tab-dificil-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar MD: questões Difícil">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarHtmlAba('dificil')" title="Exportar HTML estilizado: questões Difícil">🎨</button>
         <button class="fc-tab" id="pc-tab-medio" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('medio')">🟡 Médio <span class="fc-tab-count" id="pc-tab-medio-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarMarkdownAba('medio')" title="Exportar MD: questões Médio">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarHtmlAba('medio')" title="Exportar HTML estilizado: questões Médio">🎨</button>
         <button class="fc-tab" id="pc-tab-facil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('facil')">🟢 Fácil <span class="fc-tab-count" id="pc-tab-facil-count"></span></button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarMarkdownAba('facil')" title="Exportar MD: questões Fácil">📤</button>
+        <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.PRATICAR_CADERNO_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: questões Fácil">🎨</button>
     </div>
 
     <div class="fc-grid" id="pc-aba-navegar">
@@ -7533,6 +7660,122 @@ window.PRATICAR_CADERNO_RUNTIME = {
         s.materiaFiltro = materia;
         this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
         this.renderAbaRevisao(aba);
+    },
+
+    // ── EXPORTAÇÃO EM MARKDOWN — botão 📤 ao lado de cada aba de dificuldade,
+    // mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarMarkdownAba: exporta só
+    // o POOL atual da aba (já respeita a pílula de matéria selecionada). ──
+
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    },
+
+    // Agrupa as questões (já carimbadas com materia/topico por
+    // listarQuestoesDoTopico) por matéria > tópico.
+    // Prefixa cada linha com "> " (blockquote Markdown) — usado pra destacar
+    // a explicação como um bloco à parte do enunciado.
+    _blockquote: function(texto) {
+        return (texto || '').split('\n').map(function(linha) { return '> ' + linha; }).join('\n');
+    },
+
+    _gerarMarkdownQuestoes: function(questoes, tituloDoc) {
+        if (!questoes || questoes.length === 0) return null;
+        let self = this;
+        let porMateria = {};
+        questoes.forEach(function(q) {
+            let mat = q.materia || '(Sem matéria)';
+            let top = q.topico || '(Sem tópico)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][top]) porMateria[mat][top] = [];
+            porMateria[mat][top].push(q);
+        });
+
+        let linhas = [];
+        if (tituloDoc) linhas.push('# ' + tituloDoc, '');
+        linhas.push('_' + questoes.length + ' questão(ões) em ' + Object.keys(porMateria).length + ' matéria(s)._', '');
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            linhas.push('## ' + mat, '');
+            Object.keys(porMateria[mat]).sort().forEach(function(top) {
+                linhas.push('### ' + top, '');
+                porMateria[mat][top].forEach(function(q) {
+                    linhas.push(q.enunciado || '(sem enunciado)', '');
+                    let gabaritoTexto = q.gabarito === 'V' ? '✅ Verdadeiro' : (q.gabarito === 'F' ? '❌ Falso' : (q.gabarito || '?'));
+                    linhas.push('**Gabarito:** ' + gabaritoTexto, '');
+                    if (q.explicacao) linhas.push('**Explicação:**', '', self._blockquote(q.explicacao), '');
+                    linhas.push('---', '');
+                });
+            });
+        });
+        return linhas.join('\n');
+    },
+
+    // Mesmo dado de _gerarMarkdownQuestoes, emitindo HTML estilizado — reusa
+    // o template/CSS compartilhado em gerarDocumentoHtmlEstilizado (ver
+    // downloadArquivo).
+    _gerarHtmlQuestoes: function(questoes, tituloDoc) {
+        if (!questoes || questoes.length === 0) return null;
+        let self = this;
+        let porMateria = {};
+        questoes.forEach(function(q) {
+            let mat = q.materia || '(Sem matéria)';
+            let top = q.topico || '(Sem tópico)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][top]) porMateria[mat][top] = [];
+            porMateria[mat][top].push(q);
+        });
+
+        let corpo = '';
+        if (tituloDoc) corpo += '<div class="doc-titulo">' + self._escapar(tituloDoc) + '</div>';
+        corpo += '<div class="doc-resumo">' + questoes.length + ' questão(ões) em ' + Object.keys(porMateria).length + ' matéria(s).</div>';
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+            Object.keys(porMateria[mat]).sort().forEach(function(top) {
+                corpo += '<div class="doc-divisao">' + self._escapar(top) + '</div>';
+                porMateria[mat][top].forEach(function(q) {
+                    let vf = q.gabarito === 'V';
+                    let fBadge = q.gabarito === 'F';
+                    let badgeClasse = vf ? 'doc-badge-v' : (fBadge ? 'doc-badge-f' : '');
+                    let badgeTexto = vf ? '✅ Verdadeiro' : (fBadge ? '❌ Falso' : self._escapar(q.gabarito || '?'));
+                    corpo += '<div class="doc-card">';
+                    corpo += '<div class="doc-card-titulo">' + self._escapar(q.enunciado || '(sem enunciado)') +
+                        ' <span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span></div>';
+                    if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + self._escapar(q.explicacao) + '</div>';
+                    corpo += '</div>';
+                });
+            });
+        });
+
+        return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
+    },
+
+    exportarMarkdownAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Difícil', medio: 'Médio', facil: 'Fácil' };
+        let SLUGS_ABA = { dificil: 'dificil', medio: 'medio', facil: 'facil' };
+        let titulo = 'Questões — ' + (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let md = this._gerarMarkdownQuestoes(s.pool || [], titulo);
+        if (!md) { alert('Nenhuma questão nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(md, 'questoes-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // Botão 🎨 ao lado de cada aba de dificuldade — mesmo escopo de
+    // exportarMarkdownAba, emitindo HTML estilizado.
+    exportarHtmlAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Difícil', medio: 'Médio', facil: 'Fácil' };
+        let SLUGS_ABA = { dificil: 'dificil', medio: 'medio', facil: 'facil' };
+        let titulo = 'Questões — ' + (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let htmlDoc = this._gerarHtmlQuestoes(s.pool || [], titulo);
+        if (!htmlDoc) { alert('Nenhuma questão nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(htmlDoc, 'questoes-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
     embaralhar: function(contexto) {
@@ -15194,6 +15437,44 @@ function downloadArquivo(conteudo, nomeArquivo, mimeType) {
   document.body.removeChild(link);
 }
 
+// ── EXPORTAÇÃO EM HTML ESTILIZADO ──────────────────────────
+// Template compartilhado pelas exportações "Exportar .html" de Esquemas,
+// Jurisprudência, Praticar Questões e Praticar Axiomas — cada runtime monta
+// só o CORPO (usando as classes .doc-* abaixo) e passa pra cá, que embrulha
+// num documento HTML autocontido (CSS inline, sem dependências externas),
+// pronto pra abrir em qualquer navegador ou imprimir/exportar em PDF.
+var CSS_DOCUMENTO_HTML_ESTILIZADO =
+  '*{box-sizing:border-box;}' +
+  'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f8fafc;color:#1e293b;margin:0;padding:32px 20px;line-height:1.6;}' +
+  '.doc-container{max-width:860px;margin:0 auto;}' +
+  '.doc-titulo{font-size:26px;font-weight:800;color:#0f172a;margin-bottom:4px;}' +
+  '.doc-resumo{font-size:13px;color:#64748b;margin-bottom:28px;font-style:italic;}' +
+  '.doc-materia{font-size:20px;font-weight:800;color:#4338ca;margin:36px 0 8px;padding-bottom:6px;border-bottom:2px solid #c7d2fe;}' +
+  '.doc-materia:first-of-type{margin-top:0;}' +
+  '.doc-divisao{font-size:15px;font-weight:700;color:#334155;margin:20px 0 12px;padding-left:10px;border-left:3px solid #6366f1;}' +
+  '.doc-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,0.04);}' +
+  '.doc-card-titulo{font-size:15px;font-weight:800;color:#0f172a;margin-bottom:8px;}' +
+  '.doc-badge{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;white-space:nowrap;}' +
+  '.doc-badge-oficial{background:#fef3c7;color:#92400e;}' +
+  '.doc-badge-v{background:#dcfce7;color:#166534;}' +
+  '.doc-badge-f{background:#fee2e2;color:#991b1b;}' +
+  '.doc-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11.5px;color:#64748b;margin-bottom:12px;}' +
+  '.doc-meta b{color:#334155;}' +
+  '.doc-callout-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:#64748b;margin:10px 0 4px;}' +
+  '.doc-callout{background:#f8fafc;border-left:3px solid #94a3b8;border-radius:0 6px 6px 0;padding:10px 14px;font-size:13px;color:#334155;white-space:pre-wrap;}' +
+  '.doc-corpo table{border-collapse:collapse;width:100%;margin:10px 0;}' +
+  '.doc-corpo table td,.doc-corpo table th{border:1px solid #e2e8f0;padding:6px 8px;font-size:13px;}' +
+  '.doc-corpo table th{background:#f1f5f9;font-weight:800;}' +
+  '@media print{body{background:#fff;padding:0;} .doc-card{box-shadow:none;break-inside:avoid;}}';
+
+function gerarDocumentoHtmlEstilizado(tituloDoc, corpoHtml) {
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>' + (tituloDoc || 'Exportação') + '</title>' +
+    '<style>' + CSS_DOCUMENTO_HTML_ESTILIZADO + '</style></head>' +
+    '<body><div class="doc-container">' + corpoHtml + '</div></body></html>';
+}
+
 // ── MODAL COPIAR ──────────────────────────────────────────
 function showBlobModal(conteudo,nome,mime){
   var old=document.getElementById('_blobmo');if(old)old.remove();
@@ -17452,6 +17733,8 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-tab:hover { color:var(--app-primary); }
     #esquemas-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
     #esquemas-modal .fc-tab-count { opacity:0.65; font-weight:600; }
+    #esquemas-modal .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
+    #esquemas-modal .fc-tab-export-btn:hover { opacity:1; }
 
     #esquemas-modal .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #esquemas-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
@@ -17511,9 +17794,9 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button></div></details>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button></div></details>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
+                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">&#x2715;</button>
             </div>
@@ -17522,8 +17805,14 @@ window.triggerFileUpload = function(callback) {
             <div class="esq-tabs-grupo">
                 <button class="fc-tab ativa" id="esq-tab-grade" onclick="window.ESQUEMAS_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
                 <button class="fc-tab" id="esq-tab-1" onclick="window.ESQUEMAS_RUNTIME.trocarAba('1')">⭐ 1 Estrela <span class="fc-tab-count" id="esq-tab-1-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: esquemas de 1 Estrela">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas de 1 Estrela">🎨</button>
                 <button class="fc-tab" id="esq-tab-2" onclick="window.ESQUEMAS_RUNTIME.trocarAba('2')">⭐⭐ 2 Estrelas <span class="fc-tab-count" id="esq-tab-2-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('2')" title="Exportar MD: esquemas de 2 Estrelas">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('2')" title="Exportar HTML estilizado: esquemas de 2 Estrelas">🎨</button>
                 <button class="fc-tab" id="esq-tab-3" onclick="window.ESQUEMAS_RUNTIME.trocarAba('3')">⭐⭐⭐ 3 Estrelas <span class="fc-tab-count" id="esq-tab-3-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('3')" title="Exportar MD: esquemas de 3 Estrelas">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas de 3 Estrelas">🎨</button>
             </div>
             <div class="esq-tabs-baralho">
                 <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODOS os esquemas">🗂️ Baralho: Todos</button>
@@ -19705,8 +19994,7 @@ window.ESQUEMAS_RUNTIME = {
 
     // Exporta os esquemas VISÍVEIS (pessoais + oficiais, só não os ocultos)
     // da DISCIPLINA (matéria/L1) selecionada na barra lateral — mesmo
-    // padrão de JURISPRUDENCIA_RUNTIME.exportarTudo() (lá o botão
-    // equivalente chama-se "Exportar Disciplina").
+    // padrão de JURISPRUDENCIA_RUNTIME.exportarDisciplina().
     exportarDisciplina: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
@@ -19758,22 +20046,74 @@ window.ESQUEMAS_RUNTIME = {
     // O conteudoHtml de cada esquema (tabelas, listas) entra cru, sem
     // conversão — Markdown aceita HTML embutido normalmente, e é exatamente
     // isso que uma IA precisa pra ler a estrutura (tabela = tabela) sem
-    // exigir um conversor HTML→MD só pra isso.
+    // exigir um conversor HTML→MD só pra isso. `chave` vem sempre no formato
+    // "Matéria > Divisão" (ver _chaveL2) — quebrado aqui em 2 níveis de
+    // heading (## Matéria / ### Divisão) pra combinar com o padrão de
+    // JURISPRUDENCIA_RUNTIME._gerarMarkdownFichas, em vez de 1 heading só
+    // com o "Matéria > Divisão" cru.
     _gerarMarkdownEsquemas: function(porChave, tituloDoc) {
-        let linhas = [];
-        if (tituloDoc) { linhas.push('# ' + tituloDoc, ''); }
+        let chaves = Object.keys(porChave).sort();
+        let totalItens = chaves.reduce(function(soma, c) { return soma + porChave[c].length; }, 0);
 
-        Object.keys(porChave).sort().forEach(function(chave) {
-            linhas.push('## ' + chave, '');
+        let linhas = [];
+        if (tituloDoc) linhas.push('# ' + tituloDoc, '');
+        linhas.push('_' + totalItens + ' esquema(s) em ' + chaves.length + ' tópico(s)._', '');
+
+        let matAtual = null;
+        chaves.forEach(function(chave) {
+            let partes = chave.split(' > ');
+            let mat = partes[0] || chave;
+            let div = partes.length > 1 ? partes.slice(1).join(' > ') : null;
+            if (mat !== matAtual) {
+                linhas.push('## ' + mat, '');
+                matAtual = mat;
+            }
+            if (div) linhas.push('### ' + div, '');
             porChave[chave].forEach(function(item) {
-                linhas.push('### ' + (item.titulo || '(sem título)'), '');
-                if (item.origem_oficial) linhas.push('_(Oficial)_', '');
+                linhas.push('#### ' + (item.titulo || '(sem título)') + (item.origem_oficial ? ' _(Oficial)_' : ''), '');
                 linhas.push(item.conteudoHtml || '(sem conteúdo)', '');
                 linhas.push('---', '');
             });
         });
 
         return linhas.join('\n');
+    },
+
+    // Mesmo dado de _gerarMarkdownEsquemas (mesmo agrupamento Matéria >
+    // Divisão), só que emitindo HTML estilizado em vez de Markdown —
+    // reaproveita o template/CSS compartilhado em gerarDocumentoHtmlEstilizado
+    // (ver downloadArquivo). conteudoHtml de cada esquema já é HTML de
+    // verdade (produzido pelo próprio editor), então entra cru — mesmo
+    // tratamento que já recebe em _htmlCartaoEsquemaEstudo.
+    _gerarHtmlEsquemas: function(porChave, tituloDoc) {
+        let self = this;
+        let chaves = Object.keys(porChave).sort();
+        let totalItens = chaves.reduce(function(soma, c) { return soma + porChave[c].length; }, 0);
+
+        let corpo = '';
+        if (tituloDoc) corpo += '<div class="doc-titulo">' + this._escapar(tituloDoc) + '</div>';
+        corpo += '<div class="doc-resumo">' + totalItens + ' esquema(s) em ' + chaves.length + ' tópico(s).</div>';
+
+        let matAtual = null;
+        chaves.forEach(function(chave) {
+            let partes = chave.split(' > ');
+            let mat = partes[0] || chave;
+            let div = partes.length > 1 ? partes.slice(1).join(' > ') : null;
+            if (mat !== matAtual) {
+                corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+                matAtual = mat;
+            }
+            if (div) corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
+            porChave[chave].forEach(function(item) {
+                corpo += '<div class="doc-card">' +
+                    '<div class="doc-card-titulo">' + self._escapar(item.titulo || '(sem título)') +
+                    (item.origem_oficial ? ' <span class="doc-badge doc-badge-oficial">Oficial</span>' : '') + '</div>' +
+                    '<div class="doc-corpo">' + (item.conteudoHtml || '<em>(sem conteúdo)</em>') + '</div>' +
+                    '</div>';
+            });
+        });
+
+        return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
     },
 
     // Mesmo escopo/filtro de exportarTudo() (JSON) — só troca o formato de
@@ -19798,6 +20138,29 @@ window.ESQUEMAS_RUNTIME = {
         }
 
         downloadArquivo(this._gerarMarkdownEsquemas(resultado, 'Esquemas — Tudo'), 'esquemas-tudo.md', 'text/markdown');
+    },
+
+    // Mesmo escopo/filtro de exportarTudo() (JSON) — emite HTML estilizado.
+    exportarTudoHtml: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pra exportar (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(this._gerarHtmlEsquemas(resultado, 'Esquemas — Tudo'), 'esquemas-tudo.html', 'text/html');
     },
 
     // Mesmo escopo/filtro de exportarDisciplina() (JSON) — só troca o
@@ -19827,6 +20190,32 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(this._gerarMarkdownEsquemas(resultado, this._materiaSelecionada), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
     },
 
+    // Mesmo escopo/filtro de exportarDisciplina() (JSON) — emite HTML estilizado.
+    exportarDisciplinaHtml: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhum esquema pra exportar em "' + this._materiaSelecionada + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        downloadArquivo(this._gerarHtmlEsquemas(resultado, this._materiaSelecionada), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
+    },
+
     // Mesmo escopo/filtro de exportarTopico() (JSON) — só troca o formato
     // de saída.
     exportarTopicoMarkdown: function() {
@@ -19844,6 +20233,67 @@ window.ESQUEMAS_RUNTIME = {
         let resultado = {};
         resultado[chave] = visiveis;
         downloadArquivo(this._gerarMarkdownEsquemas(resultado, chave), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Mesmo escopo/filtro de exportarTopico() (JSON) — emite HTML estilizado.
+    exportarTopicoHtml: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+
+        if (visiveis.length === 0) {
+            alert('Nenhum esquema pra exportar em "' + chave + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        let resultado = {};
+        resultado[chave] = visiveis;
+        downloadArquivo(this._gerarHtmlEsquemas(resultado, chave), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.html', 'text/html');
+    },
+
+    // Botão 📤 ao lado de cada aba "N Estrela(s)" — exporta só o POOL atual
+    // da aba (já respeita a pílula de matéria selecionada ali, se houver),
+    // mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarMarkdownAba. Agrupa por
+    // chave (matéria > divisão) via _localizarChavePorId, já que o esquema
+    // em si não carrega essa origem (diferente da ficha de Jurisprudência).
+    exportarMarkdownAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
+        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let porChave = {};
+        (s.pool || []).forEach(function(item) {
+            let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
+            if (!porChave[chave]) porChave[chave] = [];
+            porChave[chave].push(item);
+        });
+        if (Object.keys(porChave).length === 0) { alert('Nenhum esquema nessa aba pra exportar.'); return; }
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(this._gerarMarkdownEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // Botão 🎨 ao lado de cada aba "N Estrela(s)" — mesmo escopo de
+    // exportarMarkdownAba, emitindo HTML estilizado.
+    exportarHtmlAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
+        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let porChave = {};
+        (s.pool || []).forEach(function(item) {
+            let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
+            if (!porChave[chave]) porChave[chave] = [];
+            porChave[chave].push(item);
+        });
+        if (Object.keys(porChave).length === 0) { alert('Nenhum esquema nessa aba pra exportar.'); return; }
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(this._gerarHtmlEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
     // Slug de nome de arquivo — mesmo algoritmo de JURISPRUDENCIA_RUNTIME._slugTexto.
@@ -20016,6 +20466,16 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-tab:hover { color:var(--app-primary); }
     #jurisprudencia-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
     #jurisprudencia-modal .fc-tab-count { opacity:0.65; font-weight:600; }
+    #jurisprudencia-modal .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
+    #jurisprudencia-modal .fc-tab-export-btn:hover { opacity:1; }
+    #jurisprudencia-modal .esq-export-menu { position:relative; }
+    #jurisprudencia-modal .esq-export-menu summary { list-style:none; }
+    #jurisprudencia-modal .esq-export-menu summary::-webkit-details-marker { display:none; }
+    #jurisprudencia-modal .esq-export-menu summary { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .esq-export-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .esq-export-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); right:0; min-width:145px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #jurisprudencia-modal .esq-export-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; }
+    #jurisprudencia-modal .esq-export-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
 
     #jurisprudencia-modal .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #jurisprudencia-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
@@ -20065,11 +20525,13 @@ window.carregarEsquemasOficiais = async function() {
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
-            <div style="display:flex; align-items:center; gap:10px;">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:10px;">
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()" title="Exportar as fichas visíveis (pessoais + oficiais, exceto ocultas) da disciplina selecionada em JSON — pronto pra reimportar/publicar em dados/jurisprudencia/" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📤 Exportar Disciplina (.json)</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()" title="Exportar as fichas visíveis (pessoais + oficiais, exceto ocultas) da disciplina selecionada em Markdown — mais fácil de colar direto numa IA" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Disciplina (.md)</button>
+                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
+                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtml()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em HTML estilizado — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🎨 Exportar Visíveis (.html)</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
@@ -20077,8 +20539,14 @@ window.carregarEsquemasOficiais = async function() {
             <div class="jur-tabs-grupo">
                 <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
                 <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Muito Importante <span class="fc-tab-count" id="jur-tab-dificil-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar MD: fichas Muito Importante">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('dificil')" title="Exportar HTML estilizado: fichas Muito Importante">🎨</button>
                 <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Importante <span class="fc-tab-count" id="jur-tab-medio-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('medio')" title="Exportar MD: fichas Importante">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('medio')" title="Exportar HTML estilizado: fichas Importante">🎨</button>
                 <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Regular <span class="fc-tab-count" id="jur-tab-facil-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar MD: fichas Regular">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
             </div>
             <div class="jur-tabs-baralho">
                 <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
@@ -20097,6 +20565,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('dificil')">🔀 Embaralhar</button>
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar as fichas desta aba (Muito Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('dificil')" title="Exportar as fichas desta aba (Muito Importante) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
             </div>
             <div id="jur-corpo-dificil"></div>
             <div class="fc-popup-nav">
@@ -20111,6 +20580,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('medio')">🔀 Embaralhar</button>
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('medio')" title="Exportar as fichas desta aba (Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('medio')" title="Exportar as fichas desta aba (Importante) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
             </div>
             <div id="jur-corpo-medio"></div>
             <div class="fc-popup-nav">
@@ -20125,6 +20595,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-toolbar">
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('facil')">🔀 Embaralhar</button>
                 <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar as fichas desta aba (Regular) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
+                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar as fichas desta aba (Regular) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
             </div>
             <div id="jur-corpo-facil"></div>
             <div class="fc-popup-nav">
@@ -21074,6 +21545,67 @@ window.JURISPRUDENCIA_RUNTIME = {
             .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     },
 
+    // Exporta as fichas VISÍVEIS (de TODAS as matérias/divisões, não só a
+    // selecionada) num único JSON — pessoais E oficiais juntos, só de fora
+    // as OCULTAS. Mesmo padrão de ESQUEMAS_RUNTIME.exportarTudo().
+    exportarTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+            if (visiveis.length > 0) {
+                resultado[chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        if (total === 0) {
+            alert('Nenhuma ficha pra exportar (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-tudo.json', 'application/json');
+    },
+
+    // Mesmo escopo de exportarTudo() (JSON) — só troca o formato de saída.
+    exportarTudoMarkdown: function() {
+        this._garantirCarregado();
+        let self = this;
+        let fichas = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            fichas = fichas.concat(self.fichas[chave] || []);
+        });
+
+        let md = this._gerarMarkdownFichas(fichas, 'Jurisprudência — Tudo');
+        if (!md) {
+            alert('Nenhuma ficha pra exportar (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(md, 'jurisprudencia-tudo.md', 'text/markdown');
+    },
+
+    // Mesmo escopo de exportarTudo() (JSON) — emite HTML estilizado.
+    exportarTudoHtml: function() {
+        this._garantirCarregado();
+        let self = this;
+        let fichas = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            fichas = fichas.concat(self.fichas[chave] || []);
+        });
+
+        let htmlDoc = this._gerarHtmlFichas(fichas, 'Jurisprudência — Tudo');
+        if (!htmlDoc) {
+            alert('Nenhuma ficha pra exportar (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(htmlDoc, 'jurisprudencia-tudo.html', 'text/html');
+    },
+
     // Exporta as fichas VISÍVEIS (pessoais + oficiais) da DISCIPLINA
     // (matéria/L1) selecionada na barra lateral. Só ficam de fora as
     // OCULTAS — é assim que "ocultar" vira um "excluir" seguro: oculta o
@@ -21082,7 +21614,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // não só pro fluxo de publicar no repositório (onde reexportar um
     // oficial sem alterações seria redundante, mas isso cabe ao usuário
     // decidir, não ao botão restringir).
-    exportarTudo: function() {
+    exportarDisciplina: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
         let self = this;
@@ -21107,7 +21639,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
     },
 
-    // Mesmo escopo de exportarTudo() (disciplina selecionada, pessoais +
+    // Mesmo escopo de exportarDisciplina() (disciplina selecionada, pessoais +
     // oficiais, exceto ocultas) — só troca o formato de saída pra Markdown,
     // reaproveitando _gerarMarkdownFichas (que já filtra ocultos sozinho).
     exportarDisciplinaMarkdown: function() {
@@ -21129,6 +21661,79 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
     },
 
+    // Mesmo escopo de exportarDisciplina() (JSON) — emite HTML estilizado.
+    exportarDisciplinaHtml: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let fichas = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            fichas = fichas.concat(this.fichas[chave] || []);
+        }, this);
+
+        let htmlDoc = this._gerarHtmlFichas(fichas, this._materiaSelecionada);
+        if (!htmlDoc) {
+            alert('Nenhuma ficha pra exportar em "' + this._materiaSelecionada + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(htmlDoc, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
+    },
+
+    // Exporta as fichas VISÍVEIS só do TÓPICO (divisão/L2) selecionado —
+    // mesmo padrão de ESQUEMAS_RUNTIME.exportarTopico().
+    exportarTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+
+        if (visiveis.length === 0) {
+            alert('Nenhuma ficha pra exportar em "' + chave + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        let resultado = {};
+        resultado[chave] = visiveis;
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    },
+
+    // Mesmo escopo de exportarTopico() (JSON) — só troca o formato de saída.
+    exportarTopicoMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+
+        let md = this._gerarMarkdownFichas(visiveis, chave);
+        if (!md) {
+            alert('Nenhuma ficha pra exportar em "' + chave + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Mesmo escopo de exportarTopico() (JSON) — emite HTML estilizado.
+    exportarTopicoHtml: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+
+        let htmlDoc = this._gerarHtmlFichas(visiveis, chave);
+        if (!htmlDoc) {
+            alert('Nenhuma ficha pra exportar em "' + chave + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        downloadArquivo(htmlDoc, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.html', 'text/html');
+    },
+
     // ── EXPORTAÇÃO EM MARKDOWN (documento de revisão / insumo pra gerar
     // questões) — diferente de exportarTudo (JSON, só pessoais, pra
     // publicar no repositório): aqui entram TODAS as fichas visíveis
@@ -21141,6 +21746,14 @@ window.JURISPRUDENCIA_RUNTIME = {
     // filtrada por quem chamou: grade principal ou uma aba de
     // classificação) e agrupa por matéria (materiaL1) > divisão
     // (divisaoL2), sempre presentes na ficha desde a importação/edição.
+    // Prefixa cada linha com "> " (blockquote Markdown) — usado pra destacar
+    // visualmente tese/resumo/conexões como citação, sem risco de mexer em
+    // HTML cru (diferente de ESQUEMAS_RUNTIME._gerarMarkdownEsquemas, que
+    // nunca passa por aqui: conteudoHtml é sempre texto puro nesta ficha).
+    _blockquote: function(texto) {
+        return (texto || '').split('\n').map(function(linha) { return '> ' + linha; }).join('\n');
+    },
+
     _gerarMarkdownFichas: function(fichas, tituloDoc) {
         let self = this;
         let visiveis = fichas.filter(function(f) { return f && !self.ocultos[f.id]; });
@@ -21156,32 +21769,83 @@ window.JURISPRUDENCIA_RUNTIME = {
         });
 
         let linhas = [];
-        if (tituloDoc) { linhas.push('# ' + tituloDoc, ''); }
+        if (tituloDoc) linhas.push('# ' + tituloDoc, '');
+        linhas.push('_' + visiveis.length + ' ficha(s) em ' + Object.keys(porMateria).length + ' matéria(s)._', '');
 
         Object.keys(porMateria).sort().forEach(function(mat) {
             linhas.push('## ' + mat, '');
             Object.keys(porMateria[mat]).sort().forEach(function(div) {
                 linhas.push('### ' + div, '');
                 porMateria[mat][div].forEach(function(f) {
-                    linhas.push('#### ' + (f.titulo || '(sem título)'), '');
-                    let meta1 = [f.tribunal ? '**Tribunal:** ' + f.tribunal : '', f.orgao ? '**Órgão:** ' + f.orgao : ''].filter(Boolean).join(' · ');
-                    if (meta1) linhas.push(meta1, '');
-                    let meta2 = [
-                        f.processo ? '**Processo:** ' + f.processo : '',
-                        f.relator ? '**Relator:** ' + f.relator : '',
-                        f.dataJulgado ? '**Data:** ' + self._formatarDataBR(f.dataJulgado) : ''
-                    ].filter(Boolean).join(' · ');
-                    if (meta2) linhas.push(meta2, '');
-                    if (f.sistematica) linhas.push('**Sistemática:** ' + f.sistematica, '');
-                    if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', f.tese, '');
-                    if (f.resumo) linhas.push('**Resumo do Caso:**', '', f.resumo, '');
-                    if (f.conexoes) linhas.push('**Conexões:**', '', f.conexoes, '');
+                    linhas.push('#### ' + (f.titulo || '(sem título)') + (f.origem_oficial ? ' _(Oficial)_' : ''), '');
+                    let meta = [];
+                    if (f.tribunal) meta.push('- **Tribunal:** ' + f.tribunal);
+                    if (f.orgao) meta.push('- **Órgão:** ' + f.orgao);
+                    if (f.processo) meta.push('- **Processo:** ' + f.processo);
+                    if (f.relator) meta.push('- **Relator:** ' + f.relator);
+                    if (f.dataJulgado) meta.push('- **Data:** ' + self._formatarDataBR(f.dataJulgado));
+                    if (f.sistematica) meta.push('- **Sistemática:** ' + f.sistematica);
+                    if (meta.length > 0) linhas.push(meta.join('\n'), '');
+                    if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', self._blockquote(f.tese), '');
+                    if (f.resumo) linhas.push('**Resumo do Caso:**', '', self._blockquote(f.resumo), '');
+                    if (f.conexoes) linhas.push('**Conexões:**', '', self._blockquote(f.conexoes), '');
                     linhas.push('---', '');
                 });
             });
         });
 
         return linhas.join('\n');
+    },
+
+    // Mesmo dado de _gerarMarkdownFichas (mesmo agrupamento matéria >
+    // divisão, mesmo filtro de ocultos), emitindo HTML estilizado — reusa o
+    // template/CSS compartilhado em gerarDocumentoHtmlEstilizado (ver
+    // downloadArquivo). Diferente de _gerarMarkdownEsquemas, aqui tese/
+    // resumo/conexões são sempre texto puro (nunca HTML embutido), então
+    // passam por _escapar normalmente.
+    _gerarHtmlFichas: function(fichas, tituloDoc) {
+        let self = this;
+        let visiveis = fichas.filter(function(f) { return f && !self.ocultos[f.id]; });
+        if (visiveis.length === 0) return null;
+
+        let porMateria = {};
+        visiveis.forEach(function(f) {
+            let mat = f.materiaL1 || '(Sem matéria)';
+            let div = f.divisaoL2 || '(Sem divisão)';
+            if (!porMateria[mat]) porMateria[mat] = {};
+            if (!porMateria[mat][div]) porMateria[mat][div] = [];
+            porMateria[mat][div].push(f);
+        });
+
+        let corpo = '';
+        if (tituloDoc) corpo += '<div class="doc-titulo">' + this._escapar(tituloDoc) + '</div>';
+        corpo += '<div class="doc-resumo">' + visiveis.length + ' ficha(s) em ' + Object.keys(porMateria).length + ' matéria(s).</div>';
+
+        Object.keys(porMateria).sort().forEach(function(mat) {
+            corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+            Object.keys(porMateria[mat]).sort().forEach(function(div) {
+                corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
+                porMateria[mat][div].forEach(function(f) {
+                    corpo += '<div class="doc-card">';
+                    corpo += '<div class="doc-card-titulo">' + self._escapar(f.titulo || '(sem título)') +
+                        (f.origem_oficial ? ' <span class="doc-badge doc-badge-oficial">Oficial</span>' : '') + '</div>';
+                    let meta = [];
+                    if (f.tribunal) meta.push('<span><b>Tribunal:</b> ' + self._escapar(f.tribunal) + '</span>');
+                    if (f.orgao) meta.push('<span><b>Órgão:</b> ' + self._escapar(f.orgao) + '</span>');
+                    if (f.processo) meta.push('<span><b>Processo:</b> ' + self._escapar(f.processo) + '</span>');
+                    if (f.relator) meta.push('<span><b>Relator:</b> ' + self._escapar(f.relator) + '</span>');
+                    if (f.dataJulgado) meta.push('<span><b>Data:</b> ' + self._escapar(self._formatarDataBR(f.dataJulgado)) + '</span>');
+                    if (f.sistematica) meta.push('<span><b>Sistemática:</b> ' + self._escapar(f.sistematica) + '</span>');
+                    if (meta.length > 0) corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
+                    if (f.tese) corpo += '<div class="doc-callout-label">Tese Fixada / Decisão</div><div class="doc-callout">' + self._escapar(f.tese) + '</div>';
+                    if (f.resumo) corpo += '<div class="doc-callout-label">Resumo do Caso</div><div class="doc-callout">' + self._escapar(f.resumo) + '</div>';
+                    if (f.conexoes) corpo += '<div class="doc-callout-label">Conexões</div><div class="doc-callout">' + self._escapar(f.conexoes) + '</div>';
+                    corpo += '</div>';
+                });
+            });
+        });
+
+        return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
     },
 
     // Botão da grade principal — exporta as fichas ATUALMENTE VISÍVEIS
@@ -21194,6 +21858,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         let md = this._gerarMarkdownFichas(fichas, this._materiaSelecionada);
         if (!md) { alert('Nenhuma ficha visível pra exportar (considerando os filtros atuais).'); return; }
         downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Mesmo escopo de exportarMarkdown() (fichas visíveis, respeitando os
+    // filtros ativos) — emite HTML estilizado.
+    exportarHtml: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let fichas = this._listaFiltrada().map(function(par) { return par.item; });
+        let htmlDoc = this._gerarHtmlFichas(fichas, this._materiaSelecionada);
+        if (!htmlDoc) { alert('Nenhuma ficha visível pra exportar (considerando os filtros atuais).'); return; }
+        downloadArquivo(htmlDoc, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
     },
 
     // Botões dentro de cada aba de classificação (Muito Importante/
@@ -21209,6 +21884,20 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!md) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
         let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
         downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // Botão 🎨 ao lado de cada aba de classificação — mesmo escopo de
+    // exportarMarkdownAba, emitindo HTML estilizado.
+    exportarHtmlAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let ROTULOS_ABA = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
+        let SLUGS_ABA = { dificil: 'muito-importante', medio: 'importante', facil: 'regular' };
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let htmlDoc = this._gerarHtmlFichas(s.pool || [], titulo);
+        if (!htmlDoc) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(htmlDoc, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
     // ── CLASSIFICAÇÃO (Muito Importante/Importante/Regular) — mesmo toggle de
