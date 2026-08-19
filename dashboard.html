@@ -238,6 +238,13 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
 .evo-titulo-bloco { font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:12px; }
 .evo-stat-valor { font-family:var(--font-display); font-size:24px; font-weight:800; color:var(--text-main); line-height:1.1; }
 .evo-stat-label { font-size:11px; color:var(--text-muted); margin-top:3px; }
+.evo-opcoes-grafico { display:flex; flex-wrap:wrap; align-items:flex-start; gap:18px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); }
+.evo-opcoes-grupo { display:flex; flex-direction:column; gap:4px; }
+.evo-opcoes-grupo-label { font-family:var(--font-display); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); }
+.evo-opcoes-radios { display:flex; flex-wrap:wrap; gap:4px 14px; }
+.evo-radio-item { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+.evo-radio-item input[type="radio"] { cursor:pointer; accent-color:var(--app-primary, #6366f1); }
+.evo-opcoes-separador { width:1px; align-self:stretch; background:var(--border-color); }
     </style>
 </head>
 <body>
@@ -281,6 +288,25 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
                         <div class="evo-titulo-bloco">Evolução do Desempenho</div>
                         <div style="position:relative; height:230px;">
                             <canvas id="evoChart"></canvas>
+                        </div>
+                        <div class="evo-opcoes-grafico">
+                            <div class="evo-opcoes-grupo">
+                                <span class="evo-opcoes-grupo-label">Indicação numérica</span>
+                                <div class="evo-opcoes-radios">
+                                    <label class="evo-radio-item"><input type="radio" name="evo-indicacao" value="relativa" onchange="window.evoMudarIndicacao(this.value)"> Relativa (%)</label>
+                                    <label class="evo-radio-item"><input type="radio" name="evo-indicacao" value="absoluta" checked onchange="window.evoMudarIndicacao(this.value)"> Absoluta (total)</label>
+                                </div>
+                            </div>
+                            <div class="evo-opcoes-separador"></div>
+                            <div class="evo-opcoes-grupo">
+                                <span class="evo-opcoes-grupo-label">Periodicidade</span>
+                                <div class="evo-opcoes-radios">
+                                    <label class="evo-radio-item"><input type="radio" name="evo-periodicidade" value="diario" onchange="window.evoMudarPeriodicidade(this.value)"> Diário</label>
+                                    <label class="evo-radio-item"><input type="radio" name="evo-periodicidade" value="semanal" checked onchange="window.evoMudarPeriodicidade(this.value)"> Semanal</label>
+                                    <label class="evo-radio-item"><input type="radio" name="evo-periodicidade" value="quinzenal" onchange="window.evoMudarPeriodicidade(this.value)"> Quinzenal</label>
+                                    <label class="evo-radio-item"><input type="radio" name="evo-periodicidade" value="mensal" onchange="window.evoMudarPeriodicidade(this.value)"> Mensal</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -494,10 +520,17 @@ function loadFactualDatabase() {
         window.__evoMateriasTodasConhecidas = [];
         window.__evoChartInstance = null;
         window.__evoDonutChartInstance = null;
+        // 'absoluta' = 3 linhas (Total/Acertos/Erros) em número bruto;
+        // 'relativa' = 2 linhas (% Acertos/% Erros).
+        window.__evoModoIndicacao = 'absoluta';
+        // Granularidade dos buckets do gráfico de evolução.
+        window.__evoPeriodicidade = 'semanal';
 
         function evoFormatarDataCurta(d) {
             return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
         }
+
+        const EVO_MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
         // Divide [de, ate] em N períodos iguais — mesma ideia de bucket usada
         // pra não plotar um ponto por bateria individual (ilegível com muitos
@@ -512,6 +545,55 @@ function loadFactualDatabase() {
             }
             return buckets;
         }
+
+        // Divide [de, ate] em buckets alinhados à periodicidade escolhida pelo
+        // usuário. Diário/Semanal/Quinzenal usam janelas de dias corridos (1/7/14)
+        // a partir do início do período; Mensal usa meses de calendário de
+        // verdade (clipados ao intervalo selecionado), pra render rótulos
+        // "Mês/Ano" com sentido em vez de janelas arbitrárias de 30 dias.
+        function evoBucketsPorPeriodicidade(de, ate, periodicidade) {
+            if (ate < de) return [{ inicio: de, fim: ate }];
+
+            if (periodicidade === 'mensal') {
+                let buckets = [];
+                let cursor = new Date(de.getFullYear(), de.getMonth(), 1);
+                while (cursor <= ate) {
+                    let inicioBucket = new Date(Math.max(cursor.getTime(), de.getTime()));
+                    let fimMesCalendario = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);
+                    let fimBucket = new Date(Math.min(fimMesCalendario.getTime(), ate.getTime()));
+                    buckets.push({ inicio: inicioBucket, fim: fimBucket, mensal: true, refMes: new Date(cursor.getTime()) });
+                    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+                }
+                return buckets;
+            }
+
+            let diasPorBucket = periodicidade === 'diario' ? 1 : (periodicidade === 'quinzenal' ? 14 : 7);
+            let passoMs = diasPorBucket * 24 * 60 * 60 * 1000;
+            let buckets = [];
+            let inicioAtual = new Date(de.getTime());
+            while (inicioAtual <= ate) {
+                let fimAtual = new Date(Math.min(inicioAtual.getTime() + passoMs - 1000, ate.getTime()));
+                buckets.push({ inicio: inicioAtual, fim: fimAtual, diario: periodicidade === 'diario' });
+                inicioAtual = new Date(inicioAtual.getTime() + passoMs);
+            }
+            return buckets;
+        }
+
+        function evoFormatarLabelBucket(b) {
+            if (b.mensal) return EVO_MESES_ABREV[b.refMes.getMonth()] + '/' + b.refMes.getFullYear();
+            if (b.diario) return evoFormatarDataCurta(b.inicio);
+            return evoFormatarDataCurta(b.inicio) + ' a ' + evoFormatarDataCurta(b.fim);
+        }
+
+        window.evoMudarIndicacao = function(valor) {
+            window.__evoModoIndicacao = valor;
+            window.atualizarEvolucaoDesempenho();
+        };
+
+        window.evoMudarPeriodicidade = function(valor) {
+            window.__evoPeriodicidade = valor;
+            window.atualizarEvolucaoDesempenho();
+        };
 
         window.popularFiltroEvoMaterias = function() {
             let materiasSet = new Set();
@@ -609,7 +691,10 @@ function loadFactualDatabase() {
             let materiasFiltro = window.__evoMateriasSelecionadas;
             let questoesResolvidas = 0, acertos = 0;
             let materiasEncontradas = new Set();
-            let buckets = evoBuckets(de, ate, 9).map(function(b) { return { inicio: b.inicio, fim: b.fim, acertos: 0, erros: 0 }; });
+            let periodicidade = window.__evoPeriodicidade || 'semanal';
+            let buckets = evoBucketsPorPeriodicidade(de, ate, periodicidade).map(function(b) {
+                return { inicio: b.inicio, fim: b.fim, mensal: b.mensal, diario: b.diario, refMes: b.refMes, acertos: 0, erros: 0 };
+            });
 
             getDadosGlobaisETL().forEach(function(sim) {
                 let dataSim = parseDateBr(sim.data);
@@ -668,26 +753,37 @@ function loadFactualDatabase() {
                 });
             }
 
-            let labels = buckets.map(function(b) { return evoFormatarDataCurta(b.inicio) + ' a ' + evoFormatarDataCurta(b.fim); });
+            let labels = buckets.map(evoFormatarLabelBucket);
+            let modoIndicacao = window.__evoModoIndicacao || 'absoluta';
             let ctx = document.getElementById('evoChart');
             if (window.__evoChartInstance) window.__evoChartInstance.destroy();
             if (ctx && typeof Chart !== 'undefined') {
+                let datasets;
+                let escalaY;
+                if (modoIndicacao === 'relativa') {
+                    datasets = [
+                        { label: '% Acertos', data: buckets.map(function(b) { let t = b.acertos + b.erros; return t > 0 ? Math.round((b.acertos / t) * 100) : 0; }), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#10b981' },
+                        { label: '% Erros', data: buckets.map(function(b) { let t = b.acertos + b.erros; return t > 0 ? Math.round((b.erros / t) * 100) : 0; }), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#ef4444' }
+                    ];
+                    escalaY = { beginAtZero: true, max: 100, ticks: { precision: 0, callback: function(v) { return v + '%'; } } };
+                } else {
+                    datasets = [
+                        { label: 'Total', data: buckets.map(function(b) { return b.acertos + b.erros; }), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.08)', borderDash: [5, 4], fill: false, tension: 0.35, pointRadius: 2, pointBackgroundColor: '#6366f1' },
+                        { label: 'Acertos', data: buckets.map(function(b) { return b.acertos; }), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#10b981' },
+                        { label: 'Erros', data: buckets.map(function(b) { return b.erros; }), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#ef4444' }
+                    ];
+                    escalaY = { beginAtZero: true, ticks: { precision: 0 } };
+                }
                 window.__evoChartInstance = new Chart(ctx, {
                     type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'Acertos', data: buckets.map(function(b) { return b.acertos; }), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#10b981' },
-                            { label: 'Erros', data: buckets.map(function(b) { return b.erros; }), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#ef4444' }
-                        ]
-                    },
+                    data: { labels: labels, datasets: datasets },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                        scales: { y: escalaY },
                         plugins: {
                             legend: { position: 'top', align: 'end', labels: { boxWidth: 10, font: { size: 11 } } },
-                            tooltip: { mode: 'index', intersect: false }
+                            tooltip: { mode: 'index', intersect: false, callbacks: modoIndicacao === 'relativa' ? { label: function(c) { return c.dataset.label + ': ' + c.parsed.y + '%'; } } : undefined }
                         },
                         interaction: { mode: 'index', intersect: false }
                     }
