@@ -7459,7 +7459,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
         let itens = porMateria[topico];
         if (!Array.isArray(itens)) return [];
         return itens.filter(function(q) { return q && q.gabarito !== 'ANULADA'; }).map(function(q) {
-            return { chave: q.id_q + '_' + q.sim_id, id_q: q.id_q, sim_id: q.sim_id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, materia: materia, topico: topico };
+            return { chave: q.id_q + '_' + q.sim_id, id_q: q.id_q, sim_id: q.sim_id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: q.motivoErro, materia: materia, topico: topico };
         });
     },
 
@@ -7498,7 +7498,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
             let itens = porMateria[topico];
             if (!Array.isArray(itens)) return;
             itens.filter(function(q) { return q && q.gabarito !== 'ANULADA'; }).forEach(function(q) {
-                resultado.push({ chave: q.id_q + '_' + q.sim_id, id_q: q.id_q, sim_id: q.sim_id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, materia: chaveMateria, topico: topico });
+                resultado.push({ chave: q.id_q + '_' + q.sim_id, id_q: q.id_q, sim_id: q.sim_id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: q.motivoErro, materia: chaveMateria, topico: topico });
             });
         });
         return resultado;
@@ -7704,6 +7704,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
                     linhas.push(q.enunciado || '(sem enunciado)', '');
                     let gabaritoTexto = q.gabarito === 'V' ? '✅ Verdadeiro' : (q.gabarito === 'F' ? '❌ Falso' : (q.gabarito || '?'));
                     linhas.push('**Gabarito:** ' + gabaritoTexto, '');
+                    if (q.motivoErro) linhas.push('**Motivo do erro:** ' + q.motivoErro, '');
                     if (q.explicacao) linhas.push('**Explicação:**', '', self._blockquote(q.explicacao), '');
                     linhas.push('---', '');
                 });
@@ -7743,6 +7744,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
                     corpo += '<div class="doc-card">';
                     corpo += '<div class="doc-card-titulo">' + self._escapar(q.enunciado || '(sem enunciado)') +
                         ' <span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span></div>';
+                    if (q.motivoErro) corpo += '<div class="doc-meta"><span><b>Motivo do erro:</b> ' + self._escapar(q.motivoErro) + '</span></div>';
                     if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + self._escapar(q.explicacao) + '</div>';
                     corpo += '</div>';
                 });
