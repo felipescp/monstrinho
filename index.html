@@ -12701,11 +12701,19 @@ localStorage.setItem(
             if (window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[C.id_taxonomia]) {
                 C.materia = window.MAPA_TAXONOMIA[C.id_taxonomia].materia;
                 C.caminho_completo = window.MAPA_TAXONOMIA[C.id_taxonomia].caminho;
+            } else {
+                // Sem id_taxonomia válido, materia/caminho_completo NÃO devem
+                // sobreviver de uma atribuição anterior de C (mesmo com a
+                // proteção em abrirModalCriacao/editarSimuladoAcervo, mais
+                // vale garantir aqui too) — senão o guard-clause abaixo, que só
+                // checa "vazio", deixa passar um valor não-vazio porém errado.
+                C.materia = '';
+                C.caminho_completo = '';
             }
 
             // GUARD CLAUSE: Impede salvamento de prova corrompida
-            if (!C.caminho_completo) {
-                console.error('ERRO: caminho_completo vazio. id_taxonomia:', C.id_taxonomia);
+            if (!C.id_taxonomia || !C.caminho_completo) {
+                console.error('ERRO: taxonomia não selecionada ou caminho_completo vazio. id_taxonomia:', C.id_taxonomia);
                 alert('Erro interno: taxonomia não encontrada. O simulado não foi salvo para evitar corrupção do banco.');
                 tela('tela-admin');
                 return;
@@ -13741,23 +13749,51 @@ function renderNav(){
             let htmlCaminho = partesCaminho.map(p => `<span style="color:var(--text-main); font-weight:700;">${p.trim()}</span>`).join(' <span style="color:var(--border-color); font-size:10px; margin:0 4px;">/</span> ');
             // let targetId = C.id_taxonomia; // Variável mantida se precisar para logs, mas o botão foi removido
 
-            // Baralhos manuais de Flashcards da mesma matéria+L2 dessa questão
-            // (associação por id_taxonomia -> MAPA_TAXONOMIA, mesma granularidade
-            // em que os baralhos vivem — ver FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia).
+            // Baralhos associados à mesma matéria+L2 dessa questão (associação
+            // por id_taxonomia -> MAPA_TAXONOMIA, mesma granularidade em que
+            // todo mundo abaixo vive) — 3 fontes, não só Flashcards manuais:
+            // baralhos manuais (FLASHCARDS_RUNTIME), o baralho de Esquemas do
+            // tópico e o baralho de Jurisprudência do tópico. Antes só a
+            // fonte de Flashcards era checada, então um tópico com Esquemas/
+            // Jurisprudência mas sem NENHUM baralho manual mostrava a seção
+            // inteira vazia (nada "associado"), mesmo tendo conteúdo de
+            // sobra — cada fonte agora aparece como sua própria linha
+            // clicável, abrindo o baralho daquele tipo específico.
             let htmlBaralhos = '';
             if (window.FLASHCARDS_RUNTIME && C.id_taxonomia) {
                 let locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
                 if (locBaralhos) {
+                    let mEsc = locBaralhos.materia.replace(/'/g, "\\'");
+                    let dEsc = locBaralhos.divisao.replace(/'/g, "\\'");
+                    let itensBaralhos = '';
+
                     let baralhosAssoc = window.FLASHCARDS_RUNTIME.listarBaralhosDoL2(locBaralhos.materia, locBaralhos.divisao);
-                    if (baralhosAssoc.length > 0) {
-                        let itensBaralhos = baralhosAssoc.map(function(deck) {
-                            let n = Array.isArray(deck.cards) ? deck.cards.length : 0;
-                            let mEsc = locBaralhos.materia.replace(/'/g, "\\'");
-                            let dEsc = locBaralhos.divisao.replace(/'/g, "\\'");
-                            return `<div onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho('${deck.id}', '${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
+                    baralhosAssoc.forEach(function(deck) {
+                        let n = Array.isArray(deck.cards) ? deck.cards.length : 0;
+                        itensBaralhos += `<div onclick="window.FLASHCARDS_RUNTIME.abrirPopupBaralho('${deck.id}', '${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
                                 <span>🗂️ ${deck.nome}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${n}</span>
                             </div>`;
-                        }).join('');
+                    });
+
+                    if (window.ESQUEMAS_RUNTIME) {
+                        let nEsq = window.ESQUEMAS_RUNTIME.esquemasDoL2(locBaralhos.materia, locBaralhos.divisao).length;
+                        if (nEsq > 0) {
+                            itensBaralhos += `<div onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDoTopico('${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
+                                <span>📄 Esquemas</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${nEsq}</span>
+                            </div>`;
+                        }
+                    }
+
+                    if (window.JURISPRUDENCIA_RUNTIME) {
+                        let nJur = window.JURISPRUDENCIA_RUNTIME.fichasDoL2(locBaralhos.materia, locBaralhos.divisao).length;
+                        if (nJur > 0) {
+                            itensBaralhos += `<div onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDoTopico('${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
+                                <span>⚖️ Jurisprudência</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${nJur}</span>
+                            </div>`;
+                        }
+                    }
+
+                    if (itensBaralhos) {
                         htmlBaralhos = `
                 <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">Baralhos associados</div>
                 <div>${itensBaralhos}</div>`;
@@ -15871,7 +15907,27 @@ window.ID_EDICAO = null;
 window.abrirModalCriacao = function() {
     window.ID_EDICAO = null;
     document.getElementById('tela-admin').classList.add('open');
-    
+
+    // Protege a aba ativa (se houver) ANTES de começar um rascunho novo:
+    // sincroniza o progresso mais recente pra SIMS[SI] e só então reseta
+    // os globais C/D pro estado em branco. Sem isso, salvarProvaNoAcervo()
+    // (chamada ao finalizar a criação) muta C/D DIRETAMENTE — como C/D são
+    // os mesmos globais que renderNav()/renderSim() leem pra aba
+    // atualmente aberta, criar uma bateria nova enquanto outra está em
+    // andamento "sequestrava" esses globais: as questões (D) da bateria
+    // recém-criada apareciam corretas, mas metadados de C que não fossem
+    // reatribuídos no formulário (ex.: caminho_completo, quando o campo de
+    // taxonomia ficava sem seleção) continuavam com o valor STALE da aba
+    // anterior — o guard-clause de C.caminho_completo vazio não pega esse
+    // caso porque o valor não está vazio, só errado. Bug relatado: nova
+    // bateria abria mostrando "Vínculo Taxonômico" da bateria anterior.
+    if (typeof SI !== 'undefined' && SI >= 0 && typeof SIMS !== 'undefined' && SIMS[SI]) {
+        SIMS[SI].qSalva = QA;
+        SIMS[SI].dados = JSON.parse(JSON.stringify(D));
+    }
+    C = { nome: '', tipo: 'ce', cegas: false };
+    D = { blocos: [], res: {}, fin: {}, caderno: [] };
+
     // Limpeza rigorosa do formulário para evitar vazamento de estado
     g('cfg-nome').value = '';
     g('paste-area').value = '';
@@ -15895,6 +15951,16 @@ window.abrirModalCriacao = function() {
 window.cancelarEdicaoAcervo = function() {
     window.ID_EDICAO = null;
     document.getElementById('tela-admin').classList.remove('open');
+
+    // Restaura a aba que estava ativa antes de abrir o formulário de
+    // criação/edição — chamada tanto ao cancelar quanto ao final de um
+    // salvamento bem-sucedido (ver salvarProvaNoAcervo), garantindo que
+    // C/D nunca fiquem "presos" no rascunho da bateria recém-criada/
+    // editada depois que o modal fecha.
+    if (typeof SI !== 'undefined' && SI >= 0 && typeof SIMS !== 'undefined' && SIMS[SI]) {
+        C = JSON.parse(JSON.stringify(SIMS[SI].cfg));
+        D = JSON.parse(JSON.stringify(SIMS[SI].dados));
+    }
 };
 
 window.editarSimuladoAcervo = function(id) {
@@ -15904,6 +15970,14 @@ window.editarSimuladoAcervo = function(id) {
 
     if (prova.origem_oficial) {
         prova = Object.assign({}, prova, { dados: resolverDadosCompletos(prova) });
+    }
+
+    // Mesma proteção de abrirModalCriacao(): sincroniza a aba ativa antes
+    // de salvarProvaNoAcervo() começar a mutar C/D com os dados da prova
+    // sendo editada.
+    if (typeof SI !== 'undefined' && SI >= 0 && typeof SIMS !== 'undefined' && SIMS[SI]) {
+        SIMS[SI].qSalva = QA;
+        SIMS[SI].dados = JSON.parse(JSON.stringify(D));
     }
 
     window.ID_EDICAO = id;
