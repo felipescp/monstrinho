@@ -385,9 +385,10 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
                     <option value="">-- TODAS AS MATÉRIAS --</option>
                 </select>
             </div>
-            <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
                 <button class="btn" onclick="window.fecharModalExportETL()">Cancelar</button>
-                <button class="btn btn-primary" onclick="window.exportarRendimentoETL()">📤 Exportar (.md e .html)</button>
+                <button class="btn btn-primary" onclick="window.exportarRendimentoETL('md')">Exportar (.md)</button>
+                <button class="btn btn-primary" onclick="window.exportarRendimentoETL('html')">Exportar (.html)</button>
             </div>
         </div>
     </div>
@@ -902,79 +903,123 @@ function loadFactualDatabase() {
 
         // Agrupa os dados brutos (mesmo cálculo de antes) num formato neutro
         // — reaproveitado pelos dois geradores (Markdown e HTML) abaixo.
+        // Agrupa os dados brutos e depois deriva a árvore completa Matéria >
+        // Grupo (L2) > Título (L3) — MESMA quebra "Subtema1 > Subtema2" usada
+        // em renderRendimentoETL() pros cards "Análise Agregada por Matéria"
+        // na tela (ver linhas ~1100-1130). Antes, a exportação tratava cada
+        // "g.topico" (já vindo como "Grupo > Título" combinado) como uma
+        // linha solta e sem agrupamento — por isso, quando havia vários
+        // títulos sob o mesmo grupo, cada um virava sua própria seção de
+        // nível 3 sem nenhum agrupamento/índice do grupo, dando a impressão
+        // de que só "o topo da árvore" tinha sido exportado. Agora a
+        // exportação espelha exatamente a mesma árvore de 3 níveis da tela,
+        // com TODOS os títulos de TODOS os grupos da disciplina.
         function _dadosRendimentoETLAgrupados(fMat) {
             const globais = getDadosGlobaisETL();
-            let memExport = {};
+            let memMaterias = {};
             globais.forEach(sim => {
                 if (!sim.granulares) return;
                 sim.granulares.forEach(g => {
                     if (fMat && g.materia !== fMat) return;
-                    if (!memExport[g.materia]) memExport[g.materia] = {};
-                    if (!memExport[g.materia][g.topico]) memExport[g.materia][g.topico] = { feitas: 0, acertos: 0, lei: { ac: 0, tot: 0 }, juris: { ac: 0, tot: 0 }, doutrina: { ac: 0, tot: 0 } };
-                    let b = memExport[g.materia][g.topico];
+                    if (!memMaterias[g.materia]) memMaterias[g.materia] = {};
+                    if (!memMaterias[g.materia][g.topico]) memMaterias[g.materia][g.topico] = { feitas: 0, acertos: 0, lei: { ac: 0, tot: 0 }, juris: { ac: 0, tot: 0 }, doutrina: { ac: 0, tot: 0 } };
+                    let b = memMaterias[g.materia][g.topico];
                     b.feitas += g.feitas; b.acertos += g.acertos;
                     b.lei.ac += (g.fontes?.lei?.ac || 0); b.lei.tot += (g.fontes?.lei?.tot || 0);
                     b.juris.ac += (g.fontes?.juris?.ac || 0); b.juris.tot += (g.fontes?.juris?.tot || 0);
                     b.doutrina.ac += (g.fontes?.doutrina?.ac || 0); b.doutrina.tot += (g.fontes?.doutrina?.tot || 0);
                 });
             });
-            return memExport;
+
+            let materias = {};
+            Object.entries(memMaterias).forEach(([materia, topicos]) => {
+                let gruposMap = {}; let tF = 0, tA = 0;
+                Object.entries(topicos).forEach(([nome, s]) => {
+                    tF += s.feitas; tA += s.acertos;
+                    const partes = nome.split(' > ');
+                    const grupo = partes.length >= 2 ? partes[0] : 'Outros';
+                    const titulo = partes.length >= 2 ? partes.slice(1).join(' > ') : nome;
+                    if (!gruposMap[grupo]) gruposMap[grupo] = { itens: [], feitas: 0, acertos: 0 };
+                    gruposMap[grupo].itens.push({ titulo, s });
+                    gruposMap[grupo].feitas += s.feitas;
+                    gruposMap[grupo].acertos += s.acertos;
+                });
+                let grupos = Object.entries(gruposMap).map(([grupo, g]) => ({
+                    grupo, itens: g.itens, feitas: g.feitas, acertos: g.acertos,
+                    pct: g.feitas > 0 ? Math.round((g.acertos / g.feitas) * 100) : 0
+                })).sort((a, b) => b.pct - a.pct);
+                grupos.forEach(g => g.itens.sort((a, b) => {
+                    const pctA = a.s.feitas > 0 ? Math.round((a.s.acertos / a.s.feitas) * 100) : 0;
+                    const pctB = b.s.feitas > 0 ? Math.round((b.s.acertos / b.s.feitas) * 100) : 0;
+                    return pctB - pctA;
+                }));
+                materias[materia] = { grupos, feitas: tF, acertos: tA, pct: tF > 0 ? Math.round((tA / tF) * 100) : 0 };
+            });
+            return materias;
         }
 
-        function _gerarMarkdownRendimentoETL(memExport) {
+        function _gerarMarkdownRendimentoETL(materias) {
             let md = `# RELATÓRIO DE DESEMPENHO POR MATÉRIA\n*Data de Extração: ${new Date().toLocaleDateString('pt-BR')}*\n\n`;
-            Object.keys(memExport).sort().forEach(materia => {
-                md += `## ${materia}\n`;
-                let tAc = 0, tF = 0;
-                Object.entries(memExport[materia]).sort().forEach(([topico, s]) => {
-                    tAc += s.acertos; tF += s.feitas;
-                    const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
-                    md += `### ${topico}\n- **Desempenho:** ${s.acertos}/${s.feitas} (${pct}%)\n`;
-                    if (s.doutrina.tot > 0) md += `  - *Doutrina:* ${s.doutrina.ac}/${s.doutrina.tot}\n`;
-                    if (s.lei.tot > 0) md += `  - *Lei Seca:* ${s.lei.ac}/${s.lei.tot}\n`;
-                    if (s.juris.tot > 0) md += `  - *Jurisprudência:* ${s.juris.ac}/${s.juris.tot}\n`;
+            Object.keys(materias).sort().forEach(materia => {
+                const m = materias[materia];
+                md += `## ${materia}\n**Índice Geral:** ${m.acertos}/${m.feitas} (${m.pct}%)\n\n`;
+                m.grupos.forEach(g => {
+                    md += `### ${g.grupo}\n*Desempenho do grupo:* ${g.acertos}/${g.feitas} (${g.pct}%)\n\n`;
+                    g.itens.forEach(({ titulo, s }) => {
+                        const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
+                        md += `- **${titulo}:** ${s.acertos}/${s.feitas} (${pct}%)\n`;
+                        if (s.doutrina.tot > 0) md += `  - *Doutrina:* ${s.doutrina.ac}/${s.doutrina.tot}\n`;
+                        if (s.lei.tot > 0) md += `  - *Lei Seca:* ${s.lei.ac}/${s.lei.tot}\n`;
+                        if (s.juris.tot > 0) md += `  - *Jurisprudência:* ${s.juris.ac}/${s.juris.tot}\n`;
+                    });
                     md += `\n`;
                 });
-                const matPct = tF > 0 ? Math.round((tAc / tF) * 100) : 0;
-                md += `**Índice Geral em ${materia}:** ${tAc}/${tF} (${matPct}%)\n\n---\n\n`;
+                md += `---\n\n`;
             });
             return md;
         }
 
-        function _gerarHtmlRendimentoETL(memExport) {
+        function _gerarHtmlRendimentoETL(materias) {
             let corpo = '<div class="doc-titulo">Relatório de Desempenho por Matéria</div>';
             corpo += '<div class="doc-resumo">Data de Extração: ' + new Date().toLocaleDateString('pt-BR') + '</div>';
-            Object.keys(memExport).sort().forEach(materia => {
-                corpo += '<div class="doc-materia">' + escapeHtmlDashboard(materia) + '</div>';
-                let tAc = 0, tF = 0;
-                Object.entries(memExport[materia]).sort().forEach(([topico, s]) => {
-                    tAc += s.acertos; tF += s.feitas;
-                    const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
-                    corpo += '<div class="doc-card">';
-                    corpo += '<div class="doc-card-titulo">' + escapeHtmlDashboard(topico) +
-                        ' <span class="doc-badge" style="background:' + bgPctDashboard(pct) + ';color:' + corPctDashboard(pct) + ';">' + pct + '%</span></div>';
-                    let meta = ['<span><b>Desempenho:</b> ' + s.acertos + '/' + s.feitas + '</span>'];
-                    if (s.doutrina.tot > 0) meta.push('<span><b>Doutrina:</b> ' + s.doutrina.ac + '/' + s.doutrina.tot + '</span>');
-                    if (s.lei.tot > 0) meta.push('<span><b>Lei Seca:</b> ' + s.lei.ac + '/' + s.lei.tot + '</span>');
-                    if (s.juris.tot > 0) meta.push('<span><b>Jurisprudência:</b> ' + s.juris.ac + '/' + s.juris.tot + '</span>');
-                    corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
-                    corpo += '</div>';
+            Object.keys(materias).sort().forEach(materia => {
+                const m = materias[materia];
+                corpo += '<div class="doc-materia">' + escapeHtmlDashboard(materia) +
+                    ' <span class="doc-badge" style="background:' + bgPctDashboard(m.pct) + ';color:' + corPctDashboard(m.pct) + ';">' + m.acertos + '/' + m.feitas + ' · ' + m.pct + '%</span></div>';
+                m.grupos.forEach(g => {
+                    corpo += '<div class="doc-divisao">' + escapeHtmlDashboard(g.grupo) +
+                        ' <span class="doc-badge" style="background:' + bgPctDashboard(g.pct) + ';color:' + corPctDashboard(g.pct) + ';">' + g.acertos + '/' + g.feitas + ' · ' + g.pct + '%</span></div>';
+                    g.itens.forEach(({ titulo, s }) => {
+                        const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
+                        corpo += '<div class="doc-card">';
+                        corpo += '<div class="doc-card-titulo">' + escapeHtmlDashboard(titulo) +
+                            ' <span class="doc-badge" style="background:' + bgPctDashboard(pct) + ';color:' + corPctDashboard(pct) + ';">' + pct + '%</span></div>';
+                        let meta = ['<span><b>Desempenho:</b> ' + s.acertos + '/' + s.feitas + '</span>'];
+                        if (s.doutrina.tot > 0) meta.push('<span><b>Doutrina:</b> ' + s.doutrina.ac + '/' + s.doutrina.tot + '</span>');
+                        if (s.lei.tot > 0) meta.push('<span><b>Lei Seca:</b> ' + s.lei.ac + '/' + s.lei.tot + '</span>');
+                        if (s.juris.tot > 0) meta.push('<span><b>Jurisprudência:</b> ' + s.juris.ac + '/' + s.juris.tot + '</span>');
+                        corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
+                        corpo += '</div>';
+                    });
                 });
-                const matPct = tF > 0 ? Math.round((tAc / tF) * 100) : 0;
-                corpo += '<div class="doc-callout"><b>Índice Geral em ' + escapeHtmlDashboard(materia) + ':</b> ' + tAc + '/' + tF + ' (' + matPct + '%)</div>';
             });
             return gerarDocumentoHtmlEstilizado('Relatório de Desempenho por Matéria', corpo);
         }
 
-        window.exportarRendimentoETL = function() {
+        // formato: 'md' | 'html' — botões isolados no modal, cada um baixa
+        // só a extensão pedida (antes baixava as duas juntas num clique só).
+        window.exportarRendimentoETL = function(formato) {
             const fMat = document.getElementById('export-etl-materia').value;
-            const memExport = _dadosRendimentoETLAgrupados(fMat);
+            const materias = _dadosRendimentoETLAgrupados(fMat);
 
-            if (Object.keys(memExport).length === 0) { alert('Nenhum dado encontrado para exportar.'); return; }
+            if (Object.keys(materias).length === 0) { alert('Nenhum dado encontrado para exportar.'); return; }
 
             const sufixo = (fMat ? fMat.replace(/\s+/g, '_') : 'Todas_Materias') + '_' + Date.now();
-            downloadArquivoDashboard(_gerarMarkdownRendimentoETL(memExport), `Desempenho_${sufixo}.md`, 'text/markdown');
-            downloadArquivoDashboard(_gerarHtmlRendimentoETL(memExport), `Desempenho_${sufixo}.html`, 'text/html');
+            if (formato === 'html') {
+                downloadArquivoDashboard(_gerarHtmlRendimentoETL(materias), `Desempenho_${sufixo}.html`, 'text/html');
+            } else {
+                downloadArquivoDashboard(_gerarMarkdownRendimentoETL(materias), `Desempenho_${sufixo}.md`, 'text/markdown');
+            }
             window.fecharModalExportETL();
         };
 
