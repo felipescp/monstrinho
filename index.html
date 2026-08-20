@@ -4174,23 +4174,17 @@ if(ri) {
         else if(a === 'novo')
             novoSim();
 
-        else if(a === 'cad')
-            exportarCadernoTxt();
-
         else if(a === 'ax')
             exportarCadernoAxiomasTxt();
-
-        else if(a === 'errostxt')
-            exportarErrosTxt(i);
 
         else if(a === 'refazer')
             refazerErradas(i);
 
         else if(a === 'exp-res')
-            window.exportarResultado();
+            window.exportarProvaCompletaMdHtml();
 
         else if(a === 'exp-md')
-            window.exportarNotebookLM();
+            window.exportarCadernoQuestoesMdHtml();
     });
 }
 </script>
@@ -13846,23 +13840,17 @@ function bindResultadoActions() {
         else if(a === 'novo')
             novoSim();
 
-        else if(a === 'cad')
-            exportarCadernoTxt();
-
         else if(a === 'ax')
             exportarCadernoAxiomasTxt();
-
-        else if(a === 'errostxt')
-            exportarErrosTxt(i);
 
         else if(a === 'refazer')
             refazerErradas(i);
 
         else if(a === 'exp-res')
-            window.exportarResultado();
+            window.exportarProvaCompletaMdHtml();
 
         else if(a === 'exp-md')
-            window.exportarNotebookLM();
+            window.exportarCadernoQuestoesMdHtml();
     });
 }
 
@@ -13959,11 +13947,9 @@ function renderResultado(idx){
   var botoesHTML = '<div class="rbtns" style="margin-top:-0.5rem; display:flex; width:100%; gap:6px;">'+
       '<button class="rba o" data-a="vol" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Revisar Questões">← Revisar Questões</button>'+
       '<button class="rba" data-a="refazer" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
-      '<button class="rba" data-a="exp-res" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa (.txt)">⬇ Exportar Prova Completa (.txt)</button>'+
-      '<button class="rba" data-a="exp-md" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar p/ NotebookLM (.md)">🧠 Exportar p/ NotebookLM (.md)</button>'+
-      (D.caderno && D.caderno.length ? '<button class="rba" data-a="cad" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Caderno">⭐ Caderno</button>' : '')+
+      '<button class="rba" data-a="exp-res" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa (.md e .html)">⬇ Exportar Prova Completa (.md e .html)</button>'+
+      '<button class="rba" data-a="exp-md" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Caderno de Questões (.md e .html)">🧠 Exportar Caderno de Questões (.md e .html)</button>'+
       (D.cadernoAxiomas && D.cadernoAxiomas.length ? '<button class="rba" data-a="ax" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Axiomas">📌 Axiomas</button>' : '')+
-      '<button class="rba" data-a="errostxt" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Erros (.txt)">⬇ Erros (.txt)</button>'+
 
     '</div>';
 
@@ -15156,95 +15142,7 @@ window.patchCardResolvido = function(id) {
     }
 };
 
-function exportarCadernoTxt(){
-  if(!D.caderno||!D.caderno.length){alert('Caderno vazio.');return;}
-  var SEP='================================================================================';
-  var linhas=[],gi=0,total=0;
-  linhas.push(SEP);
-  linhas.push('MEU CADERNO DE QUESTÕES');
-  linhas.push('Simulado: '+C.nome);
-  linhas.push('Data: '+new Date().toLocaleDateString('pt-BR'));
-  linhas.push('Total de questões no caderno: '+D.caderno.length);
-  linhas.push(SEP);
-
-  D.blocos.forEach(function(b){
-    var qsBloco=b.questoes.filter(function(q){return D.caderno.indexOf(q.id)>=0;});
-    if(!qsBloco.length)return;
-    linhas.push('');
-    linhas.push('BLOCO: '+b.nome);
-    linhas.push('────────────────────────────────────────────────────────────────────────────────');
-    qsBloco.forEach(function(q){
-      gi++;total++;
-      linhas.push('');
-      linhas.push('Q'+gi+'. '+q.enunciado);
-      if(q.alternativas&&q.alternativas.length){
-        q.alternativas.forEach(function(alt){linhas.push('   '+alt);});
-      }
-      if(q.taxonomia) linhas.push('Taxonomia:    '+q.taxonomia);
-      linhas.push('Gabarito:     '+(q.gabarito==='V'?'Verdadeiro':'Falso'));
-      if(q.explicacao) linhas.push('Explicação:   '+q.explicacao);
-      var motivoErroQ = D.res[q.id] && D.res[q.id].motivoErro;
-      if(motivoErroQ) linhas.push('Motivo do erro: '+motivoErroQ);
-    });
-  });
-
-  linhas.push('');
-  linhas.push(SEP);
-  linhas.push('FIM DO CADERNO — '+total+' questão(ões) exportada(s).');
-  linhas.push(SEP);
-  
-  // Novo sistema de Download
-  downloadArquivo(linhas.join('\n'), C.nome + '_caderno.txt', 'text/plain');
-}
-
 // ── FERRAMENTAS DE REVISÃO ────────────────────────────────────
-
-
-function exportarErrosTxt(idx){
-  var h=HIST[idx];if(!h)return;
-  var SEP='================================================================================';
-  var linhas=[],gi=0;
-  linhas.push(SEP);
-  linhas.push('RELATÓRIO DE ERROS — '+h.nome.toUpperCase());
-  linhas.push('Data: '+new Date().toLocaleDateString('pt-BR'));
-  linhas.push(SEP);
-
-  h.dados.blocos.forEach(function(b){
-    var erradas=b.questoes.filter(function(q){
-      var r=h.dados.res[q.id];return r&&r.c&&!r.ok;
-    });
-    if(!erradas.length)return;
-    linhas.push('');
-    linhas.push('BLOCO: '+b.nome);
-    linhas.push('────────────────────────────────────────────────────────────────────────────────');
-    erradas.forEach(function(q){
-      gi++;
-      var r=h.dados.res[q.id];
-      linhas.push('');
-      linhas.push('Q'+gi+'. '+q.enunciado);
-      if(q.alternativas&&q.alternativas.length){
-        q.alternativas.forEach(function(a){linhas.push('   '+a);});
-      }
-      if(q.taxonomia)linhas.push('Taxonomia:      '+q.taxonomia);
-      var gabTxt=h.cfg.tipo==='mc'?q.gabarito:(q.gabarito==='V'?'Verdadeiro':'Falso');
-      var suaTxt=h.cfg.tipo==='mc'?r.v:(r.v==='V'?'Verdadeiro':'Falso');
-      linhas.push('Sua resposta:   '+suaTxt);
-      linhas.push('Gabarito:       '+gabTxt);
-      if(q.explicacao)linhas.push('Explicação:     '+q.explicacao);
-      if(r.motivoErro)linhas.push('Motivo do erro: '+r.motivoErro);
-    });
-  });
-
-  if(!gi){
-    mostrarModal({titulo:'Erros',mensagem:'Nenhuma questão errada para exportar.',botoes:[{label:'OK',cor:'var(--app-primary)',cb:null}]});
-    return;
-  }
-  linhas.push('');linhas.push(SEP);
-  linhas.push('TOTAL DE ERROS: '+gi);linhas.push(SEP);
-  
-  // Novo sistema de Download
-  downloadArquivo(linhas.join('\n'), h.nome + '_erros.txt', 'text/plain');
-}
 
 // =========================================================
 // DERIVAÇÃO DE RUNTIME
@@ -15291,47 +15189,84 @@ function refazerErradas(idx){
   trocarTab(novoSI);
 }
 
-// ── EXPORTADOR ULTRA-OTIMIZADO PARA PLANNER E NOTEBOOKLM (.MD) ──
-function exportarNotebookLM() {
-  if (!D.blocos.length) { alert('Nenhum simulado em andamento.'); return; }
-  var stats = calcStats(); var linhas = [];
-  linhas.push('# Relatório de Desempenho: ' + C.nome); linhas.push('**Data:** ' + new Date().toLocaleDateString('pt-BR')); linhas.push('**Simulado:** ' + stats.ac + '/' + stats.resp + ' (' + stats.pct + '%)'); linhas.push('');
-  var mapa = {};
-  D.blocos.forEach(function(b){
-    b.questoes.forEach(function(q){
-      var r = D.res[q.id];
-      if (r && r.c && q.gabarito !== 'ANULADA') {
-        var topico = q.topico ? q.topico.split(' > ')[0].trim() : b.nome;
-        var fonte = q.fonte || "Não classificada";
-        if (!mapa[topico]) mapa[topico] = {};
-        if (!mapa[topico][fonte]) mapa[topico][fonte] = { total: 0, acertos: 0 };
-        mapa[topico][fonte].total++;
-        if (r.ok) mapa[topico][fonte].acertos++;
-      }
-    });
+// ── EXPORTAR CADERNO DE QUESTÕES (.md e .html) ── botão 🧠 da tela de
+// Resultados: exporta só as questões ASSINADAS (marcadas com ⭐ durante a
+// prova) pro Caderno de Questões — mesmo critério de seleção que o antigo
+// exportarCadernoTxt() usava (D.caderno, array de ids marcados), agora em
+// Markdown + HTML estilizado (reaproveitando gerarDocumentoHtmlEstilizado,
+// mesmo template compartilhado pelas demais exportações do app) em vez de
+// .txt.
+function _questoesDoCadernoAgrupadasPorBloco() {
+  var porBloco = [];
+  D.blocos.forEach(function(b) {
+    var qsBloco = b.questoes.filter(function(q) { return D.caderno.indexOf(q.id) >= 0; });
+    if (qsBloco.length) porBloco.push({ nome: b.nome, questoes: qsBloco });
   });
-  var topicosOrdenados = Object.keys(mapa).sort();
-  topicosOrdenados.forEach(function(tp) {
-    var fontesDoTopico = mapa[tp]; var tTotal = 0, tAcertos = 0;
-    for (var f in fontesDoTopico) { tTotal += fontesDoTopico[f].total; tAcertos += fontesDoTopico[f].acertos; }
-    linhas.push('### ' + tp); linhas.push('> Desempenho: ' + tAcertos + '/' + tTotal);
-    var categoriasPadrao = ["Doutrina", "Lei Seca", "Jurisprudência"];
-    var resumoFontes = categoriasPadrao.map(function(cat) {
-      var dados = { ac: 0, tot: 0 };
-      for (var fNome in fontesDoTopico) { if (fNome.toLowerCase().includes(cat.toLowerCase())) { dados.ac += fontesDoTopico[fNome].acertos; dados.tot += fontesDoTopico[fNome].total; } }
-      return cat + ': ' + dados.ac + '/' + dados.tot;
-    });
-    linhas.push('[' + resumoFontes.join(' | ') + ']'); linhas.push('');
-  });
-  var errosComAxioma = [];
-  D.blocos.forEach(function(b){
-    b.questoes.forEach(function(q){
-      var r = D.res[q.id]; if (r && r.c && !r.ok && q.gabarito!=='ANULADA' && q.axioma) { errosComAxioma.push('- **' + (q.topico || b.nome) + '**: ' + q.axioma); }
-    });
-  });
-  if (errosComAxioma.length > 0) { linhas.push('---'); linhas.push('## Pontos de Revisão (Axiomas dos Erros)'); linhas.push(errosComAxioma.join('\n')); }
-  downloadArquivo(linhas.join('\n'), C.nome + '.md', 'text/markdown');
+  return porBloco;
 }
+
+function _gerarMarkdownCadernoQuestoes() {
+  var blocos = _questoesDoCadernoAgrupadasPorBloco();
+  var total = blocos.reduce(function(s, b) { return s + b.questoes.length; }, 0);
+  var linhas = ['# Caderno de Questões — ' + C.nome, '', '_' + total + ' questão(ões) marcada(s)._', ''];
+  var gi = 0;
+  blocos.forEach(function(b) {
+    linhas.push('## ' + b.nome, '');
+    b.questoes.forEach(function(q) {
+      gi++;
+      linhas.push('### Q' + gi + '. ' + q.enunciado, '');
+      if (q.alternativas && q.alternativas.length) {
+        q.alternativas.forEach(function(a) { linhas.push('- ' + a); });
+        linhas.push('');
+      }
+      var gabTexto = q.gabarito === 'V' ? '✅ Verdadeiro' : (q.gabarito === 'F' ? '❌ Falso' : q.gabarito);
+      linhas.push('**Gabarito:** ' + gabTexto, '');
+      if (q.taxonomia) linhas.push('**Taxonomia:** ' + q.taxonomia, '');
+      var motivoErroQ = D.res[q.id] && D.res[q.id].motivoErro;
+      if (motivoErroQ) linhas.push('**Motivo do erro:** ' + motivoErroQ, '');
+      if (q.explicacao) linhas.push('**Explicação:**', '', q.explicacao, '');
+      linhas.push('---', '');
+    });
+  });
+  return linhas.join('\n');
+}
+
+function _gerarHtmlCadernoQuestoes() {
+  var blocos = _questoesDoCadernoAgrupadasPorBloco();
+  var total = blocos.reduce(function(s, b) { return s + b.questoes.length; }, 0);
+  var corpo = '<div class="doc-titulo">Caderno de Questões — ' + escapeHtmlCaderno(C.nome) + '</div>';
+  corpo += '<div class="doc-resumo">' + total + ' questão(ões) marcada(s).</div>';
+  var gi = 0;
+  blocos.forEach(function(b) {
+    corpo += '<div class="doc-materia">' + escapeHtmlCaderno(b.nome) + '</div>';
+    b.questoes.forEach(function(q) {
+      gi++;
+      var vf = q.gabarito === 'V';
+      var fBadge = q.gabarito === 'F';
+      var badgeClasse = vf ? 'doc-badge-v' : (fBadge ? 'doc-badge-f' : '');
+      var badgeTexto = vf ? '✅ Verdadeiro' : (fBadge ? '❌ Falso' : escapeHtmlCaderno(q.gabarito || '?'));
+      corpo += '<div class="doc-card">';
+      corpo += '<div class="doc-card-titulo">Q' + gi + '. ' + escapeHtmlCaderno(q.enunciado) + ' <span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span></div>';
+      if (q.alternativas && q.alternativas.length) {
+        corpo += '<ul>' + q.alternativas.map(function(a) { return '<li>' + escapeHtmlCaderno(a) + '</li>'; }).join('') + '</ul>';
+      }
+      var meta = [];
+      if (q.taxonomia) meta.push('<span><b>Taxonomia:</b> ' + escapeHtmlCaderno(q.taxonomia) + '</span>');
+      var motivoErroQ = D.res[q.id] && D.res[q.id].motivoErro;
+      if (motivoErroQ) meta.push('<span><b>Motivo do erro:</b> ' + escapeHtmlCaderno(motivoErroQ) + '</span>');
+      if (meta.length) corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
+      if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + escapeHtmlCaderno(q.explicacao) + '</div>';
+      corpo += '</div>';
+    });
+  });
+  return gerarDocumentoHtmlEstilizado('Caderno de Questões — ' + C.nome, corpo);
+}
+
+window.exportarCadernoQuestoesMdHtml = function() {
+  if (!D.caderno || !D.caderno.length) { alert('Caderno vazio.'); return; }
+  downloadArquivo(_gerarMarkdownCadernoQuestoes(), C.nome + '_caderno.md', 'text/markdown');
+  downloadArquivo(_gerarHtmlCadernoQuestoes(), C.nome + '_caderno.html', 'text/html');
+};
 
 // ── EXPORTAR CADERNO DE AXIOMAS (.TXT) ──
 function exportarCadernoAxiomasTxt(){
@@ -15375,61 +15310,79 @@ function exportarCadernoAxiomasTxt(){
   downloadArquivo(linhas.join('\n'), C.nome + '_axiomas.txt', 'text/plain');
 }
 
-// ── EXPORTAR RESULTADO ────────────────────────────────────
-function exportarResultado(){
-  if(!D.blocos.length){alert('Nenhum simulado em andamento.');return;}
-
-  var stats = calcStats();
-  var linhas = [];
-  var SEP = '================================================================================';
-
-  linhas.push(SEP);
-  linhas.push('RELATÓRIO GERAL DE DESEMPENHO - ' + C.nome.toUpperCase());
-  linhas.push('TOTAL DE QUESTÕES: ' + stats.total);
-  linhas.push(SEP);
-  linhas.push('DESEMPENHO GLOBAL: ' + stats.ac + ' Acertos / ' + stats.total +
-    ' Questões (Aproveitamento: ' + stats.pct.toFixed(2).replace('.',',') + '%)');
-  linhas.push('');
-  linhas.push('DISTRIBUIÇÃO POR BLOCOS TEMÁTICOS:');
-  stats.pb.forEach(function(b, bi){
-    var pctStr = b.pct !== null
-      ? (b.pct % 1 === 0 ? b.pct.toFixed(1) : b.pct.toFixed(1)).replace('.',',') + '%'
-      : '—';
-    linhas.push('Bloco ' + (bi+1) + ': ' + b.nome +
-      ' [' + b.ac + '/' + b.total + '] - ' + pctStr);
-  });
-
- var gi = 0;
-  D.blocos.forEach(function(b, bi){
-    linhas.push('');
-    linhas.push(SEP);
-    linhas.push('BLOCO ' + (bi+1) + ': ' + b.nome.toUpperCase());
-    linhas.push(SEP);
-    b.questoes.forEach(function(q){
-      gi++;
+// ── EXPORTAR PROVA COMPLETA (.md e .html) ── botão ⬇ da tela de
+// Resultados: TODAS as questões da prova (não só marcadas/erradas), com
+// resposta do usuário, gabarito e explicação — mesmo escopo que o antigo
+// exportarResultado() tinha (.txt), agora em Markdown + HTML estilizado.
+function _dadosProvaCompletaAgrupados() {
+  var porBloco = [];
+  D.blocos.forEach(function(b) {
+    var qs = b.questoes.map(function(q) {
       var r = D.res[q.id];
-      var respondida = r && r.c;
+      var respondida = !!(r && r.c);
       var acertou = respondida && r.ok;
-
-      linhas.push(gi + ') Q' + q.id + '. ' + q.enunciado);
-
       var isAnulada = q.gabarito === 'ANULADA';
-      var respStr = isAnulada ? 'NULA' : (respondida ? (C.tipo === 'mc' ? r.v : (r.v === 'V' ? 'V' : 'F')) : '—');
-      linhas.push('   Resposta do Usuário: ' + respStr + ' | Gabarito Oficial: ' + q.gabarito);
+      var respStr = isAnulada ? 'NULA' : (respondida ? (C.tipo === 'mc' ? r.v : (r.v === 'V' ? 'Verdadeiro' : 'Falso')) : '—');
+      var statusStr = isAnulada ? 'Anulada' : (respondida ? (acertou ? 'Correta' : 'Incorreta') : 'Não respondida');
+      return { q: q, respostaUsuario: respStr, status: statusStr, acertou: acertou, isAnulada: isAnulada, respondida: respondida };
+    });
+    if (qs.length) porBloco.push({ nome: b.nome, questoes: qs });
+  });
+  return porBloco;
+}
 
-      var resultado = isAnulada ? '[ANULADA]' : (respondida ? (acertou ? '[CORRETO]' : '[INCORRETO]') : '[NÃO RESPONDIDA]');
-      var expStr = q.explicacao ? ' ' + q.explicacao : '';
-      linhas.push('   ' + resultado + expStr);
-      linhas.push('');
-    }); // fecha b.questoes.forEach
-  }); // fecha D.blocos.forEach
+function _gerarMarkdownProvaCompleta() {
+  var stats = calcStats();
+  var blocos = _dadosProvaCompletaAgrupados();
+  var linhas = ['# ' + C.nome + ' — Resultado', '', '_' + stats.ac + '/' + stats.total + ' acertos (' + stats.pct.toFixed(1).replace('.', ',') + '%)._', ''];
+  var gi = 0;
+  blocos.forEach(function(b) {
+    linhas.push('## ' + b.nome, '');
+    b.questoes.forEach(function(item) {
+      gi++;
+      linhas.push('### Q' + gi + '. ' + item.q.enunciado, '');
+      if (item.q.alternativas && item.q.alternativas.length) {
+        item.q.alternativas.forEach(function(a) { linhas.push('- ' + a); });
+        linhas.push('');
+      }
+      linhas.push('**Sua resposta:** ' + item.respostaUsuario + ' · **Gabarito:** ' + item.q.gabarito + ' · **Status:** ' + item.status, '');
+      if (item.q.explicacao) linhas.push('**Explicação:**', '', item.q.explicacao, '');
+      linhas.push('---', '');
+    });
+  });
+  return linhas.join('\n');
+}
 
-  linhas.push(SEP);
-  linhas.push('FIM DE ARQUIVO. PROCESSO ENCERRADO.');
-  linhas.push(SEP);
+function _gerarHtmlProvaCompleta() {
+  var stats = calcStats();
+  var blocos = _dadosProvaCompletaAgrupados();
+  var corpo = '<div class="doc-titulo">' + escapeHtmlCaderno(C.nome) + ' — Resultado</div>';
+  corpo += '<div class="doc-resumo">' + stats.ac + '/' + stats.total + ' acertos (' + stats.pct.toFixed(1).replace('.', ',') + '%).</div>';
+  var gi = 0;
+  blocos.forEach(function(b) {
+    corpo += '<div class="doc-materia">' + escapeHtmlCaderno(b.nome) + '</div>';
+    b.questoes.forEach(function(item) {
+      gi++;
+      var badgeClasse = item.isAnulada ? 'doc-badge-oficial' : (item.respondida ? (item.acertou ? 'doc-badge-v' : 'doc-badge-f') : '');
+      var badgeEstilo = badgeClasse ? '' : ' style="background:#e2e8f0;color:#475569;"';
+      corpo += '<div class="doc-card">';
+      corpo += '<div class="doc-card-titulo">Q' + gi + '. ' + escapeHtmlCaderno(item.q.enunciado) + ' <span class="doc-badge ' + badgeClasse + '"' + badgeEstilo + '>' + escapeHtmlCaderno(item.status) + '</span></div>';
+      if (item.q.alternativas && item.q.alternativas.length) {
+        corpo += '<ul>' + item.q.alternativas.map(function(a) { return '<li>' + escapeHtmlCaderno(a) + '</li>'; }).join('') + '</ul>';
+      }
+      corpo += '<div class="doc-meta"><span><b>Sua resposta:</b> ' + escapeHtmlCaderno(item.respostaUsuario) + '</span><span><b>Gabarito:</b> ' + escapeHtmlCaderno(item.q.gabarito) + '</span></div>';
+      if (item.q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + escapeHtmlCaderno(item.q.explicacao) + '</div>';
+      corpo += '</div>';
+    });
+  });
+  return gerarDocumentoHtmlEstilizado(C.nome + ' — Resultado', corpo);
+}
 
-  downloadArquivo(linhas.join('\n'), C.nome + '_resultado.txt', 'text/plain');
-} // fecha exportarResultado
+window.exportarProvaCompletaMdHtml = function() {
+  if (!D.blocos.length) { alert('Nenhum simulado em andamento.'); return; }
+  downloadArquivo(_gerarMarkdownProvaCompleta(), C.nome + '_resultado.md', 'text/markdown');
+  downloadArquivo(_gerarHtmlProvaCompleta(), C.nome + '_resultado.html', 'text/html');
+};
 
 // ── DOWNLOAD NATIVO (Substitui o showBlobModal) ──
 function downloadArquivo(conteudo, nomeArquivo, mimeType) {

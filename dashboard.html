@@ -378,7 +378,7 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
     <div id="modal-export-etl" class="modal-overlay">
         <div style="width:360px; max-width:90vw; background:var(--bg-white); border-radius:12px; padding:22px; border:1px solid var(--border-color);">
             <div style="font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:4px;">📤 Exportação Avançada</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">Gera um Markdown com os dados dos cards de matéria (desempenho por tópico e fonte).</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">Gera um relatório com os dados dos cards de matéria (desempenho por tópico e fonte), em Markdown e HTML estilizado.</div>
             <div style="margin-bottom:18px;">
                 <label style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Matéria</label>
                 <select id="export-etl-materia" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box;">
@@ -387,7 +387,7 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
             </div>
             <div style="display:flex; justify-content:flex-end; gap:8px;">
                 <button class="btn" onclick="window.fecharModalExportETL()">Cancelar</button>
-                <button class="btn btn-primary" onclick="window.exportarRendimentoETL()">📤 Exportar</button>
+                <button class="btn btn-primary" onclick="window.exportarRendimentoETL()">📤 Exportar (.md e .html)</button>
             </div>
         </div>
     </div>
@@ -829,9 +829,61 @@ function loadFactualDatabase() {
             }
         }
 
+        // Template HTML estilizado compartilhado (mesmo padrão .doc-*/
+        // gerarDocumentoHtmlEstilizado já usado nas exportações de
+        // Esquemas/Jurisprudência/Praticar/Caderno em index.html) —
+        // duplicado aqui porque dashboard.html roda num documento/runtime
+        // separado, sem acesso direto às funções globais de index.html.
+        var CSS_DOCUMENTO_HTML_ESTILIZADO =
+          '*{box-sizing:border-box;}' +
+          'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f8fafc;color:#1e293b;margin:0;padding:32px 20px;line-height:1.6;}' +
+          '.doc-container{max-width:860px;margin:0 auto;}' +
+          '.doc-titulo{font-size:26px;font-weight:800;color:#0f172a;margin-bottom:4px;}' +
+          '.doc-resumo{font-size:13px;color:#64748b;margin-bottom:28px;font-style:italic;}' +
+          '.doc-materia{font-size:20px;font-weight:800;color:#4338ca;margin:36px 0 8px;padding-bottom:6px;border-bottom:2px solid #c7d2fe;}' +
+          '.doc-materia:first-of-type{margin-top:0;}' +
+          '.doc-divisao{font-size:15px;font-weight:700;color:#334155;margin:20px 0 12px;padding-left:10px;border-left:3px solid #6366f1;}' +
+          '.doc-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:18px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,0.04);}' +
+          '.doc-card-titulo{font-size:15px;font-weight:800;color:#0f172a;margin-bottom:8px;}' +
+          '.doc-badge{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;white-space:nowrap;}' +
+          '.doc-meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:11.5px;color:#64748b;margin-bottom:12px;}' +
+          '.doc-meta b{color:#334155;}' +
+          '.doc-callout-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:#64748b;margin:10px 0 4px;}' +
+          '.doc-callout{background:#f8fafc;border-left:3px solid #94a3b8;border-radius:0 6px 6px 0;padding:10px 14px;font-size:13px;color:#334155;white-space:pre-wrap;}' +
+          '@media print{body{background:#fff;padding:0;} .doc-card{box-shadow:none;break-inside:avoid;}}';
+
+        function gerarDocumentoHtmlEstilizado(tituloDoc, corpoHtml) {
+          return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+            '<title>' + (tituloDoc || 'Exportação') + '</title>' +
+            '<style>' + CSS_DOCUMENTO_HTML_ESTILIZADO + '</style></head>' +
+            '<body><div class="doc-container">' + corpoHtml + '</div></body></html>';
+        }
+
+        function escapeHtmlDashboard(str) {
+          return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function downloadArquivoDashboard(conteudo, nomeArquivo, mimeType) {
+          const blob = new Blob([conteudo], { type: mimeType + ';charset=utf-8;' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = nomeArquivo;
+          link.click();
+        }
+
+        // Cor do percentual — mesmo limiar 70/50 já usado no mapa de calor
+        // do restante do app (verde/âmbar/vermelho).
+        function corPctDashboard(pct) {
+          return pct >= 70 ? '#166534' : (pct >= 50 ? '#92400e' : '#991b1b');
+        }
+        function bgPctDashboard(pct) {
+          return pct >= 70 ? '#dcfce7' : (pct >= 50 ? '#fef3c7' : '#fee2e2');
+        }
+
         // EXPORTAÇÃO AVANÇADA — mesmos dados dos cards de matéria (renderSimuladosCiclo/
         // renderRendimentoETL: acertos/feitas por tópico + fontes lei/juris/doutrina),
-        // em Markdown, com filtro opcional por matéria.
+        // em Markdown e HTML estilizado, com filtro opcional por matéria.
         window.abrirModalExportETL = function() {
             const globais = getDadosGlobaisETL();
             const materiasSet = new Set();
@@ -848,10 +900,10 @@ function loadFactualDatabase() {
             document.getElementById('modal-export-etl').classList.remove('active');
         };
 
-        window.exportarRendimentoETL = function() {
+        // Agrupa os dados brutos (mesmo cálculo de antes) num formato neutro
+        // — reaproveitado pelos dois geradores (Markdown e HTML) abaixo.
+        function _dadosRendimentoETLAgrupados(fMat) {
             const globais = getDadosGlobaisETL();
-            const fMat = document.getElementById('export-etl-materia').value;
-
             let memExport = {};
             globais.forEach(sim => {
                 if (!sim.granulares) return;
@@ -866,9 +918,10 @@ function loadFactualDatabase() {
                     b.doutrina.ac += (g.fontes?.doutrina?.ac || 0); b.doutrina.tot += (g.fontes?.doutrina?.tot || 0);
                 });
             });
+            return memExport;
+        }
 
-            if (Object.keys(memExport).length === 0) { alert('Nenhum dado encontrado para exportar.'); return; }
-
+        function _gerarMarkdownRendimentoETL(memExport) {
             let md = `# RELATÓRIO DE DESEMPENHO POR MATÉRIA\n*Data de Extração: ${new Date().toLocaleDateString('pt-BR')}*\n\n`;
             Object.keys(memExport).sort().forEach(materia => {
                 md += `## ${materia}\n`;
@@ -885,12 +938,43 @@ function loadFactualDatabase() {
                 const matPct = tF > 0 ? Math.round((tAc / tF) * 100) : 0;
                 md += `**Índice Geral em ${materia}:** ${tAc}/${tF} (${matPct}%)\n\n---\n\n`;
             });
+            return md;
+        }
 
-            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Desempenho_${fMat ? fMat.replace(/\s+/g, '_') : 'Todas_Materias'}_${Date.now()}.md`;
-            link.click();
+        function _gerarHtmlRendimentoETL(memExport) {
+            let corpo = '<div class="doc-titulo">Relatório de Desempenho por Matéria</div>';
+            corpo += '<div class="doc-resumo">Data de Extração: ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+            Object.keys(memExport).sort().forEach(materia => {
+                corpo += '<div class="doc-materia">' + escapeHtmlDashboard(materia) + '</div>';
+                let tAc = 0, tF = 0;
+                Object.entries(memExport[materia]).sort().forEach(([topico, s]) => {
+                    tAc += s.acertos; tF += s.feitas;
+                    const pct = s.feitas > 0 ? Math.round((s.acertos / s.feitas) * 100) : 0;
+                    corpo += '<div class="doc-card">';
+                    corpo += '<div class="doc-card-titulo">' + escapeHtmlDashboard(topico) +
+                        ' <span class="doc-badge" style="background:' + bgPctDashboard(pct) + ';color:' + corPctDashboard(pct) + ';">' + pct + '%</span></div>';
+                    let meta = ['<span><b>Desempenho:</b> ' + s.acertos + '/' + s.feitas + '</span>'];
+                    if (s.doutrina.tot > 0) meta.push('<span><b>Doutrina:</b> ' + s.doutrina.ac + '/' + s.doutrina.tot + '</span>');
+                    if (s.lei.tot > 0) meta.push('<span><b>Lei Seca:</b> ' + s.lei.ac + '/' + s.lei.tot + '</span>');
+                    if (s.juris.tot > 0) meta.push('<span><b>Jurisprudência:</b> ' + s.juris.ac + '/' + s.juris.tot + '</span>');
+                    corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
+                    corpo += '</div>';
+                });
+                const matPct = tF > 0 ? Math.round((tAc / tF) * 100) : 0;
+                corpo += '<div class="doc-callout"><b>Índice Geral em ' + escapeHtmlDashboard(materia) + ':</b> ' + tAc + '/' + tF + ' (' + matPct + '%)</div>';
+            });
+            return gerarDocumentoHtmlEstilizado('Relatório de Desempenho por Matéria', corpo);
+        }
+
+        window.exportarRendimentoETL = function() {
+            const fMat = document.getElementById('export-etl-materia').value;
+            const memExport = _dadosRendimentoETLAgrupados(fMat);
+
+            if (Object.keys(memExport).length === 0) { alert('Nenhum dado encontrado para exportar.'); return; }
+
+            const sufixo = (fMat ? fMat.replace(/\s+/g, '_') : 'Todas_Materias') + '_' + Date.now();
+            downloadArquivoDashboard(_gerarMarkdownRendimentoETL(memExport), `Desempenho_${sufixo}.md`, 'text/markdown');
+            downloadArquivoDashboard(_gerarHtmlRendimentoETL(memExport), `Desempenho_${sufixo}.html`, 'text/html');
             window.fecharModalExportETL();
         };
 
