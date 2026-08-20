@@ -5948,30 +5948,6 @@ document.addEventListener('click', function(e) {
         </div>
     </div>
 
-<div id="modal-flashcard" class="mo">
-    <div class="mdl">
-        <div class="fc-popup-header">✦ <span id="fc-popup-titulo"></span> — Flashcards</div>
-
-        <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralhar()">🔀 Embaralhar</button>
-        </div>
-
-        <div id="fc-corpo-popup"></div>
-
-        <div class="fc-popup-nav" id="fc-popup-nav">
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.anterior()">‹</button>
-            <span id="fc-posicao">0 / 0</span>
-            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.proximo()">›</button>
-        </div>
-
-        <div class="fc-popup-footer">
-            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarBaralhoAtual()">✏️ Editar Baralho</button>
-            <button class="fc-footer-btn perigo" id="fc-btn-excluir" onclick="window.FLASHCARDS_RUNTIME.excluirCardAtual()">🗑️ Excluir</button>
-            <button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.fecharPopup()">Fechar</button>
-        </div>
-    </div>
-</div>
-
 <div id="modal-flashcard-bulk" class="mo">
     <div class="mdl">
         <div class="fc-popup-header" id="fc-bulk-header">✦ Novo Baralho</div>
@@ -7218,6 +7194,41 @@ window.FLASHCARDS_RUNTIME = {
 };
 </script>
 </section>
+
+<!-- MODAL: Baralho de Flashcards (#modal-flashcard) — movido pra FORA de
+     #section-flashcards (era filho dela). Nested dentro de uma .tela com
+     display:none, o modal nunca aparecia quando aberto por um chamador de
+     FORA da seção (ex.: "Baralhos associados" na barra lateral do simulado
+     ativo, via FLASHCARDS_RUNTIME.abrirPopupBaralho() com
+     materiaExterna/divisaoExterna) — display:none num ancestral esconde
+     TUDO por dentro, mesmo um <div class="mo"> com position:fixed; o
+     .classList.add('open') rodava sem erro, só que sem efeito visual
+     nenhum. Como sibling de nível superior (mesmo padrão de
+     #modal-esquemas-baralho/#modal-jurisprudencia-baralho), funciona não
+     importa qual .tela esteja ativa. -->
+<div id="modal-flashcard" class="mo">
+    <div class="mdl">
+        <div class="fc-popup-header">✦ <span id="fc-popup-titulo"></span> — Flashcards</div>
+
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralhar()">🔀 Embaralhar</button>
+        </div>
+
+        <div id="fc-corpo-popup"></div>
+
+        <div class="fc-popup-nav" id="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.anterior()">‹</button>
+            <span id="fc-posicao">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.FLASHCARDS_RUNTIME.proximo()">›</button>
+        </div>
+
+        <div class="fc-popup-footer">
+            <button class="fc-footer-btn" id="fc-btn-editar" onclick="window.FLASHCARDS_RUNTIME.editarBaralhoAtual()">✏️ Editar Baralho</button>
+            <button class="fc-footer-btn perigo" id="fc-btn-excluir" onclick="window.FLASHCARDS_RUNTIME.excluirCardAtual()">🗑️ Excluir</button>
+            <button class="fc-footer-btn" onclick="window.FLASHCARDS_RUNTIME.fecharPopup()">Fechar</button>
+        </div>
+    </div>
+</div>
 
 <!-- ========================================================= -->
 <!-- SEÇÃO: PRATICAR CADERNO DE QUESTÕES (reflexo em tempo real de -->
