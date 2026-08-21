@@ -915,6 +915,22 @@ body.force-mobile #top-toggle { left: 1.5rem; background: var(--warning); }
 body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-events: none; transform: translateY(20px); }
 
 /* ==========================================
+   CARD DE BATERIA (vitrine) — hover/seleção em CSS puro, não mais via
+   onmouseover/onmouseout inline. O card não é re-renderizado a cada
+   marcação (toggleSelecionadoBateria só troca a classe), então um
+   onmouseout com o fundo "certo" gravado como string no HTML ficava
+   desatualizado a cada novo toggle — o próximo mouseout revertia pro
+   valor de quando o card foi desenhado, fazendo um item selecionado
+   parecer desmarcado visualmente (o usuário reclicava achando que não
+   tinha marcado, o que na verdade DESMARCAVA de verdade — bug relatado:
+   "Exportar Selecionadas" às vezes deixava uma bateria de fora mesmo
+   com o checkbox aparentemente marcado).
+   ========================================== */
+.card-item-bateria:hover { background:#f1f5f9; }
+.card-item-bateria.card-bateria-selecionada { background:#eef2ff; }
+.card-item-bateria.card-bateria-selecionada:hover { background:#e0e7ff; }
+
+/* ==========================================
    MENU KEBAB (INLINE ADMIN MANAGEMENT)
    ========================================== */
 .kebab-btn {
@@ -10924,9 +10940,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     let kebabHtml = modoSelecao ? '' : `<button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>`;
 
 return `
-<div id="card-${p.id}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;${selecionado ? ' background:#eef2ff;' : ''}"
-     onmouseover="this.style.background='#f1f5f9'"
-     onmouseout="this.style.background='${selecionado ? '#eef2ff' : 'transparent'}'"
+<div id="card-${p.id}" class="card-item-bateria${selecionado ? ' card-bateria-selecionada' : ''}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
      onclick="${onclickCard}">
 
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; min-width: 0;">
@@ -11071,11 +11085,21 @@ window.toggleSelecionadoBateria = function(id) {
     if (window.__selecionadosBaterias__[id]) delete window.__selecionadosBaterias__[id];
     else window.__selecionadosBaterias__[id] = true;
     atualizarContadorSelecaoBaterias();
-    // O checkbox já reflete o clique sozinho (é o próprio elemento do
-    // evento) — só o destaque de fundo do card precisa de um toque manual,
-    // sem re-renderizar a lista inteira a cada marcação.
+    let selecionadoAgora = !!window.__selecionadosBaterias__[id];
+    // Sem re-renderizar a lista inteira a cada marcação: só troca a classe
+    // que carrega o destaque de fundo (ver .card-bateria-selecionada, CSS
+    // puro — nada de onmouseover/onmouseout inline, que ficava com o
+    // valor "certo" congelado em string desde o render e desincronizava a
+    // cada novo toggle). Também resincroniza o checkbox explicitamente:
+    // clicar em QUALQUER parte do card (não só no checkbox) alterna a
+    // seleção, e sem isso o checkbox podia ficar marcado visualmente
+    // mesmo depois de a seleção real já ter sido desfeita.
     let card = document.getElementById('card-' + id);
-    if (card) card.style.background = window.__selecionadosBaterias__[id] ? '#eef2ff' : 'transparent';
+    if (card) {
+        card.classList.toggle('card-bateria-selecionada', selecionadoAgora);
+        let checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox) checkbox.checked = selecionadoAgora;
+    }
 };
 
 window.selecionarTodasBateriasVisiveis = function() {

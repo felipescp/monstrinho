@@ -367,7 +367,15 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
                 
                 
 
-                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h3 style="font-family: var(--font-display); font-size: 14px; margin: 0; color: var(--text-muted);">📜 HISTÓRICO DE BATERIAS (AVULSAS E INTEGRADAS)</h3></div>
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap:wrap; gap:8px;">
+                    <h3 style="font-family: var(--font-display); font-size: 14px; margin: 0; color: var(--text-muted);">📜 HISTÓRICO DE BATERIAS (AVULSAS E INTEGRADAS)</h3>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.3px;">Organizar por:</span>
+                        <button id="btn-ordenar-hist-cronologia" onclick="window.ordenarHistoricoBaterias('cronologia')" title="Ordenar por data — clique de novo pra inverter a direção" style="padding:4px 10px; font-size:10px; font-weight:700; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Cronologia<span id="seta-ordenar-hist-cronologia"></span></button>
+                        <button id="btn-ordenar-hist-disciplina" onclick="window.ordenarHistoricoBaterias('disciplina')" title="Ordenar por disciplina — clique de novo pra inverter a direção" style="padding:4px 10px; font-size:10px; font-weight:700; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Disciplina<span id="seta-ordenar-hist-disciplina"></span></button>
+                        <button id="btn-ordenar-hist-rendimento" onclick="window.ordenarHistoricoBaterias('rendimento')" title="Ordenar por rendimento — clique de novo pra inverter entre decrescente/crescente" style="padding:4px 10px; font-size:10px; font-weight:700; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Rendimento<span id="seta-ordenar-hist-rendimento"></span></button>
+                    </div>
+                </div>
                 <div class="grid-macro" id="rendimento-cards"></div>
             </div>
         </section>
@@ -1082,18 +1090,68 @@ function loadFactualDatabase() {
             distributeToColumns('simulados-detalhes', matHTML, "Dados agregados aqui.");
         }
 
+        // "Organizar por" do Histórico de Baterias — Cronologia (padrão,
+        // mesmo comportamento de antes: mais recente primeiro) | Disciplina
+        // (A-Z) | Rendimento (% de acerto). Clicar no critério já ativo
+        // inverte a direção; trocar de critério aplica uma direção padrão
+        // sensata pra cada um (Disciplina começa A-Z, os outros dois
+        // começam com o "melhor"/mais recente primeiro).
+        window.__ordenacaoHistoricoCriterio__ = window.__ordenacaoHistoricoCriterio__ || 'cronologia';
+        window.__ordenacaoHistoricoDirecao__ = window.__ordenacaoHistoricoDirecao__ || 'desc';
+
+        window.ordenarHistoricoBaterias = function(criterio) {
+            if (window.__ordenacaoHistoricoCriterio__ === criterio) {
+                window.__ordenacaoHistoricoDirecao__ = window.__ordenacaoHistoricoDirecao__ === 'desc' ? 'asc' : 'desc';
+            } else {
+                window.__ordenacaoHistoricoCriterio__ = criterio;
+                window.__ordenacaoHistoricoDirecao__ = criterio === 'disciplina' ? 'asc' : 'desc';
+            }
+            renderRendimentoETL();
+        };
+
+        function _comparatorHistoricoBaterias(criterio, direcao) {
+            const mult = direcao === 'asc' ? 1 : -1;
+            if (criterio === 'disciplina') {
+                return (a, b) => mult * (a.materia || 'Múltiplas Matérias').localeCompare(b.materia || 'Múltiplas Matérias', 'pt-BR', { sensitivity: 'base' });
+            }
+            if (criterio === 'rendimento') {
+                return (a, b) => {
+                    const pctA = Math.round((a.global.acertos / a.global.feitas) * 100) || 0;
+                    const pctB = Math.round((b.global.acertos / b.global.feitas) * 100) || 0;
+                    return mult * (pctA - pctB);
+                };
+            }
+            // Cronologia (padrão) — pela DATA real (parseDateBr), não pelo id:
+            // id nem sempre é um número comparável (avulsas x integradas
+            // podem gerar ids em formatos diferentes), então um sort por id
+            // podia silenciosamente virar NaN-vs-NaN e não reordenar nada.
+            return (a, b) => mult * (parseDateBr(a.data) - parseDateBr(b.data));
+        }
+
+        function _marcarOrdenacaoHistoricoAtiva() {
+            const criterio = window.__ordenacaoHistoricoCriterio__ || 'cronologia';
+            const direcao = window.__ordenacaoHistoricoDirecao__ || 'desc';
+            ['cronologia', 'disciplina', 'rendimento'].forEach(function(c) {
+                const btn = document.getElementById('btn-ordenar-hist-' + c);
+                const seta = document.getElementById('seta-ordenar-hist-' + c);
+                if (!btn) return;
+                const ativo = c === criterio;
+                btn.style.background = ativo ? 'var(--app-primary)' : 'var(--bg-white)';
+                btn.style.color = ativo ? '#fff' : 'var(--text-muted)';
+                btn.style.borderColor = ativo ? 'var(--app-primary)' : 'var(--border-color)';
+                if (seta) seta.textContent = ativo ? (direcao === 'desc' ? ' ↓' : ' ↑') : '';
+            });
+        }
+
         function renderRendimentoETL() {
-            const simuladosGlobais = getDadosGlobaisETL(); 
-            let memMaterias = {}; 
-            let histHTML = []; 
+            const simuladosGlobais = getDadosGlobaisETL();
+            let memMaterias = {};
+            let histHTML = [];
             let comboMaterias = new Set();
-            
-            // Ordena pela DATA real (parseDateBr), não pelo id — id nem
-            // sempre é um número comparável (avulsas x integradas podem
-            // gerar ids em formatos diferentes), então um sort por id podia
-            // silenciosamente virar NaN-vs-NaN e não reordenar nada,
-            // deixando a ordem de inserção (mais antiga primeiro) vazar.
-            simuladosGlobais.sort((a,b) => parseDateBr(b.data) - parseDateBr(a.data)).forEach(sim => {
+
+            _marcarOrdenacaoHistoricoAtiva();
+            const comparadorHistorico = _comparatorHistoricoBaterias(window.__ordenacaoHistoricoCriterio__, window.__ordenacaoHistoricoDirecao__);
+            simuladosGlobais.sort(comparadorHistorico).forEach(sim => {
                 if(sim.granulares) sim.granulares.forEach(g => comboMaterias.add(g.materia));
                 if (sim.granulares) { 
                     sim.granulares.forEach(g => { 
