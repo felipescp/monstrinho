@@ -18030,11 +18030,21 @@ window.triggerFileUpload = function(callback) {
        navegação de "Conteúdo Relacionado" no Cronograma (clique na lista
        pula direto pro item), somada às setas ‹ › já existentes. */
     #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
-    #modal-esquemas-baralho .esq-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); padding-right:10px; display:flex; flex-direction:column; gap:2px; }
-    #modal-esquemas-baralho .esq-baralho-lista-item { padding:7px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; line-height:1.35; color:var(--text-main); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
-    #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:#f1f5f9; }
-    #modal-esquemas-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); color:#fff; }
-    #modal-esquemas-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; opacity:0.7; margin-bottom:1px; }
+    /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
+       Cronograma): 1 linha por item, truncada com reticências (nunca
+       corta no meio da palavra) — cada item só mostra o NOME do card,
+       nunca a origem sozinha tomando o espaço todo (era o bug: com
+       line-clamp:2 no item inteiro, a linha da origem consumia as 2
+       linhas do clamp e o título nunca chegava a aparecer). Separador
+       border-bottom em vez de gap, pra linhas vizinhas não colarem. */
+    #modal-esquemas-baralho .esq-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); }
+    #modal-esquemas-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:#f8fafc; }
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-nome,
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-origem { color:#fff; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     /* flex-direction:column é essencial aqui — sem isso, o card (único
        filho) fica sujeito ao eixo padrão (row) de um flex container, o
        que nunca deveria importar com 1 filho só, mas em alguns navegadores
@@ -19647,11 +19657,12 @@ window.ESQUEMAS_RUNTIME = {
         let deck = this._deckBaralhoAtual();
         let self = this;
         listaEl.innerHTML = deck.map(function(item, idx) {
+            let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
                 : '';
-            return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')">' +
-                origem + self._escapar(item.titulo || '(sem título)') +
+            return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
+                origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
                 '</div>';
         }).join('');
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
@@ -20889,11 +20900,21 @@ window.carregarEsquemasOficiais = async function() {
        escopo atual) + card em exibição à direita — mesmo padrão do
        #modal-esquemas-baralho (pedido explícito de uniformização). */
     #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
-    #modal-jurisprudencia-baralho .jur-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); padding-right:10px; display:flex; flex-direction:column; gap:2px; }
-    #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:7px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; line-height:1.35; color:var(--text-main); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
-    #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:#f1f5f9; }
-    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo { background:var(--app-primary); color:#fff; }
-    #modal-jurisprudencia-baralho .jur-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; opacity:0.7; margin-bottom:1px; }
+    /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
+       Cronograma): 1 linha por item, truncada com reticências (nunca
+       corta no meio da palavra) — cada item só mostra o NOME da ficha,
+       nunca a origem sozinha tomando o espaço todo (era o bug: com
+       line-clamp:2 no item inteiro, a linha da origem consumia as 2
+       linhas do clamp e o título nunca chegava a aparecer). Separador
+       border-bottom em vez de gap, pra linhas vizinhas não colarem. */
+    #modal-jurisprudencia-baralho .jur-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:#f8fafc; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo { background:var(--app-primary); }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-nome,
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-origem { color:#fff; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     /* Corpo do baralho preenche toda a altura que sobrar no popup (mesmo
        padrão de #esq-baralho-corpo) — sem isto, o card interno (mesmo já
        com flex:1) não tem um pai flex pra crescer, e o popup inteiro
@@ -22329,11 +22350,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         let deck = this._deckBaralhoAtual();
         let self = this;
         listaEl.innerHTML = deck.map(function(item, idx) {
+            let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="jur-baralho-lista-item-origem">' + self._escapar([item.materiaL1, item.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
                 : '';
-            return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')">' +
-                origem + self._escapar(item.titulo || '(sem título)') +
+            return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
+                origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
                 '</div>';
         }).join('');
         let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
