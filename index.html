@@ -18021,17 +18021,27 @@ window.triggerFileUpload = function(callback) {
 <div id="modal-esquemas-baralho" class="mo">
 <style>
     #modal-esquemas-baralho { z-index: 10000; }
-    #modal-esquemas-baralho .mdl { max-width:740px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-esquemas-baralho .mdl { max-width:980px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
     #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
     #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    /* Corpo principal do baralho: lista à esquerda (todos os cards do
+       escopo atual) + card em exibição à direita — mesma ideia de
+       navegação de "Conteúdo Relacionado" no Cronograma (clique na lista
+       pula direto pro item), somada às setas ‹ › já existentes. */
+    #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+    #modal-esquemas-baralho .esq-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); padding-right:10px; display:flex; flex-direction:column; gap:2px; }
+    #modal-esquemas-baralho .esq-baralho-lista-item { padding:7px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; line-height:1.35; color:var(--text-main); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
+    #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:#f1f5f9; }
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); color:#fff; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; opacity:0.7; margin-bottom:1px; }
     /* flex-direction:column é essencial aqui — sem isso, o card (único
        filho) fica sujeito ao eixo padrão (row) de um flex container, o
        que nunca deveria importar com 1 filho só, mas em alguns navegadores
        um único filho num flex row ainda recebe cross-axis stretch
        incorreto quando o pai também tem min-height:0; explícito por
        segurança. */
-    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; display:flex; flex-direction:column; }
+    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
     #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-esquemas-baralho #esq-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
@@ -18052,7 +18062,10 @@ window.triggerFileUpload = function(callback) {
             <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
         </div>
 
-        <div id="esq-baralho-corpo"></div>
+        <div class="esq-baralho-corpo-wrap">
+            <div class="esq-baralho-lista" id="esq-baralho-lista"></div>
+            <div id="esq-baralho-corpo"></div>
+        </div>
 
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.anteriorBaralho()">‹</button>
@@ -19620,6 +19633,39 @@ window.ESQUEMAS_RUNTIME = {
         this.renderBaralho();
     },
 
+    // Lista lateral com TODOS os cards do escopo atual (Todos/Disciplina/
+    // Tópico) — clique em qualquer um pula direto pra ele, mesma ideia de
+    // navegação de "Conteúdo Relacionado" no Cronograma, somada às setas
+    // ‹ › já existentes. Chamada sempre junto de renderBaralho() (inclusive
+    // no caminho de deck vazio), pra ficar sempre em sincronia com
+    // _baralhoState (inclusive depois de embaralhar/reordenar).
+    _renderListaBaralho: function() {
+        let listaEl = document.getElementById('esq-baralho-lista');
+        if (!listaEl) return;
+        let s = this._baralhoState;
+        if (!s) { listaEl.innerHTML = ''; return; }
+        let deck = this._deckBaralhoAtual();
+        let self = this;
+        listaEl.innerHTML = deck.map(function(item, idx) {
+            let origem = (s.escopo !== 'divisao')
+                ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
+                : '';
+            return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')">' +
+                origem + self._escapar(item.titulo || '(sem título)') +
+                '</div>';
+        }).join('');
+        let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
+        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+    },
+
+    // Clique num item da lista lateral — pula direto pra ele.
+    irParaBaralho: function(idx) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.indiceAtual = idx;
+        this.renderBaralho();
+    },
+
     renderBaralho: function() {
         let s = this._baralhoState;
         if (!s) return;
@@ -19627,6 +19673,7 @@ window.ESQUEMAS_RUNTIME = {
         let acoesEl = document.getElementById('esq-baralho-acoes');
         let posEl = document.getElementById('esq-baralho-posicao');
         let deck = this._deckBaralhoAtual();
+        this._renderListaBaralho();
 
         if (deck.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema aqui ainda.</div>';
@@ -20827,7 +20874,7 @@ window.carregarEsquemasOficiais = async function() {
     /* Mesmas dimensões fixas do #modal-esquemas-baralho — tamanho
        uniformizado entre as duas seções (pedido explícito), em vez de
        cada popup ter sua própria medida. */
-    #modal-jurisprudencia-baralho .mdl { max-width:740px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-jurisprudencia-baralho .mdl { max-width:980px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
     #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
        estilo padrão de <button>/<span> do navegador (foi o bug reportado:
@@ -20838,11 +20885,20 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-jurisprudencia-baralho #jur-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
+    /* Corpo principal do baralho: lista à esquerda (todos os cards do
+       escopo atual) + card em exibição à direita — mesmo padrão do
+       #modal-esquemas-baralho (pedido explícito de uniformização). */
+    #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista { width:220px; flex-shrink:0; overflow-y:auto; border-right:1px solid var(--border-color); padding-right:10px; display:flex; flex-direction:column; gap:2px; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:7px 9px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:600; line-height:1.35; color:var(--text-main); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:#f1f5f9; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo { background:var(--app-primary); color:#fff; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; opacity:0.7; margin-bottom:1px; }
     /* Corpo do baralho preenche toda a altura que sobrar no popup (mesmo
        padrão de #esq-baralho-corpo) — sem isto, o card interno (mesmo já
        com flex:1) não tem um pai flex pra crescer, e o popup inteiro
        encolhe pro tamanho do conteúdo em vez de ficar fixo. */
-    #modal-jurisprudencia-baralho #jur-baralho-corpo { flex:1; min-height:0; display:flex; flex-direction:column; }
+    #modal-jurisprudencia-baralho #jur-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
     /* Rótulo "Matéria — Divisão" da ficha ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-jurisprudencia-baralho não é descendente de
@@ -20858,7 +20914,10 @@ window.carregarEsquemasOficiais = async function() {
             <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
         </div>
 
-        <div id="jur-baralho-corpo"></div>
+        <div class="jur-baralho-corpo-wrap">
+            <div class="jur-baralho-lista" id="jur-baralho-lista"></div>
+            <div id="jur-baralho-corpo"></div>
+        </div>
 
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.anteriorBaralho()">‹</button>
@@ -22255,12 +22314,47 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._atualizarContagensAbas();
     },
 
+    // Lista lateral com TODAS as fichas do escopo atual (Todos/Disciplina/
+    // Tópico) — clique em qualquer uma pula direto pra ela, mesma ideia de
+    // navegação de "Conteúdo Relacionado" no Cronograma, somada às setas
+    // ‹ › já existentes. Chamada sempre junto de renderBaralho() (inclusive
+    // no caminho de deck vazio), pra ficar sempre em sincronia com
+    // _baralhoState (inclusive depois de embaralhar/classificar, que em
+    // Jurisprudência remove a ficha classificada do deck).
+    _renderListaBaralho: function() {
+        let listaEl = document.getElementById('jur-baralho-lista');
+        if (!listaEl) return;
+        let s = this._baralhoState;
+        if (!s) { listaEl.innerHTML = ''; return; }
+        let deck = this._deckBaralhoAtual();
+        let self = this;
+        listaEl.innerHTML = deck.map(function(item, idx) {
+            let origem = (s.escopo !== 'divisao')
+                ? '<div class="jur-baralho-lista-item-origem">' + self._escapar([item.materiaL1, item.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
+                : '';
+            return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')">' +
+                origem + self._escapar(item.titulo || '(sem título)') +
+                '</div>';
+        }).join('');
+        let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
+        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+    },
+
+    // Clique num item da lista lateral — pula direto pra ele.
+    irParaBaralho: function(idx) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.indiceAtual = idx;
+        this.renderBaralho();
+    },
+
     renderBaralho: function() {
         let s = this._baralhoState;
         if (!s) return;
         let corpo = document.getElementById('jur-baralho-corpo');
         let posEl = document.getElementById('jur-baralho-posicao');
         let deck = this._deckBaralhoAtual();
+        this._renderListaBaralho();
 
         if (deck.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha aqui ainda.</div>';
