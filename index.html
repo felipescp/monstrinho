@@ -356,6 +356,24 @@ body.dark {
     --bg-accent-soft: #312e6b;
 }
 
+/* 3b. MODO NOTURNO ISOLADO AO SIMULADO ATIVO — independente de body.dark
+   (ver #b1-tema / window.alternarTemaSimulado). Redefine as MESMAS
+   variáveis, só que escopadas a #tela-simulado — todo o resto do app
+   (nav, vitrine, outras seções) continua no tema que já estava, claro ou
+   escuro. #tela-simulado não tem background próprio normalmente (herda
+   de body), por isso o `background` explícito aqui é necessário — sem
+   ele, os espaços entre os cards mostrariam a cor do body por baixo. */
+#tela-simulado.tema-escuro-simulado {
+    --bg-body: #0f172a;
+    --bg-white: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --bg-soft: #253346;
+    --bg-accent-soft: #312e6b;
+    background: var(--bg-body);
+}
+
 /* 4. BASE FLUIDA E RESET */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html,
@@ -1351,6 +1369,14 @@ try {
         <div id="user-auth-zone" style="display: flex; align-items: center; gap: 16px;">
             
             <div style="display: flex; gap: 6px; align-items: center;">
+
+                <!-- Modo noturno GLOBAL — único controle que altera o site
+                     inteiro (body.dark, ver window.alternarTemaGlobal). O
+                     ☀/☾ de dentro do cockpit do Simulado Ativo (#b1-tema)
+                     é outra coisa: escurece só a área do simulado, sem
+                     mexer no resto do app (ver
+                     #tela-simulado.tema-escuro-simulado no CSS). -->
+                <button id="btn-tema-global" onclick="window.alternarTemaGlobal()" class="b1" style="height:26px; width:26px; font-size:13px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Modo noturno (afeta o site inteiro)">☀</button>
 
                 <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
@@ -10126,7 +10152,7 @@ window.carregarMateriaisOficiais = async function() {
         <button class="b1 b1-icon" id="b1-mobile" title="Modo Celular (Foco)">📱</button>
         <button class="b1 p b1-icon" id="b1-auto" title="Desativar Avanço Automático">⏩</button>
         <button class="b1 b1-icon" id="b1-cegas" title="Ativar Modo às Cegas">👁️</button>
-        <button class="b1 w b1-icon" id="b1-tema" title="Alternar Modo Claro/Escuro">☀</button>
+        <button class="b1 w b1-icon" id="b1-tema" title="Escurecer só o Simulado Ativo (o resto do site não muda)">☀</button>
         <div class="b1sep"></div>
         <button class="b1 b1-icon" id="b1-zoom-out" title="Reduzir Letra" style="font-weight: 800; font-family: var(--font-body);">A-</button>
         <button class="b1 b1-icon" id="b1-zoom-in" title="Aumentar Letra" style="font-weight: 800; font-family: var(--font-body);">A+</button>
@@ -11536,12 +11562,43 @@ window.HI = -1;
 var C={nome:'',tipo:'ce',cegas:false,auto:false};
 var D={blocos:[],res:{},fin:{},caderno:[],cadernoAxiomas:[]};
 var QA=null;
-// Persistido (tjpe_v1__tema_escuro) — padrão é modo claro (false); só vira
-// true se o próprio usuário já tiver ativado o modo noturno antes (ver
-// btnTema.onclick, em window.addEventListener('load', ...) mais abaixo).
+// Modo noturno GLOBAL (afeta o site inteiro, body.dark) — persistido em
+// tjpe_v1__tema_escuro. Padrão é modo claro (false); só vira true se o
+// próprio usuário já tiver ativado antes. Botão fica em #btn-tema-global,
+// na topbar (ao lado de "☁️⬆️ Salvar"), não mais no cockpit do simulado —
+// aquele botão (#b1-tema) agora é outra coisa: escurece só a área do
+// Simulado Ativo, ver alternarTemaSimulado() e
+// #tela-simulado.tema-escuro-simulado.
 var DARK = (function() {
     try { return localStorage.getItem('tjpe_v1__tema_escuro') === '1'; } catch (e) { return false; }
 })();
+
+window.alternarTemaGlobal = function() {
+    DARK = !DARK;
+    document.body.classList.toggle('dark', DARK);
+    var btn = document.getElementById('btn-tema-global');
+    if (btn) btn.textContent = DARK ? '☾' : '☀';
+    try { localStorage.setItem('tjpe_v1__tema_escuro', DARK ? '1' : '0'); } catch (e) {}
+};
+
+// Modo noturno ISOLADO ao Simulado Ativo — persistido à parte
+// (tjpe_v1__tema_escuro_simulado), sem relação com o tema global acima.
+// Só redefine localmente as MESMAS variáveis de CSS (--bg-body,
+// --bg-white etc.) dentro de #tela-simulado (ver
+// .tema-escuro-simulado no CSS), então nada fora do simulado é afetado —
+// nem a barra de navegação, nem a vitrine, nem outras seções.
+var TEMA_ESCURO_SIMULADO = (function() {
+    try { return localStorage.getItem('tjpe_v1__tema_escuro_simulado') === '1'; } catch (e) { return false; }
+})();
+
+window.alternarTemaSimulado = function() {
+    TEMA_ESCURO_SIMULADO = !TEMA_ESCURO_SIMULADO;
+    var telaSim = document.getElementById('tela-simulado');
+    if (telaSim) telaSim.classList.toggle('tema-escuro-simulado', TEMA_ESCURO_SIMULADO);
+    var btn = document.getElementById('b1-tema');
+    if (btn) btn.textContent = TEMA_ESCURO_SIMULADO ? '☾' : '☀';
+    try { localStorage.setItem('tjpe_v1__tema_escuro_simulado', TEMA_ESCURO_SIMULADO ? '1' : '0'); } catch (e) {}
+};
 var MODO_REVISAO=false;
 var blockCenSb = false; // Flag de segurança
 
@@ -12789,18 +12846,26 @@ window.addEventListener('load', async function() {
     // 2. ATRIBUIÇÃO DE BOTÕES E CLIQUES
     var btnLimpar = g('b1-limpar'); if(btnLimpar) btnLimpar.onclick = limpar;
     var btnNovo = g('b1-novo'); if(btnNovo) btnNovo.onclick = novoSim;
-    var btnTema = g('b1-tema');
-    if(btnTema) {
-        // Reflete no ícone o que já foi aplicado cedo (ver <script> logo
-        // após <body>, que evita o flash de modo claro) — sem isto, o
-        // ícone ficava incoerente com o body.dark já ativo até o 1º clique.
-        btnTema.textContent = DARK ? '☾' : '☀';
-        btnTema.onclick = function(){
-            DARK=!DARK;
-            document.body.classList.toggle('dark',DARK);
-            this.textContent=DARK?'☾':'☀';
-            try { localStorage.setItem('tjpe_v1__tema_escuro', DARK ? '1' : '0'); } catch(e) {}
-        };
+    // #btn-tema-global (topbar) — modo noturno do SITE INTEIRO.
+    var btnTemaGlobal = g('btn-tema-global');
+    if (btnTemaGlobal) btnTemaGlobal.textContent = DARK ? '☾' : '☀';
+
+    // #b1-tema (cockpit do Simulado Ativo) — modo noturno ISOLADO, só
+    // dentro de #tela-simulado (ver .tema-escuro-simulado no CSS e
+    // alternarTemaSimulado()). Reflete no ícone o que já foi aplicado
+    // cedo (ver <script> logo após <body>, que evita o flash) — sem
+    // isto, o ícone ficava incoerente com a classe já ativa até o clique.
+    var btnTemaSim = g('b1-tema');
+    if (btnTemaSim) {
+        btnTemaSim.textContent = TEMA_ESCURO_SIMULADO ? '☾' : '☀';
+        btnTemaSim.onclick = window.alternarTemaSimulado;
+    }
+    // #tela-simulado só existe no DOM a partir daqui (o <script> logo após
+    // <body> roda cedo demais pra alcançá-lo) — aplica a classe salva
+    // agora, pra já valer se uma sessão retomada abrir direto nele.
+    if (TEMA_ESCURO_SIMULADO) {
+        var telaSimInicial = g('tela-simulado');
+        if (telaSimInicial) telaSimInicial.classList.add('tema-escuro-simulado');
     }
 
     var btnZoomOut = g('b1-zoom-out'); 
