@@ -4425,6 +4425,20 @@ if(ri) {
        existente, não cria um novo. */
     .crono-gerador-reconfig-banner { background:#eef2ff; border:1px solid var(--app-primary); color:var(--app-primary); border-radius:6px; padding:8px 10px; font-size:11.5px; font-weight:700; }
     .crono-gerador-trocar-arquivo { background:none; border:none; padding:0; font-size:10.5px; font-weight:700; color:var(--app-primary); cursor:pointer; text-decoration:underline; }
+
+    /* Zoom do cronograma (A−/A+): --crono-zoom é setado em #crono-content
+       (ver render()/_aplicarZoomCronograma) e herdado por qualquer
+       descendente, então as 3 áreas abaixo — busca+toggle, resultados
+       globais da busca, e a grade de dias/kanban — escalam juntas mesmo
+       sendo irmãs não-contíguas no DOM. A fita "Semanas:" e os próprios
+       botões A−/A+ ficam FORA de propósito (não deveriam encolher/crescer
+       junto). `zoom` (não `transform`) porque reflui o layout de verdade —
+       cards não ficam cortados nem sobrepostos em zooms grandes. */
+    #section-cronograma .crono-zoom-area { zoom: var(--crono-zoom, 1); }
+    #section-cronograma .crono-fonte-toggle { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    #section-cronograma .crono-fonte-toggle button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:800; cursor:pointer; font-family:var(--font-display); line-height:1; }
+    #section-cronograma .crono-fonte-toggle button:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-cronograma .crono-fonte-nivel { font-size:10px; font-weight:700; color:var(--text-muted); min-width:32px; text-align:center; }
 </style>
 
     <div class="crono-tabs" id="crono-tabs"></div>
@@ -4444,6 +4458,13 @@ window.CRONOGRAMA_RUNTIME = {
     viewModo: 'dias', // 'dias' | 'kanban' — não persiste, reseta a cada carregamento da tela
     dragOrigem: null, // { dia, id } do card sendo arrastado — null quando não há arraste em andamento
     _buscaTexto: '', // filtro ao vivo por expressão nos cards (tópico/justificativa/matéria) da semana ativa — não persiste
+    // Zoom (A−/A+) da área "busca até os cards" — ao contrário de viewModo
+    // e _buscaTexto, este PERSISTE (ver carregar/salvar): é uma preferência
+    // de legibilidade, não um filtro/estado de navegação passageiro.
+    zoomCronograma: 1,
+    ZOOM_MIN: 0.7,
+    ZOOM_MAX: 1.5,
+    ZOOM_PASSO: 0.1,
     STORAGE_KEY: 'tjpe_v1__cronograma_runtime',
     PALETA_CORES: ['#4f46e5', '#0ea5e9', '#16a34a', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2', '#db2777'],
     // Pares fundo pastel + texto saturado da MESMA família de cor — mesmo
@@ -4471,14 +4492,37 @@ window.CRONOGRAMA_RUNTIME = {
         // planners ausentes) reinjeta pra sempre qualquer cronograma que já
         // tenha subido à nuvem antes de ser excluído localmente.
         this.excluidos = (bruto && typeof bruto.excluidos === 'object') ? bruto.excluidos : {};
+        this.zoomCronograma = (bruto && typeof bruto.zoomCronograma === 'number') ? bruto.zoomCronograma : 1;
     },
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos }));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos, zoomCronograma: this.zoomCronograma }));
         } catch (e) {
             console.warn('[CRONOGRAMA] Falha ao salvar:', e);
         }
+    },
+
+    // Passo fixo de 0.1 (10%), entre ZOOM_MIN e ZOOM_MAX — arredonda pra
+    // evitar sobra de ponto flutuante (0.1+0.2 etc.) acumulando erro depois
+    // de vários cliques.
+    ajustarZoomCronograma: function(direcao) {
+        let novo = Math.round((this.zoomCronograma + direcao * this.ZOOM_PASSO) * 100) / 100;
+        novo = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, novo));
+        if (novo === this.zoomCronograma) return; // já no limite, nada a fazer
+        this.zoomCronograma = novo;
+        this.salvar();
+        this._aplicarZoomCronograma();
+    },
+
+    // Atualiza a var CSS + o rótulo de porcentagem DIRETO no DOM, sem
+    // passar por render() — troca de zoom fica instantânea e não perde
+    // scroll/estado de nenhum menu aberto no meio da grade.
+    _aplicarZoomCronograma: function() {
+        let contentEl = document.getElementById('crono-content');
+        if (contentEl) contentEl.style.setProperty('--crono-zoom', this.zoomCronograma);
+        let label = document.getElementById('crono-fonte-nivel');
+        if (label) label.textContent = Math.round(this.zoomCronograma * 100) + '%';
     },
 
     corLivre: function() {
@@ -5760,13 +5804,29 @@ window.CRONOGRAMA_RUNTIME = {
             '<button class="crono-view-btn' + (this.viewModo === 'kanban' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'kanban\')">📋 Kanban</button>' +
         '</div>';
 
-        let htmlDireita = '<div class="crono-controls-direita">' + htmlBusca + htmlViewToggle + '</div>';
+        // Botões A-/A+ ficam DE FORA da área com zoom (senão eles mesmos
+        // encolheriam/cresceriam) — controlam --crono-zoom, aplicado via
+        // CSS `zoom` nas 3 áreas .crono-zoom-area abaixo (busca+toggle,
+        // resultados globais da busca, e a grade de dias/kanban com os
+        // cards em si). A fita "Semanas:" fica de fora de propósito.
+        let htmlFonteToggle = '<div class="crono-fonte-toggle">' +
+            '<button onclick="window.CRONOGRAMA_RUNTIME.ajustarZoomCronograma(-1)" title="Diminuir o tamanho do cronograma">A−</button>' +
+            '<span class="crono-fonte-nivel" id="crono-fonte-nivel">' + Math.round(this.zoomCronograma * 100) + '%</span>' +
+            '<button onclick="window.CRONOGRAMA_RUNTIME.ajustarZoomCronograma(1)" title="Aumentar o tamanho do cronograma">A+</button>' +
+        '</div>';
+
+        let htmlDireita = '<div class="crono-controls-direita">' +
+            '<div class="crono-zoom-area">' + htmlBusca + htmlViewToggle + '</div>' +
+            htmlFonteToggle +
+        '</div>';
 
         let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlDireita + '</div>';
 
         contentEl.innerHTML = htmlControlsRow +
-            '<div id="crono-busca-global-container">' + this._renderResultadosGlobais() + '</div>' +
-            '<div id="crono-corpo">' + this._renderCorpo() + '</div>';
+            '<div class="crono-zoom-area" id="crono-busca-global-container">' + this._renderResultadosGlobais() + '</div>' +
+            '<div class="crono-zoom-area" id="crono-corpo">' + this._renderCorpo() + '</div>';
+
+        this._aplicarZoomCronograma();
 
         // Com a fita de semanas em rolagem horizontal, a aba ativa pode
         // estar fora da área visível (ex.: semana 30 de 50) — sem isso o
