@@ -7339,7 +7339,19 @@ window.FLASHCARDS_RUNTIME = {
     // exato é ignorado. Usado pelas 2 superfícies de "baralhos associados"
     // (sidebar do simulado ativo e card do Cronograma).
     resolverMateriaDivisaoPorTaxonomia: function(idTaxonomia) {
-        if (!idTaxonomia || !window.MAPA_TAXONOMIA || !window.MAPA_TAXONOMIA[idTaxonomia]) return null;
+        if (!idTaxonomia) return null;
+        // Auto-cura: MAPA_TAXONOMIA normalmente já vem populado (ver
+        // popularMapaTaxonomia(), chamado assim que taxonomia.js carrega),
+        // mas se por algum motivo ainda estiver vazio quando isso é
+        // chamado (ex.: essa função rodou cedo demais numa carga
+        // específica), tenta popular na hora em vez de devolver null pro
+        // resto da sessão — era exatamente isso que deixava "Baralhos
+        // associados" instável entre F5s (funcionava ou não dependendo da
+        // ordem de carregamento, e quando falhava não se recuperava mais).
+        if ((!window.MAPA_TAXONOMIA || Object.keys(window.MAPA_TAXONOMIA).length === 0) && typeof window.popularMapaTaxonomia === 'function') {
+            window.popularMapaTaxonomia();
+        }
+        if (!window.MAPA_TAXONOMIA || !window.MAPA_TAXONOMIA[idTaxonomia]) return null;
         let caminho = window.MAPA_TAXONOMIA[idTaxonomia].caminho || '';
         let partes = caminho.split(' > ');
         if (partes.length < 2) return null;
@@ -10142,6 +10154,39 @@ window.carregarMateriaisOficiais = async function() {
   <div class="ri" id="ri"></div>
 </div>
 <script src="taxonomia.js"></script>
+<script>
+// Popula window.MAPA_TAXONOMIA assim que taxonomia.js termina de carregar
+// — SEM esperar o evento 'load' da página (que só dispara depois de TODO
+// o resto: imagens, CSS etc., podendo demorar de forma variável) e sem
+// depender de nenhum elemento de UI existir no DOM (a população de
+// verdade só precisa de TAXONOMIA_DADOS). Antes disso rodava só dentro do
+// handler de 'load', acoplado à existência do <select> de configuração —
+// se qualquer coisa (ex.: o cronograma ativo) renderizasse "Baralhos
+// associados"/Conteúdo Relacionado ANTES desse handler terminar, o mapa
+// ainda estava vazio, resolverMateriaDivisaoPorTaxonomia() devolvia null,
+// e nada re-renderizava depois — daí a instabilidade "aparece ou não
+// dependendo do F5, e quando não aparece não se recupera mais".
+window.popularMapaTaxonomia = function() {
+    window.MAPA_TAXONOMIA = window.MAPA_TAXONOMIA || {};
+    if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return false;
+    TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
+        mat.divisoes.forEach(function(div) {
+            window.MAPA_TAXONOMIA[div.id] = {
+                materia: mat.nivel_1.toUpperCase(),
+                caminho: mat.nivel_1 + ' > ' + div.nivel_2
+            };
+            div.topicos.forEach(function(top) {
+                window.MAPA_TAXONOMIA[top.id] = {
+                    materia: mat.nivel_1.toUpperCase(),
+                    caminho: mat.nivel_1 + ' > ' + div.nivel_2 + ' > ' + top.nivel_3
+                };
+            });
+        });
+    });
+    return true;
+};
+window.popularMapaTaxonomia();
+</script>
 
 
 <button id="top-toggle" onclick="toggleTop()" title="Menu Superior">⚙</button>
@@ -12740,7 +12785,15 @@ window.addEventListener('load', async function() {
     }
 
     // 3. POPULAÇÃO DA MEMÓRIA TAXONÔMICA
-window.MAPA_TAXONOMIA = {}; 
+    // MAPA_TAXONOMIA já foi populado bem mais cedo (ver popularMapaTaxonomia()
+    // logo após <script src="taxonomia.js">) — chamar de novo aqui é só
+    // redundância barata (idempotente), NUNCA um reset: antes este bloco
+    // fazia `window.MAPA_TAXONOMIA = {}` incondicional e só reconstruía se
+    // #cfg-tax-materia existisse, o que podia apagar o mapa e nunca mais
+    // reconstruir se esse <select> não estivesse disponível no momento
+    // certo. Preencher o <select> de configuração é a única coisa que
+    // ainda precisa acontecer aqui mesmo (é UI, só existe depois do parse).
+    window.popularMapaTaxonomia();
     let selMat = document.getElementById('cfg-tax-materia');
     if (selMat && typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) {
         TAXONOMIA_DADOS.taxonomia_concursos.forEach(mat => {
@@ -12748,30 +12801,6 @@ window.MAPA_TAXONOMIA = {};
             opt.value = mat.nivel_1;
             opt.textContent = mat.nivel_1;
             selMat.appendChild(opt);
-
-            mat.divisoes.forEach(div => {
-                // Registra o id de NÍVEL 2 (divisão) também — não só o de nível
-                // 3 (tópico) como antes. Baterias agora exigem só L2 na
-                // criação (o L3 é granularidade só de questão, via campo
-                // "topico", nunca de bateria) — sem isto, id_taxonomia de L2
-                // não resolvia em resolverMateriaDivisaoPorTaxonomia() (voltava
-                // null), cegando o "Conteúdo Relacionado" do Cronograma e todo
-                // recurso que depende dele pra essas baterias. Aditivo: L2 e L3
-                // são espaços de id disjuntos (confirmado, 0 colisões), e
-                // resolverMateriaDivisaoPorTaxonomia só lê os 2 primeiros
-                // segmentos do caminho de qualquer forma — baterias antigas com
-                // L3 continuam resolvendo exatamente como antes.
-                window.MAPA_TAXONOMIA[div.id] = {
-                    materia: mat.nivel_1.toUpperCase(),
-                    caminho: `${mat.nivel_1} > ${div.nivel_2}`
-                };
-                div.topicos.forEach(top => {
-                    window.MAPA_TAXONOMIA[top.id] = {
-                        materia: mat.nivel_1.toUpperCase(),
-                        caminho: `${mat.nivel_1} > ${div.nivel_2} > ${top.nivel_3}`
-                    };
-                });
-            });
         });
     }
 
