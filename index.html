@@ -4496,6 +4496,8 @@ if(ri) {
     #section-cronograma .crono-fonte-toggle button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:800; cursor:pointer; font-family:var(--font-display); line-height:1; outline:none; box-sizing:border-box; }
     #section-cronograma .crono-fonte-toggle button:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #section-cronograma .crono-fonte-nivel { font-size:10px; font-weight:700; color:var(--text-muted); min-width:32px; text-align:center; }
+    #section-cronograma .crono-btn-exportar-html { display:flex; align-items:center; gap:4px; height:24px; padding:0 10px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0; font-family:var(--font-body); }
+    #section-cronograma .crono-btn-exportar-html:hover { border-color:var(--app-primary); color:var(--app-primary); }
 </style>
 
     <div class="crono-tabs" id="crono-tabs"></div>
@@ -5766,6 +5768,89 @@ window.CRONOGRAMA_RUNTIME = {
         return { total: total, feitos: feitos };
     },
 
+    _escapar: function(s) {
+        return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    // Exporta o cronograma ATIVO como um HTML autocontido (mesmo template
+    // compartilhado — gerarDocumentoHtmlEstilizado/.doc-* — usado por
+    // Esquemas/Jurisprudência/Caderno), com cada semana virando uma grade
+    // de 7 colunas (Segunda a Domingo), uma abaixo da outra, num documento
+    // ÚNICO e contínuo (sem paginar por intervalo de semanas — cronogramas
+    // longos, de 50+ semanas, ganham só uma quebra de página por semana no
+    // CSS @media print, pra imprimir/exportar em PDF sem cortar no meio de
+    // uma grade). Cada card mostra matéria + prioridade + tópico — sem
+    // justificativa/status feito, pra não pesar a grade.
+    exportarHtmlEstilizado: function() {
+        if (!this.activePlannerId || !this.planners[this.activePlannerId]) { alert('Nenhum cronograma ativo pra exportar.'); return; }
+        let self = this;
+        let p = this.planners[this.activePlannerId];
+        let prog = this.calcularProgressoPlanner(this.activePlannerId);
+        let ordemDias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+        let nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+
+        let semanasOrdenadas = Object.keys(p.planejamento || {}).sort(function(a, b) {
+            return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
+        });
+        if (semanasOrdenadas.length === 0) { alert('Este cronograma ainda não tem nenhuma semana pra exportar.'); return; }
+
+        // Mesmas cores de .crono-tag-critica/alta/media/baixa (CSS da tela)
+        // e de corMateria() — repetidas aqui como valores fixos porque o
+        // documento exportado é autocontido, sem depender do CSS do app.
+        let coresPrio = {
+            critica: { bg: '#fee2e2', texto: '#dc2626' },
+            alta: { bg: '#ffedd5', texto: '#ea580c' },
+            media: { bg: '#dbeafe', texto: '#2563eb' },
+            baixa: { bg: '#f1f5f9', texto: '#64748b' }
+        };
+
+        function classePrioridade(prioridade) {
+            // Mesma técnica de renderCard (linha ~4961): remove acentos via
+            // NFD + filtro de charCode, sem depender de regex com marca de
+            // combinação literal no código-fonte.
+            let semAcento = (prioridade || '').toUpperCase().normalize('NFD');
+            let limpo = '';
+            for (let ch = 0; ch < semAcento.length; ch++) {
+                let codigo = semAcento.charCodeAt(ch);
+                if (codigo < 0x0300 || codigo > 0x036f) limpo += semAcento[ch];
+            }
+            return limpo === 'CRITICA' ? 'critica' : limpo === 'ALTA' ? 'alta' : limpo === 'MEDIA' ? 'media' : 'baixa';
+        }
+
+        function htmlCard(item) {
+            let corMat = self.corMateria(item.materia);
+            let corPrio = coresPrio[classePrioridade(item.prioridade)];
+            return '<div class="crono-doc-card">' +
+                '<div class="crono-doc-tags">' +
+                    '<span class="crono-doc-tag" style="background:' + corMat.bg + '; color:' + corMat.texto + ';">' + self._escapar(item.materia) + '</span>' +
+                    '<span class="crono-doc-tag" style="background:' + corPrio.bg + '; color:' + corPrio.texto + ';">' + self._escapar(item.prioridade) + '</span>' +
+                '</div>' +
+                '<div class="crono-doc-topico">' + self._escapar(item.topico) + '</div>' +
+            '</div>';
+        }
+
+        let corpo = '<div class="doc-resumo">' + prog.pct + '% concluído (' + prog.feitos + '/' + prog.total + ') · Exportado em ' + this._isoParaBR(this._formatarISO(new Date())) + '</div>';
+
+        semanasOrdenadas.forEach(function(semanaChave) {
+            let numero = semanaChave.replace('semana_', '');
+            let dias = p.planejamento[semanaChave] || {};
+            corpo += '<div class="crono-doc-semana-bloco">' +
+                '<div class="crono-doc-semana">Semana ' + numero + '</div>' +
+                '<table class="crono-doc-grade"><thead><tr>' +
+                    ordemDias.map(function(d) { return '<th>' + nomesDias[d] + '</th>'; }).join('') +
+                '</tr></thead><tbody><tr>' +
+                    ordemDias.map(function(d) {
+                        let itens = dias[d] || [];
+                        return '<td>' + itens.map(htmlCard).join('') + '</td>';
+                    }).join('') +
+                '</tr></tbody></table>' +
+            '</div>';
+        });
+
+        let html = gerarDocumentoHtmlEstilizado(this._escapar(p.nome) + ' — Cronograma', '<div class="doc-titulo">' + this._escapar(p.nome) + '</div>' + corpo);
+        downloadArquivo(html, (p.nome || 'cronograma').replace(/[^\w\-]+/g, '_') + '_cronograma.html', 'text/html');
+    },
+
     render: function() {
         let tabsEl = document.getElementById('crono-tabs');
         let contentEl = document.getElementById('crono-content');
@@ -5878,12 +5963,15 @@ window.CRONOGRAMA_RUNTIME = {
             '<button onclick="window.CRONOGRAMA_RUNTIME.ajustarZoomCronograma(1)" title="Aumentar o tamanho do cronograma">A+</button>' +
         '</div>';
 
+        let htmlExportarHtml = '<button class="crono-btn-exportar-html" onclick="window.CRONOGRAMA_RUNTIME.exportarHtmlEstilizado()" title="Exportar este cronograma como HTML estilizado (semanas em grade de 7 dias, pronto pra imprimir ou salvar em PDF)">🎨 Exportar HTML</button>';
+
         // crono-busca-toggle-linha cuida do layout (flex lado a lado);
         // crono-zoom-area cuida só do zoom — são 2 classes de propósito
         // diferente na mesma div, não uma substituindo a outra.
         let htmlDireita = '<div class="crono-controls-direita">' +
             '<div class="crono-zoom-area crono-busca-toggle-linha">' + htmlBusca + htmlViewToggle + '</div>' +
             htmlFonteToggle +
+            htmlExportarHtml +
         '</div>';
 
         let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlDireita + '</div>';
@@ -13562,6 +13650,17 @@ function parsDisc(txt){
   // falha — removido aqui (junto com o espaço que sobraria antes dele) como
   // rede de segurança, aplicado a enunciado/explicação/alternativas/axioma.
   var RE_CITE     = /\s*\[cite:\s*[\d,\s]+\]/gi;
+  // Chrome de transição do Gemini que às vezes vaza no fim de um lote (ex.:
+  // "MD + 1 Lote concluído. O conteúdo estipulado foi inteiramente gerado
+  // e a lista esgotada com sucesso. O Gemini é uma IA e pode cometer
+  // erros. Defining Generation Rules"). Diferente do ruído "no meio" do
+  // texto (pego por hMarcadorNosProximos, que olha um marcador real mais à
+  // frente), esse aviso normalmente aparece no ÚLTIMO lote colado — não há
+  // "QUESTÃO"/"BLOCO" depois pra servir de sinal, então a janela de
+  // ruído nunca dispara e o texto acaba grudado na explicação da última
+  // questão. Por isso é reconhecido por padrão (não string fixa — o nome
+  // do lote/bloco muda a cada rodada), independente do que vier depois.
+  var RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules)/i;
   // Quantas linhas (não-vazias) o parser tolera de "ruído" entre o fim de
   // uma explicação e o próximo marcador real (QUESTÃO/BLOCO/TÍTULO/PROVA/
   // METADADOS), antes de considerar que é mesmo continuação legítima de
@@ -13741,6 +13840,10 @@ if(qEmCurso){
       if(fase==='explicacao' || fase==='gabarito'){
         var prox=proxNaoVazia(i);
         if(ehMarcadorForte(prox)){finalizarQuestao();continue;}
+        // Aviso de fim de lote reconhecido por padrão (ver RE_RUIDO_FIM_LOTE)
+        // — dispara mesmo sem nenhum marcador real mais à frente, já que é
+        // exatamente o caso típico (último lote colado, nada depois dele).
+        if(RE_RUIDO_FIM_LOTE.test(l)){finalizarQuestao();continue;}
         // A próxima linha não é, ela mesma, um marcador — mas se um
         // marcador real aparece um pouco mais à frente (dentro da janela),
         // é sinal de que entramos em texto de transição/interface entre
@@ -16860,7 +16963,20 @@ var CSS_DOCUMENTO_HTML_ESTILIZADO =
   '.doc-corpo table{border-collapse:collapse;width:100%;margin:10px 0;}' +
   '.doc-corpo table td,.doc-corpo table th{border:1px solid #e2e8f0;padding:6px 8px;font-size:13px;}' +
   '.doc-corpo table th{background:#f1f5f9;font-weight:800;}' +
-  '@media print{body{background:#fff;padding:0;} .doc-card{box-shadow:none;break-inside:avoid;}}';
+  // Grade semanal (Cronograma) — 1 tabela por semana, 7 colunas fixas
+  // (Segunda a Domingo), cada célula empilhando os cards do dia. Namespace
+  // ".crono-doc-*" pra não colidir com nada que exista hoje ou no futuro.
+  '.crono-doc-semana{font-size:15px;font-weight:800;color:#334155;margin:28px 0 10px;padding-left:10px;border-left:3px solid #6366f1;}' +
+  '.crono-doc-semana-bloco:first-child .crono-doc-semana{margin-top:0;}' +
+  '.crono-doc-grade{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:8px;}' +
+  '.crono-doc-grade th{background:#f1f5f9;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.03em;color:#475569;padding:6px 4px;border:1px solid #e2e8f0;text-align:center;}' +
+  '.crono-doc-grade td{border:1px solid #e2e8f0;padding:6px;vertical-align:top;width:14.28%;}' +
+  '.crono-doc-card{font-size:10.5px;line-height:1.4;padding:5px 6px;border-radius:5px;margin-bottom:5px;background:#f8fafc;border:1px solid #e2e8f0;}' +
+  '.crono-doc-card:last-child{margin-bottom:0;}' +
+  '.crono-doc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px;}' +
+  '.crono-doc-tag{display:inline-block;font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:99px;white-space:nowrap;}' +
+  '.crono-doc-topico{color:#1e293b;}' +
+  '@media print{body{background:#fff;padding:0;} .doc-card{box-shadow:none;break-inside:avoid;} .crono-doc-semana-bloco{break-before:page;} .crono-doc-semana-bloco:first-child{break-before:avoid;} .crono-doc-grade{break-inside:avoid;}}';
 
 function gerarDocumentoHtmlEstilizado(tituloDoc, corpoHtml) {
   return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
@@ -22373,6 +22489,12 @@ function jurNormalizarTexto(texto) {
 const JUR_RE_TRIBUNAL = /^Tribunal:\s*(.+?)\s*\|\s*Órgão:\s*(.+)$/i;
 const JUR_RE_PROCESSO = /^Processo:\s*(.+?)\s*\|\s*Relator:\s*(.+?)\s*\|\s*Data:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_SISTEMATICA = /^Sistemática:\s*([\s\S]+)$/i;
+// "Sistemática: Recurso Repetitivo — Tema 1132" (ou Repercussão Geral/IAC)
+// embutia o Tema dentro do próprio valor — isso duplicava a categoria no
+// filtro "Sistemática" da grade (uma entrada por Tema, em vez de uma só
+// "Recurso Repetitivo"). Separado em dois campos: sistematica (categoria
+// pura) + tema (só o número), exibidos depois no título/processo do card.
+const JUR_RE_TEMA_EMBUTIDO_NA_SISTEMATICA = /^(.*?)\s*[—-]\s*Tema\s+(\d+)\s*$/i;
 const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
@@ -22411,7 +22533,7 @@ function jurClassificarLinha(l) {
 }
 
 function jurCriarFichaVazia() {
-    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tese: '', resumo: '', conexoes: '', dataConsulta: '' };
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', conexoes: '', dataConsulta: '' };
 }
 
 function jurAplicarCampoNaLinha(ficha, tipo, linha) {
@@ -22427,7 +22549,14 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
         ficha.dataJulgado = m[5] + '-' + m[4] + '-' + m[3]; // ISO AAAA-MM-DD
     } else if (tipo === 'sistematica') {
         m = JUR_RE_SISTEMATICA.exec(linha);
-        ficha.sistematica = m[1].trim();
+        let bruto = m[1].trim();
+        let mTema = JUR_RE_TEMA_EMBUTIDO_NA_SISTEMATICA.exec(bruto);
+        if (mTema) {
+            ficha.sistematica = mTema[1].trim();
+            ficha.tema = mTema[2].trim();
+        } else {
+            ficha.sistematica = bruto;
+        }
     } else if (tipo === 'tese') {
         m = JUR_RE_TESE.exec(linha);
         ficha.tese = m[1].trim();
@@ -22546,8 +22675,10 @@ function parsearImportacaoJurisprudencia(textoBruto) {
 // ── JURISPRUDÊNCIA — modal (mesmo padrão de #esquemas-modal/#caderno-modal),
 // navegação L1(matéria)>L2(divisão). Estrutura de dados: fichas: {
 // "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, tribunal, orgao,
-// processo, relator, dataJulgado, sistematica, tese, resumo, conexoes,
-// origem_oficial?, criadoEm} ] }. Criação é SÓ via importação em massa (sem
+// processo, relator, dataJulgado, sistematica, tema?, tese, resumo, conexoes,
+// origem_oficial?, criadoEm} ] }. tema (só o número, ex. "1132") existe
+// apenas quando sistematica é Recurso Repetitivo/Repercussão Geral/IAC com
+// Tema fixado — ver _tituloComTema/_processoComTema. Criação é SÓ via importação em massa (sem
 // formulário manual de 1 ficha — muitos campos, o parser resolve isso a
 // partir de texto colado). origem_oficial NUNCA é atribuído na importação
 // pessoal — só importarJurisprudenciaOficial() (JSON publicado no
@@ -22671,6 +22802,24 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || '—';
         let p = iso.split('-');
         return p[2] + '/' + p[1] + '/' + p[0];
+    },
+
+    // item.sistematica agora é sempre a categoria "pura" (Recurso Repetitivo/
+    // Repercussão Geral/IAC/Caso isolado.../Controle Concentrado) — o Tema,
+    // quando existe, mora em item.tema (só o número) e é exibido em dois
+    // lugares: aqui, ao final do TÍTULO ("(Tema 1132-STJ)"), e em
+    // _processoComTema, colado ao número do processo. Sem isso, o Tema
+    // "diluía" a categoria (cada Tema virava um valor distinto no filtro).
+    _tituloComTema: function(item) {
+        let titulo = item.titulo || '';
+        if (!item.tema) return titulo;
+        return titulo + ' (Tema ' + item.tema + (item.tribunal ? '-' + item.tribunal : '') + ')';
+    },
+
+    _processoComTema: function(item) {
+        let processo = item.processo || '';
+        if (!processo || !item.tema) return processo;
+        return processo + ' (' + (item.sistematica || 'Tema') + ' — Tema ' + item.tema + ')';
     },
 
     // 'vigente' é o default pra fichas novas (o parser de importação NUNCA
@@ -22964,7 +23113,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 : '';
 
             let teseTrunc = (item.tese || '').length > 130 ? item.tese.slice(0, 130) + '…' : (item.tese || '');
-            let metaPartes = [item.processo, item.relator, self._formatarDataBR(item.dataJulgado)].filter(function(x) { return !!x; });
+            let metaPartes = [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado)].filter(function(x) { return !!x; });
             let metaLinha = metaPartes.join(' · ');
 
             let onclickCard = self._modoSelecao ? '' : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
@@ -22980,7 +23129,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '</span>' +
                     '<span class="jur-card-tags-dir">' + btnOcultarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
-                '<div class="jur-card-titulo">' + self._escapar(item.titulo) + '</div>' +
+                '<div class="jur-card-titulo">' + self._escapar(self._tituloComTema(item)) + '</div>' +
                 '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
                 (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '') +
                 '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>' +
@@ -23006,8 +23155,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
         if (!item) return;
         this._verAtual = { chave: chave, id: id };
-        document.getElementById('jur-ver-titulo').textContent = item.titulo || 'Ficha';
-        let metaPartes = [item.tribunal, item.orgao, item.processo, item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        document.getElementById('jur-ver-titulo').textContent = this._tituloComTema(item) || 'Ficha';
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
         if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
         document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
         this._renderBlocoSuperado(item);
@@ -23401,11 +23550,11 @@ window.JURISPRUDENCIA_RUNTIME = {
             Object.keys(porMateria[mat]).sort().forEach(function(div) {
                 linhas.push('### ' + div, '');
                 porMateria[mat][div].forEach(function(f) {
-                    linhas.push('#### ' + (f.titulo || '(sem título)') + (f.origem_oficial ? ' _(Oficial)_' : ''), '');
+                    linhas.push('#### ' + (self._tituloComTema(f) || '(sem título)') + (f.origem_oficial ? ' _(Oficial)_' : ''), '');
                     let meta = [];
                     if (f.tribunal) meta.push('- **Tribunal:** ' + f.tribunal);
                     if (f.orgao) meta.push('- **Órgão:** ' + f.orgao);
-                    if (f.processo) meta.push('- **Processo:** ' + f.processo);
+                    if (f.processo) meta.push('- **Processo:** ' + self._processoComTema(f));
                     if (f.relator) meta.push('- **Relator:** ' + f.relator);
                     if (f.dataJulgado) meta.push('- **Data:** ' + self._formatarDataBR(f.dataJulgado));
                     if (f.sistematica) meta.push('- **Sistemática:** ' + f.sistematica);
@@ -23451,12 +23600,12 @@ window.JURISPRUDENCIA_RUNTIME = {
                 corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
                 porMateria[mat][div].forEach(function(f) {
                     corpo += '<div class="doc-card">';
-                    corpo += '<div class="doc-card-titulo">' + self._escapar(f.titulo || '(sem título)') +
+                    corpo += '<div class="doc-card-titulo">' + self._escapar(self._tituloComTema(f) || '(sem título)') +
                         (f.origem_oficial ? ' <span class="doc-badge doc-badge-oficial">Oficial</span>' : '') + '</div>';
                     let meta = [];
                     if (f.tribunal) meta.push('<span><b>Tribunal:</b> ' + self._escapar(f.tribunal) + '</span>');
                     if (f.orgao) meta.push('<span><b>Órgão:</b> ' + self._escapar(f.orgao) + '</span>');
-                    if (f.processo) meta.push('<span><b>Processo:</b> ' + self._escapar(f.processo) + '</span>');
+                    if (f.processo) meta.push('<span><b>Processo:</b> ' + self._escapar(self._processoComTema(f)) + '</span>');
                     if (f.relator) meta.push('<span><b>Relator:</b> ' + self._escapar(f.relator) + '</span>');
                     if (f.dataJulgado) meta.push('<span><b>Data:</b> ' + self._escapar(self._formatarDataBR(f.dataJulgado)) + '</span>');
                     if (f.sistematica) meta.push('<span><b>Sistemática:</b> ' + self._escapar(f.sistematica) + '</span>');
@@ -23575,9 +23724,9 @@ window.JURISPRUDENCIA_RUNTIME = {
     // essencial pra revisão; texto completo com conexões continua só no
     // popup "Ver", acessível pela grade).
     _htmlCartaoFichaEstudo: function(item) {
-        let metaPartes = [item.tribunal, item.orgao, item.processo, item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
-            '<div class="jur-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
+            '<div class="jur-estudo-titulo">' + this._escapar(this._tituloComTema(item)) + '</div>' +
             '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
             '<div class="jur-estudo-label">Tese Fixada / Decisão</div>' +
             '<div class="jur-estudo-texto">' + this._escapar(item.tese || '—') + '</div>' +
