@@ -343,6 +343,10 @@ body.force-mobile.top-aberto #mobile-nav-fixed-wrap {
        (#f8fafc / #eef2ff) que nunca se adaptavam ao modo noturno. */
     --bg-soft: #f8fafc;
     --bg-accent-soft: #eef2ff;
+    /* Fundo do item ATIVO/selecionado nas barras de matérias (Esquemas,
+       Jurisprudência, Axiomas, Praticar Questões, Materiais) — mais forte
+       que --bg-accent-soft (hover) pra marcar a seleção com clareza. */
+    --bg-ativo-forte: #e0e7ff;
 }
 
 /* 3. VARIÁVEIS DO TEMA ESCURO */
@@ -354,6 +358,7 @@ body.dark {
     --border-color: #334155;
     --bg-soft: #253346;
     --bg-accent-soft: #312e6b;
+    --bg-ativo-forte: #3730a3;
 }
 
 /* 3b. MODO NOTURNO ISOLADO AO SIMULADO ATIVO — independente de body.dark
@@ -5996,10 +6001,10 @@ window.CRONOGRAMA_RUNTIME = {
             previa: null,
             planejamentoBruto: null,
             config: {
-                dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'normal', domingo: 'normal' },
+                dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'reduzido', domingo: 'descanso' },
                 inicio: this._formatarISO(new Date()),
                 semanas: 4,
-                cotas: { critica: 2, alta: 2, media: 2, baixa: 2 }
+                cotas: { critica: 1, alta: 1, media: 0, baixa: 0 }
             }
         };
         document.getElementById('modal-crono-gerador').classList.add('open');
@@ -6296,6 +6301,8 @@ window.CRONOGRAMA_RUNTIME = {
             semanasConfiguradas: cfg.semanas,
             semanasUsadas: aparado.semanasMantidas,
             naoIncluidosPorNivel: {
+                critica: cfg.cotas.critica === 0 ? this._gerador.grupos.critica.length : 0,
+                alta: cfg.cotas.alta === 0 ? this._gerador.grupos.alta.length : 0,
                 media: cfg.cotas.media === 0 ? this._gerador.grupos.media.length : 0,
                 baixa: cfg.cotas.baixa === 0 ? this._gerador.grupos.baixa.length : 0
             },
@@ -6471,8 +6478,8 @@ window.CRONOGRAMA_RUNTIME = {
         }
 
         let htmlCotas =
-            linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
-            linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
+            linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
+            linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
             linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
             linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]);
 
@@ -6490,6 +6497,8 @@ window.CRONOGRAMA_RUNTIME = {
         if (g.previa) {
             let p = g.previa;
             let linhasExcluidos = [];
+            if (p.naoIncluidosPorNivel.critica > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.critica + ' de Crítica (marcado "Não incluir")');
+            if (p.naoIncluidosPorNivel.alta > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.alta + ' de Alta (marcado "Não incluir")');
             if (p.naoIncluidosPorNivel.media > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.media + ' de Média (marcado "Não incluir")');
             if (p.naoIncluidosPorNivel.baixa > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.baixa + ' de Baixa (marcado "Não incluir")');
 
@@ -6550,8 +6559,8 @@ window.CRONOGRAMA_RUNTIME = {
             previa: null,
             insercoesResultado: null,
             config: {
-                dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'normal', domingo: 'normal' },
-                cotas: { critica: 2, alta: 2, media: 2, baixa: 2 }
+                dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'reduzido', domingo: 'descanso' },
+                cotas: { critica: 1, alta: 1, media: 0, baixa: 0 }
             }
         };
         document.getElementById('modal-crono-adicionar-cards').classList.add('open');
@@ -6743,6 +6752,8 @@ window.CRONOGRAMA_RUNTIME = {
             diasTocados: diasTocados,
             diasComReclassificacao: diasComReclassificacao,
             naoIncluidosPorNivel: {
+                critica: cfg.cotas.critica === 0 ? a.grupos.critica.length : 0,
+                alta: cfg.cotas.alta === 0 ? a.grupos.alta.length : 0,
                 media: cfg.cotas.media === 0 ? a.grupos.media.length : 0,
                 baixa: cfg.cotas.baixa === 0 ? a.grupos.baixa.length : 0
             },
@@ -6828,8 +6839,8 @@ window.CRONOGRAMA_RUNTIME = {
         }
 
         let htmlCotas =
-            linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
-            linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
+            linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
+            linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
             linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
             linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]);
 
@@ -6841,6 +6852,8 @@ window.CRONOGRAMA_RUNTIME = {
         if (a.previa) {
             let p = a.previa;
             let linhasExcluidos = [];
+            if (p.naoIncluidosPorNivel.critica > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.critica + ' de Crítica (marcado "Não incluir")');
+            if (p.naoIncluidosPorNivel.alta > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.alta + ' de Alta (marcado "Não incluir")');
             if (p.naoIncluidosPorNivel.media > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.media + ' de Média (marcado "Não incluir")');
             if (p.naoIncluidosPorNivel.baixa > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.baixa + ' de Baixa (marcado "Não incluir")');
 
@@ -6957,7 +6970,7 @@ document.addEventListener('click', function(e) {
     #section-flashcards #fc-col-cards { background:var(--bg-soft); }
     #section-flashcards .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #section-flashcards .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #section-flashcards .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-flashcards .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
     #section-flashcards .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
     #section-flashcards .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
     #section-flashcards .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
@@ -8429,7 +8442,7 @@ window.fecharFlashcardsModal = function() {
     #section-praticar-caderno #pc-col-questao { background:var(--bg-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; }
     #section-praticar-caderno .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #section-praticar-caderno .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #section-praticar-caderno .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-praticar-caderno .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
     #section-praticar-caderno .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
     #section-praticar-caderno .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #section-praticar-caderno .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
@@ -9146,7 +9159,7 @@ window.fecharPraticarCadernoModal = function() {
     #section-materiais #mat-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
     #section-materiais .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #section-materiais .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #section-materiais .fc-materia-item.ativa { background:#e0e7ff; }
+    #section-materiais .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
     #section-materiais .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
     #section-materiais .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #section-materiais .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
@@ -11114,7 +11127,7 @@ window.zerarAcervoTotal = function() {
 // desenha os swatches e trata o clique/sincronização com o dashboard.
 // Reduzida de 8 para 6 (removidos #b45309 marrom e #8B0000 vermelho
 // escuro, por disputa de espaço na barra superior).
-const PALETA_TEMA = ['#27408B', '#6B8E23', '#B8860B', '#FA2F5A', '#0891b2', '#7c3aed'];
+const PALETA_TEMA = ['#27408B', '#6B8E23', '#B8860B', '#FF00FF', '#0891b2', '#7c3aed'];
 
 function renderSeletorCorTema(corAtual) {
     const seletor = document.getElementById('seletor-cor-tema');
@@ -18161,11 +18174,11 @@ window.mostrarAbaCaderno = function(aba) {
 '<button onclick="window.exportarCadernoJson(\'' + aba + '\')" title="Exportar todas as matérias desta aba em JSON" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📤 .json</button>' +
 '<button onclick="window.exportarCadernoMarkdown(\'' + aba + '\')" title="Exportar todas as matérias desta aba em Markdown" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">📄 .md</button>' +
 '<button onclick="window.exportarCadernoHtml(\'' + aba + '\')" title="Exportar todas as matérias desta aba em HTML estilizado" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'">🎨 .html</button>' +
-        '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
+        '<span style="width:1px; height:14px; background:var(--border-color);"></span>' +
 '<button onclick="window.alternarTudoCaderno(this)" data-expandido="false" onmouseover="this.style.color=\'var(--app-primary)\'" onmouseout="this.style.color=\'var(--text-main)\'" style="background:none; border:none; color:var(--text-main); font-size:0.68rem; font-weight:700; cursor:pointer; user-select:none; transition:color 0.15s ease;">Expandir Tudo ▼</button>' +
-        '<span style="width:1px; height:14px; background:#e2e8f0;"></span>' +
-        '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
-        '<button onclick="window.ajustarZoomCaderno(0.1)" title="Aumentar letra" style="background:none; border:1px solid #e2e8f0; border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A+</button>' +
+        '<span style="width:1px; height:14px; background:var(--border-color);"></span>' +
+        '<button onclick="window.ajustarZoomCaderno(-0.1)" title="Diminuir letra" style="background:none; border:1px solid var(--border-color); border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A-</button>' +
+        '<button onclick="window.ajustarZoomCaderno(0.1)" title="Aumentar letra" style="background:none; border:1px solid var(--border-color); border-radius:4px; width:26px; height:22px; color:var(--text-muted); font-weight:800; font-size:11px; cursor:pointer;">A+</button>' +
         '</div>';
 
     materias.forEach(function(mat) {
@@ -18174,22 +18187,22 @@ window.mostrarAbaCaderno = function(aba) {
         let corMat = typeof getMateriaColor === 'function' ? getMateriaColor(mat) : 'var(--app-primary)';
 
         html += `
-        <div class="caderno-materia" style="margin-bottom:10px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
-            <div class="caderno-acc-header" onclick="window.toggleCadernoAcc(this)" onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='#f8fafc'" style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-soft); cursor:pointer; border-left:4px solid ${corMat}; transition:background 0.15s;">
+        <div class="caderno-materia" style="margin-bottom:10px; border:1px solid var(--border-color); border-radius:8px; overflow:hidden;">
+            <div class="caderno-acc-header" onclick="window.toggleCadernoAcc(this)" onmouseover="this.style.background='var(--bg-accent-soft)'" onmouseout="this.style.background='var(--bg-soft)'" style="display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:var(--bg-soft); cursor:pointer; border-left:4px solid ${corMat}; transition:background 0.15s;">
                 <span style="font-size:12.5px; font-weight:800; color:${corMat}; text-transform:uppercase; letter-spacing:0.02em;">${escapeHtmlCaderno(mat)}</span>
                 <span style="display:flex; align-items:center; gap:9px;">
-                    <span style="font-size:10px; font-weight:700; color:var(--text-muted); background:#e2e8f0; padding:2px 8px; border-radius:10px;">${totalMateria}</span>
+                    <span style="font-size:10px; font-weight:700; color:var(--text-muted); background:var(--border-color); padding:2px 8px; border-radius:10px;">${totalMateria}</span>
                     <button onclick="event.stopPropagation(); window.exportarCadernoMarkdown('${aba}', '${escapeAttrCaderno(mat)}')" title="Exportar esta matéria em Markdown" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">📤</button>
                     <button onclick="event.stopPropagation(); window.exportarCadernoHtml('${aba}', '${escapeAttrCaderno(mat)}')" title="Exportar esta matéria em HTML estilizado" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">🎨</button>
                     <span class="caderno-acc-seta" style="font-size:11px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
                 </span>
             </div>
-            <div class="caderno-acc-body" style="display:none; padding:12px 14px; background:#fff;">`;
+            <div class="caderno-acc-body" style="display:none; padding:12px 14px; background:var(--bg-white);">`;
 
         Object.keys(topicos).forEach(function(top) {
             let itens = topicos[top];
             html += `
-            <div class="caderno-topico" style="margin-bottom:8px; border:1px solid #edf1f5; border-radius:6px; overflow:hidden;">
+            <div class="caderno-topico" style="margin-bottom:8px; border:1px solid var(--border-color); border-radius:6px; overflow:hidden;">
                 <div class="caderno-acc-header" onclick="window.toggleCadernoAcc(this)" onmouseover="this.style.background='var(--bg-soft)'" onmouseout="this.style.background='var(--bg-white)'" style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:var(--bg-white); cursor:pointer; transition:background 0.15s;">
                     <span style="font-size:11px; font-weight:700; color:var(--text-main);">${escapeHtmlCaderno(top)}</span>
                     <span style="display:flex; align-items:center; gap:9px;">
@@ -18197,7 +18210,7 @@ window.mostrarAbaCaderno = function(aba) {
                         <span class="caderno-acc-seta" style="font-size:10px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
                     </span>
                 </div>
-                <div class="caderno-acc-body" style="display:none; padding:10px 12px; background:#fbfbfd;">`;
+                <div class="caderno-acc-body" style="display:none; padding:10px 12px; background:var(--bg-soft);">`;
 
             itens.forEach(function(item, idx) {
                 let btnRemover = `<button onclick="window.removerDoCaderno('${aba}','${escapeAttrCaderno(mat)}','${escapeAttrCaderno(top)}',${idx}); event.stopPropagation();" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:11px;" title="Remover do caderno">✕ remover</button>`;
@@ -18206,11 +18219,11 @@ window.mostrarAbaCaderno = function(aba) {
                     let bgGabarito = item.gabarito === 'V' ? '#dcfce7' : '#fee2e2';
                     let textoGabarito = item.gabarito === 'V' ? 'VERDADEIRO' : (item.gabarito === 'F' ? 'FALSO' : item.gabarito);
                     html += `
-                    <div style="background:#eef4fc; border:1px solid #cfe0f3; border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:12px;">
+                    <div style="background:var(--bg-soft); border:1px solid var(--border-color); border-radius:6px; padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:12px;">
                         <div style="flex:1;">
                             <div style="font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Enunciado</div>
                             <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${formatarMarkdownCaderno(item.enunciado)}</div>
-                            ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed #cfe0f3; padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${formatarMarkdownCaderno(item.explicacao)}</div>` : ''}
+                            ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${formatarMarkdownCaderno(item.explicacao)}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
@@ -18220,7 +18233,7 @@ window.mostrarAbaCaderno = function(aba) {
                     </div>`;
                 } else {
                     html += `
-                    <div style="background:#eef4fc; border:1px solid #cfe0f3; border-radius:6px; padding:12px 14px; margin-bottom:8px;">
+                    <div style="background:var(--bg-soft); border:1px solid var(--border-color); border-radius:6px; padding:12px 14px; margin-bottom:8px;">
                         <div style="font-size:11px; color:var(--text-muted); line-height:1.5; margin-bottom:8px;">${formatarMarkdownCaderno(item.enunciado)}</div>
                         <div style="font-size:12.5px; font-weight:700; color:var(--app-primary); line-height:1.6; background:var(--bg-accent-soft); padding:8px 10px; border-radius:5px;">📌 ${formatarMarkdownCaderno(item.axioma)}</div>
                         <div style="text-align:right; margin-top:8px;">${btnRemover}</div>
@@ -19166,7 +19179,7 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal #esq-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
     #esquemas-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #esquemas-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #esquemas-modal .fc-materia-item.ativa { background:#e0e7ff; }
+    #esquemas-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
     #esquemas-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
     #esquemas-modal .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #esquemas-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
@@ -19289,6 +19302,14 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-estudo-texto table td, #esquemas-modal .esq-estudo-texto table th,
     #modal-esquemas-baralho .esq-estudo-texto table td, #modal-esquemas-baralho .esq-estudo-texto table th { border:1px solid var(--border-color); padding:6px 8px; min-width:40px; }
     #esquemas-modal .esq-estudo-texto table th, #modal-esquemas-baralho .esq-estudo-texto table th { background:var(--bg-soft); font-weight:800; }
+    /* Marca-texto (hiliteColor/backColor) grava só background-color no
+       span — o texto herda a cor do container. Em tema claro isso dá
+       texto escuro sobre fundo claro (ok); em modo escuro o texto herda
+       --text-main (quase branco) sobre o MESMO fundo claro do marca-texto
+       (ele não muda com o tema, é conteúdo do usuário), ficando invisível.
+       Força um texto escuro só onde há highlight, sem mexer no restante. */
+    body.dark #esq-editor-corpo [style*="background-color"],
+    body.dark .esq-estudo-texto [style*="background-color"] { color:#1e293b !important; }
 
     #esquemas-modal .fc-card-revisao-acoes, #modal-esquemas-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     #esquemas-modal .fc-rev-btn, #modal-esquemas-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
@@ -21963,7 +21984,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal #jur-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
     #jurisprudencia-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #jurisprudencia-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #jurisprudencia-modal .fc-materia-item.ativa { background:#e0e7ff; }
+    #jurisprudencia-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
     #jurisprudencia-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
     #jurisprudencia-modal .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
     #jurisprudencia-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
