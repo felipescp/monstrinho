@@ -10110,9 +10110,6 @@ window.carregarMateriaisOficiais = async function() {
       <button class="b1 p" id="b1-finalizar" onclick="window.finalizarSimulado()" style="width:100%; margin-bottom:0; background:#22c55e; border-color:#16a34a; font-size:13px; font-weight:800;">
         ✓ Finalizar
       </button>
-      <button class="b1" id="b1-pausar" onclick="window.pausarSimulado()" style="width:100%; margin-bottom:0; font-size:12px; color:var(--warning); border-color:var(--warning); background:#fffbeb; font-weight:700; transition:0.2s;">
-        ⏸ Pausar
-      </button>
     </div>
 <div class="sb-box" id="cronometro" style="display:none">
         <div id="crono-modo-btns">
@@ -14386,8 +14383,6 @@ MODO_REVISAO = false;
 
 function renderSim(){
     C.tipo = (C.tipo || '').toLowerCase();
-  var btnPausar = document.getElementById('b1-pausar');
-  if (btnPausar) btnPausar.style.display = 'block';
   syncTogglesUI();
   
   var mc=g('mc');
@@ -15125,9 +15120,6 @@ function voltarSim(idx){
   trocarTab(si,true);
 }
 function renderResultado(idx){
-  var btnPausar = document.getElementById('b1-pausar');
-  if (btnPausar) btnPausar.style.display = 'none';
-
   var agora = new Date();
   var horaFmt = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
   var h = HIST[idx], s = h.stats;
@@ -15892,72 +15884,6 @@ function mostrarModal(cfg){
   overlay.appendChild(box);
   document.body.appendChild(overlay);
 }
-
-// =========================================================
-// SNAPSHOT MANUAL DE SESSÃO
-// =========================================================
-//
-// Apesar do nome histórico:
-//
-// pausarSimulado()
-//
-// NÃO pausa semanticamente o runtime.
-//
-// Ela:
-//
-// - cria snapshot persistido;
-// - salva estado atual;
-// - retorna ao home.
-//
-// =========================================================
-
-window.pausarSimulado = function() {
-    if (C.tipo === 'mc' && QA && !MODO_REVISAO) {
-        if (!D.res[QA]) D.res[QA] = {};
-        D.res[QA].tempoSegundos = (D.res[QA].tempoSegundos || 0) + ((Date.now() - tempoInicioQuestao) / 1000);
-        tempoInicioQuestao = Date.now();
-    }
-    
-    if (typeof cronoInterval !== 'undefined' && cronoInterval !== null) {
-        clearInterval(cronoInterval);
-        cronoInterval = null;
-        cronoRodando = false;
-    }
-
-    if (SI >= 0 && SIMS[SI]) {
-        SIMS[SI].dados = JSON.parse(JSON.stringify(D));
-        SIMS[SI].qSalva = QA;
-        if (C.tipo === 'mc') {
-            SIMS[SI].estado_tempo = {
-                segundos: cronoSegundosAtuais,
-                modo: cronoModo
-            };
-        }
-    }
-    
-    // --- NOVA LÓGICA: CRIAÇÃO DE SLOT INDIVIDUAL PARA CADA PAUSA ---
-    let sessionKey = 'sess:auto_' + (C.id || Date.now());
-    let sessionData = JSON.stringify({ 
-        nome: C.nome || 'Simulado Pausado', 
-        data: new Date().toISOString(), 
-        sims: SIMS, 
-        si: SI 
-    });
-    wsSet(sessionKey, sessionData, true);
-
-    autoSave(); // Mantém o backup de segurança contra crashes
-
-    document.body.classList.remove('pagina-carregada');
-    document.body.classList.add('saindo-da-pagina');
-
-    setTimeout(function() {
-        tela('tela-home');
-        if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
-        
-        document.body.classList.remove('saindo-da-pagina');
-        document.body.classList.add('pagina-carregada');
-    }, 300);
-};
 
 // =========================================================
 // PIPELINE SOBERANA DE FINALIZAÇÃO
