@@ -14844,6 +14844,41 @@ function togExp(qId){var et=g('et-'+qId),be=et?et.previousElementSibling:null;if
 // - renderiza navegação lateral.
 //
 // =========================================================
+// Esquemas/Jurisprudência/Materiais OFICIAIS só são buscados da rede
+// quando o usuário abre aquela seção diretamente (ver *_RUNTIME.init(),
+// disparado só pelo clique no menu correspondente) — uma sessão que abre
+// direto no Simulado Ativo (ex.: retomando de onde parou, sem nunca ter
+// clicado em ESQUEMAS/JURISPRUDÊNCIA/MATERIAIS) nunca dispara essa busca.
+// "Baralhos associados"/"Materiais associados" então só enxergava o que
+// já estivesse em cache no localStorage de uma visita anterior — às vezes
+// as 3 fontes, às vezes só 1, às vezes nenhuma, dependendo do que o
+// usuário tinha visitado antes E de quando a rede respondia. Dispara a
+// sincronização aqui (1x por sessão, ver o guard abaixo) e, quando
+// terminar (sucesso ou falha — allSettled, não all), re-renderiza a barra
+// lateral pra refletir o que chegou, em vez de ficar travada no estado
+// (incompleto) de quando a página abriu.
+window._baralhosAssociadosSincronizados = false;
+window.garantirOficiaisParaBaralhosAssociados = function() {
+    if (window._baralhosAssociadosSincronizados) return;
+    window._baralhosAssociadosSincronizados = true;
+    let promessas = [];
+    if (window.ESQUEMAS_RUNTIME) {
+        window.ESQUEMAS_RUNTIME._garantirCarregado();
+        if (typeof window.carregarEsquemasOficiais === 'function') promessas.push(window.carregarEsquemasOficiais());
+    }
+    if (window.JURISPRUDENCIA_RUNTIME) {
+        window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
+        if (typeof window.carregarJurisprudenciaOficial === 'function') promessas.push(window.carregarJurisprudenciaOficial());
+    }
+    if (window.MATERIAIS_RUNTIME) {
+        window.MATERIAIS_RUNTIME._garantirCarregado();
+        if (typeof window.carregarMateriaisOficiais === 'function') promessas.push(window.carregarMateriaisOficiais());
+    }
+    Promise.allSettled(promessas).then(function() {
+        try { if (typeof window.renderNav === 'function') window.renderNav(); } catch (e) { console.warn('[BARALHOS ASSOCIADOS] Falha ao re-renderizar após sincronizar:', e); }
+    });
+};
+
 function renderNav(){
     var nav=g('sbnav');nav.innerHTML='';var gi=0;
 
@@ -14865,8 +14900,15 @@ function renderNav(){
         
         // Lógica Exclusiva para CERTO/ERRADO (Exibe a Trilha + Botão do Caderno)
 } else if (C.tipo === 'ce' && C.caminho_completo) {
-            h2Questoes.style.display = 'none'; 
-            
+            h2Questoes.style.display = 'none';
+
+            // Dispara (só na 1ª vez da sessão) a sincronização de
+            // Esquemas/Jurisprudência/Materiais oficiais — sem isso essa
+            // barra dependia só do que já estivesse em cache de uma visita
+            // anterior às seções correspondentes. Quando terminar, esta
+            // função chama renderNav() de novo sozinha.
+            if (typeof window.garantirOficiaisParaBaralhosAssociados === 'function') window.garantirOficiaisParaBaralhosAssociados();
+
             let partesCaminho = C.caminho_completo.split(' > ');
             let htmlCaminho = partesCaminho.map(p => `<span style="color:var(--text-main); font-weight:700;">${p.trim()}</span>`).join(' <span style="color:var(--border-color); font-size:10px; margin:0 4px;">/</span> ');
             // let targetId = C.id_taxonomia; // Variável mantida se precisar para logs, mas o botão foi removido
