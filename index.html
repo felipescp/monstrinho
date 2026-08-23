@@ -1430,16 +1430,16 @@ try {
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item" id="btn-nav-materiais" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-materiais'); tela('section-materiais'); if(window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
+        <div class="nav-item hd-item" id="btn-nav-materiais" onclick="window.abrirMateriaisModal()" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
                 <span class="nav-sub-label">PRATICAR:</span>
-                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-praticar-caderno'); tela('section-praticar-caderno'); if(window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); "title=" Questões Marcadas">🏹 QUESTÕES</span>
+                <span class="nav-sub-item" id="btn-nav-praticar" onclick="event.stopPropagation(); window.abrirPraticarCadernoModal()" title="Questões Marcadas">🏹 QUESTÕES</span>
                 <span class="nav-sub-sep">|</span>
-                <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-flashcards'); tela('section-flashcards'); if(window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();" title="Flashcards de Axiomas"> 🏹 AXIOMAS</span>
+                <span class="nav-sub-item" id="btn-nav-flashcards" onclick="event.stopPropagation(); window.abrirFlashcardsModal()" title="Flashcards de Axiomas"> 🏹 AXIOMAS</span>
             </span>
         </div>
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
@@ -5369,9 +5369,9 @@ window.CRONOGRAMA_RUNTIME = {
     // + baralhos manuais (listarBaralhosDoL2), mesma L2 do card. Ambos já
     // existiam prontos em FLASHCARDS_RUNTIME; só faltava o Cronograma somar
     // os axiomas (antes só os baralhos manuais entravam no painel antigo).
-    // tela('section-flashcards') primeiro é necessário porque #modal-flashcard
-    // vive DENTRO de #section-flashcards — se a aba ativa no momento do
-    // clique for outra (ex.: Cronograma), o modal abriria com .open mas
+    // abrirFlashcardsModal() primeiro é necessário porque #modal-flashcard
+    // vive DENTRO de #section-flashcards — se a seção ainda estivesse
+    // fechada no momento do clique, o modal abriria com .open mas
     // ficaria invisível (display:none herdado da seção-mãe inativa).
     _renderAbaAxiomas: function(item) {
         let loc = this._resolverL2doItem(item);
@@ -5390,7 +5390,7 @@ window.CRONOGRAMA_RUNTIME = {
                 axiomas.map(function(c) {
                     let preview = (c.texto || '').trim();
                     if (preview.length > 60) preview = preview.slice(0, 60) + '…';
-                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopup(\'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(preview) + '">' +
+                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirFlashcardsModal(); window.FLASHCARDS_RUNTIME.abrirPopup(\'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(preview) + '">' +
                         '<span class="crono-sim-item-nome">📖 ' + preview + '</span>' +
                     '</div>';
                 }).join('') +
@@ -5401,7 +5401,7 @@ window.CRONOGRAMA_RUNTIME = {
             '<div class="crono-sim-lista" style="max-height:110px;">' +
                 baralhos.map(function(b) {
                     let n = Array.isArray(b.cards) ? b.cards.length : 0;
-                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + b.id + '\', \'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(b.nome) + '">' +
+                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirFlashcardsModal(); window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + b.id + '\', \'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(b.nome) + '">' +
                         '<span class="crono-sim-item-nome">🗂️ ' + (b.nome || '(sem nome)') + '</span>' +
                         '<span style="flex-shrink:0; font-size:9px; color:var(--text-muted); font-weight:800; background:#f1f5f9; padding:2px 5px; border-radius:4px; border:1px solid var(--border-color);">' + n + '</span>' +
                     '</div>';
@@ -5434,7 +5434,7 @@ window.CRONOGRAMA_RUNTIME = {
             if (preview.length > 70) preview = preview.slice(0, 70) + '…';
             let materiaEsc = q.materia.replace(/'/g, "\\'");
             let topicoEsc = q.topico.replace(/'/g, "\\'");
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-praticar-caderno\'); window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materiaEsc + '\', \'' + topicoEsc + '\');" title="' + escaparAspas(preview) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirPraticarCadernoModal(); window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materiaEsc + '\', \'' + topicoEsc + '\');" title="' + escaparAspas(preview) + '">' +
                 '<span class="crono-sim-item-nome">📓 ' + preview + '</span>' +
             '</div>';
         }).join('') + '</div>';
@@ -5467,9 +5467,9 @@ window.CRONOGRAMA_RUNTIME = {
     },
 
     // Aba "📚 Materiais" — materiais dessa L2 (MATERIAIS_RUNTIME.
-    // materiaisDoL2, novo método). #section-materiais é uma .tela (não
-    // modal), por isso precisa de tela() antes de abrir o PDF — mesmo
-    // motivo do tela('section-flashcards') na aba Axiomas.
+    // materiaisDoL2, novo método). abrirMateriaisModal() precisa rodar
+    // antes de abrirPdf() pelo mesmo motivo do Axiomas acima: o modal do
+    // PDF vive dentro de #section-materiais, que precisa estar visível.
     _renderAbaMateriais: function(item) {
         let loc = this._resolverL2doItem(item);
         if (!loc || !window.MATERIAIS_RUNTIME) {
@@ -5497,7 +5497,7 @@ window.CRONOGRAMA_RUNTIME = {
             let chaveEsc = chaveL2.replace(/'/g, "\\'");
             let rotuloTipo = ETIQUETAS_TIPO_MATERIAL[m.tipo];
             let etiquetaHtml = rotuloTipo ? ('<span class="crono-mat-tag crono-mat-tag-' + m.tipo + '">' + rotuloTipo + '</span>') : '';
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-materiais\'); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirMateriaisModal(); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
                 '<span class="crono-sim-item-nome">📚 ' + (m.titulo || '(sem título)') + '</span>' +
                 etiquetaHtml +
             '</div>';
@@ -6937,7 +6937,10 @@ document.addEventListener('click', function(e) {
 <!-- ========================================================= -->
 <!-- SEÇÃO: FLASHCARDS (axiomas do Caderno + manuais, por L1>L2) -->
 <!-- ========================================================= -->
-<section id="section-flashcards" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<!-- Modal (não mais .tela) — mesma ideia de #section-materiais: abre por
+     cima da tela atual em vez de trocar de tela. IDs internos (fc-tab-*
+     etc.) continuam iguais, só a moldura externa mudou. -->
+<section id="section-flashcards" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-flashcards .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #section-flashcards .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
@@ -7027,6 +7030,10 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
 </style>
 
+    <div class="analytics-modal-header" style="flex-shrink:0;">
+        <div class="analytics-modal-title">🏹 Axiomas</div>
+        <button class="analytics-close-btn" onclick="window.fecharFlashcardsModal()">✕</button>
+    </div>
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="fc-tab-navegar" onclick="window.FLASHCARDS_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
         <button class="fc-tab" id="fc-tab-dificil" onclick="window.FLASHCARDS_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="fc-tab-dificil-count"></span></button>
@@ -8341,6 +8348,25 @@ window.FLASHCARDS_RUNTIME = {
         this._atualizarContagensAbas();
     }
 };
+
+// Abre/fecha Axiomas como MODAL sobre a tela atual (ex.: Cronograma), em
+// vez de trocar de tela e perder o que estava aberto embaixo — mesmo
+// padrão de abrirEsquemasModal/fecharEsquemasModal.
+window.abrirFlashcardsModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('section-flashcards');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();
+};
+
+window.fecharFlashcardsModal = function() {
+    const modal = document.getElementById('section-flashcards');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+};
 </script>
 </section>
 
@@ -8383,7 +8409,10 @@ window.FLASHCARDS_RUNTIME = {
 <!-- SEÇÃO: PRATICAR CADERNO DE QUESTÕES (reflexo em tempo real de -->
 <!-- caderno_erros — sem criação/exclusão própria, sem "baralho")  -->
 <!-- ========================================================= -->
-<section id="section-praticar-caderno" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<!-- Modal (não mais .tela) — mesma ideia de #section-materiais: abre por
+     cima da tela atual em vez de trocar de tela. IDs internos (pc-tab-*
+     etc.) continuam iguais, só a moldura externa mudou. -->
+<section id="section-praticar-caderno" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-praticar-caderno .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #section-praticar-caderno .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
@@ -8448,6 +8477,10 @@ window.FLASHCARDS_RUNTIME = {
     #section-praticar-caderno .pc-explicacao { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:12px; font-size:12px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; width:100%; max-width:560px; box-sizing:border-box; }
 </style>
 
+    <div class="analytics-modal-header" style="flex-shrink:0;">
+        <div class="analytics-modal-title">🏹 Praticar Questões</div>
+        <button class="analytics-close-btn" onclick="window.fecharPraticarCadernoModal()">✕</button>
+    </div>
     <div class="fc-tabs">
         <button class="fc-tab ativa" id="pc-tab-navegar" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('navegar')">🗂️ Navegar</button>
         <button class="fc-tab" id="pc-tab-dificil" onclick="window.PRATICAR_CADERNO_RUNTIME.trocarAba('dificil')">🔴 Difícil <span class="fc-tab-count" id="pc-tab-dificil-count"></span></button>
@@ -9071,6 +9104,25 @@ window.PRATICAR_CADERNO_RUNTIME = {
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     }
 };
+
+// Abre/fecha Praticar Questões como MODAL sobre a tela atual (ex.:
+// Cronograma), em vez de trocar de tela e perder o que estava aberto
+// embaixo — mesmo padrão de abrirEsquemasModal/fecharEsquemasModal.
+window.abrirPraticarCadernoModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('section-praticar-caderno');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();
+};
+
+window.fecharPraticarCadernoModal = function() {
+    const modal = document.getElementById('section-praticar-caderno');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+};
 </script>
 </section>
 
@@ -9079,7 +9131,13 @@ window.PRATICAR_CADERNO_RUNTIME = {
      as mesmas classes .fc-materia-item/.fc-divisao-item (visual idêntico).
      3ª coluna mostra a grade de cards do L2 selecionado, ou agregado da
      matéria inteira com "Todas as divisões" (mesmo padrão do Flashcards). -->
-<section id="section-materiais" class="tela" style="display:none; height:100vh; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<!-- Modal (não mais .tela) — abre por cima da tela atual (ex.: Cronograma),
+     igual Esquemas/Jurisprudência, em vez de trocar de tela e perder o
+     que estava aberto embaixo. Ver window.abrirMateriaisModal/
+     fecharMateriaisModal. IDs internos (mat-col-materias etc.) e todo o
+     CSS/JS que os referencia continuam exatamente iguais — só a moldura
+     externa mudou. -->
+<section id="section-materiais" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-materiais .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-materiais .fc-col { overflow-y:auto; padding:10px; }
@@ -9187,6 +9245,10 @@ window.PRATICAR_CADERNO_RUNTIME = {
     #modal-materiais-pdf iframe { flex:1; width:100%; border:1px solid var(--border-color); border-radius:8px; background:#fff; }
 </style>
 
+    <div class="analytics-modal-header" style="flex-shrink:0;">
+        <div class="analytics-modal-title">📚 Materiais</div>
+        <button class="analytics-close-btn" onclick="window.fecharMateriaisModal()">✕</button>
+    </div>
     <div class="fc-grid" id="mat-grid">
         <div class="fc-col" id="mat-col-materias"></div>
         <div class="fc-col" id="mat-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
@@ -9922,6 +9984,25 @@ window.carregarMateriaisOficiais = async function() {
     for (const caminho of caminhosManifesto) {
         await window.importarMaterialOficial(caminho);
     }
+};
+
+// Abre/fecha Materiais como MODAL sobre a tela atual (ex.: Cronograma),
+// em vez de trocar de tela e perder o que estava aberto embaixo — mesmo
+// padrão de abrirEsquemasModal/fecharEsquemasModal.
+window.abrirMateriaisModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('section-materiais');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();
+};
+
+window.fecharMateriaisModal = function() {
+    const modal = document.getElementById('section-materiais');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
 };
 </script>
 </section>
@@ -15122,7 +15203,7 @@ function renderNav(){
                             GRUPOS_MATERIAL.forEach(function(grupo) {
                                 let qtd = materiaisAssoc.filter(function(m) { return grupo.chaves.indexOf(m.tipo) !== -1; }).length;
                                 if (qtd > 0) {
-                                    itensMateriais += `<div onclick="window.tela('section-materiais'); window.MATERIAIS_RUNTIME.selecionarDivisao('${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
+                                    itensMateriais += `<div onclick="window.abrirMateriaisModal(); window.MATERIAIS_RUNTIME.selecionarDivisao('${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
                                 <span>${grupo.emoji} ${grupo.rotulo}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${qtd}</span>
                             </div>`;
                                 }
