@@ -6998,6 +6998,13 @@ document.addEventListener('click', function(e) {
     #section-flashcards .fc-corpo-aba { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; }
     #section-flashcards .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
 
+    /* #modal-flashcard é sibling de #section-flashcards no HTML (ver
+       comentário na declaração dele, junto a #modal-flashcard-bulk que
+       continua filho — esse não precisa da regra abaixo). .mo tem
+       z-index:200; desde que #section-flashcards virou modal
+       (z-index:9999), sem isto o popup de card/baralho abria atrás da
+       seção — mesma correção já aplicada a #modal-esquema-editor. */
+    #modal-flashcard { z-index: 10000; }
     #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
     #modal-flashcard .fc-popup-header, #modal-flashcard-bulk .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
@@ -9231,7 +9238,12 @@ window.fecharPraticarCadernoModal = function() {
     #section-materiais .mat-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
     #section-materiais .mat-card-add:hover { background:var(--bg-accent-soft); }
 
-    /* Modal "Novo Material" — mesmo padrão de #modal-flashcard-bulk. */
+    /* Modal "Novo Material" — mesmo padrão de #modal-flashcard-bulk, mas
+       (diferente dele) é SIBLING de #section-materiais no HTML, não filho
+       — igual #modal-esquema-editor. .mo tem z-index:200; desde que
+       #section-materiais virou modal (z-index:9999), sem isto este popup
+       renderizava atrás dela, inacessível sem fechar a seção primeiro. */
+    #modal-materiais-novo { z-index: 10000; }
     #modal-materiais-novo .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-materiais-novo .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     #modal-materiais-novo .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
@@ -9245,7 +9257,10 @@ window.fecharPraticarCadernoModal = function() {
        viewport (900px de max-width era estreito demais em telas largas,
        mesmo o modal tendo "cara" de quase-tela-cheia). .mat-pdf-maximizado
        (alternada pelo botão ⛶) reduz o respiro de .mo (padding:1rem, regra
-       base em todo .mo) e estica o .mdl praticamente borda a borda. */
+       base em todo .mo) e estica o .mdl praticamente borda a borda.
+       z-index:10000 pelo mesmo motivo de #modal-materiais-novo acima —
+       sem isto o PDF abria atrás de #section-materiais (z-index:9999). */
+    #modal-materiais-pdf { z-index: 10000; }
     #modal-materiais-pdf .mdl { max-width:1400px; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease; }
     #modal-materiais-pdf.mat-pdf-maximizado { padding:0.4rem; }
     #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; width:99vw; height:99vh; }
