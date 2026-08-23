@@ -14884,8 +14884,13 @@ function renderNav(){
 
     var h2Questoes = nav.parentElement.querySelector('h2');
     if(h2Questoes) {
-        var oldMeta = nav.parentElement.querySelector('.sb-meta');
-        if(oldMeta) oldMeta.remove(); 
+        // querySelectorAll (não só o 1º .sb-meta) — desde que "Baralhos
+        // associados"/"Materiais associados" viraram um 2º quadro
+        // separado (baralhosDiv, abaixo), cada renderNav() pode inserir
+        // até 2 elementos .sb-meta; só removendo o 1º deixava o outro
+        // duplicando a cada re-render.
+        var oldMetas = nav.parentElement.querySelectorAll('.sb-meta');
+        oldMetas.forEach(function(el) { el.remove(); });
 
         var metaDiv = document.createElement('div');
         metaDiv.className = 'sb-meta';
@@ -15004,9 +15009,21 @@ function renderNav(){
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📅 Criada em: <span style="color: var(--app-primary);">${window.formatarDataBR(C.dataCriacao)}</span></div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🤖 IA Utilizada: <span style="color: var(--app-primary);">${C.iaUtilizada || '—'}</span></div>
                 <div style="font-size: 9px; font-weight: 800; color: var(--text-main); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">📂 Vínculo Taxonômico</div>
-                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">${htmlCaminho}</div>${htmlBaralhos}
+                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">${htmlCaminho}</div>
             `;
             nav.parentElement.insertBefore(metaDiv, nav);
+
+            // "Baralhos associados"/"Materiais associados" em quadro
+            // PRÓPRIO, separado do de metadados (Criada em/IA/Vínculo) —
+            // só existe quando há algo associado (htmlBaralhos vazio =
+            // nenhum quadro extra, nada pra mostrar).
+            if (htmlBaralhos) {
+                var baralhosDiv = document.createElement('div');
+                baralhosDiv.className = 'sb-meta';
+                baralhosDiv.style.cssText = 'background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);';
+                baralhosDiv.innerHTML = htmlBaralhos;
+                nav.parentElement.insertBefore(baralhosDiv, nav);
+            }
         } else {
             h2Questoes.style.display = 'block'; 
         }
