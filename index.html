@@ -4545,6 +4545,12 @@ window.CRONOGRAMA_RUNTIME = {
             this.activePlannerId = Object.keys(this.planners)[0];
             this.salvar();
         }
+        // Entrar no Cronograma (seja por clique direto no menu, seja pelo
+        // retorno automático do voltarParaVitrine(), ver abaixo) sempre
+        // consome a "sinalização de origem" — ela só deveria valer pra UMA
+        // volta, não ficar acionando pra sempre depois que o usuário já
+        // chegou de volta aqui por conta própria.
+        window.__origemNavegacaoCronograma__ = false;
         this.render();
     },
 
@@ -5338,7 +5344,7 @@ window.CRONOGRAMA_RUNTIME = {
                 axiomas.map(function(c) {
                     let preview = (c.texto || '').trim();
                     if (preview.length > 60) preview = preview.slice(0, 60) + '…';
-                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopup(\'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(preview) + '">' +
+                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopup(\'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(preview) + '">' +
                         '<span class="crono-sim-item-nome">📖 ' + preview + '</span>' +
                     '</div>';
                 }).join('') +
@@ -5349,7 +5355,7 @@ window.CRONOGRAMA_RUNTIME = {
             '<div class="crono-sim-lista" style="max-height:110px;">' +
                 baralhos.map(function(b) {
                     let n = Array.isArray(b.cards) ? b.cards.length : 0;
-                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + b.id + '\', \'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(b.nome) + '">' +
+                    return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-flashcards\'); window.FLASHCARDS_RUNTIME.abrirPopupBaralho(\'' + b.id + '\', \'' + materiaEsc + '\', \'' + divisaoEsc + '\');" title="' + escaparAspas(b.nome) + '">' +
                         '<span class="crono-sim-item-nome">🗂️ ' + (b.nome || '(sem nome)') + '</span>' +
                         '<span style="flex-shrink:0; font-size:9px; color:var(--text-muted); font-weight:800; background:#f1f5f9; padding:2px 5px; border-radius:4px; border:1px solid var(--border-color);">' + n + '</span>' +
                     '</div>';
@@ -5382,7 +5388,7 @@ window.CRONOGRAMA_RUNTIME = {
             if (preview.length > 70) preview = preview.slice(0, 70) + '…';
             let materiaEsc = q.materia.replace(/'/g, "\\'");
             let topicoEsc = q.topico.replace(/'/g, "\\'");
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-praticar-caderno\'); window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materiaEsc + '\', \'' + topicoEsc + '\');" title="' + escaparAspas(preview) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-praticar-caderno\'); window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materiaEsc + '\', \'' + topicoEsc + '\');" title="' + escaparAspas(preview) + '">' +
                 '<span class="crono-sim-item-nome">📓 ' + preview + '</span>' +
             '</div>';
         }).join('') + '</div>';
@@ -5445,7 +5451,7 @@ window.CRONOGRAMA_RUNTIME = {
             let chaveEsc = chaveL2.replace(/'/g, "\\'");
             let rotuloTipo = ETIQUETAS_TIPO_MATERIAL[m.tipo];
             let etiquetaHtml = rotuloTipo ? ('<span class="crono-mat-tag crono-mat-tag-' + m.tipo + '">' + rotuloTipo + '</span>') : '';
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.tela(\'section-materiais\'); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; window.tela(\'section-materiais\'); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
                 '<span class="crono-sim-item-nome">📚 ' + (m.titulo || '(sem título)') + '</span>' +
                 etiquetaHtml +
             '</div>';
@@ -5554,7 +5560,7 @@ window.CRONOGRAMA_RUNTIME = {
 
         let linhaAuto = function(p) {
             let vis = self._dadosVisuaisBateria(p, arquivoMorto);
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' +
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' +
                 '<span class="crono-sim-item-nome">' + nomeComIA(p) + '</span>' +
                 '<span style="flex-shrink:0; display:flex; align-items:center; gap:6px;">' + vis.badgesHtml + '</span>' +
             '</div>';
@@ -5563,7 +5569,7 @@ window.CRONOGRAMA_RUNTIME = {
         let linhaManual = function(p) {
             let vis = self._dadosVisuaisBateria(p, arquivoMorto);
             return '<div class="crono-sim-item">' +
-                '<span class="crono-sim-item-nome" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' + nomeComIA(p) + '</span>' +
+                '<span class="crono-sim-item-nome" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.__origemNavegacaoCronograma__ = true; ' + vis.clickAcao + ';" title="' + escaparAspas(p.nome) + '">' + nomeComIA(p) + '</span>' +
                 '<span style="flex-shrink:0; display:flex; align-items:center; gap:6px;">' + vis.badgesHtml + '</span>' +
                 '<button class="crono-sim-item-remover" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.removerSimuladoVinculado(\'' + itemId + '\', \'' + p.id + '\');" title="Remover vínculo">✕</button>' +
             '</div>';
@@ -12728,6 +12734,21 @@ window.renderizarProvasAnterioresSidebar = function() {
 
 
 window.voltarParaVitrine = function() {
+// Se o usuário chegou aqui explorando "Conteúdo Relacionado" a partir do
+// Cronograma (baralho de Axiomas/Flashcards, Questões, Materiais ou um
+// simulado vinculado — todos trocam de tela por completo, ao contrário
+// dos baralhos de Esquemas/Jurisprudência, que são modais flutuando sobre
+// o Cronograma e por isso já voltam sozinhos ao fechar), "‹ Início"
+// volta pro Cronograma em vez de ir pra vitrine — sem isso, fechar o
+// conteúdo relacionado sempre jogava o usuário na vitrine, obrigando a
+// clicar em CRONOGRAMAS de novo pra retomar de onde parou.
+if (window.__origemNavegacaoCronograma__) {
+    window.__origemNavegacaoCronograma__ = false;
+    tela('section-cronograma');
+    if (window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();
+    return;
+}
+
 const simWrap = document.getElementById('sim-wrap');
 
 tela('tela-home');
