@@ -4218,6 +4218,11 @@ if(ri) {
     #section-cronograma .crono-tab-nome:focus { text-decoration:underline; }
     #section-cronograma .crono-tab-del { opacity:0.5; font-size:11px; padding:0 2px; }
     #section-cronograma .crono-tab-del:hover { opacity:1; color:var(--danger); }
+    /* Só aparece em cronogramas criados pelo Gerador por Prioridade (ver
+       p.geradorOrigem em render()) — reabre o gerador com a mesma
+       config/cards salvos, pra editar e regenerar no lugar. */
+    #section-cronograma .crono-tab-reconfigurar { opacity:0.5; font-size:11px; padding:0 2px; }
+    #section-cronograma .crono-tab-reconfigurar:hover { opacity:1; color:var(--app-primary); }
     #section-cronograma .crono-tab-add { padding:8px 12px; font-size:15px; font-weight:800; color:var(--app-primary); cursor:pointer; border-radius:8px 8px 0 0; }
     #section-cronograma .crono-tab-add:hover { background:#eef2ff; }
     #section-cronograma .crono-content { flex:1; overflow-y:auto; padding:20px 24px; }
@@ -4238,12 +4243,12 @@ if(ri) {
        cronograma, só que por semana e sem o %, em letra bem menor. */
     #section-cronograma .crono-week-tab-count { font-size:8px; font-weight:600; opacity:0.8; }
     /* Densidade adaptativa: acima de 15 semanas (ver render(), classe
-       aplicada em JS) os chips encolhem e perdem o "(feitos/total)" — com
-       muitas semanas esse número a mais só engorda a fita sem ajudar a
-       navegar; o essencial (o próprio número da semana + a cor de
-       progresso) continua visível. */
+       aplicada em JS) os chips encolhem — mas a contagem "(feitos/total)"
+       continua visível (só em letra ainda menor), porque é informação que
+       o usuário precisa pra saber onde já estudou, mesmo num cronograma
+       grande. */
     #section-cronograma .crono-week-tabs.compacta .crono-week-tab { padding:3px 6px; min-width:20px; font-size:10px; border-radius:8px; }
-    #section-cronograma .crono-week-tabs.compacta .crono-week-tab-count { display:none; }
+    #section-cronograma .crono-week-tabs.compacta .crono-week-tab-count { font-size:7px; }
     #section-cronograma .crono-week-tab.ativa { background:var(--app-primary); color:#fff; border-color:var(--app-primary); }
     /* Progresso de checks da semana — só em abas NÃO ativas (a ativa
        mantém sempre a cor do tema, mesmo padrão já usado nas miniabas do
@@ -4392,25 +4397,34 @@ if(ri) {
     /* MODAL: Gerador de Cronograma por Prioridade (fica fora da <section>,
        mas as regras por #id funcionam independente de onde o <style> está
        no documento). */
-    #modal-crono-gerador .mdl { max-width:640px; width:94%; max-height:92vh; padding:22px; display:flex; flex-direction:column; gap:0; overflow:hidden; box-sizing:border-box; }
-    #modal-crono-gerador .crono-gerador-secao-titulo { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin:16px 0 8px; }
-    #modal-crono-gerador .crono-gerador-resumo { font-size:12px; color:var(--text-main); background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; }
-    #modal-crono-gerador .crono-gerador-dia-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 2px; border-bottom:1px solid #f1f5f9; }
-    #modal-crono-gerador .crono-gerador-dia-nome { font-size:12px; font-weight:700; color:var(--text-main); }
-    #modal-crono-gerador .crono-gerador-dia-btns { display:flex; gap:4px; }
-    #modal-crono-gerador .crono-gerador-estado-btn { border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer; }
-    #modal-crono-gerador .crono-gerador-estado-btn:hover { border-color:var(--app-primary); }
-    #modal-crono-gerador .crono-gerador-estado-btn.ativo { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
-    #modal-crono-gerador .crono-gerador-stepper { display:flex; align-items:center; gap:8px; }
-    #modal-crono-gerador .crono-gerador-stepper button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); cursor:pointer; font-size:14px; line-height:1; }
-    #modal-crono-gerador .crono-gerador-stepper-valor { font-size:13px; font-weight:800; min-width:18px; text-align:center; }
-    #modal-crono-gerador input[type="date"] { border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:12px; background:var(--bg-white); color:var(--text-main); }
-    #modal-crono-gerador .crono-gerador-btn-secundario, #modal-crono-gerador .crono-gerador-btn-primario { margin-top:16px; width:100%; padding:10px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em; flex-shrink:0; }
-    #modal-crono-gerador .crono-gerador-btn-secundario { background:#eef2ff; color:var(--app-primary); }
-    #modal-crono-gerador .crono-gerador-btn-primario { background:var(--app-primary); color:#fff; }
-    #modal-crono-gerador .crono-gerador-previa { margin-top:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-main); display:flex; flex-direction:column; gap:6px; }
-    #modal-crono-gerador .crono-gerador-previa-titulo { font-size:11px; font-weight:800; text-transform:uppercase; color:var(--app-primary); }
-    #modal-crono-gerador .crono-gerador-advertencia { background:#fef3c7; border:1px solid #fcd34d; color:#92400e; border-radius:6px; padding:8px 10px; font-size:11.5px; line-height:1.5; }
+    #modal-crono-gerador .mdl, #modal-crono-adicionar-cards .mdl { max-width:640px; width:94%; max-height:92vh; padding:22px; display:flex; flex-direction:column; gap:0; overflow:hidden; box-sizing:border-box; }
+    /* Componentes compartilhados entre o Gerador por Prioridade e o
+       Adicionar Cards (mesma "cara" — linhas de dia/cota, stepper, prévia,
+       botões) — de propósito SEM prefixo de #modal, pra servir os dois
+       modais sem duplicar regra por regra. */
+    .crono-gerador-secao-titulo { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin:16px 0 8px; }
+    .crono-gerador-resumo { font-size:12px; color:var(--text-main); background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; }
+    .crono-gerador-dia-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 2px; border-bottom:1px solid #f1f5f9; }
+    .crono-gerador-dia-nome { font-size:12px; font-weight:700; color:var(--text-main); }
+    .crono-gerador-dia-btns { display:flex; gap:4px; }
+    .crono-gerador-estado-btn { border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; cursor:pointer; }
+    .crono-gerador-estado-btn:hover { border-color:var(--app-primary); }
+    .crono-gerador-estado-btn.ativo { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    .crono-gerador-stepper { display:flex; align-items:center; gap:8px; }
+    .crono-gerador-stepper button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); cursor:pointer; font-size:14px; line-height:1; }
+    .crono-gerador-stepper-valor { font-size:13px; font-weight:800; min-width:18px; text-align:center; }
+    #modal-crono-gerador input[type="date"], #modal-crono-adicionar-cards input[type="date"] { border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:12px; background:var(--bg-white); color:var(--text-main); }
+    .crono-gerador-btn-secundario, .crono-gerador-btn-primario { margin-top:16px; width:100%; padding:10px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em; flex-shrink:0; }
+    .crono-gerador-btn-secundario { background:#eef2ff; color:var(--app-primary); }
+    .crono-gerador-btn-primario { background:var(--app-primary); color:#fff; }
+    .crono-gerador-previa { margin-top:14px; background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-main); display:flex; flex-direction:column; gap:6px; }
+    .crono-gerador-previa-titulo { font-size:11px; font-weight:800; text-transform:uppercase; color:var(--app-primary); }
+    .crono-gerador-advertencia { background:#fef3c7; border:1px solid #fcd34d; color:#92400e; border-radius:6px; padding:8px 10px; font-size:11.5px; line-height:1.5; }
+    /* Banner de contexto quando o modal foi aberto via "🔁 Reconfigurar" ou
+       "➕ Adicionar Cards" — deixa claro que a ação afeta um cronograma
+       existente, não cria um novo. */
+    .crono-gerador-reconfig-banner { background:#eef2ff; border:1px solid var(--app-primary); color:var(--app-primary); border-radius:6px; padding:8px 10px; font-size:11.5px; font-weight:700; }
+    .crono-gerador-trocar-arquivo { background:none; border:none; padding:0; font-size:10.5px; font-weight:700; color:var(--app-primary); cursor:pointer; text-decoration:underline; }
 </style>
 
     <div class="crono-tabs" id="crono-tabs"></div>
@@ -5678,6 +5692,7 @@ window.CRONOGRAMA_RUNTIME = {
                 '<span style="width:8px; height:8px; border-radius:50%; background:' + p.cor + '; display:inline-block; flex-shrink:0;"></span>' +
                 '<span class="crono-tab-nome" contenteditable="false" spellcheck="false" ondblclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.iniciarEdicaoNome(this)" onblur="this.contentEditable=\'false\'; window.CRONOGRAMA_RUNTIME.renomearPlanner(\'' + id + '\', this.textContent)" onkeydown="if(event.key===\'Enter\'){event.preventDefault(); this.blur();}">' + p.nome + '</span>' +
                 '<span class="tab-pct">' + prog.pct + '% (' + prog.feitos + '/' + prog.total + ')</span>' +
+                (p.geradorOrigem ? '<span class="crono-tab-reconfigurar" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.abrirReconfigurar(\'' + id + '\')" title="Reconfigurar (editar dias/cotas e gerar de novo)">🔁</span>' : '') +
                 '<span class="crono-tab-del" onclick="event.stopPropagation(); window.CRONOGRAMA_RUNTIME.excluirPlanner(\'' + id + '\')" title="Excluir cronograma">✕</span>' +
             '</div>';
         }).join('') +
@@ -5717,10 +5732,20 @@ window.CRONOGRAMA_RUNTIME = {
                 else if (prog.feitos > prog.total / 2) classeProgresso = ' crono-week-check-medio';
                 else classeProgresso = ' crono-week-check-leve';
             }
-            let contagemHtml = (!compacta && prog.total > 0) ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
+            // A contagem "(feitos/total)" aparece sempre que há progresso —
+            // inclusive na fita compacta (>15 semanas), só em letra menor
+            // (ver .crono-week-tabs.compacta .crono-week-tab-count no CSS).
+            let contagemHtml = prog.total > 0 ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
             return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '"><span class="crono-week-tab-num">' + numero + '</span>' + contagemHtml + '</div>';
         }).join('') +
-            '<div class="crono-week-tab crono-week-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas a este cronograma, a partir de um arquivo JSON no mesmo formato">➕<br>Adicionar<br>Semanas</div>' +
+            // Cronograma gerado por prioridade não tem "próximas semanas" num
+            // arquivo pra importar — em vez disso oferece encaixar cards
+            // avulsos nas semanas que já existem (ver abrirAdicionarCards()).
+            // Um cronograma importado do jeito tradicional continua com o
+            // fluxo antigo (mais semanas de um arquivo no mesmo formato).
+            (ativo.geradorOrigem
+                ? '<div class="crono-week-tab crono-week-tab-add" onclick="window.CRONOGRAMA_RUNTIME.abrirAdicionarCards()" title="Adicionar cards de prioridade avulsos e encaixá-los nos dias que você escolher">➕<br>Adicionar<br>Cards</div>'
+                : '<div class="crono-week-tab crono-week-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas a este cronograma, a partir de um arquivo JSON no mesmo formato">➕<br>Adicionar<br>Semanas</div>') +
         '</div></div>';
 
         // Busca fica à esquerda do toggle Dias/Kanban, os dois num mesmo
@@ -5855,6 +5880,26 @@ window.CRONOGRAMA_RUNTIME = {
                 semanas: 4,
                 cotas: { critica: 2, alta: 2, media: 2, baixa: 2 }
             }
+        };
+        document.getElementById('modal-crono-gerador').classList.add('open');
+        this._renderGeradorCorpo();
+    },
+
+    // Reabre o gerador já preenchido com os cards e a configuração salvos
+    // no cronograma (ver geradorOrigem, gravado em confirmarGerarCronograma)
+    // — permite editar dias/início/semanas/cotas e gerar de novo SEM
+    // reimportar o arquivo. reconfigurarPlannerId marca pra
+    // confirmarGerarCronograma() que é uma substituição no lugar, não uma
+    // criação nova.
+    abrirReconfigurar: function(plannerId) {
+        let planner = this.planners[plannerId];
+        if (!planner || !planner.geradorOrigem) return;
+        this._gerador = {
+            grupos: JSON.parse(JSON.stringify(planner.geradorOrigem.grupos)),
+            previa: null,
+            planejamentoBruto: null,
+            config: JSON.parse(JSON.stringify(planner.geradorOrigem.config)),
+            reconfigurarPlannerId: plannerId
         };
         document.getElementById('modal-crono-gerador').classList.add('open');
         this._renderGeradorCorpo();
@@ -6167,12 +6212,65 @@ window.CRONOGRAMA_RUNTIME = {
         this._renderGeradorCorpo();
     },
 
+    // Chave de identidade "de conteúdo" de um card (não o id, que muda a
+    // cada regeneração) — usada por _reconciliarProgresso pra achar o
+    // mesmo tópico entre a distribuição antiga e a nova. id_taxonomia é
+    // preferido por ser estável mesmo se o texto do tópico mudar um pouco
+    // no arquivo reimportado; cai pra materia+topico quando ausente.
+    _chaveConteudoItem: function(item) {
+        return item.id_taxonomia ? ('tax:' + item.id_taxonomia) : ('mt:' + (item.materia || '') + '|' + (item.topico || ''));
+    },
+
+    // Reconfigurar substitui a distribuição inteira — sem isso, todo
+    // progresso (feito/resolvido, links, vínculos de simulado) voltaria a
+    // zero mesmo pra tópicos que continuam no plano. Casa por conteúdo
+    // (não por id, que é recalculado do zero a cada geração) e copia os
+    // campos de progresso do item antigo pro novo, IN PLACE em
+    // planejamentoNovo. Devolve quantos tópicos preservaram o "feito".
+    _reconciliarProgresso: function(planejamentoAntigo, planejamentoNovo) {
+        let self = this;
+        let mapaAntigo = {};
+        Object.keys(planejamentoAntigo).forEach(function(semana) {
+            Object.keys(planejamentoAntigo[semana]).forEach(function(dia) {
+                (planejamentoAntigo[semana][dia] || []).forEach(function(item) {
+                    mapaAntigo[self._chaveConteudoItem(item)] = item;
+                });
+            });
+        });
+
+        const CAMPOS_PROGRESSO = ['status', 'feitas', 'resolvidas', 'link', 'link2', 'axiomasText', 'resolucao', 'simuladosVinculados'];
+        let feitosPreservados = 0;
+        Object.keys(planejamentoNovo).forEach(function(semana) {
+            Object.keys(planejamentoNovo[semana]).forEach(function(dia) {
+                planejamentoNovo[semana][dia].forEach(function(item) {
+                    let antigo = mapaAntigo[self._chaveConteudoItem(item)];
+                    if (!antigo) return;
+                    CAMPOS_PROGRESSO.forEach(function(campo) {
+                        if (antigo[campo] !== undefined) item[campo] = antigo[campo];
+                    });
+                    if (antigo.feitas) feitosPreservados++;
+                });
+            });
+        });
+        return feitosPreservados;
+    },
+
     confirmarGerarCronograma: function() {
         if (!this._gerador || !this._gerador.planejamentoBruto) { alert('Calcule a prévia antes de criar o cronograma.'); return; }
         if (Object.keys(this._gerador.planejamentoBruto).length === 0) { alert('Nenhum card foi distribuído com essa configuração — confira os dias ativos e as cotas.'); return; }
-        let nome = prompt('Nome do novo cronograma:', 'Cronograma Gerado por Prioridade');
-        if (nome === null) return;
-        nome = nome.trim() || 'Cronograma Gerado por Prioridade';
+
+        let reconfigurando = !!this._gerador.reconfigurarPlannerId;
+        let plannerAlvo = reconfigurando ? this.planners[this._gerador.reconfigurarPlannerId] : null;
+        if (reconfigurando && !plannerAlvo) { alert('O cronograma original não existe mais.'); this.fecharGeradorPrioridade(); return; }
+
+        let nome;
+        if (reconfigurando) {
+            nome = plannerAlvo.nome;
+        } else {
+            nome = prompt('Nome do novo cronograma:', 'Cronograma Gerado por Prioridade');
+            if (nome === null) return;
+            nome = nome.trim() || 'Cronograma Gerado por Prioridade';
+        }
 
         let self = this;
         let bruto = this._gerador.planejamentoBruto;
@@ -6186,14 +6284,35 @@ window.CRONOGRAMA_RUNTIME = {
             });
         });
 
-        let id = 'crono_' + Date.now();
-        this.planners[id] = { id: id, nome: nome, cor: this.corLivre(), planejamento: planejamento, criadoEm: new Date().toISOString() };
-        this.activePlannerId = id;
+        let feitosPreservados = 0;
+        if (reconfigurando) {
+            feitosPreservados = this._reconciliarProgresso(plannerAlvo.planejamento, planejamento);
+            if (!confirm('Isso vai substituir a distribuição atual de "' + plannerAlvo.nome + '" (' + Object.keys(planejamento).length + ' semana(s), ' + totalItens + ' item(ns)). ' +
+                (feitosPreservados > 0 ? feitosPreservados + ' tópico(s) já marcados como feito serão mantidos. ' : '') +
+                'Ajustes manuais de posição/vínculo feitos depois da geração original serão perdidos. Continuar?')) return;
+        }
+
+        let geradorOrigem = {
+            grupos: JSON.parse(JSON.stringify(this._gerador.grupos)),
+            config: JSON.parse(JSON.stringify(this._gerador.config))
+        };
+
+        if (reconfigurando) {
+            plannerAlvo.planejamento = planejamento;
+            plannerAlvo.geradorOrigem = geradorOrigem;
+            this.activePlannerId = plannerAlvo.id;
+        } else {
+            let id = 'crono_' + Date.now();
+            this.planners[id] = { id: id, nome: nome, cor: this.corLivre(), planejamento: planejamento, criadoEm: new Date().toISOString(), geradorOrigem: geradorOrigem };
+            this.activePlannerId = id;
+        }
+
         this.salvar();
         this.fecharGeradorPrioridade();
         this.render();
 
-        alert('Cronograma "' + nome + '" gerado: ' + Object.keys(planejamento).length + ' semana(s), ' + totalItens + ' item(ns).');
+        alert((reconfigurando ? 'Cronograma "' + nome + '" reconfigurado: ' : 'Cronograma "' + nome + '" gerado: ') + Object.keys(planejamento).length + ' semana(s), ' + totalItens + ' item(ns).' +
+            (feitosPreservados > 0 ? ' ' + feitosPreservados + ' já marcados como feito foram mantidos.' : ''));
     },
 
     _renderGeradorCorpo: function() {
@@ -6236,8 +6355,15 @@ window.CRONOGRAMA_RUNTIME = {
             linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
             linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]);
 
+        let reconfigurando = !!g.reconfigurarPlannerId;
+        let plannerReconfigurado = reconfigurando ? this.planners[g.reconfigurarPlannerId] : null;
+        let htmlBannerReconfig = (reconfigurando && plannerReconfigurado)
+            ? '<div class="crono-gerador-reconfig-banner">🔁 Reconfigurando "' + plannerReconfigurado.nome + '" — ao gerar, isso substitui a distribuição atual desse cronograma (os checks de "feito" são mantidos).</div>'
+            : '';
+
         let resumoCarregados = '<div class="crono-gerador-resumo">Carregado: <strong>' + g.grupos.critica.length + '</strong> Crítica · <strong>' + g.grupos.alta.length + '</strong> Alta · <strong>' + g.grupos.media.length + '</strong> Média · <strong>' + g.grupos.baixa.length + '</strong> Baixa' +
-            (g.grupos.outras.length ? ' · <span style="color:var(--text-muted);">' + g.grupos.outras.length + ' sem prioridade reconhecida (ignorados)</span>' : '') + '</div>';
+            (g.grupos.outras.length ? ' · <span style="color:var(--text-muted);">' + g.grupos.outras.length + ' sem prioridade reconhecida (ignorados)</span>' : '') +
+            ' · <button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsPrioridadeJSON()">🔄 Trocar arquivo</button></div>';
 
         let htmlPrevia = '';
         if (g.previa) {
@@ -6273,10 +6399,11 @@ window.CRONOGRAMA_RUNTIME = {
                     htmlSemanasSobrando +
                     htmlAdvertencia +
                 '</div>' +
-                '<button class="crono-gerador-btn-primario" onclick="window.CRONOGRAMA_RUNTIME.confirmarGerarCronograma()">✅ Criar Cronograma</button>';
+                '<button class="crono-gerador-btn-primario" onclick="window.CRONOGRAMA_RUNTIME.confirmarGerarCronograma()">' + (reconfigurando ? '🔁 Atualizar Cronograma' : '✅ Criar Cronograma') + '</button>';
         }
 
         corpoEl.innerHTML =
+            htmlBannerReconfig +
             resumoCarregados +
             '<div class="crono-gerador-secao-titulo">Dias da semana</div>' + htmlDias +
             '<div class="crono-gerador-secao-titulo">Início e duração</div>' +
@@ -6284,6 +6411,345 @@ window.CRONOGRAMA_RUNTIME = {
             '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">Semanas</span><span class="crono-gerador-stepper"><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(-1)">−</button><span class="crono-gerador-stepper-valor">' + g.config.semanas + '</span><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(1)">+</button></span></div>' +
             '<div class="crono-gerador-secao-titulo">Cards por dia (por prioridade)</div>' + htmlCotas +
             '<button class="crono-gerador-btn-secundario" onclick="window.CRONOGRAMA_RUNTIME.calcularPrevia()">📊 Calcular Prévia</button>' +
+            htmlPrevia;
+    },
+
+    // ── ADICIONAR CARDS (encaixar avulsos num cronograma já existente) ──
+    // Mesmo formato achatado de cards do Gerador por Prioridade, mas em vez
+    // de criar semanas novas, encaixa os cards NAS SEMANAS QUE JÁ EXISTEM
+    // do cronograma ativo — útil pra acrescentar, por exemplo, só cards de
+    // revisão ou jurisprudência nos fins de semana. Estado 100% transiente
+    // em this._adicionarCards, igual this._gerador.
+
+    abrirAdicionarCards: function() {
+        if (!this.activePlannerId || !this.planners[this.activePlannerId]) return;
+        this._adicionarCards = {
+            plannerId: this.activePlannerId,
+            grupos: null,
+            previa: null,
+            insercoesResultado: null,
+            config: {
+                dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'normal', domingo: 'normal' },
+                cotas: { critica: 2, alta: 2, media: 2, baixa: 2 }
+            }
+        };
+        document.getElementById('modal-crono-adicionar-cards').classList.add('open');
+        this._renderAdicionarCorpo();
+    },
+
+    fecharAdicionarCards: function() {
+        document.getElementById('modal-crono-adicionar-cards').classList.remove('open');
+        this._adicionarCards = null;
+    },
+
+    carregarCardsAdicionarJSON: function() {
+        let input = document.getElementById('crono-adicionar-import-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.id = 'crono-adicionar-import-input';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.addEventListener('change', function(e) {
+                let file = e.target.files[0];
+                if (!file) return;
+                let reader = new FileReader();
+                reader.onload = function(ev) {
+                    try {
+                        let bruto = JSON.parse(ev.target.result);
+                        window.CRONOGRAMA_RUNTIME._processarArquivoAdicionar(bruto);
+                    } catch (err) {
+                        alert('Não foi possível ler o arquivo: ' + err.message);
+                    } finally {
+                        e.target.value = '';
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+        input.click();
+    },
+
+    _processarArquivoAdicionar: function(bruto) {
+        if (!this._validarFormatoPrioridade(bruto)) return;
+        let self = this;
+        let grupos = { critica: [], alta: [], media: [], baixa: [], outras: [] };
+        bruto.forEach(function(item) {
+            let chave = self._normalizarPrioridade(item.prioridade);
+            grupos[chave].push({
+                materia: item.materia || '',
+                topico: item.topico || '',
+                prioridade: item.prioridade || '',
+                justificativa: item.justificativa || '',
+                id_taxonomia: item.id_taxonomia,
+                metodo: item.metodo
+            });
+        });
+        this._adicionarCards.grupos = grupos;
+        this._adicionarCards.previa = null;
+        this._adicionarCards.insercoesResultado = null;
+        this._renderAdicionarCorpo();
+    },
+
+    definirDiaEstadoAdicionar: function(dia, estado) {
+        if (!this._adicionarCards) return;
+        this._adicionarCards.config.dias[dia] = estado;
+        this._adicionarCards.previa = null;
+        this._renderAdicionarCorpo();
+    },
+
+    definirCotaAdicionar: function(nivel, valor) {
+        if (!this._adicionarCards) return;
+        this._adicionarCards.config.cotas[nivel] = valor;
+        this._adicionarCards.previa = null;
+        this._renderAdicionarCorpo();
+    },
+
+    // Ordem fixa de prioridade pra reclassificar um dia depois de inserir
+    // cards novos nele — Crítica, Alta, Média, Baixa, e qualquer prioridade
+    // não reconhecida por último. Array.prototype.sort é estável (spec
+    // desde ES2019), então dentro do mesmo nível a ordem relativa original
+    // (existentes antes dos novos) se mantém.
+    _rankPrioridade: function(prioridadeStr) {
+        let chave = this._normalizarPrioridade(prioridadeStr);
+        let ordem = { critica: 0, alta: 1, media: 2, baixa: 3 };
+        return ordem[chave] !== undefined ? ordem[chave] : 4;
+    },
+
+    // Mesmo formato de item de _expandirItensDia, mas com um id que nunca
+    // colide com os já existentes no dia (que seguem o padrão
+    // "semana_dia_INDICE" sequencial) — usa timestamp + índice do lote
+    // inserido. dataHerdada copia a data do 1º item já existente no dia (se
+    // houver), só pra manter o rótulo 📅 consistente no card.
+    _expandirItemInserido: function(itemBruto, semanaChave, dia, indice, dataHerdada) {
+        return {
+            id: semanaChave + '_' + dia + '_add' + Date.now() + '_' + indice,
+            materia: itemBruto.materia || '',
+            topico: itemBruto.topico || '',
+            prioridade: itemBruto.prioridade || '',
+            justificativa: itemBruto.justificativa || '',
+            data: dataHerdada || '',
+            id_taxonomia: itemBruto.id_taxonomia,
+            metodo: itemBruto.metodo,
+            status: 'pendente',
+            feitas: false,
+            resolvidas: false,
+            link: '',
+            link2: '',
+            axiomasText: '',
+            resolucao: ''
+        };
+    },
+
+    // Percorre as semanas JÁ EXISTENTES do cronograma alvo, na ordem
+    // numérica, e dentro de cada uma os 7 dias na ordem fixa — mesmo
+    // "esgota uma fila por vez" do Gerador (Crítica→Alta→Média→Baixa),
+    // só que a fonte dos dias é o planejamento real, não dias sintetizados
+    // a partir de uma data de início. Dia "Descanso" não recebe nada; os
+    // demais recebem conforme a cota (Reduzido = metade, via _cotaEfetiva).
+    // Não cria semana nova — só encaixa no que já existe.
+    _simularInsercaoCards: function() {
+        let a = this._adicionarCards;
+        let planner = this.planners[a.plannerId];
+        let cfg = a.config;
+        let filas = {
+            critica: a.grupos.critica.slice(),
+            alta: a.grupos.alta.slice(),
+            media: a.grupos.media.slice(),
+            baixa: a.grupos.baixa.slice()
+        };
+        let ordemTiers = ['critica', 'alta', 'media', 'baixa'];
+        let self = this;
+
+        let semanasOrdenadas = Object.keys(planner.planejamento).sort(function(x, y) {
+            return (parseInt(x.replace('semana_', '')) || 0) - (parseInt(y.replace('semana_', '')) || 0);
+        });
+
+        let insercoes = {};
+        semanasOrdenadas.forEach(function(semanaChave) {
+            self._diasOrdem.forEach(function(dia) {
+                let estado = cfg.dias[dia] || 'normal';
+                if (estado === 'descanso') return;
+                let novosNesseDia = [];
+                ordemTiers.forEach(function(tier) {
+                    let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
+                    for (let k = 0; k < cota && filas[tier].length > 0; k++) {
+                        novosNesseDia.push(filas[tier].shift());
+                    }
+                });
+                if (novosNesseDia.length > 0) {
+                    if (!insercoes[semanaChave]) insercoes[semanaChave] = {};
+                    insercoes[semanaChave][dia] = novosNesseDia;
+                }
+            });
+        });
+
+        return {
+            insercoes: insercoes,
+            sobra: { critica: filas.critica.length, alta: filas.alta.length, media: filas.media.length, baixa: filas.baixa.length }
+        };
+    },
+
+    calcularPreviaAdicionar: function() {
+        if (!this._adicionarCards || !this._adicionarCards.grupos) return;
+        let a = this._adicionarCards;
+        let cfg = a.config;
+        let planner = this.planners[a.plannerId];
+        if (!planner) { alert('Este cronograma não existe mais.'); this.fecharAdicionarCards(); return; }
+
+        let resultado = this._simularInsercaoCards();
+        let totalInserido = 0, diasTocados = 0, diasComReclassificacao = 0;
+        Object.keys(resultado.insercoes).forEach(function(semana) {
+            Object.keys(resultado.insercoes[semana]).forEach(function(dia) {
+                totalInserido += resultado.insercoes[semana][dia].length;
+                diasTocados++;
+                if ((planner.planejamento[semana][dia] || []).length > 0) diasComReclassificacao++;
+            });
+        });
+
+        // Mesma distinção do Gerador: sobra num nível marcado "Não incluir"
+        // (cota 0) é exclusão deliberada, não "não coube".
+        let sobra = {
+            critica: cfg.cotas.critica > 0 ? resultado.sobra.critica : 0,
+            alta: cfg.cotas.alta > 0 ? resultado.sobra.alta : 0,
+            media: cfg.cotas.media > 0 ? resultado.sobra.media : 0,
+            baixa: cfg.cotas.baixa > 0 ? resultado.sobra.baixa : 0
+        };
+
+        a.previa = {
+            totalInserido: totalInserido,
+            diasTocados: diasTocados,
+            diasComReclassificacao: diasComReclassificacao,
+            naoIncluidosPorNivel: {
+                media: cfg.cotas.media === 0 ? a.grupos.media.length : 0,
+                baixa: cfg.cotas.baixa === 0 ? a.grupos.baixa.length : 0
+            },
+            sobra: sobra,
+            temSobra: (sobra.critica + sobra.alta + sobra.media + sobra.baixa) > 0
+        };
+        a.insercoesResultado = resultado.insercoes;
+        this._renderAdicionarCorpo();
+    },
+
+    // Aplica de fato: pra cada dia tocado, expande os itens novos
+    // (_expandirItemInserido), junta com o que já existia e RECLASSIFICA
+    // (reordena por prioridade — Crítica, Alta, Média, Baixa) o dia
+    // inteiro, existentes e novos juntos.
+    confirmarAdicionarCards: function() {
+        if (!this._adicionarCards || !this._adicionarCards.insercoesResultado) { alert('Calcule a prévia antes de adicionar os cards.'); return; }
+        let insercoes = this._adicionarCards.insercoesResultado;
+        if (Object.keys(insercoes).length === 0) { alert('Nenhum card foi encaixado com essa configuração — confira os dias marcados e as cotas.'); return; }
+
+        let planner = this.planners[this._adicionarCards.plannerId];
+        if (!planner) { alert('Este cronograma não existe mais.'); this.fecharAdicionarCards(); return; }
+
+        let self = this;
+        let totalInseridos = 0;
+        Object.keys(insercoes).forEach(function(semanaChave) {
+            Object.keys(insercoes[semanaChave]).forEach(function(dia) {
+                let existentes = planner.planejamento[semanaChave][dia] || [];
+                let dataHerdada = existentes.length ? existentes[0].data : '';
+                let novosExpandidos = insercoes[semanaChave][dia].map(function(bruto, idx) {
+                    return self._expandirItemInserido(bruto, semanaChave, dia, idx, dataHerdada);
+                });
+                let combinados = existentes.concat(novosExpandidos);
+                combinados.sort(function(x, y) { return self._rankPrioridade(x.prioridade) - self._rankPrioridade(y.prioridade); });
+                planner.planejamento[semanaChave][dia] = combinados;
+                totalInseridos += novosExpandidos.length;
+            });
+        });
+
+        this.salvar();
+        this.fecharAdicionarCards();
+        this.render();
+
+        alert(totalInseridos + ' card(s) adicionado(s) a "' + planner.nome + '".');
+    },
+
+    _renderAdicionarCorpo: function() {
+        let corpoEl = document.getElementById('crono-adicionar-corpo');
+        if (!corpoEl) return;
+        let a = this._adicionarCards;
+        if (!a) { corpoEl.innerHTML = ''; return; }
+
+        let planner = this.planners[a.plannerId];
+        if (!planner) { corpoEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:40px 20px;">Este cronograma não existe mais.</div>'; return; }
+
+        let htmlBanner = '<div class="crono-gerador-reconfig-banner">➕ Adicionando cards a "' + planner.nome + '" — eles serão encaixados nas semanas já existentes desse cronograma, nos dias que você marcar abaixo.</div>';
+
+        if (!a.grupos) {
+            corpoEl.innerHTML = htmlBanner +
+                '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:40px 20px;">' +
+                    '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>.</div>' +
+                    '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsAdicionarJSON()">⬆️ Carregar Arquivo de Cards</div>' +
+                '</div>';
+            return;
+        }
+
+        let nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
+        let htmlDias = this._diasOrdem.map(function(dia) {
+            let estadoAtual = a.config.dias[dia];
+            let btns = ['normal', 'reduzido', 'descanso'].map(function(estado) {
+                let rotulo = estado === 'normal' ? 'Normal' : (estado === 'reduzido' ? 'Reduzido' : 'Descanso');
+                let ativo = estadoAtual === estado;
+                return '<button class="crono-gerador-estado-btn' + (ativo ? ' ativo' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.definirDiaEstadoAdicionar(\'' + dia + '\',\'' + estado + '\')">' + rotulo + '</button>';
+            }).join('');
+            return '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">' + nomesDias[dia] + '</span><span class="crono-gerador-dia-btns">' + btns + '</span></div>';
+        }).join('');
+
+        function linhaCota(nivel, rotulo, opcoes) {
+            let btns = opcoes.map(function(op) {
+                let ativo = a.config.cotas[nivel] === op.valor;
+                return '<button class="crono-gerador-estado-btn' + (ativo ? ' ativo' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.definirCotaAdicionar(\'' + nivel + '\',' + op.valor + ')">' + op.rotulo + '</button>';
+            }).join('');
+            return '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">' + rotulo + '</span><span class="crono-gerador-dia-btns">' + btns + '</span></div>';
+        }
+
+        let htmlCotas =
+            linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
+            linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
+            linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
+            linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]);
+
+        let resumoCarregados = '<div class="crono-gerador-resumo">Carregado: <strong>' + a.grupos.critica.length + '</strong> Crítica · <strong>' + a.grupos.alta.length + '</strong> Alta · <strong>' + a.grupos.media.length + '</strong> Média · <strong>' + a.grupos.baixa.length + '</strong> Baixa' +
+            (a.grupos.outras.length ? ' · <span style="color:var(--text-muted);">' + a.grupos.outras.length + ' sem prioridade reconhecida (ignorados)</span>' : '') +
+            ' · <button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsAdicionarJSON()">🔄 Trocar arquivo</button></div>';
+
+        let htmlPrevia = '';
+        if (a.previa) {
+            let p = a.previa;
+            let linhasExcluidos = [];
+            if (p.naoIncluidosPorNivel.media > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.media + ' de Média (marcado "Não incluir")');
+            if (p.naoIncluidosPorNivel.baixa > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.baixa + ' de Baixa (marcado "Não incluir")');
+
+            let htmlAdvertencia = '';
+            if (p.temSobra) {
+                let partes = [];
+                if (p.sobra.critica) partes.push(p.sobra.critica + ' Crítica');
+                if (p.sobra.alta) partes.push(p.sobra.alta + ' Alta');
+                if (p.sobra.media) partes.push(p.sobra.media + ' Média');
+                if (p.sobra.baixa) partes.push(p.sobra.baixa + ' Baixa');
+                htmlAdvertencia = '<div class="crono-gerador-advertencia">⚠️ Não coube' + (partes.length === 1 ? '' : 'ram') + ' ' + partes.join(', ') + ' nos dias marcados deste cronograma — marque mais dias, aumente as cotas, ou adicione o restante depois.</div>';
+            }
+
+            htmlPrevia =
+                '<div class="crono-gerador-previa">' +
+                    '<div class="crono-gerador-previa-titulo">📋 Prévia</div>' +
+                    '<div><strong>' + p.totalInserido + '</strong> card(s) serão inseridos, em <strong>' + p.diasTocados + '</strong> dia(s)' +
+                        (p.diasComReclassificacao > 0 ? ' — <strong>' + p.diasComReclassificacao + '</strong> já tinham conteúdo (serão reclassificados por prioridade: Crítica, Alta, Média, Baixa)' : '') + '.</div>' +
+                    (linhasExcluidos.length ? '<div style="color:var(--text-muted);">Não incluídos: ' + linhasExcluidos.join(' · ') + '</div>' : '') +
+                    htmlAdvertencia +
+                '</div>' +
+                '<button class="crono-gerador-btn-primario" onclick="window.CRONOGRAMA_RUNTIME.confirmarAdicionarCards()">➕ Adicionar Cards</button>';
+        }
+
+        corpoEl.innerHTML =
+            htmlBanner +
+            resumoCarregados +
+            '<div class="crono-gerador-secao-titulo">Em quais dias encaixar</div>' + htmlDias +
+            '<div class="crono-gerador-secao-titulo">Cards por dia (por prioridade)</div>' + htmlCotas +
+            '<button class="crono-gerador-btn-secundario" onclick="window.CRONOGRAMA_RUNTIME.calcularPreviaAdicionar()">📊 Calcular Prévia</button>' +
             htmlPrevia;
     }
 };
@@ -6330,6 +6796,20 @@ document.addEventListener('click', function(e) {
             <button onclick="window.CRONOGRAMA_RUNTIME.fecharGeradorPrioridade()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
         <div id="crono-gerador-corpo" style="overflow-y:auto; flex:1; min-height:0;"></div>
+    </div>
+</div>
+
+<!-- MODAL: Adicionar Cards — encaixa cards de prioridade avulsos (ex.:
+     revisão, jurisprudência) nos dias que o usuário escolher DENTRO das
+     semanas já existentes de um cronograma gerado por prioridade. Reaproveita
+     as classes .crono-gerador-* (CSS acima, junto de #modal-crono-gerador). -->
+<div id="modal-crono-adicionar-cards" class="mo">
+    <div class="mdl">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <h2 style="font-family:var(--font-display); font-size:16px; color:var(--app-primary); margin:0; text-transform:uppercase;">➕ Adicionar Cards</h2>
+            <button onclick="window.CRONOGRAMA_RUNTIME.fecharAdicionarCards()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="crono-adicionar-corpo" style="overflow-y:auto; flex:1; min-height:0;"></div>
     </div>
 </div>
 
