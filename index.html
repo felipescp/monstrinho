@@ -19433,14 +19433,18 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-estudo-texto table td, #esquemas-modal .esq-estudo-texto table th,
     #modal-esquemas-baralho .esq-estudo-texto table td, #modal-esquemas-baralho .esq-estudo-texto table th { border:1px solid var(--border-color); padding:6px 8px; min-width:40px; }
     #esquemas-modal .esq-estudo-texto table th, #modal-esquemas-baralho .esq-estudo-texto table th { background:var(--bg-soft); font-weight:800; }
-    /* Marca-texto (hiliteColor/backColor) grava só background-color no
-       span — o texto herda a cor do container. Em tema claro isso dá
-       texto escuro sobre fundo claro (ok); em modo escuro o texto herda
-       --text-main (quase branco) sobre o MESMO fundo claro do marca-texto
-       (ele não muda com o tema, é conteúdo do usuário), ficando invisível.
-       Força um texto escuro só onde há highlight, sem mexer no restante. */
-    body.dark #esq-editor-corpo [style*="background-color"],
-    body.dark .esq-estudo-texto [style*="background-color"] { color:#1e293b !important; }
+    /* Qualquer trecho com fundo claro fixo no PRÓPRIO conteúdo (não muda
+       com o tema — é conteúdo do card, não CSS do app) grava só o fundo,
+       nunca a cor do texto: marca-texto (hiliteColor/backColor) grava
+       background-color num span; o blockquote "⚠ alerta" dos esquemas
+       oficiais (importação em massa) grava background (abreviado) num
+       <blockquote style="...background:#fffbeb...">. Nos dois casos o
+       texto herda --text-main do container — em tema claro isso dá texto
+       escuro sobre fundo claro (ok); em modo escuro herda quase-branco
+       sobre o MESMO fundo claro, ficando invisível. [style*="background"]
+       (sem "-color") cobre as duas formas de escrever a propriedade. */
+    body.dark #esq-editor-corpo [style*="background"],
+    body.dark .esq-estudo-texto [style*="background"] { color:#1e293b !important; }
 
     #esquemas-modal .fc-card-revisao-acoes, #modal-esquemas-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     #esquemas-modal .fc-rev-btn, #modal-esquemas-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
