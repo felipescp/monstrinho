@@ -1290,6 +1290,17 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
 </style>
 </head>
 <body>
+<script>
+// Aplica o modo noturno salvo ANTES do resto da página pintar — sem isso,
+// mesmo persistindo a preferência (ver btnTema em window.addEventListener
+// 'load', bem mais abaixo), o usuário veria um flash de modo claro toda
+// vez até aquele handler rodar (que só dispara depois de TUDO carregar:
+// imagens, CSS etc.). Só adiciona a classe (mesmo gatilho CSS de sempre,
+// body.dark) — não mexe em nada de UI, isso continua no handler de load.
+try {
+    if (localStorage.getItem('tjpe_v1__tema_escuro') === '1') document.body.classList.add('dark');
+} catch (e) {}
+</script>
 
 <!-- OVERLAY: "Carregando última versão salva" — aparece na 1ª abertura do
      DIA em cada navegador/computador (ver tjpe_v1__ultimo_uso_local, uma
@@ -11516,7 +11527,12 @@ window.HI = -1;
 var C={nome:'',tipo:'ce',cegas:false,auto:false};
 var D={blocos:[],res:{},fin:{},caderno:[],cadernoAxiomas:[]};
 var QA=null;
-var DARK=false;
+// Persistido (tjpe_v1__tema_escuro) — padrão é modo claro (false); só vira
+// true se o próprio usuário já tiver ativado o modo noturno antes (ver
+// btnTema.onclick, em window.addEventListener('load', ...) mais abaixo).
+var DARK = (function() {
+    try { return localStorage.getItem('tjpe_v1__tema_escuro') === '1'; } catch (e) { return false; }
+})();
 var MODO_REVISAO=false;
 var blockCenSb = false; // Flag de segurança
 
@@ -12764,7 +12780,19 @@ window.addEventListener('load', async function() {
     // 2. ATRIBUIÇÃO DE BOTÕES E CLIQUES
     var btnLimpar = g('b1-limpar'); if(btnLimpar) btnLimpar.onclick = limpar;
     var btnNovo = g('b1-novo'); if(btnNovo) btnNovo.onclick = novoSim;
-    var btnTema = g('b1-tema'); if(btnTema) btnTema.onclick = function(){DARK=!DARK;document.body.classList.toggle('dark',DARK);this.textContent=DARK?'☾':'☀';};
+    var btnTema = g('b1-tema');
+    if(btnTema) {
+        // Reflete no ícone o que já foi aplicado cedo (ver <script> logo
+        // após <body>, que evita o flash de modo claro) — sem isto, o
+        // ícone ficava incoerente com o body.dark já ativo até o 1º clique.
+        btnTema.textContent = DARK ? '☾' : '☀';
+        btnTema.onclick = function(){
+            DARK=!DARK;
+            document.body.classList.toggle('dark',DARK);
+            this.textContent=DARK?'☾':'☀';
+            try { localStorage.setItem('tjpe_v1__tema_escuro', DARK ? '1' : '0'); } catch(e) {}
+        };
+    }
 
     var btnZoomOut = g('b1-zoom-out'); 
     if(btnZoomOut) {
