@@ -12097,6 +12097,22 @@ window.exibirTodasBaterias = function() {
     atualizarContadoresModoLista();
 };
 
+// Repinta a COLUNA 3 (a lista de baterias em si, com os badges "40
+// questões"/"78%") reaplicando o filtro/modo que já estava ativo — sem
+// isso, chamar renderHomeDashboard() de novo (ex.: voltarParaVitrine()
+// depois de Finalizar uma bateria) só recalculava as colunas 1/2
+// (matérias/tópicos, logo acima) com os dados frescos; a coluna 3
+// continuava mostrando o HTML antigo (de antes da bateria ser resolvida)
+// até o usuário reclicar manualmente nalgum filtro, ou dar F5. Mesmo
+// padrão de "reaplicar a view corrente" já usado em
+// ordenarListaBaterias()/toggleOcultarOficiaisBaterias() — só que
+// disparado automaticamente aqui, não só em resposta a um clique.
+if (window.__modoListaAtivo === 'todas') {
+    window.exibirTodasBaterias();
+} else if (window.__ultimoFiltroCE) {
+    window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
+}
+
 window.exibirMateriaSelecionada = function() {
     marcarModoListaAtivo('materia');
     if (window.__ultimoFiltroCE) {
