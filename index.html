@@ -4224,12 +4224,26 @@ if(ri) {
 
     #section-cronograma .crono-controls-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
 
-    #section-cronograma .crono-week-tabs { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-    #section-cronograma .crono-week-tabs-label { font-family:var(--font-display); font-size:11px; font-weight:700; color:var(--text-muted); margin-right:2px; }
-    #section-cronograma .crono-week-tab { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:4px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; line-height:1.15; cursor:pointer; color:var(--text-muted); }
+    /* Fita de semanas: label fixo à esquerda + trilho com rolagem
+       HORIZONTAL numa linha só (antes era flex-wrap, que com muitas
+       semanas (ex.: 50) estourava em 2-3 linhas — visualmente pesado e
+       empurrava o resto da tela pra baixo). min-width:0 é o que permite o
+       trilho encolher dentro do flex pai e ativar o overflow-x, em vez de
+       simplesmente alargar a linha toda. */
+    #section-cronograma .crono-week-tabs { display:flex; align-items:center; gap:6px; min-width:0; flex:1 1 auto; }
+    #section-cronograma .crono-week-tabs-label { font-family:var(--font-display); font-size:11px; font-weight:700; color:var(--text-muted); flex-shrink:0; }
+    #section-cronograma .crono-week-tabs-trilho { display:flex; align-items:center; gap:4px; overflow-x:auto; overflow-y:hidden; min-width:0; scrollbar-width:thin; padding-bottom:2px; }
+    #section-cronograma .crono-week-tab { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:4px 8px; min-width:26px; text-align:center; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; font-size:11px; font-weight:700; line-height:1.15; cursor:pointer; color:var(--text-muted); flex-shrink:0; }
     /* "(feitos/total)" — mesmo cálculo do "X% (feitos/total)" do título do
        cronograma, só que por semana e sem o %, em letra bem menor. */
     #section-cronograma .crono-week-tab-count { font-size:8px; font-weight:600; opacity:0.8; }
+    /* Densidade adaptativa: acima de 15 semanas (ver render(), classe
+       aplicada em JS) os chips encolhem e perdem o "(feitos/total)" — com
+       muitas semanas esse número a mais só engorda a fita sem ajudar a
+       navegar; o essencial (o próprio número da semana + a cor de
+       progresso) continua visível. */
+    #section-cronograma .crono-week-tabs.compacta .crono-week-tab { padding:3px 6px; min-width:20px; font-size:10px; border-radius:8px; }
+    #section-cronograma .crono-week-tabs.compacta .crono-week-tab-count { display:none; }
     #section-cronograma .crono-week-tab.ativa { background:var(--app-primary); color:#fff; border-color:var(--app-primary); }
     /* Progresso de checks da semana — só em abas NÃO ativas (a ativa
        mantém sempre a cor do tema, mesmo padrão já usado nas miniabas do
@@ -5687,7 +5701,11 @@ window.CRONOGRAMA_RUNTIME = {
             return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
         });
 
-        let htmlWeekTabs = '<div class="crono-week-tabs"><span class="crono-week-tabs-label">Semanas:</span>' + semanasOrdenadas.map(function(s) {
+        // Acima de 15 semanas os chips encolhem e perdem o "(feitos/total)"
+        // (ver .crono-week-tabs.compacta no CSS) — sem isso, cronogramas
+        // longos (ex.: 50 semanas) ficavam visualmente pesados demais.
+        let compacta = semanasOrdenadas.length > 15;
+        let htmlWeekTabs = '<div class="crono-week-tabs' + (compacta ? ' compacta' : '') + '"><span class="crono-week-tabs-label">Semanas:</span><div class="crono-week-tabs-trilho" id="crono-week-tabs-trilho">' + semanasOrdenadas.map(function(s) {
             let numero = s.replace('semana_', '');
             // Cor da aba reflete o quanto da semana já foi marcado como
             // feito: algum check -> verde claro; mais da metade -> verde
@@ -5699,11 +5717,11 @@ window.CRONOGRAMA_RUNTIME = {
                 else if (prog.feitos > prog.total / 2) classeProgresso = ' crono-week-check-medio';
                 else classeProgresso = ' crono-week-check-leve';
             }
-            let contagemHtml = prog.total > 0 ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
+            let contagemHtml = (!compacta && prog.total > 0) ? ('<span class="crono-week-tab-count">(' + prog.feitos + '/' + prog.total + ')</span>') : '';
             return '<div class="crono-week-tab' + (s === semanaAtiva ? ' ativa' : '') + classeProgresso + '" onclick="window.CRONOGRAMA_RUNTIME.mudarSemana(\'' + s + '\')" ondragover="event.preventDefault(); this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="window.CRONOGRAMA_RUNTIME.dropNaAbaSemana(event, \'' + s + '\')" title="Semana ' + numero + '"><span class="crono-week-tab-num">' + numero + '</span>' + contagemHtml + '</div>';
         }).join('') +
             '<div class="crono-week-tab crono-week-tab-add" onclick="window.CRONOGRAMA_RUNTIME.carregarComplementoJSON()" title="Adicionar mais semanas a este cronograma, a partir de um arquivo JSON no mesmo formato">➕<br>Adicionar<br>Semanas</div>' +
-        '</div>';
+        '</div></div>';
 
         // Busca fica à esquerda do toggle Dias/Kanban, os dois num mesmo
         // grupo (canto direito da fita). Input tem id fixo e SÓ é
@@ -5724,6 +5742,13 @@ window.CRONOGRAMA_RUNTIME = {
         contentEl.innerHTML = htmlControlsRow +
             '<div id="crono-busca-global-container">' + this._renderResultadosGlobais() + '</div>' +
             '<div id="crono-corpo">' + this._renderCorpo() + '</div>';
+
+        // Com a fita de semanas em rolagem horizontal, a aba ativa pode
+        // estar fora da área visível (ex.: semana 30 de 50) — sem isso o
+        // usuário trocaria de semana e não veria qual ficou selecionada.
+        let trilho = document.getElementById('crono-week-tabs-trilho');
+        let abaAtiva = trilho && trilho.querySelector('.crono-week-tab.ativa');
+        if (abaAtiva) abaAtiva.scrollIntoView({ inline: 'center', block: 'nearest' });
     },
 
     _escaparAtributo: function(s) {
@@ -5813,7 +5838,7 @@ window.CRONOGRAMA_RUNTIME = {
     // semana/dia, aceita uma LISTA achatada de cards só com prioridade
     // (materia/topico/prioridade/id_taxonomia/justificativa/metodo, sem
     // "data" nem posição) e distribui automaticamente pelas semanas/dias
-    // conforme a configuração do usuário (Normal/Reduzido/Livre por dia +
+    // conforme a configuração do usuário (Normal/Reduzido/Descanso por dia +
     // cotas por prioridade). Estado 100% transiente em this._gerador —
     // nunca persiste, e só produz um cronograma de verdade quando o
     // usuário confirma em confirmarGerarCronograma().
@@ -5975,8 +6000,9 @@ window.CRONOGRAMA_RUNTIME = {
 
     // Reduzido = metade da cota Normal, arredondada pra baixo, mínimo 1
     // (uma cota de 1 vira "1" mesmo reduzida — só zera se a prioridade já
-    // estiver marcada Livre na origem, cota 0). Dia marcado Livre é tratado
-    // à parte por quem chama (nenhuma prioridade entra nele).
+    // estiver marcada "Não incluir" na origem, cota 0). Dia marcado
+    // "Descanso" é tratado à parte por quem chama (nenhuma prioridade
+    // entra nele).
     _cotaEfetiva: function(base, estado) {
         if (!base) return 0;
         if (estado === 'reduzido') return Math.max(1, Math.floor(base / 2));
@@ -6016,7 +6042,7 @@ window.CRONOGRAMA_RUNTIME = {
             if (!planejamentoBruto[semanaChave]) planejamentoBruto[semanaChave] = {};
             if (!planejamentoBruto[semanaChave][diaKey]) planejamentoBruto[semanaChave][diaKey] = [];
 
-            if (estado !== 'livre') {
+            if (estado !== 'descanso') {
                 ordemTiers.forEach(function(tier) {
                     let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
                     for (let k = 0; k < cota && filas[tier].length > 0; k++) {
@@ -6051,6 +6077,42 @@ window.CRONOGRAMA_RUNTIME = {
         };
     },
 
+    // As cotas/dias configurados podem esgotar as filas bem antes das
+    // semanas configuradas (ex.: 50 semanas pedidas, mas só 43 têm
+    // conteúdo) — sem isso, o cronograma final ganhava abas vazias no
+    // final, sem nenhum card. Só corta o RABO (semanas finais 100% vazias
+    // em todos os dias); uma semana vazia no MEIO por causa de dias
+    // marcados Descanso continua existindo normalmente.
+    _removerSemanasFinaisVazias: function(planejamentoBruto) {
+        let chaves = Object.keys(planejamentoBruto).sort(function(a, b) {
+            return (parseInt(a.replace('semana_', '')) || 0) - (parseInt(b.replace('semana_', '')) || 0);
+        });
+        let semanasMantidas = 0;
+        chaves.forEach(function(chave, idx) {
+            let temAlgo = Object.keys(planejamentoBruto[chave]).some(function(dia) {
+                return (planejamentoBruto[chave][dia] || []).length > 0;
+            });
+            if (temAlgo) semanasMantidas = idx + 1;
+        });
+        let planejamento = {};
+        chaves.slice(0, semanasMantidas).forEach(function(chave) { planejamento[chave] = planejamentoBruto[chave]; });
+        return { planejamento: planejamento, semanasMantidas: semanasMantidas };
+    },
+
+    // Última data (ISO) que realmente recebeu algum card — mais precisa que
+    // "início + N semanas" quando o rabo vazio foi cortado.
+    _ultimaDataComConteudo: function(planejamento) {
+        let ultima = null;
+        Object.keys(planejamento).forEach(function(semana) {
+            Object.keys(planejamento[semana]).forEach(function(dia) {
+                (planejamento[semana][dia] || []).forEach(function(item) {
+                    if (!ultima || item.data > ultima) ultima = item.data;
+                });
+            });
+        });
+        return ultima;
+    },
+
     calcularPrevia: function() {
         if (!this._gerador || !this._gerador.grupos) return;
         let cfg = this._gerador.config;
@@ -6058,13 +6120,16 @@ window.CRONOGRAMA_RUNTIME = {
         if (!cfg.semanas || cfg.semanas < 1) { alert('Informe ao menos 1 semana.'); return; }
 
         let curto = this._simularDistribuicao(cfg.semanas);
-        let diasAtivosPorSemana = this._diasOrdem.filter(function(d) { return cfg.dias[d] !== 'livre'; }).length;
+        let aparado = this._removerSemanasFinaisVazias(curto.planejamentoBruto);
+        let diasAtivosPorSemana = this._diasOrdem.filter(function(d) { return cfg.dias[d] !== 'descanso'; }).length;
 
         let resumo = {
-            diasAtivos: diasAtivosPorSemana * cfg.semanas,
+            diasAtivos: diasAtivosPorSemana * aparado.semanasMantidas,
             inicio: cfg.inicio,
-            fim: curto.ultimaDataISO,
-            excluidosPorNivelLivre: {
+            fim: this._ultimaDataComConteudo(aparado.planejamento) || cfg.inicio,
+            semanasConfiguradas: cfg.semanas,
+            semanasUsadas: aparado.semanasMantidas,
+            naoIncluidosPorNivel: {
                 media: cfg.cotas.media === 0 ? this._gerador.grupos.media.length : 0,
                 baixa: cfg.cotas.baixa === 0 ? this._gerador.grupos.baixa.length : 0
             },
@@ -6092,14 +6157,19 @@ window.CRONOGRAMA_RUNTIME = {
         }
         resumo.semanasNecessarias = semanasNecessarias;
         resumo.temOverflow = temOverflow;
+        // Caso oposto ao excesso: as cotas esgotaram tudo ANTES do fim das
+        // semanas configuradas — as sobressalentes já foram cortadas de
+        // aparado.planejamento, isso só existe pra avisar na Prévia.
+        resumo.temSemanasSobrando = !temOverflow && aparado.semanasMantidas < cfg.semanas;
 
-        this._gerador.planejamentoBruto = curto.planejamentoBruto;
+        this._gerador.planejamentoBruto = aparado.planejamento;
         this._gerador.previa = resumo;
         this._renderGeradorCorpo();
     },
 
     confirmarGerarCronograma: function() {
         if (!this._gerador || !this._gerador.planejamentoBruto) { alert('Calcule a prévia antes de criar o cronograma.'); return; }
+        if (Object.keys(this._gerador.planejamentoBruto).length === 0) { alert('Nenhum card foi distribuído com essa configuração — confira os dias ativos e as cotas.'); return; }
         let nome = prompt('Nome do novo cronograma:', 'Cronograma Gerado por Prioridade');
         if (nome === null) return;
         nome = nome.trim() || 'Cronograma Gerado por Prioridade';
@@ -6144,8 +6214,8 @@ window.CRONOGRAMA_RUNTIME = {
         let nomesDias = { segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado', domingo: 'Domingo' };
         let htmlDias = this._diasOrdem.map(function(dia) {
             let estadoAtual = g.config.dias[dia];
-            let btns = ['normal', 'reduzido', 'livre'].map(function(estado) {
-                let rotulo = estado === 'normal' ? 'Normal' : (estado === 'reduzido' ? 'Reduzido' : 'Livre');
+            let btns = ['normal', 'reduzido', 'descanso'].map(function(estado) {
+                let rotulo = estado === 'normal' ? 'Normal' : (estado === 'reduzido' ? 'Reduzido' : 'Descanso');
                 let ativo = estadoAtual === estado;
                 return '<button class="crono-gerador-estado-btn' + (ativo ? ' ativo' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.definirDiaEstado(\'' + dia + '\',\'' + estado + '\')">' + rotulo + '</button>';
             }).join('');
@@ -6163,8 +6233,8 @@ window.CRONOGRAMA_RUNTIME = {
         let htmlCotas =
             linhaCota('critica', 'Crítica', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
             linhaCota('alta', 'Alta', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }]) +
-            linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Livre' }]) +
-            linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Livre' }]);
+            linhaCota('media', 'Média', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]) +
+            linhaCota('baixa', 'Baixa', [{ valor: 1, rotulo: '1' }, { valor: 2, rotulo: '2' }, { valor: 0, rotulo: 'Não incluir' }]);
 
         let resumoCarregados = '<div class="crono-gerador-resumo">Carregado: <strong>' + g.grupos.critica.length + '</strong> Crítica · <strong>' + g.grupos.alta.length + '</strong> Alta · <strong>' + g.grupos.media.length + '</strong> Média · <strong>' + g.grupos.baixa.length + '</strong> Baixa' +
             (g.grupos.outras.length ? ' · <span style="color:var(--text-muted);">' + g.grupos.outras.length + ' sem prioridade reconhecida (ignorados)</span>' : '') + '</div>';
@@ -6173,8 +6243,8 @@ window.CRONOGRAMA_RUNTIME = {
         if (g.previa) {
             let p = g.previa;
             let linhasExcluidos = [];
-            if (p.excluidosPorNivelLivre.media > 0) linhasExcluidos.push(p.excluidosPorNivelLivre.media + ' de Média (nível marcado Livre)');
-            if (p.excluidosPorNivelLivre.baixa > 0) linhasExcluidos.push(p.excluidosPorNivelLivre.baixa + ' de Baixa (nível marcado Livre)');
+            if (p.naoIncluidosPorNivel.media > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.media + ' de Média (marcado "Não incluir")');
+            if (p.naoIncluidosPorNivel.baixa > 0) linhasExcluidos.push(p.naoIncluidosPorNivel.baixa + ' de Baixa (marcado "Não incluir")');
 
             let htmlAdvertencia = '';
             if (p.temOverflow) {
@@ -6190,12 +6260,17 @@ window.CRONOGRAMA_RUNTIME = {
                     ' Aumente "Semanas" ou os limites diários, ou gere assim mesmo — os cards excedentes ficam de fora (dá pra completar depois com "➕ Adicionar Semanas").</div>';
             }
 
+            let htmlSemanasSobrando = p.temSemanasSobrando
+                ? '<div style="color:var(--text-muted);">✅ Os cards cabem em <strong>' + p.semanasUsadas + '</strong> semana(s) — as ' + (p.semanasConfiguradas - p.semanasUsadas) + ' semana(s) excedente(s) das ' + p.semanasConfiguradas + ' configuradas não serão criadas.</div>'
+                : '';
+
             htmlPrevia =
                 '<div class="crono-gerador-previa">' +
                     '<div class="crono-gerador-previa-titulo">📋 Prévia</div>' +
-                    '<div>Dias disponíveis: <strong>' + p.diasAtivos + '</strong> dia(s) ativo(s) em ' + g.config.semanas + ' semana(s)</div>' +
+                    '<div>Dias disponíveis: <strong>' + p.diasAtivos + '</strong> dia(s) ativo(s) em ' + p.semanasUsadas + ' semana(s)</div>' +
                     '<div>Início: <strong>' + this._isoParaBR(p.inicio) + '</strong> · Data final projetada: <strong>' + this._isoParaBR(p.fim) + '</strong></div>' +
                     (linhasExcluidos.length ? '<div style="color:var(--text-muted);">Não incluídos: ' + linhasExcluidos.join(' · ') + '</div>' : '') +
+                    htmlSemanasSobrando +
                     htmlAdvertencia +
                 '</div>' +
                 '<button class="crono-gerador-btn-primario" onclick="window.CRONOGRAMA_RUNTIME.confirmarGerarCronograma()">✅ Criar Cronograma</button>';
@@ -6246,7 +6321,7 @@ document.addEventListener('click', function(e) {
 
 <!-- MODAL: Gerador de Cronograma por Prioridade — importa cards "soltos"
      (só prioridade, sem data/dia) e distribui automaticamente pelas
-     semanas/dias conforme a configuração do usuário (Normal/Reduzido/Livre
+     semanas/dias conforme a configuração do usuário (Normal/Reduzido/Descanso
      por dia + cotas por prioridade). CSS em #section-cronograma acima. -->
 <div id="modal-crono-gerador" class="mo">
     <div class="mdl">
