@@ -6186,6 +6186,50 @@ window.CRONOGRAMA_RUNTIME = {
         return 'outras';
     },
 
+    // Reordena um array de cards (já filtrado por UMA prioridade só) pra
+    // intercalar as matérias PROPORCIONALMENTE ao tamanho de cada uma —
+    // nunca "1 de cada, sempre" (isso esgota rápido as matérias pequenas,
+    // deixando só as grandes pro trecho final do cronograma), nem "esgota
+    // uma matéria inteira antes da próxima" (o bug original relatado). A
+    // cada vaga, entra a matéria com a MENOR razão emitidos/total até
+    // agora — a mais "atrasada" em relação à própria cota — então uma
+    // matéria com 40 cards e outra com 5 terminam suas cotas quase juntas,
+    // espalhadas pelo horizonte inteiro, cada uma no seu próprio ritmo.
+    // Empate (ex.: todo mundo em 0 no início) vai pra quem apareceu
+    // primeiro no arquivo — determinístico, sem aleatoriedade. Ordem
+    // interna de cada matéria (sequência dos tópicos no arquivo original)
+    // é sempre preservada.
+    _intercalarProporcional: function(cards) {
+        if (cards.length <= 1) return cards.slice();
+
+        let porMateria = {};
+        let ordemMaterias = [];
+        cards.forEach(function(c) {
+            let m = c.materia || '';
+            if (!porMateria[m]) { porMateria[m] = []; ordemMaterias.push(m); }
+            porMateria[m].push(c);
+        });
+
+        let emitidos = {};
+        let totais = {};
+        ordemMaterias.forEach(function(m) { emitidos[m] = 0; totais[m] = porMateria[m].length; });
+
+        let resultado = [];
+        for (let restantes = cards.length; restantes > 0; restantes--) {
+            let melhorMateria = null;
+            let melhorRazao = Infinity;
+            for (let i = 0; i < ordemMaterias.length; i++) {
+                let m = ordemMaterias[i];
+                if (emitidos[m] >= totais[m]) continue;
+                let razao = emitidos[m] / totais[m];
+                if (razao < melhorRazao) { melhorRazao = razao; melhorMateria = m; }
+            }
+            resultado.push(porMateria[melhorMateria][emitidos[melhorMateria]]);
+            emitidos[melhorMateria]++;
+        }
+        return resultado;
+    },
+
     _processarArquivoPrioridade: function(bruto) {
         if (!this._validarFormatoPrioridade(bruto)) return;
         let self = this;
@@ -6200,6 +6244,9 @@ window.CRONOGRAMA_RUNTIME = {
                 id_taxonomia: item.id_taxonomia,
                 metodo: item.metodo
             });
+        });
+        ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
+            grupos[tier] = self._intercalarProporcional(grupos[tier]);
         });
         this._gerador.grupos = grupos;
         this._gerador.previa = null;
@@ -6268,6 +6315,21 @@ window.CRONOGRAMA_RUNTIME = {
         return base;
     },
 
+    // Tira o próximo card de UMA fila (já intercalada por _intercalarProporcional)
+    // sem repetir, no MESMO DIA, uma matéria que outra prioridade já
+    // colocou ali (ex.: a Crítica do dia já foi de Direito Civil — a Alta
+    // não pode ser Civil de novo se houver alternativa). Procura à frente
+    // o primeiro card de outra matéria e o retira dali (splice), sem
+    // descartar nada — os que ficaram pra trás só são adiados pro próximo
+    // turno dessa fila. Se TODOS os restantes forem de matéria(s) já usada(s)
+    // hoje, não há alternativa possível — cai no próximo mesmo assim.
+    _proximoSemColisao: function(fila, materiasHoje) {
+        for (let i = 0; i < fila.length; i++) {
+            if (!materiasHoje.has(fila[i].materia)) return fila.splice(i, 1)[0];
+        }
+        return fila.shift();
+    },
+
     // Simula a distribuição sobre `semanasHorizonte` semanas, andando dia a
     // dia a partir de config.inicio (cada "semana_N" é uma janela corrida
     // de 7 dias, não necessariamente alinhada a segunda-feira — mesmo
@@ -6302,10 +6364,12 @@ window.CRONOGRAMA_RUNTIME = {
             if (!planejamentoBruto[semanaChave][diaKey]) planejamentoBruto[semanaChave][diaKey] = [];
 
             if (estado !== 'descanso') {
+                let materiasHoje = new Set();
                 ordemTiers.forEach(function(tier) {
                     let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
                     for (let k = 0; k < cota && filas[tier].length > 0; k++) {
-                        let bruto = filas[tier].shift();
+                        let bruto = self._proximoSemColisao(filas[tier], materiasHoje);
+                        materiasHoje.add(bruto.materia);
                         planejamentoBruto[semanaChave][diaKey].push({
                             materia: bruto.materia,
                             topico: bruto.topico,
@@ -6704,6 +6768,9 @@ window.CRONOGRAMA_RUNTIME = {
                 metodo: item.metodo
             });
         });
+        ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
+            grupos[tier] = self._intercalarProporcional(grupos[tier]);
+        });
         this._adicionarCards.grupos = grupos;
         this._adicionarCards.previa = null;
         this._adicionarCards.insercoesResultado = null;
@@ -6790,10 +6857,13 @@ window.CRONOGRAMA_RUNTIME = {
                 let estado = cfg.dias[dia] || 'normal';
                 if (estado === 'descanso') return;
                 let novosNesseDia = [];
+                let materiasHoje = new Set();
                 ordemTiers.forEach(function(tier) {
                     let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
                     for (let k = 0; k < cota && filas[tier].length > 0; k++) {
-                        novosNesseDia.push(filas[tier].shift());
+                        let bruto = self._proximoSemColisao(filas[tier], materiasHoje);
+                        materiasHoje.add(bruto.materia);
+                        novosNesseDia.push(bruto);
                     }
                 });
                 if (novosNesseDia.length > 0) {
