@@ -10621,6 +10621,7 @@ window.fecharMateriaisModal = function() {
     #section-glossario .esq-estudo-card, #modal-glossario-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
     #section-glossario .esq-estudo-card { max-width:640px; max-height:46vh; }
     #modal-glossario-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
+    #modal-glossario-baralho.glos-baralho-maximizado .esq-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
     #section-glossario .esq-estudo-titulo, #modal-glossario-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #section-glossario .esq-estudo-texto, #modal-glossario-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
 
@@ -10642,8 +10643,18 @@ window.fecharMateriaisModal = function() {
     #modal-glossario-baralho .glos-baralho-maximizar:hover { color:var(--app-primary); }
     #modal-glossario-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-glossario-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #modal-glossario-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+    /* Controle "‹ Reduzir | Aumentar ›" da escala lista+cartão — mesmo
+       padrão de #modal-esquemas-baralho .esq-baralho-escala-controle. */
+    #modal-glossario-baralho .glos-baralho-escala-controle { display:none; align-items:center; gap:8px; }
+    #modal-glossario-baralho.glos-baralho-maximizado .glos-baralho-escala-controle { display:flex; }
+    #modal-glossario-baralho .glos-baralho-escala-btn { padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-glossario-baralho .glos-baralho-escala-btn:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-glossario-baralho .glos-baralho-escala-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    #modal-glossario-baralho #glos-baralho-escala-valor { font-size:11px; font-weight:800; color:var(--text-muted); min-width:34px; text-align:center; }
+    #modal-glossario-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
+    #modal-glossario-baralho.glos-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
     #modal-glossario-baralho .esq-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    #modal-glossario-baralho.glos-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
     #modal-glossario-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-glossario-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-glossario-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
@@ -10651,7 +10662,7 @@ window.fecharMateriaisModal = function() {
     #modal-glossario-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-origem { color:#fff; }
     #modal-glossario-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:normal; overflow-wrap:break-word; margin-bottom:2px; }
     #modal-glossario-baralho .esq-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:normal; overflow-wrap:break-word; }
-    #modal-glossario-baralho #glos-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+    #modal-glossario-baralho #glos-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; align-items:center; }
     #modal-glossario-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
     #modal-glossario-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-glossario-baralho #glos-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
@@ -10961,6 +10972,9 @@ window.GLOSSARIO_RUNTIME = {
     _baralhoState: null,
     // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado.
     _baralhoMaximizado: false,
+    // Fator de escala (lista + cartão) do modo maximizado — mesmo padrão
+    // de ESQUEMAS_RUNTIME._baralhoEscala.
+    _baralhoEscala: 1.5,
 
     carregar: function() {
         let bruto = null;
@@ -11895,9 +11909,13 @@ window.GLOSSARIO_RUNTIME = {
         };
         document.getElementById('glos-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
-        document.getElementById('modal-glossario-baralho').classList.remove('glos-baralho-maximizado');
+        this._baralhoEscala = 1.5;
+        let modalEl = document.getElementById('modal-glossario-baralho');
+        modalEl.classList.remove('glos-baralho-maximizado');
+        modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
-        document.getElementById('modal-glossario-baralho').classList.add('open');
+        this._atualizarControleEscalaBaralho();
+        modalEl.classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
     },
@@ -11920,6 +11938,24 @@ window.GLOSSARIO_RUNTIME = {
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
         btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+    },
+
+    ajustarEscalaBaralho: function(delta) {
+        let novo = Math.round((this._baralhoEscala + delta) * 100) / 100;
+        if (novo < 0.25) novo = 0.25;
+        if (novo > 4) novo = 4;
+        this._baralhoEscala = novo;
+        document.getElementById('modal-glossario-baralho').style.setProperty('--baralho-escala', novo);
+        this._atualizarControleEscalaBaralho();
+    },
+
+    _atualizarControleEscalaBaralho: function() {
+        let valorEl = document.getElementById('glos-baralho-escala-valor');
+        if (valorEl) valorEl.textContent = this._baralhoEscala + 'x';
+        let btnReduzir = document.getElementById('glos-baralho-escala-btn-reduzir');
+        if (btnReduzir) btnReduzir.disabled = this._baralhoEscala <= 0.25;
+        let btnAumentar = document.getElementById('glos-baralho-escala-btn-aumentar');
+        if (btnAumentar) btnAumentar.disabled = this._baralhoEscala >= 4;
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -12586,6 +12622,11 @@ window.fecharGlossarioModal = function() {
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+            <div class="glos-baralho-escala-controle">
+                <button class="glos-baralho-escala-btn" id="glos-baralho-escala-btn-reduzir" onclick="window.GLOSSARIO_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
+                <span id="glos-baralho-escala-valor">1.5x</span>
+                <button class="glos-baralho-escala-btn" id="glos-baralho-escala-btn-aumentar" onclick="window.GLOSSARIO_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
+            </div>
         </div>
 
         <div class="esq-baralho-corpo-wrap">
@@ -21977,6 +22018,7 @@ window.triggerFileUpload = function(callback) {
        (o rótulo de origem opcional + o card) — com flex:1 o card ocupa só
        o que sobra depois do rótulo, em vez de tentar ser 100% e estourar. */
     #modal-esquemas-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
     /* Rótulo "MATÉRIA > Divisão" do card ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-esquemas-baralho não é descendente de
@@ -22107,11 +22149,25 @@ window.triggerFileUpload = function(callback) {
     #modal-esquemas-baralho .esq-baralho-maximizar:hover { color:var(--app-primary); }
     #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    /* Controle "‹ Reduzir | Aumentar ›" da escala lista+cartão — só faz
+       sentido (e só aparece) no modo maximizado: no tamanho normal do
+       popup (max-width:1040px) já não sobra espaço lateral pra crescer. */
+    #modal-esquemas-baralho .esq-baralho-escala-controle { display:none; align-items:center; gap:8px; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-escala-controle { display:flex; }
+    #modal-esquemas-baralho .esq-baralho-escala-btn { padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-esquemas-baralho .esq-baralho-escala-btn:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-esquemas-baralho .esq-baralho-escala-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    #modal-esquemas-baralho #esq-baralho-escala-valor { font-size:11px; font-weight:800; color:var(--text-muted); min-width:34px; text-align:center; }
     /* Corpo principal do baralho: lista à esquerda (todos os cards do
        escopo atual) + card em exibição à direita — mesma ideia de
        navegação de "Conteúdo Relacionado" no Cronograma (clique na lista
-       pula direto pro item), somada às setas ‹ › já existentes. */
-    #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+       pula direto pro item), somada às setas ‹ › já existentes.
+       No modo maximizado, lista e cartão crescem juntos (mesma proporção)
+       via --baralho-escala (var(--baralho-escala,1), 1 no tamanho normal),
+       e o bloco inteiro fica centralizado no espaço extra que sobra numa
+       tela larga, em vez de ficar grudado na esquerda com o resto vazio. */
+    #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME do card,
@@ -22120,6 +22176,7 @@ window.triggerFileUpload = function(callback) {
        linhas do clamp e o título nunca chegava a aparecer). Separador
        border-bottom em vez de gap, pra linhas vizinhas não colarem. */
     #modal-esquemas-baralho .esq-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
     #modal-esquemas-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-esquemas-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
@@ -22133,7 +22190,7 @@ window.triggerFileUpload = function(callback) {
        um único filho num flex row ainda recebe cross-axis stretch
        incorreto quando o pai também tem min-height:0; explícito por
        segurança. */
-    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+    #modal-esquemas-baralho #esq-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; align-items:center; }
     #modal-esquemas-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
     #modal-esquemas-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-esquemas-baralho #esq-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
@@ -22155,6 +22212,11 @@ window.triggerFileUpload = function(callback) {
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+            <div class="esq-baralho-escala-controle">
+                <button class="esq-baralho-escala-btn" id="esq-baralho-escala-btn-reduzir" onclick="window.ESQUEMAS_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
+                <span id="esq-baralho-escala-valor">1.5x</span>
+                <button class="esq-baralho-escala-btn" id="esq-baralho-escala-btn-aumentar" onclick="window.ESQUEMAS_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
+            </div>
         </div>
 
         <div class="esq-baralho-corpo-wrap">
@@ -22587,6 +22649,10 @@ window.ESQUEMAS_RUNTIME = {
     // sessão de leitura, não uma preferência que persiste (sempre reseta ao
     // reabrir o baralho).
     _baralhoMaximizado: false,
+    // Fator de escala (lista + cartão, mantendo a proporção entre os dois)
+    // no modo maximizado — múltiplos de 0,25 entre 0,25 e 4. Começa em 1.5
+    // (50% maior que o tamanho normal) e também reseta a cada reabertura.
+    _baralhoEscala: 1.5,
 
     carregar: function() {
         let bruto = null;
@@ -23666,9 +23732,13 @@ window.ESQUEMAS_RUNTIME = {
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
-        document.getElementById('modal-esquemas-baralho').classList.remove('esq-baralho-maximizado');
+        this._baralhoEscala = 1.5;
+        let modalEl = document.getElementById('modal-esquemas-baralho');
+        modalEl.classList.remove('esq-baralho-maximizado');
+        modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
-        document.getElementById('modal-esquemas-baralho').classList.add('open');
+        this._atualizarControleEscalaBaralho();
+        modalEl.classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
     },
@@ -23691,6 +23761,27 @@ window.ESQUEMAS_RUNTIME = {
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
         btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+    },
+
+    // Escala conjunta (lista + cartão) do modo maximizado — múltiplos de
+    // 0,25 entre 0,25 e 4, aplicada via CSS custom property (ver
+    // --baralho-escala no CSS de #modal-esquemas-baralho).
+    ajustarEscalaBaralho: function(delta) {
+        let novo = Math.round((this._baralhoEscala + delta) * 100) / 100;
+        if (novo < 0.25) novo = 0.25;
+        if (novo > 4) novo = 4;
+        this._baralhoEscala = novo;
+        document.getElementById('modal-esquemas-baralho').style.setProperty('--baralho-escala', novo);
+        this._atualizarControleEscalaBaralho();
+    },
+
+    _atualizarControleEscalaBaralho: function() {
+        let valorEl = document.getElementById('esq-baralho-escala-valor');
+        if (valorEl) valorEl.textContent = this._baralhoEscala + 'x';
+        let btnReduzir = document.getElementById('esq-baralho-escala-btn-reduzir');
+        if (btnReduzir) btnReduzir.disabled = this._baralhoEscala <= 0.25;
+        let btnAumentar = document.getElementById('esq-baralho-escala-btn-aumentar');
+        if (btnAumentar) btnAumentar.disabled = this._baralhoEscala >= 4;
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -24822,6 +24913,7 @@ window.carregarEsquemasOficiais = async function() {
        explícito de uniformização; antes, cada ficha dava um tamanho de
        card diferente (encolhe-pro-conteúdo até o teto de 46vh). */
     #modal-jurisprudencia-baralho .jur-estudo-card { max-width:680px; flex:1; min-height:0; }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
     #jurisprudencia-modal .jur-estudo-titulo, #modal-jurisprudencia-baralho .jur-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #jurisprudencia-modal .jur-estudo-meta, #modal-jurisprudencia-baralho .jur-estudo-meta { font-size:11px; color:var(--text-muted); }
     #jurisprudencia-modal .jur-estudo-label, #modal-jurisprudencia-baralho .jur-estudo-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:6px; }
@@ -25010,16 +25102,29 @@ window.carregarEsquemasOficiais = async function() {
     /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
        estilo padrão de <button>/<span> do navegador (foi o bug reportado:
        botões desestilizados no popup do Baralho). */
-    #modal-jurisprudencia-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #modal-jurisprudencia-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; }
     #modal-jurisprudencia-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    /* Controle "‹ Reduzir | Aumentar ›" da escala lista+cartão — mesmo
+       padrão de #modal-esquemas-baralho .esq-baralho-escala-controle:
+       só aparece no modo maximizado. */
+    #modal-jurisprudencia-baralho .jur-baralho-escala-controle { display:none; align-items:center; gap:8px; }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-escala-controle { display:flex; }
+    #modal-jurisprudencia-baralho .jur-baralho-escala-btn { padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-jurisprudencia-baralho .jur-baralho-escala-btn:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-baralho .jur-baralho-escala-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    #modal-jurisprudencia-baralho #jur-baralho-escala-valor { font-size:11px; font-weight:800; color:var(--text-muted); min-width:34px; text-align:center; }
     #modal-jurisprudencia-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
     #modal-jurisprudencia-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
     #modal-jurisprudencia-baralho #jur-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #modal-jurisprudencia-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
     /* Corpo principal do baralho: lista à esquerda (todos os cards do
        escopo atual) + card em exibição à direita — mesmo padrão do
-       #modal-esquemas-baralho (pedido explícito de uniformização). */
-    #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+       #modal-esquemas-baralho (pedido explícito de uniformização). No modo
+       maximizado, lista e cartão crescem juntos via --baralho-escala e o
+       bloco fica centralizado no espaço extra (ver #modal-esquemas-baralho
+       para a mesma lógica comentada em detalhe). */
+    #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME da ficha,
@@ -25028,6 +25133,7 @@ window.carregarEsquemasOficiais = async function() {
        linhas do clamp e o título nunca chegava a aparecer). Separador
        border-bottom em vez de gap, pra linhas vizinhas não colarem. */
     #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo { background:var(--app-primary); }
@@ -25039,7 +25145,7 @@ window.carregarEsquemasOficiais = async function() {
        padrão de #esq-baralho-corpo) — sem isto, o card interno (mesmo já
        com flex:1) não tem um pai flex pra crescer, e o popup inteiro
        encolhe pro tamanho do conteúdo em vez de ficar fixo. */
-    #modal-jurisprudencia-baralho #jur-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+    #modal-jurisprudencia-baralho #jur-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; align-items:center; }
     /* Rótulo "Matéria — Divisão" da ficha ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-jurisprudencia-baralho não é descendente de
@@ -25056,6 +25162,11 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+            <div class="jur-baralho-escala-controle">
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
+                <span id="jur-baralho-escala-valor">1.5x</span>
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
+            </div>
         </div>
 
         <div class="jur-baralho-corpo-wrap">
@@ -25325,6 +25436,9 @@ window.JURISPRUDENCIA_RUNTIME = {
     // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado: reseta
     // toda vez que o baralho é reaberto, não é uma preferência que persiste.
     _baralhoMaximizado: false,
+    // Fator de escala (lista + cartão) do modo maximizado — mesmo padrão
+    // de ESQUEMAS_RUNTIME._baralhoEscala.
+    _baralhoEscala: 1.5,
 
     _mostrarOcultos: false,
     _ocultarOficiais: false,
@@ -26422,9 +26536,13 @@ window.JURISPRUDENCIA_RUNTIME = {
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
-        document.getElementById('modal-jurisprudencia-baralho').classList.remove('jur-baralho-maximizado');
+        this._baralhoEscala = 1.5;
+        let modalEl = document.getElementById('modal-jurisprudencia-baralho');
+        modalEl.classList.remove('jur-baralho-maximizado');
+        modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
-        document.getElementById('modal-jurisprudencia-baralho').classList.add('open');
+        this._atualizarControleEscalaBaralho();
+        modalEl.classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
     },
@@ -26447,6 +26565,24 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
         btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+    },
+
+    ajustarEscalaBaralho: function(delta) {
+        let novo = Math.round((this._baralhoEscala + delta) * 100) / 100;
+        if (novo < 0.25) novo = 0.25;
+        if (novo > 4) novo = 4;
+        this._baralhoEscala = novo;
+        document.getElementById('modal-jurisprudencia-baralho').style.setProperty('--baralho-escala', novo);
+        this._atualizarControleEscalaBaralho();
+    },
+
+    _atualizarControleEscalaBaralho: function() {
+        let valorEl = document.getElementById('jur-baralho-escala-valor');
+        if (valorEl) valorEl.textContent = this._baralhoEscala + 'x';
+        let btnReduzir = document.getElementById('jur-baralho-escala-btn-reduzir');
+        if (btnReduzir) btnReduzir.disabled = this._baralhoEscala <= 0.25;
+        let btnAumentar = document.getElementById('jur-baralho-escala-btn-aumentar');
+        if (btnAumentar) btnAumentar.disabled = this._baralhoEscala >= 4;
     },
 
     _handlerTecladoBaralho: function(e) {
