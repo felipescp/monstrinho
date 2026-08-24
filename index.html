@@ -18868,6 +18868,41 @@ window.aplicarFormatacaoComentario = function(comando){
   document.execCommand(comando, false, null);
 };
 
+// Colar aqui não pode carregar fonte/tamanho/cor da origem (Word, Google
+// Docs, outro site) — o comentário precisa ficar visualmente idêntico ao
+// resto do Caderno de Questões, e o toolbar só oferece B/I/S mesmo, então
+// não faz sentido o texto colado vir com uma fonte diferente por baixo.
+// Remove todo atributo style/face/size/color de cada elemento colado,
+// preservando só a estrutura (negrito/itálico/sublinhado, parágrafos,
+// listas) — o CSS com !important em #cadcom-editor-corpo já reforça isso
+// visualmente, mas aqui a limpeza acontece ANTES de gravar, então o HTML
+// salvo em D.cadernoComentarios também fica limpo.
+window.aoColarComentario = function(event){
+  var dt = event.clipboardData || window.clipboardData;
+  if (!dt) return;
+  event.preventDefault();
+  var html = dt.getData('text/html');
+  var texto = dt.getData('text/plain') || '';
+  if (html && html.trim()){
+    var temp = document.createElement('div');
+    temp.innerHTML = html;
+    temp.querySelectorAll('*').forEach(function(el){
+      el.removeAttribute('style');
+      el.removeAttribute('face');
+      el.removeAttribute('size');
+      el.removeAttribute('color');
+    });
+    temp.querySelectorAll('font').forEach(function(el){
+      var span = document.createElement('span');
+      span.innerHTML = el.innerHTML;
+      el.replaceWith(span);
+    });
+    document.execCommand('insertHTML', false, temp.innerHTML);
+  } else if (texto){
+    document.execCommand('insertText', false, texto);
+  }
+};
+
 window.enviarComentarioCaderno = function(){
   var qId = window.__cadernoComentarioQidAtual;
   if(!qId) return;
@@ -22102,8 +22137,17 @@ window.triggerFileUpload = function(callback) {
     #modal-caderno-comentario #cadcom-editor-toolbar { display:flex; gap:6px; }
     #modal-caderno-comentario #cadcom-editor-toolbar button { padding:6px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:13px; color:var(--text-main); }
     #modal-caderno-comentario #cadcom-editor-toolbar button:hover { border-color:var(--app-primary); color:var(--app-primary); }
-    #modal-caderno-comentario #cadcom-editor-corpo { flex:1; min-height:160px; max-height:40vh; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white); }
+    #modal-caderno-comentario #cadcom-editor-corpo { flex:1; min-height:160px; max-height:40vh; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-family:var(--font-body); font-size:12.5px; line-height:1.6; color:var(--text-main); background:var(--bg-white); }
     #modal-caderno-comentario #cadcom-editor-corpo:focus { outline:none; border-color:var(--app-primary); }
+    /* !important trava fonte/tamanho no mesmo padrão do Enunciado exibido no
+       Caderno de Questões (12.5px, var(--font-body)) mesmo que o HTML colado
+       traga font-family/font-size embutidos (Word, Google Docs, outro site) —
+       sem isto o texto colado herdava a fonte/tamanho da origem, ficando
+       despadronizado (e a cor embutida podia até ficar ilegível no modo
+       noturno, mesma classe de bug já corrigida em Esquemas). window.aoColarComentario()
+       também limpa esses estilos ANTES de gravar, então isto aqui é um
+       reforço visual, não a única barreira. */
+    #modal-caderno-comentario #cadcom-editor-corpo, #modal-caderno-comentario #cadcom-editor-corpo * { font-family:var(--font-body) !important; font-size:12.5px !important; }
     #modal-caderno-comentario .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
     #modal-caderno-comentario .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
 </style>
@@ -22117,7 +22161,7 @@ window.triggerFileUpload = function(callback) {
             <button type="button" onclick="window.aplicarFormatacaoComentario('italic')" style="font-style:italic;" title="Itálico">I</button>
             <button type="button" onclick="window.aplicarFormatacaoComentario('underline')" style="text-decoration:underline;" title="Sublinhado">S</button>
         </div>
-        <div id="cadcom-editor-corpo" contenteditable="true"></div>
+        <div id="cadcom-editor-corpo" contenteditable="true" onpaste="window.aoColarComentario(event)"></div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.fecharComentarioCaderno()">Cancelar</button>
             <button class="fc-footer-btn primario" onclick="window.enviarComentarioCaderno()">Enviar</button>
