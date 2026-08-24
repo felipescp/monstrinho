@@ -19640,24 +19640,57 @@ window.exportarProvaCompletaMdHtml = function() {
 };
 
 // ── DOWNLOAD NATIVO (Substitui o showBlobModal) ──
+// Soma síncrona do que o PRÓPRIO Monstrinho guarda no localStorage (chaves
+// "tjpe_v1__*") vs tudo mais que exista sob esta mesma origem — útil porque
+// navigator.storage.estimate() (ver abaixo) é por ORIGEM (esquema+host+
+// porta), não por app: qualquer outro projeto publicado no mesmo
+// username.github.io (o caminho depois de "/" não importa pra isso) ou
+// qualquer coisa que este navegador já tenha guardado sob esse domínio
+// soma na MESMA cota do Monstrinho. *2 (UTF-16) é uma aproximação — não é
+// o tamanho exato em disco, mas dá pra comparar as duas fatias.
+function _medirLocalStorageMonstrinho() {
+    let totalMonstrinho = 0;
+    let totalOutros = 0;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            let chave = localStorage.key(i);
+            let valor = localStorage.getItem(chave) || '';
+            let bytes = (chave.length + valor.length) * 2;
+            if (chave.indexOf('tjpe_v1__') === 0) totalMonstrinho += bytes;
+            else totalOutros += bytes;
+        }
+    } catch (e) {}
+    return { totalMonstrinho: totalMonstrinho, totalOutros: totalOutros };
+}
+
 // Usado nos alertas de "falha ao salvar — provável falta de espaço" (ver
 // CRONOGRAMA_RUNTIME._sufixoFalhaSalvar) pra trocar "provável" por número
 // de verdade: navigator.storage.estimate() (suportado na maioria dos
 // navegadores modernos, exceto Safari em alguns casos) devolve quanto do
-// disco a origem já usa e a cota disponível — sem isso, o usuário só ouve
-// "provável falta de espaço" sem saber se está em 99% ou muito longe disso,
-// o que dificulta decidir se vale a pena investigar mais ou só tentar de
-// novo. Retorna string vazia (não lança) se a API não existir ou falhar,
-// pra nunca quebrar o fluxo de alerta que a chama.
+// disco a ORIGEM já usa (localStorage + IndexedDB + caches de QUALQUER
+// projeto sob esse mesmo domínio, não só o Monstrinho) e a cota
+// disponível — combinado com _medirLocalStorageMonstrinho() acima, separa
+// "quanto é do Monstrinho" de "quanto é de outra coisa nesta origem".
+// Retorna string vazia (não lança) se a API não existir ou falhar, pra
+// nunca quebrar o fluxo de alerta que a chama.
 async function estimarUsoArmazenamento() {
     try {
-        if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return '';
+        let medicaoLocal = _medirLocalStorageMonstrinho();
+        let mbMonstrinho = (medicaoLocal.totalMonstrinho / (1024 * 1024)).toFixed(1);
+        let mbOutros = (medicaoLocal.totalOutros / (1024 * 1024)).toFixed(1);
+        let sufixoOutros = medicaoLocal.totalOutros > 1024 ? (' + ' + mbOutros + ' MB de outras chaves nesta origem') : '';
+
+        if (!navigator.storage || typeof navigator.storage.estimate !== 'function') {
+            return ' (Monstrinho usa ' + mbMonstrinho + ' MB neste navegador' + sufixoOutros + ')';
+        }
         let est = await navigator.storage.estimate();
-        if (!est || typeof est.usage !== 'number' || typeof est.quota !== 'number' || est.quota === 0) return '';
+        if (!est || typeof est.usage !== 'number' || typeof est.quota !== 'number' || est.quota === 0) {
+            return ' (Monstrinho usa ' + mbMonstrinho + ' MB neste navegador' + sufixoOutros + ')';
+        }
         let usoMb = (est.usage / (1024 * 1024)).toFixed(1);
         let cotaMb = (est.quota / (1024 * 1024)).toFixed(0);
         let pct = Math.round((est.usage / est.quota) * 100);
-        return ' (uso atual neste navegador: ' + usoMb + ' MB de ' + cotaMb + ' MB — ' + pct + '% ocupado)';
+        return ' (uso total desta origem — inclui QUALQUER outro projeto no mesmo domínio, não só o Monstrinho: ' + usoMb + ' MB de ' + cotaMb + ' MB — ' + pct + '% ocupado; o Monstrinho sozinho usa ' + mbMonstrinho + ' MB' + sufixoOutros + ')';
     } catch (e) {
         return '';
     }
