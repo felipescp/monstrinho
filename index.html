@@ -702,6 +702,8 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .bcad { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: .35rem .8rem; font-size: 10px; font-weight: 700; text-transform: uppercase; cursor: pointer; color: var(--text-muted); margin-left: .4rem; transition: 0.2s; font-family: var(--font-display); }
 .bcad:hover { border-color: var(--app-primary); color: var(--app-primary); }
 .bcad.ativo { background: #fefce8; border-color: var(--warning); color: #854d0e; }
+.bcom { padding: .35rem .6rem; text-transform: none; }
+.bcom.ativo { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 
 .ew { margin-top: .75rem; border-top: 1px solid var(--border-color); padding-top: .75rem; }
 .bexp { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: .4rem .9rem; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; color: var(--app-primary); font-family: var(--font-display); }
@@ -17465,7 +17467,18 @@ function mkQ(q, modoRevisao){
   bca.textContent=noCad?'− Caderno':'+ Caderno';bca.setAttribute('data-qid',q.id);
   bca.onclick=function(e){e.stopPropagation();toggleCaderno(this.getAttribute('data-qid'));};
 
-  ac.appendChild(bc);ac.appendChild(bca);
+  // Botão de comentário — só aparece depois que a questão entra no Caderno
+  // ("+ Caderno" apertado). O comentário digitado aqui vai junto no
+  // Caderno de Questões (D.cadernoComentarios, ver comentarCaderno()),
+  // mostrado lá como um bloco "COMENTÁRIO" ao lado do gabarito.
+  var comentarioAtual=(D.cadernoComentarios&&D.cadernoComentarios[q.id])||'';
+  var bcm=document.createElement('button'); bcm.className='bcad bcom'+(comentarioAtual?' ativo':'');bcm.id='bcom-'+q.id;
+  bcm.textContent='💭';bcm.title=comentarioAtual?'Editar comentário':'Adicionar comentário ao Caderno';
+  bcm.style.display=noCad?'inline-block':'none';
+  bcm.setAttribute('data-qid',q.id);
+  bcm.onclick=function(e){e.stopPropagation();comentarCaderno(this.getAttribute('data-qid'));};
+
+  ac.appendChild(bc);ac.appendChild(bca);ac.appendChild(bcm);
   div.appendChild(num);div.appendChild(en);div.appendChild(vg);div.appendChild(ac);
 
   // Motivo do erro — sempre criado (ao contrário do bloco de explicação
@@ -18772,11 +18785,41 @@ function toggleCaderno(qId){
     try { sincronizarCadernoComPlanner({ cfg: C, dados: D }); } catch(e) { console.warn('[CADERNO] Falha ao sincronizar ao vivo:', e); }
   }
   // Atualizar só o botão, sem re-renderizar tudo
+  var noCadAgora=D.caderno.indexOf(qId)>=0;
   var btn=g('bcad-'+qId);
   if(btn){
-    var noCad=D.caderno.indexOf(qId)>=0;
-    btn.textContent=noCad?'− Caderno':'+ Caderno';
-    btn.classList.toggle('ativo',noCad);
+    btn.textContent=noCadAgora?'− Caderno':'+ Caderno';
+    btn.classList.toggle('ativo',noCadAgora);
+  }
+  // Botão de comentário só existe enquanto a questão está no Caderno.
+  var btnCom=g('bcom-'+qId);
+  if(btnCom) btnCom.style.display=noCadAgora?'inline-block':'none';
+}
+
+// Comentário pessoal sobre a questão, salvo junto dela no Caderno de
+// Questões (D.cadernoComentarios, mesmo padrão de D.cadernoAxiomas —
+// dicionário achatado {id_questao: texto}). Só acessível depois de "+
+// Caderno" (ver botão bcm em CriaQuestaoDiv). Aparece no modal do Caderno
+// como um bloco "COMENTÁRIO", ao lado do gabarito/motivo do erro.
+function comentarCaderno(qId){
+  if(!D.cadernoComentarios) D.cadernoComentarios={};
+  var atual=D.cadernoComentarios[qId]||'';
+  var novo=prompt('Comentário sobre esta questão (aparece no Caderno de Questões):', atual);
+  if(novo===null) return; // cancelou o prompt
+  novo=novo.trim();
+  if(novo) D.cadernoComentarios[qId]=novo;
+  else delete D.cadernoComentarios[qId];
+
+  if(SI>=0&&SIMS[SI])SIMS[SI].dados=JSON.parse(JSON.stringify(D));
+  autoSave();
+  if (typeof sincronizarCadernoComPlanner === 'function') {
+    try { sincronizarCadernoComPlanner({ cfg: C, dados: D }); } catch(e) { console.warn('[CADERNO] Falha ao sincronizar comentário:', e); }
+  }
+
+  var btn=g('bcom-'+qId);
+  if(btn){
+    btn.classList.toggle('ativo', !!novo);
+    btn.title=novo?'Editar comentário':'Adicionar comentário ao Caderno';
   }
 }
 
@@ -19015,14 +19058,17 @@ function sincronizarCadernoComPlanner(simSession) {
                 if (!dbPlanner.caderno_erros[mat]) dbPlanner.caderno_erros[mat] = {};
                 if (!dbPlanner.caderno_erros[mat][topico]) dbPlanner.caderno_erros[mat][topico] = [];
                 let motivoErro = (simSession.dados.res[q.id] || {}).motivoErro;
+                let comentario = (simSession.dados.cadernoComentarios || {})[q.id] || '';
                 // .find() em vez de .some() — se o item já existe, ATUALIZA o
-                // motivoErro nele (permite reclassificar depois de já ter
-                // adicionado ao Caderno), em vez de só ignorar silenciosamente.
+                // motivoErro/comentario nele (permite reclassificar/comentar
+                // depois de já ter adicionado ao Caderno), em vez de só
+                // ignorar silenciosamente.
                 let existente = dbPlanner.caderno_erros[mat][topico].find(function(e){ return e.id_q === q.id && e.sim_id === simSession.cfg.id; });
                 if (existente) {
                     existente.motivoErro = motivoErro;
+                    existente.comentario = comentario;
                 } else {
-                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: motivoErro });
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: motivoErro, comentario: comentario });
                 }
             } else if (dbPlanner.caderno_erros[mat] && dbPlanner.caderno_erros[mat][topico]) {
                 // Usuário desmarcou "+ Caderno" nesta bateria — remove de
@@ -19106,10 +19152,12 @@ function sincronizarResultadoComPlanner(simSession) {
                 // .find() em vez de .some() — mesmo fix de sincronizarCadernoComPlanner,
                 // permite atualizar motivoErro num item já salvo.
                 let existente = dbPlanner.caderno_erros[mat][topico].find(e => e.id_q === q.id && e.sim_id === simSession.cfg.id);
+                let comentario = (simSession.dados.cadernoComentarios || {})[q.id] || '';
                 if (existente) {
                     existente.motivoErro = r && r.motivoErro;
+                    if (comentario) existente.comentario = comentario;
                 } else {
-                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: r && r.motivoErro });
+                    dbPlanner.caderno_erros[mat][topico].push({ id_q: q.id, sim_id: simSession.cfg.id, enunciado: q.enunciado, gabarito: q.gabarito, explicacao: q.explicacao, motivoErro: r && r.motivoErro, comentario: comentario });
                 }
             }
 
@@ -20986,6 +21034,7 @@ window.mostrarAbaCaderno = function(aba) {
                             <div style="font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Enunciado</div>
                             <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${formatarMarkdownCaderno(item.enunciado)}</div>
                             ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${formatarMarkdownCaderno(item.explicacao)}</div>` : ''}
+                            ${item.comentario ? `<div style="font-size:9.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">💭 Comentário</div><div style="font-size:11px; color:var(--text-main); line-height:1.6; background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; padding:8px 10px; white-space:pre-wrap;">${formatarMarkdownCaderno(item.comentario)}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
