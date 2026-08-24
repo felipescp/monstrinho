@@ -9414,14 +9414,20 @@ window.fecharPraticarCadernoModal = function() {
     /* Modal "Visualizar PDF" — tamanho padrão já perto do limite da
        viewport (900px de max-width era estreito demais em telas largas,
        mesmo o modal tendo "cara" de quase-tela-cheia). .mat-pdf-maximizado
-       (alternada pelo botão ⛶) reduz o respiro de .mo (padding:1rem, regra
-       base em todo .mo) e estica o .mdl praticamente borda a borda.
-       z-index:10000 pelo mesmo motivo de #modal-materiais-novo acima —
-       sem isto o PDF abria atrás de #section-materiais (z-index:9999). */
+       (alternada pelo botão ⛶) precisa ir além disso — o padrão (96vw/92vh)
+       já é quase tela cheia, então só "esticar mais um pouco" (99vw/99vh,
+       como era antes) mal se percebia (poucos pixels de diferença,
+       relatado pelo usuário). Maximizado agora vai a 100vw/100vh de
+       verdade, sem respiro nenhum (padding zerado no .mo e quase zerado no
+       .mdl) e sem cantos arredondados — cobre o espaço TODO disponível,
+       em vez de só crescer marginalmente a partir de um estado que já
+       era quase tela cheia. z-index:10000 pelo mesmo motivo de
+       #modal-materiais-novo acima — sem isto o PDF abria atrás de
+       #section-materiais (z-index:9999). */
     #modal-materiais-pdf { z-index: 10000; }
-    #modal-materiais-pdf .mdl { max-width:1400px; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease; }
-    #modal-materiais-pdf.mat-pdf-maximizado { padding:0.4rem; }
-    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; width:99vw; height:99vh; }
+    #modal-materiais-pdf .mdl { max-width:1400px; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; border-radius:12px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
+    #modal-materiais-pdf.mat-pdf-maximizado { padding:0; }
+    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; width:100vw; height:100vh; padding:8px; border-radius:0; }
     #modal-materiais-pdf .mat-pdf-header { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
     #modal-materiais-pdf .mat-pdf-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); }
     #modal-materiais-pdf .mat-pdf-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
