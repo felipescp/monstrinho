@@ -10268,8 +10268,14 @@ window.fecharMateriaisModal = function() {
                 <input type="text" id="cfg-nome" placeholder="Ex: Direito Civil - LINDB...">
             </div>
             
-            <!-- Controle de Tipo -->
-            <div>
+            <!-- Controle de Tipo — Múltipla Escolha e Playlist (V/F) não
+                 existem mais como opção de criação (toda bateria nova é
+                 Certo/Errado); a linha de botões fica oculta, mas os 3
+                 elementos continuam no DOM porque forjarBateria() e
+                 editarSimuladoAcervo() ainda os "clicam" programaticamente
+                 (inclusive pra reabrir baterias MC/Playlist antigas já
+                 salvas no acervo, que continuam editáveis normalmente). -->
+            <div style="display:none;">
 <div class="rg">
                 <div class="ro sel" id="ro-ce">Certo / Errado</div>
                 <div class="ro" id="ro-mc">Múltipla Escolha</div>
@@ -10432,11 +10438,9 @@ window.fecharMateriaisModal = function() {
         <button class="b1 b1-icon" id="b1-zoom-in" title="Aumentar Letra" style="font-weight: 800; font-family: var(--font-body);">A+</button>
     </div>
 
-<div class="sb-box" style="gap: 8px;">
-      <button class="b1 p" id="b1-finalizar" onclick="window.finalizarSimulado()" style="width:100%; margin-bottom:0; background:#22c55e; border-color:#16a34a; font-size:13px; font-weight:800;">
-        ✓ Finalizar
-      </button>
-    </div>
+<!-- #b1-finalizar não é mais estático aqui — agora é criado por
+     renderNav(), como o ÚLTIMO elemento de #sbnav, depois de toda a
+     relação de questões (ver comentário lá). -->
 <div class="sb-box" id="cronometro" style="display:none">
         <div id="crono-modo-btns">
           <div class="crono-modo-btn sel" onclick="setCronoModo('regressivo', event)">Regressivo</div>
@@ -14830,20 +14834,11 @@ function renderSim(){
   // INÍCIO DA INJEÇÃO DO CABEÇALHO INTERNO (Exclusivo Múltipla Escolha)
 var temResp=Object.keys(D.res).some(function(k){return D.res[k]&&D.res[k].c;});
   g('b1-limpar').disabled=!temResp;
-  var jaFinalizado=SIMS[SI]&&SIMS[SI].stats;
-  var btn=g('b1-finalizar');
-  if(btn){
-    if(jaFinalizado){
-      btn.textContent='Ver Resultados ➔';
-      btn.style.background='var(--app-primary)';
-      btn.style.borderColor='var(--app-primary)';
-    } else {
-      btn.textContent='✓ Finalizar';
-      btn.style.background='#22c55e';
-      btn.style.borderColor='#16a34a';
-    }
-  }
-  
+  // #b1-finalizar (texto/cor conforme jaFinalizado) agora é montado por
+  // renderNav() — ela recria #sbnav do zero a cada chamada, e todo lugar
+  // que chama renderSim() chama renderNav() logo depois, então estilizar
+  // o botão aqui seria sempre perdido no recreate seguinte.
+
   D.blocos.forEach(function(b,bi){
     var d=document.createElement('div');d.className='bloco';d.id='bl-'+bi;
     
@@ -15139,14 +15134,11 @@ function verificarUltimaQuestao() {
         D.__ultimaQuestaoAvisada = true;
         var btnFin = g('b1-finalizar');
         if (btnFin) {
-            // scrollIntoView({block:'nearest'}) não sabe que .cockpit-tools é
-            // sticky e cobre o topo do #sb — ele rola só o suficiente pra
-            // encostar no topo "cru" do container, deixando o Finalizar
-            // escondido atrás da barra fixa. Rolar o próprio #sb até 0
-            // (mesmo padrão já usado em cenSb() pra 1ª questão) resolve, já
-            // que .sb-box com o Finalizar é o 1º conteúdo após a barra sticky.
-            var sbEl = g('sb');
-            if (sbEl) sbEl.scrollTo({ top: 0, behavior: 'smooth' });
+            // Finalizar agora é o ÚLTIMO elemento de #sbnav (depois de toda
+            // a relação de questões), não mais o 1º conteúdo colado no
+            // cockpit sticky — scrollIntoView("nearest") já resolve sozinho
+            // (sem risco de ficar escondido atrás de nada fixo lá embaixo).
+            btnFin.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             btnFin.classList.add('pisca-atencao');
             btnFin.addEventListener('animationend', function aoTerminar() {
                 btnFin.classList.remove('pisca-atencao');
@@ -15486,6 +15478,29 @@ function renderNav(){
     });
     gr.appendChild(h);gr.appendChild(gn);nav.appendChild(gr);
   });
+
+  // Botão "Finalizar" — último elemento de #sbnav, depois de toda a
+  // relação de questões (era fixo no topo, colado no cockpit de
+  // ferramentas). Criado aqui, do zero, a cada renderNav() — porque
+  // nav.innerHTML='' recria #sbnav inteiro a cada chamada, texto/cor
+  // setados de fora (era em renderSim(), chamada ANTES desta função em
+  // todo lugar) sempre seriam perdidos no recreate seguinte.
+  var jaFinalizado = SIMS[SI] && SIMS[SI].stats;
+  var btnFin = document.createElement('button');
+  btnFin.className = 'b1 p';
+  btnFin.id = 'b1-finalizar';
+  btnFin.style.cssText = 'width:100%; margin:16px 0 0; font-size:13px; font-weight:800;';
+  btnFin.onclick = function() { window.finalizarSimulado(); };
+  if (jaFinalizado) {
+    btnFin.textContent = 'Ver Resultados ➔';
+    btnFin.style.background = 'var(--app-primary)';
+    btnFin.style.borderColor = 'var(--app-primary)';
+  } else {
+    btnFin.textContent = '✓ Finalizar e ver Resultado';
+    btnFin.style.background = '#22c55e';
+    btnFin.style.borderColor = '#16a34a';
+  }
+  nav.appendChild(btnFin);
 }
 function limpar(){
   D.res={};D.fin={};D.caderno=[];D.cadernoAxiomas=[];QA=null;
@@ -17508,6 +17523,21 @@ window.abrirModalCriacao = function() {
     }
     C = { nome: '', tipo: 'ce', cegas: false };
     D = { blocos: [], res: {}, fin: {}, caderno: [] };
+
+    // Toda bateria NOVA é sempre Certo/Errado (Múltipla Escolha e Playlist
+    // deixaram de existir como opção de criação — só sobrevivem pra reabrir
+    // baterias antigas já salvas nesses formatos, via editarSimuladoAcervo).
+    // Força esse estado visual diretamente aqui, sem depender de um clique
+    // em #ro-ce (o seletor de tipo agora fica oculto) — assim, mesmo que a
+    // última coisa aberta no modal tenha sido uma bateria MC/Playlist
+    // antiga (que troca esses displays), uma bateria nova sempre abre limpa.
+    if(g('ro-ce')) { g('ro-ce').classList.add('sel'); }
+    if(g('ro-mc')) { g('ro-mc').classList.remove('sel'); }
+    if(g('ro-pl')) { g('ro-pl').classList.remove('sel'); }
+    if(g('box-taxonomia')) g('box-taxonomia').style.display = 'block';
+    if(g('box-mc-meta')) g('box-mc-meta').style.display = 'none';
+    if(g('box-pl-meta')) g('box-pl-meta').style.display = 'none';
+    if(g('box-nome-bateria')) g('box-nome-bateria').style.display = 'block';
 
     // Limpeza rigorosa do formulário para evitar vazamento de estado
     g('cfg-nome').value = '';
