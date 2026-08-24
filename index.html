@@ -3366,29 +3366,26 @@ window.SALINHA_BACKUP = {
 
                     const ok = await window.salvarSessaoAtiva({ sims: simsFiltrados, si: novoSi });
                     if (ok) {
-                        chavesMutadas++;
-
-                        // ENVIO CIRÚRGICO DE CORREÇÃO — NÃO é reativação do
-                        // salvamento automático (periódico/fim-de-bateria
-                        // continuam desativados, ver verificarSalvamentoPeriodicoNuvem
-                        // e autoSave()). Sem isto, a aba fantasma removida
-                        // AQUI (só localmente) volta a existir no Gist remoto
-                        // pra sempre — a mesclagem aditiva de clube_simulado_auto
-                        // (acima) a reimporta em TODO carregamento seguinte,
-                        // esta verificação cruzada remove de novo, chavesMutadas
-                        // fica > 0 de novo, recarrega de novo: um ciclo que
-                        // nunca se estabiliza sozinho (era a causa dos 3
-                        // reloads seguidos reportados). Reaproveita
-                        // exportarNuvemSilenciosa() tal como já existe — mesmo
-                        // lock (__salvamentoNuvemEmAndamento) e retry em 409,
-                        // sem depender de nenhum gatilho automático recorrente.
-                        // Não chama location.reload() nem mexe no
-                        // SYNC_RELOAD_GUARD — é só um upload; quem decide se
-                        // recarrega (e se o guard permite) continua sendo
-                        // importarNuvemSilenciosa(), depois que este await
-                        // terminar. Sem token/gistId configurados,
-                        // exportarNuvemSilenciosa() já não faz nada sozinha
-                        // (mesma guarda interna de sempre).
+                        // DELIBERADAMENTE NÃO incrementa chavesMutadas aqui —
+                        // correção histórica ("ENVIO CIRÚRGICO") tentou resolver
+                        // o loop de reload incrementando chavesMutadas normalmente
+                        // e só evitando chamar location.reload() DIRETO neste
+                        // trecho, mas isso não bastava: importarNuvemSilenciosa()
+                        // (a chamadora) decide reload só olhando
+                        // resultado.chavesMutadas > 0, sem saber QUAL bloco
+                        // incrementou — então esta limpeza (que não traz nenhum
+                        // conteúdo novo pro usuário ver, só remove uma aba
+                        // fantasma local) continuava disparando reload igual.
+                        // Como a correção enviada à nuvem (exportarNuvemSilenciosa
+                        // abaixo) não fica visível pro PRÓXIMO fetch do Gist
+                        // instantaneamente (latência/consistência da API), o
+                        // próximo load ainda podia baixar a aba fantasma de
+                        // volta, remover nela de novo, incrementar de novo,
+                        // recarregar de novo — repetindo até o teto do
+                        // SYNC_RELOAD_GUARD (3 tentativas): era exatamente o "a
+                        // página atualiza 3 vezes seguidas" reportado. Sem contar
+                        // pra chavesMutadas, esta limpeza acontece (localmente e
+                        // na nuvem) sem nunca, por si só, justificar um reload.
                         try {
                             await window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa();
                         } catch (e) {
@@ -18801,13 +18798,41 @@ function toggleCaderno(qId){
 // dicionário achatado {id_questao: texto}). Só acessível depois de "+
 // Caderno" (ver botão bcm em CriaQuestaoDiv). Aparece no modal do Caderno
 // como um bloco "COMENTÁRIO", ao lado do gabarito/motivo do erro.
+// Abre o popup #modal-caderno-comentario (B/I/S + contenteditable, mesmo
+// padrão simplificado do editor de Esquemas) em vez de um prompt() nativo.
+// __cadernoComentarioQidAtual guarda qual questão está sendo comentada
+// entre abrir e window.enviarComentarioCaderno() salvar.
+window.__cadernoComentarioQidAtual = null;
+
 function comentarCaderno(qId){
+  window.__cadernoComentarioQidAtual = qId;
+  var atual=(D.cadernoComentarios && D.cadernoComentarios[qId])||'';
+  var corpo=document.getElementById('cadcom-editor-corpo');
+  corpo.innerHTML=atual;
+  document.getElementById('modal-caderno-comentario').classList.add('open');
+  setTimeout(function(){ corpo.focus(); }, 50);
+}
+
+window.fecharComentarioCaderno = function(){
+  document.getElementById('modal-caderno-comentario').classList.remove('open');
+  window.__cadernoComentarioQidAtual = null;
+};
+
+window.aplicarFormatacaoComentario = function(comando){
+  document.getElementById('cadcom-editor-corpo').focus();
+  document.execCommand(comando, false, null);
+};
+
+window.enviarComentarioCaderno = function(){
+  var qId = window.__cadernoComentarioQidAtual;
+  if(!qId) return;
   if(!D.cadernoComentarios) D.cadernoComentarios={};
-  var atual=D.cadernoComentarios[qId]||'';
-  var novo=prompt('Comentário sobre esta questão (aparece no Caderno de Questões):', atual);
-  if(novo===null) return; // cancelou o prompt
-  novo=novo.trim();
-  if(novo) D.cadernoComentarios[qId]=novo;
+  var corpo=document.getElementById('cadcom-editor-corpo');
+  var html=(corpo.innerHTML||'').trim();
+  // contenteditable "vazio" às vezes fica como "<br>"/"<div><br></div>" —
+  // decide por textContent (texto puro), não pelo HTML cru.
+  var textoPuro=(corpo.textContent||'').trim();
+  if(textoPuro) D.cadernoComentarios[qId]=html;
   else delete D.cadernoComentarios[qId];
 
   if(SI>=0&&SIMS[SI])SIMS[SI].dados=JSON.parse(JSON.stringify(D));
@@ -18818,10 +18843,11 @@ function comentarCaderno(qId){
 
   var btn=g('bcom-'+qId);
   if(btn){
-    btn.classList.toggle('ativo', !!novo);
-    btn.title=novo?'Editar comentário':'Adicionar comentário ao Caderno';
+    btn.classList.toggle('ativo', !!textoPuro);
+    btn.title=textoPuro?'Editar comentário':'Adicionar comentário ao Caderno';
   }
-}
+  window.fecharComentarioCaderno();
+};
 
 function toggleCadernoAxioma(qId){
   if(!D.cadernoAxiomas) D.cadernoAxiomas = [];
@@ -21034,7 +21060,7 @@ window.mostrarAbaCaderno = function(aba) {
                             <div style="font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Enunciado</div>
                             <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${formatarMarkdownCaderno(item.enunciado)}</div>
                             ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${formatarMarkdownCaderno(item.explicacao)}</div>` : ''}
-                            ${item.comentario ? `<div style="font-size:9.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">💭 Comentário</div><div style="font-size:11px; color:var(--text-main); line-height:1.6; background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; padding:8px 10px; white-space:pre-wrap;">${formatarMarkdownCaderno(item.comentario)}</div>` : ''}
+                            ${item.comentario ? `<div style="font-size:9.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">💭 Comentário</div><div style="font-size:11px; color:var(--text-main); line-height:1.6; background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; padding:8px 10px;">${item.comentario}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
@@ -21959,6 +21985,42 @@ window.triggerFileUpload = function(callback) {
 
         <div id="caderno-modal-body" style="flex:1; overflow-y:auto; padding:16px;"></div>
 
+    </div>
+</div>
+
+<!-- MODAL: Comentário de Questão (Caderno de Questões) — popup .mo/.mdl
+     simples, mesmo padrão visual de #modal-esquema-editor mas só com
+     B/I/S (sem fonte/tamanho/cor/tabela) — aberto pelo botão 💭 que
+     aparece ao lado de "+ Caderno" depois que a questão entra no caderno
+     (ver comentarCaderno() perto de toggleCaderno()). -->
+<div id="modal-caderno-comentario" class="mo">
+<style>
+    #modal-caderno-comentario { z-index: 10000; }
+    #modal-caderno-comentario .mdl { max-width:640px; width:92%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px; }
+    #modal-caderno-comentario .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-caderno-comentario #cadcom-editor-toolbar { display:flex; gap:6px; }
+    #modal-caderno-comentario #cadcom-editor-toolbar button { padding:6px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:13px; color:var(--text-main); }
+    #modal-caderno-comentario #cadcom-editor-toolbar button:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-caderno-comentario #cadcom-editor-corpo { flex:1; min-height:160px; max-height:40vh; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white); }
+    #modal-caderno-comentario #cadcom-editor-corpo:focus { outline:none; border-color:var(--app-primary); }
+    #modal-caderno-comentario .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-caderno-comentario .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+</style>
+    <div class="mdl">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">💭 Comentário</div>
+            <button onclick="window.fecharComentarioCaderno()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="cadcom-editor-toolbar">
+            <button type="button" onclick="window.aplicarFormatacaoComentario('bold')" style="font-weight:800;" title="Negrito">B</button>
+            <button type="button" onclick="window.aplicarFormatacaoComentario('italic')" style="font-style:italic;" title="Itálico">I</button>
+            <button type="button" onclick="window.aplicarFormatacaoComentario('underline')" style="text-decoration:underline;" title="Sublinhado">S</button>
+        </div>
+        <div id="cadcom-editor-corpo" contenteditable="true"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.fecharComentarioCaderno()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.enviarComentarioCaderno()">Enviar</button>
+        </div>
     </div>
 </div>
 
