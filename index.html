@@ -9425,9 +9425,13 @@ window.fecharPraticarCadernoModal = function() {
        #modal-materiais-novo acima — sem isto o PDF abria atrás de
        #section-materiais (z-index:9999). */
     #modal-materiais-pdf { z-index: 10000; }
-    #modal-materiais-pdf .mdl { max-width:1400px; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; border-radius:12px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
+    /* max-height:none é essencial aqui — a regra base .mdl (linha ~571) trava
+       max-height:88vh, que senão limitaria a altura mesmo com height:92vh/100vh
+       definido abaixo (max-height sempre vence sobre height, não importa a
+       especificidade da propriedade "height" isolada). */
+    #modal-materiais-pdf .mdl { max-width:1400px; max-height:none; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; border-radius:12px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
     #modal-materiais-pdf.mat-pdf-maximizado { padding:0; }
-    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; width:100vw; height:100vh; padding:8px; border-radius:0; }
+    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:8px; border-radius:0; }
     #modal-materiais-pdf .mat-pdf-header { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
     #modal-materiais-pdf .mat-pdf-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); }
     #modal-materiais-pdf .mat-pdf-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
@@ -17072,7 +17076,7 @@ var CSS_DOCUMENTO_HTML_ESTILIZADO =
   '.crono-doc-card{font-size:10.5px;line-height:1.4;padding:5px 6px;border-radius:5px;margin-bottom:5px;background:#f8fafc;border:1px solid #e2e8f0;}' +
   '.crono-doc-card:last-child{margin-bottom:0;}' +
   '.crono-doc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px;}' +
-  '.crono-doc-tag{display:inline-block;font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:99px;white-space:nowrap;}' +
+  '.crono-doc-tag{display:inline-block;max-width:100%;font-size:8.5px;font-weight:800;padding:1px 5px;border-radius:99px;white-space:normal;word-break:break-word;}' +
   '.crono-doc-topico{color:#1e293b;}' +
   '@media print{body{background:#fff;padding:0;} .doc-card{box-shadow:none;break-inside:avoid;} .crono-doc-semana-bloco{break-before:page;} .crono-doc-semana-bloco:first-child{break-before:avoid;} .crono-doc-grade{break-inside:avoid;}}';
 
