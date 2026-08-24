@@ -4790,11 +4790,12 @@ window.CRONOGRAMA_RUNTIME = {
     // culpar "falta de espaço" quando o erro real é outra coisa (ver
     // comentário em salvar()). `reintentarVerbo` no infinitivo (ex.:
     // "gerar", "importar") pra caber em "Tente ... de novo".
-    _sufixoFalhaSalvar: function(reintentarVerbo) {
+    _sufixoFalhaSalvar: async function(reintentarVerbo) {
         if (this._ultimoErroSalvar) {
             return ' — falha técnica ao gravar no armazenamento deste dispositivo (não parece ser falta de espaço; detalhe: ' + this._ultimoErroSalvar + '). O conteúdo continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, ele se perde. Se ' + reintentarVerbo + ' de novo não resolver, é provável que seja um bug — vale reportar com esse detalhe técnico.';
         }
-        return ' — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). O conteúdo continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, ele se perde. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e ' + reintentarVerbo + ' de novo.';
+        let usoArmazenamento = await estimarUsoArmazenamento();
+        return ' — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço)' + usoArmazenamento + '. O conteúdo continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, ele se perde. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e ' + reintentarVerbo + ' de novo.';
     },
 
     // Passo fixo de 0.1 (10%), entre ZOOM_MIN e ZOOM_MAX — arredonda pra
@@ -5007,7 +5008,7 @@ window.CRONOGRAMA_RUNTIME = {
 
     // Expande cada item pro formato de runtime e cria um cronograma NOVO com
     // o resultado — nunca sobrescreve um cronograma existente.
-    processarImportacao: function(bruto) {
+    processarImportacao: async function(bruto) {
         let chavesSemana = this._validarFormatoPlanejamento(bruto);
         if (!chavesSemana) return;
 
@@ -5033,7 +5034,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
 
         if (!salvouComSucesso) {
-            alert('⚠️ O cronograma NÃO foi salvo' + this._sufixoFalhaSalvar('importar'));
+            alert('⚠️ O cronograma NÃO foi salvo' + await this._sufixoFalhaSalvar('importar'));
             return;
         }
 
@@ -5083,7 +5084,7 @@ window.CRONOGRAMA_RUNTIME = {
         input.click();
     },
 
-    processarComplemento: function(bruto) {
+    processarComplemento: async function(bruto) {
         let ativo = this.planners[this.activePlannerId];
         if (!ativo) {
             alert('Nenhum cronograma ativo pra complementar.');
@@ -5124,7 +5125,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
 
         if (!salvouComSucesso) {
-            alert('⚠️ O complemento NÃO foi salvo' + this._sufixoFalhaSalvar('complementar'));
+            alert('⚠️ O complemento NÃO foi salvo' + await this._sufixoFalhaSalvar('complementar'));
             return;
         }
 
@@ -6780,7 +6781,7 @@ window.CRONOGRAMA_RUNTIME = {
         return feitosPreservados;
     },
 
-    confirmarGerarCronograma: function() {
+    confirmarGerarCronograma: async function() {
         if (!this._gerador || !this._gerador.planejamentoBruto) { alert('Calcule a prévia antes de criar o cronograma.'); return; }
         if (Object.keys(this._gerador.planejamentoBruto).length === 0) { alert('Nenhum card foi distribuído com essa configuração — confira os dias ativos e as cotas.'); return; }
 
@@ -6837,7 +6838,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
 
         if (!salvouComSucesso) {
-            alert('⚠️ O cronograma NÃO foi salvo' + this._sufixoFalhaSalvar('gerar'));
+            alert('⚠️ O cronograma NÃO foi salvo' + await this._sufixoFalhaSalvar('gerar'));
             return;
         }
 
@@ -7176,7 +7177,7 @@ window.CRONOGRAMA_RUNTIME = {
     // (_expandirItemInserido), junta com o que já existia e RECLASSIFICA
     // (reordena por prioridade — Crítica, Alta, Média, Baixa) o dia
     // inteiro, existentes e novos juntos.
-    confirmarAdicionarCards: function() {
+    confirmarAdicionarCards: async function() {
         if (!this._adicionarCards || !this._adicionarCards.insercoesResultado) { alert('Calcule a prévia antes de adicionar os cards.'); return; }
         let insercoes = this._adicionarCards.insercoesResultado;
         if (Object.keys(insercoes).length === 0) { alert('Nenhum card foi encaixado com essa configuração — confira os dias marcados e as cotas.'); return; }
@@ -7205,7 +7206,7 @@ window.CRONOGRAMA_RUNTIME = {
         this.render();
 
         if (!salvouComSucesso) {
-            alert('⚠️ Os cards NÃO foram salvos' + this._sufixoFalhaSalvar('adicionar'));
+            alert('⚠️ Os cards NÃO foram salvos' + await this._sufixoFalhaSalvar('adicionar'));
             return;
         }
 
@@ -19639,6 +19640,29 @@ window.exportarProvaCompletaMdHtml = function() {
 };
 
 // ── DOWNLOAD NATIVO (Substitui o showBlobModal) ──
+// Usado nos alertas de "falha ao salvar — provável falta de espaço" (ver
+// CRONOGRAMA_RUNTIME._sufixoFalhaSalvar) pra trocar "provável" por número
+// de verdade: navigator.storage.estimate() (suportado na maioria dos
+// navegadores modernos, exceto Safari em alguns casos) devolve quanto do
+// disco a origem já usa e a cota disponível — sem isso, o usuário só ouve
+// "provável falta de espaço" sem saber se está em 99% ou muito longe disso,
+// o que dificulta decidir se vale a pena investigar mais ou só tentar de
+// novo. Retorna string vazia (não lança) se a API não existir ou falhar,
+// pra nunca quebrar o fluxo de alerta que a chama.
+async function estimarUsoArmazenamento() {
+    try {
+        if (!navigator.storage || typeof navigator.storage.estimate !== 'function') return '';
+        let est = await navigator.storage.estimate();
+        if (!est || typeof est.usage !== 'number' || typeof est.quota !== 'number' || est.quota === 0) return '';
+        let usoMb = (est.usage / (1024 * 1024)).toFixed(1);
+        let cotaMb = (est.quota / (1024 * 1024)).toFixed(0);
+        let pct = Math.round((est.usage / est.quota) * 100);
+        return ' (uso atual neste navegador: ' + usoMb + ' MB de ' + cotaMb + ' MB — ' + pct + '% ocupado)';
+    } catch (e) {
+        return '';
+    }
+}
+
 function downloadArquivo(conteudo, nomeArquivo, mimeType) {
   var blob = new Blob([conteudo], { type: mimeType + ';charset=utf-8;' });
   var link = document.createElement("a");
