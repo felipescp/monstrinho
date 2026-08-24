@@ -4754,11 +4754,21 @@ window.CRONOGRAMA_RUNTIME = {
         this.zoomCronograma = (bruto && typeof bruto.zoomCronograma === 'number') ? bruto.zoomCronograma : 1;
     },
 
+    // Retorna true/false (sucesso ou falha) — mesmo padrão de
+    // ESQUEMAS_RUNTIME.salvar()/GLOSSARIO_RUNTIME.salvar(): sem isso, uma
+    // escrita que falha por cota de armazenamento estourada (QuotaExceededError
+    // — comum depois de gerar um cronograma grande por prioridade, cobrindo
+    // muitas semanas) ficava só no console, nunca avisando o usuário. O
+    // cronograma continuava visível na tela (já está em memória, this.planners
+    // foi atualizado), mas sumia ao recarregar a página, porque nunca chegou
+    // a ser persistido de verdade — era exatamente esse o sintoma reportado.
     salvar: function() {
         try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos, zoomCronograma: this.zoomCronograma }));
+            return true;
         } catch (e) {
             console.warn('[CRONOGRAMA] Falha ao salvar:', e);
+            return false;
         }
     },
 
@@ -4994,8 +5004,13 @@ window.CRONOGRAMA_RUNTIME = {
         let id = 'crono_' + Date.now();
         this.planners[id] = { id: id, nome: nome, cor: this.corLivre(), planejamento: planejamento, criadoEm: new Date().toISOString() };
         this.activePlannerId = id;
-        this.salvar();
+        let salvouComSucesso = this.salvar();
         this.render();
+
+        if (!salvouComSucesso) {
+            alert('⚠️ O cronograma NÃO foi salvo — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Ele continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, essa importação se perde. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e importar de novo.');
+            return;
+        }
 
         alert('Cronograma "' + nome + '" importado: ' + chavesSemana.length + ' semana(s), ' + totalItens + ' item(ns).');
     },
@@ -5080,8 +5095,13 @@ window.CRONOGRAMA_RUNTIME = {
         });
 
         ativo.semanaAtiva = novasChaves[0]; // pula direto pra primeira semana nova
-        this.salvar();
+        let salvouComSucesso = this.salvar();
         this.render();
+
+        if (!salvouComSucesso) {
+            alert('⚠️ O complemento NÃO foi salvo — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). As semanas novas continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, elas se perdem. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e complementar de novo.');
+            return;
+        }
 
         alert('Cronograma "' + ativo.nome + '" complementado: +' + novasChaves.length + ' semana(s) (' + novasChaves[0] + ' a ' + novasChaves[novasChaves.length - 1] + '), ' + totalItens + ' item(ns) novo(s).');
     },
@@ -6787,9 +6807,14 @@ window.CRONOGRAMA_RUNTIME = {
             this.activePlannerId = id;
         }
 
-        this.salvar();
+        let salvouComSucesso = this.salvar();
         this.fecharGeradorPrioridade();
         this.render();
+
+        if (!salvouComSucesso) {
+            alert('⚠️ O cronograma NÃO foi salvo — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço, mais comum em gerações com muitas semanas/itens). Ele continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, essa distribuição se perde. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e gerar de novo.');
+            return;
+        }
 
         alert((reconfigurando ? 'Cronograma "' + nome + '" reconfigurado: ' : 'Cronograma "' + nome + '" gerado: ') + Object.keys(planejamento).length + ' semana(s), ' + totalItens + ' item(ns).' +
             (feitosPreservados > 0 ? ' ' + feitosPreservados + ' já marcados como feito foram mantidos.' : ''));
@@ -7150,9 +7175,14 @@ window.CRONOGRAMA_RUNTIME = {
             });
         });
 
-        this.salvar();
+        let salvouComSucesso = this.salvar();
         this.fecharAdicionarCards();
         this.render();
+
+        if (!salvouComSucesso) {
+            alert('⚠️ Os cards NÃO foram salvos — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Eles continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, essa adição se perde. Tente liberar espaço (ex.: exportar e depois excluir cronogramas antigos, ou limpar dados de outros sites no navegador) e adicionar de novo.');
+            return;
+        }
 
         alert(totalInseridos + ' card(s) adicionado(s) a "' + planner.nome + '".');
     },
