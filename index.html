@@ -2068,6 +2068,9 @@ window.SALINHA_BACKUP = {
         // JURISPRUDÊNCIA
         'tjpe_v1__jurisprudencia_runtime',
 
+        // GLOSSÁRIO
+        'tjpe_v1__glossario_runtime',
+
         // TEMA
         'tjpe_v1__cor_tema'
     ],
@@ -2846,6 +2849,203 @@ window.SALINHA_BACKUP = {
                     // silenciosamente (item sem id cai no "if (!itemId) return;"). União
                     // por valor direto, sem duplicar.
                     if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'coresCustomizadas' &&
+                        Array.isArray(objImportado[subChave])) {
+
+                        if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
+
+                        objImportado[subChave].forEach(cor => {
+                            if (cor && objLocal[subChave].indexOf(cor) === -1) {
+                                objLocal[subChave].push(cor);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.excluidos) ──
+                    // Mesmíssimo padrão de esquemas_runtime.excluidos — precisa ser
+                    // resolvido ANTES do caso de "glossario" abaixo.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'excluidos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idTermo => {
+                            if (objImportado[subChave][idTermo] && !objLocal[subChave][idTermo]) {
+                                objLocal[subChave][idTermo] = objImportado[subChave][idTermo];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.glossario) ──
+                    // Mesmíssima forma/problema/solução de esquemas_runtime.esquemas:
+                    // dicionário achatado {"MATÉRIA > Divisão" → array de termos}.
+                    // Respeita a lápide de exclusões (dos dois lados) e nunca persiste
+                    // termos OFICIAIS (origem_oficial) — sempre buscados de novo via
+                    // carregarGlossarioOficial() a cada load.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'glossario' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        const excluidosRemoto = (objImportado.excluidos && typeof objImportado.excluidos === 'object') ? objImportado.excluidos : {};
+                        const excluidosLocal = (objLocal.excluidos && typeof objLocal.excluidos === 'object') ? objLocal.excluidos : {};
+                        const idsExcluidos = {};
+                        Object.keys(excluidosRemoto).forEach(id => { idsExcluidos[id] = true; });
+                        Object.keys(excluidosLocal).forEach(id => { idsExcluidos[id] = true; });
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const termosImportados = objImportado[subChave][chaveL2];
+                            if (!Array.isArray(termosImportados)) return;
+                            if (!Array.isArray(objLocal[subChave][chaveL2])) {
+                                objLocal[subChave][chaveL2] = [];
+                            }
+                            termosImportados.forEach(termo => {
+                                if (!termo || !termo.id || idsExcluidos[termo.id] || termo.origem_oficial) return;
+                                const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
+                                    return local && local.id === termo.id;
+                                });
+                                if (!jaExiste) {
+                                    objLocal[subChave][chaveL2].push(termo);
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+
+                        Object.keys(objLocal[subChave]).forEach(chaveL2 => {
+                            const antes = objLocal[subChave][chaveL2].length;
+                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
+                                return item && !idsExcluidos[item.id] && !item.origem_oficial;
+                            });
+                            if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
+                            if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
+                        });
+
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.ocultos) ──
+                    // Mesma política de união pura (OR) de esquemas_runtime.ocultos.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'ocultos' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idTermo => {
+                            if (objImportado[subChave][idTermo] && !objLocal[subChave][idTermo]) {
+                                objLocal[subChave][idTermo] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.revisaoGlossario) ──
+                    // Mesmíssimo formato/problema/política de esquemas_runtime.revisaoEsquemas:
+                    // dicionário achatado {id_termo → {ultimaClassificacao}} (estrelas 1-3).
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'revisaoGlossario' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idTermo => {
+                            const remoto = objImportado[subChave][idTermo];
+                            const local = objLocal[subChave][idTermo];
+                            if (!remoto || typeof remoto !== 'object') return;
+
+                            if (local === undefined) {
+                                objLocal[subChave][idTermo] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.visualizados) ──
+                    // Mesma política de união pura (OR) de esquemas_runtime.visualizados.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'visualizados' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idTermo => {
+                            if (objImportado[subChave][idTermo] && !objLocal[subChave][idTermo]) {
+                                objLocal[subChave][idTermo] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.etiquetaPorTermo) ──
+                    // Mesmíssimo padrão de esquemas_runtime.etiquetaPorEsquema.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'etiquetaPorTermo' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idTermo => {
+                            if (objImportado[subChave][idTermo] && !objLocal[subChave][idTermo]) {
+                                objLocal[subChave][idTermo] = objImportado[subChave][idTermo];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.etiquetas) ──
+                    // Mesmíssimo padrão de esquemas_runtime.etiquetas — dicionário
+                    // aninhado {chaveL2 → {id_etiqueta → {id,nome,cor}}}.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'etiquetas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const etiquetasRemotas = objImportado[subChave][chaveL2];
+                            if (!etiquetasRemotas || typeof etiquetasRemotas !== 'object') return;
+
+                            if (!objLocal[subChave][chaveL2] || typeof objLocal[subChave][chaveL2] !== 'object') {
+                                objLocal[subChave][chaveL2] = {};
+                            }
+
+                            Object.keys(etiquetasRemotas).forEach(idEtiqueta => {
+                                if (etiquetasRemotas[idEtiqueta] && !objLocal[subChave][chaveL2][idEtiqueta]) {
+                                    objLocal[subChave][chaveL2][idEtiqueta] = etiquetasRemotas[idEtiqueta];
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.coresCustomizadas) ──
+                    // Mesmíssimo padrão de esquemas_runtime.coresCustomizadas.
+                    if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'coresCustomizadas' &&
                         Array.isArray(objImportado[subChave])) {
 
                         if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
@@ -10312,6 +10512,147 @@ window.fecharMateriaisModal = function() {
     #section-glossario .mat-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
     #section-glossario .mat-card-add:hover { background:var(--bg-accent-soft); }
 
+    /* Cabeçalho com botões de importar/exportar — mesmo padrão de
+       #esquemas-modal .esq-cabecalho-acoes. */
+    #section-glossario .esq-cabecalho-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-left:auto; }
+    #section-glossario .esq-export-menu { position:relative; }
+    #section-glossario .esq-export-menu summary { list-style:none; }
+    #section-glossario .esq-export-menu summary::-webkit-details-marker { display:none; }
+    #section-glossario .esq-export-menu summary, #section-glossario .esq-cabecalho-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #section-glossario .esq-export-menu summary:hover, #section-glossario .esq-cabecalho-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .esq-export-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); right:0; min-width:145px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #section-glossario .esq-export-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; }
+    #section-glossario .esq-export-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
+
+    /* Toolbar de ferramentas (ocultos/oficiais/etiquetas/cor/busca/seleção)
+       — mesmo padrão de #esquemas-modal .esq-toolbar. */
+    #section-glossario .esq-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #section-glossario .esq-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #section-glossario .esq-tb-busca-grupo { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    #section-glossario .esq-tb-busca { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:10px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; width:150px; }
+    #section-glossario .esq-tb-busca:focus { outline:none; border-color:var(--app-primary); }
+    #section-glossario .esq-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-glossario .esq-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .esq-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #section-glossario .esq-tb-btn.ativa:hover { color:#fff; }
+    #section-glossario .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #section-glossario .esq-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    #section-glossario .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #section-glossario .esq-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #section-glossario .esq-etq-swatch-filtro { width:16px; height:16px; }
+
+    /* Card: checkbox de seleção, selos, etiqueta e classificação por
+       estrelas — mesmo padrão de #esquemas-modal .esq-card-*/.esq-estrela*. */
+    #section-glossario .esq-card-oculto { opacity:0.5; }
+    #section-glossario .esq-card-checkbox { cursor:pointer; flex-shrink:0; }
+    #section-glossario .esq-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+    #section-glossario .esq-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
+    #section-glossario .esq-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
+    #section-glossario .esq-card-classificacao { display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:6px; margin-top:2px; border-top:1px dashed #f1f5f9; }
+    #section-glossario .esq-btn-visualizado, #modal-glossario-baralho .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+    #section-glossario .esq-btn-visualizado:hover, #modal-glossario-baralho .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .esq-btn-visualizado.ativo, #modal-glossario-baralho .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    #section-glossario .esq-estrelas { display:flex; flex-direction:row-reverse; gap:1px; flex-shrink:0; }
+    #section-glossario .esq-estrela { font-size:15px; line-height:1; border:none; background:none; cursor:pointer; color:#e2e8f0; padding:0 1px; }
+    #section-glossario .esq-estrela.preenchida { color:#f59e0b; }
+    #section-glossario .esq-estrela:hover, #section-glossario .esq-estrela:hover ~ .esq-estrela { color:#f59e0b; }
+
+    /* Abas do topo: "Navegar" + 1/2/3 Estrelas — mesmo padrão de
+       #esquemas-modal .fc-tabs/.fc-tab/.fc-aba-revisao. */
+    #section-glossario .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
+    #section-glossario .esq-tabs-grupo { display:flex; gap:4px; }
+    #section-glossario .esq-tabs-baralho { display:flex; align-items:center; gap:6px; }
+    #section-glossario .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
+    #section-glossario .fc-tab:hover { color:var(--app-primary); }
+    #section-glossario .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
+    #section-glossario .fc-tab-count { opacity:0.65; font-weight:600; }
+    #section-glossario .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
+    #section-glossario .fc-tab-export-btn:hover { opacity:1; }
+
+    #section-glossario .fc-aba-revisao { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+    #section-glossario .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #section-glossario .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-glossario .fc-pill:hover { border-color:var(--app-primary); }
+    #section-glossario .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #section-glossario .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
+    #section-glossario .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-glossario .fc-card-origem, #modal-glossario-baralho .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
+    #section-glossario .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; }
+    #section-glossario .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #section-glossario span[id^="glos-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #section-glossario .fc-vazio, #modal-glossario-baralho .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; margin:auto; }
+
+    /* Cartão de estudo (abas de estrela + popup Baralho) — mesmo padrão de
+       #esquemas-modal .esq-estudo-*. */
+    #section-glossario .esq-estudo-card, #modal-glossario-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+    #section-glossario .esq-estudo-card { max-width:640px; max-height:46vh; }
+    #modal-glossario-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
+    #section-glossario .esq-estudo-titulo, #modal-glossario-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
+    #section-glossario .esq-estudo-texto, #modal-glossario-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
+
+    #section-glossario .fc-card-revisao-acoes, #modal-glossario-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    #section-glossario .fc-rev-btn, #modal-glossario-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
+    #section-glossario .fc-rev-estrela, #modal-glossario-baralho .fc-rev-estrela { color:#92400e; border-color:#fde68a; }
+    #section-glossario .fc-rev-estrela:hover, #modal-glossario-baralho .fc-rev-estrela:hover { background:#fef3c7; }
+    #section-glossario .fc-rev-estrela.ativa, #modal-glossario-baralho .fc-rev-estrela.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #section-glossario .fc-rev-estrela.ativa:hover, #modal-glossario-baralho .fc-rev-estrela.ativa:hover { background:#b45309; }
+
+    /* MODAL: Baralho de Glossário — mesmo padrão de #modal-esquemas-baralho. */
+    #modal-glossario-baralho { z-index: 10000; }
+    #modal-glossario-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-glossario-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
+    #modal-glossario-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
+    #modal-glossario-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-glossario-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+    #modal-glossario-baralho .esq-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    #modal-glossario-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #modal-glossario-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
+    #modal-glossario-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
+    #modal-glossario-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-nome,
+    #modal-glossario-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-origem { color:#fff; }
+    #modal-glossario-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:normal; overflow-wrap:break-word; margin-bottom:2px; }
+    #modal-glossario-baralho .esq-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:normal; overflow-wrap:break-word; }
+    #modal-glossario-baralho #glos-baralho-corpo { flex:1; min-height:0; min-width:0; display:flex; flex-direction:column; }
+    #modal-glossario-baralho .fc-popup-nav { display:flex; align-items:center; justify-content:center; gap:16px; flex-shrink:0; }
+    #modal-glossario-baralho .fc-nav-btn { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:16px; cursor:pointer; color:var(--app-primary); }
+    #modal-glossario-baralho #glos-baralho-posicao { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
+    #modal-glossario-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; align-items:center; gap:8px; justify-content:space-between; border-top:1px solid var(--border-color); padding-top:12px; flex-shrink:0; }
+    #modal-glossario-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-glossario-baralho #glos-baralho-acoes { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #modal-glossario-baralho #glos-baralho-acoes .esq-btn-visualizado,
+    #modal-glossario-baralho #glos-baralho-acoes .fc-rev-btn { padding:3px 8px; font-size:9.5px; }
+
+    /* MODAL: Etiquetas do Glossário — mesmo padrão de #modal-esquema-etiquetas. */
+    #modal-glossario-etiquetas { z-index: 10000; }
+    #modal-glossario-etiquetas .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-glossario-etiquetas .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-glossario-etiquetas .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-glossario-etiquetas .esq-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-glossario-etiquetas .esq-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-glossario-etiquetas .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-glossario-etiquetas .esq-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #modal-glossario-etiquetas .esq-btn-excluir:hover { color:var(--danger); }
+    #modal-glossario-etiquetas .esq-etq-pill { font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    #modal-glossario-etiquetas .esq-etq-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #modal-glossario-etiquetas #glos-etq-nome { flex:1; min-width:140px; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-glossario-etiquetas .esq-etq-paleta { display:flex; gap:6px; flex-wrap:wrap; }
+    #modal-glossario-etiquetas .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #modal-glossario-etiquetas .esq-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #modal-glossario-etiquetas .esq-etq-swatch-add { background:var(--bg-white); border:1px dashed var(--app-primary); color:var(--app-primary); font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1; }
+    #modal-glossario-etiquetas .esq-etq-swatch-add:hover { background:var(--bg-accent-soft); }
+    #modal-glossario-etiquetas .esq-etq-lista { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+    #modal-glossario-etiquetas .esq-etq-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; }
+    #modal-glossario-etiquetas .esq-etq-vazio { font-size:11px; color:var(--text-muted); font-style:italic; padding:10px 0; text-align:center; }
+
+    /* MODAL: Transferir Termos Selecionados — mesmo padrão de
+       #modal-esquema-transferir. */
+    #modal-glossario-transferir { z-index: 10000; }
+    #modal-glossario-transferir .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-glossario-transferir .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-glossario-transferir .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-glossario-transferir select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-glossario-transferir label { font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px; }
+
     #modal-glossario-novo { z-index: 10000; }
     #modal-glossario-novo .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
     #modal-glossario-novo .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
@@ -10333,14 +10674,79 @@ window.fecharMateriaisModal = function() {
     #modal-glossario-importar #glos-import-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
 </style>
 
-    <div class="analytics-modal-header" style="flex-shrink:0;">
+    <div class="analytics-modal-header" style="flex-shrink:0; height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px;">
         <div class="analytics-modal-title">📖 Glossário</div>
-        <button class="analytics-close-btn" onclick="window.fecharGlossarioModal()">✕</button>
+        <div class="esq-cabecalho-acoes">
+            <button class="esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
+            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTudo()">Exportar .html</button></div></details>
+            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()">Exportar .html</button></div></details>
+            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()">Exportar .html</button></div></details>
+            <button class="esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
+            <button class="analytics-close-btn" onclick="window.fecharGlossarioModal()">✕</button>
+        </div>
+    </div>
+    <div class="fc-tabs">
+        <div class="esq-tabs-grupo">
+            <button class="fc-tab ativa" id="glos-tab-grade" onclick="window.GLOSSARIO_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
+            <button class="fc-tab" id="glos-tab-1" onclick="window.GLOSSARIO_RUNTIME.trocarAba('1')">⭐ 1 Estrela <span class="fc-tab-count" id="glos-tab-1-count"></span></button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: expressões de 1 Estrela">📤</button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: expressões de 1 Estrela">🎨</button>
+            <button class="fc-tab" id="glos-tab-2" onclick="window.GLOSSARIO_RUNTIME.trocarAba('2')">⭐⭐ 2 Estrelas <span class="fc-tab-count" id="glos-tab-2-count"></span></button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarMarkdownAba('2')" title="Exportar MD: expressões de 2 Estrelas">📤</button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('2')" title="Exportar HTML estilizado: expressões de 2 Estrelas">🎨</button>
+            <button class="fc-tab" id="glos-tab-3" onclick="window.GLOSSARIO_RUNTIME.trocarAba('3')">⭐⭐⭐ 3 Estrelas <span class="fc-tab-count" id="glos-tab-3-count"></span></button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarMarkdownAba('3')" title="Exportar MD: expressões de 3 Estrelas">📤</button>
+            <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: expressões de 3 Estrelas">🎨</button>
+        </div>
+        <div class="esq-tabs-baralho">
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODO o glossário">🗂️ Baralho: Todos</button>
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as expressões da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com as expressões da divisão/tópico (L2) selecionada na barra lateral">🗂️ Baralho: Tópico</button>
+        </div>
     </div>
     <div class="fc-grid" id="glos-grid">
         <div class="fc-col" id="glos-col-materias"></div>
         <div class="fc-col" id="glos-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
         <div class="fc-col" id="glos-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+    </div>
+
+    <div class="fc-aba-revisao" id="glos-aba-1" style="display:none;">
+        <div class="fc-pills" id="glos-pills-1"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('1')">🔀 Embaralhar</button>
+        </div>
+        <div id="glos-corpo-1"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('1', -1)">‹</button>
+            <span id="glos-posicao-1">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('1', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="glos-aba-2" style="display:none;">
+        <div class="fc-pills" id="glos-pills-2"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('2')">🔀 Embaralhar</button>
+        </div>
+        <div id="glos-corpo-2"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('2', -1)">‹</button>
+            <span id="glos-posicao-2">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('2', 1)">›</button>
+        </div>
+    </div>
+
+    <div class="fc-aba-revisao" id="glos-aba-3" style="display:none;">
+        <div class="fc-pills" id="glos-pills-3"></div>
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('3')">🔀 Embaralhar</button>
+        </div>
+        <div id="glos-corpo-3"></div>
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('3', -1)">‹</button>
+            <span id="glos-posicao-3">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('3', 1)">›</button>
+        </div>
     </div>
 
 <script>
@@ -10438,14 +10844,54 @@ function parsearImportacaoGlossario(textoBruto) {
     return { porDivisao: porDivisao, totalVerbetes: totalVerbetes, totalMalformados: totalMalformados, totalSemL2: totalSemL2 };
 }
 
-// ── GLOSSÁRIO — mesmo menu L1/L2 de Materiais. Estrutura de dados:
-// glossario: { "MATÉRIA > Divisão": [ {id, expressao, significado,
-// contexto, criadoEm} ] } — achatada, mesmo padrão. Sem origem_oficial:
-// diferente de Materiais/Esquemas/Jurisprudência, não existe conteúdo
-// "oficial" aqui (nada é buscado de um manifesto do repositório) — é 100%
-// pessoal, então não há init() assíncrono nem trava de edição/exclusão.
+// Nomes de divisão válidos pra uma matéria, direto da taxonomia — usado
+// pra RECUSAR (não só ignorar em silêncio) verbetes cujo "### L2:" não bate
+// EXATAMENTE com nenhuma divisão real cadastrada. Sem isso, um nome de
+// divisão errado (typo, ou divisão inventada pela IA que gerou o texto)
+// ainda entrava no glossário, só que "órfão": nunca aparecia filtrando por
+// uma divisão específica na barra lateral, só na visão agregada "Todas as
+// divisões" (que casa só pelo prefixo da matéria, sem checar se a divisão
+// depois dele existe de verdade).
+function glosDivisoesValidas(materia) {
+    if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return new Set();
+    let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+    if (!mat || !Array.isArray(mat.divisoes)) return new Set();
+    return new Set(mat.divisoes.map(function(d) { return d.nivel_2; }));
+}
+
+// ── GLOSSÁRIO — mesmo menu L1/L2 de Materiais, com o MESMO conjunto de
+// ferramentas de ESQUEMAS_RUNTIME (ocultos/oficiais, seleção múltipla,
+// etiquetas coloridas por tópico, transferir, classificação por estrelas
+// + abas + baralho, exportação JSON/MD/HTML, importação em massa e por
+// arquivo .json). Estrutura de dados: glossario: { "MATÉRIA > Divisão":
+// [ {id, expressao, significado, contexto, criadoEm} ] } — achatada, mesmo
+// padrão de esquemas_runtime.esquemas. Diferente de Esquemas, cada verbete
+// tem 3 campos de TEXTO PURO (sem editor rico/HTML) — por isso não há um
+// "editor" com toolbar de formatação: o formulário simples existente
+// (#modal-glossario-novo) já cobre criar/editar, e é isso que
+// _htmlCartaoTermoEstudo usa pra montar o cartão de estudo (abas/baralho).
 window.GLOSSARIO_RUNTIME = {
     glossario: {},
+    ocultos: {},
+    // Lápide de exclusões { id → data ISO } — mesmo motivo/mecanismo de
+    // esquemas_runtime.excluidos: sem isso, o merge de backup na nuvem
+    // (só sabe ADICIONAR o que falta) reinjeta pra sempre qualquer termo
+    // já sincronizado antes de ser excluído localmente.
+    excluidos: {},
+    // Classificação por estrelas (1 a 3) — mesmo formato/toggle de
+    // esquemas_runtime.revisaoEsquemas via window.ClassificacaoCards.
+    // Puro sistema de distribuição, sem agendamento: um termo classificado
+    // com N estrelas fica na seção de N estrelas até ser reclassificado.
+    revisaoGlossario: {},
+    // "Já vi essa expressão" — flag pessoal simples, independente das
+    // estrelas. Mesmo padrão de ocultos: {"<id>": true}.
+    visualizados: {},
+    // Etiquetas coloridas (nomeáveis), ESCOPADAS POR TÓPICO — mesmíssimo
+    // padrão/motivo de esquemas_runtime.etiquetas/etiquetaPorEsquema.
+    etiquetas: {},
+    etiquetaPorTermo: {},
+    PALETA_ETIQUETAS: ['#eab308', '#f97316', '#b91c1c', '#db2777', '#9333ea', '#16a34a', '#14b8a6', '#2563eb', '#1e293b', '#6b7280'],
+    coresCustomizadas: [],
     STORAGE_KEY: 'tjpe_v1__glossario_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado)
@@ -10454,10 +10900,38 @@ window.GLOSSARIO_RUNTIME = {
     _editandoChave: null,
     _resultadoPreVisualizado: null,
 
+    _mostrarOcultos: false,
+    _ocultarOficiais: false,
+    _modoSelecao: false,
+    _selecionados: {},
+    _filtroCor: '',
+    _mostrarFiltroCor: false,
+    _filtroBusca: '',
+    _modalEtiquetasModoAplicar: false,
+
+    // Abas do topo: 'grade' (navegação L1/L2) | '1'|'2'|'3' (estrelas) —
+    // mesmo padrão de ESQUEMAS_RUNTIME._abaAtiva/_estadosAba.
+    _abaAtiva: 'grade',
+    _estadosAba: {
+        '1': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '2': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '3': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+    },
+    // Popup "Baralho de Glossário" (Todos | Disciplina | Divisão/Tópico) —
+    // mesmo padrão de ESQUEMAS_RUNTIME._baralhoState.
+    _baralhoState: null,
+
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.glossario = (bruto && typeof bruto.glossario === 'object' && !Array.isArray(bruto.glossario)) ? bruto.glossario : {};
+        this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        this.excluidos = (bruto && typeof bruto.excluidos === 'object' && !Array.isArray(bruto.excluidos)) ? bruto.excluidos : {};
+        this.revisaoGlossario = (bruto && typeof bruto.revisaoGlossario === 'object' && !Array.isArray(bruto.revisaoGlossario)) ? bruto.revisaoGlossario : {};
+        this.visualizados = (bruto && typeof bruto.visualizados === 'object' && !Array.isArray(bruto.visualizados)) ? bruto.visualizados : {};
+        this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
+        this.etiquetaPorTermo = (bruto && typeof bruto.etiquetaPorTermo === 'object' && !Array.isArray(bruto.etiquetaPorTermo)) ? bruto.etiquetaPorTermo : {};
+        this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
         this._bootstrapped = true;
     },
 
@@ -10465,9 +10939,20 @@ window.GLOSSARIO_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
+    // Termos OFICIAIS (origem_oficial) nunca são persistidos aqui — mesmo
+    // motivo/mecanismo de ESQUEMAS_RUNTIME.salvar(): importarTermoGlossarioOficial()
+    // já os funde de novo a cada carregamento (buscados do repositório,
+    // dados/glossario/*.json), então persisti-los aqui só duplicaria esse
+    // conteúdo no localStorage/backup sem necessidade.
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ glossario: this.glossario }));
+            let self = this;
+            let glossarioPessoal = {};
+            Object.keys(this.glossario).forEach(function(chave) {
+                let apenasPessoais = (self.glossario[chave] || []).filter(function(t) { return !t.origem_oficial; });
+                if (apenasPessoais.length > 0) glossarioPessoal[chave] = apenasPessoais;
+            });
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ glossario: glossarioPessoal, ocultos: this.ocultos, excluidos: this.excluidos, revisaoGlossario: this.revisaoGlossario, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorTermo: this.etiquetaPorTermo, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[GLOSSARIO] Falha ao salvar:', e);
@@ -10478,6 +10963,12 @@ window.GLOSSARIO_RUNTIME = {
     init: function() {
         this.carregar();
         this.render();
+        this._atualizarContagensAbas();
+        if (typeof window.carregarGlossarioOficial === 'function') {
+            window.carregarGlossarioOficial().then(function() {
+                window.GLOSSARIO_RUNTIME.render();
+            });
+        }
     },
 
     _chaveL2: function(materia, divisao) {
@@ -10499,6 +10990,23 @@ window.GLOSSARIO_RUNTIME = {
     },
     _contarTermosDoL2: function(materia, divisao) {
         return (this.glossario[this._chaveL2(materia, divisao)] || []).length;
+    },
+
+    // Termos VISÍVEIS (exclui ocultos) dessa L2 — mesmo padrão público de
+    // ESQUEMAS_RUNTIME.esquemasDoL2, pra uso fora da seção no futuro.
+    glossarioDoL2: function(materia, divisao) {
+        this._garantirCarregado();
+        let self = this;
+        return (this.glossario[this._chaveL2(materia, divisao)] || []).filter(function(t) { return !self.ocultos[t.id]; });
+    },
+
+    _normalizarBusca: function(texto) {
+        return (texto || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+    },
+
+    filtrarGlossarioGrade: function(texto) {
+        this._filtroBusca = texto || '';
+        this._renderGradeCards();
     },
 
     render: function() {
@@ -10588,22 +11096,399 @@ window.GLOSSARIO_RUNTIME = {
         return resultado;
     },
 
-    _renderToolbar: function() {
-        return '<div class="mat-toolbar">' +
-            '<div class="mat-toolbar-linha">' +
-                '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarTudo()" title="Exportar todo o glossário visível em JSON">📤 Tudo (JSON)</button>' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()" title="Exportar a disciplina selecionada em JSON">📤 Disciplina (JSON)</button>' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarTopico()" title="Exportar o tópico selecionado em JSON">📤 Tópico (JSON)</button>' +
-                '</div>' +
-                '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTudo()" title="Exportar todo o glossário em HTML estilizado, pronto pra imprimir ou revisar">🎨 Tudo (HTML)</button>' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()" title="Exportar a disciplina selecionada em HTML estilizado">🎨 Disciplina (HTML)</button>' +
-                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()" title="Exportar o tópico selecionado em HTML estilizado">🎨 Tópico (HTML)</button>' +
-                '</div>' +
-                '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalImportar()" title="Importar várias expressões de uma vez, colando um texto formatado">📥 Importar em Massa</button>' +
-            '</div>' +
+    // Aplica ocultos/oficiais/busca/cor sobre _termosParaExibir() e ordena
+    // por estrelas (3★ primeiro) — mesmo padrão de ESQUEMAS_RUNTIME._listaFiltrada.
+    _listaFiltrada: function() {
+        let self = this;
+        let lista = this._termosParaExibir();
+        if (!this._mostrarOcultos) {
+            lista = lista.filter(function(par) { return !self.ocultos[par.item.id]; });
+        }
+        if (this._ocultarOficiais) {
+            lista = lista.filter(function(par) { return !par.item.origem_oficial; });
+        }
+        if (this._filtroBusca && this._filtroBusca.trim()) {
+            let alvo = this._normalizarBusca(this._filtroBusca);
+            lista = lista.filter(function(par) { return self._normalizarBusca(par.item.expressao).indexOf(alvo) !== -1; });
+        }
+        if (this._filtroCor) {
+            lista = lista.filter(function(par) {
+                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
+                let et = etiquetasDoTopico[self.etiquetaPorTermo[par.item.id]];
+                return et && et.cor === self._filtroCor;
+            });
+        }
+        lista = lista.slice().sort(function(a, b) {
+            return self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id);
+        });
+        return lista;
+    },
+
+    _estrelasAtuais: function(id) {
+        let r = this.revisaoGlossario[id];
+        return r ? (parseInt(r.ultimaClassificacao, 10) || 0) : 0;
+    },
+
+    toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
+    toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
+
+    toggleModoSelecao: function() {
+        this._modoSelecao = !this._modoSelecao;
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    toggleSelecionado: function(id) {
+        if (this._selecionados[id]) delete this._selecionados[id]; else this._selecionados[id] = true;
+        this._renderGradeCards();
+    },
+
+    selecionarTodosVisiveis: function() {
+        let self = this;
+        this._listaFiltrada().forEach(function(par) { self._selecionados[par.item.id] = true; });
+        this._renderGradeCards();
+    },
+
+    ocultarSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { self.ocultos[id] = true; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    exibirSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(id) { delete self.ocultos[id]; });
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+    },
+
+    excluirSelecionados: function() {
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        if (idsSelecionados.length === 0) return;
+
+        let idsOficiais = {};
+        idsSelecionados.forEach(function(id) {
+            Object.keys(self.glossario).forEach(function(chave) {
+                let item = (self.glossario[chave] || []).find(function(t) { return t.id === id; });
+                if (item && item.origem_oficial) idsOficiais[id] = true;
+            });
+        });
+        let idsExcluiveis = idsSelecionados.filter(function(id) { return !idsOficiais[id]; });
+        let qtdOficiais = Object.keys(idsOficiais).length;
+
+        if (idsExcluiveis.length === 0) {
+            alert('Os itens selecionados são oficiais e não podem ser excluídos.');
+            return;
+        }
+
+        let aviso = 'Excluir permanentemente ' + idsExcluiveis.length + ' expressão(ões) selecionada(s)? Esta ação não pode ser desfeita.';
+        if (qtdOficiais > 0) aviso += '\n\n(' + qtdOficiais + ' item(ns) oficial(is) selecionado(s) será(ão) ignorado(s) — oficiais não podem ser excluídos por aqui.)';
+        if (!confirm(aviso)) return;
+
+        if (!this.excluidos) this.excluidos = {};
+        let idsParaExcluir = {};
+        idsExcluiveis.forEach(function(id) { idsParaExcluir[id] = true; });
+
+        Object.keys(this.glossario).forEach(function(chave) {
+            let restantes = self.glossario[chave].filter(function(t) {
+                if (!idsParaExcluir[t.id]) return true;
+                self.excluidos[t.id] = new Date().toISOString();
+                return false;
+            });
+            if (restantes.length === 0) delete self.glossario[chave]; else self.glossario[chave] = restantes;
+        });
+
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+    },
+
+    // ── ETIQUETAS (coloridas, nomeáveis, ESCOPADAS POR TÓPICO) — mesmíssimo
+    // comportamento de ESQUEMAS_RUNTIME (ver comentários lá). ──
+
+    _chaveEtiquetas: function() {
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) return null;
+        return this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+    },
+
+    _etiquetasDoTopicoAtual: function() {
+        let chave = this._chaveEtiquetas();
+        return chave ? (this.etiquetas[chave] || {}) : {};
+    },
+
+    abrirModalEtiquetas: function(modoAplicar) {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de gerenciar etiquetas — elas organizam um tópico por dentro, não o sistema inteiro.');
+            return;
+        }
+        this._modalEtiquetasModoAplicar = !!modoAplicar;
+        document.getElementById('glos-etq-nome').value = '';
+        document.getElementById('glos-etq-cor-selecionada').value = this.PALETA_ETIQUETAS[0];
+        this._renderModalEtiquetas();
+        document.getElementById('modal-glossario-etiquetas').classList.add('open');
+    },
+
+    fecharModalEtiquetas: function() {
+        document.getElementById('modal-glossario-etiquetas').classList.remove('open');
+    },
+
+    _renderModalEtiquetas: function() {
+        let self = this;
+        let tituloEl = document.getElementById('glos-etq-titulo');
+        let qtdSel = Object.keys(this._selecionados).length;
+        let chave = this._chaveEtiquetas();
+        let sufixoTopico = chave ? (' — ' + chave) : '';
+        tituloEl.textContent = this._modalEtiquetasModoAplicar
+            ? '🏷️ Aplicar Etiqueta (' + qtdSel + ' selecionado' + (qtdSel === 1 ? '' : 's') + ')' + sufixoTopico
+            : '🏷️ Etiquetas do tópico' + sufixoTopico;
+
+        let corSelecionadaAtual = document.getElementById('glos-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        let paletaHtml = '<div class="esq-etq-paleta">' + todasAsCores.map(function(cor) {
+            return '<span class="esq-etq-swatch' + (cor === corSelecionadaAtual ? ' selecionada' : '') + '" data-cor="' + cor + '" style="background:' + cor + ';" onclick="window.GLOSSARIO_RUNTIME._selecionarCorNovaEtiqueta(this)"></span>';
+        }).join('') +
+            '<span class="esq-etq-swatch esq-etq-swatch-add" title="Adicionar cor" onclick="document.getElementById(\'glos-etq-cor-picker\').click()">+</span>' +
         '</div>';
+
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        let idsExistentes = Object.keys(etiquetasTopico).sort(function(a, b) {
+            return (etiquetasTopico[a].nome || '').localeCompare(etiquetasTopico[b].nome || '');
+        });
+
+        let listaHtml = idsExistentes.length === 0
+            ? '<div class="esq-etq-vazio">Nenhuma etiqueta criada ainda neste tópico.</div>'
+            : idsExistentes.map(function(id) {
+                let et = etiquetasTopico[id];
+                let acaoHtml = self._modalEtiquetasModoAplicar
+                    ? '<button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.aplicarEtiquetaAosSelecionados(\'' + id + '\')">Aplicar</button>'
+                    : '<button class="esq-btn-excluir" onclick="window.GLOSSARIO_RUNTIME.excluirEtiqueta(\'' + id + '\')" title="Excluir etiqueta">🗑️</button>';
+                return '<div class="esq-etq-item">' +
+                    '<span class="esq-etq-pill" style="background:' + et.cor + ';">' + self._escapar(et.nome) + '</span>' +
+                    acaoHtml +
+                '</div>';
+            }).join('');
+
+        let removerHtml = this._modalEtiquetasModoAplicar
+            ? '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.GLOSSARIO_RUNTIME.removerEtiquetaDosSelecionados()">🚫 Remover etiqueta dos selecionados</button>'
+            : '';
+
+        document.getElementById('glos-etq-lista').innerHTML = listaHtml;
+        document.getElementById('glos-etq-remover-acao').innerHTML = removerHtml;
+        document.getElementById('glos-etq-paleta-container').innerHTML = paletaHtml;
+    },
+
+    _selecionarCorNovaEtiqueta: function(el) {
+        let container = el.parentElement;
+        Array.prototype.forEach.call(container.children, function(c) { c.classList.remove('selecionada'); });
+        el.classList.add('selecionada');
+        document.getElementById('glos-etq-cor-selecionada').value = el.getAttribute('data-cor');
+    },
+
+    adicionarCorCustomizada: function(cor) {
+        if (!cor) return;
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        if (todasAsCores.indexOf(cor) === -1) {
+            this.coresCustomizadas.push(cor);
+            this.salvar();
+        }
+        document.getElementById('glos-etq-cor-selecionada').value = cor;
+        this._renderModalEtiquetas();
+    },
+
+    criarEtiqueta: function() {
+        let chave = this._chaveEtiquetas();
+        if (!chave) return;
+        let nome = (document.getElementById('glos-etq-nome').value || '').trim();
+        let cor = document.getElementById('glos-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        if (!nome) { alert('Dê um nome pra etiqueta.'); return; }
+        let id = 'etq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        if (!this.etiquetas[chave]) this.etiquetas[chave] = {};
+        this.etiquetas[chave][id] = { id: id, nome: nome, cor: cor };
+        this.salvar();
+        document.getElementById('glos-etq-nome').value = '';
+        this._renderModalEtiquetas();
+    },
+
+    excluirEtiqueta: function(id) {
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][id]) return;
+        if (!confirm('Excluir a etiqueta "' + this.etiquetas[chave][id].nome + '"? Ela será removida de todas as expressões deste tópico que a usam.')) return;
+        let self = this;
+        let corRemovida = this.etiquetas[chave][id].cor;
+        delete this.etiquetas[chave][id];
+        if (Object.keys(this.etiquetas[chave]).length === 0) delete this.etiquetas[chave];
+        Object.keys(this.etiquetaPorTermo).forEach(function(idTermo) {
+            if (self.etiquetaPorTermo[idTermo] === id) delete self.etiquetaPorTermo[idTermo];
+        });
+        if (this._filtroCor === corRemovida) {
+            let aindaExiste = Object.keys(this.etiquetas[chave] || {}).some(function(k) { return self.etiquetas[chave][k].cor === corRemovida; });
+            if (!aindaExiste) this._filtroCor = '';
+        }
+        this.salvar();
+        this._renderModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    aplicarEtiquetaAosSelecionados: function(idEtiqueta) {
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][idEtiqueta]) return;
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idTermo) { self.etiquetaPorTermo[idTermo] = idEtiqueta; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    removerEtiquetaDosSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idTermo) { delete self.etiquetaPorTermo[idTermo]; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    filtrarPorCor: function(cor) {
+        this._filtroCor = (this._filtroCor === cor) ? '' : cor;
+        this._renderGradeCards();
+    },
+
+    toggleFiltroCor: function() {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de classificar por cor.');
+            return;
+        }
+        this._mostrarFiltroCor = !this._mostrarFiltroCor;
+        if (!this._mostrarFiltroCor) this._filtroCor = '';
+        this._renderGradeCards();
+    },
+
+    _renderFiltroCores: function() {
+        if (!this._mostrarFiltroCor) return '';
+        let self = this;
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        if (Object.keys(etiquetasTopico).length === 0) {
+            return '<span class="esq-toggle-ocultos">Nenhuma etiqueta neste tópico ainda.</span>';
+        }
+        let coresEmUso = [];
+        Object.keys(etiquetasTopico).forEach(function(id) {
+            let cor = etiquetasTopico[id].cor;
+            if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
+        });
+        let swatches = coresEmUso.map(function(cor) {
+            return '<span class="esq-etq-swatch esq-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.GLOSSARIO_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
+        }).join('');
+        return '<span class="esq-toggle-ocultos">Cor:</span>' + swatches;
+    },
+
+    // ── TRANSFERIR SELECIONADOS PRA OUTRA DISCIPLINA > TÓPICO ──
+    abrirModalTransferir: function() {
+        if (Object.keys(this._selecionados).length === 0) return;
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            alert('Taxonomia não carregada — não é possível listar disciplinas/tópicos de destino.');
+            return;
+        }
+        let selMateria = document.getElementById('glos-transferir-materia');
+        selMateria.innerHTML = '<option value="">Selecione...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            return '<option value="' + mat.nivel_1.replace(/"/g, '&quot;') + '">' + mat.nivel_1 + '</option>';
+        }).join('');
+        document.getElementById('glos-transferir-divisao').innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+        document.getElementById('modal-glossario-transferir').classList.add('open');
+    },
+
+    fecharModalTransferir: function() {
+        document.getElementById('modal-glossario-transferir').classList.remove('open');
+    },
+
+    atualizarDivisoesTransferir: function() {
+        let materia = document.getElementById('glos-transferir-materia').value;
+        let selDiv = document.getElementById('glos-transferir-divisao');
+        if (!materia) { selDiv.innerHTML = '<option value="">Selecione a disciplina primeiro</option>'; return; }
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            selDiv.innerHTML = '<option value="">Nenhum tópico cadastrado</option>';
+            return;
+        }
+        selDiv.innerHTML = '<option value="">Selecione...</option>' + mat.divisoes.map(function(div) {
+            return '<option value="' + div.nivel_2.replace(/"/g, '&quot;') + '">' + div.nivel_2 + '</option>';
+        }).join('');
+    },
+
+    confirmarTransferencia: function() {
+        let materia = document.getElementById('glos-transferir-materia').value;
+        let divisao = document.getElementById('glos-transferir-divisao').value;
+        if (!materia || !divisao) { alert('Escolha a disciplina e o tópico de destino.'); return; }
+        let chaveDestino = this._chaveL2(materia, divisao);
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        let itensMovidos = [];
+
+        Object.keys(this.glossario).forEach(function(chaveOrigem) {
+            if (chaveOrigem === chaveDestino) return;
+            let restantes = [];
+            (self.glossario[chaveOrigem] || []).forEach(function(item) {
+                if (idsSelecionados.indexOf(item.id) !== -1) {
+                    itensMovidos.push(item);
+                    if (self.etiquetaPorTermo[item.id]) delete self.etiquetaPorTermo[item.id];
+                } else {
+                    restantes.push(item);
+                }
+            });
+            if (restantes.length === 0) delete self.glossario[chaveOrigem]; else self.glossario[chaveOrigem] = restantes;
+        });
+
+        if (itensMovidos.length === 0) {
+            alert('Nenhum dos selecionados foi movido (já estavam no destino escolhido).');
+            return;
+        }
+
+        if (!Array.isArray(this.glossario[chaveDestino])) this.glossario[chaveDestino] = [];
+        this.glossario[chaveDestino] = this.glossario[chaveDestino].concat(itensMovidos);
+
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalTransferir();
+        this._renderColunaDivisoes(this._materiaSelecionada);
+        this._renderGradeCards();
+        alert(itensMovidos.length + ' expressão(ões) transferida(s) para "' + chaveDestino + '".');
+    },
+
+    _renderToolbar: function() {
+        let qtdSel = Object.keys(this._selecionados).length;
+        let htmlBusca = '<input type="text" id="glos-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar por expressão..." value="' + this._escapar(this._filtroBusca) + '" oninput="window.GLOSSARIO_RUNTIME.filtrarGlossarioGrade(this.value)">';
+        let htmlAcoesSelecao;
+        if (this._modoSelecao) {
+            htmlAcoesSelecao =
+                '<div class="esq-tb-acoes-grupo">' +
+                    '<button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.GLOSSARIO_RUNTIME.abrirModalEtiquetas(true)">🏷️ Aplicar Etiqueta' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.GLOSSARIO_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.GLOSSARIO_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.GLOSSARIO_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.GLOSSARIO_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                '</div>' +
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+        } else {
+            htmlAcoesSelecao =
+                '<div class="esq-tb-acoes-grupo">' +
+                    '<label class="esq-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.GLOSSARIO_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
+                    '<button class="esq-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
+                    '<button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
+                    '<button class="esq-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
+                    this._renderFiltroCores() +
+                '</div>' +
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+        }
+        return '<div class="esq-toolbar">' + htmlAcoesSelecao + '</div>';
     },
 
     _renderGradeCards: function() {
@@ -10611,28 +11496,61 @@ window.GLOSSARIO_RUNTIME = {
         if (!col) return;
         let self = this;
 
+        let scrollAnterior = col.querySelector('.mat-grade-scroll');
+        let posicaoScroll = scrollAnterior ? scrollAnterior.scrollTop : 0;
+
+        let inputBuscaAnterior = document.getElementById('glos-busca-grade');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
+
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
             return;
         }
 
-        let lista = this._termosParaExibir();
-        let mostrarAdicionar = !!this._divisaoSelecionada;
+        let lista = this._listaFiltrada();
+        let mostrarAdicionar = !!this._divisaoSelecionada && !this._modoSelecao;
 
         let htmlCards = lista.map(function(par) {
             let item = par.item;
+            let oculto = !!self.ocultos[item.id];
+            let selecionado = !!self._selecionados[item.id];
+            let podeExcluir = !item.origem_oficial;
+
+            let checkboxHtml = self._modoSelecao
+                ? '<input type="checkbox" class="esq-card-checkbox" onclick="event.stopPropagation();" ' + (selecionado ? 'checked' : '') + ' onchange="window.GLOSSARIO_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
+                : '';
+            let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Expressão oficial">(Oficial)</span>' : '';
+            let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
+            let etiquetaDoItem = (self.etiquetas[par.chave] || {})[self.etiquetaPorTermo[item.id]];
+            let etiquetaHtml = etiquetaDoItem
+                ? '<span class="esq-etq-pill esq-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
+                : '';
+            let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
+                ? '<button class="mat-btn-excluir" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.excluirTermo(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir expressão">🗑️</button>'
+                : '';
+
             let significado = item.significado || '';
             let preview = significado.length > 110 ? significado.slice(0, 110).trim() + '…' : significado;
-            return '<div class="mat-card">' +
+
+            let onclickCard = self._modoSelecao ? '' : (' onclick="window.GLOSSARIO_RUNTIME.abrirModalEditar(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
+
+            let idEsc = item.id.replace(/'/g, "\\'");
+            let visualizado = !!self.visualizados[item.id];
+            let estrelasAtuais = self._estrelasAtuais(item.id);
+            let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.GLOSSARIO_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
+            let estrelasHtml = '<span class="esq-estrelas">' + [3, 2, 1].map(function(n) {
+                return '<button class="esq-estrela' + (estrelasAtuais >= n ? ' preenchida' : '') + '" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.marcarEstrelasCard(\'' + idEsc + '\', ' + n + ');" title="' + n + ' estrela' + (n > 1 ? 's' : '') + '">★</button>';
+            }).join('') + '</span>';
+
+            return '<div class="mat-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="mat-card-tags">' +
-                    '<span class="mat-card-tags-esq"><span class="mat-tag">Expressão</span></span>' +
-                    '<button class="mat-btn-excluir" onclick="window.GLOSSARIO_RUNTIME.excluirTermo(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir expressão">🗑️</button>' +
+                    '<span class="mat-card-tags-esq">' + checkboxHtml + etiquetaHtml + '<span class="mat-tag">Expressão</span>' + seloOficial + seloOculto + '</span>' +
+                    btnExcluirHtml +
                 '</div>' +
                 '<div class="mat-card-titulo">' + self._escapar(item.expressao) + '</div>' +
                 '<div class="mat-card-desc">' + self._escapar(preview) + '</div>' +
-                '<div class="mat-card-footer">' +
-                    '<button class="mat-btn-editar" onclick="window.GLOSSARIO_RUNTIME.abrirModalEditar(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Ver / editar">✏️ Ver / Editar</button>' +
-                '</div>' +
+                '<div class="esq-card-classificacao">' + btnVisualizado + estrelasHtml + '</div>' +
             '</div>';
         }).join('');
 
@@ -10650,6 +11568,421 @@ window.GLOSSARIO_RUNTIME = {
         }
 
         col.innerHTML = this._renderToolbar() + '<div class="mat-grade-scroll">' + corpoHtml + '</div>';
+
+        let novoScroll = col.querySelector('.mat-grade-scroll');
+        if (novoScroll) novoScroll.scrollTop = posicaoScroll;
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('glos-busca-grade');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+    },
+
+    // ── CLASSIFICAÇÃO POR ESTRELAS (1 a 3) — mesmíssimo comportamento de
+    // ESQUEMAS_RUNTIME (ver comentários lá). ──
+
+    _aplicarClassificacaoGlos: function(id, nivel) {
+        let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoGlossario[id]);
+        if (novo === null) delete this.revisaoGlossario[id]; else this.revisaoGlossario[id] = novo;
+        this.salvar();
+    },
+
+    marcarEstrelasCard: function(id, nivel) {
+        this._aplicarClassificacaoGlos(id, String(nivel));
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+    },
+
+    toggleVisualizado: function(id) {
+        if (this.visualizados[id]) delete this.visualizados[id]; else this.visualizados[id] = true;
+        this.salvar();
+    },
+
+    _botoesRevisaoGlosHtml: function(id, opts) {
+        opts = opts || {};
+        let desmarcarNivel = opts.desmarcarNivel || null;
+        let onclickPara = opts.onclickPara || function(nivel) {
+            return "window.GLOSSARIO_RUNTIME.marcarBaralho('" + nivel + "')";
+        };
+        let atual = this.revisaoGlossario[id] ? this.revisaoGlossario[id].ultimaClassificacao : null;
+        let niveis = [
+            { chave: '1', rotulo: '⭐ 1 Estrela', rotuloDesmarcar: '⭐ Desmarcar' },
+            { chave: '2', rotulo: '⭐⭐ 2 Estrelas', rotuloDesmarcar: '⭐⭐ Desmarcar' },
+            { chave: '3', rotulo: '⭐⭐⭐ 3 Estrelas', rotuloDesmarcar: '⭐⭐⭐ Desmarcar' }
+        ];
+        return niveis.map(function(n) {
+            let classeAtiva = (atual === n.chave) ? ' ativa' : '';
+            let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
+            return '<button class="fc-rev-btn fc-rev-estrela' + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
+        }).join('');
+    },
+
+    _localizarChavePorId: function(id) {
+        let self = this;
+        let chaves = Object.keys(this.glossario);
+        for (let i = 0; i < chaves.length; i++) {
+            if ((self.glossario[chaves[i]] || []).some(function(t) { return t.id === id; })) return chaves[i];
+        }
+        return null;
+    },
+
+    // Bloco de conteúdo do termo (expressão + significado + contexto) —
+    // compartilhado entre o popup "Baralho de Glossário" e as abas de
+    // estrela. Diferente de _htmlCartaoEsquemaEstudo (que injeta um HTML
+    // rico pronto), aqui os 3 campos são texto puro — escapados aqui.
+    _htmlCartaoTermoEstudo: function(item) {
+        return '<div class="esq-estudo-card">' +
+            '<div class="esq-estudo-titulo">' + this._escapar(item.expressao) + '</div>' +
+            '<div class="esq-estudo-texto"><strong>Significado:</strong> ' + this._escapar(item.significado || '(sem significado)') + '</div>' +
+            (item.contexto ? '<div class="esq-estudo-texto" style="margin-top:6px;"><strong>Contexto ou Aplicação:</strong> ' + this._escapar(item.contexto) + '</div>' : '') +
+        '</div>';
+    },
+
+    // ── ABAS "⭐ 1 ESTRELA" / "⭐⭐ 2 ESTRELAS" / "⭐⭐⭐ 3 ESTRELAS" ──
+
+    trocarAba: function(aba) {
+        this._abaAtiva = aba;
+        document.querySelectorAll('#section-glossario .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
+        let tabEl = document.getElementById('glos-tab-' + aba);
+        if (tabEl) tabEl.classList.add('ativa');
+        let idsPorAba = { grade: 'glos-grid', '1': 'glos-aba-1', '2': 'glos-aba-2', '3': 'glos-aba-3' };
+        Object.keys(idsPorAba).forEach(function(a) {
+            let el = document.getElementById(idsPorAba[a]);
+            if (!el) return;
+            el.style.display = (a !== aba) ? 'none' : (a === 'grade' ? 'grid' : 'flex');
+        });
+        if (aba === '1' || aba === '2' || aba === '3') this.renderAbaRevisao(aba);
+    },
+
+    listarGlossarioPorClassificacao: function(materiaFiltro, classificacaoAlvo) {
+        this._garantirCarregado();
+        let self = this;
+        let materias = materiaFiltro ? [materiaFiltro] : ((typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []);
+        let resultado = [];
+        materias.forEach(function(materia) {
+            let prefixo = materia + ' > ';
+            Object.keys(self.glossario).sort().forEach(function(chave) {
+                if (chave.indexOf(prefixo) !== 0) return;
+                (self.glossario[chave] || []).forEach(function(t) {
+                    let r = self.revisaoGlossario[t.id];
+                    if (r && r.ultimaClassificacao === classificacaoAlvo) resultado.push(t);
+                });
+            });
+        });
+        return resultado;
+    },
+
+    _contarPorMateriaGlos: function(classificacaoAlvo) {
+        let self = this;
+        let mapa = {};
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return mapa;
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(mat) {
+            let n = self.listarGlossarioPorClassificacao(mat.nivel_1, classificacaoAlvo).length;
+            if (n > 0) mapa[mat.nivel_1] = n;
+        });
+        return mapa;
+    },
+
+    renderAbaRevisao: function(aba) {
+        let s = this._estadosAba[aba];
+        let pool = this.listarGlossarioPorClassificacao(s.materiaFiltro, aba);
+        s.pool = pool;
+        s.ordemChaves = pool.map(function(t) { return t.id; });
+        s.indiceAtual = 0;
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+    },
+
+    _renderPillsAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let contagens = this._contarPorMateriaGlos(aba);
+        let total = Object.keys(contagens).reduce(function(soma, k) { return soma + contagens[k]; }, 0);
+        let pillsEl = document.getElementById('glos-pills-' + aba);
+        if (!pillsEl) return;
+        let materiasOrdenadas = Object.keys(contagens).sort();
+        pillsEl.innerHTML =
+            '<button class="fc-pill' + (!s.materiaFiltro ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.filtrarAba(\'' + aba + '\', null)">Todas (' + total + ')</button>' +
+            materiasOrdenadas.map(function(mat) {
+                return '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.filtrarAba(\'' + aba + '\', \'' + mat.replace(/'/g, "\\'") + '\')">' + mat + ' (' + contagens[mat] + ')</button>';
+            }).join('');
+    },
+
+    filtrarAba: function(aba, materia) {
+        let s = this._estadosAba[aba];
+        s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    embaralharAba: function(aba) {
+        let s = this._estadosAba[aba];
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this._renderCorpoAba(aba);
+    },
+
+    navegarAba: function(aba, delta) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + delta + s.ordemChaves.length) % s.ordemChaves.length;
+        this._renderCorpoAba(aba);
+    },
+
+    _itemAtualDaAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (s.ordemChaves.length === 0) return null;
+        let id = s.ordemChaves[s.indiceAtual];
+        return s.pool.find(function(t) { return t.id === id; }) || null;
+    },
+
+    _renderCorpoAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let corpo = document.getElementById('glos-corpo-' + aba);
+        let posEl = document.getElementById('glos-posicao-' + aba);
+        if (!corpo) return;
+
+        if (s.ordemChaves.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nenhuma expressão classificada aqui ainda.</div>';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._itemAtualDaAba(aba);
+        let origem = this._localizarChavePorId(card.id) || '';
+
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.GLOSSARIO_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.GLOSSARIO_RUNTIME._renderCorpoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+
+        let botoes = this._botoesRevisaoGlosHtml(card.id, {
+            desmarcarNivel: aba,
+            onclickPara: function(nivel) { return "window.GLOSSARIO_RUNTIME.marcarNaAba('" + aba + "', '" + nivel + "')"; }
+        });
+
+        corpo.innerHTML =
+            '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
+            this._htmlCartaoTermoEstudo(card) +
+            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
+            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
+    },
+
+    marcarNaAba: function(aba, classificacao) {
+        let s = this._estadosAba[aba];
+        let card = this._itemAtualDaAba(aba);
+        if (!card) return;
+        this._aplicarClassificacaoGlos(card.id, classificacao);
+
+        let idMarcado = card.id;
+        s.ordemChaves = s.ordemChaves.filter(function(id) { return id !== idMarcado; });
+        s.pool = s.pool.filter(function(t) { return t.id !== idMarcado; });
+        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
+
+        this._renderPillsAba(aba);
+        this._renderCorpoAba(aba);
+        this._atualizarContagensAbas();
+    },
+
+    _atualizarContagensAbas: function() {
+        let self = this;
+        ['1', '2', '3'].forEach(function(aba) {
+            let el = document.getElementById('glos-tab-' + aba + '-count');
+            if (el) el.textContent = '(' + self.listarGlossarioPorClassificacao(null, aba).length + ')';
+        });
+    },
+
+    // ── BARALHO (Todos | Disciplina | Divisão/Tópico) — mesmíssimo padrão
+    // de ESQUEMAS_RUNTIME (ver comentários lá). ──
+
+    _todosTermosVisiveis: function() {
+        let self = this;
+        let resultado = [];
+        Object.keys(this.glossario).forEach(function(chave) {
+            (self.glossario[chave] || []).forEach(function(t) { if (!self.ocultos[t.id]) resultado.push(t); });
+        });
+        return resultado;
+    },
+
+    abrirBaralhoTodos: function() {
+        this._garantirCarregado();
+        this._abrirBaralho('todos', 'Todo o Glossário', this._todosTermosVisiveis());
+    },
+
+    abrirBaralhoMateria: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let itens = [];
+        Object.keys(this.glossario).forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            (self.glossario[chave] || []).forEach(function(t) { if (!self.ocultos[t.id]) itens.push(t); });
+        });
+        this._abrirBaralho('materia', this._materiaSelecionada, itens);
+    },
+
+    abrirBaralhoDivisao: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let itens = (this.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+        this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, itens);
+    },
+
+    abrirBaralhoDoTopico: function(materia, divisao, idItemInicial) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this.abrirBaralhoDivisao();
+        if (this._baralhoState && idItemInicial) {
+            let idx = this._baralhoState.ordemChaves.indexOf(idItemInicial);
+            if (idx !== -1) { this._baralhoState.indiceAtual = idx; this.renderBaralho(); }
+        }
+    },
+
+    _abrirBaralho: function(escopo, titulo, itens) {
+        this._baralhoState = {
+            escopo: escopo,
+            cardsBase: itens,
+            ordemChaves: itens.map(function(t) { return t.id; }),
+            indiceAtual: 0
+        };
+        document.getElementById('glos-baralho-titulo').textContent = titulo;
+        document.getElementById('modal-glossario-baralho').classList.add('open');
+        this.renderBaralho();
+        document.addEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    fecharBaralho: function() {
+        document.getElementById('modal-glossario-baralho').classList.remove('open');
+        document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    _handlerTecladoBaralho: function(e) {
+        if (!document.getElementById('modal-glossario-baralho').classList.contains('open')) return;
+        if (e.key === 'ArrowLeft') window.GLOSSARIO_RUNTIME.anteriorBaralho();
+        else if (e.key === 'ArrowRight') window.GLOSSARIO_RUNTIME.proximoBaralho();
+    },
+
+    _deckBaralhoAtual: function() {
+        let s = this._baralhoState;
+        if (!s) return [];
+        return s.ordemChaves
+            .map(function(id) { return s.cardsBase.find(function(t) { return t.id === id; }); })
+            .filter(Boolean);
+    },
+
+    _itemBaralhoAtual: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length === 0) return null;
+        if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
+        if (s.indiceAtual < 0) s.indiceAtual = 0;
+        return deck[s.indiceAtual];
+    },
+
+    embaralharBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
+        }
+        s.indiceAtual = 0;
+        this.renderBaralho();
+    },
+
+    proximoBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual + 1) % deck.length;
+        this.renderBaralho();
+    },
+
+    anteriorBaralho: function() {
+        let s = this._baralhoState;
+        let deck = this._deckBaralhoAtual();
+        if (!s || deck.length < 2) return;
+        s.indiceAtual = (s.indiceAtual - 1 + deck.length) % deck.length;
+        this.renderBaralho();
+    },
+
+    marcarBaralho: function(nivel) {
+        let card = this._itemBaralhoAtual();
+        if (!card) return;
+        this._aplicarClassificacaoGlos(card.id, nivel);
+        this.renderBaralho();
+        this._atualizarContagensAbas();
+    },
+
+    toggleVisualizadoBaralho: function() {
+        let card = this._itemBaralhoAtual();
+        if (!card) return;
+        this.toggleVisualizado(card.id);
+        this.renderBaralho();
+    },
+
+    _renderListaBaralho: function() {
+        let listaEl = document.getElementById('glos-baralho-lista');
+        if (!listaEl) return;
+        let s = this._baralhoState;
+        if (!s) { listaEl.innerHTML = ''; return; }
+        let deck = this._deckBaralhoAtual();
+        let self = this;
+        listaEl.innerHTML = deck.map(function(item, idx) {
+            let titulo = item.expressao || '(sem expressão)';
+            let origem = (s.escopo !== 'divisao')
+                ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
+                : '';
+            return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.GLOSSARIO_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
+                origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
+                '</div>';
+        }).join('');
+        let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
+        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+    },
+
+    irParaBaralho: function(idx) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.indiceAtual = idx;
+        this.renderBaralho();
+    },
+
+    renderBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        let corpo = document.getElementById('glos-baralho-corpo');
+        let acoesEl = document.getElementById('glos-baralho-acoes');
+        let posEl = document.getElementById('glos-baralho-posicao');
+        let deck = this._deckBaralhoAtual();
+        this._renderListaBaralho();
+
+        if (deck.length === 0) {
+            corpo.innerHTML = '<div class="fc-vazio">Nenhuma expressão aqui ainda.</div>';
+            if (acoesEl) acoesEl.innerHTML = '';
+            if (posEl) posEl.textContent = '0 / 0';
+            return;
+        }
+
+        let card = this._itemBaralhoAtual();
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.GLOSSARIO_RUNTIME.toggleVisualizadoBaralho()">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+
+        let htmlOrigem = (s.escopo !== 'divisao')
+            ? '<div class="fc-card-origem">' + this._escapar(this._localizarChavePorId(card.id) || '') + '</div>'
+            : '';
+
+        corpo.innerHTML = htmlOrigem + this._htmlCartaoTermoEstudo(card);
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoGlosHtml(card.id, null);
+
+        if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },
 
     // ── MODAL "NOVA EXPRESSÃO" ──
@@ -10670,6 +12003,7 @@ window.GLOSSARIO_RUNTIME = {
     abrirModalEditar: function(chave, id) {
         let item = (this.glossario[chave] || []).find(function(t) { return t.id === id; });
         if (!item) return;
+        if (item.origem_oficial) { alert('Esta expressão é oficial e não pode ser editada.'); return; }
         this._editandoId = id;
         this._editandoChave = chave;
         document.getElementById('glos-modal-cabecalho').textContent = '✏️ Editar Expressão';
@@ -10730,11 +12064,47 @@ window.GLOSSARIO_RUNTIME = {
 
     excluirTermo: function(chave, id) {
         if (!Array.isArray(this.glossario[chave])) return;
+        let item = this.glossario[chave].find(function(t) { return t.id === id; });
+        if (item && item.origem_oficial) return; // expressões oficiais não são excluíveis pelo usuário
         if (!confirm('Excluir esta expressão?')) return;
+        if (!this.excluidos) this.excluidos = {};
+        this.excluidos[id] = new Date().toISOString();
         this.glossario[chave] = this.glossario[chave].filter(function(t) { return t.id !== id; });
         if (this.glossario[chave].length === 0) delete this.glossario[chave];
         this.salvar();
         this._renderGradeCards();
+    },
+
+    // Importa o formato das exportações JSON desta ferramenta — mesmo
+    // padrão de ESQUEMAS_RUNTIME.importarArquivoJson.
+    importarArquivoJson: function() {
+        let self = this;
+        let input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.onchange = async function(event) {
+            let arquivo = event.target.files[0];
+            if (!arquivo) { input.remove(); return; }
+            try {
+                let dados = JSON.parse(await arquivo.text());
+                if (!dados || typeof dados !== 'object' || Array.isArray(dados) || Object.keys(dados).some(function(chave) { return !Array.isArray(dados[chave]); })) {
+                    throw new Error('O arquivo nao possui o formato de exportacao do Glossario.');
+                }
+                let payload = { data: {} };
+                payload.data[self.STORAGE_KEY] = { glossario: dados };
+                let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(JSON.stringify(payload));
+                self.init();
+                alert(resultado.entidadesInjetadas > 0 ? resultado.entidadesInjetadas + ' expressão(ões) nova(s) foram incorporadas ao glossário.' : 'Nenhuma expressão nova foi incorporada: os IDs importados já existem localmente ou foram excluídos anteriormente.');
+            } catch (erro) {
+                console.error('[GLOSSARIO] Falha ao importar JSON:', erro);
+                alert('Falha ao importar o arquivo JSON: ' + erro.message);
+            } finally {
+                input.remove();
+            }
+        };
+        input.click();
     },
 
     // ── EXPORTAR (JSON) ──
@@ -10745,10 +12115,10 @@ window.GLOSSARIO_RUNTIME = {
         let resultado = {};
         let total = 0;
         Object.keys(this.glossario).sort().forEach(function(chave) {
-            let itens = self.glossario[chave] || [];
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
             if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
         });
-        if (total === 0) { alert('Nenhuma expressão pra exportar ainda.'); return; }
+        if (total === 0) { alert('Nenhuma expressão pra exportar (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-tudo.json', 'application/json');
     },
 
@@ -10761,22 +12131,133 @@ window.GLOSSARIO_RUNTIME = {
         let total = 0;
         Object.keys(this.glossario).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let itens = self.glossario[chave] || [];
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
             if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
         });
-        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '".'); return; }
+        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
     },
 
     exportarTopico: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let itens = this.glossario[chave] || [];
-        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '".'); return; }
+        let itens = (this.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         let resultado = {};
         resultado[chave] = itens;
         downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    },
+
+    // ── EXPORTAR (Markdown) — mesmo padrão de ESQUEMAS_RUNTIME._gerarMarkdownEsquemas. ──
+
+    _gerarMarkdownGlossario: function(porChave, tituloDoc) {
+        let chaves = Object.keys(porChave).sort();
+        let totalItens = chaves.reduce(function(soma, c) { return soma + porChave[c].length; }, 0);
+
+        let linhas = [];
+        if (tituloDoc) linhas.push('# ' + tituloDoc, '');
+        linhas.push('_' + totalItens + ' expressão(ões) em ' + chaves.length + ' tópico(s)._', '');
+
+        let matAtual = null;
+        chaves.forEach(function(chave) {
+            let partes = chave.split(' > ');
+            let mat = partes[0] || chave;
+            let div = partes.length > 1 ? partes.slice(1).join(' > ') : null;
+            if (mat !== matAtual) {
+                linhas.push('## ' + mat, '');
+                matAtual = mat;
+            }
+            if (div) linhas.push('### ' + div, '');
+            porChave[chave].forEach(function(item) {
+                linhas.push('#### ' + (item.expressao || '(sem expressão)') + (item.origem_oficial ? ' _(Oficial)_' : ''), '');
+                linhas.push('**Significado:** ' + (item.significado || '(sem significado)'), '');
+                if (item.contexto) linhas.push('**Contexto ou Aplicação:** ' + item.contexto, '');
+                linhas.push('---', '');
+            });
+        });
+
+        return linhas.join('\n');
+    },
+
+    exportarTudoMarkdown: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
+        downloadArquivo(this._gerarMarkdownGlossario(resultado, 'Glossário — Tudo'), 'glossario-tudo.md', 'text/markdown');
+    },
+
+    exportarDisciplinaMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
+        downloadArquivo(this._gerarMarkdownGlossario(resultado, this._materiaSelecionada), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '.md', 'text/markdown');
+    },
+
+    exportarTopicoMarkdown: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let itens = (this.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
+        let resultado = {};
+        resultado[chave] = itens;
+        downloadArquivo(this._gerarMarkdownGlossario(resultado, chave), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.md', 'text/markdown');
+    },
+
+    // Botões 📤/🎨 de cada aba de estrela — exporta só o POOL atual da
+    // aba, mesmo padrão de ESQUEMAS_RUNTIME.exportarMarkdownAba/exportarHtmlAba.
+    exportarMarkdownAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
+        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let porChave = {};
+        (s.pool || []).forEach(function(item) {
+            let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
+            if (!porChave[chave]) porChave[chave] = [];
+            porChave[chave].push(item);
+        });
+        if (Object.keys(porChave).length === 0) { alert('Nenhuma expressão nessa aba pra exportar.'); return; }
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(this._gerarMarkdownGlossario(porChave, titulo), 'glossario-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    exportarHtmlAba: function(aba) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
+        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let porChave = {};
+        (s.pool || []).forEach(function(item) {
+            let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
+            if (!porChave[chave]) porChave[chave] = [];
+            porChave[chave].push(item);
+        });
+        if (Object.keys(porChave).length === 0) { alert('Nenhuma expressão nessa aba pra exportar.'); return; }
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        downloadArquivo(this._gerarHtmlGlossario(porChave, titulo), 'glossario-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
     // ── EXPORTAR (HTML estilizado) — mesmo template compartilhado de
@@ -10819,10 +12300,10 @@ window.GLOSSARIO_RUNTIME = {
         let resultado = {};
         let total = 0;
         Object.keys(this.glossario).sort().forEach(function(chave) {
-            let itens = self.glossario[chave] || [];
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
             if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
         });
-        if (total === 0) { alert('Nenhuma expressão pra exportar ainda.'); return; }
+        if (total === 0) { alert('Nenhuma expressão pra exportar (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         downloadArquivo(this._gerarHtmlGlossario(resultado, 'Glossário — Tudo'), 'glossario-tudo.html', 'text/html');
     },
 
@@ -10835,19 +12316,20 @@ window.GLOSSARIO_RUNTIME = {
         let total = 0;
         Object.keys(this.glossario).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let itens = self.glossario[chave] || [];
+            let itens = (self.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
             if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
         });
-        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '".'); return; }
+        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         downloadArquivo(this._gerarHtmlGlossario(resultado, this._materiaSelecionada), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
     },
 
     exportarHtmlTopico: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let itens = this.glossario[chave] || [];
-        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '".'); return; }
+        let itens = (this.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
+        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '" (só existem expressões ocultas aqui, ou nenhuma expressão ainda).'); return; }
         let resultado = {};
         resultado[chave] = itens;
         downloadArquivo(this._gerarHtmlGlossario(resultado, chave), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.html', 'text/html');
@@ -10879,15 +12361,41 @@ window.GLOSSARIO_RUNTIME = {
     prevvisualizarImportacao: function() {
         let texto = document.getElementById('glos-import-textarea').value || '';
         let saida = parsearImportacaoGlossario(texto);
+
+        // Recusa (não só ignora) qualquer "### L2:" cujo nome não bata
+        // EXATAMENTE com uma divisão real da matéria selecionada — tira do
+        // resultado ANTES de guardar em _resultadoPreVisualizado, então
+        // confirmarImportacao() nunca chega a ver (nem gravar) essas
+        // divisões inventadas/com erro de digitação.
+        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
+        let divisoesInvalidas = [];
+        let totalRecusado = 0;
+        Object.keys(saida.porDivisao).forEach(function(div) {
+            if (!divisoesValidas.has(div)) {
+                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].verbetes.length });
+                totalRecusado += saida.porDivisao[div].verbetes.length;
+                saida.totalVerbetes -= saida.porDivisao[div].verbetes.length;
+                delete saida.porDivisao[div];
+            }
+        });
+
         this._resultadoPreVisualizado = saida;
 
         let previewEl = document.getElementById('glos-import-preview');
         let btnConfirmar = document.getElementById('glos-import-btn-confirmar');
+        let self = this;
+
+        let avisoInvalidas = divisoesInvalidas.length > 0
+            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' expressão(ões) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
+                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
+                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
+            : '';
 
         if (saida.totalVerbetes === 0) {
             previewEl.innerHTML = '<strong>Nenhuma expressão reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e, pra cada expressão, uma linha com o termo seguida de "Significado: ..." (obrigatório), separando uma expressão da outra com uma linha em branco.' +
                 (saida.totalMalformados > 0 ? ' (' + saida.totalMalformados + ' fragmento(s) parecido(s), mas sem "Significado:" válido.)' : '') +
-                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' expressão(ões) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' expressão(ões) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '') +
+                avisoInvalidas;
             previewEl.style.display = 'block';
             btnConfirmar.disabled = true;
             return;
@@ -10900,7 +12408,7 @@ window.GLOSSARIO_RUNTIME = {
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalVerbetes + ' expressão(ões)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
             (saida.totalMalformados > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformados + ' ignorada(s) por formato inválido</span>' : '') +
-            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas + avisoInvalidas;
         previewEl.style.display = 'block';
         btnConfirmar.disabled = false;
     },
@@ -10936,6 +12444,58 @@ window.GLOSSARIO_RUNTIME = {
     }
 };
 
+// ── GLOSSÁRIO OFICIAL — mesmíssimo padrão de importarEsquemaOficial/
+// carregarEsquemasOficiais: manifesto em dados/manifesto-glossario.txt (1
+// caminho relativo por linha), cada linha apontando pra um dados/glossario/
+// *.json { "MATÉRIA > Divisão": [ {id, expressao, significado, contexto,
+// criadoEm} ] }. Publicar um verbete oficial novo = 1 linha nova no
+// manifesto, sem tocar em index.html.
+window.importarTermoGlossarioOficial = async function(url) {
+    try {
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
+        if (!r.ok) throw new Error('Falha ao carregar glossário oficial.');
+        const dados = await r.json();
+
+        window.GLOSSARIO_RUNTIME._garantirCarregado();
+        const runtime = window.GLOSSARIO_RUNTIME;
+
+        Object.keys(dados).forEach(function(chaveL2) {
+            const itens = dados[chaveL2];
+            if (!Array.isArray(itens)) return;
+            if (!Array.isArray(runtime.glossario[chaveL2])) runtime.glossario[chaveL2] = [];
+            const arr = runtime.glossario[chaveL2];
+
+            itens.forEach(function(item) {
+                if (!item || !item.id) return;
+                item.origem_oficial = true;
+                const idx = arr.findIndex(function(t) { return t.id === item.id; });
+                if (idx === -1) arr.push(item); else arr[idx] = item;
+            });
+        });
+
+        runtime.salvar();
+    } catch (e) {
+        console.warn('[GLOSSARIO OFICIAL] erro:', e);
+    }
+};
+
+window.carregarGlossarioOficial = async function() {
+    window.GLOSSARIO_RUNTIME._garantirCarregado();
+
+    let manifestoTexto = '';
+    try {
+        const rManifesto = await fetch('dados/manifesto-glossario.txt?v=' + Date.now());
+        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+        else console.warn('[GLOSSARIO OFICIAL] Falha ao carregar manifesto: HTTP', rManifesto.status);
+    } catch (e) {
+        console.warn('[GLOSSARIO OFICIAL] Falha ao carregar manifesto:', e);
+    }
+    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    for (const caminho of caminhosManifesto) {
+        await window.importarTermoGlossarioOficial(caminho);
+    }
+};
+
 // Abre/fecha Glossário como MODAL sobre a tela atual, mesmo padrão de
 // abrirMateriaisModal/fecharMateriaisModal.
 window.abrirGlossarioModal = function() {
@@ -10955,6 +12515,81 @@ window.fecharGlossarioModal = function() {
 };
 </script>
 </section>
+
+<!-- MODAL: Baralho de Glossário (Todos | Disciplina | Tópico) — popup .mo/.mdl
+     em cima de #section-glossario, mesmo padrão de #modal-esquemas-baralho. -->
+<div id="modal-glossario-baralho" class="mo">
+    <div class="mdl">
+        <div class="fc-popup-header">🗂️ <span id="glos-baralho-titulo"></span> — Baralho de Glossário</div>
+
+        <div class="fc-popup-toolbar">
+            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
+        </div>
+
+        <div class="esq-baralho-corpo-wrap">
+            <div class="esq-baralho-lista" id="glos-baralho-lista"></div>
+            <div id="glos-baralho-corpo"></div>
+        </div>
+
+        <div class="fc-popup-nav">
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.anteriorBaralho()">‹</button>
+            <span id="glos-baralho-posicao">0 / 0</span>
+            <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.proximoBaralho()">›</button>
+        </div>
+
+        <div class="fc-popup-footer">
+            <div class="fc-card-revisao-acoes" id="glos-baralho-acoes"></div>
+            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharBaralho()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Gerenciar/Aplicar Etiquetas do Glossário — mesmo padrão de
+     #modal-esquema-etiquetas. -->
+<div id="modal-glossario-etiquetas" class="mo">
+    <div class="mdl" style="max-width:440px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header" id="glos-etq-titulo">🏷️ Gerenciar Etiquetas</div>
+            <button onclick="window.GLOSSARIO_RUNTIME.fecharModalEtiquetas()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="glos-etq-remover-acao"></div>
+        <div id="glos-etq-lista" class="esq-etq-lista"></div>
+        <div style="border-top:1px dashed var(--border-color); padding-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Nova etiqueta</div>
+            <div class="esq-etq-form">
+                <input type="text" id="glos-etq-nome" placeholder="Nome da etiqueta">
+                <button class="fc-footer-btn primario" onclick="window.GLOSSARIO_RUNTIME.criarEtiqueta()">Criar</button>
+            </div>
+            <input type="hidden" id="glos-etq-cor-selecionada">
+            <input type="color" id="glos-etq-cor-picker" style="position:absolute; width:0; height:0; opacity:0; pointer-events:none;" onchange="window.GLOSSARIO_RUNTIME.adicionarCorCustomizada(this.value)">
+            <div id="glos-etq-paleta-container"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Transferir Expressões Selecionadas pra outra Disciplina > Tópico —
+     mesmo padrão de #modal-esquema-transferir. -->
+<div id="modal-glossario-transferir" class="mo">
+    <div class="mdl" style="max-width:400px; width:95%; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📦 Transferir Selecionados</div>
+            <button onclick="window.GLOSSARIO_RUNTIME.fecharModalTransferir()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">Move as expressões marcadas pra outra disciplina/tópico. A etiqueta (se houver) não é levada — ela é uma organização do tópico de origem.</div>
+        <div>
+            <label for="glos-transferir-materia">Disciplina de destino</label>
+            <select id="glos-transferir-materia" onchange="window.GLOSSARIO_RUNTIME.atualizarDivisoesTransferir()"></select>
+        </div>
+        <div>
+            <label for="glos-transferir-divisao">Tópico de destino</label>
+            <select id="glos-transferir-divisao"><option value="">Selecione a disciplina primeiro</option></select>
+        </div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharModalTransferir()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.GLOSSARIO_RUNTIME.confirmarTransferencia()">Transferir</button>
+        </div>
+    </div>
+</div>
 
 <!-- MODAL: Nova Expressão (seção Glossário) — mesmo padrão .mo/.mdl de
      #modal-materiais-novo. -->
@@ -16040,6 +17675,10 @@ window.garantirOficiaisParaBaralhosAssociados = function() {
     if (window.MATERIAIS_RUNTIME) {
         window.MATERIAIS_RUNTIME._garantirCarregado();
         if (typeof window.carregarMateriaisOficiais === 'function') promessas.push(window.carregarMateriaisOficiais());
+    }
+    if (window.GLOSSARIO_RUNTIME) {
+        window.GLOSSARIO_RUNTIME._garantirCarregado();
+        if (typeof window.carregarGlossarioOficial === 'function') promessas.push(window.carregarGlossarioOficial());
     }
     Promise.allSettled(promessas).then(function() {
         try { if (typeof window.renderNav === 'function') window.renderNav(); } catch (e) { console.warn('[BARALHOS ASSOCIADOS] Falha ao re-renderizar após sincronizar:', e); }
@@ -25072,6 +26711,7 @@ window.__bootOficialPromise__ = (async function(){
       if (typeof window.carregarMateriaisOficiais === 'function') await window.carregarMateriaisOficiais();
       if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
       if (typeof window.carregarJurisprudenciaOficial === 'function') await window.carregarJurisprudenciaOficial();
+      if (typeof window.carregarGlossarioOficial === 'function') await window.carregarGlossarioOficial();
 
    } catch(e){
 
