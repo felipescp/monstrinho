@@ -7363,9 +7363,15 @@ document.addEventListener('click', function(e) {
        (z-index:9999), sem isto o popup de card/baralho abria atrás da
        seção — mesma correção já aplicada a #modal-esquema-editor. */
     #modal-flashcard { z-index: 10000; }
-    #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
+    #modal-flashcard .mdl, #modal-flashcard-bulk .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
     #modal-flashcard-bulk .mdl { max-width:560px; }
+    /* "⛶ Maximizar" — mesmo padrão de #modal-materiais-pdf.mat-pdf-maximizado. */
+    #modal-flashcard.fc-baralho-maximizado { padding:0; }
+    #modal-flashcard.fc-baralho-maximizado .mdl { max-width:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
     #modal-flashcard .fc-popup-header, #modal-flashcard-bulk .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-flashcard .fc-popup-header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    #modal-flashcard .fc-baralho-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-flashcard .fc-baralho-maximizar:hover { color:var(--app-primary); }
     #modal-flashcard .fc-popup-toolbar, #section-flashcards .fc-aba-revisao .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; }
     #modal-flashcard .fc-tb-btn, #section-flashcards .fc-aba-revisao .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #modal-flashcard .fc-card, #section-flashcards .fc-aba-revisao .fc-card { background:var(--bg-accent-soft); border:1px solid #c7d2fe; border-radius:10px; padding:28px 22px; min-height:160px; width:100%; max-width:480px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; position:relative; }
@@ -7561,6 +7567,8 @@ window.FLASHCARDS_RUNTIME = {
     _materiaSelecionada: null,
     _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado da matéria inteira)
     _popupState: null,     // { modo:'axiomas'|'baralho', materia, divisao, deckId, cardsBase, ordemChaves, indiceAtual, flipado }
+    // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado.
+    _baralhoMaximizado: false,
     _editandoDeckId: null, // setado por editarBaralhoAtual(), limpo por abrirModalBulk()/fecharModalBulk()
     _editandoDeckChaveL2Original: null, // chaveL2 de onde o baralho editado veio (permite mover de L2 ao salvar)
     _bootstrapped: false,  // true depois da 1ª carregar() — ver _garantirCarregado()
@@ -8152,6 +8160,9 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = divisao;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
@@ -8169,6 +8180,9 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = materia;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
@@ -8195,6 +8209,9 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = deck.nome;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
         document.addEventListener('keydown', this._handlerTeclado);
@@ -8202,7 +8219,22 @@ window.FLASHCARDS_RUNTIME = {
 
     fecharPopup: function() {
         document.getElementById('modal-flashcard').classList.remove('open');
+        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._baralhoMaximizado = false;
         document.removeEventListener('keydown', this._handlerTeclado);
+    },
+
+    alternarMaximizarBaralho: function() {
+        this._baralhoMaximizado = !this._baralhoMaximizado;
+        document.getElementById('modal-flashcard').classList.toggle('fc-baralho-maximizado', this._baralhoMaximizado);
+        this._atualizarBotaoMaximizarBaralho();
+    },
+
+    _atualizarBotaoMaximizarBaralho: function() {
+        let btn = document.getElementById('fc-baralho-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
+        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
     },
 
     _handlerTeclado: function(e) {
@@ -8761,7 +8793,10 @@ window.fecharFlashcardsModal = function() {
      importa qual .tela esteja ativa. -->
 <div id="modal-flashcard" class="mo">
     <div class="mdl">
-        <div class="fc-popup-header">✦ <span id="fc-popup-titulo"></span> — Flashcards</div>
+        <div class="fc-popup-header">
+            <span>✦ <span id="fc-popup-titulo"></span> — Flashcards</span>
+            <button class="fc-baralho-maximizar" id="fc-baralho-btn-maximizar" onclick="window.FLASHCARDS_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
+        </div>
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.FLASHCARDS_RUNTIME.embaralhar()">🔀 Embaralhar</button>
@@ -10598,8 +10633,13 @@ window.fecharMateriaisModal = function() {
 
     /* MODAL: Baralho de Glossário — mesmo padrão de #modal-esquemas-baralho. */
     #modal-glossario-baralho { z-index: 10000; }
-    #modal-glossario-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
-    #modal-glossario-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
+    #modal-glossario-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
+    /* "⛶ Maximizar" — mesmo padrão de #modal-materiais-pdf.mat-pdf-maximizado. */
+    #modal-glossario-baralho.glos-baralho-maximizado { padding:0; }
+    #modal-glossario-baralho.glos-baralho-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
+    #modal-glossario-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    #modal-glossario-baralho .glos-baralho-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-glossario-baralho .glos-baralho-maximizar:hover { color:var(--app-primary); }
     #modal-glossario-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-glossario-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #modal-glossario-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
@@ -10919,6 +10959,8 @@ window.GLOSSARIO_RUNTIME = {
     // Popup "Baralho de Glossário" (Todos | Disciplina | Divisão/Tópico) —
     // mesmo padrão de ESQUEMAS_RUNTIME._baralhoState.
     _baralhoState: null,
+    // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado.
+    _baralhoMaximizado: false,
 
     carregar: function() {
         let bruto = null;
@@ -11852,6 +11894,9 @@ window.GLOSSARIO_RUNTIME = {
             indiceAtual: 0
         };
         document.getElementById('glos-baralho-titulo').textContent = titulo;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-glossario-baralho').classList.remove('glos-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-glossario-baralho').classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
@@ -11859,7 +11904,22 @@ window.GLOSSARIO_RUNTIME = {
 
     fecharBaralho: function() {
         document.getElementById('modal-glossario-baralho').classList.remove('open');
+        document.getElementById('modal-glossario-baralho').classList.remove('glos-baralho-maximizado');
+        this._baralhoMaximizado = false;
         document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    alternarMaximizarBaralho: function() {
+        this._baralhoMaximizado = !this._baralhoMaximizado;
+        document.getElementById('modal-glossario-baralho').classList.toggle('glos-baralho-maximizado', this._baralhoMaximizado);
+        this._atualizarBotaoMaximizarBaralho();
+    },
+
+    _atualizarBotaoMaximizarBaralho: function() {
+        let btn = document.getElementById('glos-baralho-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
+        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -12519,7 +12579,10 @@ window.fecharGlossarioModal = function() {
      em cima de #section-glossario, mesmo padrão de #modal-esquemas-baralho. -->
 <div id="modal-glossario-baralho" class="mo">
     <div class="mdl">
-        <div class="fc-popup-header">🗂️ <span id="glos-baralho-titulo"></span> — Baralho de Glossário</div>
+        <div class="fc-popup-header">
+            <span>🗂️ <span id="glos-baralho-titulo"></span> — Baralho de Glossário</span>
+            <button class="glos-baralho-maximizar" id="glos-baralho-btn-maximizar" onclick="window.GLOSSARIO_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
+        </div>
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
@@ -22034,8 +22097,14 @@ window.triggerFileUpload = function(callback) {
 <div id="modal-esquemas-baralho" class="mo">
 <style>
     #modal-esquemas-baralho { z-index: 10000; }
-    #modal-esquemas-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
-    #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; }
+    #modal-esquemas-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
+    /* "⛶ Maximizar" — mesmo padrão de #modal-materiais-pdf.mat-pdf-maximizado:
+       cobre o espaço TODO disponível (100vw/100vh, sem cantos arredondados). */
+    #modal-esquemas-baralho.esq-baralho-maximizado { padding:0; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
+    #modal-esquemas-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    #modal-esquemas-baralho .esq-baralho-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-esquemas-baralho .esq-baralho-maximizar:hover { color:var(--app-primary); }
     #modal-esquemas-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; flex-shrink:0; }
     #modal-esquemas-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     /* Corpo principal do baralho: lista à esquerda (todos os cards do
@@ -22079,7 +22148,10 @@ window.triggerFileUpload = function(callback) {
     #modal-esquemas-baralho #esq-baralho-acoes .fc-rev-btn { padding:3px 8px; font-size:9.5px; }
 </style>
     <div class="mdl">
-        <div class="fc-popup-header">🗂️ <span id="esq-baralho-titulo"></span> — Baralho de Esquemas</div>
+        <div class="fc-popup-header">
+            <span>🗂️ <span id="esq-baralho-titulo"></span> — Baralho de Esquemas</span>
+            <button class="esq-baralho-maximizar" id="esq-baralho-btn-maximizar" onclick="window.ESQUEMAS_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
+        </div>
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
@@ -22511,6 +22583,10 @@ window.ESQUEMAS_RUNTIME = {
     // Popup "Baralho de Esquemas" (Todos | Disciplina | Divisão/Tópico) —
     // mesmo padrão de JURISPRUDENCIA_RUNTIME._baralhoState.
     _baralhoState: null,
+    // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado: por
+    // sessão de leitura, não uma preferência que persiste (sempre reseta ao
+    // reabrir o baralho).
+    _baralhoMaximizado: false,
 
     carregar: function() {
         let bruto = null;
@@ -23589,6 +23665,9 @@ window.ESQUEMAS_RUNTIME = {
             indiceAtual: 0
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-esquemas-baralho').classList.remove('esq-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-esquemas-baralho').classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
@@ -23596,7 +23675,22 @@ window.ESQUEMAS_RUNTIME = {
 
     fecharBaralho: function() {
         document.getElementById('modal-esquemas-baralho').classList.remove('open');
+        document.getElementById('modal-esquemas-baralho').classList.remove('esq-baralho-maximizado');
+        this._baralhoMaximizado = false;
         document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    alternarMaximizarBaralho: function() {
+        this._baralhoMaximizado = !this._baralhoMaximizado;
+        document.getElementById('modal-esquemas-baralho').classList.toggle('esq-baralho-maximizado', this._baralhoMaximizado);
+        this._atualizarBotaoMaximizarBaralho();
+    },
+
+    _atualizarBotaoMaximizarBaralho: function() {
+        let btn = document.getElementById('esq-baralho-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
+        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
     },
 
     _handlerTecladoBaralho: function(e) {
@@ -24906,8 +25000,13 @@ window.carregarEsquemasOficiais = async function() {
     /* Mesmas dimensões fixas do #modal-esquemas-baralho — tamanho
        uniformizado entre as duas seções (pedido explícito), em vez de
        cada popup ter sua própria medida. */
-    #modal-jurisprudencia-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
-    #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-baralho .mdl { max-width:1040px; width:95%; max-height:96vh; height:96vh; padding:24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
+    /* "⛶ Maximizar" — mesmo padrão de #modal-materiais-pdf.mat-pdf-maximizado. */
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado { padding:0; }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
+    #modal-jurisprudencia-baralho .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    #modal-jurisprudencia-baralho .jur-baralho-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-jurisprudencia-baralho .jur-baralho-maximizar:hover { color:var(--app-primary); }
     /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
        estilo padrão de <button>/<span> do navegador (foi o bug reportado:
        botões desestilizados no popup do Baralho). */
@@ -24950,7 +25049,10 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
 </style>
     <div class="mdl">
-        <div class="fc-popup-header">🗂️ <span id="jur-baralho-titulo"></span> — Baralho de Jurisprudência</div>
+        <div class="fc-popup-header">
+            <span>🗂️ <span id="jur-baralho-titulo"></span> — Baralho de Jurisprudência</span>
+            <button class="jur-baralho-maximizar" id="jur-baralho-btn-maximizar" onclick="window.JURISPRUDENCIA_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
+        </div>
 
         <div class="fc-popup-toolbar">
             <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
@@ -25220,6 +25322,9 @@ window.JURISPRUDENCIA_RUNTIME = {
     // padrão de FLASHCARDS_RUNTIME._popupState (embaralhar + ‹› + navegação
     // sequencial), sem "flip" (fichas não têm frente/verso).
     _baralhoState: null, // { escopo:'todos'|'materia', cardsBase, ordemChaves, indiceAtual }
+    // "⛶ Maximizar" — mesmo padrão de MATERIAIS_RUNTIME._pdfMaximizado: reseta
+    // toda vez que o baralho é reaberto, não é uma preferência que persiste.
+    _baralhoMaximizado: false,
 
     _mostrarOcultos: false,
     _ocultarOficiais: false,
@@ -26316,6 +26421,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             indiceAtual: 0
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
+        this._baralhoMaximizado = false;
+        document.getElementById('modal-jurisprudencia-baralho').classList.remove('jur-baralho-maximizado');
+        this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-jurisprudencia-baralho').classList.add('open');
         this.renderBaralho();
         document.addEventListener('keydown', this._handlerTecladoBaralho);
@@ -26323,7 +26431,22 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     fecharBaralho: function() {
         document.getElementById('modal-jurisprudencia-baralho').classList.remove('open');
+        document.getElementById('modal-jurisprudencia-baralho').classList.remove('jur-baralho-maximizado');
+        this._baralhoMaximizado = false;
         document.removeEventListener('keydown', this._handlerTecladoBaralho);
+    },
+
+    alternarMaximizarBaralho: function() {
+        this._baralhoMaximizado = !this._baralhoMaximizado;
+        document.getElementById('modal-jurisprudencia-baralho').classList.toggle('jur-baralho-maximizado', this._baralhoMaximizado);
+        this._atualizarBotaoMaximizarBaralho();
+    },
+
+    _atualizarBotaoMaximizarBaralho: function() {
+        let btn = document.getElementById('jur-baralho-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
+        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
     },
 
     _handlerTecladoBaralho: function(e) {
