@@ -576,15 +576,31 @@ function loadFactualDatabase() {
                 return buckets;
             }
 
+            // Monta os buckets de trás pra frente, a partir de `ate` — o
+            // período MAIS RECENTE (o de agora, o que importa pra ver o
+            // desempenho atual) sempre fecha uma janela cheia (7/14 dias);
+            // é o mais ANTIGO que eventualmente fica fracionado, se o
+            // intervalo total não for múltiplo exato da periodicidade.
+            // Esse fracionado do início é descartado (não faz sentido
+            // comparar "1 dia" com "7 dias cheios" no mesmo gráfico) — a
+            // única exceção é quando NENHUM bucket cheio cabe no intervalo
+            // selecionado (período menor que a periodicidade escolhida):
+            // aí mantém esse único fracionado, senão o gráfico ficaria
+            // vazio pra um filtro válido.
             let diasPorBucket = periodicidade === 'diario' ? 1 : (periodicidade === 'quinzenal' ? 14 : 7);
             let passoMs = diasPorBucket * 24 * 60 * 60 * 1000;
             let buckets = [];
-            let inicioAtual = new Date(de.getTime());
-            while (inicioAtual <= ate) {
-                let fimAtual = new Date(Math.min(inicioAtual.getTime() + passoMs - 1000, ate.getTime()));
+            let fimAtual = new Date(ate.getTime());
+            while (fimAtual >= de) {
+                let inicioAtual = new Date(fimAtual.getTime() - passoMs + 1000);
+                if (inicioAtual < de) {
+                    if (buckets.length > 0) break;
+                    inicioAtual = new Date(de.getTime());
+                }
                 buckets.push({ inicio: inicioAtual, fim: fimAtual, diario: periodicidade === 'diario' });
-                inicioAtual = new Date(inicioAtual.getTime() + passoMs);
+                fimAtual = new Date(inicioAtual.getTime() - 1000);
             }
+            buckets.reverse();
             return buckets;
         }
 
