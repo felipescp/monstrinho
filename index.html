@@ -1438,6 +1438,7 @@ try {
         <div class="nav-item hd-item" id="btn-nav-materiais" onclick="window.abrirMateriaisModal()" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
+        <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -10255,6 +10256,747 @@ window.fecharMateriaisModal = function() {
             </div>
         </div>
         <iframe id="mat-pdf-frame" src=""></iframe>
+    </div>
+</div>
+
+<!-- SEÇÃO: GLOSSÁRIO — mesmo padrão L1(matéria)>L2(divisão) de Materiais,
+     mas SEM o conceito de "oficial" (é conteúdo 100% pessoal, sem
+     sincronização com um manifesto do repositório) — por isso não há
+     carregarXOficiais()/init() assíncrono, nem ocultos/seleção múltipla.
+     3 campos por expressão: Expressão / Significado / Contexto ou
+     Aplicação (opcional). Criação tanto por formulário único (1 expressão)
+     quanto por importação em massa (texto colado, parser local), igual
+     Esquemas/Jurisprudência. CSS abaixo DUPLICA (não reaproveita) as
+     classes .mat-*/.fc-* de #section-materiais — mesmos nomes de classe,
+     mas escopados só dentro de #section-glossario, pra não arriscar nada
+     na seção de Materiais ao ajustar uma das duas no futuro. -->
+<section id="section-glossario" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<style>
+    #section-glossario .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #section-glossario .fc-col { overflow-y:auto; padding:10px; }
+    #section-glossario #glos-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
+    #section-glossario #glos-col-divisoes { border-right:1px solid var(--border-color); }
+    #section-glossario #glos-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
+    #section-glossario .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #section-glossario .fc-materia-item:hover { background:var(--bg-accent-soft); }
+    #section-glossario .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
+    #section-glossario .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #section-glossario .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-glossario .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #section-glossario .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #section-glossario .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
+    #section-glossario .fc-divisao-item.ativa { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #section-glossario .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+
+    #section-glossario .mat-toolbar { flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #section-glossario .mat-toolbar-linha { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+    #section-glossario .mat-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #section-glossario .mat-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .mat-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; }
+
+    #section-glossario .mat-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
+    #section-glossario .mat-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; align-content:start; padding:2px; }
+
+    #section-glossario .mat-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:3px solid #7c3aed; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; }
+    #section-glossario .mat-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+    #section-glossario .mat-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+    #section-glossario .mat-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    #section-glossario .mat-card-desc { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
+    #section-glossario .mat-card-footer { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px; }
+    #section-glossario .mat-btn-editar { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:none; color:var(--text-muted); cursor:pointer; }
+    #section-glossario .mat-btn-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .mat-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #section-glossario .mat-btn-excluir:hover { color:var(--danger); }
+    #section-glossario .mat-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; }
+
+    #section-glossario .mat-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
+    #section-glossario .mat-card-add:hover { background:var(--bg-accent-soft); }
+
+    #modal-glossario-novo { z-index: 10000; }
+    #modal-glossario-novo .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
+    #modal-glossario-novo .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-glossario-novo .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-glossario-novo .fc-form-campo { margin-bottom:0; }
+    #modal-glossario-novo .fc-form-campo input[type="text"], #modal-glossario-novo .fc-form-campo textarea { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); resize:vertical; }
+    #modal-glossario-novo .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-glossario-novo .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-glossario-novo .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
+
+    #modal-glossario-importar { z-index: 10000; }
+    #modal-glossario-importar .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-glossario-importar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-glossario-importar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-glossario-importar .fc-footer-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-glossario-importar #glos-import-textarea { width:100%; min-height:220px; padding:10px; border:1px solid var(--border-color); border-radius:6px; font-family:monospace; font-size:11.5px; resize:vertical; box-sizing:border-box; }
+    #modal-glossario-importar #glos-import-preview { font-size:11.5px; line-height:1.6; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:6px; padding:10px; display:none; max-height:180px; overflow-y:auto; }
+    #modal-glossario-importar #glos-import-ajuda { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-glossario-importar #glos-import-ajuda code { background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:monospace; }
+</style>
+
+    <div class="analytics-modal-header" style="flex-shrink:0;">
+        <div class="analytics-modal-title">📖 Glossário</div>
+        <button class="analytics-close-btn" onclick="window.fecharGlossarioModal()">✕</button>
+    </div>
+    <div class="fc-grid" id="glos-grid">
+        <div class="fc-col" id="glos-col-materias"></div>
+        <div class="fc-col" id="glos-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        <div class="fc-col" id="glos-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+    </div>
+
+<script>
+// ── PARSER DE IMPORTAÇÃO EM MASSA DE GLOSSÁRIO ──
+// Mesmo espírito dos parsers de Esquemas/Jurisprudência (marcador "### L2:"
+// em qualquer lugar do texto, achando o fim de cada bloco no próximo
+// marcador ou no fim do texto), mas MAIS SIMPLES: como cada verbete só tem
+// 3 campos (1 obrigatório rotulado), separar por LINHA EM BRANCO é
+// suficiente e mais robusto que a detecção por contagem de linhas usada em
+// Esquemas/Jurisprudência (que precisa disso por ter 7 linhas fixas).
+//
+// Formato esperado (dentro de cada divisão):
+//   Expressão
+//   Significado: ...
+//   Contexto: ... (opcional — linha inteira pode faltar)
+//
+//   Próxima Expressão
+//   Significado: ...
+function glosNormalizarTexto(texto) {
+    return (texto || '').replace(/\*/g, ''); // rótulos podem vir em **negrito** markdown
+}
+
+const GLOS_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g;
+const GLOS_RE_SIGNIFICADO = /^Significado:\s*([\s\S]+)$/i;
+const GLOS_RE_CONTEXTO = /^Contexto(?:\s*ou\s*Aplica[cç][aã]o)?:\s*([\s\S]+)$/i;
+
+function glosParsearBlocoDivisao(trecho) {
+    let verbetes = [];
+    let malformados = 0;
+    trecho.split(/\n\s*\n+/).forEach(function(paragrafo) {
+        let linhas = paragrafo.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+        if (linhas.length === 0) return;
+        let primeira = linhas[0];
+        // Primeira linha rotulada (Significado:/Contexto:) sem expressão
+        // antes dela — fragmento órfão, não uma expressão válida.
+        if (GLOS_RE_SIGNIFICADO.test(primeira) || GLOS_RE_CONTEXTO.test(primeira)) { malformados++; return; }
+        let expressao = primeira;
+        let significado = '';
+        let contexto = '';
+        for (let i = 1; i < linhas.length; i++) {
+            let mSig = GLOS_RE_SIGNIFICADO.exec(linhas[i]);
+            if (mSig) { significado = mSig[1].trim(); continue; }
+            let mCtx = GLOS_RE_CONTEXTO.exec(linhas[i]);
+            if (mCtx) { contexto = mCtx[1].trim(); continue; }
+        }
+        if (expressao && significado) { verbetes.push({ expressao: expressao, significado: significado, contexto: contexto }); }
+        else { malformados++; }
+    });
+    return { verbetes: verbetes, malformados: malformados };
+}
+
+function parsearImportacaoGlossario(textoBruto) {
+    let texto = glosNormalizarTexto(textoBruto);
+
+    let marcadores = [];
+    let m;
+    GLOS_RE_L2_GLOBAL.lastIndex = 0;
+    while ((m = GLOS_RE_L2_GLOBAL.exec(texto)) !== null) {
+        marcadores.push({ divisao: m[1].trim(), matchStart: m.index, matchEnd: m.index + m[0].length });
+    }
+
+    let porDivisao = {};
+    let totalVerbetes = 0;
+    let totalMalformados = 0;
+    let totalSemL2 = 0; // parágrafos com "Significado:" encontrados fora de qualquer "### L2:" válido — NUNCA importados
+
+    function contarOrfaosSemL2(trecho) {
+        trecho.split(/\n\s*\n+/).forEach(function(paragrafo) {
+            let linhas = paragrafo.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+            if (linhas.some(function(l) { return GLOS_RE_SIGNIFICADO.test(l); })) totalSemL2++;
+        });
+    }
+
+    let semL2Texto = marcadores.length > 0 ? texto.slice(0, marcadores[0].matchStart) : texto;
+    contarOrfaosSemL2(semL2Texto);
+
+    marcadores.forEach(function(marcador, idx) {
+        let inicio = marcador.matchEnd;
+        let fim = (idx + 1 < marcadores.length) ? marcadores[idx + 1].matchStart : texto.length;
+        let divisao = marcador.divisao;
+
+        if (!divisao) {
+            contarOrfaosSemL2(texto.slice(inicio, fim));
+            return;
+        }
+
+        let r = glosParsearBlocoDivisao(texto.slice(inicio, fim));
+        if (!porDivisao[divisao]) porDivisao[divisao] = { verbetes: [], malformados: 0 };
+        porDivisao[divisao].verbetes = porDivisao[divisao].verbetes.concat(r.verbetes);
+        porDivisao[divisao].malformados += r.malformados;
+        totalVerbetes += r.verbetes.length;
+        totalMalformados += r.malformados;
+    });
+
+    return { porDivisao: porDivisao, totalVerbetes: totalVerbetes, totalMalformados: totalMalformados, totalSemL2: totalSemL2 };
+}
+
+// ── GLOSSÁRIO — mesmo menu L1/L2 de Materiais. Estrutura de dados:
+// glossario: { "MATÉRIA > Divisão": [ {id, expressao, significado,
+// contexto, criadoEm} ] } — achatada, mesmo padrão. Sem origem_oficial:
+// diferente de Materiais/Esquemas/Jurisprudência, não existe conteúdo
+// "oficial" aqui (nada é buscado de um manifesto do repositório) — é 100%
+// pessoal, então não há init() assíncrono nem trava de edição/exclusão.
+window.GLOSSARIO_RUNTIME = {
+    glossario: {},
+    STORAGE_KEY: 'tjpe_v1__glossario_runtime',
+    _materiaSelecionada: null,
+    _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado)
+    _bootstrapped: false,
+    _editandoId: null,
+    _editandoChave: null,
+    _resultadoPreVisualizado: null,
+
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        this.glossario = (bruto && typeof bruto.glossario === 'object' && !Array.isArray(bruto.glossario)) ? bruto.glossario : {};
+        this._bootstrapped = true;
+    },
+
+    _garantirCarregado: function() {
+        if (!this._bootstrapped) this.carregar();
+    },
+
+    salvar: function() {
+        try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ glossario: this.glossario }));
+            return true;
+        } catch (e) {
+            console.warn('[GLOSSARIO] Falha ao salvar:', e);
+            return false;
+        }
+    },
+
+    init: function() {
+        this.carregar();
+        this.render();
+    },
+
+    _chaveL2: function(materia, divisao) {
+        return materia + ' > ' + divisao;
+    },
+
+    _escapar: function(str) {
+        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    _contarTermosDaMateria: function(materia) {
+        let self = this;
+        let total = 0;
+        let prefixo = materia + ' > ';
+        Object.keys(this.glossario).forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) total += (self.glossario[chave] || []).length;
+        });
+        return total;
+    },
+    _contarTermosDoL2: function(materia, divisao) {
+        return (this.glossario[this._chaveL2(materia, divisao)] || []).length;
+    },
+
+    render: function() {
+        let colMaterias = document.getElementById('glos-col-materias');
+        if (!colMaterias) return;
+        let self = this;
+
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
+            return;
+        }
+
+        colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            let ativa = mat.nivel_1 === self._materiaSelecionada;
+            let n = self._contarTermosDaMateria(mat.nivel_1);
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' +
+                    (n > 0 ? ('<span class="fc-materia-count">' + n + '</span>') : '') +
+                    '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
+                '</span>' +
+            '</div>';
+        }).join('');
+
+        if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
+    },
+
+    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._materiaSelecionada = nivel1;
+        this._divisaoSelecionada = null;
+        if (!semRerenderSidebarMaterias) {
+            document.querySelectorAll('#glos-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
+            let alvo = Array.from(document.querySelectorAll('#glos-col-materias .fc-materia-item')).find(function(el) {
+                return el.querySelector('.fc-materia-nome').textContent === nivel1;
+            });
+            if (alvo) alvo.classList.add('ativa');
+        }
+        this._renderColunaDivisoes(nivel1);
+        this._renderGradeCards();
+    },
+
+    _renderColunaDivisoes: function(nivel1) {
+        let colDivisoes = document.getElementById('glos-col-divisoes');
+        if (!colDivisoes) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            return;
+        }
+
+        let self = this;
+        let totalMateria = this._contarTermosDaMateria(nivel1);
+        colDivisoes.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
+            '</div>' +
+            mat.divisoes.map(function(div) {
+                let n = self._contarTermosDoL2(nivel1, div.nivel_2);
+                let ativa = self._divisaoSelecionada === div.nivel_2;
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.GLOSSARIO_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + div.nivel_2 + '</span><span class="fc-divisao-count">' + n + '</span>' +
+                '</div>';
+            }).join('');
+    },
+
+    selecionarDivisao: function(materia, divisao) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._renderColunaDivisoes(materia);
+        this._renderGradeCards();
+    },
+
+    _termosParaExibir: function() {
+        let self = this;
+        if (!this._materiaSelecionada) return [];
+        if (this._divisaoSelecionada) {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            return (this.glossario[chave] || []).map(function(t) { return { item: t, chave: chave }; });
+        }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = [];
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) {
+                (self.glossario[chave] || []).forEach(function(t) { resultado.push({ item: t, chave: chave }); });
+            }
+        });
+        return resultado;
+    },
+
+    _renderToolbar: function() {
+        return '<div class="mat-toolbar">' +
+            '<div class="mat-toolbar-linha">' +
+                '<div class="mat-tb-acoes-grupo">' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarTudo()" title="Exportar todo o glossário visível em JSON">📤 Tudo (JSON)</button>' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()" title="Exportar a disciplina selecionada em JSON">📤 Disciplina (JSON)</button>' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarTopico()" title="Exportar o tópico selecionado em JSON">📤 Tópico (JSON)</button>' +
+                '</div>' +
+                '<div class="mat-tb-acoes-grupo">' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTudo()" title="Exportar todo o glossário em HTML estilizado, pronto pra imprimir ou revisar">🎨 Tudo (HTML)</button>' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()" title="Exportar a disciplina selecionada em HTML estilizado">🎨 Disciplina (HTML)</button>' +
+                    '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()" title="Exportar o tópico selecionado em HTML estilizado">🎨 Tópico (HTML)</button>' +
+                '</div>' +
+                '<button class="mat-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalImportar()" title="Importar várias expressões de uma vez, colando um texto formatado">📥 Importar em Massa</button>' +
+            '</div>' +
+        '</div>';
+    },
+
+    _renderGradeCards: function() {
+        let col = document.getElementById('glos-col-cards');
+        if (!col) return;
+        let self = this;
+
+        if (!this._materiaSelecionada) {
+            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+            return;
+        }
+
+        let lista = this._termosParaExibir();
+        let mostrarAdicionar = !!this._divisaoSelecionada;
+
+        let htmlCards = lista.map(function(par) {
+            let item = par.item;
+            let significado = item.significado || '';
+            let preview = significado.length > 110 ? significado.slice(0, 110).trim() + '…' : significado;
+            return '<div class="mat-card">' +
+                '<div class="mat-card-tags">' +
+                    '<span class="mat-card-tags-esq"><span class="mat-tag">Expressão</span></span>' +
+                    '<button class="mat-btn-excluir" onclick="window.GLOSSARIO_RUNTIME.excluirTermo(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir expressão">🗑️</button>' +
+                '</div>' +
+                '<div class="mat-card-titulo">' + self._escapar(item.expressao) + '</div>' +
+                '<div class="mat-card-desc">' + self._escapar(preview) + '</div>' +
+                '<div class="mat-card-footer">' +
+                    '<button class="mat-btn-editar" onclick="window.GLOSSARIO_RUNTIME.abrirModalEditar(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Ver / editar">✏️ Ver / Editar</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        let htmlAdicionar = mostrarAdicionar
+            ? '<div class="mat-card-add" onclick="window.GLOSSARIO_RUNTIME.abrirModalNovo()">➕ Adicionar Expressão</div>'
+            : '';
+
+        let corpoHtml;
+        if (htmlCards || htmlAdicionar) {
+            corpoHtml = '<div class="mat-cards-grid">' + htmlCards + htmlAdicionar + '</div>';
+        } else if (this._divisaoSelecionada) {
+            corpoHtml = '<div class="fc-vazio-col">Nenhuma expressão aqui ainda.</div>';
+        } else {
+            corpoHtml = '<div class="fc-vazio-col">Escolha uma divisão específica pra adicionar a primeira expressão.</div>';
+        }
+
+        col.innerHTML = this._renderToolbar() + '<div class="mat-grade-scroll">' + corpoHtml + '</div>';
+    },
+
+    // ── MODAL "NOVA EXPRESSÃO" ──
+
+    abrirModalNovo: function() {
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
+        this._editandoId = null;
+        this._editandoChave = null;
+        document.getElementById('glos-modal-cabecalho').textContent = '📖 Nova Expressão';
+        document.getElementById('glos-form-expressao').value = '';
+        document.getElementById('glos-form-significado').value = '';
+        document.getElementById('glos-form-contexto').value = '';
+        document.getElementById('glos-form-erro').style.display = 'none';
+        document.getElementById('modal-glossario-novo').classList.add('open');
+        setTimeout(function() { let t = document.getElementById('glos-form-expressao'); if (t) t.focus(); }, 50);
+    },
+
+    abrirModalEditar: function(chave, id) {
+        let item = (this.glossario[chave] || []).find(function(t) { return t.id === id; });
+        if (!item) return;
+        this._editandoId = id;
+        this._editandoChave = chave;
+        document.getElementById('glos-modal-cabecalho').textContent = '✏️ Editar Expressão';
+        document.getElementById('glos-form-expressao').value = item.expressao || '';
+        document.getElementById('glos-form-significado').value = item.significado || '';
+        document.getElementById('glos-form-contexto').value = item.contexto || '';
+        document.getElementById('glos-form-erro').style.display = 'none';
+        document.getElementById('modal-glossario-novo').classList.add('open');
+        setTimeout(function() { let t = document.getElementById('glos-form-expressao'); if (t) t.focus(); }, 50);
+    },
+
+    fecharModalNovo: function() {
+        document.getElementById('modal-glossario-novo').classList.remove('open');
+        this._editandoId = null;
+        this._editandoChave = null;
+    },
+
+    salvarNovoTermo: function() {
+        let erroEl = document.getElementById('glos-form-erro');
+        let expressao = (document.getElementById('glos-form-expressao').value || '').trim();
+        let significado = (document.getElementById('glos-form-significado').value || '').trim();
+        let contexto = (document.getElementById('glos-form-contexto').value || '').trim();
+
+        if (!expressao) {
+            erroEl.textContent = 'Informe a expressão.';
+            erroEl.style.display = 'block';
+            return;
+        }
+        if (!significado) {
+            erroEl.textContent = 'Informe o significado.';
+            erroEl.style.display = 'block';
+            return;
+        }
+
+        if (this._editandoId) {
+            let arr = this.glossario[this._editandoChave];
+            let item = arr && arr.find(function(t) { return t.id === window.GLOSSARIO_RUNTIME._editandoId; });
+            if (item) {
+                item.expressao = expressao;
+                item.significado = significado;
+                item.contexto = contexto;
+            }
+        } else {
+            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+            if (!Array.isArray(this.glossario[chave])) this.glossario[chave] = [];
+            this.glossario[chave].push({
+                id: 'glos_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                expressao: expressao,
+                significado: significado,
+                contexto: contexto,
+                criadoEm: new Date().toISOString()
+            });
+        }
+        this.salvar();
+        this.fecharModalNovo();
+        this._renderGradeCards();
+    },
+
+    excluirTermo: function(chave, id) {
+        if (!Array.isArray(this.glossario[chave])) return;
+        if (!confirm('Excluir esta expressão?')) return;
+        this.glossario[chave] = this.glossario[chave].filter(function(t) { return t.id !== id; });
+        if (this.glossario[chave].length === 0) delete this.glossario[chave];
+        this.salvar();
+        this._renderGradeCards();
+    },
+
+    // ── EXPORTAR (JSON) ──
+
+    exportarTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            let itens = self.glossario[chave] || [];
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar ainda.'); return; }
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-tudo.json', 'application/json');
+    },
+
+    exportarDisciplina: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let itens = self.glossario[chave] || [];
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '".'); return; }
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+    },
+
+    exportarTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let itens = this.glossario[chave] || [];
+        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '".'); return; }
+        let resultado = {};
+        resultado[chave] = itens;
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    },
+
+    // ── EXPORTAR (HTML estilizado) — mesmo template compartilhado de
+    // Cronograma/Esquemas/Jurisprudência (gerarDocumentoHtmlEstilizado). ──
+
+    _gerarHtmlGlossario: function(porChave, tituloDoc) {
+        let self = this;
+        let chaves = Object.keys(porChave).sort();
+        let totalItens = chaves.reduce(function(soma, c) { return soma + porChave[c].length; }, 0);
+
+        let corpo = '';
+        if (tituloDoc) corpo += '<div class="doc-titulo">' + this._escapar(tituloDoc) + '</div>';
+        corpo += '<div class="doc-resumo">' + totalItens + ' expressão(ões) em ' + chaves.length + ' tópico(s).</div>';
+
+        let matAtual = null;
+        chaves.forEach(function(chave) {
+            let partes = chave.split(' > ');
+            let mat = partes[0] || chave;
+            let div = partes.length > 1 ? partes.slice(1).join(' > ') : null;
+            if (mat !== matAtual) {
+                corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+                matAtual = mat;
+            }
+            if (div) corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
+            porChave[chave].forEach(function(item) {
+                corpo += '<div class="doc-card">' +
+                    '<div class="doc-card-titulo">' + self._escapar(item.expressao || '(sem expressão)') + '</div>' +
+                    '<div class="doc-callout-label">Significado</div><div class="doc-callout">' + self._escapar(item.significado || '') + '</div>' +
+                    (item.contexto ? '<div class="doc-callout-label">Contexto ou Aplicação</div><div class="doc-callout">' + self._escapar(item.contexto) + '</div>' : '') +
+                '</div>';
+            });
+        });
+
+        return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
+    },
+
+    exportarHtmlTudo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            let itens = self.glossario[chave] || [];
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar ainda.'); return; }
+        downloadArquivo(this._gerarHtmlGlossario(resultado, 'Glossário — Tudo'), 'glossario-tudo.html', 'text/html');
+    },
+
+    exportarHtmlDisciplina: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let self = this;
+        let prefixo = this._materiaSelecionada + ' > ';
+        let resultado = {};
+        let total = 0;
+        Object.keys(this.glossario).sort().forEach(function(chave) {
+            if (chave.indexOf(prefixo) !== 0) return;
+            let itens = self.glossario[chave] || [];
+            if (itens.length > 0) { resultado[chave] = itens; total += itens.length; }
+        });
+        if (total === 0) { alert('Nenhuma expressão pra exportar em "' + this._materiaSelecionada + '".'); return; }
+        downloadArquivo(this._gerarHtmlGlossario(resultado, this._materiaSelecionada), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
+    },
+
+    exportarHtmlTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        let itens = this.glossario[chave] || [];
+        if (itens.length === 0) { alert('Nenhuma expressão pra exportar em "' + chave + '".'); return; }
+        let resultado = {};
+        resultado[chave] = itens;
+        downloadArquivo(this._gerarHtmlGlossario(resultado, chave), 'glossario-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.html', 'text/html');
+    },
+
+    _slugTexto: function(texto) {
+        return (texto || '').toLowerCase()
+            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    },
+
+    // ── IMPORTAR EM MASSA ──
+
+    abrirModalImportar: function() {
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
+        document.getElementById('glos-import-textarea').value = '';
+        document.getElementById('glos-import-preview').style.display = 'none';
+        document.getElementById('glos-import-preview').innerHTML = '';
+        document.getElementById('glos-import-btn-confirmar').disabled = true;
+        this._resultadoPreVisualizado = null;
+        document.getElementById('modal-glossario-importar').classList.add('open');
+    },
+
+    fecharModalImportar: function() {
+        document.getElementById('modal-glossario-importar').classList.remove('open');
+        this._resultadoPreVisualizado = null;
+    },
+
+    prevvisualizarImportacao: function() {
+        let texto = document.getElementById('glos-import-textarea').value || '';
+        let saida = parsearImportacaoGlossario(texto);
+        this._resultadoPreVisualizado = saida;
+
+        let previewEl = document.getElementById('glos-import-preview');
+        let btnConfirmar = document.getElementById('glos-import-btn-confirmar');
+
+        if (saida.totalVerbetes === 0) {
+            previewEl.innerHTML = '<strong>Nenhuma expressão reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e, pra cada expressão, uma linha com o termo seguida de "Significado: ..." (obrigatório), separando uma expressão da outra com uma linha em branco.' +
+                (saida.totalMalformados > 0 ? ' (' + saida.totalMalformados + ' fragmento(s) parecido(s), mas sem "Significado:" válido.)' : '') +
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' expressão(ões) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
+            previewEl.style.display = 'block';
+            btnConfirmar.disabled = true;
+            return;
+        }
+
+        let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
+            let d = saida.porDivisao[div];
+            return '<div>• <strong>' + div + '</strong>: ' + d.verbetes.length + ' expressão(ões)' + (d.malformados > 0 ? ' <span style="color:var(--danger);">(+' + d.malformados + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+        }).join('');
+
+        previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalVerbetes + ' expressão(ões)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
+            (saida.totalMalformados > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformados + ' ignorada(s) por formato inválido</span>' : '') +
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
+        previewEl.style.display = 'block';
+        btnConfirmar.disabled = false;
+    },
+
+    confirmarImportacao: function() {
+        if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalVerbetes === 0) return;
+        let self = this;
+        let materiaAtual = this._materiaSelecionada;
+        let agora = new Date().toISOString();
+
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
+            let chave = self._chaveL2(materiaAtual, divisao);
+            if (!Array.isArray(self.glossario[chave])) self.glossario[chave] = [];
+            self._resultadoPreVisualizado.porDivisao[divisao].verbetes.forEach(function(v) {
+                self.glossario[chave].push({
+                    id: 'glos_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                    expressao: v.expressao,
+                    significado: v.significado,
+                    contexto: v.contexto,
+                    criadoEm: agora
+                });
+            });
+        });
+
+        let salvouComSucesso = this.salvar();
+        let totalImportado = this._resultadoPreVisualizado.totalVerbetes;
+        this._resultadoPreVisualizado = null;
+        this.fecharModalImportar();
+        this._renderGradeCards();
+        if (!salvouComSucesso) {
+            alert('⚠️ As ' + totalImportado + ' expressão(ões) foram processadas, mas NÃO foram salvas — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Elas continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Libere espaço (exporte e exclua expressões antigas, ou limpe dados de outros sites no navegador) antes de importar de novo.');
+        }
+    }
+};
+
+// Abre/fecha Glossário como MODAL sobre a tela atual, mesmo padrão de
+// abrirMateriaisModal/fecharMateriaisModal.
+window.abrirGlossarioModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('section-glossario');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (window.GLOSSARIO_RUNTIME) window.GLOSSARIO_RUNTIME.init();
+};
+
+window.fecharGlossarioModal = function() {
+    const modal = document.getElementById('section-glossario');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+};
+</script>
+</section>
+
+<!-- MODAL: Nova Expressão (seção Glossário) — mesmo padrão .mo/.mdl de
+     #modal-materiais-novo. -->
+<div id="modal-glossario-novo" class="mo">
+    <div class="mdl">
+        <div class="fc-popup-header" id="glos-modal-cabecalho">📖 Nova Expressão</div>
+        <div class="fc-form-campo">
+            <label>Expressão</label>
+            <input type="text" id="glos-form-expressao" placeholder="Ex.: Direito de Retrato">
+        </div>
+        <div class="fc-form-campo">
+            <label>Significado</label>
+            <textarea id="glos-form-significado" rows="3" placeholder="O que essa expressão significa"></textarea>
+        </div>
+        <div class="fc-form-campo">
+            <label>Contexto ou Aplicação (opcional)</label>
+            <textarea id="glos-form-contexto" rows="3" placeholder="Onde/como costuma aparecer (opcional)"></textarea>
+        </div>
+        <div id="glos-form-erro" class="fc-form-erro" style="display:none;"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharModalNovo()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.GLOSSARIO_RUNTIME.salvarNovoTermo()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Importar Expressões em Massa (seção Glossário) — mesmo padrão
+     de #modal-esquema-importar. -->
+<div id="modal-glossario-importar" class="mo">
+    <div class="mdl" style="max-width:640px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📥 Importar Expressões em Massa</div>
+            <button onclick="window.GLOSSARIO_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="glos-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>. Dentro de cada divisão, separe as expressões por uma linha em branco; cada expressão começa com o termo, seguido de <code>Significado: ...</code> (obrigatório) e, opcionalmente, <code>Contexto: ...</code>.</div>
+        <textarea id="glos-import-textarea" placeholder="Cole aqui o texto com as expressões..."></textarea>
+        <div id="glos-import-preview"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharModalImportar()">Cancelar</button>
+            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.prevvisualizarImportacao()">Pré-visualizar</button>
+            <button class="fc-footer-btn primario" id="glos-import-btn-confirmar" onclick="window.GLOSSARIO_RUNTIME.confirmarImportacao()" disabled>Confirmar Importação</button>
+        </div>
     </div>
 </div>
 
