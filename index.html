@@ -9522,7 +9522,14 @@ window.MATERIAIS_RUNTIME = {
             '</div>';
         }).join('');
 
-        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+        // NÃO usar selecionarMateria() aqui — ela reseta _divisaoSelecionada
+        // pra null, o que apagava a divisão já escolhida (ex.: entrando aqui
+        // via "Materiais associados" do simulado ativo, que já chama
+        // selecionarDivisao() antes desta Promise resolver) assim que os
+        // oficiais chegavam, ~poucos segundos depois — o usuário via a
+        // divisão certa por um instante e depois caía sozinho em "Todas as
+        // divisões". Preserva a divisão já ativa, só atualiza as colunas 2/3.
+        if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
     },
 
     selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
@@ -20167,7 +20174,15 @@ window.ESQUEMAS_RUNTIME = {
             '</div>';
         }).join('');
 
-        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+        // NÃO usar selecionarMateria() aqui — ela reseta _divisaoSelecionada
+        // pra null, o que apagava a divisão já escolhida (ex.: entrando aqui
+        // via "Baralhos associados" do simulado ativo, ou vindo do Cronograma,
+        // que já chamam selecionarDivisao() antes desta Promise resolver)
+        // assim que os oficiais chegavam, ~poucos segundos depois — o
+        // usuário via a divisão certa por um instante e depois caía sozinho
+        // em "Todas as divisões". Preserva a divisão já ativa, só atualiza
+        // as colunas 2/3.
+        if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
     },
 
     selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
@@ -22882,7 +22897,15 @@ window.JURISPRUDENCIA_RUNTIME = {
             '</div>';
         }).join('');
 
-        if (this._materiaSelecionada) this.selecionarMateria(this._materiaSelecionada, true);
+        // NÃO usar selecionarMateria() aqui — ela reseta _divisaoSelecionada
+        // pra null, o que apagava a divisão já escolhida (ex.: entrando aqui
+        // via "Baralhos associados" do simulado ativo, ou vindo do Cronograma,
+        // que já chamam selecionarDivisao() antes desta Promise resolver)
+        // assim que os oficiais chegavam, ~poucos segundos depois — o
+        // usuário via a divisão certa por um instante e depois caía sozinho
+        // em "Todas as divisões". Preserva a divisão já ativa, só atualiza
+        // as colunas 2/3.
+        if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
     },
 
     selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
