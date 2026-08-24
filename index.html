@@ -12143,24 +12143,41 @@ window.GLOSSARIO_RUNTIME = {
         this._editandoId = null;
         this._editandoChave = null;
         document.getElementById('glos-modal-cabecalho').textContent = '📖 Nova Expressão';
+        document.getElementById('glos-form-somente-leitura-aviso').style.display = 'none';
+        document.getElementById('glos-form-btn-salvar').style.display = 'inline-block';
         document.getElementById('glos-form-expressao').value = '';
+        document.getElementById('glos-form-expressao').readOnly = false;
         document.getElementById('glos-form-significado').value = '';
+        document.getElementById('glos-form-significado').readOnly = false;
         document.getElementById('glos-form-contexto').value = '';
+        document.getElementById('glos-form-contexto').readOnly = false;
         document.getElementById('glos-form-erro').style.display = 'none';
         document.getElementById('modal-glossario-novo').classList.add('open');
         setTimeout(function() { let t = document.getElementById('glos-form-expressao'); if (t) t.focus(); }, 50);
     },
 
+    // Clicar num card SEMPRE abre este modal, oficial ou não — visualização
+    // não pode ficar restrita a itens editáveis (bug relatado: clicar num
+    // card oficial só mostrava um alert bloqueando, sem nenhuma forma de
+    // ler o conteúdo completo). Item oficial: mesmíssimo padrão de
+    // ESQUEMAS_RUNTIME.abrirEditorExistente — o modal abre normalmente,
+    // só que com os campos travados (readOnly) e o botão Salvar escondido,
+    // em vez de recusar a abertura inteira.
     abrirModalEditar: function(chave, id) {
         let item = (this.glossario[chave] || []).find(function(t) { return t.id === id; });
         if (!item) return;
-        if (item.origem_oficial) { alert('Esta expressão é oficial e não pode ser editada.'); return; }
         this._editandoId = id;
         this._editandoChave = chave;
-        document.getElementById('glos-modal-cabecalho').textContent = '✏️ Editar Expressão';
+        let somenteLeitura = !!item.origem_oficial;
+        document.getElementById('glos-modal-cabecalho').textContent = somenteLeitura ? item.expressao : '✏️ Editar Expressão';
+        document.getElementById('glos-form-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
+        document.getElementById('glos-form-btn-salvar').style.display = somenteLeitura ? 'none' : 'inline-block';
         document.getElementById('glos-form-expressao').value = item.expressao || '';
+        document.getElementById('glos-form-expressao').readOnly = somenteLeitura;
         document.getElementById('glos-form-significado').value = item.significado || '';
+        document.getElementById('glos-form-significado').readOnly = somenteLeitura;
         document.getElementById('glos-form-contexto').value = item.contexto || '';
+        document.getElementById('glos-form-contexto').readOnly = somenteLeitura;
         document.getElementById('glos-form-erro').style.display = 'none';
         document.getElementById('modal-glossario-novo').classList.add('open');
         setTimeout(function() { let t = document.getElementById('glos-form-expressao'); if (t) t.focus(); }, 50);
@@ -12192,7 +12209,7 @@ window.GLOSSARIO_RUNTIME = {
         if (this._editandoId) {
             let arr = this.glossario[this._editandoChave];
             let item = arr && arr.find(function(t) { return t.id === window.GLOSSARIO_RUNTIME._editandoId; });
-            if (item) {
+            if (item && !item.origem_oficial) {
                 item.expressao = expressao;
                 item.significado = significado;
                 item.contexto = contexto;
@@ -12755,6 +12772,7 @@ window.fecharGlossarioModal = function() {
 <div id="modal-glossario-novo" class="mo">
     <div class="mdl">
         <div class="fc-popup-header" id="glos-modal-cabecalho">📖 Nova Expressão</div>
+        <div id="glos-form-somente-leitura-aviso" style="display:none; font-size:11px; font-weight:700; color:var(--text-muted); background:var(--bg-soft); border:1px solid var(--border-color); border-radius:6px; padding:6px 10px;">👁 Expressão oficial — somente visualização, não pode ser editada.</div>
         <div class="fc-form-campo">
             <label>Expressão</label>
             <input type="text" id="glos-form-expressao" placeholder="Ex.: Direito de Retrato">
@@ -12770,7 +12788,7 @@ window.fecharGlossarioModal = function() {
         <div id="glos-form-erro" class="fc-form-erro" style="display:none;"></div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharModalNovo()">Cancelar</button>
-            <button class="fc-footer-btn primario" onclick="window.GLOSSARIO_RUNTIME.salvarNovoTermo()">Salvar</button>
+            <button class="fc-footer-btn primario" id="glos-form-btn-salvar" onclick="window.GLOSSARIO_RUNTIME.salvarNovoTermo()">Salvar</button>
         </div>
     </div>
 </div>
