@@ -3648,32 +3648,36 @@ exportarNuvem: async function(botao) {
                 nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
             }
 
-            // Envia cada parte em uma requisição PATCH separada — nunca todas
-            // juntas — com retry automático em 409 (ver _enviarParteComRetry).
-            for (let i = 0; i < partes.length; i++) {
-                try {
-                    await this._enviarParteComRetry(gistId, token, this.PREFIXO_PARTE + (i + 1) + '.json', partes[i]);
-                } catch (erroParte) {
-                    throw new Error('Falha na parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
-                }
-            }
-
-            // Limpa partes antigas que sobraram (backup ficou menor) e o formato antigo de arquivo único
+            // Monta TODOS os arquivos (partes novas + exclusão das velhas que
+            // sobraram + o formato antigo de arquivo único) num ÚNICO PATCH —
+            // atômico: ou o Gist inteiro passa a refletir a versão nova de
+            // uma vez, ou continua exatamente como estava antes. Antes, cada
+            // parte ia numa requisição PATCH separada (uma por arquivo, em
+            // sequência) e a limpeza das partes velhas vinha só DEPOIS, numa
+            // 3ª requisição sem tratamento de erro nenhum (nem retry, nem
+            // aviso se falhasse) — se qualquer uma dessas requisições no meio
+            // do caminho falhasse (rate limit, rede, 409 sem mais tentativas),
+            // o Gist ficava com uma mistura de partes de gerações diferentes:
+            // algumas atualizadas, outras não, e partes "velhas" que
+            // deveriam ter sido apagadas mas sobreviveram (a exclusão nunca
+            // era tentada de novo). Pra QUALQUER leitor futuro — inclusive em
+            // outro navegador, sem nenhuma corrida de tempo envolvida —
+            // reconstruir essas partes misturadas concatena pedaços de
+            // versões diferentes e produz um base64/JSON corrompido. Era
+            // essa a causa raiz de "JSON.parse: unexpected character..." ao
+            // carregar, e de "salvei mas não carrega em outro navegador":
+            // nada a ver com o CONTEÚDO salvo — Esquemas/Jurisprudência só
+            // eram o gatilho mais comum por precisarem de mais partes
+            // (mais requisições em sequência, mais chance de uma falhar).
             let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
             let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
             paraApagar.push(this.NOME_ARQUIVO);
 
-            let corpoLimpeza = { files: {} };
-            paraApagar.forEach(nome => { corpoLimpeza.files[nome] = null; });
-            await fetch('https://api.github.com/gists/' + gistId, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': 'token ' + token,
-                    'Accept': 'application/vnd.github+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(corpoLimpeza)
-            });
+            let corpoFiles = {};
+            partes.forEach((parte, i) => { corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte }; });
+            paraApagar.forEach(nome => { corpoFiles[nome] = null; });
+
+            await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
 
             mostrarModal({
                 titulo: '☁️ Backup enviado com sucesso',
@@ -4120,10 +4124,13 @@ window.addEventListener('load', function() {
 //     nova tentativa, justamente no tipo de falha mais transitório e mais
 //     fácil de superar tentando de novo.
 // Compartilhado por exportarNuvem() e exportarNuvemSilenciosa().
-window.SALINHA_GIST_SYNC._enviarParteComRetry = async function(gistId, token, nomeArquivo, conteudoParte) {
+// Envia QUALQUER conjunto de arquivos (partes novas + exclusões, ou só uma
+// coisa) numa ÚNICA requisição PATCH, com retry em falha de rede/409 — ver
+// o comentário grande em exportarNuvem() sobre por que isto precisa ser
+// atômico (1 requisição só), não N requisições sequenciais (uma por
+// arquivo). `corpoFiles` já vem pronto no formato { files: {...} }.
+window.SALINHA_GIST_SYNC._enviarArquivosComRetry = async function(gistId, token, corpoFiles) {
     const MAX_TENTATIVAS = 3;
-    let corpoParte = { files: {} };
-    corpoParte.files[nomeArquivo] = { content: conteudoParte };
 
     for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
         let resposta;
@@ -4135,7 +4142,7 @@ window.SALINHA_GIST_SYNC._enviarParteComRetry = async function(gistId, token, no
                     'Accept': 'application/vnd.github+json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(corpoParte)
+                body: JSON.stringify(corpoFiles)
             });
         } catch (erroRede) {
             if (tentativa < MAX_TENTATIVAS) {
@@ -4192,29 +4199,19 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
             nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
         }
 
-        for (let i = 0; i < partes.length; i++) {
-            try {
-                await this._enviarParteComRetry(gistId, token, this.PREFIXO_PARTE + (i + 1) + '.json', partes[i]);
-            } catch (erroParte) {
-                throw new Error('parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
-            }
-        }
-
+        // Mesmo PATCH único e atômico de exportarNuvem() (ver o comentário
+        // grande lá) — partes novas + exclusão das velhas num só envio, pra
+        // nenhum leitor (nem esta própria função, se rodar de novo antes de
+        // terminar) encontrar uma mistura de gerações diferentes do backup.
         let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
         let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
         paraApagar.push(this.NOME_ARQUIVO);
 
-        let corpoLimpeza = { files: {} };
-        paraApagar.forEach(nome => { corpoLimpeza.files[nome] = null; });
-        await fetch('https://api.github.com/gists/' + gistId, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': 'token ' + token,
-                'Accept': 'application/vnd.github+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(corpoLimpeza)
-        });
+        let corpoFiles = {};
+        partes.forEach((parte, i) => { corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte }; });
+        paraApagar.forEach(nome => { corpoFiles[nome] = null; });
+
+        await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
 
     } catch (err) {
         console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
