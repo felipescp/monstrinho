@@ -10799,7 +10799,12 @@ window.fecharMateriaisModal = function() {
     #modal-glossario-transferir label { font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px; }
 
     #modal-glossario-novo { z-index: 10000; }
-    #modal-glossario-novo .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
+    /* Campos ampliados (rows 24, o dobro do limite de ~12 linhas do preview
+       do card) — max-width maior (era 480px) pra não ficar estreito e
+       espremido nessa altura, e overflow-y:auto pra rolar o modal inteiro
+       (Salvar/Fechar continuam alcançáveis) em vez de vazar da tela em
+       telas mais baixas. */
+    #modal-glossario-novo .mdl { max-width:620px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
     #modal-glossario-novo .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     #modal-glossario-novo .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
     #modal-glossario-novo .fc-form-campo { margin-bottom:0; }
@@ -12874,11 +12879,11 @@ window.fecharGlossarioModal = function() {
         </div>
         <div class="fc-form-campo">
             <label>Significado</label>
-            <textarea id="glos-form-significado" rows="3" placeholder="O que essa expressão significa"></textarea>
+            <textarea id="glos-form-significado" rows="24" placeholder="O que essa expressão significa"></textarea>
         </div>
         <div class="fc-form-campo">
             <label>Contexto ou Aplicação (opcional)</label>
-            <textarea id="glos-form-contexto" rows="3" placeholder="Onde/como costuma aparecer (opcional)"></textarea>
+            <textarea id="glos-form-contexto" rows="24" placeholder="Onde/como costuma aparecer (opcional)"></textarea>
         </div>
         <div id="glos-form-erro" class="fc-form-erro" style="display:none;"></div>
         <div class="mfoot">
