@@ -12187,6 +12187,8 @@ window.GLOSSARIO_RUNTIME = {
         document.getElementById('glos-modal-cabecalho').textContent = '📖 Nova Expressão';
         document.getElementById('glos-form-somente-leitura-aviso').style.display = 'none';
         document.getElementById('glos-form-btn-salvar').style.display = 'inline-block';
+        document.getElementById('glos-form-btn-clonar').style.display = 'none';
+        document.getElementById('glos-form-btn-fechar').textContent = 'Cancelar';
         document.getElementById('glos-form-expressao').value = '';
         document.getElementById('glos-form-expressao').readOnly = false;
         document.getElementById('glos-form-significado').value = '';
@@ -12214,6 +12216,10 @@ window.GLOSSARIO_RUNTIME = {
         document.getElementById('glos-modal-cabecalho').textContent = somenteLeitura ? item.expressao : '✏️ Editar Expressão';
         document.getElementById('glos-form-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
         document.getElementById('glos-form-btn-salvar').style.display = somenteLeitura ? 'none' : 'inline-block';
+        // "Clonar Ficha" só faz sentido pra quem NÃO pode editar direto —
+        // itens pessoais já têm o Salvar ali do lado.
+        document.getElementById('glos-form-btn-clonar').style.display = somenteLeitura ? 'inline-block' : 'none';
+        document.getElementById('glos-form-btn-fechar').textContent = somenteLeitura ? 'Fechar' : 'Cancelar';
         document.getElementById('glos-form-expressao').value = item.expressao || '';
         document.getElementById('glos-form-expressao').readOnly = somenteLeitura;
         document.getElementById('glos-form-significado').value = item.significado || '';
@@ -12223,6 +12229,32 @@ window.GLOSSARIO_RUNTIME = {
         document.getElementById('glos-form-erro').style.display = 'none';
         document.getElementById('modal-glossario-novo').classList.add('open');
         setTimeout(function() { let t = document.getElementById('glos-form-expressao'); if (t) t.focus(); }, 50);
+    },
+
+    // Cria uma cópia PESSOAL (nunca origem_oficial, id novo) da expressão
+    // oficial sendo visualizada, no mesmo tópico, e já reabre o modal nela
+    // — a cópia entra direto em modo editável (abrirModalEditar decide isso
+    // sozinho, olhando origem_oficial do item). O original oficial nunca é
+    // alterado. Mesmo padrão de ESQUEMAS_RUNTIME.clonarEsquema.
+    clonarTermo: function() {
+        let item = (this.glossario[this._editandoChave] || []).find(t => t.id === this._editandoId);
+        if (!item) return;
+        let novoId = 'glos_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        let clone = {
+            id: novoId,
+            expressao: item.expressao,
+            significado: item.significado,
+            contexto: item.contexto,
+            criadoEm: new Date().toISOString()
+        };
+        if (!Array.isArray(this.glossario[this._editandoChave])) this.glossario[this._editandoChave] = [];
+        this.glossario[this._editandoChave].push(clone);
+        let salvouComSucesso = this.salvar();
+        this._renderGradeCards();
+        if (!salvouComSucesso) {
+            alert('⚠️ A cópia foi criada, mas NÃO foi salva — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Ela continua visível só nesta sessão.');
+        }
+        this.abrirModalEditar(this._editandoChave, novoId);
     },
 
     fecharModalNovo: function() {
@@ -12829,7 +12861,8 @@ window.fecharGlossarioModal = function() {
         </div>
         <div id="glos-form-erro" class="fc-form-erro" style="display:none;"></div>
         <div class="mfoot">
-            <button class="fc-footer-btn" onclick="window.GLOSSARIO_RUNTIME.fecharModalNovo()">Cancelar</button>
+            <button class="fc-footer-btn" id="glos-form-btn-clonar" onclick="window.GLOSSARIO_RUNTIME.clonarTermo()" style="display:none;" title="Cria uma cópia pessoal editável desta expressão">📋 Clonar Ficha</button>
+            <button class="fc-footer-btn" id="glos-form-btn-fechar" onclick="window.GLOSSARIO_RUNTIME.fecharModalNovo()">Cancelar</button>
             <button class="fc-footer-btn primario" id="glos-form-btn-salvar" onclick="window.GLOSSARIO_RUNTIME.salvarNovoTermo()">Salvar</button>
         </div>
     </div>
@@ -22627,6 +22660,7 @@ window.triggerFileUpload = function(callback) {
         <div style="font-size:10px; color:var(--text-muted);">💡 Cole um trecho em Markdown (títulos com #, **negrito**, listas com -, tabelas com |) que ele já entra formatado.</div>
         <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
         <div class="mfoot">
+            <button class="fc-footer-btn" id="esq-editor-btn-clonar" onclick="window.ESQUEMAS_RUNTIME.clonarEsquema()" style="display:none;" title="Cria uma cópia pessoal editável deste esquema">📋 Clonar Ficha</button>
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
             <button class="fc-footer-btn primario" id="esq-editor-btn-salvar" onclick="window.ESQUEMAS_RUNTIME.salvarEsquema()">Salvar</button>
         </div>
@@ -24271,6 +24305,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-editor-toolbar').style.display = 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = 'none';
         document.getElementById('esq-editor-btn-salvar').style.display = 'inline-block';
+        document.getElementById('esq-editor-btn-clonar').style.display = 'none';
 
         document.getElementById('modal-esquema-editor').classList.add('open');
         setTimeout(function() { document.getElementById('esq-form-titulo').focus(); }, 50);
@@ -24292,8 +24327,39 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
         document.getElementById('esq-editor-btn-salvar').style.display = somenteLeitura ? 'none' : 'inline-block';
+        // "Clonar Ficha" só faz sentido pra quem NÃO pode editar direto —
+        // itens pessoais já têm o Salvar ali do lado, cloná-los criaria uma
+        // duplicata sem necessidade.
+        document.getElementById('esq-editor-btn-clonar').style.display = somenteLeitura ? 'inline-block' : 'none';
 
         document.getElementById('modal-esquema-editor').classList.add('open');
+    },
+
+    // Cria uma cópia PESSOAL (nunca origem_oficial, id novo) do esquema
+    // oficial sendo visualizado, no mesmo tópico, e já reabre o editor
+    // nela — a cópia entra direto em modo editável (abrirEditorExistente
+    // decide isso sozinho, olhando origem_oficial do item). O original
+    // oficial nunca é alterado.
+    clonarEsquema: function() {
+        let item = (this.esquemas[this._editandoChave] || []).find(e => e.id === this._editandoId);
+        if (!item) return;
+        let novoId = 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        let clone = {
+            id: novoId,
+            titulo: item.titulo,
+            conteudoHtml: item.conteudoHtml,
+            criadoEm: new Date().toISOString()
+            // Deliberadamente SEM origem_oficial — mesma regra de qualquer
+            // criação pessoal (ver comentário no topo do arquivo).
+        };
+        if (!Array.isArray(this.esquemas[this._editandoChave])) this.esquemas[this._editandoChave] = [];
+        this.esquemas[this._editandoChave].push(clone);
+        let salvouComSucesso = this.salvar();
+        this._renderGradeCards();
+        if (!salvouComSucesso) {
+            alert('⚠️ A cópia foi criada, mas NÃO foi salva — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Ela continua visível só nesta sessão.');
+        }
+        this.abrirEditorExistente(this._editandoChave, novoId);
     },
 
     fecharEditor: function() {
