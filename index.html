@@ -3505,7 +3505,11 @@ window.SALINHA_BACKUP = {
 // =========================================================================
 window.SALINHA_GIST_SYNC = {
     NOME_ARQUIVO: 'monstrinho-backup.json',
-    PREFIXO_PARTE: 'monstrinho-backup.part',
+    PREFIXO_PARTE: 'monstrinho-backup.part', // formato ANTIGO (sem versão) — só lido pra compatibilidade, nunca mais escrito
+    NOME_MANIFESTO: 'monstrinho-backup.manifest.json',
+    // Formato ATUAL das partes: monstrinho-backup.v<versao>.part<N>.json —
+    // ver _enviarBackupComVersionamento/_lerConteudoDoGist pro porquê.
+    REGEX_PARTE_VERSIONADA: /^monstrinho-backup\.v(\d+)\.part\d+\.json$/,
     TAMANHO_MAX_PARTE: 700000, // ~700KB por parte — margem de segurança sob o limite de 1MB do Gist
     // Acima disso, a trava (__salvamentoNuvemEmAndamento) é considerada
     // abandonada e liberada sozinha — sem isso, um fetch() que nunca resolve
@@ -3638,46 +3642,10 @@ exportarNuvem: async function(botao) {
                 localStorage.setItem('tjpe_v1__salinha_github_gist_id', gistId);
             }
 
-            // Descobre quais partes antigas existem, pra apagar as que sobrarem
-            let nomesAntigos = [];
-            let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
-                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-            });
-            if (respostaAtual.ok) {
-                let jsonAtual = await respostaAtual.json();
-                nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
-            }
-
-            // Monta TODOS os arquivos (partes novas + exclusão das velhas que
-            // sobraram + o formato antigo de arquivo único) num ÚNICO PATCH —
-            // atômico: ou o Gist inteiro passa a refletir a versão nova de
-            // uma vez, ou continua exatamente como estava antes. Antes, cada
-            // parte ia numa requisição PATCH separada (uma por arquivo, em
-            // sequência) e a limpeza das partes velhas vinha só DEPOIS, numa
-            // 3ª requisição sem tratamento de erro nenhum (nem retry, nem
-            // aviso se falhasse) — se qualquer uma dessas requisições no meio
-            // do caminho falhasse (rate limit, rede, 409 sem mais tentativas),
-            // o Gist ficava com uma mistura de partes de gerações diferentes:
-            // algumas atualizadas, outras não, e partes "velhas" que
-            // deveriam ter sido apagadas mas sobreviveram (a exclusão nunca
-            // era tentada de novo). Pra QUALQUER leitor futuro — inclusive em
-            // outro navegador, sem nenhuma corrida de tempo envolvida —
-            // reconstruir essas partes misturadas concatena pedaços de
-            // versões diferentes e produz um base64/JSON corrompido. Era
-            // essa a causa raiz de "JSON.parse: unexpected character..." ao
-            // carregar, e de "salvei mas não carrega em outro navegador":
-            // nada a ver com o CONTEÚDO salvo — Esquemas/Jurisprudência só
-            // eram o gatilho mais comum por precisarem de mais partes
-            // (mais requisições em sequência, mais chance de uma falhar).
-            let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
-            let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
-            paraApagar.push(this.NOME_ARQUIVO);
-
-            let corpoFiles = {};
-            partes.forEach((parte, i) => { corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte }; });
-            paraApagar.forEach(nome => { corpoFiles[nome] = null; });
-
-            await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
+            // Ver _enviarBackupComVersionamento (perto de _enviarArquivosComRetry)
+            // pra como isto evita tanto a corrupção por partes de gerações
+            // misturadas quanto request PATCH gigante demais pro Gist aceitar.
+            await this._enviarBackupComVersionamento(gistId, token, partes);
 
             mostrarModal({
                 titulo: '☁️ Backup enviado com sucesso',
@@ -3734,34 +3702,10 @@ exportarNuvem: async function(botao) {
             }
 
             let json = await resposta.json();
-            let arquivos = json.files || {};
-
-            let nomesPartes = Object.keys(arquivos)
-                .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
-                .sort(function(a, b) {
-                    let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
-                    let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
-                    return na - nb;
-                });
-
-            let conteudoCompleto = '';
-
-            if (nomesPartes.length > 0) {
-                for (let nome of nomesPartes) {
-                    let arquivo = arquivos[nome];
-                    let texto = arquivo.content;
-                    if (arquivo.truncated && arquivo.raw_url) {
-                        let respostaRaw = await fetch(arquivo.raw_url);
-                        texto = await respostaRaw.text();
-                    }
-                    conteudoCompleto += texto;
-                }
-            } else if (arquivos[this.NOME_ARQUIVO]) {
-                // Compatibilidade com um backup antigo, salvo antes do particionamento
-                conteudoCompleto = arquivos[this.NOME_ARQUIVO].content;
-            } else {
-                throw new Error('Backup não encontrado dentro do Gist.');
-            }
+            // Ver _lerConteudoDoGist (perto de _enviarBackupComVersionamento)
+            // — segue o manifesto quando existe, com fallback pro formato
+            // antigo (backups salvos antes desta correção).
+            let conteudoCompleto = await this._lerConteudoDoGist(json);
 
             let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
             // Aviso adicional sempre que o parser precisou descartar lixo
@@ -4164,6 +4108,144 @@ window.SALINHA_GIST_SYNC._enviarArquivosComRetry = async function(gistId, token,
     }
 };
 
+// Escreve o backup no Gist em 2 fases — resolve a corrupção por "partes de
+// gerações diferentes misturadas" (relatada como "JSON.parse: unexpected
+// character..." ao carregar, e "salvei mas não abre em outro navegador")
+// SEM depender de 1 único PATCH gigante com tudo junto (a 1ª tentativa de
+// corrigir isso combinava partes novas + exclusões num PATCH só — que
+// funcionava com pouco conteúdo, mas esbarrou num "422 missing_field:
+// files" quando o corpo da requisição ficou grande demais em backups com
+// bastante Esquemas/Jurisprudência, provavelmente um limite de tamanho do
+// lado do GitHub pra esse tipo de requisição).
+//
+// FASE 1 — cada parte da versão NOVA sobe num arquivo cujo NOME já carrega
+// o número da versão (monstrinho-backup.v<timestamp>.part<N>.json), uma
+// requisição PATCH pequena por parte (mesmo tamanho seguro de sempre, só
+// que agora nunca reaproveitando o nome de um arquivo já existente). Como
+// esses nomes NUNCA colidem com os da versão anterior, mesmo que esta fase
+// seja interrompida no meio (rede cai na parte 3 de 5), a versão anterior
+// continua 100% intacta — as partes novas incompletas ficam só soltas ali,
+// sem efeito nenhum em ninguém que leia o Gist nesse meio-tempo.
+//
+// FASE 2 — só DEPOIS que TODAS as partes novas terminaram de subir, grava
+// o manifesto (monstrinho-backup.manifest.json) apontando pra essa versão
+// + quantas partes ela tem. Esse é o "ponto de virada": um leitor sempre
+// segue o manifesto pra saber QUAL versão ler (ver _lerConteudoDoGist) —
+// até esta escrita terminar, o manifesto antigo ainda aponta pra versão
+// anterior (completa), então ninguém nunca lê uma mistura.
+//
+// FASE 3 — limpeza das versões antigas (partes + manifesto antigo não se
+// aplica, só as partes/formatos obsoletos) é best-effort: roda por último,
+// não lança se falhar. Isso é seguro porque a correção pra qualquer leitor
+// já não depende mais dela — só deixa arquivos não usados no Gist até o
+// próximo salvamento tentar de novo.
+window.SALINHA_GIST_SYNC._enviarBackupComVersionamento = async function(gistId, token, partes) {
+    let versaoNova = Date.now();
+
+    for (let i = 0; i < partes.length; i++) {
+        let nomeArquivo = 'monstrinho-backup.v' + versaoNova + '.part' + (i + 1) + '.json';
+        try {
+            let corpoFiles = {};
+            corpoFiles[nomeArquivo] = { content: partes[i] };
+            await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
+        } catch (erroParte) {
+            throw new Error('Falha na parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
+        }
+    }
+
+    let corpoManifesto = {};
+    corpoManifesto[this.NOME_MANIFESTO] = { content: JSON.stringify({ versao: versaoNova, totalPartes: partes.length }) };
+    await this._enviarArquivosComRetry(gistId, token, { files: corpoManifesto });
+
+    try {
+        let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
+            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+        });
+        if (respostaAtual.ok) {
+            let jsonAtual = await respostaAtual.json();
+            let self = this;
+            let paraApagar = Object.keys(jsonAtual.files || {}).filter(function(nome) {
+                if (nome === self.NOME_ARQUIVO) return true; // formato antigo, sem partes
+                if (nome.indexOf(self.PREFIXO_PARTE) === 0) return true; // formato antigo, sem versão
+                let m = nome.match(self.REGEX_PARTE_VERSIONADA);
+                return !!(m && Number(m[1]) !== versaoNova); // versão diferente da que acabou de virar atual
+            });
+            if (paraApagar.length > 0) {
+                let corpoLimpeza = {};
+                paraApagar.forEach(function(nome) { corpoLimpeza[nome] = null; });
+                await this._enviarArquivosComRetry(gistId, token, { files: corpoLimpeza });
+            }
+        }
+    } catch (erroLimpeza) {
+        console.warn('[GIST SYNC] Limpeza de versões antigas do backup falhou (sem impacto — só deixa arquivos não usados no Gist, tenta de novo no próximo salvamento):', erroLimpeza);
+    }
+};
+
+// Reconstrói o conteúdo completo do backup a partir de json.files (resposta
+// crua da API de Gists) — usado por importarNuvem()/importarNuvemSilenciosa().
+// Segue o manifesto (formato atual, ver _enviarBackupComVersionamento)
+// quando ele existe: é a ÚNICA forma de garantir que as partes lidas
+// pertencem TODAS à mesma geração do backup, mesmo que o Gist também tenha
+// partes soltas de uma versão anterior ou de um envio interrompido. Sem
+// manifesto (backup salvo antes desta correção), cai no formato antigo:
+// varre tudo com o prefixo sem versão e concatena na ordem numérica.
+window.SALINHA_GIST_SYNC._lerConteudoDoGist = async function(json) {
+    let arquivos = json.files || {};
+
+    let manifesto = arquivos[this.NOME_MANIFESTO];
+    if (manifesto && manifesto.content) {
+        try {
+            let dadosManifesto = JSON.parse(manifesto.content);
+            if (dadosManifesto && dadosManifesto.versao && dadosManifesto.totalPartes > 0) {
+                let conteudoCompleto = '';
+                for (let i = 1; i <= dadosManifesto.totalPartes; i++) {
+                    let nome = 'monstrinho-backup.v' + dadosManifesto.versao + '.part' + i + '.json';
+                    let arquivo = arquivos[nome];
+                    if (!arquivo) throw new Error('Parte ' + i + '/' + dadosManifesto.totalPartes + ' da versão ' + dadosManifesto.versao + ' não foi encontrada no Gist.');
+                    let texto = arquivo.content;
+                    if (arquivo.truncated && arquivo.raw_url) {
+                        let respostaRaw = await fetch(arquivo.raw_url);
+                        if (!respostaRaw.ok) throw new Error('Falha ao buscar o conteúdo completo da parte ' + i + ' (HTTP ' + respostaRaw.status + ').');
+                        texto = await respostaRaw.text();
+                    }
+                    conteudoCompleto += texto;
+                }
+                return conteudoCompleto;
+            }
+        } catch (erroManifesto) {
+            console.warn('[GIST SYNC] Manifesto inválido/incompleto — tentando o formato antigo (sem manifesto):', erroManifesto);
+        }
+    }
+
+    // Formato antigo (sem manifesto) — mesma reconstrução de sempre.
+    let nomesPartes = Object.keys(arquivos)
+        .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
+        .sort(function(a, b) {
+            let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
+            let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
+            return na - nb;
+        });
+
+    if (nomesPartes.length > 0) {
+        let conteudoCompleto = '';
+        for (let nome of nomesPartes) {
+            let arquivo = arquivos[nome];
+            let texto = arquivo.content;
+            if (arquivo.truncated && arquivo.raw_url) {
+                let respostaRaw = await fetch(arquivo.raw_url);
+                if (!respostaRaw.ok) throw new Error('Falha ao buscar o conteúdo completo de "' + nome + '" (HTTP ' + respostaRaw.status + ').');
+                texto = await respostaRaw.text();
+            }
+            conteudoCompleto += texto;
+        }
+        return conteudoCompleto;
+    }
+    if (arquivos[this.NOME_ARQUIVO]) {
+        return arquivos[this.NOME_ARQUIVO].content;
+    }
+    throw new Error('Backup não encontrado dentro do Gist.');
+};
+
 // =========================================================================
 // SALVAMENTO AUTOMÁTICO E SILENCIOSO — PERIÓDICO (a cada 5min de atividade)
 // =========================================================================
@@ -4190,28 +4272,8 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
         let conteudo = JSON.stringify(payload, null, 2);
         let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
 
-        let nomesAntigos = [];
-        let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
-            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-        });
-        if (respostaAtual.ok) {
-            let jsonAtual = await respostaAtual.json();
-            nomesAntigos = Object.keys(jsonAtual.files || {}).filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0);
-        }
-
-        // Mesmo PATCH único e atômico de exportarNuvem() (ver o comentário
-        // grande lá) — partes novas + exclusão das velhas num só envio, pra
-        // nenhum leitor (nem esta própria função, se rodar de novo antes de
-        // terminar) encontrar uma mistura de gerações diferentes do backup.
-        let nomesNovos = partes.map((_, i) => this.PREFIXO_PARTE + (i + 1) + '.json');
-        let paraApagar = nomesAntigos.filter(nome => nomesNovos.indexOf(nome) === -1);
-        paraApagar.push(this.NOME_ARQUIVO);
-
-        let corpoFiles = {};
-        partes.forEach((parte, i) => { corpoFiles[this.PREFIXO_PARTE + (i + 1) + '.json'] = { content: parte }; });
-        paraApagar.forEach(nome => { corpoFiles[nome] = null; });
-
-        await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
+        // Ver _enviarBackupComVersionamento (perto de _enviarArquivosComRetry).
+        await this._enviarBackupComVersionamento(gistId, token, partes);
 
     } catch (err) {
         console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
@@ -4301,32 +4363,10 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
         if (!resposta.ok) return;
 
         let json = await resposta.json();
-        let arquivos = json.files || {};
-
-        let nomesPartes = Object.keys(arquivos)
-            .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
-            .sort(function(a, b) {
-                let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
-                let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
-                return na - nb;
-            });
-
-        let conteudoCompleto = '';
-        if (nomesPartes.length > 0) {
-            for (let nome of nomesPartes) {
-                let arquivo = arquivos[nome];
-                let texto = arquivo.content;
-                if (arquivo.truncated && arquivo.raw_url) {
-                    let respostaRaw = await fetch(arquivo.raw_url);
-                    texto = await respostaRaw.text();
-                }
-                conteudoCompleto += texto;
-            }
-        } else if (arquivos[this.NOME_ARQUIVO]) {
-            conteudoCompleto = arquivos[this.NOME_ARQUIVO].content;
-        } else {
-            return;
-        }
+        // Ver _lerConteudoDoGist — se o backup não for encontrado nem no
+        // formato novo nem no antigo, ela lança, e o catch mais externo
+        // desta função (silencioso, só console.warn) já cobre o caso.
+        let conteudoCompleto = await this._lerConteudoDoGist(json);
 
         let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
         if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
