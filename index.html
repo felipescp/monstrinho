@@ -10912,7 +10912,12 @@ function glosNormalizarTexto(texto) {
     return (texto || '').replace(/\*/g, ''); // rótulos podem vir em **negrito** markdown
 }
 
-const GLOS_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g;
+// #{0,6} (não "###" fixo) — muitos modelos de IA interpretam "###" como
+// cabeçalho de markdown e entregam o texto sem os #, ou com uma quantidade
+// diferente deles (## , # , nenhum). O marcador "L2:" em si já é
+// suficientemente específico (não é um rótulo comum em texto solto) pra
+// continuar seguro sem exigir os #.
+const GLOS_RE_L2_GLOBAL = /#{0,6}\s*\bL2:\s*([^\n]*)/g;
 const GLOS_RE_SIGNIFICADO = /^Significado:\s*([\s\S]+)$/i;
 const GLOS_RE_CONTEXTO = /^Contexto(?:\s*ou\s*Aplica[cç][aã]o)?:\s*([\s\S]+)$/i;
 
@@ -12838,7 +12843,7 @@ window.fecharGlossarioModal = function() {
             <div class="fc-popup-header">📥 Importar Expressões em Massa</div>
             <button onclick="window.GLOSSARIO_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="glos-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>. Dentro de cada divisão, separe as expressões por uma linha em branco; cada expressão começa com o termo, seguido de <code>Significado: ...</code> (obrigatório) e, opcionalmente, <code>Contexto: ...</code>.</div>
+        <div id="glos-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui). Dentro de cada divisão, separe as expressões por uma linha em branco; cada expressão começa com o termo, seguido de <code>Significado: ...</code> (obrigatório) e, opcionalmente, <code>Contexto: ...</code>.</div>
         <textarea id="glos-import-textarea" placeholder="Cole aqui o texto com as expressões..."></textarea>
         <div id="glos-import-preview"></div>
         <div class="mfoot">
@@ -22647,7 +22652,7 @@ window.triggerFileUpload = function(callback) {
             <div class="fc-popup-header">📥 Importar Esquemas em Massa</div>
             <button onclick="window.ESQUEMAS_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>, seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA".</div>
+        <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA".</div>
         <textarea id="esq-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="esq-import-preview"></div>
         <div class="mfoot">
@@ -22775,7 +22780,10 @@ function esqNormalizarTexto(texto) {
     return (texto || '').replace(/\*/g, ''); // rótulos podem vir em **negrito** markdown
 }
 
-const ESQ_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g;
+// #{0,6} (não "###" fixo) — mesmo motivo de GLOS_RE_L2_GLOBAL: vários
+// modelos de IA tratam "###" como cabeçalho de markdown e entregam o
+// texto sem os #, ou com uma quantidade diferente deles.
+const ESQ_RE_L2_GLOBAL = /#{0,6}\s*\bL2:\s*([^\n]*)/g;
 const ESQ_RE_SUBTEMA = /^Subtema:\s*(.+?)\s*\|\s*Tipo:\s*(.+)$/i;
 const ESQ_RE_REFERENCIA = /^Refer[eê]ncia:\s*([\s\S]+)$/i;
 const ESQ_RE_CORPO = /^CORPO:\s*([\s\S]+)$/i;
@@ -25362,7 +25370,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code>, seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...").</div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...").</div>
         <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="jur-import-preview"></div>
         <div class="mfoot">
@@ -25546,7 +25554,11 @@ const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
 const JUR_RE_DATACONSULTA = /^DATA DA CONSULTA:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
-const JUR_RE_L2_GLOBAL = /###\s*L2:\s*([^\n]*)/g; // NÃO ancorado a início de linha — acha o marcador mesmo sem \n antes dele
+// #{0,6} (não "###" fixo) — mesmo motivo de ESQ_RE_L2_GLOBAL/GLOS_RE_L2_GLOBAL:
+// vários modelos de IA tratam "###" como cabeçalho de markdown e entregam
+// o texto sem os #. NÃO ancorado a início de linha — acha o marcador
+// mesmo sem \n antes dele.
+const JUR_RE_L2_GLOBAL = /#{0,6}\s*\bL2:\s*([^\n]*)/g;
 
 // Só "como pode ser cobrado" precisa engolir linhas subsequentes não
 // rotuladas (seus sub-itens "Objetiva:/Discursiva/Oral:", sempre
