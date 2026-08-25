@@ -10634,6 +10634,8 @@ window.fecharMateriaisModal = function() {
     #section-glossario .mat-btn-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #section-glossario .mat-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #section-glossario .mat-btn-excluir:hover { color:var(--danger); }
+    #section-glossario .esq-btn-ocultar { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #section-glossario .esq-btn-ocultar:hover { color:var(--app-primary); }
     #section-glossario .mat-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; }
 
     #section-glossario .mat-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
@@ -11285,6 +11287,17 @@ window.GLOSSARIO_RUNTIME = {
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
     toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
 
+    // Toggle individual de visibilidade (botão 🙈/👁️ do card) — mesmo
+    // padrão de ESQUEMAS_RUNTIME.toggleOcultarEsquema/
+    // JURISPRUDENCIA_RUNTIME.toggleOcultarFicha: 1 clique, disponível pra
+    // expressões oficiais também, sem precisar entrar no modo "Selecionar"
+    // pra ocultar 1 expressão só.
+    toggleOcultarTermo: function(id) {
+        if (this.ocultos[id]) delete this.ocultos[id]; else this.ocultos[id] = true;
+        this.salvar();
+        this._renderGradeCards();
+    },
+
     toggleModoSelecao: function() {
         this._modoSelecao = !this._modoSelecao;
         this._selecionados = {};
@@ -11679,6 +11692,14 @@ window.GLOSSARIO_RUNTIME = {
             let etiquetaHtml = etiquetaDoItem
                 ? '<span class="esq-etq-pill esq-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
                 : '';
+            // Ocultar é preferência PESSOAL de visibilidade (não edita o
+            // conteúdo) — disponível pra expressões oficiais também, mesmo
+            // padrão de ESQUEMAS_RUNTIME.toggleOcultarEsquema/
+            // JURISPRUDENCIA_RUNTIME.toggleOcultarFicha: 1 clique, sem
+            // precisar entrar no modo "Selecionar".
+            let btnOcultarHtml = !self._modoSelecao
+                ? '<button class="esq-btn-ocultar" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.toggleOcultarTermo(\'' + item.id + '\')" title="' + (oculto ? 'Exibir expressão' : 'Ocultar expressão') + '">' + (oculto ? '👁️' : '🙈') + '</button>'
+                : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="mat-btn-excluir" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.excluirTermo(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir expressão">🗑️</button>'
                 : '';
@@ -11699,7 +11720,7 @@ window.GLOSSARIO_RUNTIME = {
             return '<div class="mat-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="mat-card-tags">' +
                     '<span class="mat-card-tags-esq">' + checkboxHtml + etiquetaHtml + '<span class="mat-tag">Expressão</span>' + seloOficial + seloOculto + '</span>' +
-                    btnExcluirHtml +
+                    btnOcultarHtml + btnExcluirHtml +
                 '</div>' +
                 '<div class="mat-card-titulo">' + self._escapar(item.expressao) + '</div>' +
                 '<div class="mat-card-desc">' + self._escapar(preview) + '</div>' +
@@ -22313,6 +22334,8 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-card-preview { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
     #esquemas-modal .esq-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #esquemas-modal .esq-btn-excluir:hover { color:var(--danger); }
+    #esquemas-modal .esq-btn-ocultar { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #esquemas-modal .esq-btn-ocultar:hover { color:var(--app-primary); }
     /* Etiqueta colorida no CARD — lado esquerdo do cabeçalho
        (.esq-card-tags-esq), extremo oposto do botão de excluir (à direita,
        .esq-btn-excluir), conforme referência visual anexada pelo usuário. */
@@ -22618,6 +22641,17 @@ window.triggerFileUpload = function(callback) {
     #modal-esquema-editor #esq-editor-corpo table td, #modal-esquema-editor #esq-editor-corpo table th { border:1px solid var(--border-color); padding:6px 8px; min-width:40px; }
     #modal-esquema-editor #esq-editor-corpo table th { background:var(--bg-soft); font-weight:800; }
     #modal-esquema-editor #esq-editor-corpo[contenteditable="false"] { background:var(--bg-soft); color:var(--text-muted); }
+    /* Paleta de cores em dropdown — troca o <input type="color"> nativo
+       (abre o mapa RGB/HSV inteiro do sistema operacional) por só ~10
+       quadrinhos de cores prontas, pedido explícito por ser mais rápido de
+       usar num editor de texto (não precisa de precisão de cor nenhuma). */
+    #modal-esquema-editor .esq-cor-picker { position:relative; }
+    #modal-esquema-editor .esq-cor-trigger { padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:13px; font-weight:800; color:var(--text-main); }
+    #modal-esquema-editor .esq-cor-trigger:hover { border-color:var(--app-primary); }
+    #modal-esquema-editor .esq-cor-dropdown { display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:20; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); grid-template-columns:repeat(5, 1fr); gap:6px; width:118px; }
+    #modal-esquema-editor .esq-cor-dropdown.aberto { display:grid; }
+    #modal-esquema-editor .esq-cor-swatch { width:18px; height:18px; border-radius:50%; cursor:pointer; border:1px solid rgba(0,0,0,0.15); padding:0; }
+    #modal-esquema-editor .esq-cor-swatch:hover { transform:scale(1.15); }
 </style>
     <div class="mdl" style="max-width:720px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -22645,16 +22679,18 @@ window.triggerFileUpload = function(callback) {
                 <option value="20">Grande</option>
                 <option value="28">Enorme</option>
             </select>
-            <label title="Cor da fonte" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">A
-                <input type="color" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarCorFonte(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
-            </label>
-            <label title="Marca-texto" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">🖍️
-                <input type="color" value="#fff59d" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarMarcaTexto(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
-            </label>
-            <button type="button" onclick="window.ESQUEMAS_RUNTIME.inserirTabela()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:700;" title="Inserir tabela 3x3">▦ Inserir Tabela</button>
-            <label title="Cor de fundo da célula — clique dentro de uma célula da tabela antes de escolher a cor" style="display:flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); cursor:pointer; font-size:11px; font-weight:800;">▦
-                <input type="color" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onchange="window.ESQUEMAS_RUNTIME.aplicarCorFundoCelula(this.value)" style="width:20px; height:20px; border:none; padding:0; cursor:pointer;">
-            </label>
+            <div class="esq-cor-picker">
+                <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-fonte-dd')" title="Cor da fonte">A</button>
+                <div id="esq-cor-fonte-dd" class="esq-cor-dropdown"></div>
+            </div>
+            <div class="esq-cor-picker">
+                <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-marca-dd')" title="Marca-texto">🖍️</button>
+                <div id="esq-cor-marca-dd" class="esq-cor-dropdown"></div>
+            </div>
+            <div class="esq-cor-picker">
+                <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-celula-dd')" title="Cor de fundo da célula — clique dentro de uma célula de uma tabela colada antes de escolher a cor">▦</button>
+                <div id="esq-cor-celula-dd" class="esq-cor-dropdown"></div>
+            </div>
         </div>
         <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onpaste="window.ESQUEMAS_RUNTIME._colarComMarkdown(event)" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
         <div style="font-size:10px; color:var(--text-muted);">💡 Cole um trecho em Markdown (títulos com #, **negrito**, listas com -, tabelas com |) que ele já entra formatado.</div>
@@ -23282,6 +23318,16 @@ window.ESQUEMAS_RUNTIME = {
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
     toggleOcultarOficiais: function() { this._ocultarOficiais = !this._ocultarOficiais; this._renderGradeCards(); },
 
+    // Toggle individual de visibilidade (botão 🙈/👁️ do card) — mesmo
+    // padrão de JURISPRUDENCIA_RUNTIME.toggleOcultarFicha: 1 clique,
+    // disponível pra esquemas oficiais também, sem precisar entrar no
+    // modo "Selecionar" pra ocultar 1 esquema só.
+    toggleOcultarEsquema: function(id) {
+        if (this.ocultos[id]) delete this.ocultos[id]; else this.ocultos[id] = true;
+        this.salvar();
+        this._renderGradeCards();
+    },
+
     toggleModoSelecao: function() {
         this._modoSelecao = !this._modoSelecao;
         this._selecionados = {};
@@ -23714,6 +23760,13 @@ window.ESQUEMAS_RUNTIME = {
             let etiquetaHtml = etiquetaDoItem
                 ? '<span class="esq-etq-pill esq-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
                 : '';
+            // Ocultar é preferência PESSOAL de visibilidade (não edita o
+            // conteúdo) — disponível pra esquemas oficiais também, mesmo
+            // padrão de JURISPRUDENCIA_RUNTIME.toggleOcultarFicha: 1 clique
+            // no card, sem precisar entrar em "Selecionar".
+            let btnOcultarHtml = !self._modoSelecao
+                ? '<button class="esq-btn-ocultar" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleOcultarEsquema(\'' + item.id + '\')" title="' + (oculto ? 'Exibir esquema' : 'Ocultar esquema') + '">' + (oculto ? '👁️' : '🙈') + '</button>'
+                : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="esq-btn-excluir" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.excluirEsquema(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir esquema">🗑️</button>'
                 : '';
@@ -23743,7 +23796,7 @@ window.ESQUEMAS_RUNTIME = {
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
-                    btnExcluirHtml +
+                    btnOcultarHtml + btnExcluirHtml +
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
@@ -24307,6 +24360,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-editor-btn-salvar').style.display = 'inline-block';
         document.getElementById('esq-editor-btn-clonar').style.display = 'none';
 
+        this._popularDropdownsCor();
         document.getElementById('modal-esquema-editor').classList.add('open');
         setTimeout(function() { document.getElementById('esq-form-titulo').focus(); }, 50);
     },
@@ -24332,6 +24386,7 @@ window.ESQUEMAS_RUNTIME = {
         // duplicata sem necessidade.
         document.getElementById('esq-editor-btn-clonar').style.display = somenteLeitura ? 'inline-block' : 'none';
 
+        this._popularDropdownsCor();
         document.getElementById('modal-esquema-editor').classList.add('open');
     },
 
@@ -24454,12 +24509,68 @@ window.ESQUEMAS_RUNTIME = {
         celula.style.backgroundColor = cor;
     },
 
-    inserirTabela: function() {
-        let corpo = document.getElementById('esq-editor-corpo');
-        corpo.focus();
-        let linha = '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
-        let html = '<table><tbody>' + linha + linha + linha + '</tbody></table><p><br></p>';
-        document.execCommand('insertHTML', false, html);
+    // Paletas fixas (~10 cores cada) pros 3 seletores de cor do editor — no
+    // lugar do <input type="color"> nativo, que abre o mapa RGB/HSV inteiro
+    // do sistema operacional pra uma tarefa que não precisa de precisão de
+    // cor nenhuma (pedido explícito). Fonte/célula usam tons mais saturados
+    // (é cor de TEXTO/borda, precisa contrastar); marca-texto usa tons
+    // pastel (é cor de FUNDO atrás do texto — um tom saturado deixaria o
+    // texto ilegível em cima).
+    PALETA_COR_FONTE: ['#000000', '#b91c1c', '#ea580c', '#a16207', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777', '#6b7280'],
+    PALETA_MARCA_TEXTO: ['#fff59d', '#ffe0b2', '#ffccbc', '#f8bbd0', '#e1bee7', '#bbdefb', '#b2ebf2', '#c8e6c9', '#dcedc8', '#eeeeee'],
+    PALETA_COR_CELULA: ['#ffffff', '#f1f5f9', '#fef3c7', '#fee2e2', '#dcfce7', '#dbeafe', '#ede9fe', '#fce7f3', '#e2e8f0', '#000000'],
+
+    // Preenche os 3 dropdowns de swatch (idempotente — só a 1ª chamada tem
+    // efeito, checando se já tem filho) e liga o listener de "clicar fora
+    // fecha" uma única vez. Chamado sempre que o editor abre (abrirEditorNovo/
+    // abrirEditorExistente), não no load da página, porque os elementos
+    // #esq-cor-*-dd só existem dentro de #modal-esquema-editor.
+    _popularDropdownsCor: function() {
+        let self = this;
+        let mapa = [
+            { id: 'esq-cor-fonte-dd', paleta: this.PALETA_COR_FONTE, onclick: 'window.ESQUEMAS_RUNTIME._escolherCorFonte' },
+            { id: 'esq-cor-marca-dd', paleta: this.PALETA_MARCA_TEXTO, onclick: 'window.ESQUEMAS_RUNTIME._escolherMarcaTexto' },
+            { id: 'esq-cor-celula-dd', paleta: this.PALETA_COR_CELULA, onclick: 'window.ESQUEMAS_RUNTIME._escolherCorCelula' }
+        ];
+        mapa.forEach(function(m) {
+            let el = document.getElementById(m.id);
+            if (!el || el.children.length > 0) return; // já populado
+            el.innerHTML = m.paleta.map(function(cor) {
+                return '<button type="button" class="esq-cor-swatch" style="background:' + cor + ';" title="' + cor + '" onclick="event.stopPropagation(); ' + m.onclick + '(\'' + cor + '\')"></button>';
+            }).join('');
+        });
+        if (!this._listenerFecharDropdownCorLigado) {
+            this._listenerFecharDropdownCorLigado = true;
+            document.addEventListener('click', function() { self._fecharDropdownsCor(); });
+        }
+    },
+
+    _toggleCorDropdown: function(idDropdown) {
+        let alvo = document.getElementById(idDropdown);
+        if (!alvo) return;
+        let jaAberto = alvo.classList.contains('aberto');
+        this._fecharDropdownsCor();
+        if (!jaAberto) alvo.classList.add('aberto');
+    },
+
+    _fecharDropdownsCor: function() {
+        ['esq-cor-fonte-dd', 'esq-cor-marca-dd', 'esq-cor-celula-dd'].forEach(function(id) {
+            let el = document.getElementById(id);
+            if (el) el.classList.remove('aberto');
+        });
+    },
+
+    _escolherCorFonte: function(cor) {
+        this._fecharDropdownsCor();
+        this.aplicarCorFonte(cor);
+    },
+    _escolherMarcaTexto: function(cor) {
+        this._fecharDropdownsCor();
+        this.aplicarMarcaTexto(cor);
+    },
+    _escolherCorCelula: function(cor) {
+        this._fecharDropdownsCor();
+        this.aplicarCorFundoCelula(cor);
     },
 
     // Deixa colar Markdown puro (ex.: trecho extraído de PDF e convertido
@@ -25436,7 +25547,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...").</div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
         <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="jur-import-preview"></div>
         <div class="mfoot">
@@ -25455,6 +25566,7 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-ver .fc-popup-header { font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main); line-height:1.3; }
     #modal-jurisprudencia-ver .jur-ver-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:10px; margin-bottom:4px; }
     #modal-jurisprudencia-ver .jur-ver-texto { font-size:12.5px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; }
+    #modal-jurisprudencia-ver #jur-ver-link a { color:var(--app-primary); word-break:break-all; }
     #modal-jurisprudencia-ver .jur-ver-meta { font-size:11px; color:var(--text-muted); }
     /* Bloco "Marcar como Superado" — só aparece pra fichas PESSOAIS (mesma
        regra de bloqueio de excluir/editar; fichas oficiais não mostram isto). */
@@ -25475,6 +25587,8 @@ window.carregarEsquemasOficiais = async function() {
         <div class="jur-ver-texto" id="jur-ver-resumo"></div>
         <div class="jur-ver-label">Conexões</div>
         <div class="jur-ver-texto" id="jur-ver-conexoes"></div>
+        <div class="jur-ver-label" id="jur-ver-link-label" style="display:none;">Link</div>
+        <div class="jur-ver-texto" id="jur-ver-link" style="display:none;"></div>
     </div>
 </div>
 
@@ -25618,6 +25732,7 @@ const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
+const JUR_RE_LINK = /^LINK:\s*([\s\S]+)$/i;
 const JUR_RE_DATACONSULTA = /^DATA DA CONSULTA:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
 // #{0,6} (não "###" fixo) — mesmo motivo de ESQ_RE_L2_GLOBAL/GLOS_RE_L2_GLOBAL:
@@ -25651,12 +25766,13 @@ function jurClassificarLinha(l) {
     if (JUR_RE_RESUMO.test(l)) return 'resumo';
     if (JUR_RE_COMOCOBRAR.test(l)) return 'comocobrar';
     if (JUR_RE_CONEXOES.test(l)) return 'conexoes';
+    if (JUR_RE_LINK.test(l)) return 'link';
     if (JUR_RE_DATACONSULTA.test(l)) return 'dataconsulta';
     return null;
 }
 
 function jurCriarFichaVazia() {
-    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', conexoes: '', dataConsulta: '' };
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', conexoes: '', link: '', dataConsulta: '' };
 }
 
 function jurAplicarCampoNaLinha(ficha, tipo, linha) {
@@ -25689,6 +25805,9 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
     } else if (tipo === 'conexoes') {
         m = JUR_RE_CONEXOES.exec(linha);
         ficha.conexoes = m[1].trim();
+    } else if (tipo === 'link') {
+        m = JUR_RE_LINK.exec(linha);
+        ficha.link = m[1].trim();
     } else if (tipo === 'dataconsulta') {
         m = JUR_RE_DATACONSULTA.exec(linha);
         ficha.dataConsulta = m[3] + '-' + m[2] + '-' + m[1]; // ISO AAAA-MM-DD
@@ -26300,6 +26419,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         document.getElementById('jur-ver-tese').textContent = item.tese || '—';
         document.getElementById('jur-ver-resumo').textContent = item.resumo || '—';
         document.getElementById('jur-ver-conexoes').textContent = item.conexoes || '—';
+        // Link é opcional (nem toda ficha antiga/importada tem um) — o
+        // rótulo e o bloco só aparecem quando existe, em vez de mostrar
+        // "Link: —" pra maioria das fichas que nunca vai ter isso.
+        let temLink = !!item.link;
+        document.getElementById('jur-ver-link-label').style.display = temLink ? 'block' : 'none';
+        let linkEl = document.getElementById('jur-ver-link');
+        linkEl.style.display = temLink ? 'block' : 'none';
+        linkEl.innerHTML = temLink ? '<a href="' + this._escapar(item.link) + '" target="_blank" rel="noopener noreferrer">' + this._escapar(item.link) + '</a>' : '';
         document.getElementById('modal-jurisprudencia-ver').classList.add('open');
     },
 
@@ -26699,6 +26826,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', self._blockquote(f.tese), '');
                     if (f.resumo) linhas.push('**Resumo do Caso:**', '', self._blockquote(f.resumo), '');
                     if (f.conexoes) linhas.push('**Conexões:**', '', self._blockquote(f.conexoes), '');
+                    if (f.link) linhas.push('**Link:** ' + f.link, '');
                     linhas.push('---', '');
                 });
             });
@@ -26750,6 +26878,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (f.tese) corpo += '<div class="doc-callout-label">Tese Fixada / Decisão</div><div class="doc-callout">' + self._escapar(f.tese) + '</div>';
                     if (f.resumo) corpo += '<div class="doc-callout-label">Resumo do Caso</div><div class="doc-callout">' + self._escapar(f.resumo) + '</div>';
                     if (f.conexoes) corpo += '<div class="doc-callout-label">Conexões</div><div class="doc-callout">' + self._escapar(f.conexoes) + '</div>';
+                    if (f.link) corpo += '<div class="doc-callout-label">Link</div><div class="doc-callout"><a href="' + self._escapar(f.link) + '" target="_blank" rel="noopener noreferrer">' + self._escapar(f.link) + '</a></div>';
                     corpo += '</div>';
                 });
             });
