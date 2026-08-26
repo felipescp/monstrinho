@@ -27498,6 +27498,39 @@ window.carregarJurisprudenciaOficial = async function() {
 
 <script>
 
+// Deduplica chamadas CONCORRENTES às 4 buscas de conteúdo oficial
+// (Materiais/Esquemas/Jurisprudência/Glossário) — sem isto, o boot da
+// página tinha 2 disparadores INDEPENDENTES buscando exatamente as mesmas
+// 4 fontes ao mesmo tempo: este __bootOficialPromise__ (sequencial, logo
+// abaixo) e window.garantirOficiaisParaBaralhosAssociados() (paralelo,
+// disparado de dentro de renderNav() assim que a barra lateral do
+// Simulado Ativo aparece). Cada material/esquema/ficha/expressão oficial
+// acabava sendo buscado da rede 2x por carregamento de página, e a
+// contenção de conexões concorrentes fazia as 3 fontes ("Baralhos
+// associados": Esquemas/Jurisprudência; "Materiais associados") chegarem
+// em momentos bem espaçados um do outro — exatamente as "3 carregadas"
+// percebidas na barra lateral, mesmo com garantirOficiaisParaBaralhosAssociados
+// já esperando as 4 fontes com Promise.allSettled antes de re-renderizar.
+// Só deduplica ENQUANTO uma busca está em andamento — depois que resolve,
+// a próxima chamada busca de novo (preserva o comportamento de sempre
+// verificar conteúdo novo ao reabrir Materiais/Esquemas/Jurisprudência/
+// Glossário manualmente, bem depois do boot).
+function _comBuscaOficialUnica(nomeFuncao) {
+    var original = window[nomeFuncao];
+    if (typeof original !== 'function') return;
+    var emAndamento = null;
+    window[nomeFuncao] = function() {
+        if (emAndamento) return emAndamento;
+        emAndamento = original.apply(this, arguments);
+        emAndamento.finally(function() { emAndamento = null; });
+        return emAndamento;
+    };
+}
+_comBuscaOficialUnica('carregarMateriaisOficiais');
+_comBuscaOficialUnica('carregarEsquemasOficiais');
+_comBuscaOficialUnica('carregarJurisprudenciaOficial');
+_comBuscaOficialUnica('carregarGlossarioOficial');
+
 window.__bootOficialPromise__ = (async function(){
    try {
       await window.carregarAcervosOficiais();
