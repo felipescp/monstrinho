@@ -4712,6 +4712,17 @@ if(ri) {
        existente, não cria um novo. */
     .crono-gerador-reconfig-banner { background:var(--bg-accent-soft); border:1px solid var(--app-primary); color:var(--app-primary); border-radius:6px; padding:8px 10px; font-size:11.5px; font-weight:700; }
     .crono-gerador-trocar-arquivo { background:none; border:none; padding:0; font-size:10.5px; font-weight:700; color:var(--app-primary); cursor:pointer; text-decoration:underline; }
+    /* Fase 1 do Gerador por Prioridade: seleção de disciplinas a partir do
+       arquivo carregado, antes de agrupar por prioridade (Fase 2). */
+    .crono-gerador-fase1-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:4px; }
+    .crono-gerador-fase1-sub { font-size:11.5px; color:var(--text-muted); line-height:1.5; margin-bottom:10px; }
+    .crono-gerador-fase1-acoes { display:flex; gap:14px; margin-bottom:6px; }
+    .crono-gerador-materia-row { display:flex; align-items:center; gap:8px; padding:7px 2px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
+    .crono-gerador-materia-row input[type="checkbox"] { flex-shrink:0; cursor:pointer; }
+    .crono-gerador-materia-nome { flex:1; font-size:12.5px; font-weight:600; color:var(--text-main); }
+    .crono-gerador-materia-count { font-size:10.5px; font-weight:700; color:var(--text-muted); background:var(--bg-soft); padding:1px 7px; border-radius:99px; flex-shrink:0; }
+    .crono-gerador-fase1-rodape { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border-color); position:sticky; bottom:0; background:var(--bg-white); }
+    .crono-gerador-fase1-rodape span { font-size:11.5px; color:var(--text-muted); font-weight:700; }
 
     /* Zoom do cronograma (A−/A+): --crono-zoom é setado em #crono-content
        (ver render()/_aplicarZoomCronograma) e herdado por qualquer
@@ -6371,6 +6382,12 @@ window.CRONOGRAMA_RUNTIME = {
             grupos: null,
             previa: null,
             planejamentoBruto: null,
+            // Fase 1 (seleção de disciplinas) — só existem depois de carregar
+            // um arquivo; abrirReconfigurar() nunca preenche isto (pula
+            // direto pra Fase 2 reusando os grupos já salvos).
+            brutoCarregado: null,
+            materiasDisponiveis: null,
+            materiasSelecionadas: {},
             config: {
                 dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'reduzido', domingo: 'descanso' },
                 inicio: this._formatarISO(new Date()),
@@ -6513,11 +6530,64 @@ window.CRONOGRAMA_RUNTIME = {
         return resultado;
     },
 
+    // Só a Fase 1 agora: valida o arquivo, guarda a lista bruta e extrai as
+    // matérias presentes (ordem de 1ª aparição, mesmo critério determinístico
+    // de _intercalarProporcional) pra tela de seleção de disciplinas. O
+    // agrupamento por prioridade (que ANTES acontecia aqui direto) só roda
+    // depois que o usuário confirmar quais disciplinas quer, em
+    // confirmarSelecaoMateriasGerador().
     _processarArquivoPrioridade: function(bruto) {
         if (!this._validarFormatoPrioridade(bruto)) return;
-        let self = this;
-        let grupos = { critica: [], alta: [], media: [], baixa: [], outras: [] };
+        let ordemMaterias = [];
+        let contagemPorMateria = {};
         bruto.forEach(function(item) {
+            let m = item.materia || '(sem matéria)';
+            if (!contagemPorMateria[m]) { contagemPorMateria[m] = 0; ordemMaterias.push(m); }
+            contagemPorMateria[m]++;
+        });
+        let materiasSelecionadas = {};
+        ordemMaterias.forEach(function(m) { materiasSelecionadas[m] = true; }); // todas marcadas por padrão
+
+        this._gerador.brutoCarregado = bruto;
+        this._gerador.materiasDisponiveis = ordemMaterias.map(function(m) { return { materia: m, total: contagemPorMateria[m] }; });
+        this._gerador.materiasSelecionadas = materiasSelecionadas;
+        this._gerador.grupos = null;
+        this._gerador.previa = null;
+        this._gerador.planejamentoBruto = null;
+        this._renderGeradorCorpo();
+    },
+
+    // ── FASE 1: seleção de disciplinas (a partir do arquivo já carregado) ──
+
+    toggleMateriaGerador: function(materia) {
+        if (!this._gerador) return;
+        this._gerador.materiasSelecionadas[materia] = !this._gerador.materiasSelecionadas[materia];
+        this._renderGeradorCorpo();
+    },
+
+    selecionarTodasMateriasGerador: function(valor) {
+        if (!this._gerador || !this._gerador.materiasDisponiveis) return;
+        let self = this;
+        this._gerador.materiasDisponiveis.forEach(function(m) { self._gerador.materiasSelecionadas[m.materia] = valor; });
+        this._renderGeradorCorpo();
+    },
+
+    // Fase 1 -> Fase 2: filtra o array bruto pelas matérias marcadas, agrupa
+    // por prioridade e intercala proporcionalmente dentro de cada grupo —
+    // exatamente a lógica que antes rodava direto em _processarArquivoPrioridade,
+    // só que agora só sobre o subconjunto de matérias escolhido.
+    confirmarSelecaoMateriasGerador: function() {
+        let g = this._gerador;
+        if (!g || !g.brutoCarregado) return;
+        let self = this;
+        let selecionadas = g.materiasSelecionadas;
+        let algumaMarcada = Object.keys(selecionadas).some(function(m) { return selecionadas[m]; });
+        if (!algumaMarcada) { alert('Selecione ao menos uma disciplina.'); return; }
+
+        let grupos = { critica: [], alta: [], media: [], baixa: [], outras: [] };
+        g.brutoCarregado.forEach(function(item) {
+            let m = item.materia || '(sem matéria)';
+            if (!selecionadas[m]) return;
             let chave = self._normalizarPrioridade(item.prioridade);
             grupos[chave].push({
                 materia: item.materia || '',
@@ -6531,9 +6601,22 @@ window.CRONOGRAMA_RUNTIME = {
         ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
             grupos[tier] = self._intercalarProporcional(grupos[tier]);
         });
-        this._gerador.grupos = grupos;
-        this._gerador.previa = null;
-        this._gerador.planejamentoBruto = null;
+
+        g.grupos = grupos;
+        g.previa = null;
+        g.planejamentoBruto = null;
+        this._renderGeradorCorpo();
+    },
+
+    // Fase 2 -> Fase 1: volta pra tela de seleção de disciplinas sem precisar
+    // reabrir o arquivo — preserva as marcações já feitas (não reseta
+    // materiasSelecionadas).
+    voltarParaSelecaoMaterias: function() {
+        let g = this._gerador;
+        if (!g || !g.brutoCarregado) return;
+        g.grupos = null;
+        g.previa = null;
+        g.planejamentoBruto = null;
         this._renderGeradorCorpo();
     },
 
@@ -6883,18 +6966,58 @@ window.CRONOGRAMA_RUNTIME = {
             (feitosPreservados > 0 ? ' ' + feitosPreservados + ' já marcados como feito foram mantidos.' : ''));
     },
 
+    _renderFase1SelecaoMaterias: function(corpoEl, g) {
+        let self = this;
+        let totalGeral = g.brutoCarregado.length;
+        let totalSelecionado = g.materiasDisponiveis.reduce(function(soma, m) {
+            return soma + (g.materiasSelecionadas[m.materia] ? m.total : 0);
+        }, 0);
+
+        let htmlLista = g.materiasDisponiveis.map(function(m) {
+            let marcado = !!g.materiasSelecionadas[m.materia];
+            let mEsc = self._escapar(m.materia).replace(/'/g, "\\'");
+            return '<label class="crono-gerador-materia-row">' +
+                '<input type="checkbox" ' + (marcado ? 'checked' : '') + ' onchange="window.CRONOGRAMA_RUNTIME.toggleMateriaGerador(\'' + mEsc + '\')">' +
+                '<span class="crono-gerador-materia-nome">' + self._escapar(m.materia) + '</span>' +
+                '<span class="crono-gerador-materia-count">' + m.total + '</span>' +
+            '</label>';
+        }).join('');
+
+        corpoEl.innerHTML =
+            '<div class="crono-gerador-fase1-titulo">Selecione as disciplinas</div>' +
+            '<div class="crono-gerador-fase1-sub">' + totalGeral + ' card(s) no arquivo, em ' + g.materiasDisponiveis.length + ' disciplina(s). Desmarque as que não quer incluir neste cronograma.</div>' +
+            '<div class="crono-gerador-fase1-acoes">' +
+                '<button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.selecionarTodasMateriasGerador(true)">Selecionar todas</button>' +
+                '<button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.selecionarTodasMateriasGerador(false)">Nenhuma</button>' +
+                '<button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsPrioridadeJSON()">🔄 Trocar arquivo</button>' +
+            '</div>' +
+            '<div class="crono-gerador-fase1-lista">' + htmlLista + '</div>' +
+            '<div class="crono-gerador-fase1-rodape">' +
+                '<span>' + totalSelecionado + ' de ' + totalGeral + ' card(s) selecionados</span>' +
+                '<button class="crono-tab-add" onclick="window.CRONOGRAMA_RUNTIME.confirmarSelecaoMateriasGerador()">Ok, continuar ➔</button>' +
+            '</div>';
+    },
+
     _renderGeradorCorpo: function() {
         let corpoEl = document.getElementById('crono-gerador-corpo');
         if (!corpoEl) return;
         let g = this._gerador;
         if (!g) { corpoEl.innerHTML = ''; return; }
 
-        if (!g.grupos) {
+        if (!g.grupos && !g.brutoCarregado) {
             corpoEl.innerHTML =
                 '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:40px 20px;">' +
                     '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — sem data nem semana/dia, só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>.</div>' +
                     '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsPrioridadeJSON()">⬆️ Carregar Arquivo de Cards</div>' +
                 '</div>';
+            return;
+        }
+
+        // Fase 1: arquivo já carregado, mas o usuário ainda não confirmou
+        // quais disciplinas quer incluir — grupos por prioridade só existem
+        // depois de confirmarSelecaoMateriasGerador().
+        if (!g.grupos) {
+            this._renderFase1SelecaoMaterias(corpoEl, g);
             return;
         }
 
@@ -6929,8 +7052,15 @@ window.CRONOGRAMA_RUNTIME = {
             ? '<div class="crono-gerador-reconfig-banner">🔁 Reconfigurando "' + plannerReconfigurado.nome + '" — ao gerar, isso substitui a distribuição atual desse cronograma (os checks de "feito" são mantidos).</div>'
             : '';
 
+        // "Alterar disciplinas" só existe quando há um arquivo bruto pra
+        // voltar (brutoCarregado) — abrirReconfigurar() nunca preenche isso,
+        // então reconfigurar um cronograma existente não ganha esse link.
+        let htmlAlterarDisciplinas = g.brutoCarregado
+            ? ' · <button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.voltarParaSelecaoMaterias()">← Alterar disciplinas</button>'
+            : '';
         let resumoCarregados = '<div class="crono-gerador-resumo">Carregado: <strong>' + g.grupos.critica.length + '</strong> Crítica · <strong>' + g.grupos.alta.length + '</strong> Alta · <strong>' + g.grupos.media.length + '</strong> Média · <strong>' + g.grupos.baixa.length + '</strong> Baixa' +
             (g.grupos.outras.length ? ' · <span style="color:var(--text-muted);">' + g.grupos.outras.length + ' sem prioridade reconhecida (ignorados)</span>' : '') +
+            htmlAlterarDisciplinas +
             ' · <button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsPrioridadeJSON()">🔄 Trocar arquivo</button></div>';
 
         let htmlPrevia = '';
