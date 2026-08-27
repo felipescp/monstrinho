@@ -12238,8 +12238,13 @@ window.GLOSSARIO_RUNTIME = {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
         if (this._filtroBusca && this._filtroBusca.trim()) {
+            // Estendido pro CONTEÚDO também (antes só a expressão) — significado
+            // e contexto são texto puro (sem HTML), então entram direto na busca.
             let alvo = this._normalizarBusca(this._filtroBusca);
-            lista = lista.filter(function(par) { return self._normalizarBusca(par.item.expressao).indexOf(alvo) !== -1; });
+            lista = lista.filter(function(par) {
+                let alvoTexto = (par.item.expressao || '') + ' ' + (par.item.significado || '') + ' ' + (par.item.contexto || '');
+                return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
+            });
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
@@ -12605,7 +12610,7 @@ window.GLOSSARIO_RUNTIME = {
 
     _renderToolbar: function() {
         let qtdSel = Object.keys(this._selecionados).length;
-        let htmlBusca = '<input type="text" id="glos-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar por expressão..." value="' + this._escapar(this._filtroBusca) + '" oninput="window.GLOSSARIO_RUNTIME.filtrarGlossarioGrade(this.value)">';
+        let htmlBusca = '<input type="text" id="glos-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar..." title="Busca por expressão, significado e contexto" value="' + this._escapar(this._filtroBusca) + '" oninput="window.GLOSSARIO_RUNTIME.filtrarGlossarioGrade(this.value)">';
         let htmlAcoesSelecao;
         if (this._modoSelecao) {
             htmlAcoesSelecao =
@@ -24323,8 +24328,16 @@ window.ESQUEMAS_RUNTIME = {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
         if (this._filtroBusca && this._filtroBusca.trim()) {
+            // Estendido pro CONTEÚDO também (antes só o título) — conteudoHtml
+            // é HTML de verdade (ver conteudoHtml em salvarEdicao/renderCard),
+            // então tira as tags antes de comparar (senão "class=" ou um nome
+            // de tag qualquer podia "bater" com a busca por engano).
             let alvo = this._normalizarBusca(this._filtroBusca);
-            lista = lista.filter(function(par) { return self._normalizarBusca(par.item.titulo).indexOf(alvo) !== -1; });
+            lista = lista.filter(function(par) {
+                if (self._normalizarBusca(par.item.titulo).indexOf(alvo) !== -1) return true;
+                let semHtml = (par.item.conteudoHtml || '').replace(/<[^>]*>/g, ' ');
+                return self._normalizarBusca(semHtml).indexOf(alvo) !== -1;
+            });
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
@@ -24717,7 +24730,7 @@ window.ESQUEMAS_RUNTIME = {
         // DOM) pra sobreviver ao innerHTML inteiro sendo recriado; o
         // foco/cursor durante a digitação é preservado à parte, em
         // _renderGradeCards().
-        let htmlBusca = '<input type="text" id="esq-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar por título..." value="' + this._escapar(this._filtroBusca) + '" oninput="window.ESQUEMAS_RUNTIME.filtrarEsquemasGrade(this.value)">';
+        let htmlBusca = '<input type="text" id="esq-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + this._escapar(this._filtroBusca) + '" oninput="window.ESQUEMAS_RUNTIME.filtrarEsquemasGrade(this.value)">';
         let htmlAcoes;
         if (this._modoSelecao) {
             htmlAcoes =
@@ -26381,6 +26394,11 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-toolbar { flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
     #jurisprudencia-modal .jur-toolbar-linha1 { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; }
     #jurisprudencia-modal .jur-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    /* Campo de busca — mesmo padrão visual de .esq-tb-busca-grupo/.esq-tb-busca
+       (Esquemas/Glossário), ao lado esquerdo de Selecionar/Cancelar. */
+    #jurisprudencia-modal .jur-tb-busca-grupo { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    #jurisprudencia-modal .jur-tb-busca { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:10px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; width:150px; }
+    #jurisprudencia-modal .jur-tb-busca:focus { outline:none; border-color:var(--app-primary); }
     #jurisprudencia-modal .jur-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -27023,6 +27041,18 @@ window.JURISPRUDENCIA_RUNTIME = {
     _filtroSistematica: '',
     _filtroAno: '',
 
+    // Busca por texto (ao lado esquerdo de "Selecionar", mesmo lugar e
+    // padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME) — título E conteúdo
+    // (tese/resumo), não só o título.
+    _filtroBusca: '',
+    _normalizarBusca: function(texto) {
+        return (texto || '').toString().toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+    },
+    filtrarJurisprudenciaGrade: function(texto) {
+        this._filtroBusca = texto || '';
+        this._renderGradeCards();
+    },
+
     carregar: function() {
         let bruto = null;
         try { bruto = JSON.parse(window.lerJurisprudenciaBruto() || 'null'); } catch (e) { bruto = null; }
@@ -27269,6 +27299,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (this._filtroAno) {
             lista = lista.filter(function(par) { return (par.item.dataJulgado || '').slice(0, 4) === self._filtroAno; });
         }
+        if (this._filtroBusca && this._filtroBusca.trim()) {
+            // Título E conteúdo (tese/resumo) — não só o título.
+            let alvo = this._normalizarBusca(this._filtroBusca);
+            lista = lista.filter(function(par) {
+                let alvoTexto = self._tituloComTema(par.item) + ' ' + (par.item.tese || '') + ' ' + (par.item.resumo || '');
+                return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
+            });
+        }
         if (this._modoExibicao === 'data') {
             lista = lista.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         }
@@ -27346,6 +27384,10 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     _renderToolbar: function() {
         let qtdSel = Object.keys(this._selecionados).length;
+        // Ao lado do botão Selecionar/Cancelar — mesmo lugar e padrão de
+        // ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME. Busca por título E conteúdo
+        // (tese/resumo), ver _listaFiltrada.
+        let htmlBusca = '<input type="text" id="jur-busca-grade" class="jur-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + this._escapar(this._filtroBusca) + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarJurisprudenciaGrade(this.value)">';
         let htmlAcoes;
         if (this._modoSelecao) {
             htmlAcoes =
@@ -27354,7 +27396,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button>';
+                '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             htmlAcoes =
                 '<div class="jur-tb-acoes-grupo">' +
@@ -27362,7 +27404,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
                     '<button class="jur-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
                 '</div>' +
-                '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button>';
+                '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
 
         let self = this;
@@ -27386,6 +27428,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         let col = document.getElementById('jur-col-cards');
         if (!col) return;
         let self = this;
+
+        // Preserva posição de rolagem + foco/cursor do campo de busca entre
+        // re-renders — mesmo padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME:
+        // filtrarJurisprudenciaGrade() chama este método a cada tecla
+        // digitada, e como _renderToolbar() reconstrói o <input> do zero a
+        // cada vez, sem isto o foco cairia a cada caractere.
+        let scrollAnterior = col.querySelector('.jur-grade-scroll');
+        let posicaoScroll = scrollAnterior ? scrollAnterior.scrollTop : 0;
+        let inputBuscaAnterior = document.getElementById('jur-busca-grade');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
@@ -27452,6 +27505,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         col.innerHTML = this._renderToolbar() + '<div class="jur-grade-scroll">' + corpoHtml + '</div>';
+
+        let novoScroll = col.querySelector('.jur-grade-scroll');
+        if (novoScroll) novoScroll.scrollTop = posicaoScroll;
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('jur-busca-grade');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
     },
 
     // ── POPUP "VER FICHA" (tese/resumo/conexões completos) ──
