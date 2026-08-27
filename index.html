@@ -710,6 +710,32 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .bexp:hover { background: rgba(79, 70, 229, 0.05); }
 .etx { margin-top: .75rem; font-size: 13px; line-height: 1.7; color: var(--text-main); background: var(--bg-body); border-radius: 6px; padding: .75rem; border: 1px solid var(--border-color); display: none; }
 
+/* Termos do Glossário destacados no enunciado (.qe) e na explicação
+   (.etx) do Simulado — em andamento OU em revisão, já que os dois usam a
+   mesma mkQ() (ver destacarTermosGlossario). Balão customizado (não o
+   title nativo do navegador) com o "significado" ao passar o mouse. */
+.glos-termo-sim { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; position: relative; }
+.glos-termo-sim:hover::after {
+    content: attr(data-significado);
+    position: absolute;
+    left: 50%; bottom: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: max-content; max-width: min(320px, 80vw);
+    background: #1e293b; color: #fff;
+    font-size: 11.5px; font-weight: 500; line-height: 1.5; white-space: normal;
+    padding: 8px 10px; border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 60; pointer-events: none;
+}
+.glos-termo-sim:hover::before {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: calc(100% + 3px);
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #1e293b;
+    z-index: 60; pointer-events: none;
+}
+
 /* Motivo do erro — mesmo padrão .rg/.ro/.sel do seletor de tipo de bateria
    (index.html ~488-491), só com pegada visual menor pra caber dentro do
    card compacto da questão, sem alterar o .ro/.rg globais usados lá. */
@@ -1046,6 +1072,45 @@ body.top-aberto .nav-toggle, body.sb-aberta .nav-toggle { opacity: 0; pointer-ev
     flex-direction: column;
 
     box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+}
+
+/* "⛶ Maximizar" (Esquemas/Jurisprudência) — mesmo padrão de
+   #modal-materiais-pdf.mat-pdf-maximizado: a classe fica no wrapper
+   .analytics-modal (não no .analytics-modal-content), escopada por ID
+   pra não vazar pros outros modais que também usam .analytics-modal
+   (Caderno de Questões, o modal genérico de Estatísticas) — esses dois
+   continuam sem a opção, só Esquemas/Jurisprudência ganharam. */
+#esquemas-modal.modal-maximizado .analytics-modal-content,
+#jurisprudencia-modal.modal-maximizado .analytics-modal-content {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+}
+
+/* Glossário/Axiomas/Praticar Questões abriam sempre em tela cheia
+   (<section style="position:fixed; inset:0"> avulsa, sem "moldura"
+   nenhuma) — padronizado com o padrão .analytics-modal acima
+   (Esquemas/Jurisprudência): abrem REDUZIDOS por padrão, com "⛶
+   Maximizar" pra quem quiser tela cheia. Sem trocar a estrutura interna
+   (nenhum wrapper novo) — só o tamanho/posição da própria <section>, que
+   passa a ser ela mesma a "caixa" do modal. O escurecido de fundo é
+   simulado com um box-shadow gigante (truque de CSS conhecido, sem
+   precisar de elemento extra) — o box-shadow de um elemento nunca é
+   cortado pelo overflow:hidden do PRÓPRIO elemento (só corta os filhos),
+   então funciona mesmo com a section tendo overflow:hidden. */
+#section-glossario, #section-flashcards, #section-praticar-caderno {
+    top: 50%; left: 50%; right: auto; bottom: auto;
+    transform: translate(-50%, -50%);
+    width: min(1400px, 96vw);
+    height: min(900px, 92vh);
+    border-radius: 14px;
+    box-shadow: 0 0 0 9999px rgba(15,23,42,0.55), 0 25px 50px rgba(0,0,0,0.25);
+}
+#section-glossario.secao-maximizada, #section-flashcards.secao-maximizada, #section-praticar-caderno.secao-maximizada {
+    top: 0; left: 0; transform: none;
+    width: 100vw; height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .analytics-modal-header {
@@ -8026,7 +8091,7 @@ document.addEventListener('click', function(e) {
 <!-- Modal (não mais .tela) — mesma ideia de #section-materiais: abre por
      cima da tela atual em vez de trocar de tela. IDs internos (fc-tab-*
      etc.) continuam iguais, só a moldura externa mudou. -->
-<section id="section-flashcards" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<section id="section-flashcards" style="display:none; position:fixed; z-index:9999; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-flashcards .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #section-flashcards .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
@@ -8131,6 +8196,7 @@ document.addEventListener('click', function(e) {
 
     <div class="analytics-modal-header" style="flex-shrink:0;">
         <div class="analytics-modal-title">🏹 Axiomas</div>
+        <button class="analytics-close-btn" id="fc-modal-btn-maximizar" onclick="window.alternarMaximizarFlashcardsModal()" title="Maximizar">⛶</button>
         <button class="analytics-close-btn" onclick="window.fecharFlashcardsModal()">✕</button>
     </div>
     <div class="fc-tabs">
@@ -9474,6 +9540,27 @@ window.FLASHCARDS_RUNTIME = {
     }
 };
 
+// "⛶ Maximizar" compartilhado por Glossário/Axiomas/Praticar Questões —
+// as 3 <section> que viraram "moldura reduzida" (ver CSS
+// #section-glossario/#section-flashcards/#section-praticar-caderno em
+// .analytics-modal-content). Sempre abre reduzido (ver as 3 chamadas de
+// _resetarMaximizacaoSecaoModal dentro de cada abrir*Modal abaixo) —
+// maximizar é escolha da sessão de leitura, não preferência persistida
+// (mesmo espírito de MATERIAIS_RUNTIME._pdfMaximizado).
+window._alternarMaximizarSecaoModal = function(secaoId, btnId) {
+    const modal = document.getElementById(secaoId);
+    if (!modal) return;
+    const maximizado = modal.classList.toggle('secao-maximizada');
+    const btn = document.getElementById(btnId);
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+};
+window._resetarMaximizacaoSecaoModal = function(secaoId, btnId) {
+    const modal = document.getElementById(secaoId);
+    if (modal) modal.classList.remove('secao-maximizada');
+    const btn = document.getElementById(btnId);
+    if (btn) { btn.textContent = '⛶'; btn.title = 'Maximizar'; }
+};
+
 // Abre/fecha Axiomas como MODAL sobre a tela atual (ex.: Cronograma), em
 // vez de trocar de tela e perder o que estava aberto embaixo — mesmo
 // padrão de abrirEsquemasModal/fecharEsquemasModal.
@@ -9481,10 +9568,13 @@ window.abrirFlashcardsModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('section-flashcards');
     if (!modal) return;
+    window._resetarMaximizacaoSecaoModal('section-flashcards', 'fc-modal-btn-maximizar');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     if (window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init();
 };
+
+window.alternarMaximizarFlashcardsModal = function() { window._alternarMaximizarSecaoModal('section-flashcards', 'fc-modal-btn-maximizar'); };
 
 window.fecharFlashcardsModal = function() {
     const modal = document.getElementById('section-flashcards');
@@ -9540,7 +9630,7 @@ window.fecharFlashcardsModal = function() {
 <!-- Modal (não mais .tela) — mesma ideia de #section-materiais: abre por
      cima da tela atual em vez de trocar de tela. IDs internos (pc-tab-*
      etc.) continuam iguais, só a moldura externa mudou. -->
-<section id="section-praticar-caderno" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<section id="section-praticar-caderno" style="display:none; position:fixed; z-index:9999; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-praticar-caderno .fc-tabs { display:flex; gap:4px; padding:10px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #section-praticar-caderno .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
@@ -9607,6 +9697,7 @@ window.fecharFlashcardsModal = function() {
 
     <div class="analytics-modal-header" style="flex-shrink:0;">
         <div class="analytics-modal-title">🏹 Praticar Questões</div>
+        <button class="analytics-close-btn" id="praticar-modal-btn-maximizar" onclick="window.alternarMaximizarPraticarModal()" title="Maximizar">⛶</button>
         <button class="analytics-close-btn" onclick="window.fecharPraticarCadernoModal()">✕</button>
     </div>
     <div class="fc-tabs">
@@ -10240,10 +10331,13 @@ window.abrirPraticarCadernoModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('section-praticar-caderno');
     if (!modal) return;
+    window._resetarMaximizacaoSecaoModal('section-praticar-caderno', 'praticar-modal-btn-maximizar');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     if (window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init();
 };
+
+window.alternarMaximizarPraticarModal = function() { window._alternarMaximizarSecaoModal('section-praticar-caderno', 'praticar-modal-btn-maximizar'); };
 
 window.fecharPraticarCadernoModal = function() {
     const modal = document.getElementById('section-praticar-caderno');
@@ -11219,7 +11313,7 @@ window.fecharMateriaisModal = function() {
      classes .mat-*/.fc-* de #section-materiais — mesmos nomes de classe,
      mas escopados só dentro de #section-glossario, pra não arriscar nada
      na seção de Materiais ao ajustar uma das duas no futuro. -->
-<section id="section-glossario" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<section id="section-glossario" style="display:none; position:fixed; z-index:9999; flex-direction:column; overflow:hidden; background:var(--bg-body);">
 <style>
     #section-glossario .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
     #section-glossario .fc-col { overflow-y:auto; padding:10px; }
@@ -11454,6 +11548,7 @@ window.fecharMateriaisModal = function() {
             <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()">Exportar .html</button></div></details>
             <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()">Exportar .html</button></div></details>
             <button class="esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
+            <button class="analytics-close-btn" id="glos-modal-btn-maximizar" onclick="window.alternarMaximizarGlossarioModal()" title="Maximizar">⛶</button>
             <button class="analytics-close-btn" onclick="window.fecharGlossarioModal()">✕</button>
         </div>
     </div>
@@ -13399,10 +13494,13 @@ window.abrirGlossarioModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('section-glossario');
     if (!modal) return;
+    window._resetarMaximizacaoSecaoModal('section-glossario', 'glos-modal-btn-maximizar');
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     if (window.GLOSSARIO_RUNTIME) window.GLOSSARIO_RUNTIME.init();
 };
+
+window.alternarMaximizarGlossarioModal = function() { window._alternarMaximizarSecaoModal('section-glossario', 'glos-modal-btn-maximizar'); };
 
 window.fecharGlossarioModal = function() {
     const modal = document.getElementById('section-glossario');
@@ -18182,6 +18280,66 @@ D.blocos.forEach(function(b){b.questoes.forEach(function(q){
   });});
 }
 
+// Normaliza acento/caixa só pra COMPARAR nomes de matéria (Simulado x
+// Glossário podem vir em grafias diferentes, ex. "DIREITO CIVIL" x
+// "Direito Civil") — nunca é usado no texto que aparece na tela.
+function _normMateriaGlosSim(texto) {
+    return (texto || '').toString().trim().toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+}
+
+function _escaparAtributoGlosSim(texto) {
+    return (texto || '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Sublinha, no texto BRUTO do enunciado/explicação (roda ANTES do
+// replace de **negrito**/*itálico* de mkQ, pra não ter que pular tags já
+// inseridas), as expressões do Glossário da MESMA disciplina da questão
+// (só disciplina — não trava no tópico, porque há questões abrangentes
+// que cruzam vários tópicos da matéria). Cobre Simulado em andamento E
+// revisão (mesma mkQ, só muda o parâmetro modoRevisao) — a Auditoria
+// (renderAuditoria) tem o próprio innerHTML e fica de fora de propósito.
+// Sem cache: o Glossário raramente passa de umas centenas de termos por
+// disciplina, e reconstruir a lista filtrada a cada questão é
+// desprezível perto do resto da renderização.
+function destacarTermosGlossario(texto, materia) {
+    if (!texto || !materia) return texto;
+    var runtime = window.GLOSSARIO_RUNTIME;
+    if (!runtime || !runtime.glossario) return texto;
+    var materiaAlvo = _normMateriaGlosSim(materia);
+    var porExpressao = {}; // expressão em minúsculas -> item {expressao, significado}
+    Object.keys(runtime.glossario).forEach(function(chave) {
+        var materiaChave = chave.split(' > ')[0] || '';
+        if (_normMateriaGlosSim(materiaChave) !== materiaAlvo) return;
+        (runtime.glossario[chave] || []).forEach(function(item) {
+            if (!item || !item.expressao) return;
+            var chaveNorm = item.expressao.toLowerCase();
+            // Colisão (mesmo termo em 2 divisões da matéria): fica o
+            // primeiro encontrado — só precisa de UM significado pro balão.
+            if (!porExpressao[chaveNorm]) porExpressao[chaveNorm] = item;
+        });
+    });
+    var expressoes = Object.keys(porExpressao);
+    if (!expressoes.length) return texto;
+    // Mais longa primeiro: garante que "Exceção de Contrato Não
+    // Cumprido" vença "Contrato" quando os dois batem no mesmo trecho.
+    expressoes.sort(function(a, b) { return b.length - a.length; });
+    var alternativas = expressoes.map(function(chaveNorm) {
+        return porExpressao[chaveNorm].expressao.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    });
+    var regex;
+    try {
+        regex = new RegExp('(?<![\\p{L}\\p{N}_])(' + alternativas.join('|') + ')(?![\\p{L}\\p{N}_])', 'giu');
+    } catch (e) {
+        return texto; // motor sem suporte a lookbehind/unicode — degrada sem quebrar
+    }
+    return texto.replace(regex, function(match) {
+        var item = porExpressao[match.toLowerCase()];
+        if (!item) return match;
+        var significadoEsc = _escaparAtributoGlosSim(item.significado || '');
+        return '<span class="glos-termo-sim" data-significado="' + significadoEsc + '">' + match + '</span>';
+    });
+}
+
 function mkQ(q, modoRevisao){
   var cegas=C.cegas&&!modoRevisao;
   var isAnulada = q.gabarito === 'ANULADA';
@@ -18198,7 +18356,7 @@ function mkQ(q, modoRevisao){
   }
 
   var en=document.createElement('div');en.className='qe';
-  en.innerHTML=q.enunciado.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+  en.innerHTML=destacarTermosGlossario(q.enunciado, q.materia).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
 
   var vg=document.createElement('div'); vg.className='vfg';
   var isMC=C.tipo==='mc'&&q.alternativas&&q.alternativas.length;
@@ -18284,7 +18442,7 @@ function mkQ(q, modoRevisao){
     var et=document.createElement('div'); et.className='etx'; et.id='et-'+q.id;
     if (q.explicacao) {
         var expText = document.createElement('div');
-        expText.innerHTML = q.explicacao
+        expText.innerHTML = destacarTermosGlossario(q.explicacao, q.materia)
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/(?<!\*)\*(?!\*)(.*?)\*(?!\*)/g,'<em>$1</em>');
         et.appendChild(expText);
@@ -23076,6 +23234,7 @@ window.triggerFileUpload = function(callback) {
                 <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
+                <button class="analytics-close-btn" id="esq-modal-btn-maximizar" onclick="window.alternarMaximizarEsquemasModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">&#x2715;</button>
             </div>
         </div>
@@ -25856,9 +26015,24 @@ window.abrirEsquemasModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
+    modal.classList.remove('modal-maximizado');
+    const btnMax = document.getElementById('esq-modal-btn-maximizar');
+    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     window.ESQUEMAS_RUNTIME.init();
+};
+
+// "⛶ Maximizar" — mesmo padrão de #modal-materiais-pdf.mat-pdf-maximizado,
+// só que a classe fica no wrapper #esquemas-modal (não no
+// .analytics-modal-content) pra não vazar pros outros modais que também
+// usam .analytics-modal (ver CSS #esquemas-modal.modal-maximizado).
+window.alternarMaximizarEsquemasModal = function() {
+    const modal = document.getElementById('esquemas-modal');
+    if (!modal) return;
+    const maximizado = modal.classList.toggle('modal-maximizado');
+    const btn = document.getElementById('esq-modal-btn-maximizar');
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
 };
 
 window.fecharEsquemasModal = function() {
@@ -26081,6 +26255,7 @@ window.carregarEsquemasOficiais = async function() {
                 <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtml()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em HTML estilizado — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🎨 Exportar Visíveis (.html)</button>
+                <button class="analytics-close-btn" id="jur-modal-btn-maximizar" onclick="window.alternarMaximizarJurisprudenciaModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
         </div>
@@ -28045,9 +28220,21 @@ window.abrirJurisprudenciaModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
+    modal.classList.remove('modal-maximizado');
+    const btnMax = document.getElementById('jur-modal-btn-maximizar');
+    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     window.JURISPRUDENCIA_RUNTIME.init();
+};
+
+// "⛶ Maximizar" — mesmo padrão de window.alternarMaximizarEsquemasModal.
+window.alternarMaximizarJurisprudenciaModal = function() {
+    const modal = document.getElementById('jurisprudencia-modal');
+    if (!modal) return;
+    const maximizado = modal.classList.toggle('modal-maximizado');
+    const btn = document.getElementById('jur-modal-btn-maximizar');
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
 };
 
 window.fecharJurisprudenciaModal = function() {
