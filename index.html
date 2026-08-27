@@ -6835,9 +6835,11 @@ window.CRONOGRAMA_RUNTIME = {
     },
 
     // Contraparte de _pesoOrdemMateria pro modo "Recorrência em provas" —
-    // quanto MAIOR a recorrência mais alta entre os cards da matéria,
-    // menor o peso (mais cedo ela entra). Matéria sem NENHUM card com
-    // recorrência informada vai pro fim (Infinity) — não tem como
+    // usada como DESEMPATE dentro do mesmo peso de matéria (ver
+    // _intercalarProporcional): quanto MAIOR a recorrência mais alta entre
+    // os cards da matéria, menor o peso (mais cedo ela entra, entre as
+    // matérias do mesmo tier). Matéria sem NENHUM card com recorrência
+    // informada vai pro fim do seu tier (Infinity) — não tem como
     // priorizar o que não foi informado.
     _pesoRecorrenciaMateria: function(cardsDaMateria) {
         let max = -Infinity;
@@ -6865,13 +6867,21 @@ window.CRONOGRAMA_RUNTIME = {
     //                    fallback); dentro de cada matéria, mantém a
     //                    sequência ORIGINAL do arquivo (sequência didática
     //                    pura, sem "pular" tópicos por recorrência).
-    //   'recorrencia' -> _pesoRecorrenciaMateria (a matéria com o tópico
-    //                    mais cobrado entra primeiro); dentro de cada
-    //                    matéria, os tópicos também são reordenados do
-    //                    mais pro menos recorrente — sem isso, um tópico
-    //                    residual (ex.: "Outras resoluções", sem
-    //                    recorrência informada) podia aparecer cedo só por
-    //                    estar cedo no arquivo.
+    //   'recorrencia' -> peso da matéria (_pesoMateria: as "matérias de
+    //                    peso" SEMPRE lideram, dão credibilidade ao
+    //                    cronograma) primeiro; DENTRO do mesmo peso,
+    //                    _pesoRecorrenciaMateria desempata (a matéria com
+    //                    o tópico mais cobrado, dentro daquele peso, entra
+    //                    primeiro) — sem isso, uma matéria "Demais" (peso
+    //                    3, ex.: legislação institucional) com um único
+    //                    tópico de recorrência alta furava a fila na
+    //                    frente de Constitucional/Civil/Penal etc., que é
+    //                    justamente o que a credibilidade do cronograma
+    //                    pede que NÃO aconteça. Dentro de cada matéria, os
+    //                    tópicos também são reordenados do mais pro menos
+    //                    recorrente — sem isso, um tópico residual (ex.:
+    //                    "Outras resoluções", sem recorrência informada)
+    //                    podia aparecer cedo só por estar cedo no arquivo.
     // Em ambos os modos, dentro do mesmo peso o desempate cai pra ordem de
     // aparição no arquivo (sort é estável) — determinístico, sem
     // aleatoriedade.
@@ -6888,7 +6898,11 @@ window.CRONOGRAMA_RUNTIME = {
             porMateria[m].push(c);
         });
         if (modo === 'recorrencia') {
-            ordemMaterias.sort(function(a, b) { return self._pesoRecorrenciaMateria(porMateria[a]) - self._pesoRecorrenciaMateria(porMateria[b]); });
+            ordemMaterias.sort(function(a, b) {
+                let pesoA = self._pesoMateria(a), pesoB = self._pesoMateria(b);
+                if (pesoA !== pesoB) return pesoA - pesoB;
+                return self._pesoRecorrenciaMateria(porMateria[a]) - self._pesoRecorrenciaMateria(porMateria[b]);
+            });
             Object.keys(porMateria).forEach(function(m) {
                 porMateria[m].sort(function(x, y) {
                     let rx = (typeof x.recorrencia === 'number' && !isNaN(x.recorrencia)) ? x.recorrencia : -Infinity;
