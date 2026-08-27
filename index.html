@@ -4997,7 +4997,10 @@ if(ri) {
     .crono-gerador-estado-btn.ativo { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     .crono-gerador-stepper { display:flex; align-items:center; gap:8px; }
     .crono-gerador-stepper button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); cursor:pointer; font-size:14px; line-height:1; }
-    .crono-gerador-stepper-valor { font-size:13px; font-weight:800; min-width:18px; text-align:center; }
+    /* Campo editável (não só +/-) — digitar direto evita 30-40 cliques
+       pra chegar numa semana alta. Mesma largura/alinhamento do antigo
+       <span> só-leitura que ocupava este lugar. */
+    .crono-gerador-stepper-input { font-size:13px; font-weight:800; width:40px; text-align:center; border:1px solid var(--border-color); border-radius:6px; padding:2px 4px; background:var(--bg-white); color:var(--text-main); }
     #modal-crono-gerador input[type="date"], #modal-crono-adicionar-cards input[type="date"] { border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:12px; background:var(--bg-white); color:var(--text-main); }
     .crono-gerador-btn-secundario, .crono-gerador-btn-primario { margin-top:16px; width:100%; padding:10px; border-radius:8px; border:none; font-size:12px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.03em; flex-shrink:0; }
     .crono-gerador-btn-secundario { background:var(--bg-accent-soft); color:var(--app-primary); }
@@ -5005,6 +5008,8 @@ if(ri) {
     .crono-gerador-previa { margin-top:14px; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-main); display:flex; flex-direction:column; gap:6px; }
     .crono-gerador-previa-titulo { font-size:11px; font-weight:800; text-transform:uppercase; color:var(--app-primary); }
     .crono-gerador-advertencia { background:#fef3c7; border:1px solid #fcd34d; color:#92400e; border-radius:6px; padding:8px 10px; font-size:11.5px; line-height:1.5; }
+    .crono-gerador-advertencia-confirmar { display:block; margin-top:8px; padding:6px 12px; border-radius:6px; border:1px solid #92400e; background:#fff; color:#92400e; font-size:11px; font-weight:800; cursor:pointer; }
+    .crono-gerador-advertencia-confirmar:hover { background:#92400e; color:#fff; }
     /* Banner de contexto quando o modal foi aberto via "🔁 Reconfigurar" ou
        "➕ Adicionar Cards" — deixa claro que a ação afeta um cronograma
        existente, não cria um novo. */
@@ -7050,6 +7055,31 @@ window.CRONOGRAMA_RUNTIME = {
         this._renderGeradorCorpo();
     },
 
+    // Digitar direto no campo — sem isto, chegar em, digamos, 40 semanas
+    // exigia 40 cliques em "+". Qualquer valor inválido/vazio/menor que 1
+    // cai no mínimo (1), nunca deixa a configuração num estado quebrado.
+    definirSemanasGerador: function(valor) {
+        if (!this._gerador) return;
+        let n = parseInt(valor, 10);
+        if (isNaN(n) || n < 1) n = 1;
+        this._gerador.config.semanas = n;
+        this._gerador.previa = null;
+        this._renderGeradorCorpo();
+    },
+
+    // Botão "Confirmar XX semanas" na advertência de excesso — adota
+    // direto o número de semanas que calcularPrevia() já calculou como
+    // necessário (resumo.semanasNecessarias), em vez do usuário digitar/
+    // clicar até chegar lá, e recalcula a prévia na hora (o usuário acabou
+    // de pedir exatamente essa mudança, não faz sentido esperar um 2º
+    // clique em "Calcular Prévia" pra ver o resultado sem mais excesso).
+    confirmarSemanasSugeridas: function() {
+        if (!this._gerador || !this._gerador.previa || !this._gerador.previa.temOverflow) return;
+        this._gerador.config.semanas = this._gerador.previa.semanasNecessarias;
+        this._gerador.previa = null;
+        this.calcularPrevia();
+    },
+
     definirInicioGerador: function(valor) {
         if (!this._gerador || !valor) return;
         this._gerador.config.inicio = valor;
@@ -7512,7 +7542,9 @@ window.CRONOGRAMA_RUNTIME = {
                     (p.semanasIndeterminadas
                         ? 'seriam necessárias mais de ' + p.semanasNecessarias + ' semanas.'
                         : 'seriam necessárias ' + p.semanasNecessarias + ' semana(s) no total (mais ' + (p.semanasNecessarias - g.config.semanas) + ').') +
-                    ' Aumente "Semanas" ou os limites diários, ou gere assim mesmo — os cards excedentes ficam de fora (dá pra completar depois com "➕ Adicionar Semanas").</div>';
+                    ' Aumente "Semanas" ou os limites diários, ou gere assim mesmo — os cards excedentes ficam de fora (dá pra completar depois com "➕ Adicionar Semanas").' +
+                    '<button class="crono-gerador-advertencia-confirmar" onclick="window.CRONOGRAMA_RUNTIME.confirmarSemanasSugeridas()">Confirmar ' + p.semanasNecessarias + (p.semanasIndeterminadas ? '+' : '') + ' semanas</button>' +
+                    '</div>';
             }
 
             let htmlSemanasSobrando = p.temSemanasSobrando
@@ -7537,7 +7569,7 @@ window.CRONOGRAMA_RUNTIME = {
             '<div class="crono-gerador-secao-titulo">Dias da semana</div>' + htmlDias +
             '<div class="crono-gerador-secao-titulo">Início e duração</div>' +
             '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">Início</span><input type="date" value="' + g.config.inicio + '" onchange="window.CRONOGRAMA_RUNTIME.definirInicioGerador(this.value)"></div>' +
-            '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">Semanas</span><span class="crono-gerador-stepper"><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(-1)">−</button><span class="crono-gerador-stepper-valor">' + g.config.semanas + '</span><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(1)">+</button></span></div>' +
+            '<div class="crono-gerador-dia-row"><span class="crono-gerador-dia-nome">Semanas</span><span class="crono-gerador-stepper"><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(-1)">−</button><input type="number" min="1" class="crono-gerador-stepper-input" value="' + g.config.semanas + '" onchange="window.CRONOGRAMA_RUNTIME.definirSemanasGerador(this.value)"><button onclick="window.CRONOGRAMA_RUNTIME.alterarSemanasGerador(1)">+</button></span></div>' +
             '<div class="crono-gerador-secao-titulo">Cards por dia (por prioridade)</div>' + htmlCotas +
             '<button class="crono-gerador-btn-secundario" onclick="window.CRONOGRAMA_RUNTIME.calcularPrevia()">📊 Calcular Prévia</button>' +
             htmlPrevia;
