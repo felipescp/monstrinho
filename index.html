@@ -9901,9 +9901,10 @@ window.fecharFlashcardsModal = function() {
     #section-praticar-caderno .fc-tab-export-btn { border:none; background:none; cursor:pointer; font-size:12px; padding:0 6px 0 0; opacity:0.5; align-self:center; }
     #section-praticar-caderno .fc-tab-export-btn:hover { opacity:1; }
 
-    #section-praticar-caderno .fc-grid { display:grid; grid-template-columns: 0.35fr 0.65fr 2fr; flex:1; overflow:hidden; }
+    #section-praticar-caderno .fc-grid { display:grid; grid-template-columns: 0.3fr 0.5fr 0.7fr 2fr; flex:1; overflow:hidden; }
     #section-praticar-caderno .fc-col { overflow-y:auto; padding:10px; }
     #section-praticar-caderno #pc-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
+    #section-praticar-caderno #pc-col-divisoes { border-right:1px solid var(--border-color); }
     #section-praticar-caderno #pc-col-topicos { border-right:1px solid var(--border-color); }
     #section-praticar-caderno #pc-col-questao { background:var(--bg-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; }
     #section-praticar-caderno .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
@@ -9976,7 +9977,8 @@ window.fecharFlashcardsModal = function() {
 
     <div class="fc-grid" id="pc-aba-navegar">
         <div class="fc-col" id="pc-col-materias"></div>
-        <div class="fc-col" id="pc-col-topicos"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        <div class="fc-col" id="pc-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        <div class="fc-col" id="pc-col-topicos"><div class="fc-vazio-col">Selecione uma divisão.</div></div>
         <div class="fc-col" id="pc-col-questao">
             <div class="fc-corpo-aba" id="pc-corpo-navegar"></div>
             <div class="fc-popup-nav">
@@ -10059,6 +10061,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
     _bootstrapped: false,
 
     _materiaSelecionada: null,
+    _divisaoSelecionada: null,
     _topicoSelecionado: null, // null = "todos os tópicos" (agregado)
     _abaAtiva: 'navegar',
     _estadoNavegar: { pool: [], ordemChaves: [], indiceAtual: 0 },
@@ -10206,44 +10209,63 @@ window.PRATICAR_CADERNO_RUNTIME = {
             });
             if (alvo) alvo.classList.add('ativa');
         }
-        this.selecionarTopico(materia, null); // trocar de matéria sempre volta pro agregado
+        this.selecionarDivisao(materia, null);
+    },
+
+    _renderColunaDivisoes: function(materia) {
+        let col = document.getElementById('pc-col-divisoes');
+        if (!col) return;
+        let porMateria = this._lerCadernoErros()[materia] || {};
+        let self = this;
+        let divisoes = Object.keys(porMateria).map(function(topico) { return topico.split(' > ')[0]; })
+            .filter(function(div, i, arr) { return arr.indexOf(div) === i; })
+            .filter(function(div) { return self.listarQuestoesDoL2(materia, div).length > 0; }).sort();
+        col.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarDivisao(\'' + materia.replace(/'/g, "\\'") + '\', null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + self.contarQuestoesDaMateria(materia) + '</span></div>' +
+            divisoes.map(function(div) {
+                return '<div class="fc-divisao-item' + (self._divisaoSelecionada === div ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarDivisao(\'' + materia.replace(/'/g, "\\'") + '\', \'' + div.replace(/'/g, "\\'") + '\')"><span>' + self._escapar(div) + '</span><span class="fc-divisao-count">' + self.listarQuestoesDoL2(materia, div).length + '</span></div>';
+            }).join('');
     },
 
     _renderColunaTopicos: function(materia) {
         let col = document.getElementById('pc-col-topicos');
         if (!col) return;
-        let erros = this._lerCadernoErros();
-        let porMateria = erros[materia] || {};
+        if (!this._divisaoSelecionada) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma divisão.</div>'; return; }
+        let porMateria = this._lerCadernoErros()[materia] || {};
         let self = this;
-        let topicos = Object.keys(porMateria).filter(function(t) { return self.contarQuestoesDoTopico(materia, t) > 0; }).sort();
-        if (topicos.length === 0) {
-            col.innerHTML = '<div class="fc-vazio-col">Nenhum tópico.</div>';
-            return;
-        }
+        let topicos = Object.keys(porMateria).filter(function(t) {
+            return (t === self._divisaoSelecionada || t.indexOf(self._divisaoSelecionada + ' > ') === 0) && self.contarQuestoesDoTopico(materia, t) > 0;
+        }).sort();
         col.innerHTML =
             '<div class="fc-divisao-item' + (!self._topicoSelecionado ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materia.replace(/'/g, "\\'") + '\', null)">' +
-                '<span>Todos os tópicos</span><span class="fc-divisao-count">' + self.contarQuestoesDaMateria(materia) + '</span>' +
-            '</div>' +
+                '<span>Todos os tópicos</span><span class="fc-divisao-count">' + self.listarQuestoesDoL2(materia, self._divisaoSelecionada).length + '</span></div>' +
             topicos.map(function(top) {
-                let ativa = self._topicoSelecionado === top;
-                let n = self.contarQuestoesDoTopico(materia, top);
-                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materia.replace(/'/g, "\\'") + '\', \'' + top.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + top + '</span><span class="fc-divisao-count">' + n + '</span>' +
-                '</div>';
+                let rotulo = top === self._divisaoSelecionada ? top : top.slice((self._divisaoSelecionada + ' > ').length);
+                return '<div class="fc-divisao-item' + (self._topicoSelecionado === top ? ' ativa' : '') + '" onclick="window.PRATICAR_CADERNO_RUNTIME.selecionarTopico(\'' + materia.replace(/'/g, "\\'") + '\', \'' + top.replace(/'/g, "\\'") + '\')"><span>' + self._escapar(rotulo) + '</span><span class="fc-divisao-count">' + self.contarQuestoesDoTopico(materia, top) + '</span></div>';
             }).join('');
     },
 
-    // topico === null -> modo agregado (todos os tópicos da matéria).
+    selecionarDivisao: function(materia, divisao) {
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._topicoSelecionado = null;
+        this._renderColunaDivisoes(materia);
+        this._renderColunaTopicos(materia);
+        this._renderPoolNavegar();
+    },
+
     selecionarTopico: function(materia, topico) {
         this._materiaSelecionada = materia;
+        this._divisaoSelecionada = topico ? topico.split(' > ')[0] : this._divisaoSelecionada;
         this._topicoSelecionado = topico;
+        this._renderColunaDivisoes(materia);
         this._renderColunaTopicos(materia);
         this._renderPoolNavegar();
     },
 
     _renderPoolNavegar: function() {
-        let materia = this._materiaSelecionada, topico = this._topicoSelecionado;
-        let pool = !materia ? [] : (topico ? this.listarQuestoesDoTopico(materia, topico) : this.listarQuestoesDaMateria(materia));
+        let materia = this._materiaSelecionada, topico = this._topicoSelecionado, divisao = this._divisaoSelecionada;
+        let pool = !materia ? [] : (topico ? this.listarQuestoesDoTopico(materia, topico) : (divisao ? this.listarQuestoesDoL2(materia, divisao) : this.listarQuestoesDaMateria(materia)));
         let s = this._estadoNavegar;
         s.pool = pool;
         s.ordemChaves = pool.map(function(q) { return q.chave; });
@@ -10251,7 +10273,6 @@ window.PRATICAR_CADERNO_RUNTIME = {
         this._estadoResposta = { chave: null, escolha: null, respondida: false, acertou: null };
         this._renderCorpo('navegar');
     },
-
     // ── ABAS DE DIFICULDADE ──
 
     trocarAba: function(aba) {
