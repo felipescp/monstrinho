@@ -712,29 +712,44 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 
 /* Termos do Glossário destacados no enunciado (.qe) e na explicação
    (.etx) do Simulado — em andamento OU em revisão, já que os dois usam a
-   mesma mkQ() (ver destacarTermosGlossario). Balão customizado (não o
-   title nativo do navegador) com o "significado" ao passar o mouse. */
-.glos-termo-sim { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; position: relative; }
-.glos-termo-sim:hover::after {
-    content: attr(data-significado);
-    position: absolute;
-    left: 50%; bottom: calc(100% + 8px);
-    transform: translateX(-50%);
-    width: max-content; max-width: min(320px, 80vw);
+   mesma mkQ() (ver destacarTermosGlossario). */
+.glos-termo-sim { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; }
+
+/* Balão flutuante do "significado" — DOM real (#glos-tooltip-flutuante),
+   não mais um ::after com content:attr() fixo sempre acima/centralizado no
+   termo. Esse posicionamento fixo cortava o balão quando o termo ficava
+   perto do topo (o balão nascia por trás de uma barra sticky, ex.: a barra
+   de progresso da bateria) ou perto da borda esquerda/direita (o balão
+   vazava da tela). Agora _glosMostrarTooltip() (ver script no fim do
+   arquivo) mede o espaço disponível e decide a posição na hora: sobe/desce
+   conforme cabe acima do termo, e nunca deixa a caixa passar das bordas
+   laterais da janela — sempre inteiro visível. position:fixed (não
+   absolute) pra nunca ficar preso dentro de um ancestral com overflow
+   escondido nem atrás de algo com z-index/stacking context próprio (era
+   exatamente esse o motivo da barra sticky cobrir o balão antes). */
+#glos-tooltip-flutuante {
+    position: fixed;
+    z-index: 99999;
+    max-width: min(320px, 90vw);
     background: #1e293b; color: #fff;
     font-size: 11.5px; font-weight: 500; line-height: 1.5; white-space: normal;
     padding: 8px 10px; border-radius: 8px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    z-index: 60; pointer-events: none;
+    pointer-events: none;
+    display: none;
 }
-.glos-termo-sim:hover::before {
+/* Setinha — sempre aponta pro CENTRO DO TERMO de verdade (--glos-seta-left,
+   calculada em px pelo JS a cada exibição), mesmo quando o balão em si
+   precisou deslocar lateralmente pra não vazar da tela. */
+#glos-tooltip-flutuante::after {
     content: '';
     position: absolute;
-    left: 50%; bottom: calc(100% + 3px);
+    left: var(--glos-seta-left, 50%);
     transform: translateX(-50%);
-    border: 5px solid transparent; border-top-color: #1e293b;
-    z-index: 60; pointer-events: none;
+    border: 5px solid transparent;
 }
+#glos-tooltip-flutuante.acima::after { top: 100%; border-top-color: #1e293b; }
+#glos-tooltip-flutuante.abaixo::after { bottom: 100%; border-bottom-color: #1e293b; }
 
 /* Motivo do erro — mesmo padrão .rg/.ro/.sel do seletor de tipo de bateria
    (index.html ~488-491), só com pegada visual menor pra caber dentro do
@@ -18605,6 +18620,88 @@ function destacarTermosGlossario(texto, materia) {
         return '<span class="glos-termo-sim" data-significado="' + significadoEsc + '">' + match + '</span>';
     });
 }
+
+// ── BALÃO FLUTUANTE DO GLOSSÁRIO (posicionamento dinâmico) ──
+// Substitui o antigo ::after com content:attr() sempre acima/centralizado
+// no termo — problema relatado: nascia coberto por barras sticky (perto do
+// topo) ou cortado nas bordas (perto das laterais da tela), porque CSS
+// puro não sabe medir espaço disponível. Aqui: 1 <div> flutuante só,
+// reaproveitada via mouseover/mouseout delegados em document (os spans
+// .glos-termo-sim nascem e somem dinamicamente a cada render de questão —
+// delegação evita ficar religando listener por span). position:fixed
+// (setado no CSS) escapa de qualquer ancestral com overflow escondido ou
+// z-index/stacking context próprio — era isso que deixava a barra sticky
+// "por cima" do balão antes.
+function _glosGarantirTooltipEl() {
+    if (window.__glosTooltipEl) return window.__glosTooltipEl;
+    var el = document.createElement('div');
+    el.id = 'glos-tooltip-flutuante';
+    document.body.appendChild(el);
+    window.__glosTooltipEl = el;
+    return el;
+}
+
+function _glosMostrarTooltip(trigger) {
+    var significado = trigger.getAttribute('data-significado');
+    if (!significado) return;
+    var el = _glosGarantirTooltipEl();
+    el.textContent = significado;
+    el.style.display = 'block';
+    el.classList.remove('acima', 'abaixo');
+
+    var margem = 8;
+    var rect = trigger.getBoundingClientRect();
+    // offsetWidth/Height já refletem o texto de verdade (display:block já
+    // rodou, força layout) — não um placeholder ou o texto do hover anterior.
+    var largura = el.offsetWidth;
+    var altura = el.offsetHeight;
+
+    // Vertical: prefere ACIMA do termo (era o único comportamento antes);
+    // só desce quando não sobra margem no topo DA JANELA — é o que evita
+    // nascer atrás de uma barra sticky ou sumir pra fora da tela.
+    var top = rect.top - altura - margem;
+    var posicao = 'acima';
+    if (top < margem) {
+        top = rect.bottom + margem;
+        posicao = 'abaixo';
+    }
+    el.classList.add(posicao);
+
+    // Horizontal: centraliza no termo, mas nunca deixa a caixa passar das
+    // bordas laterais da janela — era isso que cortava o balão perto do
+    // canto. A setinha (--glos-seta-left) continua apontando pro CENTRO
+    // DO TERMO de verdade, mesmo com a caixa deslocada pra caber.
+    var centroTermo = rect.left + rect.width / 2;
+    var left = centroTermo - largura / 2;
+    var maxLeft = window.innerWidth - largura - margem;
+    if (left < margem) left = margem;
+    if (left > maxLeft) left = Math.max(margem, maxLeft);
+
+    var setaLeft = centroTermo - left;
+    var setaMin = 12, setaMax = largura - 12;
+    if (setaLeft < setaMin) setaLeft = setaMin;
+    if (setaLeft > setaMax) setaLeft = setaMax;
+
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.setProperty('--glos-seta-left', setaLeft + 'px');
+}
+
+function _glosEsconderTooltip() {
+    if (window.__glosTooltipEl) window.__glosTooltipEl.style.display = 'none';
+}
+
+document.addEventListener('mouseover', function(e) {
+    var alvo = e.target.closest && e.target.closest('.glos-termo-sim');
+    if (alvo) _glosMostrarTooltip(alvo);
+});
+document.addEventListener('mouseout', function(e) {
+    var alvo = e.target.closest && e.target.closest('.glos-termo-sim');
+    if (alvo && !alvo.contains(e.relatedTarget)) _glosEsconderTooltip();
+});
+// Rolar com o balão aberto: position:fixed não acompanha o termo durante o
+// scroll (ficaria "grudado" no lugar errado) — mais simples esconder.
+document.addEventListener('scroll', _glosEsconderTooltip, true);
 
 function mkQ(q, modoRevisao){
   var cegas=C.cegas&&!modoRevisao;
