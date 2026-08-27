@@ -11879,7 +11879,14 @@ window.GLOSSARIO_RUNTIME = {
     },
 
     // Aplica ocultos/oficiais/busca/cor sobre _termosParaExibir() e ordena
-    // por estrelas (3★ primeiro) — mesmo padrão de ESQUEMAS_RUNTIME._listaFiltrada.
+    // por ordem alfabética (A-Z) da expressão — diferente do padrão de
+    // ESQUEMAS_RUNTIME._listaFiltrada (que ordena por estrelas): num
+    // glossário, o usuário procura um termo específico visualmente na
+    // lista, então navegar A-Z é o que faz sentido (estrelas ficam só
+    // como indicador visual no card, não como critério de ordenação).
+    // localeCompare com locale 'pt' e sensitivity 'base' trata acento/
+    // caixa como o alfabeto tradicional espera (ex.: "Ação" perto de
+    // "Acórdão", não empurrado pro fim por causar do "ç"/"ã").
     _listaFiltrada: function() {
         let self = this;
         let lista = this._termosParaExibir();
@@ -11901,7 +11908,7 @@ window.GLOSSARIO_RUNTIME = {
             });
         }
         lista = lista.slice().sort(function(a, b) {
-            return self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id);
+            return (a.item.expressao || '').localeCompare(b.item.expressao || '', 'pt', { sensitivity: 'base' });
         });
         return lista;
     },
