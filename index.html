@@ -4974,6 +4974,10 @@ if(ri) {
     #section-cronograma .crono-tag-alta { background:#ffedd5; color:#ea580c; border:1px solid #fdba74; }
     #section-cronograma .crono-tag-media { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; }
     #section-cronograma .crono-tag-baixa { background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; }
+    /* "Revisão" — bucket de cards cuja prioridade não bate em nenhum dos 4
+       tiers reconhecidos (_normalizarPrioridade retorna 'outras') — usado
+       só em Ciclos & Matérias (ver ORDEM_TIERS_CICLOS/ROTULOS_TIER_CICLOS). */
+    #section-cronograma .crono-tag-outras { background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; }
     #section-cronograma .crono-tag-data { background:var(--bg-soft); color:#475569; border:1px solid var(--border-color); font-weight:600; }
     #section-cronograma .crono-card-topico { font-size:11px; font-weight:600; color:var(--text-main); line-height:1.35; margin-bottom:3px; }
     #section-cronograma .crono-card-justif { font-size:10px; color:var(--text-muted); line-height:1.35; font-style:italic; }
@@ -4985,6 +4989,44 @@ if(ri) {
     #section-cronograma .crono-kanban-title { font-family:var(--font-display); font-weight:700; font-size:13px; color:var(--text-main); }
     #section-cronograma .crono-kanban-count { font-family:var(--font-display); font-size:10px; font-weight:600; color:var(--text-muted); background:#f1f5f9; padding:2px 7px; border-radius:99px; margin-left:auto; }
     #section-cronograma .crono-kanban-body { padding:12px; display:flex; flex-direction:column; gap:10px; }
+
+    /* "Ciclos & Matérias" (viewModo 'materias') — 1 coluna por disciplina,
+       cruzando TODAS as semanas do cronograma (ver renderCiclosMaterias). */
+    #section-cronograma .crono-ciclos-cabecalho { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+    #section-cronograma .crono-ciclos-subtitulo { font-size:12px; color:var(--text-muted); }
+    #section-cronograma .crono-ciclos-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:16px; align-items:start; }
+    #section-cronograma .crono-ciclos-coluna { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:14px; }
+    #section-cronograma .crono-ciclos-coluna-titulo { font-family:var(--font-display); font-weight:800; font-size:13px; text-transform:uppercase; margin-bottom:2px; }
+    #section-cronograma .crono-ciclos-coluna-resumo { font-size:10.5px; font-weight:700; color:var(--text-muted); margin-bottom:10px; }
+
+    #section-cronograma .crono-ciclos-tier { margin-bottom:10px; }
+    #section-cronograma .crono-ciclos-tier:last-child { margin-bottom:0; }
+    #section-cronograma .crono-ciclos-tier-cabecalho { display:flex; align-items:center; gap:8px; cursor:pointer; padding:2px 0; }
+    #section-cronograma .crono-ciclos-tier-nome { font-weight:800; font-size:9.5px; flex-shrink:0; }
+    #section-cronograma .crono-ciclos-tier-barra { flex:1; height:6px; border-radius:99px; background:var(--bg-body); overflow:hidden; }
+    #section-cronograma .crono-ciclos-tier-barra-fill { display:block; height:100%; border-radius:99px; transition:width 0.25s ease; }
+    #section-cronograma .crono-tag-fill-critica { background:#dc2626; }
+    #section-cronograma .crono-tag-fill-alta { background:#ea580c; }
+    #section-cronograma .crono-tag-fill-media { background:#2563eb; }
+    #section-cronograma .crono-tag-fill-baixa { background:#64748b; }
+    #section-cronograma .crono-tag-fill-outras { background:#7c3aed; }
+    #section-cronograma .crono-ciclos-tier-contagem { font-size:9.5px; font-weight:700; color:var(--text-muted); white-space:nowrap; flex-shrink:0; }
+    #section-cronograma .crono-ciclos-tier-expandir { font-size:13px; font-weight:800; color:var(--text-muted); width:14px; text-align:center; flex-shrink:0; }
+
+    #section-cronograma .crono-ciclos-topicos { margin-top:6px; display:flex; flex-direction:column; }
+    #section-cronograma .crono-ciclos-topicos-didatica { margin-top:0; }
+    #section-cronograma .crono-ciclos-topico { display:flex; align-items:center; gap:7px; padding:5px 2px; border-radius:6px; cursor:pointer; font-size:11px; color:var(--text-main); line-height:1.3; }
+    #section-cronograma .crono-ciclos-topico:hover { background:var(--bg-accent-soft); }
+    #section-cronograma .crono-ciclos-topico.feito { color:var(--text-muted); text-decoration:line-through; }
+    #section-cronograma .crono-ciclos-topico-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    #section-cronograma .crono-tag-dot-critica { background:#dc2626; }
+    #section-cronograma .crono-tag-dot-alta { background:#ea580c; }
+    #section-cronograma .crono-tag-dot-media { background:#2563eb; }
+    #section-cronograma .crono-tag-dot-baixa { background:#64748b; }
+    #section-cronograma .crono-tag-dot-outras { background:#7c3aed; }
+    #section-cronograma .crono-ciclos-topico-tag { flex-shrink:0; }
+    #section-cronograma .crono-ciclos-topico-texto { min-width:0; }
+    #section-cronograma .crono-ciclos-topico.feito .crono-ciclos-topico-dot { opacity:0.4; }
 
     /* #crono-mover-menu é anexado a document.body (fora de #section-cronograma),
        por isso as regras abaixo não levam o prefixo da seção. */
@@ -5138,9 +5180,15 @@ if(ri) {
 window.CRONOGRAMA_RUNTIME = {
     planners: {},
     activePlannerId: null,
-    viewModo: 'dias', // 'dias' | 'kanban' — não persiste, reseta a cada carregamento da tela
+    viewModo: 'dias', // 'dias' | 'kanban' | 'materias' — não persiste, reseta a cada carregamento da tela
     dragOrigem: null, // { dia, id } do card sendo arrastado — null quando não há arraste em andamento
     _buscaTexto: '', // filtro ao vivo por expressão nos cards (tópico/justificativa/matéria) da semana ativa — não persiste
+    // "Ciclos & Matérias" (viewModo 'materias') — visão de todos os tópicos
+    // do cronograma (TODAS as semanas, não só a ativa) agrupados por
+    // matéria, sem depender de dia/semana. Nenhum dos dois persiste (mesmo
+    // espírito de viewModo/_buscaTexto).
+    modoOrganizacaoCiclos: 'prioridade', // 'prioridade' (agrupado por Crítica/Alta/Média/Baixa/Revisão) | 'didatica' (lista única, ordem tradicional)
+    _ciclosExpandido: {}, // chave "materia|tier" -> true/false (linhas expandidas no modo 'prioridade')
     // Zoom (A−/A+) da área "busca até os cards" — ao contrário de viewModo
     // e _buscaTexto, este PERSISTE (ver carregar/salvar): é uma preferência
     // de legibilidade, não um filtro/estado de navegação passageiro.
@@ -5740,6 +5788,174 @@ window.CRONOGRAMA_RUNTIME = {
         }
 
         return '<div class="crono-kanban-board">' + coluna('Pendente', '#94a3b8', pendentes) + coluna('Finalizado', '#22c55e', finalizados) + '</div>';
+    },
+
+    // ── "CICLOS & MATÉRIAS" (viewModo 'materias') ──
+    // Mesma ideia da tela de referência do usuário: em vez de navegar
+    // dia-a-dia, mostra ONDE cada tópico do cronograma está — 1 coluna por
+    // matéria, cruzando TODAS as semanas de uma vez. Dois jeitos de
+    // organizar o conteúdo dentro de cada coluna (botão no topo):
+    //   'prioridade' — agrupado por Crítica/Alta/Média/Baixa/Revisão, cada
+    //                  grupo com sua barra de progresso e expansível.
+    //   'didatica'   — lista única por matéria, na ordem tradicional das
+    //                  disciplinas (ordem_didatica do card, quando presente).
+    // A ordem das PRÓPRIAS colunas usa a mesma heurística de matérias "de
+    // peso" do Gerador (_pesoMateria) — Constitucional/Civil/Penal etc.
+    // primeiro, dá o mesmo "início com credibilidade" da geração automática.
+    ORDEM_TIERS_CICLOS: ['critica', 'alta', 'media', 'baixa', 'outras'],
+    ROTULOS_TIER_CICLOS: { critica: 'Crítica', alta: 'Alta', media: 'Média', baixa: 'Baixa', outras: 'Revisão' },
+
+    renderCiclosMaterias: function() {
+        let self = this;
+        let ativo = this.planners[this.activePlannerId];
+        if (!ativo) return '';
+
+        let todos = [];
+        Object.keys(ativo.planejamento).forEach(function(semana) {
+            Object.keys(ativo.planejamento[semana]).forEach(function(dia) {
+                (ativo.planejamento[semana][dia] || []).forEach(function(item) {
+                    if (self._itemBateBusca(item)) todos.push(item);
+                });
+            });
+        });
+
+        let porMateria = {};
+        let ordemMaterias = [];
+        todos.forEach(function(item) {
+            let m = item.materia || '(Sem matéria)';
+            if (!porMateria[m]) { porMateria[m] = []; ordemMaterias.push(m); }
+            porMateria[m].push(item);
+        });
+        ordemMaterias.sort(function(a, b) {
+            let pa = self._pesoMateria(a), pb = self._pesoMateria(b);
+            if (pa !== pb) return pa - pb;
+            return a.localeCompare(b, 'pt', { sensitivity: 'base' });
+        });
+
+        let modo = this.modoOrganizacaoCiclos === 'didatica' ? 'didatica' : 'prioridade';
+        let temBusca = !!(this._buscaTexto || '').trim();
+
+        let htmlCabecalho = '<div class="crono-ciclos-cabecalho">' +
+            '<div class="crono-ciclos-subtitulo">Todos os tópicos por matéria' + (modo === 'prioridade' ? ', agrupados por prioridade' : ', na ordem didática tradicional') + '</div>' +
+            '<div class="crono-view-toggle">' +
+                '<button class="crono-view-btn' + (modo === 'prioridade' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.definirModoCiclosMaterias(\'prioridade\')">Grupos Prioritários</button>' +
+                '<button class="crono-view-btn' + (modo === 'didatica' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.definirModoCiclosMaterias(\'didatica\')">Ordem Didática</button>' +
+            '</div>' +
+        '</div>';
+
+        if (!ordemMaterias.length) {
+            return htmlCabecalho + '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:24px;">' + (temBusca ? 'Nenhum resultado pra essa busca.' : 'Nenhum card no cronograma ainda.') + '</div>';
+        }
+
+        let colunas = ordemMaterias.map(function(materia) {
+            return self._renderColunaMateriaCiclos(materia, porMateria[materia], modo);
+        }).join('');
+
+        return htmlCabecalho + '<div class="crono-ciclos-grid">' + colunas + '</div>';
+    },
+
+    definirModoCiclosMaterias: function(modo) {
+        this.modoOrganizacaoCiclos = (modo === 'didatica') ? 'didatica' : 'prioridade';
+        let corpoEl = document.getElementById('crono-corpo');
+        if (corpoEl) corpoEl.innerHTML = this._renderCorpo();
+    },
+
+    // Expande/recolhe UM grupo de prioridade de UMA matéria (modo
+    // 'prioridade'). Estado mora em this._ciclosExpandido (sobrevive a
+    // render() normal, já que é estado em JS, não no DOM) — só um
+    // re-render leve de #crono-corpo, sem mexer no resto da tela.
+    toggleTierCiclos: function(chave) {
+        this._ciclosExpandido[chave] = !this._ciclosExpandido[chave];
+        let corpoEl = document.getElementById('crono-corpo');
+        if (corpoEl) corpoEl.innerHTML = this._renderCorpo();
+    },
+
+    _renderColunaMateriaCiclos: function(materia, itens, modo) {
+        let self = this;
+        let corMat = this.corMateria(materia);
+        let total = itens.length;
+        let feitos = itens.filter(function(it) { return it.feitas === true; }).length;
+        let pct = total > 0 ? Math.round(feitos / total * 100) : 0;
+
+        let corpoHtml = modo === 'didatica'
+            ? this._renderListaDidaticaCiclos(materia, itens)
+            : this._renderTiersPrioridadeCiclos(materia, itens);
+
+        return '<div class="crono-ciclos-coluna">' +
+            '<div class="crono-ciclos-coluna-titulo" style="color:' + corMat.texto + ';">' + materia + '</div>' +
+            '<div class="crono-ciclos-coluna-resumo">' + feitos + '/' + total + ' · ' + pct + '%</div>' +
+            corpoHtml +
+        '</div>';
+    },
+
+    _renderTiersPrioridadeCiclos: function(materia, itens) {
+        let self = this;
+        let porTier = {};
+        itens.forEach(function(item) {
+            let tier = self._normalizarPrioridade(item.prioridade);
+            if (tier === 'outras') tier = 'outras'; // aliás explícito — bucket "Revisão"
+            if (!porTier[tier]) porTier[tier] = [];
+            porTier[tier].push(item);
+        });
+
+        return this.ORDEM_TIERS_CICLOS.filter(function(tier) { return porTier[tier] && porTier[tier].length; }).map(function(tier) {
+            let lista = porTier[tier];
+            let total = lista.length;
+            let feitos = lista.filter(function(it) { return it.feitas === true; }).length;
+            let pct = total > 0 ? Math.round(feitos / total * 100) : 0;
+            let chave = materia + '|' + tier;
+            let expandido = !!self._ciclosExpandido[chave];
+            let chaveEsc = self._escaparAtributo(chave);
+
+            let topicosHtml = self._ordenarTopicosCiclos(lista).map(function(item) { return self._renderTopicoCiclos(item, tier); }).join('');
+
+            return '<div class="crono-ciclos-tier">' +
+                '<div class="crono-ciclos-tier-cabecalho" onclick="window.CRONOGRAMA_RUNTIME.toggleTierCiclos(\'' + chaveEsc + '\')">' +
+                    '<span class="crono-ciclos-tier-nome crono-tag-' + tier + '">' + self.ROTULOS_TIER_CICLOS[tier] + '</span>' +
+                    '<span class="crono-ciclos-tier-barra"><span class="crono-ciclos-tier-barra-fill crono-tag-fill-' + tier + '" style="width:' + pct + '%;"></span></span>' +
+                    '<span class="crono-ciclos-tier-contagem">' + feitos + '/' + total + ' · ' + pct + '%</span>' +
+                    '<span class="crono-ciclos-tier-expandir">' + (expandido ? '−' : '+') + '</span>' +
+                '</div>' +
+                '<div class="crono-ciclos-topicos"' + (expandido ? '' : ' style="display:none;"') + '>' + topicosHtml + '</div>' +
+            '</div>';
+        }).join('');
+    },
+
+    // Modo "Ordem Didática" — lista única por matéria (sem separar por
+    // prioridade), ordenada por ordem_didatica quando o card tem essa
+    // informação (ver _simularDistribuicao — só cards vindos do Gerador de
+    // Cronograma por Prioridade carregam esse campo). Sem ordem_didatica,
+    // afunda pro fim mantendo a ordem relativa entre si (mesmo padrão de
+    // _pesoOrdemMateria/_pesoRecorrenciaMateria no Gerador).
+    _renderListaDidaticaCiclos: function(materia, itens) {
+        let self = this;
+        let ordenados = this._ordenarTopicosCiclos(itens, true);
+        return '<div class="crono-ciclos-topicos crono-ciclos-topicos-didatica">' + ordenados.map(function(item) {
+            return self._renderTopicoCiclos(item, self._normalizarPrioridade(item.prioridade), true);
+        }).join('') + '</div>';
+    },
+
+    _ordenarTopicosCiclos: function(itens, porOrdemDidatica) {
+        if (!porOrdemDidatica) return itens.slice();
+        return itens.slice().sort(function(a, b) {
+            let oa = (typeof a.ordem_didatica === 'number' && !isNaN(a.ordem_didatica)) ? a.ordem_didatica : Infinity;
+            let ob = (typeof b.ordem_didatica === 'number' && !isNaN(b.ordem_didatica)) ? b.ordem_didatica : Infinity;
+            return oa - ob;
+        });
+    },
+
+    // 1 linha clicável por tópico — clique alterna "feito" (mesmo
+    // toggleCheck usado nos cards de Dias/Kanban), sem precisar abrir o
+    // card inteiro só pra marcar. mostrarTagPrioridade=true (modo
+    // didática, onde a cor da prioridade não vem mais do agrupamento).
+    _renderTopicoCiclos: function(item, tier, mostrarTagPrioridade) {
+        let feito = item.feitas === true;
+        let idEsc = this._escaparAtributo(item.id);
+        return '<div class="crono-ciclos-topico' + (feito ? ' feito' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.toggleCheck(\'' + idEsc + '\',\'feitas\')" title="' + (feito ? 'Marcar como não feito' : 'Marcar como feito') + '">' +
+            '<span class="crono-ciclos-topico-dot crono-tag-dot-' + tier + '"></span>' +
+            (mostrarTagPrioridade ? '<span class="crono-tag crono-tag-' + tier + ' crono-ciclos-topico-tag">' + this.ROTULOS_TIER_CICLOS[tier] + '</span>' : '') +
+            '<span class="crono-ciclos-topico-texto">' + (item.topico || '') + '</span>' +
+        '</div>';
     },
 
     // ── PEDIDO 3: ARRASTAR ENTRE DIAS E SEMANAS + MENU "MOVER PARA..." ──
@@ -6620,6 +6836,7 @@ window.CRONOGRAMA_RUNTIME = {
 
         let htmlViewToggle = '<div class="crono-view-toggle">' +
             '<button class="crono-view-btn' + (this.viewModo === 'dias' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'dias\')">📅 Dias</button>' +
+            '<button class="crono-view-btn' + (this.viewModo === 'materias' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'materias\')" title="Ciclos & Matérias — todos os tópicos do cronograma, agrupados por disciplina">📊 Matérias</button>' +
             '<button class="crono-view-btn' + (this.viewModo === 'kanban' ? ' ativa' : '') + '" onclick="window.CRONOGRAMA_RUNTIME.mudarView(\'kanban\')">📋 Kanban</button>' +
         '</div>';
 
@@ -6645,7 +6862,10 @@ window.CRONOGRAMA_RUNTIME = {
             htmlExportarHtml +
         '</div>';
 
-        let htmlControlsRow = '<div class="crono-controls-row">' + htmlWeekTabs + htmlDireita + '</div>';
+        // "Semanas:" não faz sentido em Ciclos & Matérias (visão cruza
+        // todas as semanas de uma vez) — some pra não sugerir um escopo que
+        // essa view não respeita.
+        let htmlControlsRow = '<div class="crono-controls-row">' + (this.viewModo === 'materias' ? '' : htmlWeekTabs) + htmlDireita + '</div>';
 
         contentEl.innerHTML = htmlControlsRow +
             '<div class="crono-zoom-area" id="crono-busca-global-container">' + this._renderResultadosGlobais() + '</div>' +
@@ -6671,6 +6891,11 @@ window.CRONOGRAMA_RUNTIME = {
     _renderCorpo: function() {
         let ativo = this.planners[this.activePlannerId];
         if (!ativo) return '';
+        // "Ciclos & Matérias" enxerga TODAS as semanas de uma vez (não é
+        // escopado à semana ativa como Dias/Kanban) — sai cedo, antes de
+        // pré-computar coisas que só esse ramo não usa (relacionados por
+        // card, semana ativa).
+        if (this.viewModo === 'materias') return this.renderCiclosMaterias();
         let semanaAtiva = this.getSemanaAtiva(ativo);
         // Pré-computado uma vez por passada — renderCard lê
         // this._setChavesL2ComBaterias em vez de resolver o catálogo
@@ -7271,6 +7496,12 @@ window.CRONOGRAMA_RUNTIME = {
                             justificativa: bruto.justificativa,
                             id_taxonomia: bruto.id_taxonomia,
                             metodo: bruto.metodo,
+                            // Sobrevivem no card final (não só durante a
+                            // distribuição) pra alimentar a visão "Ciclos &
+                            // Matérias" — modo "Ordem Didática" (ver
+                            // renderCiclosMaterias/_renderColunaMateriaCiclos).
+                            ordem_didatica: bruto.ordem_didatica,
+                            recorrencia: bruto.recorrencia,
                             data: dataISO
                         });
                         orcamentoHoje--;
