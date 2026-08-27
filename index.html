@@ -7152,11 +7152,22 @@ window.CRONOGRAMA_RUNTIME = {
     // `modo` ('didatica', padrão, ou 'recorrencia') decide o CRITÉRIO de
     // desempate quando várias matérias estão empatadas nessa razão — é o
     // rádio "Organizar cards por" da Fase 1 do Gerador:
-    //   'didatica'    -> _pesoOrdemMateria (ordem_didatica do arquivo, ou
-    //                    o heurístico de matérias "de peso" como
-    //                    fallback); dentro de cada matéria, mantém a
-    //                    sequência ORIGINAL do arquivo (sequência didática
-    //                    pura, sem "pular" tópicos por recorrência).
+    //   'didatica'    -> peso da matéria (_pesoMateria: as "matérias de
+    //                    peso" SEMPRE lideram) primeiro; DENTRO do mesmo
+    //                    peso, _pesoOrdemMateria desempata (ordem_didatica
+    //                    do arquivo, quando presente, ou o próprio
+    //                    heurístico de peso como fallback). Sem isso,
+    //                    ordem_didatica sozinho não funciona como critério
+    //                    ÚNICO de peso: no arquivo real, ele é uma
+    //                    numeração LOCAL por matéria (reinicia em 1 pra
+    //                    cada disciplina) — todo mundo empatava em peso 1 e
+    //                    a ordem das matérias virava, na prática, a ordem
+    //                    de aparição no arquivo (relatado pelo usuário:
+    //                    Direitos Humanos/Ambiental/Consumidor/Empresarial
+    //                    saindo antes de Constitucional/Civil/Penal).
+    //                    Dentro de cada matéria, mantém a sequência
+    //                    ORIGINAL do arquivo (sequência didática pura, sem
+    //                    "pular" tópicos por recorrência).
     //   'recorrencia' -> peso da matéria (_pesoMateria: as "matérias de
     //                    peso" SEMPRE lideram, dão credibilidade ao
     //                    cronograma) primeiro; DENTRO do mesmo peso,
@@ -7201,7 +7212,11 @@ window.CRONOGRAMA_RUNTIME = {
                 });
             });
         } else {
-            ordemMaterias.sort(function(a, b) { return self._pesoOrdemMateria(a, porMateria[a]) - self._pesoOrdemMateria(b, porMateria[b]); });
+            ordemMaterias.sort(function(a, b) {
+                let pesoA = self._pesoMateria(a), pesoB = self._pesoMateria(b);
+                if (pesoA !== pesoB) return pesoA - pesoB;
+                return self._pesoOrdemMateria(a, porMateria[a]) - self._pesoOrdemMateria(b, porMateria[b]);
+            });
         }
 
         let emitidos = {};
