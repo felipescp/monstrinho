@@ -6822,6 +6822,19 @@ window.CRONOGRAMA_RUNTIME = {
         return this._pesoMateria(materia);
     },
 
+    // Contraparte de _pesoOrdemMateria pro modo "Recorrência em provas" —
+    // quanto MAIOR a recorrência mais alta entre os cards da matéria,
+    // menor o peso (mais cedo ela entra). Matéria sem NENHUM card com
+    // recorrência informada vai pro fim (Infinity) — não tem como
+    // priorizar o que não foi informado.
+    _pesoRecorrenciaMateria: function(cardsDaMateria) {
+        let max = -Infinity;
+        (cardsDaMateria || []).forEach(function(c) {
+            if (typeof c.recorrencia === 'number' && !isNaN(c.recorrencia) && c.recorrencia > max) max = c.recorrencia;
+        });
+        return max === -Infinity ? Infinity : -max;
+    },
+
     // Reordena um array de cards (já filtrado por UMA prioridade só) pra
     // intercalar as matérias PROPORCIONALMENTE ao tamanho de cada uma —
     // nunca "1 de cada, sempre" (isso esgota rápido as matérias pequenas,
@@ -6831,25 +6844,29 @@ window.CRONOGRAMA_RUNTIME = {
     // agora — a mais "atrasada" em relação à própria cota — então uma
     // matéria com 40 cards e outra com 5 terminam suas cotas quase juntas,
     // espalhadas pelo horizonte inteiro, cada uma no seu próprio ritmo.
-    // Empate (ex.: todo mundo em 0 no início) vai pra quem tiver o menor
-    // _pesoOrdemMateria (matérias de peso primeiro); dentro do mesmo peso,
-    // desempate por ordem de aparição no arquivo (sort é estável) —
-    // determinístico, sem aleatoriedade.
     //
-    // Ordem interna de cada matéria: por padrão, a sequência dos tópicos
-    // no arquivo original é preservada — MAS se algum card trouxer
-    // recorrencia (quanto MAIOR, mais cobrado/recorrente em provas
-    // anteriores), os tópicos daquela matéria são reordenados do mais pro
-    // menos recorrente antes de entrar na fila. Sem isso, um tópico
-    // residual (ex.: "Outras resoluções" de baixa recorrência) podia
-    // aparecer cedo no cronograma só por estar cedo no arquivo, dentro da
-    // matéria dele — com recorrencia informada, ele afunda pro fim da
-    // fila daquela matéria automaticamente. Tópicos sem recorrencia
-    // informada ficam no fim (entre si, mantêm a ordem original do
-    // arquivo — sort estável).
-    _intercalarProporcional: function(cards) {
+    // `modo` ('didatica', padrão, ou 'recorrencia') decide o CRITÉRIO de
+    // desempate quando várias matérias estão empatadas nessa razão — é o
+    // rádio "Organizar cards por" da Fase 1 do Gerador:
+    //   'didatica'    -> _pesoOrdemMateria (ordem_didatica do arquivo, ou
+    //                    o heurístico de matérias "de peso" como
+    //                    fallback); dentro de cada matéria, mantém a
+    //                    sequência ORIGINAL do arquivo (sequência didática
+    //                    pura, sem "pular" tópicos por recorrência).
+    //   'recorrencia' -> _pesoRecorrenciaMateria (a matéria com o tópico
+    //                    mais cobrado entra primeiro); dentro de cada
+    //                    matéria, os tópicos também são reordenados do
+    //                    mais pro menos recorrente — sem isso, um tópico
+    //                    residual (ex.: "Outras resoluções", sem
+    //                    recorrência informada) podia aparecer cedo só por
+    //                    estar cedo no arquivo.
+    // Em ambos os modos, dentro do mesmo peso o desempate cai pra ordem de
+    // aparição no arquivo (sort é estável) — determinístico, sem
+    // aleatoriedade.
+    _intercalarProporcional: function(cards, modo) {
         if (cards.length <= 1) return cards.slice();
         let self = this;
+        modo = (modo === 'recorrencia') ? 'recorrencia' : 'didatica';
 
         let porMateria = {};
         let ordemMaterias = [];
@@ -6858,14 +6875,18 @@ window.CRONOGRAMA_RUNTIME = {
             if (!porMateria[m]) { porMateria[m] = []; ordemMaterias.push(m); }
             porMateria[m].push(c);
         });
-        ordemMaterias.sort(function(a, b) { return self._pesoOrdemMateria(a, porMateria[a]) - self._pesoOrdemMateria(b, porMateria[b]); });
-        Object.keys(porMateria).forEach(function(m) {
-            porMateria[m].sort(function(x, y) {
-                let rx = (typeof x.recorrencia === 'number' && !isNaN(x.recorrencia)) ? x.recorrencia : -Infinity;
-                let ry = (typeof y.recorrencia === 'number' && !isNaN(y.recorrencia)) ? y.recorrencia : -Infinity;
-                return ry - rx; // decrescente: mais recorrente primeiro
+        if (modo === 'recorrencia') {
+            ordemMaterias.sort(function(a, b) { return self._pesoRecorrenciaMateria(porMateria[a]) - self._pesoRecorrenciaMateria(porMateria[b]); });
+            Object.keys(porMateria).forEach(function(m) {
+                porMateria[m].sort(function(x, y) {
+                    let rx = (typeof x.recorrencia === 'number' && !isNaN(x.recorrencia)) ? x.recorrencia : -Infinity;
+                    let ry = (typeof y.recorrencia === 'number' && !isNaN(y.recorrencia)) ? y.recorrencia : -Infinity;
+                    return ry - rx; // decrescente: mais recorrente primeiro
+                });
             });
-        });
+        } else {
+            ordemMaterias.sort(function(a, b) { return self._pesoOrdemMateria(a, porMateria[a]) - self._pesoOrdemMateria(b, porMateria[b]); });
+        }
 
         let emitidos = {};
         let totais = {};
