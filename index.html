@@ -18577,15 +18577,30 @@ function destacarTermosGlossario(texto, materia) {
     var alternativas = expressoes.map(function(chaveNorm) {
         return porExpressao[chaveNorm].expressao.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     });
+    // SEM lookbehind (?<!...) de propósito: é suportado só a partir do
+    // Safari 16.4 (2023) — em qualquer navegador mais velho a regex
+    // lançava erro, caía no catch abaixo e o destaque não aparecia NUNCA,
+    // em nenhuma questão, sem aviso nenhum (bug relatado pelo usuário). A
+    // fronteira de palavra agora é checada manualmente no callback do
+    // replace (offset/string, 3º e 4º argumentos), olhando o caractere
+    // antes/depois do trecho casado — funciona em qualquer motor com
+    // suporte a \p{...} (Unicode property escapes), que é bem mais antigo
+    // (2018) e universal que lookbehind.
     var regex;
     try {
-        regex = new RegExp('(?<![\\p{L}\\p{N}_])(' + alternativas.join('|') + ')(?![\\p{L}\\p{N}_])', 'giu');
+        regex = new RegExp('(' + alternativas.join('|') + ')', 'giu');
     } catch (e) {
-        return texto; // motor sem suporte a lookbehind/unicode — degrada sem quebrar
+        return texto; // motor sem suporte nem a \p{...} — degrada sem quebrar
     }
-    return texto.replace(regex, function(match) {
+    function ehLetraOuNumero(ch) {
+        return !!ch && /[\p{L}\p{N}_]/u.test(ch);
+    }
+    return texto.replace(regex, function(match, _grupo, offset, textoCompleto) {
         var item = porExpressao[match.toLowerCase()];
         if (!item) return match;
+        var antes = offset > 0 ? textoCompleto[offset - 1] : '';
+        var depois = (offset + match.length < textoCompleto.length) ? textoCompleto[offset + match.length] : '';
+        if (ehLetraOuNumero(antes) || ehLetraOuNumero(depois)) return match; // no meio de outra palavra — não destaca
         var significadoEsc = _escaparAtributoGlosSim(item.significado || '');
         return '<span class="glos-termo-sim" data-significado="' + significadoEsc + '">' + match + '</span>';
     });
@@ -18607,7 +18622,16 @@ function mkQ(q, modoRevisao){
   }
 
   var en=document.createElement('div');en.className='qe';
-  en.innerHTML=destacarTermosGlossario(q.enunciado, q.materia).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+  // q.materia quase nunca existe de verdade (exQ(), o parser padrão de
+  // "[enunciado][V/F][explicação]", NUNCA seta esse campo por questão) —
+  // a matéria de uma bateria "Certo/Errado" vem da taxonomia escolhida na
+  // CRIAÇÃO da prova e fica em C.materia (ver MAPA_TAXONOMIA em
+  // processarUpload/módulos de playlist), não em cada questão. Sem esse
+  // fallback, destacarTermosGlossario recebia materia=undefined e nunca
+  // destacava nada, em NENHUMA questão — era a causa real do "não
+  // funcionou" relatado (Chrome + Glossário com termos cadastrados, mas
+  // a matéria nunca chegava na função).
+  en.innerHTML=destacarTermosGlossario(q.enunciado, q.materia || C.materia).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
 
   var vg=document.createElement('div'); vg.className='vfg';
   var isMC=C.tipo==='mc'&&q.alternativas&&q.alternativas.length;
@@ -18693,7 +18717,7 @@ function mkQ(q, modoRevisao){
     var et=document.createElement('div'); et.className='etx'; et.id='et-'+q.id;
     if (q.explicacao) {
         var expText = document.createElement('div');
-        expText.innerHTML = destacarTermosGlossario(q.explicacao, q.materia)
+        expText.innerHTML = destacarTermosGlossario(q.explicacao, q.materia || C.materia)
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/(?<!\*)\*(?!\*)(.*?)\*(?!\*)/g,'<em>$1</em>');
         et.appendChild(expText);
