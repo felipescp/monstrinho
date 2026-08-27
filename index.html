@@ -5014,6 +5014,10 @@ if(ri) {
        arquivo carregado, antes de agrupar por prioridade (Fase 2). */
     .crono-gerador-fase1-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); margin-bottom:4px; }
     .crono-gerador-fase1-sub { font-size:11.5px; color:var(--text-muted); line-height:1.5; margin-bottom:10px; }
+    .crono-gerador-fase1-modo { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:8px 10px; margin-bottom:10px; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:8px; }
+    .crono-gerador-fase1-modo-label { font-size:11px; font-weight:800; color:var(--text-main); }
+    .crono-gerador-fase1-modo-opcao { display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; color:var(--text-main); cursor:pointer; user-select:none; }
+    .crono-gerador-fase1-modo-opcao input[type="radio"] { cursor:pointer; }
     .crono-gerador-fase1-acoes { display:flex; gap:14px; margin-bottom:6px; }
     .crono-gerador-materia-row { display:flex; align-items:center; gap:8px; padding:7px 2px; border-bottom:1px solid #f1f5f9; cursor:pointer; }
     .crono-gerador-materia-row input[type="checkbox"] { flex-shrink:0; cursor:pointer; }
@@ -6692,6 +6696,9 @@ window.CRONOGRAMA_RUNTIME = {
             brutoCarregado: null,
             materiasDisponiveis: null,
             materiasSelecionadas: {},
+            // Rádio "Organizar cards por" da Fase 1 — 'didatica' (padrão)
+            // ou 'recorrencia'. Ver _intercalarProporcional.
+            modoOrganizacao: 'didatica',
             config: {
                 dias: { segunda: 'normal', terca: 'normal', quarta: 'normal', quinta: 'normal', sexta: 'normal', sabado: 'reduzido', domingo: 'descanso' },
                 inicio: this._formatarISO(new Date()),
@@ -6950,6 +6957,15 @@ window.CRONOGRAMA_RUNTIME = {
         this._renderGeradorCorpo();
     },
 
+    // Rádio "Organizar cards por" da Fase 1 — só re-renderiza a Fase 1 (não
+    // recalcula nada ainda; o modo só é aplicado de fato em
+    // confirmarSelecaoMateriasGerador, quando os grupos são montados).
+    definirModoOrganizacaoGerador: function(modo) {
+        if (!this._gerador) return;
+        this._gerador.modoOrganizacao = (modo === 'recorrencia') ? 'recorrencia' : 'didatica';
+        this._renderGeradorCorpo();
+    },
+
     // Fase 1 -> Fase 2: filtra o array bruto pelas matérias marcadas, agrupa
     // por prioridade e intercala proporcionalmente dentro de cada grupo —
     // exatamente a lógica que antes rodava direto em _processarArquivoPrioridade,
@@ -6990,8 +7006,9 @@ window.CRONOGRAMA_RUNTIME = {
                 recorrencia: item.recorrencia
             });
         });
+        let modo = g.modoOrganizacao || 'didatica';
         ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
-            grupos[tier] = self._intercalarProporcional(grupos[tier]);
+            grupos[tier] = self._intercalarProporcional(grupos[tier], modo);
         });
 
         g.grupos = grupos;
@@ -7386,9 +7403,18 @@ window.CRONOGRAMA_RUNTIME = {
             '</label>';
         }).join('');
 
+        let modoAtual = g.modoOrganizacao || 'didatica';
+        let htmlModoOrganizacao =
+            '<div class="crono-gerador-fase1-modo">' +
+                '<span class="crono-gerador-fase1-modo-label">Organizar cards por:</span>' +
+                '<label class="crono-gerador-fase1-modo-opcao"><input type="radio" name="crono-modo-organizacao" value="recorrencia" ' + (modoAtual === 'recorrencia' ? 'checked' : '') + ' onchange="window.CRONOGRAMA_RUNTIME.definirModoOrganizacaoGerador(\'recorrencia\')"> Recorrência em provas</label>' +
+                '<label class="crono-gerador-fase1-modo-opcao"><input type="radio" name="crono-modo-organizacao" value="didatica" ' + (modoAtual === 'didatica' ? 'checked' : '') + ' onchange="window.CRONOGRAMA_RUNTIME.definirModoOrganizacaoGerador(\'didatica\')"> Sequência tradicional didática</label>' +
+            '</div>';
+
         corpoEl.innerHTML =
             '<div class="crono-gerador-fase1-titulo">Selecione as disciplinas</div>' +
             '<div class="crono-gerador-fase1-sub">' + totalGeral + ' card(s) no arquivo, em ' + g.materiasDisponiveis.length + ' disciplina(s). Desmarque as que não quer incluir neste cronograma.</div>' +
+            htmlModoOrganizacao +
             '<div class="crono-gerador-fase1-acoes">' +
                 '<button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.selecionarTodasMateriasGerador(true)">Selecionar todas</button>' +
                 '<button class="crono-gerador-trocar-arquivo" onclick="window.CRONOGRAMA_RUNTIME.selecionarTodasMateriasGerador(false)">Nenhuma</button>' +
