@@ -2028,6 +2028,294 @@ window.__migrarSessaoAtivaSeNecessario__ = async function(dadosLidos) {
 window.__sessaoAtivaPromise__ = window.lerSessaoAtiva();
 
 // =========================================================================
+// CAMADA DE ACESSO: ESQUEMAS (tjpe_v1__esquemas_runtime)
+// =========================================================================
+// Mesmo padrão do Arquivo Morto acima: cache síncrono em memória (evita
+// tornar assíncrono qualquer um dos muitos call sites de
+// ESQUEMAS_RUNTIME.salvar()/carregar() espalhados pela seção — nenhum
+// precisa de await, exatamente como salvarArquivoMorto já documenta).
+// Migrado porque o conteúdo HTML rico de esquemas pessoais já estourou a
+// cota do localStorage de verdade — QuotaExceededError confirmado no
+// console (ver comentário em ESQUEMAS_RUNTIME.salvar()).
+window.CHAVE_ESQUEMAS_RUNTIME = 'tjpe_v1__esquemas_runtime';
+window.CHAVE_ESQUEMAS_RUNTIME_IDB = 'esquemas_runtime';
+let _esquemasRuntimeCache = null;
+
+window.lerEsquemasBruto = function() {
+    return _esquemasRuntimeCache;
+};
+
+window.salvarEsquemasBruto = function(jsonString) {
+    _esquemasRuntimeCache = jsonString; // síncrono e imediato — nada muda pros chamadores
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_ESQUEMAS_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[ESQUEMAS] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__esquemasHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_ESQUEMAS_RUNTIME_IDB);
+        if (valor !== undefined) { _esquemasRuntimeCache = valor; return; }
+
+        // Ainda não migrado — cai pro localStorage, migra, só apaga a
+        // origem DEPOIS de confirmar a gravação no IndexedDB.
+        let bruto = localStorage.getItem(window.CHAVE_ESQUEMAS_RUNTIME);
+        _esquemasRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_ESQUEMAS_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_ESQUEMAS_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        // Se ESQUEMAS_RUNTIME.carregar() já rodou antes disto terminar
+        // (ex.: "Baralhos associados" do Cronograma chamando
+        // _garantirCarregado() cedo), o cache lido na hora estava vazio —
+        // recarrega agora com o valor de verdade e corrige a tela se
+        // algo já estiver aberto. Mesmo espírito do finally do Arquivo
+        // Morto (renderHomeDashboard) e da correção da corrida dos
+        // "oficiais" em MATERIAIS_RUNTIME/ESQUEMAS_RUNTIME/JURISPRUDENCIA_RUNTIME.
+        if (window.ESQUEMAS_RUNTIME) {
+            window.ESQUEMAS_RUNTIME.carregar();
+            if (typeof window.ESQUEMAS_RUNTIME.render === 'function') {
+                try { window.ESQUEMAS_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+// Chaves já migradas pra IndexedDB — SALINHA_BACKUP.construirPayload()/
+// aplicarPayloadMerge() consultam este mapa pra ler/escrever por aqui em
+// vez de localStorage direto (senão nunca veriam o dado real depois da
+// migração, nem persistiriam o resultado do merge onde o app realmente lê).
+// Populado incrementalmente conforme cada seção migra.
+window.CAMADAS_STORAGE_MIGRADAS = window.CAMADAS_STORAGE_MIGRADAS || {};
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ESQUEMAS_RUNTIME] = { ler: window.lerEsquemasBruto, salvar: window.salvarEsquemasBruto };
+
+// =========================================================================
+// CAMADA DE ACESSO: JURISPRUDÊNCIA (tjpe_v1__jurisprudencia_runtime)
+// =========================================================================
+// Mesmo padrão de Esquemas acima — fichas pessoais extensas (ementa, tese)
+// com o mesmo risco de estourar a cota do localStorage.
+window.CHAVE_JURISPRUDENCIA_RUNTIME = 'tjpe_v1__jurisprudencia_runtime';
+window.CHAVE_JURISPRUDENCIA_RUNTIME_IDB = 'jurisprudencia_runtime';
+let _jurisprudenciaRuntimeCache = null;
+
+window.lerJurisprudenciaBruto = function() {
+    return _jurisprudenciaRuntimeCache;
+};
+
+window.salvarJurisprudenciaBruto = function(jsonString) {
+    _jurisprudenciaRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_JURISPRUDENCIA_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[JURISPRUDÊNCIA] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__jurisprudenciaHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_JURISPRUDENCIA_RUNTIME_IDB);
+        if (valor !== undefined) { _jurisprudenciaRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_JURISPRUDENCIA_RUNTIME);
+        _jurisprudenciaRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_JURISPRUDENCIA_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_JURISPRUDENCIA_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.JURISPRUDENCIA_RUNTIME) {
+            window.JURISPRUDENCIA_RUNTIME.carregar();
+            if (typeof window.JURISPRUDENCIA_RUNTIME.render === 'function') {
+                try { window.JURISPRUDENCIA_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_JURISPRUDENCIA_RUNTIME] = { ler: window.lerJurisprudenciaBruto, salvar: window.salvarJurisprudenciaBruto };
+
+// =========================================================================
+// CAMADA DE ACESSO: MATERIAIS (tjpe_v1__materiais_runtime)
+// =========================================================================
+// Mesmo padrão de Esquemas/Jurisprudência acima.
+window.CHAVE_MATERIAIS_RUNTIME = 'tjpe_v1__materiais_runtime';
+window.CHAVE_MATERIAIS_RUNTIME_IDB = 'materiais_runtime';
+let _materiaisRuntimeCache = null;
+
+window.lerMateriaisBruto = function() {
+    return _materiaisRuntimeCache;
+};
+
+window.salvarMateriaisBruto = function(jsonString) {
+    _materiaisRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_MATERIAIS_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[MATERIAIS] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__materiaisHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_MATERIAIS_RUNTIME_IDB);
+        if (valor !== undefined) { _materiaisRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_MATERIAIS_RUNTIME);
+        _materiaisRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_MATERIAIS_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_MATERIAIS_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.MATERIAIS_RUNTIME) {
+            window.MATERIAIS_RUNTIME.carregar();
+            if (typeof window.MATERIAIS_RUNTIME.render === 'function') {
+                try { window.MATERIAIS_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_MATERIAIS_RUNTIME] = { ler: window.lerMateriaisBruto, salvar: window.salvarMateriaisBruto };
+
+// =========================================================================
+// CAMADA DE ACESSO: GLOSSÁRIO (tjpe_v1__glossario_runtime)
+// =========================================================================
+// Mesmo padrão das demais acima.
+window.CHAVE_GLOSSARIO_RUNTIME = 'tjpe_v1__glossario_runtime';
+window.CHAVE_GLOSSARIO_RUNTIME_IDB = 'glossario_runtime';
+let _glossarioRuntimeCache = null;
+
+window.lerGlossarioBruto = function() {
+    return _glossarioRuntimeCache;
+};
+
+window.salvarGlossarioBruto = function(jsonString) {
+    _glossarioRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_GLOSSARIO_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[GLOSSARIO] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__glossarioHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_GLOSSARIO_RUNTIME_IDB);
+        if (valor !== undefined) { _glossarioRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_GLOSSARIO_RUNTIME);
+        _glossarioRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_GLOSSARIO_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_GLOSSARIO_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.GLOSSARIO_RUNTIME) {
+            window.GLOSSARIO_RUNTIME.carregar();
+            if (typeof window.GLOSSARIO_RUNTIME.render === 'function') {
+                try { window.GLOSSARIO_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_GLOSSARIO_RUNTIME] = { ler: window.lerGlossarioBruto, salvar: window.salvarGlossarioBruto };
+
+// =========================================================================
+// CAMADA DE ACESSO: FLASHCARDS (tjpe_v1__flashcards_runtime)
+// =========================================================================
+// Mesmo padrão das demais acima.
+window.CHAVE_FLASHCARDS_RUNTIME = 'tjpe_v1__flashcards_runtime';
+window.CHAVE_FLASHCARDS_RUNTIME_IDB = 'flashcards_runtime';
+let _flashcardsRuntimeCache = null;
+
+window.lerFlashcardsBruto = function() {
+    return _flashcardsRuntimeCache;
+};
+
+window.salvarFlashcardsBruto = function(jsonString) {
+    _flashcardsRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_FLASHCARDS_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[FLASHCARDS] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__flashcardsHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_FLASHCARDS_RUNTIME_IDB);
+        if (valor !== undefined) { _flashcardsRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_FLASHCARDS_RUNTIME);
+        _flashcardsRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_FLASHCARDS_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_FLASHCARDS_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.FLASHCARDS_RUNTIME) {
+            window.FLASHCARDS_RUNTIME.carregar();
+            if (typeof window.FLASHCARDS_RUNTIME.render === 'function') {
+                try { window.FLASHCARDS_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_FLASHCARDS_RUNTIME] = { ler: window.lerFlashcardsBruto, salvar: window.salvarFlashcardsBruto };
+
+// =========================================================================
+// CAMADA DE ACESSO: CRONOGRAMA (tjpe_v1__cronograma_runtime)
+// =========================================================================
+// Mesmo padrão das demais acima — foi o caso que originalmente motivou
+// toda essa migração (cronogramas grandes por prioridade estourando a
+// cota do localStorage).
+window.CHAVE_CRONOGRAMA_RUNTIME = 'tjpe_v1__cronograma_runtime';
+window.CHAVE_CRONOGRAMA_RUNTIME_IDB = 'cronograma_runtime';
+let _cronogramaRuntimeCache = null;
+
+window.lerCronogramaBruto = function() {
+    return _cronogramaRuntimeCache;
+};
+
+window.salvarCronogramaBruto = function(jsonString) {
+    _cronogramaRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_CRONOGRAMA_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[CRONOGRAMA] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__cronogramaHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_CRONOGRAMA_RUNTIME_IDB);
+        if (valor !== undefined) { _cronogramaRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_CRONOGRAMA_RUNTIME);
+        _cronogramaRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_CRONOGRAMA_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_CRONOGRAMA_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.CRONOGRAMA_RUNTIME) {
+            window.CRONOGRAMA_RUNTIME.carregar();
+            if (typeof window.CRONOGRAMA_RUNTIME.render === 'function') {
+                try { window.CRONOGRAMA_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_CRONOGRAMA_RUNTIME] = { ler: window.lerCronogramaBruto, salvar: window.salvarCronogramaBruto };
+
+// =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
 // =========================================================================
 window.SALINHA_BACKUP = {
@@ -2099,8 +2387,12 @@ window.SALINHA_BACKUP = {
                 }
                 continue;
             }
-            let valor = localStorage.getItem(chave);
-            if (valor !== null) {
+            // Chaves já migradas pra IndexedDB (ver CAMADAS_STORAGE_MIGRADAS,
+            // perto de lerArquivoMorto/lerSessaoAtiva) — leem pela camada
+            // própria, não mais localStorage direto.
+            let camadaMigrada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+            let valor = camadaMigrada ? camadaMigrada.ler() : localStorage.getItem(chave);
+            if (valor !== null && valor !== undefined) {
                 payload.data[chave] = valor;
             }
         }
@@ -2321,7 +2613,12 @@ window.SALINHA_BACKUP = {
                 return;
             }
 
-            const valorLocalBruto = localStorage.getItem(chaveDestinoLocal);
+            // Chave já migrada pra IndexedDB (ver CAMADAS_STORAGE_MIGRADAS) —
+            // lê/escreve pela camada própria em vez de localStorage direto;
+            // usado tanto na leitura logo abaixo quanto na gravação no fim
+            // deste bloco (variável de fora capturada pelo closure).
+            const camadaMergeMigrada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chaveDestinoLocal];
+            const valorLocalBruto = camadaMergeMigrada ? camadaMergeMigrada.ler() : localStorage.getItem(chaveDestinoLocal);
             let objImportado = null;
             let objLocal = null;
 
@@ -3210,7 +3507,8 @@ window.SALINHA_BACKUP = {
 
             if (persistirChave) {
                 try {
-                    localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal));
+                    if (camadaMergeMigrada) { camadaMergeMigrada.salvar(JSON.stringify(objLocal)); }
+                    else { localStorage.setItem(chaveDestinoLocal, JSON.stringify(objLocal)); }
                     chavesMutadas++;
                 } catch (e) {
                     console.warn('[MERGE] Falha ao persistir "' + chaveDestinoLocal + '" (provável falta de espaço):', e);
@@ -4795,7 +5093,7 @@ window.CRONOGRAMA_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerCronogramaBruto() || 'null'); } catch (e) { bruto = null; }
         this.planners = (bruto && typeof bruto.planners === 'object') ? bruto.planners : {};
         this.activePlannerId = (bruto && bruto.activePlannerId) || null;
         // Lápide de exclusões { plannerId → data ISO da exclusão } — sem isso,
@@ -4826,7 +5124,7 @@ window.CRONOGRAMA_RUNTIME = {
     _ultimoErroSalvar: null,
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos, zoomCronograma: this.zoomCronograma }));
+            window.salvarCronogramaBruto(JSON.stringify({ planners: this.planners, activePlannerId: this.activePlannerId, excluidos: this.excluidos, zoomCronograma: this.zoomCronograma }));
             this._ultimoErroSalvar = null;
             return true;
         } catch (e) {
@@ -6374,8 +6672,9 @@ window.CRONOGRAMA_RUNTIME = {
     // ── GERADOR DE CRONOGRAMA POR PRIORIDADE ──
     // Modo de importação alternativo: em vez de um JSON já organizado em
     // semana/dia, aceita uma LISTA achatada de cards só com prioridade
-    // (materia/topico/prioridade/id_taxonomia/justificativa/metodo, sem
-    // "data" nem posição) e distribui automaticamente pelas semanas/dias
+    // (materia/topico/prioridade/id_taxonomia/justificativa/metodo/
+    // ordem_didatica/recorrencia, sem "data" nem posição) e distribui
+    // automaticamente pelas semanas/dias
     // conforme a configuração do usuário (Normal/Reduzido/Descanso por dia +
     // cotas por prioridade). Estado 100% transiente em this._gerador —
     // nunca persiste, e só produz um cronograma de verdade quando o
@@ -6491,6 +6790,38 @@ window.CRONOGRAMA_RUNTIME = {
         return 'outras';
     },
 
+    // Matérias "de peso" entram primeiro no cronograma, pra dar
+    // credibilidade logo de cara (pedido do usuário) — tier 1:
+    // Constitucional/Administrativo/Civil/Penal (cobre "Processual Civil"/
+    // "Processual Penal" também, por conterem "civil"/"penal" como
+    // substring); tier 2: Criança e Adolescente/Consumidor; tier 3: todas
+    // as demais. Comparação por substring, sem acento/caixa (mesmo padrão
+    // de normalização de _normalizarPrioridade) — cobre "Direito
+    // Constitucional", "DIREITO CONSTITUCIONAL", "Constitucional" etc.
+    // sem exigir bater o nome exato da matéria.
+    _TIER1_MATERIAS_PESO: ['constitucional', 'administrativo', 'civil', 'penal'],
+    _TIER2_MATERIAS_PESO: ['crianca', 'adolescente', 'consumidor'],
+    _pesoMateria: function(materia) {
+        let norm = (materia || '').toString().toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+        if (this._TIER1_MATERIAS_PESO.some(function(k) { return norm.indexOf(k) !== -1; })) return 1;
+        if (this._TIER2_MATERIAS_PESO.some(function(k) { return norm.indexOf(k) !== -1; })) return 2;
+        return 3;
+    },
+
+    // Peso final de uma matéria pro desempate de _intercalarProporcional —
+    // se o arquivo já trouxe ordem_didatica explícita (mesmo valor em
+    // todos os cards da matéria, ver confirmarSelecaoMateriasGerador/
+    // _processarArquivoAdicionar), usa ela: dá controle total sobre a
+    // ordem tradicional COMPLETA (1 a X, qualquer conjunto de matérias),
+    // em vez de só os 3 tiers fixos por palavra-chave de _pesoMateria.
+    // cardsDaMateria é a lista já agrupada (todos compartilham a mesma
+    // matéria, então o valor de ordem_didatica do primeiro basta).
+    _pesoOrdemMateria: function(materia, cardsDaMateria) {
+        let explicita = cardsDaMateria && cardsDaMateria[0] && cardsDaMateria[0].ordem_didatica;
+        if (typeof explicita === 'number' && !isNaN(explicita)) return explicita;
+        return this._pesoMateria(materia);
+    },
+
     // Reordena um array de cards (já filtrado por UMA prioridade só) pra
     // intercalar as matérias PROPORCIONALMENTE ao tamanho de cada uma —
     // nunca "1 de cada, sempre" (isso esgota rápido as matérias pequenas,
@@ -6500,12 +6831,25 @@ window.CRONOGRAMA_RUNTIME = {
     // agora — a mais "atrasada" em relação à própria cota — então uma
     // matéria com 40 cards e outra com 5 terminam suas cotas quase juntas,
     // espalhadas pelo horizonte inteiro, cada uma no seu próprio ritmo.
-    // Empate (ex.: todo mundo em 0 no início) vai pra quem apareceu
-    // primeiro no arquivo — determinístico, sem aleatoriedade. Ordem
-    // interna de cada matéria (sequência dos tópicos no arquivo original)
-    // é sempre preservada.
+    // Empate (ex.: todo mundo em 0 no início) vai pra quem tiver o menor
+    // _pesoOrdemMateria (matérias de peso primeiro); dentro do mesmo peso,
+    // desempate por ordem de aparição no arquivo (sort é estável) —
+    // determinístico, sem aleatoriedade.
+    //
+    // Ordem interna de cada matéria: por padrão, a sequência dos tópicos
+    // no arquivo original é preservada — MAS se algum card trouxer
+    // recorrencia (quanto MAIOR, mais cobrado/recorrente em provas
+    // anteriores), os tópicos daquela matéria são reordenados do mais pro
+    // menos recorrente antes de entrar na fila. Sem isso, um tópico
+    // residual (ex.: "Outras resoluções" de baixa recorrência) podia
+    // aparecer cedo no cronograma só por estar cedo no arquivo, dentro da
+    // matéria dele — com recorrencia informada, ele afunda pro fim da
+    // fila daquela matéria automaticamente. Tópicos sem recorrencia
+    // informada ficam no fim (entre si, mantêm a ordem original do
+    // arquivo — sort estável).
     _intercalarProporcional: function(cards) {
         if (cards.length <= 1) return cards.slice();
+        let self = this;
 
         let porMateria = {};
         let ordemMaterias = [];
@@ -6513,6 +6857,14 @@ window.CRONOGRAMA_RUNTIME = {
             let m = c.materia || '';
             if (!porMateria[m]) { porMateria[m] = []; ordemMaterias.push(m); }
             porMateria[m].push(c);
+        });
+        ordemMaterias.sort(function(a, b) { return self._pesoOrdemMateria(a, porMateria[a]) - self._pesoOrdemMateria(b, porMateria[b]); });
+        Object.keys(porMateria).forEach(function(m) {
+            porMateria[m].sort(function(x, y) {
+                let rx = (typeof x.recorrencia === 'number' && !isNaN(x.recorrencia)) ? x.recorrencia : -Infinity;
+                let ry = (typeof y.recorrencia === 'number' && !isNaN(y.recorrencia)) ? y.recorrencia : -Infinity;
+                return ry - rx; // decrescente: mais recorrente primeiro
+            });
         });
 
         let emitidos = {};
@@ -6600,7 +6952,21 @@ window.CRONOGRAMA_RUNTIME = {
                 prioridade: item.prioridade || '',
                 justificativa: item.justificativa || '',
                 id_taxonomia: item.id_taxonomia,
-                metodo: item.metodo
+                metodo: item.metodo,
+                // Opcionais — ver _pesoOrdemMateria/_intercalarProporcional.
+                // ordem_didatica: mesmo valor em todos os cards da MATÉRIA
+                // (não por card) — 1 = matéria vista primeiro na ordem
+                // tradicional das disciplinas, 2 = seguinte, etc. Quando
+                // presente, substitui o heurístico por palavra-chave de
+                // _pesoMateria (cobre qualquer matéria, não só as 6-8
+                // reconhecidas por nome). recorrencia: por TÓPICO — quanto
+                // maior, mais cobrado/recorrente em provas anteriores;
+                // ordena os tópicos DENTRO da fila de cada matéria (mais
+                // recorrente primeiro), em vez de manter a ordem crua do
+                // arquivo — evita que um tópico residual (baixa
+                // recorrência) apareça cedo só por estar cedo no arquivo.
+                ordem_didatica: item.ordem_didatica,
+                recorrencia: item.recorrencia
             });
         });
         ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
@@ -6675,15 +7041,24 @@ window.CRONOGRAMA_RUNTIME = {
         return ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'][indiceGetDay];
     },
 
-    // Reduzido = metade da cota Normal, arredondada pra baixo, mínimo 1
-    // (uma cota de 1 vira "1" mesmo reduzida — só zera se a prioridade já
-    // estiver marcada "Não incluir" na origem, cota 0). Dia marcado
-    // "Descanso" é tratado à parte por quem chama (nenhuma prioridade
-    // entra nele).
-    _cotaEfetiva: function(base, estado) {
-        if (!base) return 0;
-        if (estado === 'reduzido') return Math.max(1, Math.floor(base / 2));
-        return base;
+    // Orçamento de cards do DIA INTEIRO — Normal: soma das cotas de todas
+    // as prioridades (cada uma emite até a própria cota, dentro desse
+    // teto). Reduzido: METADE do total do dia normal (arredondado pra
+    // baixo, mínimo 1 se havia algo a distribuir) — não metade de CADA
+    // prioridade separada. Correção de um bug relatado: antes, cada cota
+    // reduzida caía no próprio "mínimo 1" individualmente (a extinta
+    // _cotaEfetiva(base, estado)), então 1 crítica + 1 alta num dia normal
+    // (2 cards) continuava virando 1+1=2 também num dia Reduzido — o
+    // "reduzido" não reduzia nada quando as cotas já eram 1. Agora esse
+    // mesmo cenário vira 1 card no Reduzido (a crítica consome o único
+    // slot, na ordem de prioridade crítica > alta > média > baixa,
+    // sobrando 0 pra alta). Dia "Descanso" é tratado à parte por quem
+    // chama (nenhuma prioridade entra nele, nem passa por aqui).
+    _orcamentoDoDia: function(cotas, estado) {
+        let total = (cotas.critica || 0) + (cotas.alta || 0) + (cotas.media || 0) + (cotas.baixa || 0);
+        if (total === 0) return 0;
+        if (estado === 'reduzido') return Math.max(1, Math.floor(total / 2));
+        return total;
     },
 
     // Tira o próximo card de UMA fila (já intercalada por _intercalarProporcional)
@@ -6736,9 +7111,10 @@ window.CRONOGRAMA_RUNTIME = {
 
             if (estado !== 'descanso') {
                 let materiasHoje = new Set();
+                let orcamentoHoje = self._orcamentoDoDia(cfg.cotas, estado);
                 ordemTiers.forEach(function(tier) {
-                    let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
-                    for (let k = 0; k < cota && filas[tier].length > 0; k++) {
+                    let cota = cfg.cotas[tier] || 0;
+                    for (let k = 0; k < cota && orcamentoHoje > 0 && filas[tier].length > 0; k++) {
                         let bruto = self._proximoSemColisao(filas[tier], materiasHoje);
                         materiasHoje.add(bruto.materia);
                         planejamentoBruto[semanaChave][diaKey].push({
@@ -6750,6 +7126,7 @@ window.CRONOGRAMA_RUNTIME = {
                             metodo: bruto.metodo,
                             data: dataISO
                         });
+                        orcamentoHoje--;
                     }
                 });
             }
@@ -7012,7 +7389,7 @@ window.CRONOGRAMA_RUNTIME = {
         if (!g.grupos && !g.brutoCarregado) {
             corpoEl.innerHTML =
                 '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:40px 20px;">' +
-                    '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — sem data nem semana/dia, só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>.</div>' +
+                    '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — sem data nem semana/dia, só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>/<code>ordem_didatica</code>/<code>recorrencia</code>.</div>' +
                     '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsPrioridadeJSON()">⬆️ Carregar Arquivo de Cards</div>' +
                 '</div>';
             return;
@@ -7188,7 +7565,21 @@ window.CRONOGRAMA_RUNTIME = {
                 prioridade: item.prioridade || '',
                 justificativa: item.justificativa || '',
                 id_taxonomia: item.id_taxonomia,
-                metodo: item.metodo
+                metodo: item.metodo,
+                // Opcionais — ver _pesoOrdemMateria/_intercalarProporcional.
+                // ordem_didatica: mesmo valor em todos os cards da MATÉRIA
+                // (não por card) — 1 = matéria vista primeiro na ordem
+                // tradicional das disciplinas, 2 = seguinte, etc. Quando
+                // presente, substitui o heurístico por palavra-chave de
+                // _pesoMateria (cobre qualquer matéria, não só as 6-8
+                // reconhecidas por nome). recorrencia: por TÓPICO — quanto
+                // maior, mais cobrado/recorrente em provas anteriores;
+                // ordena os tópicos DENTRO da fila de cada matéria (mais
+                // recorrente primeiro), em vez de manter a ordem crua do
+                // arquivo — evita que um tópico residual (baixa
+                // recorrência) apareça cedo só por estar cedo no arquivo.
+                ordem_didatica: item.ordem_didatica,
+                recorrencia: item.recorrencia
             });
         });
         ['critica', 'alta', 'media', 'baixa'].forEach(function(tier) {
@@ -7255,7 +7646,8 @@ window.CRONOGRAMA_RUNTIME = {
     // "esgota uma fila por vez" do Gerador (Crítica→Alta→Média→Baixa),
     // só que a fonte dos dias é o planejamento real, não dias sintetizados
     // a partir de uma data de início. Dia "Descanso" não recebe nada; os
-    // demais recebem conforme a cota (Reduzido = metade, via _cotaEfetiva).
+    // demais recebem conforme o orçamento do dia (Reduzido = metade do
+    // total do dia, via _orcamentoDoDia).
     // Não cria semana nova — só encaixa no que já existe.
     _simularInsercaoCards: function() {
         let a = this._adicionarCards;
@@ -7281,12 +7673,14 @@ window.CRONOGRAMA_RUNTIME = {
                 if (estado === 'descanso') return;
                 let novosNesseDia = [];
                 let materiasHoje = new Set();
+                let orcamentoHoje = self._orcamentoDoDia(cfg.cotas, estado);
                 ordemTiers.forEach(function(tier) {
-                    let cota = self._cotaEfetiva(cfg.cotas[tier], estado);
-                    for (let k = 0; k < cota && filas[tier].length > 0; k++) {
+                    let cota = cfg.cotas[tier] || 0;
+                    for (let k = 0; k < cota && orcamentoHoje > 0 && filas[tier].length > 0; k++) {
                         let bruto = self._proximoSemColisao(filas[tier], materiasHoje);
                         materiasHoje.add(bruto.materia);
                         novosNesseDia.push(bruto);
+                        orcamentoHoje--;
                     }
                 });
                 if (novosNesseDia.length > 0) {
@@ -7399,7 +7793,7 @@ window.CRONOGRAMA_RUNTIME = {
         if (!a.grupos) {
             corpoEl.innerHTML = htmlBanner +
                 '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:40px 20px;">' +
-                    '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>.</div>' +
+                    '<div style="margin-bottom:14px; line-height:1.6;">Carregue um arquivo JSON com uma lista de cards de prioridade — só <code>materia</code>, <code>topico</code>, <code>prioridade</code> e, se tiver, <code>id_taxonomia</code>/<code>justificativa</code>/<code>metodo</code>/<code>ordem_didatica</code>/<code>recorrencia</code>.</div>' +
                     '<div class="crono-tab-add" style="display:inline-flex; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px;" onclick="window.CRONOGRAMA_RUNTIME.carregarCardsAdicionarJSON()">⬆️ Carregar Arquivo de Cards</div>' +
                 '</div>';
             return;
@@ -7809,7 +8203,7 @@ window.FLASHCARDS_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerFlashcardsBruto() || 'null'); } catch (e) { bruto = null; }
         this.manuais = (bruto && typeof bruto.manuais === 'object') ? bruto.manuais : {};
         this.revisao = (bruto && typeof bruto.revisao === 'object') ? bruto.revisao : {};
         this._migrarManuaisSeNecessario();
@@ -7845,7 +8239,7 @@ window.FLASHCARDS_RUNTIME = {
 
     salvar: function() {
         try {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ manuais: this.manuais, revisao: this.revisao }));
+            window.salvarFlashcardsBruto(JSON.stringify({ manuais: this.manuais, revisao: this.revisao }));
         } catch (e) {
             console.warn('[FLASHCARDS] Falha ao salvar:', e);
         }
@@ -9952,7 +10346,7 @@ window.MATERIAIS_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerMateriaisBruto() || 'null'); } catch (e) { bruto = null; }
         this.materiais = (bruto && typeof bruto.materiais === 'object' && !Array.isArray(bruto.materiais)) ? bruto.materiais : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         this._bootstrapped = true;
@@ -9978,7 +10372,7 @@ window.MATERIAIS_RUNTIME = {
                 let apenasPessoais = (self.materiais[chave] || []).filter(function(m) { return !m.origem_oficial; });
                 if (apenasPessoais.length > 0) materiaisPessoais[chave] = apenasPessoais;
             });
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ materiais: materiaisPessoais, ocultos: this.ocultos }));
+            window.salvarMateriaisBruto(JSON.stringify({ materiais: materiaisPessoais, ocultos: this.ocultos }));
             return true;
         } catch (e) {
             console.warn('[MATERIAIS] Falha ao salvar:', e);
@@ -11218,7 +11612,7 @@ window.GLOSSARIO_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerGlossarioBruto() || 'null'); } catch (e) { bruto = null; }
         this.glossario = (bruto && typeof bruto.glossario === 'object' && !Array.isArray(bruto.glossario)) ? bruto.glossario : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         this.excluidos = (bruto && typeof bruto.excluidos === 'object' && !Array.isArray(bruto.excluidos)) ? bruto.excluidos : {};
@@ -11247,7 +11641,7 @@ window.GLOSSARIO_RUNTIME = {
                 let apenasPessoais = (self.glossario[chave] || []).filter(function(t) { return !t.origem_oficial; });
                 if (apenasPessoais.length > 0) glossarioPessoal[chave] = apenasPessoais;
             });
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ glossario: glossarioPessoal, ocultos: this.ocultos, excluidos: this.excluidos, revisaoGlossario: this.revisaoGlossario, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorTermo: this.etiquetaPorTermo, coresCustomizadas: this.coresCustomizadas }));
+            window.salvarGlossarioBruto(JSON.stringify({ glossario: glossarioPessoal, ocultos: this.ocultos, excluidos: this.excluidos, revisaoGlossario: this.revisaoGlossario, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorTermo: this.etiquetaPorTermo, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[GLOSSARIO] Falha ao salvar:', e);
@@ -19954,32 +20348,26 @@ function _medirLocalStorageMonstrinho() {
 
 // Usado nos alertas de "falha ao salvar — provável falta de espaço" (ver
 // CRONOGRAMA_RUNTIME._sufixoFalhaSalvar) pra trocar "provável" por número
-// de verdade: navigator.storage.estimate() (suportado na maioria dos
-// navegadores modernos, exceto Safari em alguns casos) devolve quanto do
-// disco a ORIGEM já usa (localStorage + IndexedDB + caches de QUALQUER
-// projeto sob esse mesmo domínio, não só o Monstrinho) e a cota
-// disponível — combinado com _medirLocalStorageMonstrinho() acima, separa
-// "quanto é do Monstrinho" de "quanto é de outra coisa nesta origem".
-// Retorna string vazia (não lança) se a API não existir ou falhar, pra
-// nunca quebrar o fluxo de alerta que a chama.
+// de verdade — SÓ com _medirLocalStorageMonstrinho() (soma síncrona e
+// exata do próprio localStorage, que é o que acabou de estourar).
+// DELIBERADAMENTE não usa navigator.storage.estimate(): esse "usage"/
+// "quota" refletem a cota GERAL da origem (IndexedDB/Cache/Service
+// Worker), que é um orçamento completamente separado do limite PRÓPRIO,
+// fixo e bem menor do localStorage (tipicamente 5–10 MB, mal relacionado
+// ao espaço livre em disco) — em navegadores baseados em Chromium, isso já
+// mostrou algo como "0% ocupado, 10 GB livres" no MESMO instante em que
+// localStorage.setItem() falhava por falta de espaço, porque o
+// localStorage nem entra nessa conta. Um número tecnicamente real, mas
+// que só confunde quem lê o alerta (parece contradizer a própria falha).
+// Retorna string vazia (não lança) se a medição falhar, pra nunca quebrar
+// o fluxo de alerta que a chama.
 async function estimarUsoArmazenamento() {
     try {
         let medicaoLocal = _medirLocalStorageMonstrinho();
         let mbMonstrinho = (medicaoLocal.totalMonstrinho / (1024 * 1024)).toFixed(1);
         let mbOutros = (medicaoLocal.totalOutros / (1024 * 1024)).toFixed(1);
         let sufixoOutros = medicaoLocal.totalOutros > 1024 ? (' + ' + mbOutros + ' MB de outras chaves nesta origem') : '';
-
-        if (!navigator.storage || typeof navigator.storage.estimate !== 'function') {
-            return ' (Monstrinho usa ' + mbMonstrinho + ' MB neste navegador' + sufixoOutros + ')';
-        }
-        let est = await navigator.storage.estimate();
-        if (!est || typeof est.usage !== 'number' || typeof est.quota !== 'number' || est.quota === 0) {
-            return ' (Monstrinho usa ' + mbMonstrinho + ' MB neste navegador' + sufixoOutros + ')';
-        }
-        let usoMb = (est.usage / (1024 * 1024)).toFixed(1);
-        let cotaMb = (est.quota / (1024 * 1024)).toFixed(0);
-        let pct = Math.round((est.usage / est.quota) * 100);
-        return ' (uso total desta origem — inclui QUALQUER outro projeto no mesmo domínio, não só o Monstrinho: ' + usoMb + ' MB de ' + cotaMb + ' MB — ' + pct + '% ocupado; o Monstrinho sozinho usa ' + mbMonstrinho + ' MB' + sufixoOutros + ')';
+        return ' (localStorage desta origem: Monstrinho usa ' + mbMonstrinho + ' MB' + sufixoOutros + ' — a maioria dos navegadores trava esse armazenamento específico em ~5–10 MB por origem, bem menor que a cota geral de disco; por isso, pode acontecer mesmo com bastante espaço livre no dispositivo)';
     } catch (e) {
         return '';
     }
@@ -23197,7 +23585,7 @@ window.ESQUEMAS_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerEsquemasBruto() || 'null'); } catch (e) { bruto = null; }
         this.esquemas = (bruto && typeof bruto.esquemas === 'object' && !Array.isArray(bruto.esquemas)) ? bruto.esquemas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         // Lápide de exclusões { id → data ISO } — sem isso, o merge de backup
@@ -23246,7 +23634,7 @@ window.ESQUEMAS_RUNTIME = {
                 let apenasPessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial; });
                 if (apenasPessoais.length > 0) esquemasPessoais[chave] = apenasPessoais;
             });
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ esquemas: esquemasPessoais, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
+            window.salvarEsquemasBruto(JSON.stringify({ esquemas: esquemasPessoais, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
@@ -26116,7 +26504,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lerJurisprudenciaBruto() || 'null'); } catch (e) { bruto = null; }
         this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         this.revisaoJurisprudencia = (bruto && typeof bruto.revisaoJurisprudencia === 'object' && !Array.isArray(bruto.revisaoJurisprudencia)) ? bruto.revisaoJurisprudencia : {};
@@ -26143,7 +26531,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let apenasPessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
                 if (apenasPessoais.length > 0) fichasPessoais[chave] = apenasPessoais;
             });
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
+            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
             return true;
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
