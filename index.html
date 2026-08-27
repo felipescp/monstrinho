@@ -18642,6 +18642,34 @@ function destacarTermosGlossario(texto, materia) {
     });
 }
 
+// Atualiza somente os trechos textuais do simulado já montado quando os
+// verbetes oficiais terminam de carregar. Não usa renderSim()/setQA(): assim
+// não recria controles, não toca no cronômetro e não muda a questão ativa.
+function atualizarDestaquesGlossarioSimuladoAtivo() {
+    if (!window.D || !Array.isArray(D.blocos) || !window.C) return;
+    D.blocos.forEach(function(bloco) {
+        (bloco.questoes || []).forEach(function(q) {
+            var card = g('q-' + q.id);
+            if (!card) return;
+            var materia = q.materia || C.materia;
+            var enunciado = card.querySelector('.qe');
+            if (enunciado) {
+                enunciado.innerHTML = destacarTermosGlossario(q.enunciado, materia)
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            }
+            if (q.explicacao) {
+                var explicacao = g('et-' + q.id);
+                var conteudoExplicacao = explicacao && explicacao.querySelector('div');
+                if (conteudoExplicacao) {
+                    conteudoExplicacao.innerHTML = destacarTermosGlossario(q.explicacao, materia)
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/(?<!\*)\*(?!\*)(.*?)\*(?!\*)/g, '<em>$1</em>');
+                }
+            }
+        });
+    });
+}
 // ── BALÃO FLUTUANTE DO GLOSSÁRIO (posicionamento dinâmico) ──
 // Substitui o antigo ::after com content:attr() sempre acima/centralizado
 // no termo — problema relatado: nascia coberto por barras sticky (perto do
@@ -19150,7 +19178,10 @@ window.garantirOficiaisParaBaralhosAssociados = function() {
         if (typeof window.carregarGlossarioOficial === 'function') promessas.push(window.carregarGlossarioOficial());
     }
     Promise.allSettled(promessas).then(function() {
-        try { if (typeof window.renderNav === 'function') window.renderNav(); } catch (e) { console.warn('[BARALHOS ASSOCIADOS] Falha ao re-renderizar após sincronizar:', e); }
+        try {
+            if (typeof window.atualizarDestaquesGlossarioSimuladoAtivo === 'function') window.atualizarDestaquesGlossarioSimuladoAtivo();
+            if (typeof window.renderNav === 'function') window.renderNav();
+        } catch (e) { console.warn('[BARALHOS ASSOCIADOS] Falha ao atualizar após sincronizar:', e); }
     });
 };
 
