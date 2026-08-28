@@ -21817,7 +21817,7 @@ if (idxExistente >= 0) {
 // MÓDULO: INICIALIZAÇÃO INSTANTÂNEA DA VITRINE (SPA)
 // ==========================================
 
-window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
+window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
 
     // Bloqueia abertura de bateria sem login com GitHub feito — só checa
     // presença do token (sem chamada de rede, não confirma que é aceito
@@ -21848,6 +21848,15 @@ window.iniciarSimuladoDaVitrine = function(simId, moduleIdx) {
     let provaAlvo = acervo.find(p => p.id === simId);
     
     if (!provaAlvo) { alert('Erro: Prova não encontrada no acervo.'); return; }
+
+    // Baterias oficiais ficam rasas no localStorage para não duplicar o
+    // conteúdo completo. Aguarda só quando a cópia integral ainda não está
+    // em memória, antes de montar C/D e a aba ativa.
+    if (provaAlvo.origem_oficial &&
+        (!window.ACERVO_OFICIAL_FULL || !window.ACERVO_OFICIAL_FULL[provaAlvo.id]) &&
+        window.__bootOficialPromise__) {
+        await window.__bootOficialPromise__;
+    }
 
     // O ID da aba depende se estamos abrindo um módulo específico ou uma bateria avulsa
     let targetId = (moduleIdx !== undefined && moduleIdx !== null) ? `${simId}_aba_${moduleIdx}` : simId;
