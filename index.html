@@ -18579,21 +18579,22 @@ function _escaparAtributoGlosSim(texto) {
     return (texto || '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// Sublinha, no texto BRUTO do enunciado/explicação (roda ANTES do
-// replace de **negrito**/*itálico* de mkQ, pra não ter que pular tags já
-// inseridas), as expressões do Glossário da MESMA disciplina da questão
-// (só disciplina — não trava no tópico, porque há questões abrangentes
-// que cruzam vários tópicos da matéria). Cobre Simulado em andamento E
-// revisão (mesma mkQ, só muda o parâmetro modoRevisao) — a Auditoria
-// (renderAuditoria) tem o próprio innerHTML e fica de fora de propósito.
-// Sem cache: o Glossário raramente passa de umas centenas de termos por
-// disciplina, e reconstruir a lista filtrada a cada questão é
-// desprezível perto do resto da renderização.
-function destacarTermosGlossario(texto, materia) {
-    if (!texto || !materia) return texto;
-    var runtime = window.GLOSSARIO_RUNTIME;
-    if (!runtime || !runtime.glossario) return texto;
-    var materiaAlvo = _normMateriaGlosSim(materia);
+// Cache do "matcher" (regex + tabela expressão->item) POR MATÉRIA —
+// bug relatado pelo usuário: sem cache, cada chamada varria TODO o
+// Glossário (todas as matérias, não só a da questão) e recompilava a
+// regex do zero; renderSim() chama mkQ() (2x isso aqui — enunciado e
+// explicação) pra CADA questão de CADA bloco, de uma vez, de forma
+// síncrona (ver b.questoes.forEach em renderSim) — com o Glossário já
+// grande (centenas de termos em várias matérias), isso virou o atraso
+// de renderização relatado em quase toda bateria, e travava a aba tempo
+// suficiente pra parecer que os cliques na vitrine "não funcionavam".
+// Troca-off aceito: se o usuário editar o Glossário DA MESMA matéria
+// enquanto uma bateria já está aberta na tela, o cache não vê a edição
+// até recarregar a página — cenário raro (editar Glossário no meio da
+// prova), não vale a complexidade de invalidação pra evitá-lo.
+var _cacheDestacarGlossario = {}; // materiaNormalizada -> {regex, porExpressao} | null (sem termos cadastrados)
+
+function _construirMatcherGlossario(runtime, materiaAlvo) {
     var porExpressao = {}; // expressão em minúsculas -> item {expressao, significado}
     Object.keys(runtime.glossario).forEach(function(chave) {
         var materiaChave = chave.split(' > ')[0] || '';
@@ -18607,7 +18608,7 @@ function destacarTermosGlossario(texto, materia) {
         });
     });
     var expressoes = Object.keys(porExpressao);
-    if (!expressoes.length) return texto;
+    if (!expressoes.length) return null;
     // Mais longa primeiro: garante que "Exceção de Contrato Não
     // Cumprido" vença "Contrato" quando os dois batem no mesmo trecho.
     expressoes.sort(function(a, b) { return b.length - a.length; });
@@ -18617,27 +18618,49 @@ function destacarTermosGlossario(texto, materia) {
     // SEM lookbehind (?<!...) de propósito: é suportado só a partir do
     // Safari 16.4 (2023) — em qualquer navegador mais velho a regex
     // lançava erro, caía no catch abaixo e o destaque não aparecia NUNCA,
-    // em nenhuma questão, sem aviso nenhum (bug relatado pelo usuário). A
+    // em nenhuma questão, sem aviso nenhum (outro bug já relatado). A
     // fronteira de palavra agora é checada manualmente no callback do
     // replace (offset/string, 3º e 4º argumentos), olhando o caractere
     // antes/depois do trecho casado — funciona em qualquer motor com
     // suporte a \p{...} (Unicode property escapes), que é bem mais antigo
     // (2018) e universal que lookbehind.
-    var regex;
     try {
-        regex = new RegExp('(' + alternativas.join('|') + ')', 'giu');
+        return { regex: new RegExp('(' + alternativas.join('|') + ')', 'giu'), porExpressao: porExpressao };
     } catch (e) {
-        return texto; // motor sem suporte nem a \p{...} — degrada sem quebrar
+        return null; // motor sem suporte nem a \p{...} — degrada sem quebrar
     }
-    function ehLetraOuNumero(ch) {
-        return !!ch && /[\p{L}\p{N}_]/u.test(ch);
+}
+
+function _ehLetraOuNumeroGlosSim(ch) {
+    return !!ch && /[\p{L}\p{N}_]/u.test(ch);
+}
+
+// Sublinha, no texto BRUTO do enunciado/explicação (roda ANTES do
+// replace de **negrito**/*itálico* de mkQ, pra não ter que pular tags já
+// inseridas), as expressões do Glossário da MESMA disciplina da questão
+// (só disciplina — não trava no tópico, porque há questões abrangentes
+// que cruzam vários tópicos da matéria). Cobre Simulado em andamento E
+// revisão (mesma mkQ, só muda o parâmetro modoRevisao) — a Auditoria
+// (renderAuditoria) tem o próprio innerHTML e fica de fora de propósito.
+function destacarTermosGlossario(texto, materia) {
+    if (!texto || !materia) return texto;
+    var runtime = window.GLOSSARIO_RUNTIME;
+    if (!runtime || !runtime.glossario) return texto;
+    var materiaAlvo = _normMateriaGlosSim(materia);
+
+    var entrada = _cacheDestacarGlossario[materiaAlvo];
+    if (entrada === undefined) {
+        entrada = _construirMatcherGlossario(runtime, materiaAlvo);
+        _cacheDestacarGlossario[materiaAlvo] = entrada;
     }
-    return texto.replace(regex, function(match, _grupo, offset, textoCompleto) {
-        var item = porExpressao[match.toLowerCase()];
+    if (!entrada) return texto;
+
+    return texto.replace(entrada.regex, function(match, _grupo, offset, textoCompleto) {
+        var item = entrada.porExpressao[match.toLowerCase()];
         if (!item) return match;
         var antes = offset > 0 ? textoCompleto[offset - 1] : '';
         var depois = (offset + match.length < textoCompleto.length) ? textoCompleto[offset + match.length] : '';
-        if (ehLetraOuNumero(antes) || ehLetraOuNumero(depois)) return match; // no meio de outra palavra — não destaca
+        if (_ehLetraOuNumeroGlosSim(antes) || _ehLetraOuNumeroGlosSim(depois)) return match; // no meio de outra palavra — não destaca
         var significadoEsc = _escaparAtributoGlosSim(item.significado || '');
         return '<span class="glos-termo-sim" data-significado="' + significadoEsc + '">' + match + '</span>';
     });
