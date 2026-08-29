@@ -21502,6 +21502,60 @@ window.excluirSimuladoIndividual = function(id) {
     } catch (e) {}
 
     // =========================================================================
+    // 3.5. PURGA DA SESSÃO ATIVA (abas ABERTAS no runtime em memória)
+    // =========================================================================
+    // Regressão relatada: bateria excluída "voltava" no F5, sempre com a
+    // aba aberta. Motivo: os 3 passos acima só limpam o CATÁLOGO (acervo/
+    // playlists/sims salvos), nunca o array SIMS em memória (as abas
+    // efetivamente ABERTAS agora) nem a "sessão ativa" persistida a partir
+    // dele — se a bateria excluída tinha uma aba aberta, ela sobrevivia
+    // ali e voltava a ser restaurada no próximo F5/carregamento. A versão
+    // anterior desta função (ver comentário "MOTOR DE EXCLUSÃO
+    // INDIVIDUAL" acima) fazia essa limpeza; a reescrita que blindou o bug
+    // do card sumindo perdeu esse passo por engano.
+    // Playlist: cada módulo aberto vira uma aba própria com id
+    // "<id>_aba_<n>" (ver iniciarSimuladoDaVitrine) — remove todas de uma vez.
+    // Sem confirm() aqui (o usuário já confirmou a exclusão acima) e com o
+    // mesmo cuidado de fecharTab(): invalida SI ANTES de trocar de aba/
+    // persistir, pra não gravar o D de uma aba já removida no slot que,
+    // após o array encolher, passou a pertencer a outra aba.
+    if (typeof SIMS !== 'undefined' && Array.isArray(SIMS) && SIMS.length) {
+        var abaAtivaId = (typeof SI === 'number' && SI >= 0 && SIMS[SI] && SIMS[SI].cfg) ? SIMS[SI].cfg.id : null;
+        var idAtivoFoiRemovido = false;
+        var simsRestantes = SIMS.filter(function(s) {
+            var simId = s && s.cfg && s.cfg.id;
+            var pertenceABateriaExcluida = simId === id || (typeof simId === 'string' && simId.indexOf(id + '_aba_') === 0);
+            if (pertenceABateriaExcluida && simId === abaAtivaId) idAtivoFoiRemovido = true;
+            return !pertenceABateriaExcluida;
+        });
+        if (simsRestantes.length !== SIMS.length) {
+            SIMS.length = 0;
+            Array.prototype.push.apply(SIMS, simsRestantes);
+            if (idAtivoFoiRemovido) {
+                SI = -1;
+                if (SIMS.length) {
+                    trocarTab(0); // já persiste a sessão ativa (chama autoSave() no final)
+                } else {
+                    D = { blocos: [], res: {}, fin: {}, caderno: [] };
+                    var telaSimAberta = g('tela-simulado');
+                    if (telaSimAberta) telaSimAberta.style.display = 'none';
+                    if (typeof renderTabs === 'function') renderTabs();
+                    window.salvarSessaoAtiva({ sims: [], si: -1 });
+                    tela('tela-home');
+                    if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+                }
+            } else {
+                // A aba ativa (se houver) não era da bateria excluída — só
+                // realinha SI (o array mudou de tamanho/posições) e
+                // persiste, sem trocar de tela.
+                SI = abaAtivaId ? SIMS.findIndex(function(s) { return s && s.cfg && s.cfg.id === abaAtivaId; }) : -1;
+                if (typeof renderTabs === 'function') renderTabs();
+                if (typeof autoSave === 'function') autoSave();
+            }
+        }
+    }
+
+    // =========================================================================
     // 4. MUTAÇÃO LOCALIZADA (UX Hardening síncrono para o DOM)
     // =========================================================================
     var elCard = document.getElementById('card-' + id);
