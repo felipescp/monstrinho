@@ -23633,6 +23633,10 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-btn-excluir:hover { color:var(--danger); }
     #esquemas-modal .esq-btn-ocultar { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
     #esquemas-modal .esq-btn-ocultar:hover { color:var(--app-primary); }
+    /* "🎨 Exportar .html" por card — oficiais e pessoais (não some pra
+       nenhum dos dois, ao contrário de excluir, que é só pra pessoais). */
+    #esquemas-modal .esq-btn-exportar { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #esquemas-modal .esq-btn-exportar:hover { color:var(--app-primary); }
     /* Etiqueta colorida no CARD — lado esquerdo do cabeçalho
        (.esq-card-tags-esq), extremo oposto do botão de excluir (à direita,
        .esq-btn-excluir), conforme referência visual anexada pelo usuário. */
@@ -23950,11 +23954,21 @@ window.triggerFileUpload = function(callback) {
     #modal-esquema-editor .esq-cor-dropdown.aberto { display:grid; }
     #modal-esquema-editor .esq-cor-swatch { width:18px; height:18px; border-radius:50%; cursor:pointer; border:1px solid rgba(0,0,0,0.15); padding:0; }
     #modal-esquema-editor .esq-cor-swatch:hover { transform:scale(1.15); }
+    /* "⛶ Maximizar" — mesmo padrão de #modal-esquemas-baralho.esq-baralho-maximizado
+       (e de #modal-materiais-pdf.mat-pdf-maximizado): tela cheia de verdade,
+       sem cantos arredondados nem padding externo. */
+    #modal-esquema-editor.esq-editor-maximizado { padding:0; }
+    #modal-esquema-editor.esq-editor-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
+    #modal-esquema-editor .esq-editor-maximizar { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-esquema-editor .esq-editor-maximizar:hover { color:var(--app-primary); }
 </style>
     <div class="mdl" style="max-width:720px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div class="fc-popup-header" id="esq-editor-cabecalho">Novo Esquema</div>
-            <button onclick="window.ESQUEMAS_RUNTIME.fecharEditor()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <button class="esq-editor-maximizar" id="esq-editor-btn-maximizar" onclick="window.ESQUEMAS_RUNTIME.alternarMaximizarEditor()" title="Maximizar">⛶</button>
+                <button onclick="window.ESQUEMAS_RUNTIME.fecharEditor()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+            </div>
         </div>
         <input type="text" id="esq-form-titulo" placeholder="Título do esquema" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main);">
         <div id="esq-editor-toolbar" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
@@ -25073,6 +25087,11 @@ window.ESQUEMAS_RUNTIME = {
             let btnOcultarHtml = !self._modoSelecao
                 ? '<button class="esq-btn-ocultar" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleOcultarEsquema(\'' + item.id + '\')" title="' + (oculto ? 'Exibir esquema' : 'Ocultar esquema') + '">' + (oculto ? '👁️' : '🙈') + '</button>'
                 : '';
+            // "🎨 Exportar .html" — igual pra oficiais e pessoais (ao
+            // contrário de excluir, que só existe pra pessoais).
+            let btnExportarHtml = !self._modoSelecao
+                ? '<button class="esq-btn-exportar" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarEsquemaHtml(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Exportar este esquema como .html">🎨</button>'
+                : '';
             let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
                 ? '<button class="esq-btn-excluir" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.excluirEsquema(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir esquema">🗑️</button>'
                 : '';
@@ -25102,7 +25121,7 @@ window.ESQUEMAS_RUNTIME = {
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
-                    btnOcultarHtml + btnExcluirHtml +
+                    btnOcultarHtml + btnExportarHtml + btnExcluirHtml +
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
@@ -25667,6 +25686,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-editor-btn-clonar').style.display = 'none';
 
         this._popularDropdownsCor();
+        this._resetarMaximizarEditor();
         document.getElementById('modal-esquema-editor').classList.add('open');
         setTimeout(function() { document.getElementById('esq-form-titulo').focus(); }, 50);
     },
@@ -25693,6 +25713,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-editor-btn-clonar').style.display = somenteLeitura ? 'inline-block' : 'none';
 
         this._popularDropdownsCor();
+        this._resetarMaximizarEditor();
         document.getElementById('modal-esquema-editor').classList.add('open');
     },
 
@@ -25725,8 +25746,32 @@ window.ESQUEMAS_RUNTIME = {
 
     fecharEditor: function() {
         document.getElementById('modal-esquema-editor').classList.remove('open');
+        document.getElementById('modal-esquema-editor').classList.remove('esq-editor-maximizado');
+        this._editorMaximizado = false;
         this._editandoId = null;
         this._editandoChave = null;
+    },
+
+    // "⛶ Maximizar" do editor (card individual) — mesmo padrão de
+    // alternarMaximizarBaralho/alternarMaximizarPdf: sempre abre reduzido
+    // (reset em abrirEditorNovo/abrirEditorExistente), maximizar é escolha
+    // da sessão de leitura, não preferência persistida.
+    _editorMaximizado: false,
+    _resetarMaximizarEditor: function() {
+        this._editorMaximizado = false;
+        document.getElementById('modal-esquema-editor').classList.remove('esq-editor-maximizado');
+        this._atualizarBotaoMaximizarEditor();
+    },
+    alternarMaximizarEditor: function() {
+        this._editorMaximizado = !this._editorMaximizado;
+        document.getElementById('modal-esquema-editor').classList.toggle('esq-editor-maximizado', this._editorMaximizado);
+        this._atualizarBotaoMaximizarEditor();
+    },
+    _atualizarBotaoMaximizarEditor: function() {
+        let btn = document.getElementById('esq-editor-btn-maximizar');
+        if (!btn) return;
+        btn.textContent = this._editorMaximizado ? '🗗' : '⛶';
+        btn.title = this._editorMaximizado ? 'Restaurar tamanho' : 'Maximizar';
     },
 
     aplicarFormatacao: function(comando) {
@@ -26477,6 +26522,18 @@ window.ESQUEMAS_RUNTIME = {
         let resultado = {};
         resultado[chave] = visiveis;
         downloadArquivo(this._gerarHtmlEsquemas(resultado, chave), 'esquemas-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.html', 'text/html');
+    },
+
+    // "🎨" no cabeçalho de CADA card da grade — exporta só ESSE esquema em
+    // .html, oficial ou pessoal (diferente de excluir, que é só pra
+    // pessoais). Mesmo gerador (_gerarHtmlEsquemas) dos outros 3 níveis
+    // (Tudo/Disciplina/Tópico), só que com 1 item só.
+    exportarEsquemaHtml: function(chave, id) {
+        let item = (this.esquemas[chave] || []).find(function(e) { return e.id === id; });
+        if (!item) return;
+        let resultado = {};
+        resultado[chave] = [item];
+        downloadArquivo(this._gerarHtmlEsquemas(resultado, item.titulo || 'Esquema'), 'esquema-' + this._slugTexto(item.titulo || id) + '.html', 'text/html');
     },
 
     // Botão 📤 ao lado de cada aba "N Estrela(s)" — exporta só o POOL atual
