@@ -17019,14 +17019,20 @@ else if (auditId) {
         await window.__bootOficialPromise__;
     }
     
-    if (provaAlvo) {
+    // Mesmo depois do boot, o arquivo oficial dessa bateria pode ter
+    // falhado ao buscar (rede instável, arquivo grande) — mesma última
+    // chance dada em iniciarSimuladoDaVitrine, senão a bateria abria com
+    // enunciado/explicação em branco por aqui também.
+    let conteudoOficialOk = provaAlvo ? await window.garantirConteudoOficialCompleto(provaAlvo) : true;
+
+    if (provaAlvo && conteudoOficialOk) {
         C = provaAlvo.cfg; D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo))); C.id = simId;
         C.auto = false; // Avanço automático nunca reativa sozinho ao abrir por link direto (?sim=) — precisa de clique explícito
-            
+
             let dOrigem = sessionStorage.getItem('etl_retorno_dia');
             let iOrigem = sessionStorage.getItem('etl_retorno_idx');
             let pOrigem = sessionStorage.getItem('etl_planner_origem');
-            
+
             if (dOrigem && iOrigem !== null && pOrigem) {
                 C.vinculo_planner = { id_planner: pOrigem, dia: dOrigem, meta_idx: iOrigem };
             }
@@ -17056,6 +17062,8 @@ else if (auditId) {
             renderSim(); renderNav(); renderTabs();
             if(D.blocos[0] && D.blocos[0].questoes[0]) setQA(D.blocos[0].questoes[0].id);
             autoSave();
+        } else if (provaAlvo && !conteudoOficialOk) {
+            document.getElementById('mc').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger); font-weight: bold;">Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).</div>';
         } else {
             document.getElementById('mc').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger); font-weight: bold;">Erro 404: Prova não encontrada.</div>';
         }
@@ -21986,6 +21994,16 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
         await window.__bootOficialPromise__;
     }
 
+    // Mesmo depois do boot, o arquivo oficial dessa bateria pode ter
+    // falhado ao buscar (rede instável, arquivo grande) — garantirConteudoOficialCompleto
+    // dá mais uma chance específica pra ele antes de desistir. Sem isso, a
+    // bateria abria com enunciado/explicação em branco, sem erro nenhum
+    // visível (só um console.warn discreto).
+    if (!(await window.garantirConteudoOficialCompleto(provaAlvo))) {
+        alert('Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).');
+        return;
+    }
+
     // O ID da aba depende se estamos abrindo um módulo específico ou uma bateria avulsa
     let targetId = (moduleIdx !== undefined && moduleIdx !== null) ? `${simId}_aba_${moduleIdx}` : simId;
 
@@ -22828,39 +22846,87 @@ window.importarAcervoJson = function() {
 
 };
 
+// Tentativas com pequeno atraso entre elas — sem isso, uma falha de rede
+// pontual (mais provável em arquivos grandes, como
+// grupo-ce-contratosemespeciepoderlegproclegloman.json, ~3,5MB) descartava
+// SILENCIOSAMENTE todas as baterias oficiais daquele arquivo pro resto da
+// sessão: window.ACERVO_OFICIAL_FULL nunca era preenchido pra elas, e
+// resolverDadosCompletos() caía sem aviso na cópia "rasa" (sem
+// enunciado/explicação) persistida no localStorage — bateria abria em
+// branco, sem erro nenhum no console, parecendo "travada". As URLs que
+// ainda falharem depois de esgotar as tentativas ficam registradas em
+// window.__acervoOficialFalhas__ pra uma última tentativa em
+// garantirConteudoOficialCompleto(), no momento de abrir a bateria (ver
+// iniciarSimuladoDaVitrine/fluxo ?simId=).
 window.importarAcervoOficial = async function(url) {
+    const MAX_TENTATIVAS = 3;
 
-    try {
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+        try {
+            // Cache-buster: sem isso, editar uma bateria já publicada (mesmo
+            // nome de arquivo) fica presa no cache HTTP do GitHub Pages
+            // (max-age=600) por até 10min — F5 na página não ajuda, só
+            // revalida o index.html, não este fetch().
+            const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
 
-        // Cache-buster: sem isso, editar uma bateria já publicada (mesmo
-        // nome de arquivo) fica presa no cache HTTP do GitHub Pages
-        // (max-age=600) por até 10min — F5 na página não ajuda, só
-        // revalida o index.html, não este fetch().
-        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
+            if (!r.ok) {
+                throw new Error('Falha ao carregar acervo oficial.');
+            }
 
-        if (!r.ok) {
-            throw new Error(
-                'Falha ao carregar acervo oficial.'
+            const dadosImportados = await r.json();
+
+            window.processarImportacaoAcervo(
+                dadosImportados,
+                { origemOficial: true }
             );
+
+            return;
+
+        } catch (e) {
+            if (tentativa < MAX_TENTATIVAS) {
+                await new Promise(function(resolve) { setTimeout(resolve, 500 * tentativa); });
+                continue;
+            }
+
+            console.warn(
+                '[ACERVO OFICIAL] erro (desistiu após ' + MAX_TENTATIVAS + ' tentativas):',
+                url,
+                e
+            );
+
+            if (!Array.isArray(window.__acervoOficialFalhas__)) window.__acervoOficialFalhas__ = [];
+            window.__acervoOficialFalhas__.push(url);
         }
+    }
+};
 
-        const dadosImportados = await r.json();
+// Última chance de trazer o conteúdo COMPLETO (com enunciado/explicação,
+// não a cópia rasa persistida) de uma bateria oficial antes de abri-la —
+// chamada por iniciarSimuladoDaVitrine e pelo fluxo de link direto
+// (?simId=), os 2 lugares que efetivamente mostram a bateria pro usuário
+// responder. Se algum arquivo oficial já esgotou as 3 tentativas de
+// importarAcervoOficial (ver window.__acervoOficialFalhas__), tenta essas
+// URLs de novo aqui — só nesse momento, sob demanda, em vez de deixar o
+// boot inteiro esperando por um arquivo problemático. Retorna true se o
+// conteúdo completo está disponível (ou a bateria nem é oficial — nada a
+// garantir); false se, mesmo depois dessa última tentativa, continua
+// faltando — nesse caso o chamador deve avisar o usuário em vez de abrir a
+// bateria com enunciado/explicação em branco silenciosamente (era
+// exatamente isso que dava a impressão de "clique travado, sem erro
+// nenhum").
+window.garantirConteudoOficialCompleto = async function(item) {
+    if (!item || !item.origem_oficial) return true;
+    if (window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]) return true;
 
-        window.processarImportacaoAcervo(
-            dadosImportados,
-            { origemOficial: true }
-        );
-
-
-    } catch(e) {
-
-        console.warn(
-            '[ACERVO OFICIAL] erro:',
-            e
-        );
-
+    if (Array.isArray(window.__acervoOficialFalhas__) && window.__acervoOficialFalhas__.length > 0) {
+        let falhas = window.__acervoOficialFalhas__.slice();
+        window.__acervoOficialFalhas__ = [];
+        for (const urlFalha of falhas) {
+            await window.importarAcervoOficial(urlFalha);
+        }
     }
 
+    return !!(window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]);
 };
 
 window.carregarAcervosOficiais = async function() {
