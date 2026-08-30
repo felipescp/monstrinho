@@ -2854,15 +2854,6 @@ const TAXONOMIA_DADOS = {
                 "Código de Trânsito Brasileiro (Lei nº 9.503/1997)",
                 "Estatuto do Desarmamento (Lei nº 10.826/2003)"
               ]
-            },
-            {
-              "id": "pp_leg_resolucoes",
-              "nivel_3": "Resoluções do CNJ",
-              "aliases": [
-                "Audiência de Custódia (Resolução nº 213/2015)",
-                "Proteção de Dados (Resolução nº 427/2021)",
-                "Reconhecimento de Pessoas (Resolução nº 484/2022)"
-              ]
             }
           ]
         }
@@ -5896,6 +5887,24 @@ const TAXONOMIA_DADOS = {
                 "sessões do tribunal pleno e turmas",
                 "súmulas locais do tj"
               ]
+            }
+          ]
+        },
+        {
+          "id": "div_1788098112108",
+          "nivel_2": "CNJ: Atos Normativos",
+          "topicos": [
+            {
+              "id": "top_1788098150902",
+              "nivel_3": "Resoluções"
+            },
+            {
+              "id": "top_1788098160527",
+              "nivel_3": "Provimentos"
+            },
+            {
+              "id": "top_1788098168944",
+              "nivel_3": "Recomendações"
             }
           ]
         }
