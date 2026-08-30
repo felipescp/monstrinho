@@ -26472,25 +26472,34 @@ window.ESQUEMAS_RUNTIME = {
     // (ver downloadArquivo). conteudoHtml de cada esquema já é HTML de
     // verdade (produzido pelo próprio editor), então entra cru — mesmo
     // tratamento que já recebe em _htmlCartaoEsquemaEstudo.
-    _gerarHtmlEsquemas: function(porChave, tituloDoc) {
+    // semCapa: pula título/resumo/matéria/divisão (usado por
+    // exportarEsquemaHtml, o botão 🎨 por card — pra 1 esquema só, essa
+    // "folha de rosto" só duplicava o título que o próprio card já mostra,
+    // sem nenhum card visível na primeira página. Os outros 3 níveis
+    // (Tudo/Disciplina/Tópico) continuam com a capa normalmente.
+    _gerarHtmlEsquemas: function(porChave, tituloDoc, semCapa) {
         let self = this;
         let chaves = Object.keys(porChave).sort();
         let totalItens = chaves.reduce(function(soma, c) { return soma + porChave[c].length; }, 0);
 
         let corpo = '';
-        if (tituloDoc) corpo += '<div class="doc-titulo">' + this._escapar(tituloDoc) + '</div>';
-        corpo += '<div class="doc-resumo">' + totalItens + ' esquema(s) em ' + chaves.length + ' tópico(s).</div>';
+        if (!semCapa) {
+            if (tituloDoc) corpo += '<div class="doc-titulo">' + this._escapar(tituloDoc) + '</div>';
+            corpo += '<div class="doc-resumo">' + totalItens + ' esquema(s) em ' + chaves.length + ' tópico(s).</div>';
+        }
 
         let matAtual = null;
         chaves.forEach(function(chave) {
             let partes = chave.split(' > ');
             let mat = partes[0] || chave;
             let div = partes.length > 1 ? partes.slice(1).join(' > ') : null;
-            if (mat !== matAtual) {
-                corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
-                matAtual = mat;
+            if (!semCapa) {
+                if (mat !== matAtual) {
+                    corpo += '<div class="doc-materia">' + self._escapar(mat) + '</div>';
+                    matAtual = mat;
+                }
+                if (div) corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
             }
-            if (div) corpo += '<div class="doc-divisao">' + self._escapar(div) + '</div>';
             porChave[chave].forEach(function(item) {
                 corpo += '<div class="doc-card">' +
                     '<div class="doc-card-titulo">' + self._escapar(item.titulo || '(sem título)') +
@@ -26643,13 +26652,16 @@ window.ESQUEMAS_RUNTIME = {
     // "🎨" no cabeçalho de CADA card da grade — exporta só ESSE esquema em
     // .html, oficial ou pessoal (diferente de excluir, que é só pra
     // pessoais). Mesmo gerador (_gerarHtmlEsquemas) dos outros 3 níveis
-    // (Tudo/Disciplina/Tópico), só que com 1 item só.
+    // (Tudo/Disciplina/Tópico), só que com 1 item só — semCapa=true pula a
+    // folha de rosto (título/resumo/matéria/divisão), que pra 1 esquema só
+    // ficava numa página vazia, sem nenhum card visível, e duplicava o
+    // título que o card já mostra.
     exportarEsquemaHtml: function(chave, id) {
         let item = (this.esquemas[chave] || []).find(function(e) { return e.id === id; });
         if (!item) return;
         let resultado = {};
         resultado[chave] = [item];
-        downloadArquivo(this._gerarHtmlEsquemas(resultado, item.titulo || 'Esquema'), 'esquema-' + this._slugTexto(item.titulo || id) + '.html', 'text/html');
+        downloadArquivo(this._gerarHtmlEsquemas(resultado, item.titulo || 'Esquema', true), 'esquema-' + this._slugTexto(item.titulo || id) + '.html', 'text/html');
     },
 
     // Botão 📤 ao lado de cada aba "N Estrela(s)" — exporta só o POOL atual
