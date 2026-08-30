@@ -6487,8 +6487,6 @@ window.CRONOGRAMA_RUNTIME = {
         let clickAcao;
         if (isResolvido) {
             clickAcao = 'window.abrirResultadoHistorico(\'' + p.id + '\')';
-        } else if (p.is_playlist_modulo) {
-            clickAcao = 'window.iniciarSimuladoDaVitrine(\'' + p.origem_playlist + '\', ' + p.playlist_module_idx + ')';
         } else {
             clickAcao = 'window.iniciarSimuladoDaVitrine(\'' + p.id + '\')';
         }
@@ -6601,7 +6599,7 @@ window.CRONOGRAMA_RUNTIME = {
 
         let termoNorm = (termo || '').trim().toLowerCase();
         let filtrados = acervo.filter(function(p) {
-            if (!p || p.is_playlist === true) return false;
+            if (!p) return false;
             if (!termoNorm) return true;
             let alvo = ((p.nome || '') + ' ' + (p.materia || '') + ' ' + (p.caminho_completo || '')).toLowerCase();
             return alvo.indexOf(termoNorm) !== -1;
@@ -15212,53 +15210,6 @@ if (listPA) listPA.remove();
 //
 // =========================================================
 
-window.buildCardSimulado = function(p, isResolvido, qtdQ, disciplinasHtml, m) {
-    const adminKebab = (typeof IS_ADMIN !== 'undefined' && IS_ADMIN) 
-    
-        ? `<button class="kebab-btn" onclick="window.abrirKebabMenu(event, '${p.id}')" title="Gerenciar Bateria">⋮</button>` 
-        : '';
-
-
-        const estaAberto = Array.isArray(window.SIMS)
-    && window.SIMS.some(s => s?.cfg?.id === p.id);
-
-    let emAndamento = (window.SIMS || []).some(sim => {
-
-    return (
-        sim?.cfg?.id === p.id &&
-        !sim?.dados?.fin?.finalizado
-    );
-
-});
-    const btnAcao = isResolvido
-
-    ? `<button style="background: var(--success); color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 9px; font-family: var(--font-display); font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.abrirResultadoHistorico('${p.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">VER 📔</button>`
-
-    : emAndamento
-
-        ? `<button style="background: var(--warning); color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 9px; font-family: var(--font-display); font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.iniciarSimuladoDaVitrine('${p.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">▶ RETOMAR</button>`
-
-        : `<button style="background: var(--danger); color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 9px; font-family: var(--font-display); font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.iniciarSimuladoDaVitrine('${p.id}')" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">▶</button>`;
-
-    return `
-    <div style="padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg-white); border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02); position: relative;" id="card-${p.id}">
-        <div style="position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 8px; z-index: 10;">
-            ${adminKebab}
-            ${btnAcao}
-        </div>
-        <div style="padding-right: 30px;">
-            <div style="font-size: 11px; font-weight: 800; color: var(--text-main); text-transform: uppercase;">${m.carreira || 'Geral'}</div>
-            <div style="font-size: 10px; color: var(--app-primary); font-weight: 800;">${m.orgao || ''}</div>
-        </div>
-        <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
-            ${qtdQ} questões • ${m.ano || 'S/A'} • estilo "${m.banca || 'N/A'}"
-        </div>
-        <div style="font-size: 9px; color: var(--text-muted); margin-top: 6px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
-            ${disciplinasHtml}
-        </div>
-    </div>`;
-};
-
 // =========================================================
 // CATÁLOGO FACTUAL SOBERANO
 // =========================================================
@@ -16796,300 +16747,56 @@ window.aplicarChavesCompostas = function(dadosObj, baseId) {
 
 
 function salvarProvaNoAcervo() {
-    C.tipo = g('ro-ce').classList.contains('sel') ? 'ce' : (g('ro-mc').classList.contains('sel') ? 'mc' : 'pl');
-    
-    // ==========================================
-    // ROTA EXCLUSIVA DE PLAYLIST (O MULTI-PARSER)
-    // ==========================================
-    if (C.tipo === 'pl') {
-        let modulosWrappers = document.querySelectorAll('.pl-module-wrapper');
-        let playlistSims = [];
-        let temErro = false;
+    // Toda bateria salva é Certo/Errado — Múltipla Escolha e Playlist não
+    // existem mais como formato de criação (ver mesmo comentário em
+    // abrirModalCriacao()/editarSimuladoAcervo()).
+    C.tipo = 'ce';
 
-        modulosWrappers.forEach((wrap, idx) => {
-            let tituloModulo = wrap.querySelector('.pl-mod-title').value.trim();
-            let txtModulo = wrap.querySelector('.pl-raw-text').value.trim();
-
-            if (tituloModulo && txtModulo) {
-                C.nome = tituloModulo; // Ocultamente injeta o título pro motor ler
-                let res = parsear(txtModulo);
-                
-		if (res.ok) {
-                // INJEÇÃO DA IDENTIDADE: Garante que cada submódulo tenha um ID base
-                let isEdicao = window.ID_EDICAO !== null && window.ID_EDICAO !== undefined;
-                let finalIdPlaylist = isEdicao ? window.ID_EDICAO : 'pl_' + Date.now();
-                let baseIdSubmodulo = `${finalIdPlaylist}_mod${idx}`;
-                
-                // Aplica as Chaves Compostas no objeto D recém-parseado
-                window.aplicarChavesCompostas(D, baseIdSubmodulo);
-
-                let topicoId = wrap.querySelector('.playlist-topico-modulo')?.value;
-                let cfgModulo = JSON.parse(JSON.stringify(C));
-                
-                // --- ACESSO AO COFRE SEGURO (NATIVO DA ROTA CE) ---
-                if (topicoId && window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[topicoId]) {
-                    cfgModulo.id_taxonomia = topicoId;
-                    cfgModulo.materia = window.MAPA_TAXONOMIA[topicoId].materia;
-                    cfgModulo.caminho_completo = window.MAPA_TAXONOMIA[topicoId].caminho;
-                } else {
-                    cfgModulo.id_taxonomia = null;
-                    cfgModulo.materia = '';
-                    cfgModulo.caminho_completo = '';
-                }
-
-                // Empacota o simulado perfeitamente isolado!
-                playlistSims.push({
-
-    // IDENTIDADE FACTUAL DO SUBMÓDULO
-    id: baseIdSubmodulo,
-
-    // ÂNCORA FACTUAL DE RAIZ
-    id_taxonomia: cfgModulo.id_taxonomia || null,
-    materia: cfgModulo.materia || '',
-    caminho_completo: cfgModulo.caminho_completo || '',
-
-    // CFG NATIVO
-    cfg: cfgModulo,
-
-    dados: JSON.parse(JSON.stringify(D)),
-    stats: null,
-    qSalva: null,
-    data: new Date().toISOString()
-});
-                } else {
-                    temErro = true;
-                }
-            }
-        });
-
-        if (playlistSims.length === 0) { alert('Preencha ao menos um módulo válido (Título e Questões).'); return; }
-        if (temErro) { alert('Aviso: Um ou mais módulos falharam na formatação e foram ignorados.'); }
-
-        let isEdicao = window.ID_EDICAO !== null && window.ID_EDICAO !== undefined;
-        let finalId = isEdicao ? window.ID_EDICAO : 'pl_' + Date.now();
-
-// O Objeto Supremo da Playlist (Emula o seu JSON externo)
-        // Captura a taxonomia do 1º Módulo para ancorar o card visualmente
-        let rootTaxId = playlistSims.length > 0 ? playlistSims[0].cfg.id_taxonomia : null;
-        let rootMateria = playlistSims.length > 0 ? playlistSims[0].cfg.materia : '';
-        let rootCaminho = playlistSims.length > 0 ? playlistSims[0].cfg.caminho_completo : '';
-
-        // O Objeto Supremo da Playlist (Emula o seu JSON externo)
-        let novaPlaylist = {
-            id: finalId,
-            nome: document.getElementById('cfg-nome').value.trim(),
-            
-            // --- INJEÇÃO DA ÂNCORA VISUAL DE RAIZ ---
-            id_taxonomia: rootTaxId,
-            materia: rootMateria,
-            caminho_completo: rootCaminho,
-            // ----------------------------------------
-            
-            is_playlist: true,
-            tipo: 'pl',
-            referencias: document.getElementById('cfg-pl-ref').value.trim(),
-            
-            metadados_mc: null,
-            cfg: {
-                nome: document.getElementById('cfg-nome').value.trim(),
-                tipo: 'ce',
-                is_playlist: true,
-                
-                // Proteção extra contra engines de fallback
-                id_taxonomia: rootTaxId,
-                materia: rootMateria,
-                caminho_completo: rootCaminho
-            },
-
-            playlist_sims: playlistSims, // O Array de Abas
-            dataCriacao: new Date().toISOString()
-        };
-
-// =========================================================
-// CATÁLOGO FACTUAL SOBERANO
-// =========================================================
-//
-// Fonte oficial de entidades cadastradas.
-//
-// Representa:
-//
-// - biblioteca;
-// - vitrine;
-// - acervo persistente.
-//
-// NÃO representa:
-//
-// - runtime;
-// - tabs;
-// - sessão ativa.
-//
-// =========================================================
-
-        let acervo = [];
-
-try {
-
-    acervo = JSON.parse(
-        localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'
-    );
-
-} catch(e){}
-
-// =========================================================
-// PLAYLISTS: PERSISTÊNCIA SOBERANA DOS SUBMÓDULOS
-// =========================================================
-
-// =========================================================
-// LIMPEZA ESTRUTURAL GLOBAL
-// =========================================================
-
-// 1. Remove playlist antiga em edição
-if (isEdicao) {
-
-    acervo = acervo.filter(function(p){
-
-        if (p.id === window.ID_EDICAO)
-            return false;
-
-        if (
-            typeof p.id === 'string' &&
-            p.id.startsWith(window.ID_EDICAO + '_mod')
-        ) return false;
-
-        return true;
-
-    });
-
-}
-
-// =========================================================
-// 2. REMOVE MÓDULOS ÓRFÃOS GLOBAIS
-// =========================================================
-
-acervo = acervo.filter(function(p){
-
-    // mantém tudo que não é módulo
-    if (
-        !p.id ||
-        typeof p.id !== 'string' ||
-        !p.id.includes('_mod')
-    ) return true;
-
-    // raiz da playlist
-    let raiz = p.id.split('_mod')[0];
-
-    // playlist correspondente existe?
-    return acervo.some(function(x){
-
-        return (
-            x.id === raiz &&
-            x.is_playlist === true
-        );
-
-    });
-
-});
-
-// Persistência soberana dos módulos
-playlistSims.forEach(function(sim){
-
-    acervo.push(sim);
-
-});
-
-// Persistência da playlist agregadora
-acervo.push(novaPlaylist);
-
-localStorage.setItem(
-    'tjpe_v1__cordeiro_acervo_provas',
-    JSON.stringify(acervo)
-);
-
-        alert('Playlist processada e salva no Acervo!');
-        
-        // Fecha o modal limpando as variáveis corretamente
-        if(typeof window.cancelarEdicaoAcervo === 'function') window.cancelarEdicaoAcervo();
-        
-        // Retorna o fundo para a Vitrine (Tira o app do limbo)
-        tela('tela-home');
-
-        // renderHomeDashboard() em vez do antigo "enxerto localizado" —
-        // aquele patch cirúrgico só sabia inserir em #lista-provas-mc/
-        // #lista-playlists/#lista-provas-anteriores, containers de uma
-        // Vitrine de 4 colunas que não existe mais (só sobrou o painel
-        // Baterias V/F, #lista-provas-ce) — então toda playlist criada
-        // falhava em silêncio (só console.error) e exigia F5 pra aparecer.
-        if (typeof window.renderHomeDashboard === 'function') {
-            window.renderHomeDashboard();
-        }
-
-        return; // MATA a função aqui para não rodar a lógica antiga abaixo!
-    }
-
-    // ==========================================
-    // ROTA NORMAL (CE e MÚLTIPLA ESCOLHA)
-    // ==========================================
     var txt = g('paste-area').value;
     C.is_playlist = false;
 
     if (!txt.trim()) { alert('Cole o conteúdo antes de processar.'); return; }
-    
+
     tela('tela-proc');
     var res = parsear(txt);
-    
+
     let estiloCE = null;
     let iaUtilizadaCE = null;
     if (res.ok) {
-        if (C.tipo === 'ce') {
-            let selTax = document.getElementById('cfg-taxonomia');
-            C.id_taxonomia = selTax.value;
+        let selTax = document.getElementById('cfg-taxonomia');
+        C.id_taxonomia = selTax.value;
 
-            // Lê do Cofre Seguro
-            if (window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[C.id_taxonomia]) {
-                C.materia = window.MAPA_TAXONOMIA[C.id_taxonomia].materia;
-                C.caminho_completo = window.MAPA_TAXONOMIA[C.id_taxonomia].caminho;
-            } else {
-                // Sem id_taxonomia válido, materia/caminho_completo NÃO devem
-                // sobreviver de uma atribuição anterior de C (mesmo com a
-                // proteção em abrirModalCriacao/editarSimuladoAcervo, mais
-                // vale garantir aqui too) — senão o guard-clause abaixo, que só
-                // checa "vazio", deixa passar um valor não-vazio porém errado.
-                C.materia = '';
-                C.caminho_completo = '';
-            }
-
-            // GUARD CLAUSE: Impede salvamento de prova corrompida
-            if (!C.id_taxonomia || !C.caminho_completo) {
-                console.error('ERRO: taxonomia não selecionada ou caminho_completo vazio. id_taxonomia:', C.id_taxonomia);
-                alert('Erro interno: taxonomia não encontrada. O simulado não foi salvo para evitar corrupção do banco.');
-                tela('tela-admin');
-                return;
-            }
-            C.metadados_mc = null;
-
-            // "Estilo" (banca) — só existe pro tipo CE; fica de fora de cfg,
-            // no mesmo nível de dataCriacao no registro do acervo.
-            let selEstilo = document.getElementById('cfg-ce-estilo');
-            estiloCE = (selEstilo && selEstilo.value && selEstilo.value !== '__NEW__') ? selEstilo.value : null;
-
-            // "IA Utilizada" — mesmo tratamento de estilo: só tipo CE, raiz do registro.
-            let selIa = document.getElementById('cfg-ce-ia');
-            iaUtilizadaCE = (selIa && selIa.value && selIa.value !== '__NEW__') ? selIa.value : null;
+        // Lê do Cofre Seguro
+        if (window.MAPA_TAXONOMIA && window.MAPA_TAXONOMIA[C.id_taxonomia]) {
+            C.materia = window.MAPA_TAXONOMIA[C.id_taxonomia].materia;
+            C.caminho_completo = window.MAPA_TAXONOMIA[C.id_taxonomia].caminho;
         } else {
-            C.id_taxonomia = null;
-C.metadados_mc = {
-                classificacao: document.getElementById('cfg-mc-tipo').value,
-                ano: document.getElementById('cfg-mc-ano').value,
-                carreira: document.getElementById('cfg-mc-carreira').value.trim(),
-                banca: document.getElementById('cfg-mc-banca').value.trim().toUpperCase(),
-                orgao: document.getElementById('cfg-mc-orgao').value.trim().toUpperCase(),
-                corte_ampla: document.getElementById('cfg-mc-corte-ampla').value || null,
-                corte_cota: document.getElementById('cfg-mc-corte-cota').value || null
-            };
-            C.materia = `${C.metadados_mc.banca} - ${C.metadados_mc.carreira} (${C.metadados_mc.ano})`;
-	    C.nome = `${C.metadados_mc.carreira} - ${C.metadados_mc.orgao}`; // FORÇADO NO SAVE
-            C.caminho_completo = null;
+            // Sem id_taxonomia válido, materia/caminho_completo NÃO devem
+            // sobreviver de uma atribuição anterior de C (mesmo com a
+            // proteção em abrirModalCriacao/editarSimuladoAcervo, mais
+            // vale garantir aqui too) — senão o guard-clause abaixo, que só
+            // checa "vazio", deixa passar um valor não-vazio porém errado.
+            C.materia = '';
+            C.caminho_completo = '';
         }
+
+        // GUARD CLAUSE: Impede salvamento de prova corrompida
+        if (!C.id_taxonomia || !C.caminho_completo) {
+            console.error('ERRO: taxonomia não selecionada ou caminho_completo vazio. id_taxonomia:', C.id_taxonomia);
+            alert('Erro interno: taxonomia não encontrada. O simulado não foi salvo para evitar corrupção do banco.');
+            tela('tela-admin');
+            return;
+        }
+        C.metadados_mc = null;
+
+        // "Estilo" (banca) — fica de fora de cfg, no mesmo nível de
+        // dataCriacao no registro do acervo.
+        let selEstilo = document.getElementById('cfg-ce-estilo');
+        estiloCE = (selEstilo && selEstilo.value && selEstilo.value !== '__NEW__') ? selEstilo.value : null;
+
+        // "IA Utilizada" — mesmo tratamento de estilo, raiz do registro.
+        let selIa = document.getElementById('cfg-ce-ia');
+        iaUtilizadaCE = (selIa && selIa.value && selIa.value !== '__NEW__') ? selIa.value : null;
 
         let acervo = [];
         try {
@@ -17142,13 +16849,10 @@ if (isEdicao) {
         // Restaura a visão da Vitrine (Tira o app do limbo)
         tela('tela-home');
 
-        // renderHomeDashboard() em vez do antigo "enxerto localizado" (ver
-        // nota equivalente na rota de playlist, algumas linhas acima) —
-        // mesmo motivo: os containers que ele visava não existem mais.
         if (typeof window.renderHomeDashboard === 'function') {
             window.renderHomeDashboard();
         }
-        
+
     } else {
         // Se houver erro na formatação do texto da IA, apenas alerta e mantém o usuário na tela de upload
         alert('Falha no processamento. Verifique a formatação do texto colado.');
@@ -19778,135 +19482,16 @@ function sincronizarResultadoComPlanner(simSession) {
     } else {
         objResultado.materia = objResultado.granulares[0] ? objResultado.granulares[0].materia : "DIVERSOS";
         objResultado.topico = simSession.cfg.nome || "Treinamento Avulso";
-        
-// Padronização ESTRITA do Objeto para o Planner renderizar as Provas Anteriores sem quebrar
-        if (simSession.cfg.metadados_mc) {
-            objResultado.classificacao = simSession.cfg.metadados_mc.classificacao || '';
-            objResultado.banca = simSession.cfg.metadados_mc.banca || '';
-objResultado.ano = simSession.cfg.metadados_mc.ano || '';
-            objResultado.orgao = simSession.cfg.metadados_mc.orgao || '';
-            objResultado.carreira = simSession.cfg.metadados_mc.carreira || '';
-            objResultado.corte_ampla = simSession.cfg.metadados_mc.corte_ampla || null;
-            objResultado.corte_cota = simSession.cfg.metadados_mc.corte_cota || null;
-            
-            // O Planner exige nomes específicos para ordenar e classificar as Provas Anteriores
-            
-            // O Planner exige nomes específicos para ordenar e classificar as Provas Anteriores
-            objResultado.data_execucao = objResultado.data; 
-            
-            let rawClass = objResultado.classificacao.toUpperCase();
-            objResultado.tipo = rawClass.includes('PROVA') ? 'Simulação Real' : 'Bateria Parcial';
-        }
 
-// ROTEAMENTO: Acervo de Provas (Provas e Simulados) vs Treinamento V/F Avulso
-        if (simSession.cfg.metadados_mc) {
-            if (!dbPlanner.historico_provas_anteriores) dbPlanner.historico_provas_anteriores = [];
-            dbPlanner.historico_provas_anteriores.push(objResultado);
-        } else {
-            if (!dbPlanner.simulados_avulsos) dbPlanner.simulados_avulsos = [];
-            dbPlanner.simulados_avulsos.push(objResultado);
-        }
+        if (!dbPlanner.simulados_avulsos) dbPlanner.simulados_avulsos = [];
+        dbPlanner.simulados_avulsos.push(objResultado);
     }
 
     // 4. Salva no Banco Universal Soberano
     localStorage.setItem('tjpe_v1__salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
     // Espelho de segurança para compatibilidade com o sistema legado
-    localStorage.setItem('tjpe_v1__etl_planner_db', JSON.stringify(dbPlanner)); 
-
-    // =========================================================================
-    // ACOPLAMENTO CIRÚRGICO DA FASE 2D.1 (MUTAÇÃO LOCALIZADA)
-    // =========================================================================
-    if (dbPlanner && Array.isArray(dbPlanner.historico_provas_anteriores) && dbPlanner.historico_provas_anteriores.length > 0) {
-        // Captura o nó de performance da resolução que acabou de ser computada
-        var ultimaProva = dbPlanner.historico_provas_anteriores[dbPlanner.historico_provas_anteriores.length - 1];
-        
-        if (ultimaProva && typeof window.patchCardResolvido === 'function') {
-            // Extrai o id_original (ancora factual do DOM). Fallback para o id caso divergente.
-            var targetId = ultimaProva.id_original || ultimaProva.id;
-            window.patchCardResolvido(targetId);
-        }
-    }
+    localStorage.setItem('tjpe_v1__etl_planner_db', JSON.stringify(dbPlanner));
 }
-
-window.patchCardResolvido = function(id) {
-    // 1. Localização do nó alvo no DOM corrente
-    var cardAntigo = document.getElementById('card-' + id);
-    if (!cardAntigo) {
-        console.warn('[AUDITORIA 2D.1] Elemento visual não localizado na árvore corrente para o ID:', id);
-        return;
-    }
-
-// =========================================================
-// CATÁLOGO FACTUAL SOBERANO
-// =========================================================
-//
-// Fonte oficial de entidades cadastradas.
-//
-// Representa:
-//
-// - biblioteca;
-// - vitrine;
-// - acervo persistente.
-//
-// NÃO representa:
-//
-// - runtime;
-// - tabs;
-// - sessão ativa.
-//
-// =========================================================
-
-    try {
-        // 2. Releitura do acervo factual soberano
-        var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-        var item = acervoSoberano.find(function(x) { return x && x.id === id; });
-
-        if (!item) {
-            console.error('[AUDITORIA 2D.1] Objeto factual ausente no catálogo estável para o ID:', id);
-            return;
-        }
-
-        var m = item.metadados_mc || {};
-
-        // 3. Recálculo síncrono dos dados estruturais mínimos
-        var qtdQ = 0;
-        var arrayDisciplinas = [];
-        if (item.dados && Array.isArray(item.dados.blocos)) {
-            item.dados.blocos.forEach(function(b) {
-                var qLen = Array.isArray(b.questoes) ? b.questoes.length : 0;
-                qtdQ += qLen;
-                if (qLen > 0) {
-                    arrayDisciplinas.push('• ' + b.nome + ' (' + qLen + ')');
-                }
-            });
-        }
-        var disciplinasHtml = arrayDisciplinas.join(' ');
-
-        // 4. BLINDAGEM DE HELPER AUSENTE: Proteção contra assincronia no namespace global
-        if (typeof window.buildCardSimulado !== 'function') {
-            console.error('[FASE 2D.1] Helper buildCardSimulado ausente.');
-            return;
-        }
-
-        // 5. DOCUMENTAÇÃO ESTRUTURAL INTERNA (Mapeamento semântico de rotas)
-        // buildCardSimulado → Coluna 2
-
-        // 6. PRESERVAÇÃO DE SCROLL VISUAL: Captura de coordenada síncrona
-        var scrollAtual = window.scrollY;
-
-        // 7. Regeneração do HTML via Helper Oficial forçando o estado resolvido (true)
-        var novoHtml = window.buildCardSimulado(item, true, qtdQ, disciplinasHtml, m);
-
-        // 8. MUTAÇÃO ATÔMICA LOCALIZADA (OuterHTML Swap)
-        cardAntigo.outerHTML = novoHtml;
-
-        // 9. RESTAURAÇÃO DE SCROLL VISUAL: Neutralização de microjump
-        window.scrollTo(0, scrollAtual);
-
-    } catch (e) {
-        console.error('[ERRO CRÍTICO FASE 2D.1]', e);
-    }
-};
 
 // ── FERRAMENTAS DE REVISÃO ────────────────────────────────────
 
@@ -20784,29 +20369,20 @@ window.abrirModalCriacao = function() {
     C = { nome: '', tipo: 'ce', cegas: false };
     D = { blocos: [], res: {}, fin: {}, caderno: [] };
 
-    // Toda bateria NOVA é sempre Certo/Errado (Múltipla Escolha e Playlist
-    // deixaram de existir como opção de criação — só sobrevivem pra reabrir
-    // baterias antigas já salvas nesses formatos, via editarSimuladoAcervo).
-    // Força esse estado visual diretamente aqui, sem depender de um clique
-    // em #ro-ce (o seletor de tipo agora fica oculto) — assim, mesmo que a
-    // última coisa aberta no modal tenha sido uma bateria MC/Playlist
-    // antiga (que troca esses displays), uma bateria nova sempre abre limpa.
+    // Toda bateria é sempre Certo/Errado (Múltipla Escolha e Playlist não
+    // existem mais como formato — nem pra criar, nem pra reabrir baterias
+    // antigas, ver editarSimuladoAcervo). Força esse estado visual
+    // diretamente aqui, sem depender de um clique em #ro-ce (o seletor de
+    // tipo fica oculto).
     if(g('ro-ce')) { g('ro-ce').classList.add('sel'); }
-    if(g('ro-mc')) { g('ro-mc').classList.remove('sel'); }
-    if(g('ro-pl')) { g('ro-pl').classList.remove('sel'); }
     if(g('box-taxonomia')) g('box-taxonomia').style.display = 'block';
-    if(g('box-mc-meta')) g('box-mc-meta').style.display = 'none';
-    if(g('box-pl-meta')) g('box-pl-meta').style.display = 'none';
     if(g('box-nome-bateria')) g('box-nome-bateria').style.display = 'block';
 
     // Limpeza rigorosa do formulário para evitar vazamento de estado
     g('cfg-nome').value = '';
     g('paste-area').value = '';
     if(g('cfg-taxonomia')) g('cfg-taxonomia').value = '';
-    ['cfg-mc-tipo', 'cfg-mc-ano', 'cfg-mc-carreira', 'cfg-mc-banca', 'cfg-mc-orgao', 'cfg-mc-corte-ampla', 'cfg-mc-corte-cota'].forEach(id => {
-        if (g(id)) g(id).value = '';
-    });
-    
+
     g('box-upload').style.display = 'none';
     document.getElementById('cfg-nome').closest('.cfg-card').style.display = 'flex';
     
@@ -20854,70 +20430,25 @@ window.editarSimuladoAcervo = function(id) {
     window.ID_EDICAO = id;
 
     g('cfg-nome').value = prova.nome;
-    
-    // Rota Certo/Errado
-    if(prova.tipo === 'ce') {
-        g('ro-ce').click();
-        setTimeout(() => {
-            if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || '';
-            if(g('cfg-ce-estilo')) g('cfg-ce-estilo').value = prova.estilo || '';
-            if(g('cfg-ce-ia')) g('cfg-ce-ia').value = prova.iaUtilizada || '';
-            validarFormAdmin();
-        }, 50);
-        g('paste-area').value = window.reconstruirTextoOriginal(prova);
-        
-    // Nova Rota: Playlist
-    } else if (prova.tipo === 'pl' || prova.is_playlist) {
-        g('ro-pl').click();
-        setTimeout(() => {
-            if(g('cfg-pl-ref')) g('cfg-pl-ref').value = prova.referencias || '';
-            
-            let qtd = prova.playlist_sims ? prova.playlist_sims.length : 1;
-            let inputQtd = g('cfg-pl-qtd');
-            if(inputQtd) {
-                inputQtd.value = qtd;
-                if(typeof gerarTextareasPlaylist === 'function') gerarTextareasPlaylist();
-            }
-            
-            let modulosWrappers = document.querySelectorAll('.pl-module-wrapper');
-            if (prova.playlist_sims) {
-                prova.playlist_sims.forEach((sim, idx) => {
-                    if (modulosWrappers[idx]) {
-                        modulosWrappers[idx].querySelector('.pl-mod-title').value = sim.cfg.nome || '';
-                        let txtReconstruido = window.reconstruirTextoOriginal(sim);
-                        txtReconstruido = txtReconstruido.replace(/^# BLOCO:.*?\n+/i, '').trim();
-                        modulosWrappers[idx].querySelector('.pl-raw-text').value = txtReconstruido;
-                    }
-                });
-            }
-            validarFormAdmin();
-        }, 50);
-        
-    // Rota Múltipla Escolha
-    } else {
-        g('ro-mc').click();
-        setTimeout(() => {
-            if(prova.metadados_mc) {
-                if(g('cfg-mc-tipo')) g('cfg-mc-tipo').value = prova.metadados_mc.classificacao || '';
-                if(g('cfg-mc-ano')) g('cfg-mc-ano').value = prova.metadados_mc.ano || '';
-                if(g('cfg-mc-carreira')) g('cfg-mc-carreira').value = prova.metadados_mc.carreira || '';
-                if(g('cfg-mc-banca')) g('cfg-mc-banca').value = prova.metadados_mc.banca || '';
-                
-                // Variáveis realocadas em segurança (dentro do bloco)
-                if(g('cfg-mc-orgao')) g('cfg-mc-orgao').value = prova.metadados_mc.orgao || '';
-                if(g('cfg-mc-corte-ampla')) g('cfg-mc-corte-ampla').value = prova.metadados_mc.corte_ampla || '';
-                if(g('cfg-mc-corte-cota')) g('cfg-mc-corte-cota').value = prova.metadados_mc.corte_cota || '';
-            }
-            validarFormAdmin();
-        }, 50);
-        g('paste-area').value = window.reconstruirTextoOriginal(prova);
-    }
-    
+
+    // Toda bateria salva é Certo/Errado (Múltipla Escolha e Playlist não
+    // existem mais como formato — ver mesmo comentário em
+    // abrirModalCriacao()). Editar uma bateria antiga salva num desses 2
+    // formatos não é mais suportado.
+    if(g('ro-ce')) g('ro-ce').click();
+    setTimeout(() => {
+        if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || '';
+        if(g('cfg-ce-estilo')) g('cfg-ce-estilo').value = prova.estilo || '';
+        if(g('cfg-ce-ia')) g('cfg-ce-ia').value = prova.iaUtilizada || '';
+        validarFormAdmin();
+    }, 50);
+    g('paste-area').value = window.reconstruirTextoOriginal(prova);
+
     let btnOk = g('cfg-ok');
-    if(btnOk) { 
-        btnOk.textContent = (prova.tipo === 'pl') ? 'Atualizar Playlist' : 'Avançar para Edição'; 
-        btnOk.style.background = 'var(--warning)'; 
-        btnOk.disabled = false; 
+    if(btnOk) {
+        btnOk.textContent = 'Avançar para Edição';
+        btnOk.style.background = 'var(--warning)';
+        btnOk.disabled = false;
     }
     
     let btnIni = g('up-iniciar');
@@ -21078,147 +20609,53 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
         await window.__bootOficialPromise__;
     }
 
-    // O ID da aba depende se estamos abrindo um módulo específico ou uma bateria avulsa
-    let targetId = (moduleIdx !== undefined && moduleIdx !== null) ? `${simId}_aba_${moduleIdx}` : simId;
+    let targetId = simId;
 
-    // 2. Verifica se a aba já está aberta (Apenas para Avulsos ou Clique Individual)
-    if (moduleIdx !== undefined || !provaAlvo.is_playlist) {
-        let abaExistente = -1;
-        for(let i = 0; i < SIMS.length; i++) {
-            if(SIMS[i].cfg && SIMS[i].cfg.id === targetId && !SIMS[i].stats) { abaExistente = i; break; }
-        }
-
-        // Aba já aberta: só troca pra ela — SIMS[abaExistente].dados já tem
-        // o conteúdo completo de quando foi aberta, não depende de
-        // window.ACERVO_OFICIAL_FULL de novo. Checar garantirConteudoOficialCompleto
-        // aqui (antes desta troca) era a regressão: se o arquivo oficial
-        // ainda não tivesse recarregado nessa sessão (F5 recente, rede
-        // lenta), reabrir uma bateria JÁ EM ANDAMENTO ficava bloqueado à
-        // toa, com o clique "não fazendo nada" (ou mostrando o alerta de
-        // falha) mesmo a aba já tendo tudo que precisa.
-        if (abaExistente >= 0) {
-            trocarTab(abaExistente, true); // Pula para a aba aberta
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-        renderSim();
+    // 2. Verifica se a aba já está aberta
+    let abaExistente = -1;
+    for(let i = 0; i < SIMS.length; i++) {
+        if(SIMS[i].cfg && SIMS[i].cfg.id === targetId && !SIMS[i].stats) { abaExistente = i; break; }
     }
 
-// =========================================================
-// ABERTURA MULTITABS CONTROLADA
-// =========================================================
-//
-// Playlists operam por:
-//
-// - expansão procedural;
-// - múltiplas sessões independentes.
-//
-// Cada módulo:
-//
-// - torna-se uma aba autônoma;
-// - possui persistência própria;
-// - possui ciclo de vida isolado.
-//
-// =========================================================
-    // ----------------------------------------------------
-    // LÓGICA DE PLAYLIST (Lote ou Individual)
-    // ----------------------------------------------------
-    if (provaAlvo.is_playlist || provaAlvo.tipo === 'pl') {
-        if (!provaAlvo.playlist_sims || provaAlvo.playlist_sims.length === 0) { alert('Playlist vazia.'); return; }
-        
-        let primeiroNovoIndice = SIMS.length;
-
-        if (moduleIdx !== undefined && moduleIdx !== null) {
-            // ---> CLIQUE INDIVIDUAL (Carrega apenas 1 aba)
-            if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
-            
-            let simObj = provaAlvo.playlist_sims[moduleIdx];
-            let simClone = JSON.parse(JSON.stringify(simObj));
-            simClone.cfg.id = targetId; 
-            SIMS.push(simClone);
-            SI = SIMS.length - 1;
-
-        } else {
-
-        // =========================================================
-// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
-//
-// Representa:
-//
-// - simulados concluídos;
-// - snapshots finalizados;
-// - auditoria longitudinal.
-//
-// NÃO representa:
-//
-// - runtime ativo;
-// - tabs abertas;
-// - sessão persistente.
-//
-// =========================================================
-
-// ---> CLIQUE EM LOTE [INICIAR TUDO / RETOMAR]
-            // Filtra os módulos que ainda não estão nas abas e que não constam no arquivo morto (já resolvidos)
-            let arquivoMorto = window.lerArquivoMorto();
-            let modulosParaAbrir = provaAlvo.playlist_sims.filter((sim, idx) => {
-                let idAba = `${simId}_aba_${idx}`;
-                return !SIMS.some(s => s.cfg.id === idAba && !s.stats) && !arquivoMorto[idAba];
-            });
-
-            if (modulosParaAbrir.length === 0) {
-                alert('Todos os simulados pendentes já estão em andamento ou a playlist foi totalmente concluída.');
-                return;
-            }
-
-            let vagasLivres = 10 - SIMS.length;
-            if (modulosParaAbrir.length > vagasLivres) {
-                alert(`O limite máximo é de 10 abas ativas simultâneas. Você tem ${vagasLivres} vagas livres e está tentando abrir ${modulosParaAbrir.length} baterias.\n\nPor favor, finalize ou feche os simulados em andamento.`);
-                return;
-            }
-
-            // Despeja os módulos na fila
-            modulosParaAbrir.forEach((simObj) => {
-                let originalIdx = provaAlvo.playlist_sims.indexOf(simObj);
-                let simClone = JSON.parse(JSON.stringify(simObj));
-                simClone.cfg.id = `${simId}_aba_${originalIdx}`; // Amarração de ID
-                SIMS.push(simClone);
-            });
-
-            SI = primeiroNovoIndice; // Dá o foco na primeira aba que acabou de entrar
-        }
-
-        // Hidrata o ambiente com o simulado focado
-        C = JSON.parse(JSON.stringify(SIMS[SI].cfg));
-        C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
-        D = JSON.parse(JSON.stringify(SIMS[SI].dados));
-
-    } else {
-        // ----------------------------------------------------
-        // LÓGICA NORMAL (Bateria Avulsa - Colunas 1 e 2)
-        // ----------------------------------------------------
-        if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
-
-        // Chegando aqui, a aba é NOVA (não existia em SIMS) — resolverDadosCompletos
-        // vai precisar mesmo de window.ACERVO_OFICIAL_FULL. Mesmo depois do
-        // boot, o arquivo oficial dessa bateria pode ter falhado ao buscar
-        // (rede instável, arquivo grande) — garantirConteudoOficialCompleto
-        // dá mais uma chance específica antes de desistir. Sem isso, a
-        // bateria abria com enunciado/explicação em branco, sem erro nenhum
-        // visível (só um console.warn discreto).
-        if (!(await window.garantirConteudoOficialCompleto(provaAlvo))) {
-            alert('Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).');
-            return;
-        }
-
-        C = JSON.parse(JSON.stringify(provaAlvo.cfg));
-        C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
-        D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
-        C.id = simId;
-        C.dataCriacao = provaAlvo.dataCriacao; // pro painel "Criada em" na sidebar (dataCriacao vive na raiz do acervo, não em cfg)
-        C.iaUtilizada = provaAlvo.iaUtilizada; // pro painel "IA Utilizada" na sidebar (mesmo motivo — vive na raiz, não em cfg)
-        SIMS.push({ cfg: JSON.parse(JSON.stringify(C)), dados: JSON.parse(JSON.stringify(D)), stats: null, qSalva: null, data: new Date().toISOString() });
-        SI = SIMS.length - 1;
+    // Aba já aberta: só troca pra ela — SIMS[abaExistente].dados já tem o
+    // conteúdo completo de quando foi aberta, não depende de
+    // window.ACERVO_OFICIAL_FULL de novo. Checar garantirConteudoOficialCompleto
+    // aqui (antes desta troca) era a regressão: se o arquivo oficial ainda
+    // não tivesse recarregado nessa sessão (F5 recente, rede lenta),
+    // reabrir uma bateria JÁ EM ANDAMENTO ficava bloqueado à toa, com o
+    // clique "não fazendo nada" (ou mostrando o alerta de falha) mesmo a
+    // aba já tendo tudo que precisa.
+    if (abaExistente >= 0) {
+        trocarTab(abaExistente, true); // Pula para a aba aberta
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
     }
+    renderSim();
+
+    // ----------------------------------------------------
+    // ABERTURA DE BATERIA NOVA (não existia em SIMS)
+    // ----------------------------------------------------
+    if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
+
+    // resolverDadosCompletos vai precisar mesmo de window.ACERVO_OFICIAL_FULL.
+    // Mesmo depois do boot, o arquivo oficial dessa bateria pode ter
+    // falhado ao buscar (rede instável, arquivo grande) —
+    // garantirConteudoOficialCompleto dá mais uma chance específica antes
+    // de desistir. Sem isso, a bateria abria com enunciado/explicação em
+    // branco, sem erro nenhum visível (só um console.warn discreto).
+    if (!(await window.garantirConteudoOficialCompleto(provaAlvo))) {
+        alert('Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).');
+        return;
+    }
+
+    C = JSON.parse(JSON.stringify(provaAlvo.cfg));
+    C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
+    D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
+    C.id = simId;
+    C.dataCriacao = provaAlvo.dataCriacao; // pro painel "Criada em" na sidebar (dataCriacao vive na raiz do acervo, não em cfg)
+    C.iaUtilizada = provaAlvo.iaUtilizada; // pro painel "IA Utilizada" na sidebar (mesmo motivo — vive na raiz, não em cfg)
+    SIMS.push({ cfg: JSON.parse(JSON.stringify(C)), dados: JSON.parse(JSON.stringify(D)), stats: null, qSalva: null, data: new Date().toISOString() });
+    SI = SIMS.length - 1;
 
 // Abertura visual unificada
     tela('tela-simulado');
@@ -22293,48 +21730,6 @@ novosItens.forEach(item => {
    JSON.stringify(Array.from(mapa.values()))
 );
 
-        // ENXERTO PASSIVO EXISTENTE
-        novosItens.forEach(item => {
-
-            let m = item.metadados_mc || {};
-
-            let isSimulado =
-                m.classificacao?.toUpperCase().includes('SIMULADO');
-
-            if (!isSimulado) return;
-
-            if (document.getElementById(`card-${item.id}`)) return;
-
-            let container =
-                document.getElementById('lista-provas-mc');
-
-            if (!container) return;
-
-            let qtdQ =
-                item.dados?.blocos.reduce(
-                    (acc, b) => acc + b.questoes.length,
-                    0
-                ) || 0;
-
-            let disciplinasHtml =
-                item.dados?.blocos
-                    .map(b => `• ${b.nome} (${b.questoes.length})`)
-                    .join(' ');
-
-            let htmlCard = window.buildCardSimulado(
-                item,
-                false,
-                qtdQ,
-                disciplinasHtml,
-                m
-            );
-
-            container.insertAdjacentHTML(
-                'beforeend',
-                htmlCard
-            );
-        });
-
     window.ACERVO_OFICIAL = Array.from(
    new Map(
       (
@@ -22394,33 +21789,6 @@ novosItens.forEach(item => {
 /* ==========================================
    EXPORTAÇÃO BLINDADA (GRUPOS E ENTIDADES)
    ========================================== */
-
-window.exportarGrupoJson = function(tipo) {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-    let grupo = [];
-    
-    // Filtros ampliados: entende qualquer nome de tag enviado pelo botão no HTML
-    if (tipo === 'ce' || tipo === 'baterias_vf') {
-        grupo = acervo.filter(p => p.tipo === 'ce');
-        tipo = 'baterias_vf';
-    } else if (tipo === 'playlists' || tipo === 'pl') {
-        grupo = acervo.filter(p => p.tipo === 'pl' || p.is_playlist);
-        tipo = 'playlists';
-    } else if (tipo === 'simulados' || tipo === 'simulados_avulsos' || tipo === 'mc') {
-        grupo = acervo.filter(p => p.tipo === 'mc' && p.metadados_mc && p.metadados_mc.classificacao && p.metadados_mc.classificacao.toUpperCase().includes('SIMULADO'));
-        tipo = 'simulados';
-    } else if (tipo === 'provas_anteriores' || tipo === 'historico_provas_anteriores' || tipo === 'provas') {
-        grupo = acervo.filter(p => p.tipo === 'mc' && !(p.metadados_mc && p.metadados_mc.classificacao && p.metadados_mc.classificacao.toUpperCase().includes('SIMULADO')));
-        tipo = 'provas';
-    }
-
-    if (grupo.length === 0) { 
-        alert('Este grupo está vazio.'); 
-        return; 
-    }
-    
-    downloadArquivo(JSON.stringify(grupo, null, 2), `grupo-${tipo}-${Date.now()}.json`, 'application/json');
-};
 
 window.exportarEntidadeJson = function(arg1, arg2) {
     // Truque mágico: aceita tanto 1 argumento (id) quanto 2 argumentos (tipo, id)
@@ -22487,7 +21855,7 @@ window.exportarAcervoJson = function() {
    MOTORES DE GRUPO: IMPORT, EXPORT E DELETE
    ========================================== */
 
-// 1. Exportar Grupo (Já existente, mantido aqui apenas para referência)
+// 1. Exportar Grupo
 window.exportarGrupoJson = function(tipo) {
     let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
     let grupo = acervo.filter(p => filtrarPorTipo(p, tipo));
@@ -22531,31 +21899,20 @@ window.importarGrupoJson = function(tipo) {
 // 3. Excluir Grupo Total
 window.excluirGrupoTotal = function(tipo) {
     if(!confirm(`⚠️ Tem certeza que deseja apagar TODAS as baterias do grupo ${tipo}?`)) return;
-    
+
     let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
     acervo = acervo.filter(p => !filtrarPorTipo(p, tipo));
-    
+
     localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
     window.renderHomeDashboard();
     alert('Grupo excluído.');
 };
 
-// Função de apoio para unificar filtros (Use esta mesma lógica nos seus botões)
-function filtrarPorTipo(prova, tipo) {
-    // Ajuste conforme a estrutura do seu objeto 'prova' (ex: prova.cfg.tipo ou prova.tipo)
-    return prova.tipo === tipo || (prova.cfg && prova.cfg.tipo === tipo);
-}
-
-function filtrarPorTipo(p, tipo) {    
-    if (tipo === 'ce')
-   return (
-      p.tipo === 'ce'
-      ||
-      p.is_playlist === true
-   );
-    if (tipo === 'playlists') return p.tipo === 'pl' || p.is_playlist;
-    if (tipo === 'simulados') return p.tipo === 'mc' && p.metadados_mc && p.metadados_mc.classificacao?.toUpperCase().includes('SIMULADO');
-    if (tipo === 'provas_anteriores') return p.tipo === 'mc' && !(p.metadados_mc && p.metadados_mc.classificacao?.toUpperCase().includes('SIMULADO'));
+// Função de apoio pra unificar os filtros dos "Motores de Grupo" acima —
+// único tipo usado hoje é 'ce' (Certo/Errado). Múltipla Escolha e Playlist
+// não existem mais como formato.
+function filtrarPorTipo(p, tipo) {
+    if (tipo === 'ce') return p.tipo === 'ce';
     return false;
 }
 
