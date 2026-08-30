@@ -18367,6 +18367,13 @@ function fecharTab(i){
   tela('tela-home');
 
   renderTabs();
+  // Sem isto, a vitrine ficava com as colunas vazias (só os placeholders
+  // estáticos "Selecione uma matéria."/"Selecione um tópico.") até um F5 —
+  // tela('tela-home') só troca qual seção fica visível, quem preenche as
+  // colunas com a lista de baterias é renderHomeDashboard(), que
+  // voltarParaVitrine() já chama mas este caminho (fechar a última aba já
+  // finalizada) nunca chamou.
+  if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
 
   return;
 
@@ -21994,16 +22001,6 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
         await window.__bootOficialPromise__;
     }
 
-    // Mesmo depois do boot, o arquivo oficial dessa bateria pode ter
-    // falhado ao buscar (rede instável, arquivo grande) — garantirConteudoOficialCompleto
-    // dá mais uma chance específica pra ele antes de desistir. Sem isso, a
-    // bateria abria com enunciado/explicação em branco, sem erro nenhum
-    // visível (só um console.warn discreto).
-    if (!(await window.garantirConteudoOficialCompleto(provaAlvo))) {
-        alert('Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).');
-        return;
-    }
-
     // O ID da aba depende se estamos abrindo um módulo específico ou uma bateria avulsa
     let targetId = (moduleIdx !== undefined && moduleIdx !== null) ? `${simId}_aba_${moduleIdx}` : simId;
 
@@ -22014,6 +22011,14 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
             if(SIMS[i].cfg && SIMS[i].cfg.id === targetId && !SIMS[i].stats) { abaExistente = i; break; }
         }
 
+        // Aba já aberta: só troca pra ela — SIMS[abaExistente].dados já tem
+        // o conteúdo completo de quando foi aberta, não depende de
+        // window.ACERVO_OFICIAL_FULL de novo. Checar garantirConteudoOficialCompleto
+        // aqui (antes desta troca) era a regressão: se o arquivo oficial
+        // ainda não tivesse recarregado nessa sessão (F5 recente, rede
+        // lenta), reabrir uma bateria JÁ EM ANDAMENTO ficava bloqueado à
+        // toa, com o clique "não fazendo nada" (ou mostrando o alerta de
+        // falha) mesmo a aba já tendo tudo que precisa.
         if (abaExistente >= 0) {
             trocarTab(abaExistente, true); // Pula para a aba aberta
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -22115,7 +22120,19 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
         // LÓGICA NORMAL (Bateria Avulsa - Colunas 1 e 2)
         // ----------------------------------------------------
         if (SIMS.length >= 10) { alert('O limite máximo é de 10 simulados abertos simultaneamente. Conclua os que estão em andamento para liberar espaço.'); return; }
-        
+
+        // Chegando aqui, a aba é NOVA (não existia em SIMS) — resolverDadosCompletos
+        // vai precisar mesmo de window.ACERVO_OFICIAL_FULL. Mesmo depois do
+        // boot, o arquivo oficial dessa bateria pode ter falhado ao buscar
+        // (rede instável, arquivo grande) — garantirConteudoOficialCompleto
+        // dá mais uma chance específica antes de desistir. Sem isso, a
+        // bateria abria com enunciado/explicação em branco, sem erro nenhum
+        // visível (só um console.warn discreto).
+        if (!(await window.garantirConteudoOficialCompleto(provaAlvo))) {
+            alert('Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).');
+            return;
+        }
+
         C = JSON.parse(JSON.stringify(provaAlvo.cfg));
         C.auto = false; // Avanço automático nunca reativa sozinho ao abrir/retomar pela Vitrine — precisa de clique explícito
         D = JSON.parse(JSON.stringify(resolverDadosCompletos(provaAlvo)));
