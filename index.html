@@ -14324,197 +14324,6 @@ window.validarRuntime = function(rt){
 
 window.RUNTIME_LOCK = false;
 
-window.SimuladosEngine = {
-    importar: function() {
-        var input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = function(e) {
-            var file = e.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = async function(event) {
-                try {
-                    var parsed = JSON.parse(event.target.result);
-
-                    if (parsed.type !== 'simulados' || parsed.version !== 1 || !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
-                        throw new Error("Arquivo incompatível. O envelope estrutural não corresponde à coluna de Simulados.");
-                    }
-
-                    var novosSims = Array.isArray(parsed.data.sims) ? parsed.data.sims : [];
-
-                    var runtimeAtual = (await window.lerSessaoAtiva()) || {};
-        
-  // =========================================================
-// CATÁLOGO FACTUAL SOBERANO
-// =========================================================
-//
-// Fonte oficial de entidades cadastradas.
-//
-// Representa:
-//
-// - biblioteca;
-// - vitrine;
-// - acervo persistente.
-//
-// NÃO representa:
-//
-// - runtime;
-// - tabs;
-// - sessão ativa.
-//
-// =========================================================      
-                    var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-                    if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
-
-// =========================================================
-// RUNTIME FACTUAL DE SIMULADOS
-// =========================================================
-//
-// Esta coluna possui natureza híbrida:
-//
-// - os simulados existem no catálogo factual;
-// - mas também possuem persistência runtime;
-//
-// Portanto:
-//
-// runtimeAtual.sims NÃO representa:
-// - tabs abertas globais;
-// - sessão principal do usuário;
-//
-// Ele representa apenas:
-// - estado persistente da coluna factual
-//   de simulados.
-//
-// Qualquer alteração aqui deve evitar:
-//
-// - interferir em SIMS global;
-// - abrir tabs automaticamente;
-// - restaurar runtime principal.
-//
-// =========================================================
-
-                    runtimeAtual.sims = acervoSoberano.filter(function(item) {
-                        return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO');
-                    });
-                    
-                    var mapaAtual = new Map();
-                    runtimeAtual.sims.forEach(function(item) { if (item && item.id) mapaAtual.set(item.id, item); });
-                    
-                    var itensInjetaveis = [];
-                    
-                    novosSims.forEach(function(item) {
-                        if (item && item.id && !mapaAtual.has(item.id)) {
-                            runtimeAtual.sims.push(item);
-                            mapaAtual.set(item.id, item);
-                            itensInjetaveis.push(item);
-                        }
-                    });
-                    
-                    if (runtimeAtual.sims.length > 0 && typeof runtimeAtual.si !== 'number') {
-                        runtimeAtual.si = 0;
-                    }
-
-                    await window.salvarSessaoAtiva(runtimeAtual);
-
-                    var acervoFinal = acervoSoberano.filter(function(item) {
-                        return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO'));
-                    });
-                    
-                    runtimeAtual.sims.forEach(function(item) {
-                        if (!acervoFinal.some(function(existing) {
-                            return existing && existing.id === item.id;
-                        })) {
-                            acervoFinal.push(item);
-                        }
-                    });
-                    
-                    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervoFinal));
-                    
-                    // FASE 2C.1 - ENXERTO PASSIVO PURO
-                    var container = document.getElementById('lista-provas-mc');
-                    if (container && itensInjetaveis.length > 0) {
-                        itensInjetaveis.forEach(function(item) {
-                            if (document.getElementById('card-' + item.id)) return;
-
-                            var m = item.metadados_mc || {};
-                            var qtdQ = 0;
-                            var arrayDisciplinas = [];
-                            if (item.dados && Array.isArray(item.dados.blocos)) {
-                                item.dados.blocos.forEach(function(b) {
-                                    qtdQ += b.questoes.length;
-                                    if (b.questoes.length > 0) arrayDisciplinas.push('• ' + b.nome + ' (' + b.questoes.length + ')');
-                                });
-                            }
-                            var disciplinasHtml = arrayDisciplinas.join(' ');
-
-                            var htmlCard = window.buildCardSimulado(item, false, qtdQ, disciplinasHtml, m);
-                            container.insertAdjacentHTML('beforeend', htmlCard);
-                        });
-                    }
-                    
-                    alert('Simulados importados com sucesso!');
-                    // RECONSTRUÇÃO GLOBAL ELIMINADA DA PIPELINE
-                    
-                } catch (err) {
-                    alert('Erro na importação: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-        };
-        input.click();
-    },
-
-    exportar: async function() {
-        var runtime = (await window.lerSessaoAtiva()) || {};
-        var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-        if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
-        runtime.sims = acervoSoberano.filter(function(item) {
-            return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO');
-        });
-        
-        var payload = {
-            type: 'simulados',
-            version: 1,
-            data: runtime
-        };
-        
-        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'simulados_soberanos_backup.json';
-        a.click();
-        
-        setTimeout(function() {
-            URL.revokeObjectURL(url);
-        }, 1000);
-    },
-
-    excluir: async function() {
-        if (confirm('Atenção: Isso apagará os simulados desta coluna. O runtime factual não será afetado. Deseja continuar?')) {
-            var runtimeAtual = (await window.lerSessaoAtiva()) || {};
-
-            runtimeAtual.sims = [];
-            runtimeAtual.si = 0;
-
-            await window.salvarSessaoAtiva(runtimeAtual);
-
-            var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-            if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
-            var acervoFinal = acervoSoberano.filter(function(item) {
-                return !(item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO'));
-            });
-            localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervoFinal));
-            
-            // Redirecionamento de nó-folha: Mutação localizada substitui o repaint global
-if (typeof window.executarPatchVisualSimulados === 'function') {
-    window.executarPatchVisualSimulados();
-}
-        }
-    }
-};
-
 window.ProvasEngine = {
     importar: function() {
         var input = document.createElement('input');
@@ -15271,9 +15080,6 @@ cb(true);
 //
 // =========================================================
 window.SIMS = [];
-if (typeof window.renderizarSimuladosIneditos === 'function') {
-    window.renderizarSimuladosIneditos();
-}
 if (typeof renderSessoes === 'function') {
     renderSessoes();
 }
@@ -15453,33 +15259,6 @@ window.buildCardSimulado = function(p, isResolvido, qtdQ, disciplinasHtml, m) {
     </div>`;
 };
 
-window.buildCardProvaAnterior = function(p, isResolvido, m, clickAcao) {
-    const adminKebab = (typeof IS_ADMIN !== 'undefined' && IS_ADMIN) 
-        ? `<button class="kebab-btn" onclick="window.abrirKebabMenu(event, '${p.id}')" title="Gerenciar Bateria">⋮</button>` 
-        : '';
-        
-    const btnHTML = isResolvido 
-        ? `<button style="background: var(--success); border: none; border-radius: 4px; padding: 4px 8px; font-size: 9px; font-weight: 800; cursor: pointer; color: white; flex-shrink: 0; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="${clickAcao}" title="Ver Resultados">VER 📔</button>`
-        : `<button style="background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; font-size: 9px; cursor: pointer; color: var(--danger); flex-shrink: 0; transition: 0.2s;" onclick="${clickAcao}" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'
-" onmouseout="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'
-">▶</button>`;
-
-    return `
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border-color); gap: 6px;" id="card-${p.id}">
-        <div style="flex: 1; min-width: 0; cursor: pointer;" onclick="${clickAcao}">
-            <div style="font-size: 11px; font-weight: 800; color: ${isResolvido ? 'var(--success)' : 'var(--text-main)'}; text-transform: uppercase;">${m.carreira || 'Geral'}</div>
-            <div style="font-size: 9.5px; font-weight: 700; color: ${isResolvido ? '#166534' : 'var(--app-primary)'}; text-transform: uppercase;">${m.orgao || ''}</div>
-            <div style="font-size: 8px; color: var(--text-muted); margin-top: 4px;">
-                <span style="font-weight: bold;">${m.classificacao ? `[${m.classificacao.toUpperCase()}]` : '[NÃO COMENTADA]'}</span> • ${m.banca || 'N/A'} • ${m.ano || 'S/A'}
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            ${adminKebab}
-            ${btnHTML}
-        </div>
-    </div>`;
-};
-
 // =========================================================
 // CATÁLOGO FACTUAL SOBERANO
 // =========================================================
@@ -15516,21 +15295,6 @@ window.renderHomeDashboard = function() {
     acervo.forEach(function(p) {
         if (p.tipo === 'ce') {
             provasCE.push(p);
-        } else if (p.is_playlist === true && Array.isArray(p.playlist_sims)) {
-            p.playlist_sims.forEach(function(simObj, idx) {
-                if (!simObj || !simObj.cfg || !simObj.dados || !simObj.dados.blocos) return;
-                provasCE.push({
-                    ...simObj,
-                    id: `${p.id}_aba_${idx}`,
-                    nome: simObj.cfg.nome || `Módulo ${idx + 1}`,
-                    materia: simObj.cfg.materia || '',
-                    caminho_completo: simObj.cfg.caminho_completo || '',
-                    origem_playlist: p.id,
-                    nome_playlist: p.nome,
-                    is_playlist_modulo: true,
-                    playlist_module_idx: idx
-                });
-            });
         }
     });
 
@@ -15721,11 +15485,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                     if (isResolvido) {
                         clickAcao = `window.abrirResultadoHistorico('${p.id}')`;
                     } else {
-                        if (p.is_playlist_modulo) {
-                            clickAcao = `window.iniciarSimuladoDaVitrine('${p.origem_playlist}', ${p.playlist_module_idx})`;
-                        } else {
-                            clickAcao = `window.iniciarSimuladoDaVitrine('${p.id}')`;
-                        }
+                        clickAcao = `window.iniciarSimuladoDaVitrine('${p.id}')`;
                     }
 
                     // 4. Linha 2 — Estilo / Criada em / Resolvida em ("—" quando ausente)
@@ -16119,209 +15879,6 @@ atualizarContadoresModoLista();
         }
     }
 
-// ==========================================
-    // 2. RENDERIZAÇÃO: MÚLTIPLA ESCOLHA E PROVAS ANTERIORES
-    // ==========================================
-    const containerMC = document.getElementById('lista-provas-mc');
-    const containerProvasSidebar = document.getElementById('bloco-provas-anteriores');
-    const filtrosBar = document.querySelector('.filtros-bar');
-    
-    if (filtrosBar) filtrosBar.style.display = 'none';
-
-    if (containerMC) {
-        const acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
-        const provasMC_raw = acervo.filter(p => p.tipo === 'mc');
-        const provasMC = [...provasMC_raw].reverse(); 
-        
-        const simuladosIneditos = provasMC.filter(p => p.metadados_mc && p.metadados_mc.classificacao && p.metadados_mc.classificacao.toUpperCase().includes('SIMULADO'));
-        const provasAnteriores = provasMC.filter(p => !(p.metadados_mc && p.metadados_mc.classificacao && p.metadados_mc.classificacao.toUpperCase().includes('SIMULADO')));
-
-// Banco de filtros exclusivo para Provas Anteriores
-        let bancasPA = new Set(), carreirasPA = new Set();
-        provasAnteriores.forEach(p => {
-            if(p.metadados_mc) {
-                if(p.metadados_mc.banca) bancasPA.add(p.metadados_mc.banca);
-                if(p.metadados_mc.carreira) carreirasPA.add(p.metadados_mc.carreira);
-            }
-        });
-
-        // Banco de filtros exclusivo para Simulados Inéditos
-        let bancasSI = new Set(), carreirasSI = new Set();
-        simuladosIneditos.forEach(p => {
-            if(p.metadados_mc) {
-                if(p.metadados_mc.banca) bancasSI.add(p.metadados_mc.banca);
-                if(p.metadados_mc.carreira) carreirasSI.add(p.metadados_mc.carreira);
-            }
-        });
-
-        // Popula selects de Simulados Inéditos apenas na 1ª vez
-        let selBancaSI = document.getElementById('v-filtro-banca');
-        let selCarreiraSI = document.getElementById('v-filtro-carreira');
-        if (selBancaSI && selBancaSI.options.length <= 1) {
-            selBancaSI.innerHTML = '<option value="">Banca (Todas)</option>' + Array.from(bancasSI).sort().map(b => `<option value="${b}">${b}</option>`).join('');
-            selCarreiraSI.innerHTML = '<option value="">Cargo (Todos)</option>' + Array.from(carreirasSI).sort().map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-        // --- COLUNA CENTRAL: SIMULADOS INÉDITOS (PREMIUM) ---
-window.renderizarSimuladosIneditos = function() {
-    let fBancaSI = document.getElementById('v-filtro-banca') ? document.getElementById('v-filtro-banca').value : '';
-    let fCarreiraSI = document.getElementById('v-filtro-carreira') ? document.getElementById('v-filtro-carreira').value : '';
-    let fAnoSI = document.getElementById('v-filtro-ano') ? document.getElementById('v-filtro-ano').value.trim() : '';
-
-    let ineditosFiltrados = simuladosIneditos.filter(p => {
-        let m = p.metadados_mc || {};
-        let matchB = fBancaSI === "" || m.banca === fBancaSI;
-        let matchC = fCarreiraSI === "" || m.carreira === fCarreiraSI;
-        let matchA = fAnoSI === "" || String(m.ano) === fAnoSI;
-        return matchB && matchC && matchA;
-    });
-
-// =========================================================
-// RUNTIME ATIVO (SESSÃO DO USUÁRIO)
-// =========================================================
-//
-// SIMS representa EXCLUSIVAMENTE:
-//
-// - abas abertas;
-// - progresso em andamento;
-// - simulados ativos;
-// - sessão restaurável.
-//
-// Alterações em SIMS:
-// - impactam persistência;
-// - impactam autosave;
-// - impactam restore;
-//
-// Somente ações explícitas do usuário
-// ou restore legítimo podem alterar SIMS.
-//
-// O boot factual NUNCA deve:
-// - abrir tabs;
-// - fazer push em SIMS;
-// - alterar SI/C/D.
-//
-// =========================================================
-
-// =========================================================
-// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
-//
-// Representa:
-//
-// - simulados concluídos;
-// - snapshots finalizados;
-// - auditoria longitudinal.
-//
-// NÃO representa:
-//
-// - runtime ativo;
-// - tabs abertas;
-// - sessão persistente.
-//
-// =========================================================
-    let arquivoMorto = window.lerArquivoMorto();
-
-    let htmlSimulados = ineditosFiltrados.map(p => {
-        let isResolvido = !!arquivoMorto[p.id];
-        let qtdQ = 0;
-        let arrayDisciplinas = [];
-        p.dados.blocos.forEach(b => {
-            qtdQ += b.questoes.length;
-            if(b.questoes.length > 0) {
-                arrayDisciplinas.push(`• ${b.nome} (${b.questoes.length})`);
-            }
-        });
-        let disciplinasHtml = arrayDisciplinas.join(' ');
-        let m = p.metadados_mc || {};
-
-        // AQUI ESTÁ A CHAMADA DO HELPER LIMPA:
-        return window.buildCardSimulado(p, isResolvido, qtdQ, disciplinasHtml, m);
-    }).join('');
-
-    if(ineditosFiltrados.length === 0) {
-        htmlSimulados = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 11px; font-style: italic;">Acervo em construção. Seus simulados inéditos aparecerão aqui.</div>';
-    }
-
-    containerMC.innerHTML = htmlSimulados;
-};
-
-        // --- BARRA LATERAL: PROVAS ANTERIORES (ACERVO PÚBLICO) ---
-window.renderizarProvasAnterioresSidebar = function() {
-    let blocoProvas = document.getElementById('bloco-provas-anteriores');
-    if(!blocoProvas) return;
-
-    let fBusca = document.getElementById('v-filtro-busca-pa') ? document.getElementById('v-filtro-busca-pa').value.toLowerCase().trim() : '';
-    let fBanca = document.getElementById('v-filtro-banca-pa') ? document.getElementById('v-filtro-banca-pa').value : '';
-    let fCarreira = document.getElementById('v-filtro-carreira-pa') ? document.getElementById('v-filtro-carreira-pa').value : '';
-
-    let filtradas = provasAnteriores.filter(p => {
-        let m = p.metadados_mc || {};
-        let matchBusca = fBusca === "" || p.nome.toLowerCase().includes(fBusca);
-        let matchB = fBanca === "" || m.banca === fBanca;
-        let matchC = fCarreira === "" || m.carreira === fCarreira;
-        return matchBusca && matchB && matchC;
-    });
-
-    if(!document.getElementById('lista-provas-anteriores-filtradas')) {
-        containerProvasSidebar.innerHTML = `
-            <div class="filtros-bar">
-                <input type="text" id="v-filtro-busca-pa" placeholder="🔍 Buscar prova..." oninput="window.renderizarProvasAnterioresSidebar()">
-                <div style="display: flex; gap: 6px; width: 100%;">
-                    <select id="v-filtro-banca-pa" onchange="window.renderizarProvasAnterioresSidebar()" style="flex:1;">
-                        <option value="">Banca (Todas)</option>
-                        ${Array.from(bancasPA).sort().map(b => `<option value="${b}">${b}</option>`).join('')}
-                    </select>
-                    <select id="v-filtro-carreira-pa" onchange="window.renderizarProvasAnterioresSidebar()" style="flex:1;">
-                        <option value="">Cargo (Todos)</option>
-                        ${Array.from(carreirasPA).sort().map(c => `<option value="${c}">${c}</option>`).join('')}
-                    </select>
-                </div>
-            </div>
-            <div class="listagem-provas" id="lista-provas-anteriores-filtradas" style="flex:1; overflow-y:auto; padding: 10px; margin: 0; max-height: none;"></div>
-        `;
-    }
-
-    let listFiltrada = document.getElementById('lista-provas-anteriores-filtradas');
-    if(!listFiltrada) return;
-
-    if (filtradas.length === 0) {
-        listFiltrada.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 9px; font-style: italic;">Nenhuma prova encontrada.</div>';
-        return;
-    }
-
-// =========================================================
-// ARQUIVO MORTO (HISTÓRICO IMUTÁVEL)
-//
-// Representa:
-//
-// - simulados concluídos;
-// - snapshots finalizados;
-// - auditoria longitudinal.
-//
-// NÃO representa:
-//
-// - runtime ativo;
-// - tabs abertas;
-// - sessão persistente.
-//
-// =========================================================
-
-    let exibidas = filtradas.slice(0, 20);
-    let avisoExtra = filtradas.length > 20 ? `<div style="text-align:center; font-size:9px; color:var(--text-muted); padding-top:8px;">+ ${filtradas.length - 20} resultados ocultos. Refine a busca.</div>` : '';
-    let arquivoMorto = window.lerArquivoMorto();
-
-    listFiltrada.innerHTML = exibidas.map(p => {
-        let m = p.metadados_mc || {};
-        let isResolvido = !!arquivoMorto[p.id];
-        let clickAcao = isResolvido ? `window.abrirResultadoHistorico('${p.id}')` : `window.iniciarSimuladoDaVitrine('${p.id}')`;
-        
-        // AQUI ESTÁ A CHAMADA DO HELPER LIMPA:
-        return window.buildCardProvaAnterior(p, isResolvido, m, clickAcao);
-    }).join('') + avisoExtra;
-};
-
-        window.renderizarSimuladosIneditos();
-        window.renderizarProvasAnterioresSidebar();
-    }
 
 
 window.voltarParaVitrine = function() {
@@ -20333,7 +19890,6 @@ window.patchCardResolvido = function(id) {
 
         // 5. DOCUMENTAÇÃO ESTRUTURAL INTERNA (Mapeamento semântico de rotas)
         // buildCardSimulado → Coluna 2
-        // buildCardProvaAnterior → Coluna 4
 
         // 6. PRESERVAÇÃO DE SCROLL VISUAL: Captura de coordenada síncrona
         var scrollAtual = window.scrollY;
