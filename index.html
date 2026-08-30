@@ -2723,10 +2723,29 @@ window.SALINHA_BACKUP = {
             // ── ESTRATÉGIA A: ARRAYS (Acervos, Baterias, Históricos de Prova) ──
 
             if (Array.isArray(objImportado) && Array.isArray(objLocal)) {
+                // Lápide de baterias excluídas (cordeiro_acervo_provas): sem
+                // isso, uma bateria excluída localmente (mas ainda presente
+                // no backup da nuvem, já que a exclusão em si nunca é
+                // reenviada sozinha pra lá) reaparece pra sempre aqui — esta
+                // estratégia só sabe ADICIONAR itens ausentes, nunca soube
+                // que o id tinha sido excluído de propósito. Ver tombstone
+                // gravado por excluirSimuladoIndividual/
+                // excluirBateriasSelecionadas. Escopado só a esta chave —
+                // as outras que passam por Estratégia A (históricos de
+                // prova, playlists soberanas) continuam sem tombstone.
+                let idsExcluidosAcervo = null;
+                if (chaveDestinoLocal === 'tjpe_v1__cordeiro_acervo_provas') {
+                    try {
+                        let bruto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+                        if (bruto && typeof bruto === 'object' && !Array.isArray(bruto)) idsExcluidosAcervo = bruto;
+                    } catch (e) {}
+                }
+
                 objImportado.forEach(item => {
                     if (!item) return;
                     const itemId = item.id || item.uid || item.hash || item.codigo;
                     if (!itemId) return;
+                    if (idsExcluidosAcervo && idsExcluidosAcervo[itemId]) return;
 
                     if (!objLocal.some(local => {
                         const localId = local.id || local.uid || local.hash || local.codigo;
@@ -16317,6 +16336,17 @@ window.excluirBateriasSelecionadas = function() {
     acervo = acervo.filter(function(p) { return !(p && idsSet.has(p.id)); });
     localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
 
+    // Lápide de exclusão em lote — mesmo motivo/mesma chave de
+    // excluirSimuladoIndividual (ver comentário lá): sem isso, a
+    // sincronização automática com a nuvem reinjeta as baterias de volta.
+    try {
+        let excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
+        let agora = new Date().toISOString();
+        ids.forEach(function(id) { excluidosAcervo[id] = agora; });
+        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+    } catch (e) {}
+
     let playlistsRuntime = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
     playlistsRuntime = playlistsRuntime.filter(function(p) { return !(p && idsSet.has(p.id)); });
     localStorage.setItem('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsRuntime));
@@ -21481,6 +21511,26 @@ window.excluirSimuladoIndividual = function(id) {
         return p && p.id !== id;
     });
     localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervoFiltrado));
+
+    // 1.5. Lápide de exclusão — a exclusão local NUNCA é reenviada sozinha
+    // pro backup na nuvem (só "☁️⬆️ Salvar" faz isso, manual). Sem
+    // registrar o id aqui, a sincronização automática que roda em TODO
+    // carregamento (importarNuvemSilenciosa, ver window.addEventListener
+    // 'load') buscava o backup, via aplicarPayloadMerge → "ESTRATÉGIA A:
+    // ARRAYS (Acervos, Baterias...)" reinjetava a bateria de volta (ela só
+    // sabe ADICIONAR itens ausentes, nunca soube que o id tinha sido
+    // excluído de propósito) — regressão relatada: exclusão "não pega",
+    // volta em todo F5, mesmo já não abrindo mais em aba. Mesmo padrão já
+    // usado em cronograma_runtime.excluidos/esquemas_runtime.excluidos/
+    // glossario_runtime.excluidos, só que como chave própria no
+    // localStorage (o acervo não é um "runtime" com carregar()/salvar()
+    // central — é lido/escrito direto em vários pontos do arquivo).
+    try {
+        var excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
+        excluidosAcervo[id] = new Date().toISOString();
+        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+    } catch (e) {}
 
     // 2. Purga no Runtime de Playlists (Se aplicável à Coluna 3)
     var playlistsRuntime = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
