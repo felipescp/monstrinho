@@ -22473,13 +22473,18 @@ window.triggerFileUpload = function(callback) {
     #modal-esquema-editor .esq-cor-swatch:hover { transform:scale(1.15); }
     /* "⛶ Maximizar" — mesmo padrão de #modal-esquemas-baralho.esq-baralho-maximizado
        (e de #modal-materiais-pdf.mat-pdf-maximizado): tela cheia de verdade,
-       sem cantos arredondados nem padding externo. */
+       sem cantos arredondados nem padding externo.
+       As dimensões do .mdl precisam estar aqui (não inline no HTML) — estilo
+       inline tem especificidade maior que qualquer seletor de classe e
+       sempre venceria a regra .esq-editor-maximizado .mdl abaixo, deixando
+       o botão "Maximizar" trocar o ícone sem nunca redimensionar de fato. */
+    #modal-esquema-editor .mdl { max-width:720px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; transition:max-width 0.15s ease, width 0.15s ease, max-height 0.15s ease, border-radius 0.15s ease; }
     #modal-esquema-editor.esq-editor-maximizado { padding:0; }
     #modal-esquema-editor.esq-editor-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:12px; border-radius:0; }
     #modal-esquema-editor .esq-editor-maximizar { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted); line-height:1; }
     #modal-esquema-editor .esq-editor-maximizar:hover { color:var(--app-primary); }
 </style>
-    <div class="mdl" style="max-width:720px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:10px;">
+    <div class="mdl">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <div class="fc-popup-header" id="esq-editor-cabecalho">Novo Esquema</div>
             <div style="display:flex; align-items:center; gap:4px;">
