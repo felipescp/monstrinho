@@ -19040,6 +19040,13 @@ function resolverMatTopicoQuestao(q, cfg, nomeBloco) {
     if (topico.toUpperCase().startsWith(prefixo)) {
         topico = topico.substring(prefixo.length).trim();
     }
+    // O Caderno de Questões só agrupa em 2 níveis (Matéria > Tópico) — se
+    // q.topico vier de uma taxonomia mais profunda (L1 > L2 > L3, ex.:
+    // "... > Sistema Nacional de Atendimento Socioeducativo (SINASE) >
+    // Lei do SINASE"), descarta tudo a partir do 3º nível, mantendo só o
+    // L2 (o que realmente aparece como opção na grade do Caderno).
+    let separadorL3 = topico.indexOf(' > ');
+    if (separadorL3 !== -1) topico = topico.substring(0, separadorL3).trim();
     return { materia: mat, topico: topico };
 }
 
