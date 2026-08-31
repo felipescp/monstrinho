@@ -703,6 +703,9 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .bcad:hover { border-color: var(--app-primary); color: var(--app-primary); }
 .bcad.ativo { background: #fefce8; border-color: var(--warning); color: #854d0e; }
 .bcom { padding: .35rem .6rem; text-transform: none; }
+/* Feedback discreto de pra onde a questão foi arquivada no Caderno (ver
+   toggleCaderno) — só existe/aparece enquanto a questão está no Caderno. */
+.cad-destino { font-size: 10px; font-style: italic; color: var(--text-muted); margin-top: .5rem; }
 .bcom.ativo { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
 
 .ew { margin-top: .75rem; border-top: 1px solid var(--border-color); padding-top: .75rem; }
@@ -17702,8 +17705,20 @@ function mkQ(q, modoRevisao){
   bcm.setAttribute('data-qid',q.id);
   bcm.onclick=function(e){e.stopPropagation();comentarCaderno(this.getAttribute('data-qid'));};
 
+  // "Pra onde ela foi": a questão isolada não carrega o mesmo carimbo
+  // taxonômico da bateria (baterias "abrangentes"/importadas têm cada
+  // questão de uma matéria/tópico diferente) — sem isso, só se descobria
+  // onde uma questão foi parar no Caderno abrindo-o e procurando. Nasce já
+  // visível se a questão já estava no Caderno (sessão restaurada, F5).
+  var cadDestino=document.createElement('div'); cadDestino.className='cad-destino'; cadDestino.id='caddest-'+q.id;
+  cadDestino.style.display=noCad?'block':'none';
+  if(noCad){
+    var destinoInicial=resolverMatTopicoQuestao(q,C,q.bn);
+    cadDestino.textContent='Questão enviada para "'+destinoInicial.materia+(destinoInicial.topico?' > '+destinoInicial.topico:'')+'"';
+  }
+
   ac.appendChild(bc);ac.appendChild(bca);ac.appendChild(bcm);
-  div.appendChild(num);div.appendChild(en);div.appendChild(vg);div.appendChild(ac);
+  div.appendChild(num);div.appendChild(en);div.appendChild(vg);div.appendChild(ac);div.appendChild(cadDestino);
 
   // Motivo do erro — sempre criado (ao contrário do bloco de explicação
   // logo abaixo, que só existe se a questão tiver explicacao/axioma
@@ -19000,6 +19015,34 @@ function syncTogglesUI() {
   }
 }
 
+// Resolve a matéria/tópico "de exibição" de uma questão dentro da bateria
+// — cobre tanto bateria de tópico único (usa cfg.materia, igual pra todas
+// as questões) quanto bateria "abrangente"/importada com anotação por
+// questão (q.topico, q.taxonomia, nome do bloco). Mesma prioridade usada
+// por sincronizarCadernoComPlanner (onde a questão REALMENTE é arquivada
+// no Caderno) — extraída daqui pra virar a fonte única, tanto pra
+// persistir quanto pro aviso "Questão enviada para..." exibido ao clicar
+// "+ Caderno" (ver toggleCaderno) baterem sempre no mesmo mat/tópico.
+function resolverMatTopicoQuestao(q, cfg, nomeBloco) {
+    let matOriginal = "DIVERSOS";
+    if (q.topico && q.topico.includes(' > ')) {
+        matOriginal = q.topico.split(' > ')[0];
+    } else if (nomeBloco && nomeBloco.toUpperCase() !== "GERAL" && nomeBloco.toUpperCase() !== (cfg.nome || '').toUpperCase()) {
+        matOriginal = nomeBloco;
+    } else if (q.taxonomia) {
+        matOriginal = q.taxonomia;
+    } else {
+        matOriginal = cfg.materia || "DIVERSOS";
+    }
+    let mat = matOriginal.toUpperCase().trim();
+    let topico = q.topico || nomeBloco || '';
+    let prefixo = mat + " > ";
+    if (topico.toUpperCase().startsWith(prefixo)) {
+        topico = topico.substring(prefixo.length).trim();
+    }
+    return { materia: mat, topico: topico };
+}
+
 function toggleCaderno(qId){
   if(!D.caderno)D.caderno=[];
   var idx=D.caderno.indexOf(qId);
@@ -19021,6 +19064,21 @@ function toggleCaderno(qId){
   // Botão de comentário só existe enquanto a questão está no Caderno.
   var btnCom=g('bcom-'+qId);
   if(btnCom) btnCom.style.display=noCadAgora?'inline-block':'none';
+  // Feedback discreto de pra onde a questão foi arquivada (ver cadDestino
+  // em CriaQuestaoDiv e resolverMatTopicoQuestao acima).
+  var elDestino=g('caddest-'+qId);
+  if(elDestino){
+    if(noCadAgora){
+      var qObj=getQ(qId);
+      if(qObj){
+        var destino=resolverMatTopicoQuestao(qObj,C,qObj.bn);
+        elDestino.textContent='Questão enviada para "'+destino.materia+(destino.topico?' > '+destino.topico:'')+'"';
+      }
+      elDestino.style.display='block';
+    } else {
+      elDestino.style.display='none';
+    }
+  }
 }
 
 // Comentário pessoal sobre a questão, salvo junto dela no Caderno de
@@ -19319,23 +19377,9 @@ function sincronizarCadernoComPlanner(simSession) {
 
     simSession.dados.blocos.forEach(function(b) {
         (b.questoes || []).forEach(function(q) {
-            let matOriginal = "DIVERSOS";
-            if (q.topico && q.topico.includes(' > ')) {
-                matOriginal = q.topico.split(' > ')[0];
-            } else if (b.nome && b.nome.toUpperCase() !== "GERAL" && b.nome.toUpperCase() !== (simSession.cfg.nome || '').toUpperCase()) {
-                matOriginal = b.nome;
-            } else if (q.taxonomia) {
-                matOriginal = q.taxonomia;
-            } else {
-                matOriginal = simSession.cfg.materia || "DIVERSOS";
-            }
-
-            let mat = matOriginal.toUpperCase().trim();
-            let topico = q.topico || b.nome;
-            let prefixo = mat + " > ";
-            if (topico.toUpperCase().startsWith(prefixo)) {
-                topico = topico.substring(prefixo.length).trim();
-            }
+            let destino = resolverMatTopicoQuestao(q, simSession.cfg, b.nome);
+            let mat = destino.materia;
+            let topico = destino.topico;
 
             if (simSession.dados.cadernoAxiomas && simSession.dados.cadernoAxiomas.includes(q.id) && q.axioma) {
                 if (!dbPlanner.caderno_axiomas[mat]) dbPlanner.caderno_axiomas[mat] = {};
@@ -21210,7 +21254,7 @@ window.mostrarAbaCaderno = function(aba) {
                             <div style="font-size:9.5px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;">Enunciado</div>
                             <div style="font-size:12.5px; line-height:1.6; color:var(--text-main);">${formatarMarkdownCaderno(item.enunciado)}</div>
                             ${item.explicacao ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">Explicação</div><div style="font-size:11px; color:var(--text-muted); line-height:1.6;">${formatarMarkdownCaderno(item.explicacao)}</div>` : ''}
-                            ${item.comentario ? `<div style="font-size:9.5px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">💭 Comentário</div><div style="font-size:11px; color:var(--text-main); line-height:1.6; background:#eff6ff; border:1px solid #bfdbfe; border-radius:5px; padding:8px 10px;">${item.comentario}</div>` : ''}
+                            ${item.comentario ? `<div style="font-size:9.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:0.03em; margin-top:10px; margin-bottom:4px; border-top:1px dashed var(--border-color); padding-top:8px;">💭 Comentário</div><div style="font-size:11px; color:var(--text-main); line-height:1.6; background:var(--bg-accent-soft); border:1px solid var(--border-color); border-radius:5px; padding:8px 10px;">${item.comentario}</div>` : ''}
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;">
                             <span style="font-size:9px; font-weight:800; padding:3px 7px; border-radius:4px; background:${bgGabarito}; color:${corGabarito}; letter-spacing:0.03em;">${textoGabarito}</span>
