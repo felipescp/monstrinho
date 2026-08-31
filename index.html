@@ -2300,6 +2300,14 @@ window.__glossarioHidratacaoPromise__ = (async function() {
                 try { window.GLOSSARIO_RUNTIME.render(); } catch (e) {}
             }
         }
+        // Se uma bateria já tiver renderizado questões antes desta
+        // hidratação terminar, o sublinhado de termos do Glossário
+        // (destacarTermosGlossario, mais abaixo no arquivo) já cacheou
+        // "sem termos" pra matéria dela. atualizarDestaquesGlossarioSimuladoAtivo
+        // zera esse cache e reaplica nos cards já montados.
+        if (typeof window.atualizarDestaquesGlossarioSimuladoAtivo === 'function') {
+            try { window.atualizarDestaquesGlossarioSimuladoAtivo(); } catch (e) {}
+        }
     }
 })();
 
@@ -17497,6 +17505,20 @@ function destacarTermosGlossario(texto, materia) {
 // verbetes oficiais terminam de carregar. Não usa renderSim()/setQA(): assim
 // não recria controles, não toca no cronômetro e não muda a questão ativa.
 function atualizarDestaquesGlossarioSimuladoAtivo() {
+    // _cacheDestacarGlossario (acima) é montado NA PRIMEIRA VEZ que uma
+    // matéria é vista, e nunca se invalidava sozinho. Se a 1ª questão de
+    // uma bateria renderizasse ANTES do Glossário terminar de carregar
+    // (hidratação local via IndexedDB, ou busca de termos oficiais — as
+    // duas são assíncronas e correm em paralelo ao boot/abertura da
+    // bateria), o cache gravava "sem termos" pra aquela matéria e NUNCA
+    // se corrigia — nenhum termo sublinhava na bateria inteira, mesmo com
+    // termos cadastrados e repetidos no texto, até um F5 que por acaso
+    // vencesse a corrida. Zera aqui pra forçar reconstruir o matcher com
+    // o Glossário já carregado; esta função já é chamada quando a
+    // hidratação local termina e quando a busca oficial termina.
+    if (typeof _cacheDestacarGlossario === 'object' && _cacheDestacarGlossario) {
+        Object.keys(_cacheDestacarGlossario).forEach(function(k) { delete _cacheDestacarGlossario[k]; });
+    }
     if (!window.D || !Array.isArray(D.blocos) || !window.C) return;
     D.blocos.forEach(function(bloco) {
         (bloco.questoes || []).forEach(function(q) {
