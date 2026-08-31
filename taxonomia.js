@@ -2306,10 +2306,6 @@ const TAXONOMIA_DADOS = {
               "nivel_3": "Lei de Lavagem de Capitais (Lei nº 9.613/98)"
             },
             {
-              "id": "top_1786562572910",
-              "nivel_3": "Lei Maria da Penha e Henry Borel: Aspectos Penais (Lei nº 11.340/06)"
-            },
-            {
               "id": "top_1786562659298",
               "nivel_3": "Lei Antiterrorismo"
             },
