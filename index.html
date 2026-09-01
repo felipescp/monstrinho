@@ -3564,6 +3564,78 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.etiquetaPorFicha) ──
+                    // Mesmíssimo padrão de esquemas_runtime.etiquetaPorEsquema/
+                    // glossario_runtime.etiquetaPorTermo — atribuição achatada
+                    // {id_ficha → id_etiqueta}. Precisa do caso especial pelo mesmo
+                    // motivo: salvar() sempre grava esta chave, então a ESTRATÉGIA B
+                    // genérica nunca mais copiaria nada aqui depois do 1º salvamento local.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'etiquetaPorFicha' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idFicha => {
+                            if (objImportado[subChave][idFicha] && !objLocal[subChave][idFicha]) {
+                                objLocal[subChave][idFicha] = objImportado[subChave][idFicha];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.etiquetas) ──
+                    // Mesmíssimo padrão de esquemas_runtime.etiquetas/glossario_runtime.
+                    // etiquetas — dicionário aninhado {chaveL2 → {id_etiqueta → {id,nome,cor}}},
+                    // une por chaveL2 e, dentro dela, por id_etiqueta.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'etiquetas' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(chaveL2 => {
+                            const etiquetasRemotas = objImportado[subChave][chaveL2];
+                            if (!etiquetasRemotas || typeof etiquetasRemotas !== 'object') return;
+
+                            if (!objLocal[subChave][chaveL2] || typeof objLocal[subChave][chaveL2] !== 'object') {
+                                objLocal[subChave][chaveL2] = {};
+                            }
+
+                            Object.keys(etiquetasRemotas).forEach(idEtiqueta => {
+                                if (etiquetasRemotas[idEtiqueta] && !objLocal[subChave][chaveL2][idEtiqueta]) {
+                                    objLocal[subChave][chaveL2][idEtiqueta] = etiquetasRemotas[idEtiqueta];
+                                    entidadesInjetadas++;
+                                    persistirChave = true;
+                                }
+                            });
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.coresCustomizadas) ──
+                    // Mesmíssimo padrão de esquemas_runtime.coresCustomizadas — array de
+                    // strings de cor cruas, sem id/uid/hash pra a ESTRATÉGIA A genérica
+                    // reconhecer. União por valor direto, sem duplicar.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'coresCustomizadas' &&
+                        Array.isArray(objImportado[subChave])) {
+
+                        if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
+
+                        objImportado[subChave].forEach(cor => {
+                            if (cor && objLocal[subChave].indexOf(cor) === -1) {
+                                objLocal[subChave].push(cor);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: PRATICAR CADERNO (praticar_caderno_runtime.revisaoQuestoes) ──
                     // Mesmíssimo formato/problema/política do caso acima (flashcards_runtime.revisao),
                     // só que a chave usada aqui é id_q+'_'+sim_id de questões do caderno_erros.
@@ -25338,6 +25410,12 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #jurisprudencia-modal .jur-tb-btn.ativa:hover { color:#fff; }
     #jurisprudencia-modal .jur-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    /* Etiquetas — mesmo padrão de #esquemas-modal/#section-glossario.
+       .jur-etq-swatch é reaproveitado tanto na paleta (22px) quanto no
+       filtro por cor da toolbar (16px, via .jur-etq-swatch-filtro). */
+    #jurisprudencia-modal .jur-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #jurisprudencia-modal .jur-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #jurisprudencia-modal .jur-etq-swatch-filtro { width:16px; height:16px; }
     /* 2ª linha da toolbar — os 3 filtros adicionais (Tribunal/Sistemática/
        Ano), compactos, populados dinamicamente com os valores distintos já
        presentes no escopo atual (matéria/divisão selecionada). */
@@ -25358,6 +25436,9 @@ window.carregarEsquemasOficiais = async function() {
        botões como itens separados e empurra "Ocultar" pro meio do card. */
     #jurisprudencia-modal .jur-card-tags-dir { display:flex; align-items:center; gap:2px; flex-shrink:0; }
     #jurisprudencia-modal .jur-card-checkbox { cursor:pointer; flex-shrink:0; }
+    /* Etiqueta no card — lado ESQUERDO do cabeçalho, junto do checkbox
+       (extremo oposto de Ocultar/Excluir), mesmo padrão de #esquemas-modal. */
+    #jurisprudencia-modal .jur-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
     #jurisprudencia-modal .jur-tag-tribunal { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; }
     #jurisprudencia-modal .jur-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
     #jurisprudencia-modal .jur-card-meta { font-size:9.5px; color:var(--text-muted); }
@@ -25525,6 +25606,53 @@ window.carregarEsquemasOficiais = async function() {
                 <span id="jur-posicao-facil">0 / 0</span>
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('facil', 1)">›</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Gerenciar/Aplicar Etiquetas da Jurisprudência — popup .mo/.mdl
+     em cima de #jurisprudencia-modal, mesmíssimo padrão de
+     #modal-esquema-etiquetas/#modal-glossario-etiquetas. -->
+<div id="modal-jurisprudencia-etiquetas" class="mo">
+<style>
+    #modal-jurisprudencia-etiquetas { z-index: 10000; }
+    #modal-jurisprudencia-etiquetas .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-etiquetas .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-jurisprudencia-etiquetas .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-jurisprudencia-etiquetas .jur-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-jurisprudencia-etiquetas .jur-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-etiquetas .jur-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-jurisprudencia-etiquetas .jur-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
+    #modal-jurisprudencia-etiquetas .jur-btn-excluir:hover { color:var(--danger); }
+    #modal-jurisprudencia-etiquetas .jur-etq-pill { font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    #modal-jurisprudencia-etiquetas .jur-etq-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #modal-jurisprudencia-etiquetas #jur-etq-nome { flex:1; min-width:140px; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-jurisprudencia-etiquetas .jur-etq-paleta { display:flex; gap:6px; flex-wrap:wrap; }
+    #modal-jurisprudencia-etiquetas .jur-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
+    #modal-jurisprudencia-etiquetas .jur-etq-swatch.selecionada { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white) inset; }
+    #modal-jurisprudencia-etiquetas .jur-etq-swatch-filtro { width:16px; height:16px; }
+    #modal-jurisprudencia-etiquetas .jur-etq-swatch-add { background:var(--bg-white); border:1px dashed var(--app-primary); color:var(--app-primary); font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1; }
+    #modal-jurisprudencia-etiquetas .jur-etq-swatch-add:hover { background:var(--bg-accent-soft); }
+    #modal-jurisprudencia-etiquetas .jur-etq-lista { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+    #modal-jurisprudencia-etiquetas .jur-etq-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border:1px solid var(--border-color); border-radius:6px; }
+    #modal-jurisprudencia-etiquetas .jur-etq-vazio { font-size:11px; color:var(--text-muted); font-style:italic; padding:10px 0; text-align:center; }
+</style>
+    <div class="mdl" style="max-width:440px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header" id="jur-etq-titulo">🏷️ Gerenciar Etiquetas</div>
+            <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalEtiquetas()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="jur-etq-remover-acao"></div>
+        <div id="jur-etq-lista" class="jur-etq-lista"></div>
+        <div style="border-top:1px dashed var(--border-color); padding-top:12px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted);">Nova etiqueta</div>
+            <div class="jur-etq-form">
+                <input type="text" id="jur-etq-nome" placeholder="Nome da etiqueta">
+                <button class="fc-footer-btn primario" onclick="window.JURISPRUDENCIA_RUNTIME.criarEtiqueta()">Criar</button>
+            </div>
+            <input type="hidden" id="jur-etq-cor-selecionada">
+            <input type="color" id="jur-etq-cor-picker" style="position:absolute; width:0; height:0; opacity:0; pointer-events:none;" onchange="window.JURISPRUDENCIA_RUNTIME.adicionarCorCustomizada(this.value)">
+            <div id="jur-etq-paleta-container"></div>
         </div>
     </div>
 </div>
@@ -25935,6 +26063,19 @@ window.JURISPRUDENCIA_RUNTIME = {
     // acoplamento a nenhuma seção específica). { "<id_ficha>":
     // {ultimaClassificacao} } — puro sistema de distribuição, sem agendamento.
     revisaoJurisprudencia: {},
+    // Etiquetas coloridas (nomeáveis) — ESCOPADAS POR TÓPICO (chave L2),
+    // mesmíssimo padrão/motivo de ESQUEMAS_RUNTIME.etiquetas/
+    // GLOSSARIO_RUNTIME.etiquetas: um tópico pode reunir dezenas de fichas
+    // diferentes, e a etiqueta organiza esse monte por dentro.
+    //   etiquetas: { "<chaveL2>": { "<idEtiqueta>": {id, nome, cor} } }
+    //   etiquetaPorFicha: { "<idFicha>": "<idEtiqueta>" } — no máximo UMA
+    //   etiqueta por ficha, ids de ficha já são únicos no sistema todo.
+    etiquetas: {},
+    etiquetaPorFicha: {},
+    PALETA_ETIQUETAS: ['#eab308', '#f97316', '#b91c1c', '#db2777', '#9333ea', '#16a34a', '#14b8a6', '#2563eb', '#1e293b', '#6b7280'],
+    // Cores extras adicionadas pelo usuário via "+ Adicionar Cor" — globais
+    // (só as ETIQUETAS em si são por tópico), mesmo padrão de ESQUEMAS_RUNTIME.
+    coresCustomizadas: [],
     STORAGE_KEY: 'tjpe_v1__jurisprudencia_runtime',
     _materiaSelecionada: null,
     _divisaoSelecionada: null,
@@ -25965,6 +26106,8 @@ window.JURISPRUDENCIA_RUNTIME = {
     _ocultarOficiais: false,
     _modoSelecao: false,
     _selecionados: {},
+    _filtroCor: '', // '' = todas as cores; senão, uma cor da paleta (fixa ou customizada)
+    _mostrarFiltroCor: false, // toggle do botão "Classificar por Cor"
     _modoExibicao: 'temas', // 'temas' | 'data'
     _resultadoPreVisualizado: null, // guarda o parse entre "Pré-visualizar" e "Confirmar"
     _verAtual: null, // {chave, id} da ficha aberta no popup "Ver" — usado por alternarSuperado/atualizarSupersedidoPor
@@ -25993,6 +26136,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         this.revisaoJurisprudencia = (bruto && typeof bruto.revisaoJurisprudencia === 'object' && !Array.isArray(bruto.revisaoJurisprudencia)) ? bruto.revisaoJurisprudencia : {};
+        this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
+        this.etiquetaPorFicha = (bruto && typeof bruto.etiquetaPorFicha === 'object' && !Array.isArray(bruto.etiquetaPorFicha)) ? bruto.etiquetaPorFicha : {};
+        this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
         this._bootstrapped = true;
     },
 
@@ -26016,7 +26162,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let apenasPessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
                 if (apenasPessoais.length > 0) fichasPessoais[chave] = apenasPessoais;
             });
-            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia }));
+            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia, etiquetas: this.etiquetas, etiquetaPorFicha: this.etiquetaPorFicha, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
@@ -26246,6 +26392,13 @@ window.JURISPRUDENCIA_RUNTIME = {
                 return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
             });
         }
+        if (this._filtroCor) {
+            lista = lista.filter(function(par) {
+                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
+                let et = etiquetasDoTopico[self.etiquetaPorFicha[par.item.id]];
+                return et && et.cor === self._filtroCor;
+            });
+        }
         if (this._modoExibicao === 'data') {
             lista = lista.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         }
@@ -26321,6 +26474,196 @@ window.JURISPRUDENCIA_RUNTIME = {
         });
     },
 
+    // ── ETIQUETAS — mesmíssimo padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME
+    // (ver comentários lá para o raciocínio completo por trás de cada
+    // decisão): escopadas por tópico (chave L2), no máximo 1 etiqueta por
+    // ficha, paleta fixa + cores customizadas globais. ──
+    _chaveEtiquetas: function() {
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) return null;
+        return this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+    },
+
+    _etiquetasDoTopicoAtual: function() {
+        let chave = this._chaveEtiquetas();
+        return chave ? (this.etiquetas[chave] || {}) : {};
+    },
+
+    abrirModalEtiquetas: function(modoAplicar) {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de gerenciar etiquetas — elas organizam um tópico por dentro, não o sistema inteiro.');
+            return;
+        }
+        this._modalEtiquetasModoAplicar = !!modoAplicar;
+        document.getElementById('jur-etq-nome').value = '';
+        document.getElementById('jur-etq-cor-selecionada').value = this.PALETA_ETIQUETAS[0];
+        this._renderModalEtiquetas();
+        document.getElementById('modal-jurisprudencia-etiquetas').classList.add('open');
+    },
+
+    fecharModalEtiquetas: function() {
+        document.getElementById('modal-jurisprudencia-etiquetas').classList.remove('open');
+    },
+
+    _renderModalEtiquetas: function() {
+        let self = this;
+        let tituloEl = document.getElementById('jur-etq-titulo');
+        let qtdSel = Object.keys(this._selecionados).length;
+        let chave = this._chaveEtiquetas();
+        let sufixoTopico = chave ? (' — ' + chave) : '';
+        tituloEl.textContent = this._modalEtiquetasModoAplicar
+            ? '🏷️ Aplicar Etiqueta (' + qtdSel + ' selecionado' + (qtdSel === 1 ? '' : 's') + ')' + sufixoTopico
+            : '🏷️ Etiquetas do tópico' + sufixoTopico;
+
+        let corSelecionadaAtual = document.getElementById('jur-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        let paletaHtml = '<div class="jur-etq-paleta">' + todasAsCores.map(function(cor) {
+            return '<span class="jur-etq-swatch' + (cor === corSelecionadaAtual ? ' selecionada' : '') + '" data-cor="' + cor + '" style="background:' + cor + ';" onclick="window.JURISPRUDENCIA_RUNTIME._selecionarCorNovaEtiqueta(this)"></span>';
+        }).join('') +
+            '<span class="jur-etq-swatch jur-etq-swatch-add" title="Adicionar cor" onclick="document.getElementById(\'jur-etq-cor-picker\').click()">+</span>' +
+        '</div>';
+
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        let idsExistentes = Object.keys(etiquetasTopico).sort(function(a, b) {
+            return (etiquetasTopico[a].nome || '').localeCompare(etiquetasTopico[b].nome || '');
+        });
+
+        let listaHtml = idsExistentes.length === 0
+            ? '<div class="jur-etq-vazio">Nenhuma etiqueta criada ainda neste tópico.</div>'
+            : idsExistentes.map(function(id) {
+                let et = etiquetasTopico[id];
+                let acaoHtml = self._modalEtiquetasModoAplicar
+                    ? '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarEtiquetaAosSelecionados(\'' + id + '\')">Aplicar</button>'
+                    : '<button class="jur-btn-excluir" onclick="window.JURISPRUDENCIA_RUNTIME.excluirEtiqueta(\'' + id + '\')" title="Excluir etiqueta">🗑️</button>';
+                return '<div class="jur-etq-item">' +
+                    '<span class="jur-etq-pill" style="background:' + et.cor + ';">' + self._escapar(et.nome) + '</span>' +
+                    acaoHtml +
+                '</div>';
+            }).join('');
+
+        let removerHtml = this._modalEtiquetasModoAplicar
+            ? '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.removerEtiquetaDosSelecionados()">🚫 Remover etiqueta dos selecionados</button>'
+            : '';
+
+        document.getElementById('jur-etq-lista').innerHTML = listaHtml;
+        document.getElementById('jur-etq-remover-acao').innerHTML = removerHtml;
+        document.getElementById('jur-etq-paleta-container').innerHTML = paletaHtml;
+    },
+
+    _selecionarCorNovaEtiqueta: function(el) {
+        let container = el.parentElement;
+        Array.prototype.forEach.call(container.children, function(c) { c.classList.remove('selecionada'); });
+        el.classList.add('selecionada');
+        document.getElementById('jur-etq-cor-selecionada').value = el.getAttribute('data-cor');
+    },
+
+    // Disparado pelo <input type="color" id="jur-etq-cor-picker"> oculto,
+    // acionado pelo swatch "+" — mesmo padrão de ESQUEMAS_RUNTIME.
+    adicionarCorCustomizada: function(cor) {
+        if (!cor) return;
+        let todasAsCores = this.PALETA_ETIQUETAS.concat(this.coresCustomizadas);
+        if (todasAsCores.indexOf(cor) === -1) {
+            this.coresCustomizadas.push(cor);
+            this.salvar();
+        }
+        document.getElementById('jur-etq-cor-selecionada').value = cor;
+        this._renderModalEtiquetas();
+    },
+
+    criarEtiqueta: function() {
+        let chave = this._chaveEtiquetas();
+        if (!chave) return;
+        let nome = (document.getElementById('jur-etq-nome').value || '').trim();
+        let cor = document.getElementById('jur-etq-cor-selecionada').value || this.PALETA_ETIQUETAS[0];
+        if (!nome) { alert('Dê um nome pra etiqueta.'); return; }
+        let id = 'etq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        if (!this.etiquetas[chave]) this.etiquetas[chave] = {};
+        this.etiquetas[chave][id] = { id: id, nome: nome, cor: cor };
+        this.salvar();
+        document.getElementById('jur-etq-nome').value = '';
+        this._renderModalEtiquetas();
+    },
+
+    excluirEtiqueta: function(id) {
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][id]) return;
+        if (!confirm('Excluir a etiqueta "' + this.etiquetas[chave][id].nome + '"? Ela será removida de todas as fichas deste tópico que a usam.')) return;
+        let self = this;
+        let corRemovida = this.etiquetas[chave][id].cor;
+        delete this.etiquetas[chave][id];
+        if (Object.keys(this.etiquetas[chave]).length === 0) delete this.etiquetas[chave];
+        Object.keys(this.etiquetaPorFicha).forEach(function(idFicha) {
+            if (self.etiquetaPorFicha[idFicha] === id) delete self.etiquetaPorFicha[idFicha];
+        });
+        if (this._filtroCor === corRemovida) {
+            let aindaExiste = Object.keys(this.etiquetas[chave] || {}).some(function(k) { return self.etiquetas[chave][k].cor === corRemovida; });
+            if (!aindaExiste) this._filtroCor = ''; // a cor filtrada não pertence a mais nenhuma etiqueta deste tópico
+        }
+        this.salvar();
+        this._renderModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    aplicarEtiquetaAosSelecionados: function(idEtiqueta) {
+        let chave = this._chaveEtiquetas();
+        if (!chave || !this.etiquetas[chave] || !this.etiquetas[chave][idEtiqueta]) return;
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idFicha) { self.etiquetaPorFicha[idFicha] = idEtiqueta; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    removerEtiquetaDosSelecionados: function() {
+        let self = this;
+        Object.keys(this._selecionados).forEach(function(idFicha) { delete self.etiquetaPorFicha[idFicha]; });
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalEtiquetas();
+        this._renderGradeCards();
+    },
+
+    filtrarPorCor: function(cor) {
+        this._filtroCor = (this._filtroCor === cor) ? '' : cor; // clicar na cor já ativa limpa o filtro
+        this._renderGradeCards();
+    },
+
+    // Botão "🎨 Classificar por Cor" — mostra/esconde a fileira de swatches
+    // com as cores em uso NESTE tópico. Fechar o filtro também limpa a cor
+    // escolhida (sai do modo "filtrado").
+    toggleFiltroCor: function() {
+        if (!this._chaveEtiquetas()) {
+            alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de classificar por cor.');
+            return;
+        }
+        this._mostrarFiltroCor = !this._mostrarFiltroCor;
+        if (!this._mostrarFiltroCor) this._filtroCor = '';
+        this._renderGradeCards();
+    },
+
+    // Retorna só o CONTEÚDO (sem embrulho próprio) — é encaixado dentro do
+    // grupo de botões já existente na toolbar, logo depois de "🎨
+    // Classificar por Cor".
+    _renderFiltroCores: function() {
+        if (!this._mostrarFiltroCor) return '';
+        let self = this;
+        let etiquetasTopico = this._etiquetasDoTopicoAtual();
+        if (Object.keys(etiquetasTopico).length === 0) {
+            return '<span class="jur-toggle-ocultos">Nenhuma etiqueta neste tópico ainda.</span>';
+        }
+        let coresEmUso = [];
+        Object.keys(etiquetasTopico).forEach(function(id) {
+            let cor = etiquetasTopico[id].cor;
+            if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
+        });
+        let swatches = coresEmUso.map(function(cor) {
+            return '<span class="jur-etq-swatch jur-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
+        }).join('');
+        return '<span class="jur-toggle-ocultos">Cor:</span>' + swatches;
+    },
+
     _renderToolbar: function() {
         let qtdSel = Object.keys(this._selecionados).length;
         // Ao lado do botão Selecionar/Cancelar — mesmo lugar e padrão de
@@ -26332,6 +26675,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             htmlAcoes =
                 '<div class="jur-tb-acoes-grupo">' +
                     '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalEtiquetas(true)">🏷️ Aplicar Etiqueta' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
@@ -26342,6 +26686,9 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn' + (this._modoExibicao === 'data' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoExibicao()">' + (this._modoExibicao === 'data' ? 'Por Temas' : 'Data do Julgado') + '</button>' +
                     '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
                     '<button class="jur-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
+                    '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
+                    '<button class="jur-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
+                    this._renderFiltroCores() +
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
@@ -26399,6 +26746,12 @@ window.JURISPRUDENCIA_RUNTIME = {
             let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
             let seloSuperado = superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '';
+            let etiquetaDoItem = (self.etiquetas[par.chave] || {})[self.etiquetaPorFicha[item.id]];
+            // Mesmo padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME: lado ESQUERDO
+            // do cabeçalho, junto do checkbox — extremo oposto de Ocultar/Excluir.
+            let etiquetaHtml = etiquetaDoItem
+                ? '<span class="jur-etq-pill jur-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
+                : '';
             // Ocultar é preferência PESSOAL de visibilidade (não edita o
             // conteúdo) — ao contrário de Editar/Excluir, disponível pra
             // fichas oficiais também.
@@ -26419,6 +26772,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<div class="jur-card-tags">' +
                     '<span class="jur-card-tags-esq">' +
                         checkboxHtml +
+                        etiquetaHtml +
                         '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
                         seloOficial +
                         seloOculto +
