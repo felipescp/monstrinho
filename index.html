@@ -24490,17 +24490,37 @@ window.ESQUEMAS_RUNTIME = {
         }
     },
 
+    // O modelo de dados de Esquemas só guarda {titulo, conteudoHtml} — a
+    // importação em massa NÃO grava um campo "subtema" separado, ela
+    // embute "<strong>Subtema:</strong> X" dentro do próprio HTML do corpo
+    // (ver _montarConteudoHtmlImportado). Pra usar isso como etiqueta sem
+    // precisar migrar/regravar nada já salvo, extrai na hora, direto do
+    // HTML, e desfaz o escape aplicado na gravação (_escapar só troca
+    // & < > " — sem aspa simples, então não precisa desfazer essa). Cards
+    // criados manualmente pelo editor (sem essa meta) simplesmente não têm
+    // etiqueta — retorna '', tratado normalmente como "sem etiqueta" em
+    // todo o resto do código do baralho.
+    _extrairEtiquetaEsquema: function(item) {
+        if (!item) return '';
+        if (item.subtema) return item.subtema; // futuro-compatível, se um dia isso virar campo de verdade
+        let html = item.conteudoHtml || '';
+        let m = /<strong>Subtema:<\/strong>\s*([\s\S]*?)\s*(?:·\s*<strong>|<\/div>)/.exec(html);
+        if (!m) return '';
+        return m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&').trim();
+    },
+
     _abrirBaralho: function(escopo, titulo, itens) {
+        let self = this;
         // Ordem padrão = por etiqueta (subtema/lei), não por ordem de
         // importação — pedido explícito pra dar alguma racionalidade ao
         // volume de leis diferentes misturadas (sobretudo em Legislação
         // Especial), já que esses baralhos não têm L2 pra apoiar a
         // organização. Sort estável (garantido desde ES2019): dentro da
         // mesma etiqueta, mantém a ordem relativa original. Cards sem
-        // etiqueta (raro — o parser exige "Subtema: ...") vão pro final.
+        // etiqueta vão pro final.
         itens = itens.slice().sort(function(a, b) {
-            let ta = (a.subtema || '').toLowerCase();
-            let tb = (b.subtema || '').toLowerCase();
+            let ta = self._extrairEtiquetaEsquema(a).toLowerCase();
+            let tb = self._extrairEtiquetaEsquema(b).toLowerCase();
             if (!ta && tb) return 1;
             if (ta && !tb) return -1;
             if (ta < tb) return -1;
@@ -24577,10 +24597,11 @@ window.ESQUEMAS_RUNTIME = {
     _deckBaralhoAtual: function() {
         let s = this._baralhoState;
         if (!s) return [];
+        let self = this;
         let deck = s.ordemChaves
             .map(function(id) { return s.cardsBase.find(function(e) { return e.id === id; }); })
             .filter(Boolean);
-        if (s.filtroEtiqueta) deck = deck.filter(function(e) { return (e.subtema || '') === s.filtroEtiqueta; });
+        if (s.filtroEtiqueta) deck = deck.filter(function(e) { return self._extrairEtiquetaEsquema(e) === s.filtroEtiqueta; });
         return deck;
     },
 
@@ -24591,10 +24612,11 @@ window.ESQUEMAS_RUNTIME = {
     _etiquetasBaralho: function() {
         let s = this._baralhoState;
         if (!s) return [];
+        let self = this;
         let vistas = {};
         let etiquetas = [];
         s.cardsBase.forEach(function(e) {
-            let et = e.subtema || '';
+            let et = self._extrairEtiquetaEsquema(e);
             if (!et || vistas[et]) return;
             vistas[et] = true;
             etiquetas.push(et);
@@ -24695,8 +24717,9 @@ window.ESQUEMAS_RUNTIME = {
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
                 : '';
-            let etiqueta = item.subtema
-                ? '<span class="esq-baralho-lista-item-etiqueta">[' + self._escapar(item.subtema) + ']</span>'
+            let etiquetaTexto = self._extrairEtiquetaEsquema(item);
+            let etiqueta = etiquetaTexto
+                ? '<span class="esq-baralho-lista-item-etiqueta">[' + self._escapar(etiquetaTexto) + ']</span>'
                 : '';
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiqueta +
