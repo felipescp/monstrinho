@@ -21412,10 +21412,12 @@ window.encurtarAnoDataBR = function(dataBrLonga) {
 // itens já usada em mostrarAbaCaderno. materiaFiltro null/undefined exporta
 // tudo (título "Todas as Matérias" e um "# matéria" por seção); com filtro,
 // exporta só aquela matéria, sem o cabeçalho "# matéria" repetido.
-function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
+// topicoFiltro (só válido junto de materiaFiltro) restringe mais ainda, a
+// um único tópico (L2) — botões 📤/🎨 do cabeçalho de tópico no Caderno.
+function gerarMarkdownCaderno(aba, dados, materiaFiltro, topicoFiltro) {
     let materias = materiaFiltro ? [materiaFiltro] : Object.keys(dados);
     let exportandoTudo = !materiaFiltro;
-    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
+    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (topicoFiltro || materiaFiltro || 'Todas as Matérias');
 
     let linhas = ['# ' + tituloDoc, ''];
 
@@ -21428,7 +21430,8 @@ function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
             linhas.push('');
         }
 
-        Object.keys(topicos).forEach(function(top) {
+        (topicoFiltro && materiaFiltro ? [topicoFiltro] : Object.keys(topicos)).forEach(function(top) {
+            if (!topicos[top]) return;
             linhas.push('## ' + top);
             linhas.push('');
 
@@ -21465,15 +21468,15 @@ function gerarMarkdownCaderno(aba, dados, materiaFiltro) {
 // HTML estilizado do Caderno (Erros ou Axiomas) — mesmo dado/nesting de
 // gerarMarkdownCaderno, emitindo as classes .doc-* compartilhadas (ver
 // gerarDocumentoHtmlEstilizado, perto de downloadArquivo) em vez de Markdown.
-function gerarHtmlCaderno(aba, dados, materiaFiltro) {
+function gerarHtmlCaderno(aba, dados, materiaFiltro, topicoFiltro) {
     let materias = materiaFiltro ? [materiaFiltro] : Object.keys(dados);
-    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (materiaFiltro || 'Todas as Matérias');
+    let tituloDoc = (aba === 'erros' ? 'Caderno de Questões' : 'Caderno de Axiomas') + ' — ' + (topicoFiltro || materiaFiltro || 'Todas as Matérias');
 
     let totalItens = 0;
     materias.forEach(function(mat) {
         let topicos = dados[mat];
         if (!topicos) return;
-        Object.keys(topicos).forEach(function(top) { totalItens += topicos[top].length; });
+        (topicoFiltro && materiaFiltro ? [topicoFiltro] : Object.keys(topicos)).forEach(function(top) { if (topicos[top]) totalItens += topicos[top].length; });
     });
 
     let corpo = '<div class="doc-titulo">' + escapeHtmlCaderno(tituloDoc) + '</div>';
@@ -21484,7 +21487,8 @@ function gerarHtmlCaderno(aba, dados, materiaFiltro) {
         if (!topicos) return;
         corpo += '<div class="doc-materia">' + escapeHtmlCaderno(mat) + '</div>';
 
-        Object.keys(topicos).forEach(function(top) {
+        (topicoFiltro && materiaFiltro ? [topicoFiltro] : Object.keys(topicos)).forEach(function(top) {
+            if (!topicos[top]) return;
             corpo += '<div class="doc-divisao">' + escapeHtmlCaderno(top) + '</div>';
 
             topicos[top].forEach(function(item) {
@@ -21511,14 +21515,21 @@ function gerarHtmlCaderno(aba, dados, materiaFiltro) {
     return gerarDocumentoHtmlEstilizado(tituloDoc, corpo);
 }
 
-window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
+// topicoFiltro (só faz sentido junto de materiaFiltro) restringe a exportação
+// a um único tópico (L2) — botão 📤 do cabeçalho de tópico no Caderno.
+window.exportarCadernoMarkdown = function(aba, materiaFiltro, topicoFiltro) {
     let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
     let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
 
-    if (materiaFiltro) {
+    if (topicoFiltro && materiaFiltro) {
+        if (!dados[materiaFiltro] || !dados[materiaFiltro][topicoFiltro] || dados[materiaFiltro][topicoFiltro].length === 0) {
+            alert('Nenhuma questão salva neste tópico ainda.');
+            return;
+        }
+    } else if (materiaFiltro) {
         if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
             alert('Nenhuma questão salva nesta matéria ainda.');
             return;
@@ -21528,22 +21539,28 @@ window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
         return;
     }
 
-    let md = gerarMarkdownCaderno(aba, dados, materiaFiltro);
+    let md = gerarMarkdownCaderno(aba, dados, materiaFiltro, topicoFiltro);
     let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
-    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.md') : (prefixo + '-completo.md');
+    let sufixo = topicoFiltro ? slugCaderno(materiaFiltro) + '-' + slugCaderno(topicoFiltro) : (materiaFiltro ? slugCaderno(materiaFiltro) : null);
+    let nomeArquivo = sufixo ? (prefixo + '-' + sufixo + '.md') : (prefixo + '-completo.md');
 
     downloadArquivo(md, nomeArquivo, 'text/markdown');
 };
 
 // Mesmo escopo/filtro de exportarCadernoMarkdown — emite o dado bruto em JSON.
-window.exportarCadernoJson = function(aba, materiaFiltro) {
+window.exportarCadernoJson = function(aba, materiaFiltro, topicoFiltro) {
     let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
     let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
 
-    if (materiaFiltro) {
+    if (topicoFiltro && materiaFiltro) {
+        if (!dados[materiaFiltro] || !dados[materiaFiltro][topicoFiltro] || dados[materiaFiltro][topicoFiltro].length === 0) {
+            alert('Nenhuma questão salva neste tópico ainda.');
+            return;
+        }
+    } else if (materiaFiltro) {
         if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
             alert('Nenhuma questão salva nesta matéria ainda.');
             return;
@@ -21553,22 +21570,30 @@ window.exportarCadernoJson = function(aba, materiaFiltro) {
         return;
     }
 
-    let resultado = materiaFiltro ? { [materiaFiltro]: dados[materiaFiltro] } : dados;
+    let resultado = (topicoFiltro && materiaFiltro)
+        ? { [materiaFiltro]: { [topicoFiltro]: dados[materiaFiltro][topicoFiltro] } }
+        : (materiaFiltro ? { [materiaFiltro]: dados[materiaFiltro] } : dados);
     let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
-    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.json') : (prefixo + '-completo.json');
+    let sufixo = topicoFiltro ? slugCaderno(materiaFiltro) + '-' + slugCaderno(topicoFiltro) : (materiaFiltro ? slugCaderno(materiaFiltro) : null);
+    let nomeArquivo = sufixo ? (prefixo + '-' + sufixo + '.json') : (prefixo + '-completo.json');
 
     downloadArquivo(JSON.stringify(resultado, null, 2), nomeArquivo, 'application/json');
 };
 
 // Mesmo escopo/filtro de exportarCadernoMarkdown — emite HTML estilizado.
-window.exportarCadernoHtml = function(aba, materiaFiltro) {
+window.exportarCadernoHtml = function(aba, materiaFiltro, topicoFiltro) {
     let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
     let dados = aba === 'erros' ? (dbPlanner.caderno_erros || {}) : (dbPlanner.caderno_axiomas || {});
 
-    if (materiaFiltro) {
+    if (topicoFiltro && materiaFiltro) {
+        if (!dados[materiaFiltro] || !dados[materiaFiltro][topicoFiltro] || dados[materiaFiltro][topicoFiltro].length === 0) {
+            alert('Nenhuma questão salva neste tópico ainda.');
+            return;
+        }
+    } else if (materiaFiltro) {
         if (!dados[materiaFiltro] || Object.keys(dados[materiaFiltro]).length === 0) {
             alert('Nenhuma questão salva nesta matéria ainda.');
             return;
@@ -21578,9 +21603,10 @@ window.exportarCadernoHtml = function(aba, materiaFiltro) {
         return;
     }
 
-    let htmlDoc = gerarHtmlCaderno(aba, dados, materiaFiltro);
+    let htmlDoc = gerarHtmlCaderno(aba, dados, materiaFiltro, topicoFiltro);
     let prefixo = aba === 'erros' ? 'caderno-erros' : 'caderno-axiomas';
-    let nomeArquivo = materiaFiltro ? (prefixo + '-' + slugCaderno(materiaFiltro) + '.html') : (prefixo + '-completo.html');
+    let sufixo = topicoFiltro ? slugCaderno(materiaFiltro) + '-' + slugCaderno(topicoFiltro) : (materiaFiltro ? slugCaderno(materiaFiltro) : null);
+    let nomeArquivo = sufixo ? (prefixo + '-' + sufixo + '.html') : (prefixo + '-completo.html');
 
     downloadArquivo(htmlDoc, nomeArquivo, 'text/html');
 };
@@ -21650,6 +21676,8 @@ window.mostrarAbaCaderno = function(aba) {
                     <span style="font-size:11px; font-weight:700; color:var(--text-main);">${escapeHtmlCaderno(top)}</span>
                     <span style="display:flex; align-items:center; gap:9px;">
                         <span style="font-size:9.5px; font-weight:700; color:var(--app-primary);">${itens.length}</span>
+                        <button onclick="event.stopPropagation(); window.exportarCadernoMarkdown('${aba}', '${escapeAttrCaderno(mat)}', '${escapeAttrCaderno(top)}')" title="Exportar este tópico em Markdown" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:11px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">📤</button>
+                        <button onclick="event.stopPropagation(); window.exportarCadernoHtml('${aba}', '${escapeAttrCaderno(mat)}', '${escapeAttrCaderno(top)}')" title="Exportar este tópico em HTML estilizado" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:11px; padding:0; line-height:1;" onmouseover="this.style.color='var(--app-primary)'" onmouseout="this.style.color='var(--text-muted)'">🎨</button>
                         <span class="caderno-acc-seta" style="font-size:10px; color:var(--text-muted); display:inline-block; transition:transform 0.2s;">▸</span>
                     </span>
                 </div>
