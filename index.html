@@ -22856,15 +22856,34 @@ window.triggerFileUpload = function(callback) {
        line-clamp:2 no item inteiro, a linha da origem consumia as 2
        linhas do clamp e o título nunca chegava a aparecer). Separador
        border-bottom em vez de gap, pra linhas vizinhas não colarem. */
-    #modal-esquemas-baralho .esq-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    /* Coluna flex: barra de etiquetas fixa no topo (não rola) + lista de
+       itens rolável abaixo dela, ambas dentro do mesmo painel lateral de
+       300px — ver _renderListaBaralho() pra a estrutura HTML. */
+    #modal-esquemas-baralho .esq-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
     #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-esquemas-baralho .esq-baralho-lista-itens { flex:1; overflow-y:auto; overflow-x:hidden; }
     #modal-esquemas-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-esquemas-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
     #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-nome,
-    #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-origem { color:#fff; }
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-origem,
+    #modal-esquemas-baralho .esq-baralho-lista-item.ativo .esq-baralho-lista-item-etiqueta { color:#fff; }
     #modal-esquemas-baralho .esq-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:normal; overflow-wrap:break-word; margin-bottom:2px; }
     #modal-esquemas-baralho .esq-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:normal; overflow-wrap:break-word; }
+    /* Etiqueta (subtema/lei) do card, em segunda linha — discreta, itálico,
+       pra não competir com o título mas ainda dar o contexto pedido (útil
+       sobretudo em Legislação Especial, com muitas leis diferentes
+       misturadas no mesmo baralho). */
+    #modal-esquemas-baralho .esq-baralho-lista-item-etiqueta { display:block; font-size:10px; font-style:italic; color:var(--text-muted); margin-top:2px; white-space:normal; overflow-wrap:break-word; }
+    /* Barra de chips de etiqueta — fixa no topo, não rola junto com a lista. */
+    #modal-esquemas-baralho .esq-baralho-etiquetas { flex-shrink:0; display:flex; flex-wrap:wrap; gap:5px; padding:8px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #modal-esquemas-baralho .esq-baralho-etiqueta-chip { padding:3px 8px; border-radius:20px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #modal-esquemas-baralho .esq-baralho-etiqueta-chip:hover { border-color:var(--app-primary); }
+    #modal-esquemas-baralho .esq-baralho-etiqueta-chip.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    /* Uma etiqueta ativa isola aquela lei — as demais ficam esmaecidas pra
+       indicar visualmente que estão fora do filtro (mas continuam clicáveis,
+       pra trocar de etiqueta com 1 clique em vez de precisar limpar antes). */
+    #modal-esquemas-baralho .esq-baralho-etiquetas.tem-filtro .esq-baralho-etiqueta-chip:not(.ativa) { opacity:0.4; }
     /* flex-direction:column é essencial aqui — sem isso, o card (único
        filho) fica sujeito ao eixo padrão (row) de um flex container, o
        que nunca deveria importar com 1 filho só, mas em alguns navegadores
@@ -24472,11 +24491,28 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     _abrirBaralho: function(escopo, titulo, itens) {
+        // Ordem padrão = por etiqueta (subtema/lei), não por ordem de
+        // importação — pedido explícito pra dar alguma racionalidade ao
+        // volume de leis diferentes misturadas (sobretudo em Legislação
+        // Especial), já que esses baralhos não têm L2 pra apoiar a
+        // organização. Sort estável (garantido desde ES2019): dentro da
+        // mesma etiqueta, mantém a ordem relativa original. Cards sem
+        // etiqueta (raro — o parser exige "Subtema: ...") vão pro final.
+        itens = itens.slice().sort(function(a, b) {
+            let ta = (a.subtema || '').toLowerCase();
+            let tb = (b.subtema || '').toLowerCase();
+            if (!ta && tb) return 1;
+            if (ta && !tb) return -1;
+            if (ta < tb) return -1;
+            if (ta > tb) return 1;
+            return 0;
+        });
         this._baralhoState = {
             escopo: escopo,
             cardsBase: itens,
             ordemChaves: itens.map(function(e) { return e.id; }),
-            indiceAtual: 0
+            indiceAtual: 0,
+            filtroEtiqueta: null
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -24541,9 +24577,43 @@ window.ESQUEMAS_RUNTIME = {
     _deckBaralhoAtual: function() {
         let s = this._baralhoState;
         if (!s) return [];
-        return s.ordemChaves
+        let deck = s.ordemChaves
             .map(function(id) { return s.cardsBase.find(function(e) { return e.id === id; }); })
             .filter(Boolean);
+        if (s.filtroEtiqueta) deck = deck.filter(function(e) { return (e.subtema || '') === s.filtroEtiqueta; });
+        return deck;
+    },
+
+    // Etiquetas distintas do baralho INTEIRO (sempre a partir de cardsBase,
+    // nunca do deck já filtrado) — é o que popula a barra de chips no topo
+    // da lista; se viesse do deck filtrado, as demais etiquetas sumiriam
+    // da barra assim que uma fosse escolhida, e não daria pra trocar.
+    _etiquetasBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return [];
+        let vistas = {};
+        let etiquetas = [];
+        s.cardsBase.forEach(function(e) {
+            let et = e.subtema || '';
+            if (!et || vistas[et]) return;
+            vistas[et] = true;
+            etiquetas.push(et);
+        });
+        etiquetas.sort(function(a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+        return etiquetas;
+    },
+
+    // Clique numa etiqueta: ISOLA ela (mostra só os cards daquela lei);
+    // clicar de novo na mesma etiqueta já ativa LIMPA o filtro (volta a
+    // mostrar tudo). Sempre volta pro primeiro card do novo recorte — um
+    // índice antigo poderia não existir mais (ou apontar pro card errado)
+    // dentro do deck filtrado.
+    toggleFiltroEtiquetaBaralho: function(etiqueta) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroEtiqueta = (s.filtroEtiqueta === etiqueta) ? null : etiqueta;
+        s.indiceAtual = 0;
+        this.renderBaralho();
     },
 
     _itemBaralhoAtual: function() {
@@ -24608,17 +24678,32 @@ window.ESQUEMAS_RUNTIME = {
         if (!listaEl) return;
         let s = this._baralhoState;
         if (!s) { listaEl.innerHTML = ''; return; }
-        let deck = this._deckBaralhoAtual();
         let self = this;
-        listaEl.innerHTML = deck.map(function(item, idx) {
+
+        let etiquetas = this._etiquetasBaralho();
+        let htmlEtiquetas = etiquetas.length === 0 ? '' :
+            '<div class="esq-baralho-etiquetas' + (s.filtroEtiqueta ? ' tem-filtro' : '') + '">' +
+            etiquetas.map(function(et) {
+                let etJs = et.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return '<span class="esq-baralho-etiqueta-chip' + (et === s.filtroEtiqueta ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroEtiquetaBaralho(\'' + etJs + '\')" title="' + self._escapar(et) + '">' + self._escapar(et) + '</span>';
+            }).join('') +
+            '</div>';
+
+        let deck = this._deckBaralhoAtual();
+        let htmlItens = deck.map(function(item, idx) {
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
                 : '';
+            let etiqueta = item.subtema
+                ? '<span class="esq-baralho-lista-item-etiqueta">[' + self._escapar(item.subtema) + ']</span>'
+                : '';
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
-                origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
+                origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiqueta +
                 '</div>';
-        }).join('');
+        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhum card com esta etiqueta.</div>';
+
+        listaEl.innerHTML = htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
         if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
     },
