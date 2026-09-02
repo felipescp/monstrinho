@@ -2519,6 +2519,11 @@ window.repararSimuladosNaoSincronizados = async function() {
 
     if (reparados.length > 0) {
         console.info('[REPARO] ' + reparados.length + ' simulado(s) ressincronizado(s) com o Planner/Dashboard:', reparados);
+        // Sem isto, o dbPlanner é corrigido por baixo do pano mas o iframe
+        // do Dashboard — se já estava aberto/renderizado antes deste reparo
+        // rodar — nunca fica sabendo que os dados mudaram (só reage a esta
+        // mensagem, disparada normalmente por finalizarSimulado()).
+        if (typeof window.notificarMutacaoAoDashboard === 'function') window.notificarMutacaoAoDashboard();
     }
     return reparados;
 };
@@ -2677,6 +2682,7 @@ window.repararTopicosNoPlanner = async function() {
     }
     if (examesCorrigidos.length > 0) {
         console.info('[REPARO TÓPICOS] ' + examesCorrigidos.length + ' exame(s) com Caderno/Estatísticas realinhados à taxonomia atual:', examesCorrigidos);
+        if (typeof window.notificarMutacaoAoDashboard === 'function') window.notificarMutacaoAoDashboard();
     }
     return examesCorrigidos;
 };
