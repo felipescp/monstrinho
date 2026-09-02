@@ -414,8 +414,71 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
          MOTORES PROCEDURAIS SOBERANOS
          ========================================== -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    loadFactualDatabase();
+// =========================================================================
+// HELPER COMPARTILHADO: INDEXEDDB CHAVE-VALOR — same-origin com index.html,
+// MESMO nome de banco/store/chave (ver index.html, "HELPER COMPARTILHADO:
+// INDEXEDDB CHAVE-VALOR" e window.CHAVE_PLANNER_RUNTIME_IDB) — é o MESMO
+// banco físico, não uma cópia. Precisa existir aqui porque dashboard.html
+// é um DOCUMENTO SEPARADO (carregado num <iframe>), sem acesso às
+// variáveis/funções JS do index.html — só ao que estiver no armazenamento
+// compartilhado da origem (localStorage, IndexedDB), nunca ao runtime em
+// memória de outro documento.
+//
+// Isso corrige um apagão real: quando o Planner foi migrado de localStorage
+// pra IndexedDB (ver index.html), este arquivo continuou lendo só
+// localStorage — como os dados somem de lá após a migração (só existem no
+// IndexedDB dali em diante), o dashboard passou a carregar um banco vazio
+// (0 questões, histórico zerado) mesmo com o simulado corretamente salvo.
+const IDB_NOME = 'tjpe_v1_db';
+const IDB_STORE = 'kv';
+const CHAVE_PLANNER_IDB = 'salinha_longitudinal_runtime';
+let _idbPromise = null;
+
+function abrirIndexedDB() {
+    if (_idbPromise) return _idbPromise;
+    _idbPromise = new Promise(function(resolve) {
+        if (!window.indexedDB) { resolve(null); return; }
+        try {
+            const req = indexedDB.open(IDB_NOME, 1);
+            req.onupgradeneeded = function() {
+                if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
+            };
+            req.onsuccess = function() { resolve(req.result); };
+            req.onerror = req.onblocked = function() { resolve(null); };
+        } catch (e) { resolve(null); }
+    });
+    return _idbPromise;
+}
+
+function idbGet(chave) {
+    return abrirIndexedDB().then(function(db) {
+        if (!db) return undefined;
+        return new Promise(function(resolve) {
+            try {
+                const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(chave);
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { resolve(undefined); };
+            } catch (e) { resolve(undefined); }
+        });
+    });
+}
+
+function idbSet(chave, valor) {
+    return abrirIndexedDB().then(function(db) {
+        if (!db) return false;
+        return new Promise(function(resolve) {
+            try {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(valor, chave);
+                tx.oncomplete = function() { resolve(true); };
+                tx.onerror = tx.onabort = function() { resolve(false); };
+            } catch (e) { resolve(false); }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadFactualDatabase();
     initializeLongitudinalRuntime();
 });
 
@@ -428,18 +491,18 @@ const LEGACY_STORAGE_KEY = 'tjpe_v1__etl_planner_db';
 const DEFAULT_DB = { historico_provas_anteriores: [], simulados_avulsos: [], cadernos_perenes: {}, caderno_erros: {}, caderno_axiomas: {}, materiais: {}, hues: {} };
 let db = { ...DEFAULT_DB };
 
-function loadFactualDatabase() {
+async function loadFactualDatabase() {
     try {
-        // Tenta carregar a chave nova Soberana
-        let cache = localStorage.getItem(STORAGE_KEY);
-        
-        // Fallback migratório silencioso
-        if (!cache) {
-            cache = localStorage.getItem(LEGACY_STORAGE_KEY);
-            if (cache) {
-                console.log("⚙️ [MIGRAÇÃO]: Transferindo dados do legado semântico para a nova chave soberana.");
-                localStorage.setItem(STORAGE_KEY, cache); // Consagra a nova persistência imediatamente
-            }
+        // Fonte de verdade é o IndexedDB (ver comentário acima). Só cai pro
+        // localStorage se ainda não existir lá — 1ª carga antes do
+        // index.html ter rodado sua própria migração, ou navegador sem
+        // IndexedDB disponível — nunca apaga a origem localStorage daqui
+        // (quem migra/limpa de verdade é o index.html; o dashboard só lê).
+        let cache = await idbGet(CHAVE_PLANNER_IDB);
+
+        if (cache === undefined) {
+            cache = localStorage.getItem(STORAGE_KEY);
+            if (!cache) cache = localStorage.getItem(LEGACY_STORAGE_KEY);
         }
 
         if (cache) {
@@ -471,11 +534,20 @@ function loadFactualDatabase() {
                     }
                 });
             }
-            save(); 
         }
     } catch (e) { console.error("Falha na inicialização do DB Factual:", e); }
 }
-        function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); } catch (e) { console.error("Falha ao persistir factualidade:", e); } }
+        // Grava no MESMO IndexedDB que index.html lê/escreve — fire-and-forget
+        // (não bloqueia quem chama), mesmo espírito de window.salvarPlannerBruto
+        // no index.html. Usado pelas ações que o próprio Dashboard executa
+        // (excluir simulado, resetar ETL — ver executarExclusaoSimulado/
+        // resetarETLGlobal) para que a mudança realmente persista no lugar
+        // que o resto do app lê, e não fique presa só neste documento.
+        function save() {
+            idbSet(CHAVE_PLANNER_IDB, JSON.stringify(db)).then(function(ok) {
+                if (!ok) console.warn('[DASHBOARD] Falha ao persistir no IndexedDB.');
+            });
+        }
     </script>
 
     <script>
@@ -1844,9 +1916,9 @@ window.alternarSanfonaFactual = function(elemento) {
             }
         };
 
-        window.addEventListener('message', function(event) {
+        window.addEventListener('message', async function(event) {
             if (event.data === 'SIMULADO_FINALIZADO' || event.data === 'BATERIA_CRIADA') {
-                loadFactualDatabase();
+                await loadFactualDatabase();
                 window.initializeLongitudinalRuntime();
             } else if (event.data === 'FECHAR_MODAL') {
                 if (typeof window.fecharModalCofre === 'function') window.fecharModalCofre();
@@ -1855,11 +1927,11 @@ window.alternarSanfonaFactual = function(elemento) {
             }
         });
 
-        window.onload = () => {
-            loadFactualDatabase();
+        window.onload = async () => {
+            await loadFactualDatabase();
             if (db.taxonomia) window.TAXONOMIA_DADOS = db.taxonomia;
             setupNavigation();
-            window.initializeLongitudinalRuntime(); 
+            window.initializeLongitudinalRuntime();
         };
     </script>
 
