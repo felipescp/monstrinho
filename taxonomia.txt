@@ -230,8 +230,7 @@ const TAXONOMIA_DADOS = {
                 "perdas e danos",
                 "juros de mora"
               ]
-            }
-          ,
+            },
             {
               "id": "civil_pref_creditorias",
               "nivel_3": "Preferências e Privilégios Creditórios (arts. 955 a 965 do CC)",
@@ -321,7 +320,6 @@ const TAXONOMIA_DADOS = {
           "id": "civil_responsabilidade",
           "nivel_2": "Responsabilidade Civil",
           "topicos": [
-            
             {
               "id": "civil_resp_teoria",
               "nivel_3": "Teorias, Elementos (Conduta, Dano, Nexo Causal)",
@@ -1232,7 +1230,6 @@ const TAXONOMIA_DADOS = {
           "id": "cons_legislacao_especial",
           "nivel_2": "Legislação Especial e Setorial",
           "topicos": [
-            
             {
               "id": "cons_leg_telecom",
               "nivel_3": "Regulamento de Serviços de Telecomunicações",
@@ -1364,8 +1361,7 @@ const TAXONOMIA_DADOS = {
               "aliases": [
                 "Lei nº 13.257/2016"
               ]
-            }
-          ,
+            },
             {
               "id": "eca_juventude",
               "nivel_3": "Estatuto da Juventude (Lei nº 12.852/2013)",
@@ -1410,7 +1406,6 @@ const TAXONOMIA_DADOS = {
           "id": "eca_justica_normativas",
           "nivel_2": "Atos Normativos do CNJ e Saúde Mental",
           "topicos": [
-            
             {
               "id": "eca_cnj_audiencias",
               "nivel_3": "Audiências Concentradas e Outros Atos Normativos",
@@ -1562,9 +1557,8 @@ const TAXONOMIA_DADOS = {
                 "requisição de tratamento médico",
                 "inclusão em programa oficial"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "eca_henry_borel",
               "nivel_3": "Prevenção e Enfrentamento da Violência Doméstica e Familiar (Lei Henry Borel)",
               "aliases": [
@@ -1828,8 +1822,6 @@ const TAXONOMIA_DADOS = {
           "id": "penal_pe_pessoa",
           "nivel_2": "Parte Especial: Crimes contra a Pessoa",
           "topicos": [
-            
-            
             {
               "id": "penal_pe_vida",
               "nivel_3": "Crimes contra a Vida",
@@ -1953,9 +1945,8 @@ const TAXONOMIA_DADOS = {
                 "golpe de estado",
                 "abolição violenta"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "top_1786562526771",
               "nivel_3": "Crimes em Licitações e Contratos (Arts. 178 a 183-B do CP / Lei 14.133)",
               "aliases": []
@@ -2091,8 +2082,7 @@ const TAXONOMIA_DADOS = {
                 "Marco Legal do Combate ao Crime Organizado",
                 "Lei Raul Jungmann"
               ]
-            }
-          ,
+            },
             {
               "id": "penal_esp_consumo",
               "nivel_3": "Crimes contra as Relações de Consumo (Lei nº 8.078/1990, arts. 61 a 80)",
@@ -2212,8 +2202,7 @@ const TAXONOMIA_DADOS = {
               "id": "crim_contemporaneos",
               "nivel_3": "Temas Contemporâneos (Nova Criminologia)",
               "aliases": []
-            }
-          ,
+            },
             {
               "id": "crim_cifras_controle",
               "nivel_3": "Cifras Criminais, Fatores Desencadeantes e Controle Social",
@@ -2268,7 +2257,6 @@ const TAXONOMIA_DADOS = {
           "id": "pp_investigacao",
           "nivel_2": "Investigação Criminal",
           "topicos": [
-            
             {
               "id": "pp_invest_ip",
               "nivel_3": "Inquérito Policial, ANPP e Outros Procedimentos",
@@ -2414,8 +2402,7 @@ const TAXONOMIA_DADOS = {
                 "Impedimento e Suspeição",
                 "Juiz"
               ]
-            }
-          ,
+            },
             {
               "id": "pp_suj_funcoes_essenciais",
               "nivel_3": "Funções Essenciais à Justiça e Ofendido",
@@ -2437,8 +2424,6 @@ const TAXONOMIA_DADOS = {
           "id": "pp_prisoes",
           "nivel_2": "Prisões e Medidas Cautelares",
           "topicos": [
-            
-            
             {
               "id": "pp_prisoes_prov",
               "nivel_3": "Prisões Provisórias (Flagrante, Preventiva e Temporária)",
@@ -2466,8 +2451,6 @@ const TAXONOMIA_DADOS = {
           "id": "pp_atos",
           "nivel_2": "Atos Processuais e Comunicação",
           "topicos": [
-            
-            
             {
               "id": "pp_atos_comunic",
               "nivel_3": "Comunicação dos Atos (Citação, Intimação) e Prazos",
@@ -2533,9 +2516,8 @@ const TAXONOMIA_DADOS = {
                 "ação penal originária",
                 "súmula vinculante 45"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "pp_atos_sentenca",
               "nivel_3": "Sentença e Coisa Julgada",
               "aliases": [
@@ -2732,7 +2714,6 @@ const TAXONOMIA_DADOS = {
           "id": "const_organizacao_estado",
           "nivel_2": "Organização do Estado",
           "topicos": [
-            
             {
               "id": "const_org_estado_comp",
               "nivel_3": "Repartição de Competências e Entes Federados",
@@ -2822,8 +2803,7 @@ const TAXONOMIA_DADOS = {
                 "Autonomia Administrativa e Financeira",
                 "Juizados Especiais e Justiça de Paz"
               ]
-            }
-          ,
+            },
             {
               "id": "const_jud_stf_cnj",
               "nivel_3": "STF, Súmula Vinculante e CNJ (arts. 101 a 103-B da CF/1988)",
@@ -2859,8 +2839,7 @@ const TAXONOMIA_DADOS = {
                 "ministério público junto aos tribunais de contas",
                 "Conselho Nacional do Ministério Público (CNMP)"
               ]
-            }
-          ,
+            },
             {
               "id": "const_func_advocacia",
               "nivel_3": "Advocacia Pública, Advocacia Privada e Defensoria Pública (arts. 131 a 135 da CF/1988)",
@@ -2883,7 +2862,6 @@ const TAXONOMIA_DADOS = {
           "id": "const_controle",
           "nivel_2": "Controle de Constitucionalidade",
           "topicos": [
-            
             {
               "id": "const_controle_difuso",
               "nivel_3": "Teoria Geral e Controle Difuso",
@@ -2978,7 +2956,6 @@ const TAXONOMIA_DADOS = {
           "id": "const_ordem_eco",
           "nivel_2": "Ordem Econômica e Financeira",
           "topicos": [
-            
             {
               "id": "const_eco_urbana_agraria",
               "nivel_3": "Política Urbana, Agrícola e Fundiária (arts. 182 a 191 da CF/1988)",
@@ -2996,9 +2973,8 @@ const TAXONOMIA_DADOS = {
                 "plano nacional de reforma agrária",
                 "participação do setor de produção"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "econ_ord_princ",
               "nivel_3": "Princípios Gerais e Formas de Atuação do Estado",
               "aliases": [
@@ -3010,7 +2986,7 @@ const TAXONOMIA_DADOS = {
                 "Lei nº 13.874/2019 (Liberdade Econômica)"
               ]
             },
-{
+            {
               "id": "econ_ord_monopolios",
               "nivel_3": "Monopólios, Serviços Públicos e Atividade Econômica",
               "aliases": [
@@ -3025,7 +3001,6 @@ const TAXONOMIA_DADOS = {
           "id": "const_trib_orc",
           "nivel_2": "Tributação e Orçamento",
           "topicos": [
-            
             {
               "id": "const_trib_financas",
               "nivel_3": "Finanças Públicas, Orçamento e Precatórios (arts. 163 a 169 e 100 da CF/1988)",
@@ -3040,9 +3015,8 @@ const TAXONOMIA_DADOS = {
                 "dívida pública",
                 "despesa com pessoal"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "trib_const_conceito",
               "nivel_3": "Conceito de Tributo, Natureza Jurídica e Preços Públicos",
               "aliases": [
@@ -3054,7 +3028,7 @@ const TAXONOMIA_DADOS = {
                 "Fiscalidade, extrafiscalidade e parafiscalidade"
               ]
             },
-{
+            {
               "id": "trib_const_princ",
               "nivel_3": "Princípios e Limitações ao Poder de Tributar",
               "aliases": [
@@ -3066,7 +3040,7 @@ const TAXONOMIA_DADOS = {
                 "Limitações constitucionais"
               ]
             },
-{
+            {
               "id": "trib_const_comp",
               "nivel_3": "Competência Tributária",
               "aliases": [
@@ -3082,7 +3056,7 @@ const TAXONOMIA_DADOS = {
                 "Bitributação e Bis in Idem"
               ]
             },
-{
+            {
               "id": "trib_const_repart",
               "nivel_3": "Repartição Constitucional de Receitas Tributárias",
               "aliases": [
@@ -3093,7 +3067,7 @@ const TAXONOMIA_DADOS = {
                 "desvinculação de receitas (dru/drem)"
               ]
             },
-{
+            {
               "id": "trib_const_imun",
               "nivel_3": "Imunidades Tributárias",
               "aliases": [
@@ -3103,7 +3077,7 @@ const TAXONOMIA_DADOS = {
                 "Imunidades genéricas e específicas"
               ]
             },
-{
+            {
               "id": "trib_const_reforma",
               "nivel_3": "Reforma Tributária (EC nº 132/2023)",
               "aliases": [
@@ -3123,8 +3097,6 @@ const TAXONOMIA_DADOS = {
       "id": "eleitoral",
       "nivel_1": "Direito Eleitoral",
       "divisoes": [
-        
-        
         {
           "id": "eleitoral_elegibilidade",
           "nivel_2": "Elegibilidade, Inelegibilidade e Registro",
@@ -3437,8 +3409,6 @@ const TAXONOMIA_DADOS = {
           "id": "emp_titulos_credito",
           "nivel_2": "Títulos de Crédito",
           "topicos": [
-            
-            
             {
               "id": "emp_tit_teoria",
               "nivel_3": "Teoria Geral, Princípios e Atributos",
@@ -3583,7 +3553,6 @@ const TAXONOMIA_DADOS = {
           "id": "emp_prop_industrial",
           "nivel_2": "Propriedade Industrial",
           "topicos": [
-            
             {
               "id": "emp_pi_patentes",
               "nivel_3": "Patentes de Invenção e Modelo de Utilidade",
@@ -3668,9 +3637,8 @@ const TAXONOMIA_DADOS = {
                 "direito de retirada",
                 "exclusão de sócio"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "emp_soc_acoes",
               "nivel_3": "Sociedade por Ações (Lei nº 6.404/1976)",
               "aliases": [
@@ -3683,7 +3651,7 @@ const TAXONOMIA_DADOS = {
                 "Sociedade Anônima do Futebol - SAF (Lei nº 14.193/2021)"
               ]
             },
-{
+            {
               "id": "emp_op_reestruturacao",
               "nivel_3": "Transformação, Incorporação, Fusão e Cisão",
               "aliases": [
@@ -3692,7 +3660,7 @@ const TAXONOMIA_DADOS = {
                 "Sociedades Coligadas, Controladas e Filiadas"
               ]
             },
-{
+            {
               "id": "emp_ltda_regras",
               "nivel_3": "Sociedade Limitada: Quotas, Administração e Deliberações",
               "aliases": [
@@ -3762,12 +3730,10 @@ const TAXONOMIA_DADOS = {
       "id": "financeiro_tributario",
       "nivel_1": "Direito Financeiro e Tributário",
       "divisoes": [
-        
         {
           "id": "trib_tributos_especies",
           "nivel_2": "Teoria Geral dos Tributos e Espécies Tributárias",
           "topicos": [
-            
             {
               "id": "trib_especies",
               "nivel_3": "Espécies Tributárias",
@@ -3776,9 +3742,8 @@ const TAXONOMIA_DADOS = {
                 "Contribuições sociais",
                 "Preço público, tarifa e pedágio"
               ]
-            }
-          ,
-{
+            },
+            {
               "id": "trib_esp_fed",
               "nivel_3": "Impostos Federais",
               "aliases": [
@@ -3797,7 +3762,7 @@ const TAXONOMIA_DADOS = {
                 "Impostos da União"
               ]
             },
-{
+            {
               "id": "trib_esp_est",
               "nivel_3": "Impostos Estaduais",
               "aliases": [
@@ -3813,7 +3778,7 @@ const TAXONOMIA_DADOS = {
                 "Impostos dos Estados e do Distrito Federal"
               ]
             },
-{
+            {
               "id": "trib_esp_mun",
               "nivel_3": "Impostos Municipais",
               "aliases": [
@@ -3828,7 +3793,7 @@ const TAXONOMIA_DADOS = {
                 "Impostos dos Municípios"
               ]
             },
-{
+            {
               "id": "trib_esp_taxas",
               "nivel_3": "Taxas, Contribuições de Melhoria e Empréstimos Compulsórios",
               "aliases": [
@@ -3836,7 +3801,7 @@ const TAXONOMIA_DADOS = {
                 "serviço público específico e divisível"
               ]
             },
-{
+            {
               "id": "trib_esp_contrib",
               "nivel_3": "Contribuições Especiais",
               "aliases": [
@@ -3855,9 +3820,6 @@ const TAXONOMIA_DADOS = {
           "id": "trib_legislacao_obrigacao",
           "nivel_2": "Legislação, Norma e Obrigação Tributária",
           "topicos": [
-            
-            
-            
             {
               "id": "trib_obrig_teoria",
               "nivel_3": "Legislação, Vigência, Interpretação e Fato Gerador",
@@ -3957,7 +3919,6 @@ const TAXONOMIA_DADOS = {
           "id": "trib_adm_processo",
           "nivel_2": "Administração, Infrações e Processo Tributário",
           "topicos": [
-            
             {
               "id": "trib_proc_fisc",
               "nivel_3": "Fiscalização Tributária",
@@ -4115,8 +4076,7 @@ const TAXONOMIA_DADOS = {
                 "garantias e contragarantias",
                 "aspectos jurídicos da lrf"
               ]
-            }
-          ,
+            },
             {
               "id": "econ_fin_royalties",
               "nivel_3": "Compensação Financeira pela Exploração de Recursos Minerais e Petróleo (Royalties)",
@@ -4134,7 +4094,6 @@ const TAXONOMIA_DADOS = {
       "id": "ambiental",
       "nivel_1": "Direito Ambiental",
       "divisoes": [
-        
         {
           "id": "amb_pnma_instrumentos",
           "nivel_2": "Política Nacional do Meio Ambiente e Instrumentos",
@@ -4208,7 +4167,6 @@ const TAXONOMIA_DADOS = {
           "id": "amb_responsabilidade_tutela",
           "nivel_2": "Responsabilidade, Defesa Processual e Crimes Ambientais",
           "topicos": [
-            
             {
               "id": "amb_defesa_processual",
               "nivel_3": "Meios Processuais para a Defesa Ambiental",
@@ -4495,8 +4453,7 @@ const TAXONOMIA_DADOS = {
                 "concessão de uso especial para fins de moradia",
                 "concessão de direito real de uso (cdru)"
               ]
-            }
-          ,
+            },
             {
               "id": "urb_rm_habitacao",
               "nivel_3": "Política Nacional de Habitação de Interesse Social",
@@ -4530,8 +4487,7 @@ const TAXONOMIA_DADOS = {
                 "zonas especiais de interesse social (zeis)",
                 "recuos e alinhamentos"
               ]
-            }
-          ,
+            },
             {
               "id": "urb_loc_metropole",
               "nivel_3": "Estatuto da Metrópole (Lei nº 13.089/2015)",
@@ -4751,7 +4707,6 @@ const TAXONOMIA_DADOS = {
           "id": "adm_servicos_bens",
           "nivel_2": "Serviços Públicos",
           "topicos": [
-            
             {
               "id": "adm_servicos_teoria",
               "nivel_3": "Teoria Geral, Princípios e Direitos dos Usuários",
@@ -4870,8 +4825,7 @@ const TAXONOMIA_DADOS = {
                 "sustação de atos",
                 "julgamento de contas"
               ]
-            }
-          ,
+            },
             {
               "id": "adm_transparencia_anticorrupcao",
               "nivel_3": "Lei Anticorrupção (Lei nº 12.846/2013)",
@@ -4879,8 +4833,7 @@ const TAXONOMIA_DADOS = {
                 "Lei de Responsabilidade Fiscal (LC nº 101/2000)",
                 "Lei Anticorrupção (Lei nº 12.846/2013)"
               ]
-            }
-          ,
+            },
             {
               "id": "adm_lai",
               "nivel_3": "Lei de Acesso à Informação (Lei nº 12.527/2011)",
@@ -4917,8 +4870,7 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        }
-      ,
+        },
         {
           "id": "adm_improbidade",
           "nivel_2": "Improbidade Administrativa (Lei nº 8.429/1992)",
@@ -4942,8 +4894,7 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        }
-        ,
+        },
         {
           "id": "adm_poderes",
           "nivel_2": "Poderes da Administração",
@@ -4969,7 +4920,7 @@ const TAXONOMIA_DADOS = {
             }
           ]
         }
-        ]
+      ]
     },
     {
       "id": "agrario",
@@ -5005,7 +4956,6 @@ const TAXONOMIA_DADOS = {
           "id": "agr_const",
           "nivel_2": "Reforma Agrária: Desapropriação e Procedimento (LC nº 76/1993 e Lei nº 8.629/1993)",
           "topicos": [
-            
             {
               "id": "agr_const_desaprop",
               "nivel_3": "Desapropriação para Fins de Reforma Agrária e Vistoria (LC 76/93 e Lei 8.629/93)",
@@ -5094,6 +5044,477 @@ const TAXONOMIA_DADOS = {
                 "subarrendamento",
                 "indenização por benfeitorias (úteis e necessárias)",
                 "formas de retribuição"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prev",
+      "nivel_1": "Direito Previdenciário",
+      "divisoes": [
+        {
+          "id": "prev_seguridade",
+          "nivel_2": "Seguridade Social: Aspectos Gerais",
+          "topicos": [
+            {
+              "id": "prev_seg_princ",
+              "nivel_3": "Conceito, Estrutura, Objetivos e Princípios da Seguridade Social",
+              "aliases": [
+                "Regime Jurídico das Normas Previdenciárias (Fontes, Hierarquia, Vigência, Interpretação e Integração)",
+                "Financiamento da Seguridade Social (Aspectos Constitucionais)",
+                "Origem e Evolução Legislativa"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_rgps_beneficiarios",
+          "nivel_2": "RGPS: Beneficiários e Prestações em Geral (Lei nº 8.213/1991)",
+          "topicos": [
+            {
+              "id": "prev_rgps_segurados",
+              "nivel_3": "Segurados Obrigatórios e Facultativos",
+              "aliases": [
+                "Empregado",
+                "Empregado Doméstico",
+                "Contribuinte Individual",
+                "Trabalhador Avulso",
+                "Segurado Especial",
+                "Segurado Facultativo",
+                "Manutenção e Perda da Qualidade de Segurado"
+              ]
+            },
+            {
+              "id": "prev_rgps_dependentes",
+              "nivel_3": "Dependentes, Inscrições e Conceito de Empresa",
+              "aliases": [
+                "Classes de Dependentes",
+                "Inscrição",
+                "Conceito de Empresa e Empregador Doméstico"
+              ]
+            },
+            {
+              "id": "prev_rgps_prestacoes",
+              "nivel_3": "Prestações em Geral: Espécies, Carência e Cálculo do Benefício",
+              "aliases": [
+                "Espécies de Prestações",
+                "Carência",
+                "Renda Mensal Inicial (RMI)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_rgps_beneficios",
+          "nivel_2": "RGPS: Benefícios em Espécie (Lei nº 8.213/1991)",
+          "topicos": [
+            {
+              "id": "prev_ben_aposentadorias",
+              "nivel_3": "Aposentadorias (Incapacidade, Idade, Programada, Especial e PCD)",
+              "aliases": [
+                "Aposentadoria por Incapacidade Permanente",
+                "Aposentadoria por Idade do Trabalhador Rural",
+                "Aposentadoria Programada (Normal e do Professor)",
+                "Aposentadoria Especial",
+                "Aposentadoria por Tempo de Contribuição e por Idade do Segurado com Deficiência"
+              ]
+            },
+            {
+              "id": "prev_ben_incapacidade_outros",
+              "nivel_3": "Auxílio-Doença, Auxílio-Acidente e Benefícios por Incapacidade",
+              "aliases": [
+                "Auxílio-Doença",
+                "Auxílio-Acidente",
+                "Acidente de Trabalho"
+              ]
+            },
+            {
+              "id": "prev_ben_familia_morte",
+              "nivel_3": "Salário-Família, Salário-Maternidade, Pensão por Morte e Auxílio-Reclusão",
+              "aliases": [
+                "Salário-Família",
+                "Salário-Maternidade",
+                "Pensão por Morte",
+                "Auxílio-Reclusão",
+                "Abono Anual"
+              ]
+            },
+            {
+              "id": "prev_ben_outros",
+              "nivel_3": "Seguro-Desemprego e Disposições Diversas sobre Prestações",
+              "aliases": [
+                "Seguro-Desemprego, FAT e Abono Salarial",
+                "Reconhecimento da Filiação",
+                "Contagem Recíproca de Tempo de Serviço",
+                "Habilitação e Reabilitação Profissional",
+                "Justificação Administrativa",
+                "Prescrição e Decadência das Prestações"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_custeio",
+          "nivel_2": "Custeio da Previdência Social (Lei nº 8.212/1991)",
+          "topicos": [
+            {
+              "id": "prev_cust_contrib",
+              "nivel_3": "Salário de Contribuição e Arrecadação",
+              "aliases": [
+                "Arrecadação e Recolhimento das Contribuições",
+                "Prescrição e Decadência do Custeio"
+              ]
+            },
+            {
+              "id": "prev_cust_receitas",
+              "nivel_3": "Certidão Negativa de Débito (CND) e Receitas da Seguridade",
+              "aliases": [
+                "Prova de Inexistência de Débito",
+                "Receitas das Contribuições Sociais",
+                "Receitas de Outras Fontes"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_orgaos_acoes",
+          "nivel_2": "Órgãos Colegiados e Ações Previdenciárias",
+          "topicos": [
+            {
+              "id": "prev_orgaos",
+              "nivel_3": "Sistema Nacional da Seguridade Social: Órgãos Colegiados",
+              "aliases": [
+                "Conselhos Setoriais",
+                "Recursos das Decisões Administrativas"
+              ]
+            },
+            {
+              "id": "prev_acoes",
+              "nivel_3": "Ações Previdenciárias",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "prev_rpps",
+          "nivel_2": "Regime Próprio de Previdência Social (RPPS)",
+          "topicos": [
+            {
+              "id": "prev_rpps_regras",
+              "nivel_3": "RPPS: Regras Gerais (CF/1988 e Lei nº 9.717/1998)",
+              "aliases": [
+                "Lei nº 10.887/2004 (Aplicação da EC nº 41/2003)",
+                "Certificado de Regularidade Previdenciária (CRP)",
+                "Normas Infralegais de RPPS (Portarias, Resoluções e Legislação Estadual/Municipal)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_complementar",
+          "nivel_2": "Regime de Previdência Complementar",
+          "topicos": [
+            {
+              "id": "prev_comp_regras",
+              "nivel_3": "Previdência Complementar: Regras Gerais",
+              "aliases": [
+                "Lei nº 12.618/2012 (Previdência Complementar Federal)",
+                "LC nº 108/2001 e LC nº 109/2001",
+                "PREVIC e CRPC (Lei nº 12.154/2009)",
+                "FUNPRESP-EXE"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_assistencia",
+          "nivel_2": "Assistência Social (LOAS - Lei nº 8.742/1993)",
+          "topicos": [
+            {
+              "id": "prev_ass_loas",
+              "nivel_3": "LOAS: Definições, Princípios, Organização e Gestão",
+              "aliases": [
+                "Definições e Objetivos",
+                "Princípios e Diretrizes",
+                "Organização e Gestão"
+              ]
+            },
+            {
+              "id": "prev_ass_beneficios",
+              "nivel_3": "Benefícios, Serviços e Programas de Assistência Social",
+              "aliases": [
+                "Benefício de Prestação Continuada (BPC - Decreto nº 6.214/2007)",
+                "Benefícios Eventuais (Decreto nº 6.307/2007)",
+                "Serviços e Programas de Enfrentamento da Pobreza",
+                "Financiamento da Assistência Social"
+              ]
+            },
+            {
+              "id": "prev_ass_cnas",
+              "nivel_3": "Resoluções CNAS e SUAS",
+              "aliases": [
+                "NOB/SUAS (Res. CNAS nº 33/2012)",
+                "Tipificação Nacional de Serviços Socioassistenciais (Res. CNAS nº 109/2009)",
+                "Política Nacional de Assistência Social - PNAS (Res. CNAS nº 145/2004)",
+                "NOB-RH/SUAS (Res. CNAS nº 269/2006)"
+              ]
+            },
+            {
+              "id": "prev_ass_transferencia_renda",
+              "nivel_3": "Programas de Transferência de Renda",
+              "aliases": [
+                "Cadastro Único (CadÚnico - Decreto nº 11.016/2022)",
+                "Programa Bolsa Família (Lei nº 14.601/2023)",
+                "Auxílio Brasil e Alimenta Brasil (Lei nº 14.284/2021)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "prev_legislacao_especial",
+          "nivel_2": "Legislação Previdenciária Especial",
+          "topicos": [
+            {
+              "id": "prev_leg_pensoes_especiais",
+              "nivel_3": "Pensões Especiais Nomeadas",
+              "aliases": [
+                "Síndrome de Talidomida (Lei nº 7.070/1982)",
+                "Seringueiros (Lei nº 7.986/1989)",
+                "Ex-Combatentes da 2ª Guerra Mundial (Lei nº 8.059/1990)",
+                "Vítimas de Hemodiálise de Caruaru (Lei nº 9.422/1996)",
+                "Acidente Nuclear de Goiânia - Césio-137 (Lei nº 9.425/1996)",
+                "Anistiados Políticos (Lei nº 10.559/2002)",
+                "Hanseníase (Lei nº 11.520/2007)",
+                "Síndrome Congênita do Zika Vírus (Lei nº 13.985/2020)"
+              ]
+            },
+            {
+              "id": "prev_leg_defeso_tributacao",
+              "nivel_3": "Seguro Defeso e Tributação Previdenciária",
+              "aliases": [
+                "Seguro Desemprego ao Pescador Artesanal - Seguro Defeso (Lei nº 10.779/2003)",
+                "Tributação dos Planos de Benefícios de Caráter Previdenciário (Lei nº 11.053/2004)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dip_dipr",
+      "nivel_1": "Direito Internacional Público e Privado",
+      "divisoes": [
+        {
+          "id": "dip_teoria_fontes",
+          "nivel_2": "Teoria Geral, Fontes e Relação com Direito Interno",
+          "topicos": [
+            {
+              "id": "dip_teo_relacao",
+              "nivel_3": "Relação entre Direito Internacional e Interno (Monismo e Dualismo)",
+              "aliases": [
+                "Incorporação dos Tratados",
+                "Bloco de Constitucionalidade",
+                "Status dos Tratados de Direitos Humanos",
+                "Conflito Hierárquico"
+              ]
+            },
+            {
+              "id": "dip_teo_tratados",
+              "nivel_3": "Direito dos Tratados (Convenção de Viena de 1969)",
+              "aliases": [
+                "Formação e Assinatura",
+                "Reservas",
+                "Denúncia",
+                "Aprovação pelo Congresso Nacional"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_sujeitos_relacoes",
+          "nivel_2": "Sujeitos de DIP, Relações Diplomáticas e Imunidades",
+          "topicos": [
+            {
+              "id": "dip_suj_teoria",
+              "nivel_3": "Personalidade Jurídica: Estado, Santa Sé, Organizações e Indivíduos",
+              "aliases": [
+                "Reconhecimento de Estado e de Governo",
+                "Responsabilidade Internacional do Estado"
+              ]
+            },
+            {
+              "id": "dip_suj_diplomacia",
+              "nivel_3": "Relações Diplomáticas e Consulares",
+              "aliases": [
+                "Convenções de Viena sobre Relações Diplomáticas e Consulares",
+                "Mala Diplomática",
+                "Privilégios e Inviolabilidade"
+              ]
+            },
+            {
+              "id": "dip_suj_imunidade",
+              "nivel_3": "Imunidade de Jurisdição e Execução",
+              "aliases": [
+                "Atos de Império e de Gestão",
+                "Imunidade do Estado Estrangeiro",
+                "Imunidade de Organizações Internacionais",
+                "Jurisprudência do STF e TST"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_espacos",
+          "nivel_2": "Domínio Público Internacional",
+          "topicos": [
+            {
+              "id": "dip_esp_mar",
+              "nivel_3": "Direito do Mar (CNUDM) e Espaço Aéreo/Sideral",
+              "aliases": [
+                "Mar Territorial",
+                "Zona Econômica Exclusiva",
+                "Plataforma Continental",
+                "Passagem Inocente"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_organizacoes",
+          "nivel_2": "Organizações Internacionais",
+          "topicos": [
+            {
+              "id": "dip_org_onu",
+              "nivel_3": "Sistema ONU (Organização das Nações Unidas)",
+              "aliases": [
+                "Conselho de Segurança",
+                "Assembleia Geral",
+                "Conselho de Direitos Humanos",
+                "Carta da ONU",
+                "Solução Pacífica de Controvérsias Internacionais",
+                "Corte Internacional de Justiça"
+              ]
+            },
+            {
+              "id": "dip_org_oit",
+              "nivel_3": "Organização Internacional do Trabalho (OIT)",
+              "aliases": [
+                "Convenções e Recomendações da OIT",
+                "Tripartismo",
+                "Comitê de Liberdade Sindical",
+                "Trabalho no Exterior"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_dh_dih_penal",
+          "nivel_2": "Direitos Humanos, Direito Humanitário e Penal Internacional",
+          "topicos": [
+            {
+              "id": "dip_penal_tpi",
+              "nivel_3": "Tribunal Penal Internacional (Estatuto de Roma)",
+              "aliases": [
+                "Crimes contra a Humanidade",
+                "Genocídio",
+                "Crime de Agressão",
+                "Crimes de Guerra",
+                "Princípio da Complementaridade"
+              ]
+            },
+            {
+              "id": "dip_dih",
+              "nivel_3": "Direito Internacional Humanitário e dos Conflitos Armados",
+              "aliases": [
+                "Convenções de Genebra",
+                "Cláusula de Martens",
+                "Perfídia e Limites na Guerra",
+                "Cruz Vermelha"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_privado",
+          "nivel_2": "Direito Internacional Privado (DIPr) e Cooperação",
+          "topicos": [
+            {
+              "id": "dip_dipr_conflitos",
+              "nivel_3": "Conflito de Leis no Espaço e LINDB",
+              "aliases": [
+                "Elementos de Conexão",
+                "Domicílio",
+                "Contratos Internacionais",
+                "Lex Loci Executionis",
+                "Casamento e Família no Exterior"
+              ]
+            },
+            {
+              "id": "dip_dipr_coop",
+              "nivel_3": "Cooperação Jurídica Internacional",
+              "aliases": [
+                "Homologação de Sentença Estrangeira",
+                "Carta Rogatória",
+                "Auxílio Direto",
+                "Crime Organizado Transnacional (Convenção de Palermo)",
+                "Convenção contra a Corrupção (Mérida e Interamericana)",
+                "Tráfico Ilícito de Entorpecentes (Convenção de 1988)",
+                "Assistência Jurídica Mútua em Matéria Penal"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_condicao_estrangeiro",
+          "nivel_2": "Nacionalidade e Condição Jurídica do Estrangeiro",
+          "topicos": [
+            {
+              "id": "dip_est_nacionalidade",
+              "nivel_3": "Nacionalidade Brasileira e Dupla Cidadania",
+              "aliases": [
+                "Brasileiro Nato",
+                "Naturalização",
+                "Perda e Reaquisição de Nacionalidade"
+              ]
+            },
+            {
+              "id": "dip_est_migracao",
+              "nivel_3": "Migração, Refúgio e Retirada Compulsória",
+              "aliases": [
+                "Lei de Migração (Lei nº 13.445/2017)",
+                "Estatuto dos Refugiados",
+                "Vistos",
+                "Asilo Político",
+                "Extradição, Expulsão, Deportação e Repatriação"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dip_comercio_integracao",
+          "nivel_2": "Direito da Integração e do Comércio Internacional",
+          "topicos": [
+            {
+              "id": "dip_com_integracao",
+              "nivel_3": "Direito Comunitário e da Integração",
+              "aliases": [
+                "Mercosul",
+                "União Europeia",
+                "Tribunal Permanente de Revisão",
+                "Livre Circulação de Pessoas",
+                "Supranacionalidade"
+              ]
+            },
+            {
+              "id": "dip_com_omc",
+              "nivel_3": "Direito do Comércio Internacional (OMC)",
+              "aliases": [
+                "Organização Mundial do Comércio",
+                "Cláusula Social",
+                "Dumping Social",
+                "Solução de Controvérsias"
               ]
             }
           ]
@@ -5196,7 +5617,6 @@ const TAXONOMIA_DADOS = {
           "id": "inst_mp_principios",
           "nivel_2": "Ministério Público: Princípios, Organização e Carreira (CF/1988 e Lei nº 8.625/1993)",
           "topicos": [
-            
             {
               "id": "inst_mp_principios",
               "nivel_3": "Princípios Institucionais, Autonomia e CNMP",
@@ -5804,8 +6224,7 @@ const TAXONOMIA_DADOS = {
               ]
             }
           ]
-        }
-      ,
+        },
         {
           "id": "dh_microssistemas",
           "nivel_2": "Microssistemas de Proteção a Grupos Vulneráveis",
@@ -5853,477 +6272,6 @@ const TAXONOMIA_DADOS = {
                 "Resolução ONU nº 45/111 (1990)"
               ]
             }
-          ]
-        }
-        ]
-    },
-    {
-      "id": "prev",
-      "nivel_1": "Direito Previdenciário",
-      "divisoes": [
-        {
-          "id": "prev_seguridade",
-          "nivel_2": "Seguridade Social: Aspectos Gerais",
-          "topicos": [
-          {
-            "id": "prev_seg_princ",
-            "nivel_3": "Conceito, Estrutura, Objetivos e Princípios da Seguridade Social",
-            "aliases": [
-              "Regime Jurídico das Normas Previdenciárias (Fontes, Hierarquia, Vigência, Interpretação e Integração)",
-              "Financiamento da Seguridade Social (Aspectos Constitucionais)",
-              "Origem e Evolução Legislativa"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_rgps_beneficiarios",
-          "nivel_2": "RGPS: Beneficiários e Prestações em Geral (Lei nº 8.213/1991)",
-          "topicos": [
-          {
-            "id": "prev_rgps_segurados",
-            "nivel_3": "Segurados Obrigatórios e Facultativos",
-            "aliases": [
-              "Empregado",
-              "Empregado Doméstico",
-              "Contribuinte Individual",
-              "Trabalhador Avulso",
-              "Segurado Especial",
-              "Segurado Facultativo",
-              "Manutenção e Perda da Qualidade de Segurado"
-            ]
-          },
-          {
-            "id": "prev_rgps_dependentes",
-            "nivel_3": "Dependentes, Inscrições e Conceito de Empresa",
-            "aliases": [
-              "Classes de Dependentes",
-              "Inscrição",
-              "Conceito de Empresa e Empregador Doméstico"
-            ]
-          },
-          {
-            "id": "prev_rgps_prestacoes",
-            "nivel_3": "Prestações em Geral: Espécies, Carência e Cálculo do Benefício",
-            "aliases": [
-              "Espécies de Prestações",
-              "Carência",
-              "Renda Mensal Inicial (RMI)"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_rgps_beneficios",
-          "nivel_2": "RGPS: Benefícios em Espécie (Lei nº 8.213/1991)",
-          "topicos": [
-          {
-            "id": "prev_ben_aposentadorias",
-            "nivel_3": "Aposentadorias (Incapacidade, Idade, Programada, Especial e PCD)",
-            "aliases": [
-              "Aposentadoria por Incapacidade Permanente",
-              "Aposentadoria por Idade do Trabalhador Rural",
-              "Aposentadoria Programada (Normal e do Professor)",
-              "Aposentadoria Especial",
-              "Aposentadoria por Tempo de Contribuição e por Idade do Segurado com Deficiência"
-            ]
-          },
-          {
-            "id": "prev_ben_incapacidade_outros",
-            "nivel_3": "Auxílio-Doença, Auxílio-Acidente e Benefícios por Incapacidade",
-            "aliases": [
-              "Auxílio-Doença",
-              "Auxílio-Acidente",
-              "Acidente de Trabalho"
-            ]
-          },
-          {
-            "id": "prev_ben_familia_morte",
-            "nivel_3": "Salário-Família, Salário-Maternidade, Pensão por Morte e Auxílio-Reclusão",
-            "aliases": [
-              "Salário-Família",
-              "Salário-Maternidade",
-              "Pensão por Morte",
-              "Auxílio-Reclusão",
-              "Abono Anual"
-            ]
-          },
-          {
-            "id": "prev_ben_outros",
-            "nivel_3": "Seguro-Desemprego e Disposições Diversas sobre Prestações",
-            "aliases": [
-              "Seguro-Desemprego, FAT e Abono Salarial",
-              "Reconhecimento da Filiação",
-              "Contagem Recíproca de Tempo de Serviço",
-              "Habilitação e Reabilitação Profissional",
-              "Justificação Administrativa",
-              "Prescrição e Decadência das Prestações"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_custeio",
-          "nivel_2": "Custeio da Previdência Social (Lei nº 8.212/1991)",
-          "topicos": [
-          {
-            "id": "prev_cust_contrib",
-            "nivel_3": "Salário de Contribuição e Arrecadação",
-            "aliases": [
-              "Arrecadação e Recolhimento das Contribuições",
-              "Prescrição e Decadência do Custeio"
-            ]
-          },
-          {
-            "id": "prev_cust_receitas",
-            "nivel_3": "Certidão Negativa de Débito (CND) e Receitas da Seguridade",
-            "aliases": [
-              "Prova de Inexistência de Débito",
-              "Receitas das Contribuições Sociais",
-              "Receitas de Outras Fontes"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_orgaos_acoes",
-          "nivel_2": "Órgãos Colegiados e Ações Previdenciárias",
-          "topicos": [
-          {
-            "id": "prev_orgaos",
-            "nivel_3": "Sistema Nacional da Seguridade Social: Órgãos Colegiados",
-            "aliases": [
-              "Conselhos Setoriais",
-              "Recursos das Decisões Administrativas"
-            ]
-          },
-          {
-            "id": "prev_acoes",
-            "nivel_3": "Ações Previdenciárias",
-            "aliases": []
-          }
-          ]
-        },
-        {
-          "id": "prev_rpps",
-          "nivel_2": "Regime Próprio de Previdência Social (RPPS)",
-          "topicos": [
-          {
-            "id": "prev_rpps_regras",
-            "nivel_3": "RPPS: Regras Gerais (CF/1988 e Lei nº 9.717/1998)",
-            "aliases": [
-              "Lei nº 10.887/2004 (Aplicação da EC nº 41/2003)",
-              "Certificado de Regularidade Previdenciária (CRP)",
-              "Normas Infralegais de RPPS (Portarias, Resoluções e Legislação Estadual/Municipal)"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_complementar",
-          "nivel_2": "Regime de Previdência Complementar",
-          "topicos": [
-          {
-            "id": "prev_comp_regras",
-            "nivel_3": "Previdência Complementar: Regras Gerais",
-            "aliases": [
-              "Lei nº 12.618/2012 (Previdência Complementar Federal)",
-              "LC nº 108/2001 e LC nº 109/2001",
-              "PREVIC e CRPC (Lei nº 12.154/2009)",
-              "FUNPRESP-EXE"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_assistencia",
-          "nivel_2": "Assistência Social (LOAS - Lei nº 8.742/1993)",
-          "topicos": [
-          {
-            "id": "prev_ass_loas",
-            "nivel_3": "LOAS: Definições, Princípios, Organização e Gestão",
-            "aliases": [
-              "Definições e Objetivos",
-              "Princípios e Diretrizes",
-              "Organização e Gestão"
-            ]
-          },
-          {
-            "id": "prev_ass_beneficios",
-            "nivel_3": "Benefícios, Serviços e Programas de Assistência Social",
-            "aliases": [
-              "Benefício de Prestação Continuada (BPC - Decreto nº 6.214/2007)",
-              "Benefícios Eventuais (Decreto nº 6.307/2007)",
-              "Serviços e Programas de Enfrentamento da Pobreza",
-              "Financiamento da Assistência Social"
-            ]
-          },
-          {
-            "id": "prev_ass_cnas",
-            "nivel_3": "Resoluções CNAS e SUAS",
-            "aliases": [
-              "NOB/SUAS (Res. CNAS nº 33/2012)",
-              "Tipificação Nacional de Serviços Socioassistenciais (Res. CNAS nº 109/2009)",
-              "Política Nacional de Assistência Social - PNAS (Res. CNAS nº 145/2004)",
-              "NOB-RH/SUAS (Res. CNAS nº 269/2006)"
-            ]
-          },
-          {
-            "id": "prev_ass_transferencia_renda",
-            "nivel_3": "Programas de Transferência de Renda",
-            "aliases": [
-              "Cadastro Único (CadÚnico - Decreto nº 11.016/2022)",
-              "Programa Bolsa Família (Lei nº 14.601/2023)",
-              "Auxílio Brasil e Alimenta Brasil (Lei nº 14.284/2021)"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "prev_legislacao_especial",
-          "nivel_2": "Legislação Previdenciária Especial",
-          "topicos": [
-          {
-            "id": "prev_leg_pensoes_especiais",
-            "nivel_3": "Pensões Especiais Nomeadas",
-            "aliases": [
-              "Síndrome de Talidomida (Lei nº 7.070/1982)",
-              "Seringueiros (Lei nº 7.986/1989)",
-              "Ex-Combatentes da 2ª Guerra Mundial (Lei nº 8.059/1990)",
-              "Vítimas de Hemodiálise de Caruaru (Lei nº 9.422/1996)",
-              "Acidente Nuclear de Goiânia - Césio-137 (Lei nº 9.425/1996)",
-              "Anistiados Políticos (Lei nº 10.559/2002)",
-              "Hanseníase (Lei nº 11.520/2007)",
-              "Síndrome Congênita do Zika Vírus (Lei nº 13.985/2020)"
-            ]
-          },
-          {
-            "id": "prev_leg_defeso_tributacao",
-            "nivel_3": "Seguro Defeso e Tributação Previdenciária",
-            "aliases": [
-              "Seguro Desemprego ao Pescador Artesanal - Seguro Defeso (Lei nº 10.779/2003)",
-              "Tributação dos Planos de Benefícios de Caráter Previdenciário (Lei nº 11.053/2004)"
-            ]
-          }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "dip_dipr",
-      "nivel_1": "Direito Internacional Público e Privado",
-      "divisoes": [
-        {
-          "id": "dip_teoria_fontes",
-          "nivel_2": "Teoria Geral, Fontes e Relação com Direito Interno",
-          "topicos": [
-          {
-            "id": "dip_teo_relacao",
-            "nivel_3": "Relação entre Direito Internacional e Interno (Monismo e Dualismo)",
-            "aliases": [
-              "Incorporação dos Tratados",
-              "Bloco de Constitucionalidade",
-              "Status dos Tratados de Direitos Humanos",
-              "Conflito Hierárquico"
-            ]
-          },
-          {
-            "id": "dip_teo_tratados",
-            "nivel_3": "Direito dos Tratados (Convenção de Viena de 1969)",
-            "aliases": [
-              "Formação e Assinatura",
-              "Reservas",
-              "Denúncia",
-              "Aprovação pelo Congresso Nacional"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_sujeitos_relacoes",
-          "nivel_2": "Sujeitos de DIP, Relações Diplomáticas e Imunidades",
-          "topicos": [
-          {
-            "id": "dip_suj_teoria",
-            "nivel_3": "Personalidade Jurídica: Estado, Santa Sé, Organizações e Indivíduos",
-            "aliases": [
-              "Reconhecimento de Estado e de Governo",
-              "Responsabilidade Internacional do Estado"
-            ]
-          },
-          {
-            "id": "dip_suj_diplomacia",
-            "nivel_3": "Relações Diplomáticas e Consulares",
-            "aliases": [
-              "Convenções de Viena sobre Relações Diplomáticas e Consulares",
-              "Mala Diplomática",
-              "Privilégios e Inviolabilidade"
-            ]
-          },
-          {
-            "id": "dip_suj_imunidade",
-            "nivel_3": "Imunidade de Jurisdição e Execução",
-            "aliases": [
-              "Atos de Império e de Gestão",
-              "Imunidade do Estado Estrangeiro",
-              "Imunidade de Organizações Internacionais",
-              "Jurisprudência do STF e TST"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_espacos",
-          "nivel_2": "Domínio Público Internacional",
-          "topicos": [
-          {
-            "id": "dip_esp_mar",
-            "nivel_3": "Direito do Mar (CNUDM) e Espaço Aéreo/Sideral",
-            "aliases": [
-              "Mar Territorial",
-              "Zona Econômica Exclusiva",
-              "Plataforma Continental",
-              "Passagem Inocente"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_organizacoes",
-          "nivel_2": "Organizações Internacionais",
-          "topicos": [
-          {
-            "id": "dip_org_onu",
-            "nivel_3": "Sistema ONU (Organização das Nações Unidas)",
-            "aliases": [
-              "Conselho de Segurança",
-              "Assembleia Geral",
-              "Conselho de Direitos Humanos",
-              "Carta da ONU",
-              "Solução Pacífica de Controvérsias Internacionais",
-              "Corte Internacional de Justiça"
-            ]
-          },
-          {
-            "id": "dip_org_oit",
-            "nivel_3": "Organização Internacional do Trabalho (OIT)",
-            "aliases": [
-              "Convenções e Recomendações da OIT",
-              "Tripartismo",
-              "Comitê de Liberdade Sindical",
-              "Trabalho no Exterior"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_dh_dih_penal",
-          "nivel_2": "Direitos Humanos, Direito Humanitário e Penal Internacional",
-          "topicos": [
-          {
-            "id": "dip_penal_tpi",
-            "nivel_3": "Tribunal Penal Internacional (Estatuto de Roma)",
-            "aliases": [
-              "Crimes contra a Humanidade",
-              "Genocídio",
-              "Crime de Agressão",
-              "Crimes de Guerra",
-              "Princípio da Complementaridade"
-            ]
-          },
-          {
-            "id": "dip_dih",
-            "nivel_3": "Direito Internacional Humanitário e dos Conflitos Armados",
-            "aliases": [
-              "Convenções de Genebra",
-              "Cláusula de Martens",
-              "Perfídia e Limites na Guerra",
-              "Cruz Vermelha"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_privado",
-          "nivel_2": "Direito Internacional Privado (DIPr) e Cooperação",
-          "topicos": [
-          {
-            "id": "dip_dipr_conflitos",
-            "nivel_3": "Conflito de Leis no Espaço e LINDB",
-            "aliases": [
-              "Elementos de Conexão",
-              "Domicílio",
-              "Contratos Internacionais",
-              "Lex Loci Executionis",
-              "Casamento e Família no Exterior"
-            ]
-          },
-          {
-            "id": "dip_dipr_coop",
-            "nivel_3": "Cooperação Jurídica Internacional",
-            "aliases": [
-              "Homologação de Sentença Estrangeira",
-              "Carta Rogatória",
-              "Auxílio Direto",
-              "Crime Organizado Transnacional (Convenção de Palermo)",
-              "Convenção contra a Corrupção (Mérida e Interamericana)",
-              "Tráfico Ilícito de Entorpecentes (Convenção de 1988)",
-              "Assistência Jurídica Mútua em Matéria Penal"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_condicao_estrangeiro",
-          "nivel_2": "Nacionalidade e Condição Jurídica do Estrangeiro",
-          "topicos": [
-          {
-            "id": "dip_est_nacionalidade",
-            "nivel_3": "Nacionalidade Brasileira e Dupla Cidadania",
-            "aliases": [
-              "Brasileiro Nato",
-              "Naturalização",
-              "Perda e Reaquisição de Nacionalidade"
-            ]
-          },
-          {
-            "id": "dip_est_migracao",
-            "nivel_3": "Migração, Refúgio e Retirada Compulsória",
-            "aliases": [
-              "Lei de Migração (Lei nº 13.445/2017)",
-              "Estatuto dos Refugiados",
-              "Vistos",
-              "Asilo Político",
-              "Extradição, Expulsão, Deportação e Repatriação"
-            ]
-          }
-          ]
-        },
-        {
-          "id": "dip_comercio_integracao",
-          "nivel_2": "Direito da Integração e do Comércio Internacional",
-          "topicos": [
-          {
-            "id": "dip_com_integracao",
-            "nivel_3": "Direito Comunitário e da Integração",
-            "aliases": [
-              "Mercosul",
-              "União Europeia",
-              "Tribunal Permanente de Revisão",
-              "Livre Circulação de Pessoas",
-              "Supranacionalidade"
-            ]
-          },
-          {
-            "id": "dip_com_omc",
-            "nivel_3": "Direito do Comércio Internacional (OMC)",
-            "aliases": [
-              "Organização Mundial do Comércio",
-              "Cláusula Social",
-              "Dumping Social",
-              "Solução de Controvérsias"
-            ]
-          }
           ]
         }
       ]
