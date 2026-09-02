@@ -2406,6 +2406,123 @@ window.__cronogramaHidratacaoPromise__ = (async function() {
 
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_CRONOGRAMA_RUNTIME] = { ler: window.lerCronogramaBruto, salvar: window.salvarCronogramaBruto };
 
+// Banco Universal Soberano (Caderno de Erros/Axiomas, histórico de
+// simulados e planners do ETL) — de longe a estrutura que mais cresce no
+// app (acumula todo o histórico, nunca poda) e, até aqui, a única das
+// chaves de alto volume que ainda gravava direto no localStorage — inclusive
+// em DOBRO, espelhando pra uma 2ª chave legada a cada gravação. Era a causa
+// mais provável de QuotaExceededError. Mesmo padrão das demais camadas
+// migradas; ver window.lerCronogramaBruto acima para o modelo original.
+window.CHAVE_PLANNER_RUNTIME = 'tjpe_v1__salinha_longitudinal_runtime';
+window.CHAVE_PLANNER_RUNTIME_LEGADA = 'tjpe_v1__etl_planner_db';
+window.CHAVE_PLANNER_RUNTIME_IDB = 'salinha_longitudinal_runtime';
+let _plannerRuntimeCache = null;
+
+window.lerPlannerBruto = function() {
+    return _plannerRuntimeCache;
+};
+
+window.salvarPlannerBruto = function(jsonString) {
+    _plannerRuntimeCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_PLANNER_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[PLANNER] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__plannerHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_PLANNER_RUNTIME_IDB);
+        if (valor !== undefined) { _plannerRuntimeCache = valor; return; }
+
+        // Migração do dado antigo: tenta a chave atual e, se vazia, a
+        // legada (o app gravava as duas juntas, então qualquer uma tem o
+        // conteúdo completo) — só apaga do localStorage depois de confirmar
+        // a escrita no IndexedDB, mesma cautela das demais camadas.
+        let bruto = localStorage.getItem(window.CHAVE_PLANNER_RUNTIME) || localStorage.getItem(window.CHAVE_PLANNER_RUNTIME_LEGADA);
+        _plannerRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_PLANNER_RUNTIME_IDB, bruto);
+            if (ok) {
+                try { localStorage.removeItem(window.CHAVE_PLANNER_RUNTIME); } catch (e) {}
+                try { localStorage.removeItem(window.CHAVE_PLANNER_RUNTIME_LEGADA); } catch (e) {}
+            }
+        }
+    } finally {
+        // Ao contrário das 6 seções de conteúdo, não existe um único objeto
+        // "PLANNER_RUNTIME" com .render() central — cada função consumidora
+        // (Caderno, Dashboard-Vitrine, ETL) já lê o JSON puro sob demanda a
+        // cada chamada, então não há cache de UI pra corrigir aqui.
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_PLANNER_RUNTIME] = { ler: window.lerPlannerBruto, salvar: window.salvarPlannerBruto };
+
+// Reparo de simulados finalizados que nunca chegaram ao Planner/Dashboard —
+// sequela do bug de QuotaExceededError corrigido acima. finalizarSimulado()
+// grava primeiro no Arquivo Morto (já em IndexedDB, então sempre teve
+// sucesso) e só DEPOIS chama sincronizarResultadoComPlanner() (que estourava
+// a cota e travava ali, sem try/catch, deixando o Dashboard sem saber que
+// aquele simulado existiu). Como o Arquivo Morto é a fonte de verdade
+// imutável, dá pra reprocessar: para cada snapshot finalizado (tem .stats)
+// que não aparece em nenhum simulados_avulsos nem em nenhuma task de
+// nenhum planner (ambas as rotas que sincronizarResultadoComPlanner pode
+// ter tentado), roda a MESMA extração de novo — idempotente e segura de
+// chamar quantas vezes quiser (só usada uma vez no boot, ver window.load
+// perto de sincronizarResultadoComPlanner).
+window.repararSimuladosNaoSincronizados = async function() {
+    await window.__arquivoMortoPromise__;
+    await window.__plannerHidratacaoPromise__;
+
+    if (typeof window.sincronizarResultadoComPlanner !== 'function') return [];
+
+    let arquivoMorto = window.lerArquivoMorto() || {};
+    let dbStr = window.lerPlannerBruto() || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch (e) { dbPlanner = {}; }
+
+    let idsJaSincronizados = new Set();
+    (dbPlanner.simulados_avulsos || []).forEach(function(r) {
+        if (r && r.id_original) idsJaSincronizados.add(r.id_original);
+    });
+    if (dbPlanner.planners && typeof dbPlanner.planners === 'object') {
+        Object.keys(dbPlanner.planners).forEach(function(pid) {
+            let p = dbPlanner.planners[pid];
+            if (!p || !p.planejamento || typeof p.planejamento !== 'object') return;
+            Object.keys(p.planejamento).forEach(function(semana) {
+                let dias = p.planejamento[semana];
+                if (!dias || typeof dias !== 'object') return;
+                Object.keys(dias).forEach(function(dia) {
+                    (dias[dia] || []).forEach(function(tarefa) {
+                        (tarefa && tarefa.simulados || []).forEach(function(r) {
+                            if (r && r.id_original) idsJaSincronizados.add(r.id_original);
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    let reparados = [];
+    Object.keys(arquivoMorto).forEach(function(examId) {
+        let snap = arquivoMorto[examId];
+        if (!snap || !snap.stats || !snap.cfg || !snap.dados) return;
+        if (idsJaSincronizados.has(examId)) return;
+        try {
+            window.sincronizarResultadoComPlanner(snap);
+            reparados.push(examId);
+        } catch (e) {
+            console.warn('[REPARO] Falha ao ressincronizar simulado', examId, ':', e);
+        }
+    });
+
+    if (reparados.length > 0) {
+        console.info('[REPARO] ' + reparados.length + ' simulado(s) ressincronizado(s) com o Planner/Dashboard:', reparados);
+    }
+    return reparados;
+};
+
 // =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
 // =========================================================================
@@ -2417,9 +2534,12 @@ window.SALINHA_BACKUP = {
         'tjpe_v1__cordeiro_auditoria_historica',
         'tjpe_v1__clube_simulado_auto',
 
-        // DASHBOARD FACTUAL
+        // DASHBOARD FACTUAL — 'tjpe_v1__etl_planner_db' era um espelho
+        // idêntico desta chave (escrito em dobro a cada save); removido da
+        // lista após a migração pra IndexedDB, que já não o mantém — o
+        // conteúdo sempre esteve 100% duplicado aqui, então nenhum backup
+        // antigo perde dado por causa disso.
         'tjpe_v1__salinha_longitudinal_runtime',
-        'tjpe_v1__etl_planner_db',
 
         // PLAYLISTS / LINKS
         'tjpe_v1__cordeiro_playlists_soberanas',
@@ -8827,7 +8947,7 @@ window.FLASHCARDS_RUNTIME = {
     // Lê caderno_axiomas de onde quer que ele esteja persistido hoje —
     // mesmo fallback de chave que sincronizarCadernoComPlanner() já usa.
     _lerCadernoAxiomas: function() {
-        let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+        let dbStr = window.lerPlannerBruto() || '{}';
         let db = {};
         try { db = JSON.parse(dbStr); } catch (e) { db = {}; }
         return (db && typeof db.caderno_axiomas === 'object') ? db.caderno_axiomas : {};
@@ -10216,7 +10336,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
     // Mesma leitura dupla-chave usada em todo o app (mostrarAbaCaderno,
     // sincronizarCadernoComPlanner, _lerCadernoAxiomas do Flashcards).
     _lerCadernoErros: function() {
-        let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+        let dbStr = window.lerPlannerBruto() || '{}';
         let db = {};
         try { db = JSON.parse(dbStr); } catch (e) { db = {}; }
         return (db && typeof db.caderno_erros === 'object') ? db.caderno_erros : {};
@@ -14709,7 +14829,13 @@ renderSeletorCorTema(localStorage.getItem('tjpe_v1__cor_tema') || PALETA_TEMA[0]
 
     if (!corInicial) {
         try {
-            let dbStr = localStorage.getItem('tjpe_v1__etl_planner_db');
+            // Lê o cache síncrono do Planner (window.lerPlannerBruto) já
+            // migrado pro IndexedDB — a hidratação é assíncrona, então se
+            // este trecho rodar antes dela terminar (1ª carga da página)
+            // o cache ainda está null e cai no fallback de sessionStorage
+            // abaixo, sem erro; localStorage.getItem fica como 2º fallback
+            // só pra quem ainda não passou pela migração nenhuma vez.
+            let dbStr = (typeof window.lerPlannerBruto === 'function' && window.lerPlannerBruto()) || localStorage.getItem('tjpe_v1__etl_planner_db');
             if (dbStr) {
                 let dbTemp = JSON.parse(dbStr);
                 if (dbTemp.activePlannerId && dbTemp.planners && dbTemp.planners[dbTemp.activePlannerId]) {
@@ -14720,10 +14846,17 @@ renderSeletorCorTema(localStorage.getItem('tjpe_v1__cor_tema') || PALETA_TEMA[0]
     }
 
     if (!corInicial) corInicial = sessionStorage.getItem('etl_cor_primaria');
-    
+
     setCor(corInicial);
 
-    // Motor Cross-Tab: Atualiza sozinho sem F5 se você mudar a aba do Planner em OUTRA aba do navegador
+    // Motor Cross-Tab: Atualiza sozinho sem F5 se você mudar a aba do Planner em OUTRA aba do navegador.
+    // LIMITAÇÃO CONHECIDA pós-migração: eventos 'storage' só disparam para
+    // mudanças em localStorage — como o Planner agora vive no IndexedDB,
+    // este listener nunca mais dispara de fato (a chave legada não é mais
+    // escrita). Mantido como fallback inofensivo para quem ainda tiver a
+    // chave antiga por algum motivo; a troca de cor ao vivo entre abas foi
+    // uma perda aceita — não há BroadcastChannel/mecanismo equivalente para
+    // IndexedDB implementado aqui.
     window.addEventListener('storage', function(e) {
         if (e.key === 'tjpe_v1__etl_planner_db' && e.newValue) {
             try {
@@ -15489,7 +15622,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                 // tempo, casado pelo id original da bateria (id_original).
                 let mapaDataResolucaoPlanner = {};
                 try {
-                    let dbStrVitrine = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+                    let dbStrVitrine = window.lerPlannerBruto() || '{}';
                     let dbPlannerVitrine = JSON.parse(dbStrVitrine);
                     (dbPlannerVitrine.simulados_avulsos || []).forEach(function(sim) {
                         if (sim && sim.id_original && sim.data && !mapaDataResolucaoPlanner[sim.id_original]) {
@@ -18392,6 +18525,9 @@ function bindResultadoActions() {
         if(a === 'vol')
             voltarSim(i);
 
+        else if(a === 'refazer-bateria')
+            confirmarRefazerBateria(i);
+
         else if(a === 'novo')
             novoSim();
 
@@ -18417,6 +18553,24 @@ function voltarSim(idx){
   if(si<0)for(var i=0;i<SIMS.length;i++)if(SIMS[i].cfg.nome===h.nome&&SIMS[i].data===h.data){si=i;break;}
   if(si<0){mostrarModal({titulo:'Não encontrado',mensagem:'Simulado não encontrado no histórico.',botoes:[{label:'OK',cor:'var(--app-primary)',cb:null}]});return;}
   trocarTab(si,true);
+}
+// "🔄 Refazer Bateria" (tela de resultado) — atalho pra voltar E já limpar
+// as respostas de uma vez, em vez de exigir "Revisar Questões" e depois o
+// 🧹 dentro da prova. Diferente do 🧹 (que limpa baterias EM ANDAMENTO,
+// ainda sem stats, sem precisar de aviso), este parte de uma bateria JÁ
+// FINALIZADA — finalizar de novo sobrescreve o resultado atual no Arquivo
+// Morto (arquivoMorto[cfg.id], chaveado pela bateria, não por tentativa —
+// ver finalizarSimulado/sincronizarResultadoComPlanner), daí o aviso aqui
+// ANTES de entrar na prova.
+function confirmarRefazerBateria(idx){
+  mostrarModal({
+    titulo: 'Refazer Bateria',
+    mensagem: 'Ao refazer a bateria e finalizar, este resultado atual será sobrescrito pelo novo. Já nas Estatísticas, o novo resultado se somará ao anterior.',
+    botoes: [
+      {label: 'Cancelar', outline: true, cb: null},
+      {label: 'OK', cor: 'var(--danger)', cb: function(){ voltarSim(idx); limpar(); }}
+    ]
+  });
 }
 function renderResultado(idx){
   var agora = new Date();
@@ -18498,6 +18652,7 @@ function renderResultado(idx){
   // Nova linha de botões: Flex-nowrap, margem negativa para colar nos cards, e tamanhos reduzidos
   var botoesHTML = '<div class="rbtns" style="margin-top:-0.5rem; display:flex; width:100%; gap:6px;">'+
       '<button class="rba o" data-a="vol" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Revisar Questões">← Revisar Questões</button>'+
+      '<button class="rba" data-a="refazer-bateria" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Bateria (sobrescreve este resultado)">🔄 Refazer Bateria</button>'+
       '<button class="rba" data-a="refazer" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
       '<button class="rba" data-a="exp-res" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa (.md e .html)">⬇ Exportar Prova Completa (.md e .html)</button>'+
       '<button class="rba" data-a="exp-md" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Caderno de Questões (.md e .html)">🧠 Exportar Caderno de Questões (.md e .html)</button>'+
@@ -19452,7 +19607,7 @@ function finalizarSimulado() {
 function sincronizarCadernoComPlanner(simSession) {
     if (!simSession || !simSession.dados || !Array.isArray(simSession.dados.blocos)) return;
 
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) { dbPlanner = {}; }
 
@@ -19506,13 +19661,12 @@ function sincronizarCadernoComPlanner(simSession) {
         });
     });
 
-    localStorage.setItem('tjpe_v1__salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
-    localStorage.setItem('tjpe_v1__etl_planner_db', JSON.stringify(dbPlanner));
+    window.salvarPlannerBruto(JSON.stringify(dbPlanner));
 }
 
 // O MOTOR DE INTEGRAÇÃO COM A CENTRAL ANALÍTICA
 function sincronizarResultadoComPlanner(simSession) {
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = JSON.parse(dbStr);
     
     if (!dbPlanner.simulados_avulsos) dbPlanner.simulados_avulsos = [];
@@ -19638,9 +19792,7 @@ function sincronizarResultadoComPlanner(simSession) {
     }
 
     // 4. Salva no Banco Universal Soberano
-    localStorage.setItem('tjpe_v1__salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
-    // Espelho de segurança para compatibilidade com o sistema legado
-    localStorage.setItem('tjpe_v1__etl_planner_db', JSON.stringify(dbPlanner));
+    window.salvarPlannerBruto(JSON.stringify(dbPlanner));
 }
 
 // ── FERRAMENTAS DE REVISÃO ────────────────────────────────────
@@ -20934,6 +21086,12 @@ if (e.data && e.data.type === 'CMD_ATUALIZAR_COR') {
 document.addEventListener('click', function() { setTimeout(window.syncToPlanner, 100); });
 window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 500); });
 
+// Roda uma vez por carregamento de página — reprocessa qualquer simulado
+// finalizado que ficou pra trás por causa do bug de cota corrigido acima
+// (ver window.repararSimuladosNaoSincronizados). Sem custo perceptível
+// quando já está tudo sincronizado (só compara ids, não reprocessa nada).
+window.addEventListener('load', function() { window.repararSimuladosNaoSincronizados(); });
+
 
 /* ==========================================
    ANALYTICS MODAL RUNTIME (Soberania Isolada)
@@ -21183,7 +21341,7 @@ function gerarHtmlCaderno(aba, dados, materiaFiltro) {
 }
 
 window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
@@ -21208,7 +21366,7 @@ window.exportarCadernoMarkdown = function(aba, materiaFiltro) {
 
 // Mesmo escopo/filtro de exportarCadernoMarkdown — emite o dado bruto em JSON.
 window.exportarCadernoJson = function(aba, materiaFiltro) {
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
@@ -21233,7 +21391,7 @@ window.exportarCadernoJson = function(aba, materiaFiltro) {
 
 // Mesmo escopo/filtro de exportarCadernoMarkdown — emite HTML estilizado.
 window.exportarCadernoHtml = function(aba, materiaFiltro) {
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
@@ -21268,7 +21426,7 @@ window.mostrarAbaCaderno = function(aba) {
         btnAxiomas.style.borderBottomColor = (aba === 'axiomas') ? 'var(--app-primary)' : 'transparent';
     }
 
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
@@ -21401,7 +21559,7 @@ window.alternarTudoCaderno = function(elemento) {
 };
 
 window.removerDoCaderno = function(aba, mat, topico, idx) {
-    let dbStr = localStorage.getItem('tjpe_v1__salinha_longitudinal_runtime') || localStorage.getItem('tjpe_v1__etl_planner_db') || '{}';
+    let dbStr = window.lerPlannerBruto() || '{}';
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch(e) {}
 
@@ -21416,8 +21574,7 @@ window.removerDoCaderno = function(aba, mat, topico, idx) {
         if (Object.keys(dbPlanner[chave][mat]).length === 0) delete dbPlanner[chave][mat];
     }
 
-    localStorage.setItem('tjpe_v1__salinha_longitudinal_runtime', JSON.stringify(dbPlanner));
-    localStorage.setItem('tjpe_v1__etl_planner_db', JSON.stringify(dbPlanner));
+    window.salvarPlannerBruto(JSON.stringify(dbPlanner));
 
     // Desmarca o toggle na origem — senão volta pro caderno na próxima sincronização
     if (item && item.sim_id && item.id_q) {
