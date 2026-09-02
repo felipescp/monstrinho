@@ -2523,6 +2523,164 @@ window.repararSimuladosNaoSincronizados = async function() {
     return reparados;
 };
 
+// Realinha, no Planner já sincronizado, o Caderno de Erros/Axiomas e as
+// estatísticas granulares (Dashboard) de exames antigos cujo "topico" por
+// questão mudou na taxonomia.js depois que o exame foi feito — sequela da
+// harmonização da taxonomia: sincronizarCadernoComPlanner/
+// sincronizarResultadoComPlanner gravam materia/topico como FOTOGRAFIA no
+// momento da sincronização, nunca mais revisitada; corrigir o "topico" na
+// bateria (dados/bateriasvf/*.json) não move sozinho o que já foi gravado.
+//
+// A correção usa window.ACERVO_OFICIAL_FULL — o app já busca, em TODO
+// carregamento de página (ver window.__bootOficialPromise__ /
+// window.carregarAcervosOficiais, alimentado por dados/manifesto-baterias.txt),
+// o conteúdo ATUAL de cada bateria oficial, indexado pelo próprio id. Ou
+// seja, o "topico" corrigido de cada questão já está disponível ali sem
+// precisar duplicar nenhuma tabela de mapeamento antigo→novo — só cruza,
+// por id da questão, o resultado histórico (Arquivo Morto, imutável) com o
+// rótulo taxonômico vigente (ACERVO_OFICIAL_FULL).
+//
+// Idempotente (só mexe no que realmente mudou de posição) e segura de
+// rodar quantas vezes quiser.
+window.repararTopicosNoPlanner = async function() {
+    await window.__bootOficialPromise__;
+    await window.__arquivoMortoPromise__;
+    await window.__plannerHidratacaoPromise__;
+
+    if (!window.ACERVO_OFICIAL_FULL || typeof window.resolverMatTopicoQuestao !== 'function') return [];
+
+    let arquivoMorto = window.lerArquivoMorto() || {};
+    let dbStr = window.lerPlannerBruto() || '{}';
+    let dbPlanner = {};
+    try { dbPlanner = JSON.parse(dbStr); } catch (e) { dbPlanner = {}; }
+
+    let mudouAlgumaCoisa = false;
+    let examesCorrigidos = [];
+
+    // Mesma agregação de sincronizarResultadoComPlanner (fontes lei/juris/
+    // doutrina, contagem de acertos por matéria+tópico), só que lendo o
+    // tópico do conteúdo ATUAL (mapaAtual) em vez do snapshot congelado.
+    function calcularGranulares(mapaAtual, resSnap) {
+        let granularesMap = {};
+        Object.keys(mapaAtual).forEach(function(idQ) {
+            let q = mapaAtual[idQ];
+            let resp = resSnap[idQ];
+            if (!resp || !resp.c || q.gabarito === 'ANULADA') return;
+            let mat = (q.topico && q.topico.indexOf(' > ') !== -1) ? q.topico.split(' > ')[0].toUpperCase().trim() : ((q.materiaFallback || 'DIVERSOS').toUpperCase().trim());
+            let topico = q.topico || '';
+            let prefixo = mat + ' > ';
+            if (topico.toUpperCase().indexOf(prefixo) === 0) topico = topico.substring(prefixo.length).trim();
+            let chave = mat + '|||' + topico;
+            if (!granularesMap[chave]) granularesMap[chave] = { materia: mat, topico: topico, acertos: 0, feitas: 0, fontes: { lei: { ac: 0, tot: 0 }, juris: { ac: 0, tot: 0 }, doutrina: { ac: 0, tot: 0 } } };
+            granularesMap[chave].feitas++;
+            if (resp.ok) granularesMap[chave].acertos++;
+            let fStr = (q.fonte || '').toLowerCase();
+            let grupo = (fStr.indexOf('lei') !== -1 || fStr.indexOf('seca') !== -1 || fStr.indexOf('código') !== -1 || fStr.indexOf('cf') !== -1 || fStr.indexOf('constituição') !== -1) ? 'lei'
+                : (fStr.indexOf('juris') !== -1 || fStr.indexOf('sumula') !== -1 || fStr.indexOf('súmula') !== -1 || fStr.indexOf('informativo') !== -1 || fStr.indexOf('stf') !== -1 || fStr.indexOf('stj') !== -1) ? 'juris'
+                : 'doutrina';
+            granularesMap[chave].fontes[grupo].tot++;
+            if (resp.ok) granularesMap[chave].fontes[grupo].ac++;
+        });
+        return Object.values(granularesMap);
+    }
+
+    // Recalcula r.granulares in-place se o resultado (r.id_original === examId)
+    // divergir do que está gravado; devolve true se mudou algo.
+    function atualizarGranularesSeNecessario(r, examId, mapaAtual, resSnap) {
+        if (!r || r.id_original !== examId) return false;
+        let novoGranulares = calcularGranulares(mapaAtual, resSnap);
+        if (JSON.stringify(novoGranulares) === JSON.stringify(r.granulares || [])) return false;
+        r.granulares = novoGranulares;
+        return true;
+    }
+
+    Object.keys(arquivoMorto).forEach(function(examId) {
+        let snap = arquivoMorto[examId];
+        let atual = window.ACERVO_OFICIAL_FULL[examId];
+        if (!snap || !snap.stats || !snap.dados || !atual || !atual.dados) return;
+
+        let mapaAtual = {};
+        (atual.dados.blocos || []).forEach(function(b) {
+            (b.questoes || []).forEach(function(q) {
+                mapaAtual[q.id] = { topico: q.topico, gabarito: q.gabarito, fonte: q.fonte, materiaFallback: atual.materia || (atual.cfg && atual.cfg.materia) };
+            });
+        });
+        if (Object.keys(mapaAtual).length === 0) return;
+
+        let esteExameMudou = false;
+
+        // ── 1) CADERNO DE ERROS / AXIOMAS: reposiciona item a item ──
+        ['caderno_erros', 'caderno_axiomas'].forEach(function(chaveCad) {
+            if (!dbPlanner[chaveCad]) return;
+            Object.keys(dbPlanner[chaveCad]).forEach(function(mat) {
+                Object.keys(dbPlanner[chaveCad][mat]).forEach(function(topico) {
+                    let itens = dbPlanner[chaveCad][mat][topico];
+                    if (!Array.isArray(itens)) return;
+                    for (let i = itens.length - 1; i >= 0; i--) {
+                        let item = itens[i];
+                        if (!item || item.sim_id !== examId) continue;
+                        let qAtual = mapaAtual[item.id_q];
+                        if (!qAtual || !qAtual.topico) continue;
+                        let destino = window.resolverMatTopicoQuestao({ topico: qAtual.topico }, atual.cfg || snap.cfg || {}, null);
+                        if (destino.materia === mat && destino.topico === topico) continue;
+
+                        itens.splice(i, 1);
+                        if (!dbPlanner[chaveCad][destino.materia]) dbPlanner[chaveCad][destino.materia] = {};
+                        if (!dbPlanner[chaveCad][destino.materia][destino.topico]) dbPlanner[chaveCad][destino.materia][destino.topico] = [];
+                        let destArr = dbPlanner[chaveCad][destino.materia][destino.topico];
+                        if (!destArr.some(function(x) { return x.id_q === item.id_q && x.sim_id === item.sim_id; })) {
+                            destArr.push(item);
+                        }
+                        esteExameMudou = true;
+                        mudouAlgumaCoisa = true;
+                    }
+                    if (itens.length === 0) delete dbPlanner[chaveCad][mat][topico];
+                });
+                if (dbPlanner[chaveCad][mat] && Object.keys(dbPlanner[chaveCad][mat]).length === 0) delete dbPlanner[chaveCad][mat];
+            });
+        });
+
+        // ── 2) GRANULARES (Dashboard): recalcula pra este exame, onde quer
+        // que ele esteja (simulados_avulsos OU dentro de uma task de algum
+        // planner de Cronograma — sincronizarResultadoComPlanner grava num
+        // dos dois, nunca nos dois; aqui procura nos dois pra não depender
+        // de saber qual rota foi usada no momento original da sincronização) ──
+        let resSnap = snap.dados.res || {};
+        let mudouGranulares = false;
+        (dbPlanner.simulados_avulsos || []).forEach(function(r) {
+            if (atualizarGranularesSeNecessario(r, examId, mapaAtual, resSnap)) mudouGranulares = true;
+        });
+        if (dbPlanner.planners) {
+            Object.keys(dbPlanner.planners).forEach(function(pid) {
+                let p = dbPlanner.planners[pid];
+                if (!p || !p.planejamento) return;
+                Object.keys(p.planejamento).forEach(function(semana) {
+                    let dias = p.planejamento[semana];
+                    if (!dias) return;
+                    Object.keys(dias).forEach(function(dia) {
+                        (dias[dia] || []).forEach(function(tarefa) {
+                            (tarefa.simulados || []).forEach(function(r) {
+                                if (atualizarGranularesSeNecessario(r, examId, mapaAtual, resSnap)) mudouGranulares = true;
+                            });
+                        });
+                    });
+                });
+            });
+        }
+        if (mudouGranulares) { esteExameMudou = true; mudouAlgumaCoisa = true; }
+
+        if (esteExameMudou) examesCorrigidos.push(examId);
+    });
+
+    if (mudouAlgumaCoisa) {
+        await window.salvarPlannerBruto(JSON.stringify(dbPlanner));
+    }
+    if (examesCorrigidos.length > 0) {
+        console.info('[REPARO TÓPICOS] ' + examesCorrigidos.length + ' exame(s) com Caderno/Estatísticas realinhados à taxonomia atual:', examesCorrigidos);
+    }
+    return examesCorrigidos;
+};
+
 // =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
 // =========================================================================
@@ -21088,9 +21246,16 @@ window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 50
 
 // Roda uma vez por carregamento de página — reprocessa qualquer simulado
 // finalizado que ficou pra trás por causa do bug de cota corrigido acima
-// (ver window.repararSimuladosNaoSincronizados). Sem custo perceptível
-// quando já está tudo sincronizado (só compara ids, não reprocessa nada).
-window.addEventListener('load', function() { window.repararSimuladosNaoSincronizados(); });
+// (ver window.repararSimuladosNaoSincronizados), e SÓ DEPOIS realinha
+// Caderno/Estatísticas à taxonomia vigente (ver window.repararTopicosNoPlanner)
+// — nessa ordem, porque um simulado recém-ressincronizado ainda carrega o
+// "topico" congelado no Arquivo Morto, então também precisa passar pelo
+// realinhamento. Sem custo perceptível quando já está tudo em dia (as duas
+// funções só comparam o que já existe, não reprocessam à toa).
+window.addEventListener('load', async function() {
+    await window.repararSimuladosNaoSincronizados();
+    await window.repararTopicosNoPlanner();
+});
 
 
 /* ==========================================
