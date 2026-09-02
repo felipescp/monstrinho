@@ -706,7 +706,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 /* Feedback discreto de pra onde a questão foi arquivada no Caderno (ver
    toggleCaderno) — só existe/aparece enquanto a questão está no Caderno. */
 .cad-destino { font-size: 10px; font-style: italic; color: var(--text-muted); margin-top: .5rem; }
-.bcom.ativo { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+.bcom.ativo { background: #fff7ed; border-color: #fb923c; color: #9a3412; }
 
 .ew { margin-top: .75rem; border-top: 1px solid var(--border-color); padding-top: .75rem; }
 .bexp { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: .4rem .9rem; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; color: var(--app-primary); font-family: var(--font-display); }
@@ -26219,8 +26219,12 @@ window.carregarEsquemasOficiais = async function() {
        line-clamp:2 no item inteiro, a linha da origem consumia as 2
        linhas do clamp e o título nunca chegava a aparecer). Separador
        border-bottom em vez de gap, pra linhas vizinhas não colarem. */
-    #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    /* Coluna flex: barra de etiquetas fixa no topo (não rola) + lista de
+       itens rolável abaixo dela — mesmo padrão de #modal-esquemas-baralho
+       (ver _renderListaBaralho() pra a estrutura HTML). */
+    #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
     #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-itens { flex:1; overflow-y:auto; overflow-x:hidden; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo { background:var(--app-primary); }
@@ -26228,6 +26232,17 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-origem { color:#fff; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-origem { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); white-space:normal; overflow-wrap:break-word; margin-bottom:2px; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:normal; overflow-wrap:break-word; }
+    /* Pill da etiqueta — mesma etiqueta colorida/nomeável da grade e do
+       modal "Etiquetas do tópico" (this.etiquetas/etiquetaPorFicha). */
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-etiqueta { display:inline-block; margin-top:3px; }
+    #modal-jurisprudencia-baralho .esq-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    /* Barra de pills de etiqueta — fixa no topo. Clicar numa etiqueta ISOLA
+       ela na LISTAGEM apenas — não navega nem troca a ficha exibida à
+       direita (ver toggleFiltroEtiquetaBaralho). */
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas { flex-shrink:0; display:flex; flex-wrap:wrap; gap:5px; padding:8px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas .esq-etq-pill { cursor:pointer; border:2px solid transparent; }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas .esq-etq-pill.ativa { border-color:var(--text-main); }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas.tem-filtro .esq-etq-pill:not(.ativa) { opacity:0.4; }
     /* Corpo do baralho preenche toda a altura que sobrar no popup (mesmo
        padrão de #esq-baralho-corpo) — sem isto, o card interno (mesmo já
        com flex:1) não tem um pai flex pra crescer, e o popup inteiro
@@ -27910,12 +27925,44 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
     },
 
+    // A ETIQUETA de verdade de uma ficha — mesma etiqueta colorida/nomeável
+    // da grade e do modal "Etiquetas do tópico" (this.etiquetas[chave][id]
+    // = {id,nome,cor}, atribuída via this.etiquetaPorFicha[idFicha] =
+    // idEtiqueta). Diferente de ESQUEMAS_RUNTIME (que precisa de
+    // _localizarChavePorId pra descobrir o tópico de um item), aqui a
+    // própria ficha já carrega materiaL1/divisaoL2 — só remonta a chave
+    // com _chaveL2. Devolve o objeto {id,nome,cor} inteiro; null se a
+    // ficha não tem etiqueta.
+    _etiquetaDaFicha: function(item) {
+        if (!item) return null;
+        let chave = this._chaveL2(item.materiaL1, item.divisaoL2);
+        let idEtiqueta = this.etiquetaPorFicha[item.id];
+        if (!idEtiqueta) return null;
+        return (this.etiquetas[chave] || {})[idEtiqueta] || null;
+    },
+
     _abrirBaralho: function(escopo, titulo, fichas) {
+        let self = this;
+        // Ordem padrão = por etiqueta, mesmo raciocínio/pedido de
+        // ESQUEMAS_RUNTIME._abrirBaralho — sort estável (ES2019+), sem
+        // etiqueta vai pro final.
+        fichas = fichas.slice().sort(function(a, b) {
+            let ea = self._etiquetaDaFicha(a);
+            let eb = self._etiquetaDaFicha(b);
+            let ta = ea ? ea.nome.toLowerCase() : '';
+            let tb = eb ? eb.nome.toLowerCase() : '';
+            if (!ta && tb) return 1;
+            if (ta && !tb) return -1;
+            if (ta < tb) return -1;
+            if (ta > tb) return 1;
+            return 0;
+        });
         this._baralhoState = {
             escopo: escopo,
             cardsBase: fichas,
             ordemChaves: fichas.map(function(f) { return f.id; }),
-            indiceAtual: 0
+            indiceAtual: 0,
+            filtroEtiqueta: null
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -27974,12 +28021,47 @@ window.JURISPRUDENCIA_RUNTIME = {
         else if (e.key === 'ArrowRight') window.JURISPRUDENCIA_RUNTIME.proximoBaralho();
     },
 
+    // NUNCA filtrado — s.filtroEtiqueta só afeta o que é LISTADO na barra
+    // lateral (ver _renderListaBaralho), nunca a navegação ‹›, a posição
+    // "X/Y" nem a ficha exibida no painel direito. Mesmo padrão de
+    // ESQUEMAS_RUNTIME._deckBaralhoAtual.
     _deckBaralhoAtual: function() {
         let s = this._baralhoState;
         if (!s) return [];
         return s.ordemChaves
             .map(function(id) { return s.cardsBase.find(function(f) { return f.id === id; }); })
             .filter(Boolean);
+    },
+
+    // Etiquetas distintas presentes no baralho — popula a barra de pills no
+    // topo da lista. Dedup por ID, não por nome (this.etiquetas é escopado
+    // por tópico — ver ESQUEMAS_RUNTIME._etiquetasBaralho pro raciocínio
+    // completo).
+    _etiquetasBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return [];
+        let self = this;
+        let vistas = {};
+        let etiquetas = [];
+        s.cardsBase.forEach(function(f) {
+            let et = self._etiquetaDaFicha(f);
+            if (!et || vistas[et.id]) return;
+            vistas[et.id] = true;
+            etiquetas.push(et);
+        });
+        etiquetas.sort(function(a, b) { return a.nome.toLowerCase().localeCompare(b.nome.toLowerCase()); });
+        return etiquetas;
+    },
+
+    // Clique numa etiqueta: ISOLA ela SÓ NA LISTAGEM lateral; clicar de
+    // novo na mesma já ativa LIMPA o filtro. Não mexe em indiceAtual nem
+    // chama renderBaralho() inteiro — a ficha exibida à direita e a
+    // posição "X/Y" continuam intocadas, só a lista muda.
+    toggleFiltroEtiquetaBaralho: function(idEtiqueta) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroEtiqueta = (s.filtroEtiqueta === idEtiqueta) ? null : idEtiqueta;
+        this._renderListaBaralho();
     },
 
     _fichaBaralhoAtual: function() {
@@ -28051,17 +28133,37 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!listaEl) return;
         let s = this._baralhoState;
         if (!s) { listaEl.innerHTML = ''; return; }
-        let deck = this._deckBaralhoAtual();
         let self = this;
-        listaEl.innerHTML = deck.map(function(item, idx) {
+
+        let etiquetas = this._etiquetasBaralho();
+        let htmlEtiquetas = etiquetas.length === 0 ? '' :
+            '<div class="jur-baralho-etiquetas' + (s.filtroEtiqueta ? ' tem-filtro' : '') + '">' +
+            etiquetas.map(function(et) {
+                return '<span class="esq-etq-pill' + (et.id === s.filtroEtiqueta ? ' ativa' : '') + '" style="background:' + et.cor + ';" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroEtiquetaBaralho(\'' + et.id + '\')" title="' + self._escapar(et.nome) + '">' + self._escapar(et.nome) + '</span>';
+            }).join('') +
+            '</div>';
+
+        // deck é SEMPRE o completo — ver _deckBaralhoAtual. O índice "idx"
+        // do onclick é a posição real no baralho (a mesma que ‹›/
+        // indiceAtual usam); um item fora do filtro só não entra no HTML.
+        let deck = this._deckBaralhoAtual();
+        let htmlItens = deck.map(function(item, idx) {
+            let etiquetaDoItem = self._etiquetaDaFicha(item);
+            if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
+
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="jur-baralho-lista-item-origem">' + self._escapar([item.materiaL1, item.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
                 : '';
+            let etiquetaHtml = etiquetaDoItem
+                ? '<div class="jur-baralho-lista-item-etiqueta"><span class="esq-etq-pill" style="background:' + etiquetaDoItem.cor + ';">' + self._escapar(etiquetaDoItem.nome) + '</span></div>'
+                : '';
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
-                origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
+                origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
-        }).join('');
+        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma ficha com esta etiqueta.</div>';
+
+        listaEl.innerHTML = htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>';
         let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
         if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
     },
