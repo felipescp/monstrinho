@@ -2687,6 +2687,64 @@ window.repararTopicosNoPlanner = async function() {
     return examesCorrigidos;
 };
 
+// Reparo irmão de repararTopicosNoPlanner, mas para baterias AINDA EM
+// ANDAMENTO (SIMS), não para as já concluídas. Cada bateria ativa carrega
+// um clone congelado de id_taxonomia/caminho_completo/materia (SIMS[i].cfg,
+// copiado de C no momento em que a bateria foi iniciada — ver lancar()) que
+// nunca é revisitado depois. Se o cadastro-fonte (ACERVO_OFICIAL_FULL) for
+// corrigido enquanto a bateria já estava em andamento, o painel "Vínculo
+// Taxonômico" e a busca de Esquemas/Jurisprudência/Materiais relacionados
+// (que dependem de C.id_taxonomia) continuam presos ao valor antigo até
+// este reparo rodar. Só toca nesses 3 campos do cfg — respostas/progresso
+// (sim.dados) ficam intocados.
+window.repararTaxonomiaSessaoAtiva = async function() {
+    await window.__bootOficialPromise__;
+    await window.__sessaoAtivaPromise__;
+
+    if (!window.ACERVO_OFICIAL_FULL || !Array.isArray(window.SIMS) || !window.SIMS.length) return [];
+
+    let CAMPOS = ['id_taxonomia', 'caminho_completo', 'materia'];
+    let mudouAlgumaCoisa = false;
+    let mudouAAbaAberta = false;
+    let baseriasCorrigidas = [];
+
+    window.SIMS.forEach(function(sim, i) {
+        if (!sim || !sim.cfg || !sim.cfg.id) return;
+        let atual = window.ACERVO_OFICIAL_FULL[sim.cfg.id];
+        if (!atual) return;
+
+        let mudouEsta = false;
+        CAMPOS.forEach(function(campo) {
+            if (atual[campo] !== undefined && sim.cfg[campo] !== atual[campo]) {
+                sim.cfg[campo] = atual[campo];
+                mudouEsta = true;
+            }
+        });
+
+        if (mudouEsta) {
+            mudouAlgumaCoisa = true;
+            baseriasCorrigidas.push(sim.cfg.nome || sim.cfg.id);
+            if (i === SI) mudouAAbaAberta = true;
+        }
+    });
+
+    if (!mudouAlgumaCoisa) return [];
+
+    // Só refaz C/re-renderiza se a bateria corrigida for a que está aberta
+    // na tela agora — senão o reparo fica silencioso até o usuário trocar
+    // de aba (trocarTab() já rebuild C a partir do cfg corrigido sozinho).
+    if (mudouAAbaAberta && typeof SI === 'number' && SI >= 0 && window.SIMS[SI] && typeof C !== 'undefined') {
+        C = JSON.parse(JSON.stringify(window.SIMS[SI].cfg));
+        C.auto = false;
+        if (typeof renderNav === 'function') { try { renderNav(); } catch (e) {} }
+    }
+
+    await window.salvarSessaoAtiva({ sims: window.SIMS, si: typeof SI === 'number' ? SI : -1 });
+
+    console.info('[REPARO TAXONOMIA SESSÃO ATIVA] ' + baseriasCorrigidas.length + ' bateria(s) com vínculo taxonômico realinhado:', baseriasCorrigidas);
+    return baseriasCorrigidas;
+};
+
 // =========================================================================
 // MÓDULO SOBERANO DE BACKUP E RESTAURAÇÃO (INDEX.HTML)
 // =========================================================================
@@ -21245,11 +21303,14 @@ window.addEventListener('load', function() { setTimeout(window.syncToPlanner, 50
 // Caderno/Estatísticas à taxonomia vigente (ver window.repararTopicosNoPlanner)
 // — nessa ordem, porque um simulado recém-ressincronizado ainda carrega o
 // "topico" congelado no Arquivo Morto, então também precisa passar pelo
-// realinhamento. Sem custo perceptível quando já está tudo em dia (as duas
-// funções só comparam o que já existe, não reprocessam à toa).
+// realinhamento. Por fim, repararTaxonomiaSessaoAtiva cuida do caso irmão
+// para baterias AINDA em andamento (SIMS), independente das duas primeiras.
+// Sem custo perceptível quando já está tudo em dia (as três funções só
+// comparam o que já existe, não reprocessam à toa).
 window.addEventListener('load', async function() {
     await window.repararSimuladosNaoSincronizados();
     await window.repararTopicosNoPlanner();
+    await window.repararTaxonomiaSessaoAtiva();
 });
 
 
