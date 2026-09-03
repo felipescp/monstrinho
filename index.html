@@ -12232,9 +12232,9 @@ window.fecharMateriaisModal = function() {
             <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: expressões de 3 Estrelas">🎨</button>
         </div>
         <div class="esq-tabs-baralho">
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODO o glossário">🗂️ Baralho: Todos</button>
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as expressões da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com as expressões da divisão/tópico (L2) selecionada na barra lateral">🗂️ Baralho: Tópico</button>
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODO o glossário">📖 Leitor: Todos</button>
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as expressões da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
+            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as expressões da divisão/tópico (L2) selecionada na barra lateral">📖 Leitor: Tópico</button>
         </div>
     </div>
     <div class="fc-grid" id="glos-grid">
@@ -13394,7 +13394,7 @@ window.GLOSSARIO_RUNTIME = {
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o leitor da disciplina.'); return; }
         let self = this;
         let prefixo = this._materiaSelecionada + ' > ';
         let itens = [];
@@ -13407,7 +13407,7 @@ window.GLOSSARIO_RUNTIME = {
 
     abrirBaralhoDivisao: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o leitor da divisão/tópico.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
         let itens = (this.glossario[chave] || []).filter(function(t) { return !self.ocultos[t.id]; });
@@ -13503,17 +13503,6 @@ window.GLOSSARIO_RUNTIME = {
         if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
         if (s.indiceAtual < 0) s.indiceAtual = 0;
         return deck[s.indiceAtual];
-    },
-
-    embaralharBaralho: function() {
-        let s = this._baralhoState;
-        if (!s) return;
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this.renderBaralho();
     },
 
     proximoBaralho: function() {
@@ -14192,12 +14181,11 @@ window.fecharGlossarioModal = function() {
 <div id="modal-glossario-baralho" class="mo">
     <div class="mdl">
         <div class="fc-popup-header">
-            <span>🗂️ <span id="glos-baralho-titulo"></span> — Baralho de Glossário</span>
+            <span>📖 <span id="glos-baralho-titulo"></span> — Leitor de Glossário</span>
             <button class="glos-baralho-maximizar" id="glos-baralho-btn-maximizar" onclick="window.GLOSSARIO_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
         </div>
 
         <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
             <div class="glos-baralho-escala-controle">
                 <button class="glos-baralho-escala-btn" id="glos-baralho-escala-btn-reduzir" onclick="window.GLOSSARIO_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
                 <span id="glos-baralho-escala-valor">1.5x</span>
@@ -19929,7 +19917,15 @@ function sincronizarResultadoComPlanner(simSession) {
     let objResultado = {
         id: 'sim_' + Date.now(),
         id_original: simSession.cfg.id, // <--- O ELO PERDIDO: Identificador original do Acervo
-        data: new Date().toLocaleDateString('pt-BR'),
+        // Data da CONCLUSÃO real (finalizadaEm), não do momento desta
+        // sincronização — sem isso, um reparo retroativo (ver
+        // window.repararSimuladosNaoSincronizados, chamado no boot pra
+        // baterias que ficaram presas no Arquivo Morto sem nunca terem sido
+        // sincronizadas) carimbava a data de HOJE numa bateria feita há
+        // semanas, fazendo ela aparecer no Dashboard como "resolvida hoje".
+        // No caminho normal (finalizarSimulado chamando isto na hora), dá
+        // no mesmo — finalizadaEm acabou de ser setado nesse exato instante.
+        data: (simSession.finalizadaEm ? new Date(simSession.finalizadaEm) : new Date()).toLocaleDateString('pt-BR'),
         global: { acertos: simSession.stats.ac, feitas: simSession.stats.resp },
         granulares: Object.values(granularesMap)
     };
@@ -22790,9 +22786,9 @@ window.triggerFileUpload = function(callback) {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas de 3 Estrelas">🎨</button>
             </div>
             <div class="esq-tabs-baralho">
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODOS os esquemas">🗂️ Baralho: Todos</button>
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com os esquemas da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">🗂️ Baralho: Tópico</button>
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODOS os esquemas">📖 Leitor: Todos</button>
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com os esquemas da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
+                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">📖 Leitor: Tópico</button>
             </div>
         </div>
         <div class="fc-grid" id="esq-grid">
@@ -22935,12 +22931,11 @@ window.triggerFileUpload = function(callback) {
 </style>
     <div class="mdl">
         <div class="fc-popup-header">
-            <span>🗂️ <span id="esq-baralho-titulo"></span> — Baralho de Esquemas</span>
+            <span>📖 <span id="esq-baralho-titulo"></span> — Leitor de Esquemas</span>
             <button class="esq-baralho-maximizar" id="esq-baralho-btn-maximizar" onclick="window.ESQUEMAS_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
         </div>
 
         <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
             <div class="esq-baralho-escala-controle">
                 <button class="esq-baralho-escala-btn" id="esq-baralho-escala-btn-reduzir" onclick="window.ESQUEMAS_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
                 <span id="esq-baralho-escala-valor">1.5x</span>
@@ -24481,7 +24476,7 @@ window.ESQUEMAS_RUNTIME = {
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o leitor da disciplina.'); return; }
         let self = this;
         let prefixo = this._materiaSelecionada + ' > ';
         let itens = [];
@@ -24494,7 +24489,7 @@ window.ESQUEMAS_RUNTIME = {
 
     abrirBaralhoDivisao: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o leitor da divisão/tópico.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
         let itens = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
@@ -24677,17 +24672,6 @@ window.ESQUEMAS_RUNTIME = {
         if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
         if (s.indiceAtual < 0) s.indiceAtual = 0;
         return deck[s.indiceAtual];
-    },
-
-    embaralharBaralho: function() {
-        let s = this._baralhoState;
-        if (!s) return;
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this.renderBaralho();
     },
 
     proximoBaralho: function() {
@@ -26027,9 +26011,9 @@ window.carregarEsquemasOficiais = async function() {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
             </div>
             <div class="jur-tabs-baralho">
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Baralho navegável (embaralhar + ‹›) com TODAS as fichas de jurisprudência">🗂️ Baralho: Todos</button>
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Baralho navegável só com as fichas da disciplina selecionada na barra lateral">🗂️ Baralho: Disciplina</button>
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Baralho navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">🗂️ Baralho: Divisão/Tópico</button>
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODAS as fichas de jurisprudência">📖 Leitor: Todos</button>
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
+                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">📖 Leitor: Divisão/Tópico</button>
             </div>
         </div>
         <div class="fc-grid" id="jur-grid">
@@ -26286,12 +26270,11 @@ window.carregarEsquemasOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="fc-popup-header">
-            <span>🗂️ <span id="jur-baralho-titulo"></span> — Baralho de Jurisprudência</span>
+            <span>📖 <span id="jur-baralho-titulo"></span> — Leitor de Jurisprudência</span>
             <button class="jur-baralho-maximizar" id="jur-baralho-btn-maximizar" onclick="window.JURISPRUDENCIA_RUNTIME.alternarMaximizarBaralho()" title="Maximizar">⛶</button>
         </div>
 
         <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharBaralho()">🔀 Embaralhar</button>
             <div class="jur-baralho-escala-controle">
                 <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
                 <span id="jur-baralho-escala-valor">1.5x</span>
@@ -27918,7 +27901,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o baralho da disciplina.'); return; }
+        if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o leitor da disciplina.'); return; }
         let self = this;
         let prefixo = this._materiaSelecionada + ' > ';
         let fichas = [];
@@ -27929,13 +27912,13 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._abrirBaralho('materia', this._materiaSelecionada, fichas);
     },
 
-    // Baralho restrito à divisão (L2) selecionada — mesma fichasDoL2() já
+    // Leitor restrito à divisão (L2) selecionada — mesma fichasDoL2() já
     // usada pelo Cronograma pra listar "Conteúdo Relacionado" (já filtra
     // ocultos). Existe porque algumas disciplinas têm centenas de fichas, e
-    // "Baralho: Disciplina" mistura todas as divisões de uma vez.
+    // "Leitor: Disciplina" mistura todas as divisões de uma vez.
     abrirBaralhoDivisao: function() {
         this._garantirCarregado();
-        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o baralho da divisão/tópico.'); return; }
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o leitor da divisão/tópico.'); return; }
         let fichas = this.fichasDoL2(this._materiaSelecionada, this._divisaoSelecionada);
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, fichas);
     },
@@ -28099,17 +28082,6 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (s.indiceAtual >= deck.length) s.indiceAtual = deck.length - 1;
         if (s.indiceAtual < 0) s.indiceAtual = 0;
         return deck[s.indiceAtual];
-    },
-
-    embaralharBaralho: function() {
-        let s = this._baralhoState;
-        if (!s) return;
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this.renderBaralho();
     },
 
     proximoBaralho: function() {
