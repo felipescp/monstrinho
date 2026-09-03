@@ -21964,7 +21964,7 @@ window.importarAcervoOficial = async function(url) {
 
             window.processarImportacaoAcervo(
                 dadosImportados,
-                { origemOficial: true }
+                { origemOficial: true, urlOrigem: url }
             );
 
             return;
@@ -22106,6 +22106,39 @@ let acervo = JSON.parse(
 
 window.ACERVO_OFICIAL = acervo;
 
+};
+
+// Reparo de UMA VEZ (por boot) pra contaminação legada: antes de existir o
+// _manifestoUrl (ver processarImportacaoAcervo), uma bateria oficial
+// excluída do arquivo-fonte (ex.: a limpeza das baterias GPT) ficava presa
+// pra sempre no catálogo local de cada usuário — nunca era removida por
+// merge/upsert puro, e ao clicar dava "falha ao buscar do servidor" porque
+// o conteúdo completo já não existe mais em ACERVO_OFICIAL_FULL. Só roda
+// quando TODOS os arquivos do manifesto foram buscados com sucesso neste
+// boot (__acervoOficialFalhas__ vazio) — com qualquer falha de rede no
+// meio, ACERVO_OFICIAL_FULL ficaria incompleto e podar por cima dele
+// apagaria cache válido por engano.
+window.repararAcervoOficialOrfao = function() {
+    if (Array.isArray(window.__acervoOficialFalhas__) && window.__acervoOficialFalhas__.length > 0) return [];
+    if (!window.ACERVO_OFICIAL_FULL) return [];
+
+    let acervoLocal;
+    try { acervoLocal = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { return []; }
+
+    let removidos = [];
+    let restantes = acervoLocal.filter(function(item) {
+        if (item && item.origem_oficial && !window.ACERVO_OFICIAL_FULL[item.id]) {
+            removidos.push(item.nome || item.id);
+            return false;
+        }
+        return true;
+    });
+
+    if (removidos.length > 0) {
+        localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(restantes));
+        console.info('[ACERVO OFICIAL] ' + removidos.length + ' bateria(s) oficial(is) removida(s) do catálogo local (não existem mais no arquivo-fonte):', removidos);
+    }
+    return removidos;
 };
 
 
@@ -22274,12 +22307,33 @@ novosItens.forEach(item => {
                     });
                 });
             }
+            // Marca de que arquivo-manifesto essa bateria veio — só assim dá
+            // pra podar, abaixo, uma bateria oficial que foi REMOVIDA do
+            // arquivo-fonte (ex.: exclusão em massa por qualidade) sem
+            // arriscar apagar bateria de OUTRO arquivo por engano.
+            if (opcoes.urlOrigem) itemRaso._manifestoUrl = opcoes.urlOrigem;
             mapa.set(item.id, itemRaso);
         } else {
             mapa.set(item.id, item);
         }
     }
 });
+
+// Poda de baterias oficiais removidas do arquivo-fonte: só roda quando
+// ESTE fetch teve sucesso (novosItens reflete o conteúdo atual e completo
+// daquele arquivo) — nunca em cima de uma falha de rede, que deixaria
+// novosItens vazio/parcial e apagaria cache válido por engano. Restrita ao
+// MESMO _manifestoUrl (nunca mexe em bateria de outro arquivo) e a itens
+// origem_oficial (nunca em conteúdo pessoal do usuário).
+if (opcoes.origemOficial && opcoes.urlOrigem) {
+    let idsAtuais = new Set(novosItens.filter(x => x && x.id).map(x => x.id));
+    Array.from(mapa.values()).forEach(function(entry) {
+        if (entry && entry.origem_oficial && entry._manifestoUrl === opcoes.urlOrigem && !idsAtuais.has(entry.id)) {
+            mapa.delete(entry.id);
+            if (window.ACERVO_OFICIAL_FULL) delete window.ACERVO_OFICIAL_FULL[entry.id];
+        }
+    });
+}
 
         localStorage.setItem(
    'tjpe_v1__cordeiro_acervo_provas',
@@ -28551,6 +28605,7 @@ _comBuscaOficialUnica('carregarGlossarioOficial');
 window.__bootOficialPromise__ = (async function(){
    try {
       await window.carregarAcervosOficiais();
+      if (typeof window.repararAcervoOficialOrfao === 'function') window.repararAcervoOficialOrfao();
       if (typeof window.carregarMateriaisOficiais === 'function') await window.carregarMateriaisOficiais();
       if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
       if (typeof window.carregarJurisprudenciaOficial === 'function') await window.carregarJurisprudenciaOficial();
