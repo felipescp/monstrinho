@@ -16566,19 +16566,12 @@ window.popularSelectTopicos = function() {
     let matData = TAXONOMIA_DADOS.taxonomia_concursos.find(m => m.nivel_1 === matSelecionada);
 
     if (matData) {
+        // Bateria só exige L1 | L2 — os tópicos (L3) ficam omitidos aqui.
         matData.divisoes.forEach(div => {
-            let optGroup = document.createElement('optgroup');
-            optGroup.label = div.nivel_2; // Divisão como agrupador visual
-
-            // Bateria só exige L2: todas as opções de um mesmo grupo (L3, exibido
-            // apenas pra facilitar a busca visual) compartilham o value do L2 pai.
-            div.topicos.forEach(top => {
-                let opt = document.createElement('option');
-                opt.value = div.id;
-                opt.textContent = top.nivel_3;
-                optGroup.appendChild(opt);
-            });
-            selTax.appendChild(optGroup);
+            let opt = document.createElement('option');
+            opt.value = div.id;
+            opt.textContent = div.nivel_2;
+            selTax.appendChild(opt);
         });
     }
     validarFormAdmin(); // Revalida o botão "Avançar"
