@@ -22108,6 +22108,26 @@ window.ACERVO_OFICIAL = acervo;
 
 };
 
+// Mesma lápide de exclusão usada por excluirSimuladoIndividual/
+// excluirBateriasSelecionadas (tjpe_v1__cordeiro_acervo_excluidos, ver
+// ESTRATÉGIA A em aplicarPayloadMerge) — extraída aqui pra ser reaproveitada
+// por qualquer poda AUTOMÁTICA de bateria oficial (não só exclusão manual
+// pela UI). Sem marcar a lápide, uma bateria removida do arquivo-fonte
+// volta pro catálogo local assim que a sincronização com a nuvem rodar: o
+// merge da nuvem só sabe ADICIONAR itens ausentes, nunca soube que o id
+// tinha sido excluído de propósito — exatamente o "aparece certo por 1s e
+// depois volta" relatado.
+window._marcarExcluidosAcervo = function(ids) {
+    if (!ids || !ids.length) return;
+    try {
+        let excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
+        let agora = new Date().toISOString();
+        ids.forEach(function(id) { excluidosAcervo[id] = agora; });
+        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+    } catch (e) {}
+};
+
 // Reparo de UMA VEZ (por boot) pra contaminação legada: antes de existir o
 // _manifestoUrl (ver processarImportacaoAcervo), uma bateria oficial
 // excluída do arquivo-fonte (ex.: a limpeza das baterias GPT) ficava presa
@@ -22126,9 +22146,11 @@ window.repararAcervoOficialOrfao = function() {
     try { acervoLocal = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { return []; }
 
     let removidos = [];
+    let idsRemovidos = [];
     let restantes = acervoLocal.filter(function(item) {
         if (item && item.origem_oficial && !window.ACERVO_OFICIAL_FULL[item.id]) {
             removidos.push(item.nome || item.id);
+            idsRemovidos.push(item.id);
             return false;
         }
         return true;
@@ -22136,6 +22158,7 @@ window.repararAcervoOficialOrfao = function() {
 
     if (removidos.length > 0) {
         localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(restantes));
+        window._marcarExcluidosAcervo(idsRemovidos);
         console.info('[ACERVO OFICIAL] ' + removidos.length + ' bateria(s) oficial(is) removida(s) do catálogo local (não existem mais no arquivo-fonte):', removidos);
     }
     return removidos;
@@ -22327,12 +22350,20 @@ novosItens.forEach(item => {
 // origem_oficial (nunca em conteúdo pessoal do usuário).
 if (opcoes.origemOficial && opcoes.urlOrigem) {
     let idsAtuais = new Set(novosItens.filter(x => x && x.id).map(x => x.id));
+    let idsPodados = [];
     Array.from(mapa.values()).forEach(function(entry) {
         if (entry && entry.origem_oficial && entry._manifestoUrl === opcoes.urlOrigem && !idsAtuais.has(entry.id)) {
             mapa.delete(entry.id);
+            idsPodados.push(entry.id);
             if (window.ACERVO_OFICIAL_FULL) delete window.ACERVO_OFICIAL_FULL[entry.id];
         }
     });
+    // Mesma lápide de excluirBateriasSelecionadas — sem ela, a próxima
+    // sincronização com a nuvem reinjeta essas baterias de volta a partir
+    // de um backup antigo que ainda as continha (a estratégia de merge de
+    // arrays só sabe ADICIONAR itens ausentes, nunca soube que o id foi
+    // removido de propósito).
+    if (typeof window._marcarExcluidosAcervo === 'function') window._marcarExcluidosAcervo(idsPodados);
 }
 
         localStorage.setItem(
