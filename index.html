@@ -21013,13 +21013,24 @@ window.editarSimuladoAcervo = function(id) {
         prova = Object.assign({}, prova, { dados: resolverDadosCompletos(prova) });
     }
 
-    // Mesma proteção de abrirModalCriacao(): sincroniza a aba ativa antes
-    // de salvarProvaNoAcervo() começar a mutar C/D com os dados da prova
-    // sendo editada.
+    // Mesma proteção de abrirModalCriacao() (ver comentário lá — bug já
+    // relatado uma vez com "Vínculo Taxonômico" vazando de aba anterior):
+    // sincroniza a aba ativa ANTES de mexer em C/D, e reseta os dois pro
+    // estado em branco — não só protege a aba. Faltava aqui: sem isso,
+    // qualquer campo de C que esta tela de edição NÃO reatribui
+    // explicitamente (ex.: cegas, auto) ficava com o valor STALE de
+    // QUALQUER outra aba aberta no momento de clicar "Editar" — esse resto
+    // vazava pro cfg salvo (e exportado/publicado) da bateria sendo
+    // editada. id_taxonomia/materia/caminho_completo/nome continuam
+    // seguros de qualquer forma (salvarProvaNoAcervo() os reatribui
+    // sempre, a partir do formulário), mas os demais campos de C só ficam
+    // protegidos com este reset.
     if (typeof SI !== 'undefined' && SI >= 0 && typeof SIMS !== 'undefined' && SIMS[SI]) {
         SIMS[SI].qSalva = QA;
         SIMS[SI].dados = JSON.parse(JSON.stringify(D));
     }
+    C = { nome: '', tipo: 'ce', cegas: false };
+    D = { blocos: [], res: {}, fin: {}, caderno: [] };
 
     window.ID_EDICAO = id;
 
