@@ -12131,6 +12131,17 @@ window.fecharMateriaisModal = function() {
     #section-glossario .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #section-glossario .esq-tabs-grupo { display:flex; gap:4px; }
     #section-glossario .esq-tabs-baralho { display:flex; align-items:center; gap:6px; }
+    /* "Leitor ▾" — Disciplina/Tópico consolidados num único menu suspenso
+       (eram 2 botões soltos; pedido explícito: "ergonomicamente mais
+       bonito, mantendo o padrão"), mesmo <details> de "Exportar Tudo/
+       Disciplina/Tópico" (ver .esq-export-menu). */
+    #section-glossario .esq-leitor-menu { position:relative; }
+    #section-glossario .esq-leitor-menu summary { list-style:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #section-glossario .esq-leitor-menu summary::-webkit-details-marker { display:none; }
+    #section-glossario .esq-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #section-glossario .esq-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:130px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #section-glossario .esq-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
+    #section-glossario .esq-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
     #section-glossario .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #section-glossario .fc-tab:hover { color:var(--app-primary); }
     #section-glossario .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
@@ -12298,9 +12309,13 @@ window.fecharMateriaisModal = function() {
             <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: expressões de 3 Estrelas">🎨</button>
         </div>
         <div class="esq-tabs-baralho">
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODO o glossário">📖 Leitor: Todos</button>
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as expressões da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
-            <button class="esq-tb-btn" onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as expressões da divisão/tópico (L2) selecionada na barra lateral">📖 Leitor: Tópico</button>
+            <details class="esq-leitor-menu">
+                <summary title="Leitor navegável — escolha entre a disciplina ou o tópico selecionado na barra lateral">📖 Leitor ▾</summary>
+                <div class="esq-leitor-opcoes">
+                    <button onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as expressões da disciplina selecionada na barra lateral">Disciplina</button>
+                    <button onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as expressões da divisão/tópico (L2) selecionada na barra lateral">Tópico</button>
+                </div>
+            </details>
         </div>
     </div>
     <div class="fc-grid" id="glos-grid">
@@ -13434,22 +13449,10 @@ window.GLOSSARIO_RUNTIME = {
         });
     },
 
-    // ── BARALHO (Todos | Disciplina | Divisão/Tópico) — mesmíssimo padrão
-    // de ESQUEMAS_RUNTIME (ver comentários lá). ──
-
-    _todosTermosVisiveis: function() {
-        let self = this;
-        let resultado = [];
-        Object.keys(this.glossario).forEach(function(chave) {
-            (self.glossario[chave] || []).forEach(function(t) { if (!self.ocultos[t.id]) resultado.push(t); });
-        });
-        return resultado;
-    },
-
-    abrirBaralhoTodos: function() {
-        this._garantirCarregado();
-        this._abrirBaralho('todos', 'Todo o Glossário', this._todosTermosVisiveis());
-    },
+    // ── BARALHO (Disciplina | Divisão/Tópico) — mesmíssimo padrão de
+    // ESQUEMAS_RUNTIME (ver comentários lá). "Leitor: Todos" foi removido
+    // (pedido explícito): volume total do glossário tornou o Leitor
+    // sem filtro nenhum insustentável de navegar 1-a-1.
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
@@ -22869,6 +22872,17 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #esquemas-modal .esq-tabs-grupo { display:flex; gap:4px; }
     #esquemas-modal .esq-tabs-baralho { display:flex; align-items:center; gap:6px; }
+    /* "Leitor ▾" — Disciplina/Tópico consolidados num único menu suspenso
+       (eram 2 botões soltos; pedido explícito: "ergonomicamente mais
+       bonito, mantendo o padrão"), mesmo <details> de "Exportar Tudo/
+       Disciplina/Tópico" (ver .esq-export-menu). */
+    #esquemas-modal .esq-leitor-menu { position:relative; }
+    #esquemas-modal .esq-leitor-menu summary { list-style:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #esquemas-modal .esq-leitor-menu summary::-webkit-details-marker { display:none; }
+    #esquemas-modal .esq-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #esquemas-modal .esq-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:130px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #esquemas-modal .esq-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
+    #esquemas-modal .esq-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
     #esquemas-modal .fc-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--text-muted); border-bottom:2px solid transparent; font-family:var(--font-display); }
     #esquemas-modal .fc-tab:hover { color:var(--app-primary); }
     #esquemas-modal .fc-tab.ativa { color:var(--app-primary); border-bottom-color:var(--app-primary); }
@@ -22973,9 +22987,13 @@ window.triggerFileUpload = function(callback) {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas de 3 Estrelas">🎨</button>
             </div>
             <div class="esq-tabs-baralho">
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODOS os esquemas">📖 Leitor: Todos</button>
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com os esquemas da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
-                <button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">📖 Leitor: Tópico</button>
+                <details class="esq-leitor-menu">
+                    <summary title="Leitor navegável — escolha entre a disciplina ou o tópico selecionado na barra lateral">📖 Leitor ▾</summary>
+                    <div class="esq-leitor-opcoes">
+                        <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com os esquemas da disciplina selecionada na barra lateral">Disciplina</button>
+                        <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">Tópico</button>
+                    </div>
+                </details>
             </div>
         </div>
         <div class="fc-grid" id="esq-grid">
@@ -24634,27 +24652,15 @@ window.ESQUEMAS_RUNTIME = {
         });
     },
 
-    // ── BARALHO (Todos | Disciplina | Divisão/Tópico) ──
+    // ── BARALHO (Disciplina | Divisão/Tópico) ──
     // Popup de navegação livre 1-a-1 (embaralhar + ‹›), mesmo padrão de
-    // JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos/Materia/Divisao. Diferente
-    // das abas de estrela: classificar um card aqui NÃO remove ele do
-    // deck (só reflete a nova estrela e continua no mesmo lugar) — o
-    // objetivo deste baralho é folhear e ir classificando tudo sem perder
-    // a posição, não é uma fila de revisão que se esvazia.
-
-    _todosEsquemasVisiveis: function() {
-        let self = this;
-        let resultado = [];
-        Object.keys(this.esquemas).forEach(function(chave) {
-            (self.esquemas[chave] || []).forEach(function(e) { if (!self.ocultos[e.id]) resultado.push(e); });
-        });
-        return resultado;
-    },
-
-    abrirBaralhoTodos: function() {
-        this._garantirCarregado();
-        this._abrirBaralho('todos', 'Todos os Esquemas', this._todosEsquemasVisiveis());
-    },
+    // JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria/Divisao. Diferente das
+    // abas de estrela: classificar um card aqui NÃO remove ele do deck (só
+    // reflete a nova estrela e continua no mesmo lugar) — o objetivo deste
+    // baralho é folhear e ir classificando tudo sem perder a posição, não é
+    // uma fila de revisão que se esvazia. "Leitor: Todos" foi removido
+    // (pedido explícito): volume total tornou o Leitor sem filtro nenhum
+    // insustentável de navegar 1-a-1.
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
@@ -26182,6 +26188,11 @@ window.carregarEsquemasOficiais = async function() {
     /* Fileira de atalhos, fixa acima da lista de matérias — pedido
        explícito do usuário ("acima do início dos L1"). */
     #jurisprudencia-modal .jur-sistematica-pills { display:flex; flex-direction:column; gap:4px; padding:2px 2px 10px 2px; margin-bottom:8px; border-bottom:1px solid var(--border-color); }
+    /* Rótulo pequeno identificando a seção — "PRECEDENTES" (maiúsculas via
+       CSS, texto-fonte já capitalizado normalmente), mesmo espírito
+       tipográfico de .fc-materia-nome (uppercase, letter-spacing), só
+       menor/mais discreto por não ser um item clicável de navegação. */
+    #jurisprudencia-modal .jur-sistematica-titulo-lateral { font-size:9px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:0 2px 2px 2px; }
     #jurisprudencia-modal .jur-sistematica-pill { text-align:left; padding:6px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-sistematica-pill:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-sistematica-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -26209,13 +26220,23 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #jurisprudencia-modal .jur-tabs-grupo { display:flex; gap:4px; }
     #jurisprudencia-modal .jur-tabs-baralho { display:flex; align-items:center; gap:6px; }
-    /* "Leitor ▾" — extensão dos 3 Leitores normais (Todos/Disciplina/
-       Divisão), reunindo os atalhos por sistemática (Repercussão Geral/
-       Repetitivos/Controle Concentrado) num menu suspenso em vez de mais 3
-       botões soltos — mesmo padrão <details> de "Exportar Tudo/Disciplina/
-       Tópico" (ver .esq-export-menu), mas com cor PRÓPRIA (tom leve de
-       --app-primary) pra se diferenciar visualmente dos 3 Leitores normais,
-       já que abre um recorte de natureza diferente (cruza disciplinas). */
+    /* "Leitor ▾" — Disciplina/Divisão-Tópico consolidados num único menu
+       suspenso (eram 2 botões soltos; pedido explícito: "ergonomicamente
+       mais bonito, mantendo o padrão"), mesmo <details> de "Exportar Tudo/
+       Disciplina/Tópico" (ver .esq-export-menu), cor neutra igual aos
+       outros botões da toolbar. */
+    #jurisprudencia-modal .jur-leitor-menu { position:relative; }
+    #jurisprudencia-modal .jur-leitor-menu summary { list-style:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .jur-leitor-menu summary::-webkit-details-marker { display:none; }
+    #jurisprudencia-modal .jur-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:150px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #jurisprudencia-modal .jur-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .jur-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
+    /* "Leitor de Precedentes ▾" — os atalhos por sistemática (Repercussão
+       Geral/Repetitivos/Controle Concentrado), num menu à parte com cor
+       PRÓPRIA (tom leve de --app-primary) pra se diferenciar do Leitor
+       normal acima, já que abre um recorte de natureza diferente (cruza
+       disciplinas — são precedentes, não fichas de uma disciplina só). */
     #jurisprudencia-modal .jur-leitor-mais-menu { position:relative; }
     #jurisprudencia-modal .jur-leitor-mais-menu summary { list-style:none; background:var(--bg-accent-soft); border:1px solid #c7d2fe; border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--app-primary); cursor:pointer; white-space:nowrap; }
     #jurisprudencia-modal .jur-leitor-mais-menu summary::-webkit-details-marker { display:none; }
@@ -26319,11 +26340,15 @@ window.carregarEsquemasOficiais = async function() {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
             </div>
             <div class="jur-tabs-baralho">
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoTodos()" title="Leitor navegável (‹›) com TODAS as fichas de jurisprudência">📖 Leitor: Todos</button>
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">📖 Leitor: Disciplina</button>
-                <button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">📖 Leitor: Divisão/Tópico</button>
+                <details class="jur-leitor-menu">
+                    <summary title="Leitor navegável — escolha entre a disciplina ou a divisão/tópico selecionada na barra lateral">📖 Leitor ▾</summary>
+                    <div class="jur-leitor-opcoes">
+                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">Disciplina</button>
+                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">Divisão/Tópico</button>
+                    </div>
+                </details>
                 <details class="jur-leitor-mais-menu">
-                    <summary title="Leitor navegável cruzando TODAS as disciplinas, filtrado pela sistemática mais relevante">📖 Leitor ▾</summary>
+                    <summary title="Leitor navegável cruzando TODAS as disciplinas, filtrado pela sistemática mais relevante">📖 Leitor de Precedentes ▾</summary>
                     <div class="jur-leitor-mais-opcoes">
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Repercussão Geral')">📌 Repercussão Geral</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Recurso Repetitivo')">📌 Repetitivos</button>
@@ -27091,6 +27116,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // o mesmo card, mesma classificação, mesmo ocultar/excluir), não um
         // estado pessoal de revisão.
         let htmlPills = '<div class="jur-sistematica-pills">' +
+            '<div class="jur-sistematica-titulo-lateral">Precedentes</div>' +
             this._SISTEMATICAS_DESTAQUE.map(function(p) {
                 return '<button class="jur-sistematica-pill' + (self._modoSistematica === p.valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSistematica(\'' + p.valor.replace(/'/g, "\\'") + '\')">' + p.rotulo + '</button>';
             }).join('') +
@@ -28399,24 +28425,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         '</div>';
     },
 
-    // ── POPUP "BARALHO DE CARDS" (Todos | Disciplina selecionada) ──
+    // ── POPUP "BARALHO DE CARDS" (Disciplina selecionada) ──
     // Mesmo padrão de FLASHCARDS_RUNTIME._popupState/abrirPopupBaralho: pool
     // fixo (cardsBase) + ordemChaves (respeita embaralhar) + índice atual.
-    // Sem "flip" — fichas de jurisprudência não têm frente/verso.
-
-    _todasFichasVisiveis: function() {
-        let self = this;
-        let resultado = [];
-        Object.keys(this.fichas).forEach(function(chave) {
-            (self.fichas[chave] || []).forEach(function(f) { if (!self.ocultos[f.id]) resultado.push(f); });
-        });
-        return resultado;
-    },
-
-    abrirBaralhoTodos: function() {
-        this._garantirCarregado();
-        this._abrirBaralho('todos', 'Todas as Fichas', this._todasFichasVisiveis());
-    },
+    // Sem "flip" — fichas de jurisprudência não têm frente/verso. "Leitor:
+    // Todos" foi removido (pedido explícito): volume total de jurisprudência
+    // tornou o Leitor sem filtro nenhum insustentável de navegar 1-a-1.
 
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
@@ -28473,7 +28487,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Leitor de sempre (‹›, busca, ordenação por classificação), só que
     // alimentado pela lista cruzando disciplinas. escopo !== 'divisao' já
     // basta pra renderBaralho() mostrar a origem (matéria — divisão) em
-    // cada card, mesmo comportamento de "Leitor: Todos"/"Leitor: Disciplina".
+    // cada card, mesmo comportamento que "Leitor: Disciplina" já tinha.
     abrirBaralhoSistematica: function(valor) {
         this._garantirCarregado();
         let rotuloObj = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === valor; });
