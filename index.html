@@ -12309,7 +12309,7 @@ window.fecharMateriaisModal = function() {
             <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.GLOSSARIO_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: expressões de 3 Estrelas">🎨</button>
         </div>
         <div class="esq-tabs-baralho">
-            <details class="esq-leitor-menu">
+            <details class="esq-leitor-menu leitor-dropdown">
                 <summary title="Leitor navegável — escolha entre a disciplina ou o tópico selecionado na barra lateral">📖 Leitor ▾</summary>
                 <div class="esq-leitor-opcoes">
                     <button onclick="window.GLOSSARIO_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as expressões da disciplina selecionada na barra lateral">Disciplina</button>
@@ -21035,6 +21035,19 @@ window.toggleKebab = function(event) {
 document.addEventListener('click', () => {
     document.querySelectorAll('.kebab-dropdown').forEach(m => m.classList.remove('show'));
 });
+
+// Mesmo comportamento de "fecha ao clicar fora" acima (📁 Arquivo), agora
+// pros menus "Leitor ▾"/"Leitor de Precedentes ▾" (Jurisprudência/Esquemas/
+// Glossário) — nativamente um <details> só fecha clicando de novo no
+// <summary>, nunca clicando fora dele. A exclusão mútua entre "Leitor ▾" e
+// "Leitor de Precedentes ▾" já é resolvida nativamente pelo atributo
+// name="jur-leitor-grupo" compartilhado entre os dois (mesmo mecanismo do
+// name="jur-export-grupo" já usado nos menus de Exportar).
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('details.leitor-dropdown[open]').forEach(function(det) {
+        if (!det.contains(e.target)) det.removeAttribute('open');
+    });
+});
 </script>
 
 <script>
@@ -22987,7 +23000,7 @@ window.triggerFileUpload = function(callback) {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas de 3 Estrelas">🎨</button>
             </div>
             <div class="esq-tabs-baralho">
-                <details class="esq-leitor-menu">
+                <details class="esq-leitor-menu leitor-dropdown">
                     <summary title="Leitor navegável — escolha entre a disciplina ou o tópico selecionado na barra lateral">📖 Leitor ▾</summary>
                     <div class="esq-leitor-opcoes">
                         <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com os esquemas da disciplina selecionada na barra lateral">Disciplina</button>
@@ -26340,14 +26353,14 @@ window.carregarEsquemasOficiais = async function() {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
             </div>
             <div class="jur-tabs-baralho">
-                <details class="jur-leitor-menu">
+                <details class="jur-leitor-menu leitor-dropdown" name="jur-leitor-grupo">
                     <summary title="Leitor navegável — escolha entre a disciplina ou a divisão/tópico selecionada na barra lateral">📖 Leitor ▾</summary>
                     <div class="jur-leitor-opcoes">
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">Disciplina</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">Divisão/Tópico</button>
                     </div>
                 </details>
-                <details class="jur-leitor-mais-menu">
+                <details class="jur-leitor-mais-menu leitor-dropdown" name="jur-leitor-grupo">
                     <summary title="Leitor navegável cruzando TODAS as disciplinas, filtrado pela sistemática mais relevante">📖 Leitor de Precedentes ▾</summary>
                     <div class="jur-leitor-mais-opcoes">
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Repercussão Geral')">📌 Repercussão Geral</button>
