@@ -1468,7 +1468,7 @@ try {
                      #tela-simulado.tema-escuro-simulado no CSS). -->
                 <button id="btn-tema-global" onclick="window.alternarTemaGlobal()" class="b1" style="height:26px; width:26px; font-size:13px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Modo noturno (afeta o site inteiro)">☀</button>
 
-                <button onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
+                <button id="btn-salvar-nuvem-desktop" onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
                 <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
                 <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login com GitHub — único método de sincronização em nuvem">🔑 Entrar com GitHub</button>
                 <button id="btn-github-logout-desktop" onclick="window.SALINHA_GITHUB_OAUTH.sair()" class="b1" style="display:none; height:26px; width:26px; font-size:11px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Sair da conta do GitHub neste navegador">✕</button>
@@ -1560,6 +1560,7 @@ try {
     <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
 
         <button
+            id="btn-salvar-nuvem-mobile"
             onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)"
             class="b1"
             style="
@@ -5102,6 +5103,33 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
     } finally {
         window.__salvamentoNuvemEmAndamento = false;
     }
+};
+
+// Salvamento automático na nuvem ao CONCLUIR uma bateria — pedido
+// explícito do usuário: mesmo botão, mesma mensagem "⏳ Salvando..." e o
+// mesmo modal de sucesso do "☁️⬆️ Salvar" manual, disparado sozinho
+// enquanto a pessoa confere os resultados (não aguardado — não atrasa a
+// transição pra tela de resultado). Diferente do salvamento periódico
+// (verificarSalvamentoPeriodicoNuvem, hoje desativado por causa de uma
+// corrida 409 investigada antes), este é um gatilho por EVENTO significativo
+// (fim de bateria), não um timer arbitrário — risco de corrida bem menor,
+// e exportarNuvem() já tem lock+retry com backoff prontos pra isso.
+// Mesma regra de exportarNuvemSilenciosa(): só faz algo se token E gistId
+// já estiverem configurados (a pessoa já salvou manualmente pelo menos uma
+// vez) — nunca força login nem cria Gist novo sozinha, e nunca interrompe
+// quem nunca configurou sincronização em nuvem com um alerta indesejado.
+window.salvarNuvemAoConcluirBateria = function() {
+    if (!window.SALINHA_GIST_SYNC || typeof window.SALINHA_GIST_SYNC.exportarNuvem !== 'function') return;
+    if (!window.SALINHA_GIST_SYNC.getToken() || !window.SALINHA_GIST_SYNC.getGistId()) return;
+
+    function visivel(el) {
+        return !!el && window.getComputedStyle(el).display !== 'none';
+    }
+    let botao = document.getElementById('btn-salvar-nuvem-desktop');
+    if (!visivel(botao)) botao = document.getElementById('btn-salvar-nuvem-mobile');
+    if (!visivel(botao)) botao = null;
+
+    window.SALINHA_GIST_SYNC.exportarNuvem(botao);
 };
 
 // Gancho de ativação: reaproveita autoSave() (chamada em ~20 lugares a
@@ -19842,11 +19870,17 @@ function finalizarSimulado() {
 
                 HIST = SIMS.filter(function(x){return x.stats;}).map(function(x){return mkH(x,SIMS.indexOf(x));});
                 HI = HIST.length-1;
-                
+
                 renderResultado(HI);
                 tela('tela-resultado');
                 renderTabs();
                 fecharSb();
+
+                // Backup automático na nuvem — dispara depois da tela de
+                // resultado já estar montada, sem aguardar (fire-and-forget):
+                // a pessoa vê os resultados na hora, o backup roda por baixo
+                // enquanto ela confere o desempenho.
+                if (typeof window.salvarNuvemAoConcluirBateria === 'function') window.salvarNuvemAoConcluirBateria();
             }}
         ]
     });
