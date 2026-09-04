@@ -12154,7 +12154,7 @@ window.fecharMateriaisModal = function() {
     /* Cartão de estudo (abas de estrela + popup Baralho) — mesmo padrão de
        #esquemas-modal .esq-estudo-*. */
     #section-glossario .esq-estudo-card, #modal-glossario-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
-    #section-glossario .esq-estudo-card { max-width:640px; max-height:46vh; }
+    #section-glossario .esq-estudo-card { max-width:640px; flex:1; min-height:0; }
     #modal-glossario-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
     #modal-glossario-baralho.glos-baralho-maximizado .esq-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
     #section-glossario .esq-estudo-titulo, #modal-glossario-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
@@ -12188,8 +12188,12 @@ window.fecharMateriaisModal = function() {
     #modal-glossario-baralho #glos-baralho-escala-valor { font-size:11px; font-weight:800; color:var(--text-muted); min-width:34px; text-align:center; }
     #modal-glossario-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
     #modal-glossario-baralho.glos-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
-    #modal-glossario-baralho .esq-baralho-lista { width:300px; flex-shrink:0; overflow-y:auto; overflow-x:hidden; border-right:1px solid var(--border-color); }
+    #modal-glossario-baralho .esq-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
     #modal-glossario-baralho.glos-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-glossario-baralho .esq-baralho-busca-wrap { flex-shrink:0; padding:10px 10px 0 10px; }
+    #modal-glossario-baralho .esq-baralho-busca { width:100%; box-sizing:border-box; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); }
+    #modal-glossario-baralho .esq-baralho-busca:focus { outline:none; border-color:var(--app-primary); }
+    #modal-glossario-baralho .esq-baralho-lista-itens { flex:1; overflow-y:auto; overflow-x:hidden; }
     #modal-glossario-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-glossario-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
     #modal-glossario-baralho .esq-baralho-lista-item.ativo { background:var(--app-primary); }
@@ -12303,9 +12307,6 @@ window.fecharMateriaisModal = function() {
 
     <div class="fc-aba-revisao" id="glos-aba-1" style="display:none;">
         <div class="fc-pills" id="glos-pills-1"></div>
-        <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('1')">🔀 Embaralhar</button>
-        </div>
         <div id="glos-corpo-1"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('1', -1)">‹</button>
@@ -12316,9 +12317,6 @@ window.fecharMateriaisModal = function() {
 
     <div class="fc-aba-revisao" id="glos-aba-2" style="display:none;">
         <div class="fc-pills" id="glos-pills-2"></div>
-        <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('2')">🔀 Embaralhar</button>
-        </div>
         <div id="glos-corpo-2"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('2', -1)">‹</button>
@@ -12329,9 +12327,6 @@ window.fecharMateriaisModal = function() {
 
     <div class="fc-aba-revisao" id="glos-aba-3" style="display:none;">
         <div class="fc-pills" id="glos-pills-3"></div>
-        <div class="fc-popup-toolbar">
-            <button class="fc-tb-btn" onclick="window.GLOSSARIO_RUNTIME.embaralharAba('3')">🔀 Embaralhar</button>
-        </div>
         <div id="glos-corpo-3"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('3', -1)">‹</button>
@@ -12572,7 +12567,13 @@ window.GLOSSARIO_RUNTIME = {
         this._atualizarContagensAbas();
         if (typeof window.carregarGlossarioOficial === 'function') {
             window.carregarGlossarioOficial().then(function() {
+                // Mesma correção de ESQUEMAS_RUNTIME/JURISPRUDENCIA_RUNTIME:
+                // termo OFICIAL já classificado em sessão anterior fica de
+                // fora da 1ª contagem síncrona (só entra em this.termos
+                // depois desta Promise resolver) — sem recalcular aqui, o
+                // rótulo da aba "1/2/3 Estrelas" fica travado em "(0)".
                 window.GLOSSARIO_RUNTIME.render();
+                window.GLOSSARIO_RUNTIME._atualizarContagensAbas();
             });
         }
     },
@@ -13353,16 +13354,6 @@ window.GLOSSARIO_RUNTIME = {
         this.renderAbaRevisao(aba);
     },
 
-    embaralharAba: function(aba) {
-        let s = this._estadosAba[aba];
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this._renderCorpoAba(aba);
-    },
-
     navegarAba: function(aba, delta) {
         let s = this._estadosAba[aba];
         if (s.ordemChaves.length < 2) return;
@@ -13482,12 +13473,27 @@ window.GLOSSARIO_RUNTIME = {
         }
     },
 
+    // 3 estrelas=0, 2=1, 1=2, sem classificação=3 — usado pra ordenar o
+    // Leitor (mais importante primeiro), pedido explícito do usuário.
+    _rankClassificacaoGlos: function(item) {
+        let ORDEM = { '3': 0, '2': 1, '1': 2 };
+        let r = this.revisaoGlossario[item.id];
+        let chave = r ? r.ultimaClassificacao : null;
+        return (chave && ORDEM.hasOwnProperty(chave)) ? ORDEM[chave] : 3;
+    },
+
     _abrirBaralho: function(escopo, titulo, itens) {
+        let self = this;
+        // Ordem padrão = por classificação (3 Estrelas primeiro, sem
+        // classificação por último) — pedido explícito do usuário. Sort
+        // estável (ES2019+): dentro do mesmo nível, mantém a ordem original.
+        itens = itens.slice().sort(function(a, b) { return self._rankClassificacaoGlos(a) - self._rankClassificacaoGlos(b); });
         this._baralhoState = {
             escopo: escopo,
             cardsBase: itens,
             ordemChaves: itens.map(function(t) { return t.id; }),
-            indiceAtual: 0
+            indiceAtual: 0,
+            filtroBusca: ''
         };
         document.getElementById('glos-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -13599,9 +13605,18 @@ window.GLOSSARIO_RUNTIME = {
         if (!listaEl) return;
         let s = this._baralhoState;
         if (!s) { listaEl.innerHTML = ''; return; }
-        let deck = this._deckBaralhoAtual();
         let self = this;
-        listaEl.innerHTML = deck.map(function(item, idx) {
+
+        let inputBuscaAnterior = document.getElementById('glos-baralho-busca');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
+
+        let htmlBusca = '<div class="esq-baralho-busca-wrap"><input type="text" id="glos-baralho-busca" class="esq-baralho-busca" placeholder="🔎 Buscar por expressão..." value="' + self._escapar(s.filtroBusca || '') + '" oninput="window.GLOSSARIO_RUNTIME.filtrarBuscaBaralho(this.value)"></div>';
+
+        let buscaNormalizada = self._normalizarBusca(s.filtroBusca || '');
+        let deck = this._deckBaralhoAtual();
+        let htmlItens = deck.map(function(item, idx) {
+            if (buscaNormalizada && self._normalizarBusca(item.expressao || '').indexOf(buscaNormalizada) === -1) return '';
             let titulo = item.expressao || '(sem expressão)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
@@ -13609,9 +13624,28 @@ window.GLOSSARIO_RUNTIME = {
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.GLOSSARIO_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' +
                 '</div>';
-        }).join('');
+        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma expressão encontrada.</div>';
+
+        listaEl.innerHTML = htmlBusca + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
         if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('glos-baralho-busca');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+    },
+
+    // Filtra a LISTAGEM lateral por expressão — não navega nem troca o card
+    // exibido à direita.
+    filtrarBuscaBaralho: function(texto) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroBusca = texto || '';
+        this._renderListaBaralho();
     },
 
     irParaBaralho: function(idx) {
@@ -22852,7 +22886,7 @@ window.triggerFileUpload = function(callback) {
        sempre branco) — um fundo cinza/azulado por trás do conteúdo do
        esquema (tabelas, linhas coloridas) lavava o contraste dessas cores. */
     #esquemas-modal .esq-estudo-card, #modal-esquemas-baralho .esq-estudo-card { background:var(--bg-white); border:1px solid var(--border-color); border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
-    #esquemas-modal .esq-estudo-card { max-width:640px; max-height:46vh; }
+    #esquemas-modal .esq-estudo-card { max-width:640px; flex:1; min-height:0; }
     /* Baralho: usa toda a altura que sobrar dentro do popup (ver
        #modal-esquemas-baralho #esq-baralho-corpo, com flex:1) em vez de um
        teto fixo em vh — objetivo é evitar rolagem na maioria dos casos,
@@ -22938,9 +22972,6 @@ window.triggerFileUpload = function(callback) {
 
         <div class="fc-aba-revisao" id="esq-aba-1" style="display:none;">
             <div class="fc-pills" id="esq-pills-1"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('1')">🔀 Embaralhar</button>
-            </div>
             <div id="esq-corpo-1"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('1', -1)">‹</button>
@@ -22951,9 +22982,6 @@ window.triggerFileUpload = function(callback) {
 
         <div class="fc-aba-revisao" id="esq-aba-2" style="display:none;">
             <div class="fc-pills" id="esq-pills-2"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('2')">🔀 Embaralhar</button>
-            </div>
             <div id="esq-corpo-2"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('2', -1)">‹</button>
@@ -22964,9 +22992,6 @@ window.triggerFileUpload = function(callback) {
 
         <div class="fc-aba-revisao" id="esq-aba-3" style="display:none;">
             <div class="fc-pills" id="esq-pills-3"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.ESQUEMAS_RUNTIME.embaralharAba('3')">🔀 Embaralhar</button>
-            </div>
             <div id="esq-corpo-3"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('3', -1)">‹</button>
@@ -23024,6 +23049,9 @@ window.triggerFileUpload = function(callback) {
        300px — ver _renderListaBaralho() pra a estrutura HTML. */
     #modal-esquemas-baralho .esq-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
     #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-esquemas-baralho .esq-baralho-busca-wrap { flex-shrink:0; padding:10px 10px 0 10px; }
+    #modal-esquemas-baralho .esq-baralho-busca { width:100%; box-sizing:border-box; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); }
+    #modal-esquemas-baralho .esq-baralho-busca:focus { outline:none; border-color:var(--app-primary); }
     #modal-esquemas-baralho .esq-baralho-lista-itens { flex:1; overflow-y:auto; overflow-x:hidden; }
     #modal-esquemas-baralho .esq-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-esquemas-baralho .esq-baralho-lista-item:hover { background:var(--bg-soft); }
@@ -23629,7 +23657,12 @@ window.ESQUEMAS_RUNTIME = {
                 // olhava a tela). render() já re-seleciona a matéria ativa no
                 // final (this.selecionarMateria(this._materiaSelecionada, true)),
                 // o que cobre _renderColunaDivisoes() e _renderGradeCards() juntos.
+                // _atualizarContagensAbas() sofre do mesmo problema (rótulo
+                // da aba "1/2/3 Estrelas" travado em "(0)" pra esquema
+                // oficial já classificado em sessão anterior) — recalcula
+                // aqui também.
                 window.ESQUEMAS_RUNTIME.render();
+                window.ESQUEMAS_RUNTIME._atualizarContagensAbas();
             });
         }
     },
@@ -24498,16 +24531,6 @@ window.ESQUEMAS_RUNTIME = {
         this.renderAbaRevisao(aba);
     },
 
-    embaralharAba: function(aba) {
-        let s = this._estadosAba[aba];
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this._renderCorpoAba(aba);
-    },
-
     navegarAba: function(aba, delta) {
         let s = this._estadosAba[aba];
         if (s.ordemChaves.length < 2) return;
@@ -24673,14 +24696,24 @@ window.ESQUEMAS_RUNTIME = {
         return (this.etiquetas[chave] || {})[idEtiqueta] || null;
     },
 
+    // 3 estrelas=0, 2=1, 1=2, sem classificação=3 — usado pra ordenar o
+    // Leitor (mais importante primeiro), pedido explícito do usuário.
+    _rankClassificacaoEsq: function(item) {
+        let ORDEM = { '3': 0, '2': 1, '1': 2 };
+        let r = this.revisaoEsquemas[item.id];
+        let chave = r ? r.ultimaClassificacao : null;
+        return (chave && ORDEM.hasOwnProperty(chave)) ? ORDEM[chave] : 3;
+    },
+
     _abrirBaralho: function(escopo, titulo, itens) {
         let self = this;
-        // Ordem padrão = por etiqueta, não por ordem de importação —
-        // pedido explícito pra dar alguma racionalidade ao volume de leis
-        // diferentes misturadas (sobretudo em Legislação Especial), já que
-        // esses baralhos não têm L2 pra apoiar a organização. Sort estável
-        // (garantido desde ES2019): dentro da mesma etiqueta, mantém a
-        // ordem relativa original. Cards sem etiqueta vão pro final.
+        // Ordem padrão = por etiqueta primeiro (agrupa todo mundo da mesma
+        // etiqueta junto — pedido original, pra dar racionalidade ao volume
+        // de leis diferentes misturadas, sobretudo em Legislação Especial;
+        // sem etiqueta vai pro final) — dentro de cada etiqueta (e no grupo
+        // "sem etiqueta"), desempata por classificação (3 Estrelas primeiro,
+        // sem classificação por último). Pedido explícito do usuário. Sort
+        // estável (garantido desde ES2019).
         itens = itens.slice().sort(function(a, b) {
             let ea = self._etiquetaDoEsquema(a);
             let eb = self._etiquetaDoEsquema(b);
@@ -24690,14 +24723,17 @@ window.ESQUEMAS_RUNTIME = {
             if (ta && !tb) return -1;
             if (ta < tb) return -1;
             if (ta > tb) return 1;
-            return 0;
+            let ra = self._rankClassificacaoEsq(a);
+            let rb = self._rankClassificacaoEsq(b);
+            return ra - rb;
         });
         this._baralhoState = {
             escopo: escopo,
             cardsBase: itens,
             ordemChaves: itens.map(function(e) { return e.id; }),
             indiceAtual: 0,
-            filtroEtiqueta: null
+            filtroEtiqueta: null,
+            filtroBusca: ''
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -24857,6 +24893,12 @@ window.ESQUEMAS_RUNTIME = {
         if (!s) { listaEl.innerHTML = ''; return; }
         let self = this;
 
+        let inputBuscaAnterior = document.getElementById('esq-baralho-busca');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
+
+        let htmlBusca = '<div class="esq-baralho-busca-wrap"><input type="text" id="esq-baralho-busca" class="esq-baralho-busca" placeholder="🔎 Buscar por título..." value="' + self._escapar(s.filtroBusca || '') + '" oninput="window.ESQUEMAS_RUNTIME.filtrarBuscaBaralho(this.value)"></div>';
+
         let etiquetas = this._etiquetasBaralho();
         let htmlEtiquetas = etiquetas.length === 0 ? '' :
             '<div class="esq-baralho-etiquetas' + (s.filtroEtiqueta ? ' tem-filtro' : '') + '">' +
@@ -24864,6 +24906,8 @@ window.ESQUEMAS_RUNTIME = {
                 return '<span class="esq-etq-pill' + (et.id === s.filtroEtiqueta ? ' ativa' : '') + '" style="background:' + et.cor + ';" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroEtiquetaBaralho(\'' + et.id + '\')" title="' + self._escapar(et.nome) + '">' + self._escapar(et.nome) + '</span>';
             }).join('') +
             '</div>';
+
+        let buscaNormalizada = self._normalizarBusca(s.filtroBusca || '');
 
         // deck é SEMPRE o completo (_deckBaralhoAtual nunca filtra) — o
         // índice "idx" usado no onclick de cada item é a posição real no
@@ -24875,6 +24919,7 @@ window.ESQUEMAS_RUNTIME = {
         let htmlItens = deck.map(function(item, idx) {
             let etiquetaDoItem = self._etiquetaDoEsquema(item);
             if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
+            if (buscaNormalizada && self._normalizarBusca(item.titulo || '').indexOf(buscaNormalizada) === -1) return '';
 
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
@@ -24886,11 +24931,28 @@ window.ESQUEMAS_RUNTIME = {
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
-        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhum card com esta etiqueta.</div>';
+        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhum card encontrado.</div>';
 
-        listaEl.innerHTML = htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
+        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
         if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('esq-baralho-busca');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+    },
+
+    // Filtra a LISTAGEM lateral por título — não navega nem troca o card
+    // exibido à direita, mesmo espírito de toggleFiltroEtiquetaBaralho.
+    filtrarBuscaBaralho: function(texto) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroBusca = texto || '';
+        this._renderListaBaralho();
     },
 
     // Clique num item da lista lateral — pula direto pra ele.
@@ -26094,7 +26156,7 @@ window.carregarEsquemasOficiais = async function() {
        tese+resumo (texto longo, não cabe num cartão pequeno). Compartilhado
        com #modal-jurisprudencia-baralho via seletor combinado. */
     #jurisprudencia-modal .jur-estudo-card, #modal-jurisprudencia-baralho .jur-estudo-card { background:var(--bg-accent-soft); border:1px solid #c7d2fe; border-radius:10px; padding:18px 20px; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
-    #jurisprudencia-modal .jur-estudo-card { max-width:640px; max-height:46vh; }
+    #jurisprudencia-modal .jur-estudo-card { max-width:640px; flex:1; min-height:0; }
     /* Baralho: tamanho FIXO igual ao de Esquemas (680px de largura,
        flex:1 pra sempre ocupar a altura toda disponível) — pedido
        explícito de uniformização; antes, cada ficha dava um tamanho de
@@ -26163,11 +26225,6 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-aba-revisao" id="jur-aba-dificil" style="display:none;">
             <div class="fc-pills" id="jur-pills-dificil"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('dificil')">🔀 Embaralhar</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar as fichas desta aba (Muito Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('dificil')" title="Exportar as fichas desta aba (Muito Importante) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
-            </div>
             <div id="jur-corpo-dificil"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('dificil', -1)">‹</button>
@@ -26178,11 +26235,6 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-aba-revisao" id="jur-aba-medio" style="display:none;">
             <div class="fc-pills" id="jur-pills-medio"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('medio')">🔀 Embaralhar</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('medio')" title="Exportar as fichas desta aba (Importante) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('medio')" title="Exportar as fichas desta aba (Importante) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
-            </div>
             <div id="jur-corpo-medio"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('medio', -1)">‹</button>
@@ -26193,11 +26245,6 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-aba-revisao" id="jur-aba-facil" style="display:none;">
             <div class="fc-pills" id="jur-pills-facil"></div>
-            <div class="fc-popup-toolbar">
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.embaralharAba('facil')">🔀 Embaralhar</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar as fichas desta aba (Regular) em Markdown, respeitando o filtro de disciplina">📄 Exportar .md</button>
-                <button class="fc-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar as fichas desta aba (Regular) em HTML estilizado, respeitando o filtro de disciplina">🎨 Exportar .html</button>
-            </div>
             <div id="jur-corpo-facil"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('facil', -1)">‹</button>
@@ -26375,6 +26422,12 @@ window.carregarEsquemasOficiais = async function() {
        (ver _renderListaBaralho() pra a estrutura HTML). */
     #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
     #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    /* Busca por título — topo da barra lateral, acima da lista (e da barra
+       de etiquetas, quando existe). Só filtra a LISTAGEM, mesmo espírito do
+       filtro de etiqueta (ver toggleFiltroEtiquetaBaralho). */
+    #modal-jurisprudencia-baralho .jur-baralho-busca-wrap { flex-shrink:0; padding:10px 10px 0 10px; }
+    #modal-jurisprudencia-baralho .jur-baralho-busca { width:100%; box-sizing:border-box; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); }
+    #modal-jurisprudencia-baralho .jur-baralho-busca:focus { outline:none; border-color:var(--app-primary); }
     #modal-jurisprudencia-baralho .jur-baralho-lista-itens { flex:1; overflow-y:auto; overflow-x:hidden; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item:hover { background:var(--bg-soft); }
@@ -26798,7 +26851,15 @@ window.JURISPRUDENCIA_RUNTIME = {
                 // ESQUEMAS_RUNTIME.init()/MATERIAIS_RUNTIME.init(): a contagem
                 // por disciplina na barra lateral só é montada uma vez, antes
                 // das fichas oficiais chegarem, e nunca era recalculada depois.
+                // _atualizarContagensAbas() sofre do MESMO problema — uma
+                // ficha OFICIAL já classificada (Muito Importante/Importante/
+                // Regular) em sessão anterior fica de fora da 1ª contagem
+                // (fichas oficiais só entram em this.fichas depois desta
+                // Promise resolver), e como nada recalculava aqui, o rótulo
+                // da aba ficava travado em "(0)" até o usuário classificar
+                // outra ficha manualmente e disparar um recálculo.
                 window.JURISPRUDENCIA_RUNTIME.render();
+                window.JURISPRUDENCIA_RUNTIME._atualizarContagensAbas();
             });
         }
     },
@@ -28092,11 +28153,23 @@ window.JURISPRUDENCIA_RUNTIME = {
         return (this.etiquetas[chave] || {})[idEtiqueta] || null;
     },
 
+    // dificil(Muito Importante)=0, medio(Importante)=1, facil(Regular)=2,
+    // sem classificação=3 — usado pra ordenar o Leitor (mais importante
+    // primeiro), pedido explícito do usuário.
+    _rankClassificacaoJur: function(item) {
+        let ORDEM = { dificil: 0, medio: 1, facil: 2 };
+        let r = this.revisaoJurisprudencia[item.id];
+        let chave = r ? r.ultimaClassificacao : null;
+        return (chave && ORDEM.hasOwnProperty(chave)) ? ORDEM[chave] : 3;
+    },
+
     _abrirBaralho: function(escopo, titulo, fichas) {
         let self = this;
-        // Ordem padrão = por etiqueta, mesmo raciocínio/pedido de
-        // ESQUEMAS_RUNTIME._abrirBaralho — sort estável (ES2019+), sem
-        // etiqueta vai pro final.
+        // Ordem padrão = por etiqueta primeiro (agrupa todo mundo da mesma
+        // etiqueta junto; sem etiqueta vai pro final) — dentro de cada
+        // etiqueta (e no grupo "sem etiqueta"), desempata por classificação
+        // (Muito Importante primeiro, sem classificação por último). Pedido
+        // explícito do usuário. Sort estável (ES2019+).
         fichas = fichas.slice().sort(function(a, b) {
             let ea = self._etiquetaDaFicha(a);
             let eb = self._etiquetaDaFicha(b);
@@ -28106,14 +28179,17 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (ta && !tb) return -1;
             if (ta < tb) return -1;
             if (ta > tb) return 1;
-            return 0;
+            let ra = self._rankClassificacaoJur(a);
+            let rb = self._rankClassificacaoJur(b);
+            return ra - rb;
         });
         this._baralhoState = {
             escopo: escopo,
             cardsBase: fichas,
             ordemChaves: fichas.map(function(f) { return f.id; }),
             indiceAtual: 0,
-            filtroEtiqueta: null
+            filtroEtiqueta: null,
+            filtroBusca: ''
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -28275,6 +28351,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!s) { listaEl.innerHTML = ''; return; }
         let self = this;
 
+        // Preserva foco/cursor do campo de busca entre re-renders — mesmo
+        // padrão de _renderGradeCards (o input é reconstruído do zero a
+        // cada tecla, sem isto o foco cairia a cada caractere digitado).
+        let inputBuscaAnterior = document.getElementById('jur-baralho-busca');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
+
+        let htmlBusca = '<div class="jur-baralho-busca-wrap"><input type="text" id="jur-baralho-busca" class="jur-baralho-busca" placeholder="🔎 Buscar por título..." value="' + self._escapar(s.filtroBusca || '') + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarBuscaBaralho(this.value)"></div>';
+
         let etiquetas = this._etiquetasBaralho();
         let htmlEtiquetas = etiquetas.length === 0 ? '' :
             '<div class="jur-baralho-etiquetas' + (s.filtroEtiqueta ? ' tem-filtro' : '') + '">' +
@@ -28283,6 +28368,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             }).join('') +
             '</div>';
 
+        let buscaNormalizada = self._normalizarBusca(s.filtroBusca || '');
+
         // deck é SEMPRE o completo — ver _deckBaralhoAtual. O índice "idx"
         // do onclick é a posição real no baralho (a mesma que ‹›/
         // indiceAtual usam); um item fora do filtro só não entra no HTML.
@@ -28290,6 +28377,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let htmlItens = deck.map(function(item, idx) {
             let etiquetaDoItem = self._etiquetaDaFicha(item);
             if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
+            if (buscaNormalizada && self._normalizarBusca(item.titulo || '').indexOf(buscaNormalizada) === -1) return '';
 
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
@@ -28301,11 +28389,28 @@ window.JURISPRUDENCIA_RUNTIME = {
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
-        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma ficha com esta etiqueta.</div>';
+        }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma ficha encontrada.</div>';
 
-        listaEl.innerHTML = htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>';
+        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>';
         let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
         if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('jur-baralho-busca');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+    },
+
+    // Filtra a LISTAGEM lateral por título — não navega nem troca a ficha
+    // exibida à direita, mesmo espírito de toggleFiltroEtiquetaBaralho.
+    filtrarBuscaBaralho: function(texto) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroBusca = texto || '';
+        this._renderListaBaralho();
     },
 
     // Clique num item da lista lateral — pula direto pra ele.
@@ -28430,16 +28535,6 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._estadosAba[aba];
         s.materiaFiltro = materia;
         this.renderAbaRevisao(aba);
-    },
-
-    embaralharAba: function(aba) {
-        let s = this._estadosAba[aba];
-        for (let i = s.ordemChaves.length - 1; i > 0; i--) {
-            let j = Math.floor(Math.random() * (i + 1));
-            let tmp = s.ordemChaves[i]; s.ordemChaves[i] = s.ordemChaves[j]; s.ordemChaves[j] = tmp;
-        }
-        s.indiceAtual = 0;
-        this._renderCorpoAba(aba);
     },
 
     navegarAba: function(aba, delta) {
