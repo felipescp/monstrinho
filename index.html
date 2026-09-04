@@ -25485,15 +25485,46 @@ window.ESQUEMAS_RUNTIME = {
     prevvisualizarImportacao: function() {
         let texto = document.getElementById('esq-import-textarea').value || '';
         let saida = this._parsearImportacao(texto);
+
+        // Recusa (não só ignora) qualquer "### L2:" cujo nome não bata
+        // EXATAMENTE com uma divisão real da matéria selecionada — tira do
+        // resultado ANTES de guardar em _resultadoPreVisualizado, mesmo
+        // padrão já usado em GLOSSARIO_RUNTIME (ver glosDivisoesValidas).
+        // Sem isso, confirmarImportacao() grava CEGAMENTE toda divisão do
+        // texto colado sob a matéria selecionada na barra lateral — uma
+        // divisão de outra matéria (ex.: colar "Teoria Geral dos
+        // Tributos..." com "Direito Processual Penal" selecionado) virava
+        // uma chave inválida, que nunca aparece em nenhum L2 da lista, só
+        // em "Todas as divisões" (bug relatado pelo usuário).
+        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
+        let divisoesInvalidas = [];
+        let totalRecusado = 0;
+        Object.keys(saida.porDivisao).forEach(function(div) {
+            if (!divisoesValidas.has(div)) {
+                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].fichas.length });
+                totalRecusado += saida.porDivisao[div].fichas.length;
+                saida.totalFichas -= saida.porDivisao[div].fichas.length;
+                delete saida.porDivisao[div];
+            }
+        });
+
         this._resultadoPreVisualizado = saida;
 
         let previewEl = document.getElementById('esq-import-preview');
         let btnConfirmar = document.getElementById('esq-import-btn-confirmar');
+        let self = this;
+
+        let avisoInvalidas = divisoesInvalidas.length > 0
+            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' ficha(s) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
+                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
+                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
+            : '';
 
         if (saida.totalFichas === 0) {
             previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão de 7 linhas por ficha (conferência, título, "Subtema: ... | Tipo: ...", "Referência:", "CORPO:", "ALERTA:", "FONTE: ... | Data da curadoria: DD/MM/AAAA").' +
                 (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem "Subtema:"/"CORPO:" válidos.)' : '') +
-                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '') +
+                avisoInvalidas;
             previewEl.style.display = 'block';
             btnConfirmar.disabled = true;
             return;
@@ -25506,7 +25537,7 @@ window.ESQUEMAS_RUNTIME = {
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
             (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') +
-            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas + avisoInvalidas;
         previewEl.style.display = 'block';
         btnConfirmar.disabled = false;
     },
@@ -27793,15 +27824,46 @@ window.JURISPRUDENCIA_RUNTIME = {
     prevvisualizarImportacao: function() {
         let texto = document.getElementById('jur-import-textarea').value || '';
         let saida = this._parsearImportacao(texto);
+
+        // Recusa (não só ignora) qualquer "### L2:" cujo nome não bata
+        // EXATAMENTE com uma divisão real da matéria selecionada — tira do
+        // resultado ANTES de guardar em _resultadoPreVisualizado, mesmo
+        // padrão já usado em GLOSSARIO_RUNTIME/ESQUEMAS_RUNTIME (ver
+        // glosDivisoesValidas). Sem isso, confirmarImportacao() grava
+        // CEGAMENTE toda divisão do texto colado sob a matéria selecionada
+        // na barra lateral — uma divisão de outra matéria (ex.: colar
+        // "Teoria Geral dos Tributos..." com "Direito Processual Penal"
+        // selecionado) virava uma chave inválida, que nunca aparece em
+        // nenhum L2 da lista, só em "Todas as divisões" (bug relatado).
+        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
+        let divisoesInvalidas = [];
+        let totalRecusado = 0;
+        Object.keys(saida.porDivisao).forEach(function(div) {
+            if (!divisoesValidas.has(div)) {
+                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].fichas.length });
+                totalRecusado += saida.porDivisao[div].fichas.length;
+                saida.totalFichas -= saida.porDivisao[div].fichas.length;
+                delete saida.porDivisao[div];
+            }
+        });
+
         this._resultadoPreVisualizado = saida;
 
         let previewEl = document.getElementById('jur-import-preview');
         let btnConfirmar = document.getElementById('jur-import-btn-confirmar');
+        let self = this;
+
+        let avisoInvalidas = divisoesInvalidas.length > 0
+            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' ficha(s) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
+                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
+                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
+            : '';
 
         if (saida.totalFichas === 0) {
             previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão "Tribunal: X | Órgão: Y".' +
                 (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem a linha "Tribunal:".)' : '') +
-                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '');
+                (saida.totalSemL2 > 0 ? ' (' + saida.totalSemL2 + ' ficha(s) encontrada(s) fora de qualquer "### L2:" válido — ignorada(s), nunca importadas sem divisão identificada.)' : '') +
+                avisoInvalidas;
             previewEl.style.display = 'block';
             btnConfirmar.disabled = true;
             return;
@@ -27814,7 +27876,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
             (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') +
-            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas;
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas + avisoInvalidas;
         previewEl.style.display = 'block';
         btnConfirmar.disabled = false;
     },
