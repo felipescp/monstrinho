@@ -18202,7 +18202,7 @@ function mkQ(q, modoRevisao){
   cadDestino.style.display=noCad?'block':'none';
   if(noCad){
     var destinoInicial=resolverMatTopicoQuestao(q,C,q.bn);
-    cadDestino.textContent='Questão enviada para "'+destinoInicial.materia+(destinoInicial.topico?' > '+destinoInicial.topico:'')+'"';
+    cadDestino.textContent='Questão enviada para Caderno "'+formatarMateriaExibicao(destinoInicial.materia)+(destinoInicial.topico?' > '+destinoInicial.topico:'')+'"';
   }
 
   ac.appendChild(bc);ac.appendChild(bca);ac.appendChild(bcm);
@@ -19560,6 +19560,20 @@ function resolverMatTopicoQuestao(q, cfg, nomeBloco) {
     return { materia: mat, topico: topico };
 }
 
+// resolverMatTopicoQuestao() devolve a matéria em CAIXA ALTA de propósito
+// (é a chave interna de agrupamento do Caderno, ex.: caderno_erros[MAT][topico]
+// — precisa ser estável/uppercase). Só pra EXIBIÇÃO (ex.: aviso "Questão
+// enviada para Caderno..."), busca o nome com a grafia correta em
+// TAXONOMIA_DADOS; se não achar (ex.: "DIVERSOS", ou algo fora da
+// taxonomia), cai num title case simples como último recurso.
+function formatarMateriaExibicao(materiaUpper) {
+    if (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) {
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1.toUpperCase() === materiaUpper; });
+        if (mat) return mat.nivel_1;
+    }
+    return (materiaUpper || '').toLowerCase().replace(/(^|\s)\S/g, function(c) { return c.toUpperCase(); });
+}
+
 function toggleCaderno(qId){
   if(!D.caderno)D.caderno=[];
   var idx=D.caderno.indexOf(qId);
@@ -19589,7 +19603,7 @@ function toggleCaderno(qId){
       var qObj=getQ(qId);
       if(qObj){
         var destino=resolverMatTopicoQuestao(qObj,C,qObj.bn);
-        elDestino.textContent='Questão enviada para "'+destino.materia+(destino.topico?' > '+destino.topico:'')+'"';
+        elDestino.textContent='Questão enviada para Caderno "'+formatarMateriaExibicao(destino.materia)+(destino.topico?' > '+destino.topico:'')+'"';
       }
       elDestino.style.display='block';
     } else {
