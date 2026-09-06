@@ -1993,7 +1993,18 @@ window.lerArquivoMorto = function() {
 
 window.salvarArquivoMorto = function(dados) {
     _arquivoMortoCache = dados; // síncrono e imediato — nada muda pros ~11 chamadores
-    if (!window._idbDisponivel) return Promise.resolve(false); // só memória, nunca reescreve localStorage
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // já usado em salvarSessaoAtiva, depois de um bug real rastreado a
+    // IndexedDB indisponível/bloqueado num boot específico, que perdia
+    // dado mesmo com ele intacto na fonte primária). Se não couber (Arquivo
+    // Morto pode crescer bastante), falha em silêncio — IndexedDB continua
+    // sendo a única fonte primária nesse caso, sem regressão.
+    try {
+        localStorage.setItem(window.CHAVE_ARQUIVO_MORTO, JSON.stringify(dados));
+    } catch (e) {
+        console.warn('[ARQUIVO MORTO] Não coube a cópia de segurança no localStorage (sem impacto — IndexedDB continua sendo a fonte primária):', e);
+    }
+    if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_ARQUIVO_MORTO_IDB, dados).then(function(ok) {
         if (!ok) console.warn('[ARQUIVO MORTO] Falha ao persistir no IndexedDB.');
         return ok;
@@ -2131,6 +2142,14 @@ window.lerEsquemasBruto = function() {
 
 window.salvarEsquemasBruto = function(jsonString) {
     _esquemasRuntimeCache = jsonString; // síncrono e imediato — nada muda pros chamadores
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_ESQUEMAS_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[ESQUEMAS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_ESQUEMAS_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[ESQUEMAS] Falha ao persistir no IndexedDB.');
@@ -2191,6 +2210,14 @@ window.lerJurisprudenciaBruto = function() {
 
 window.salvarJurisprudenciaBruto = function(jsonString) {
     _jurisprudenciaRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_JURISPRUDENCIA_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[JURISPRUDÊNCIA] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_JURISPRUDENCIA_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[JURISPRUDÊNCIA] Falha ao persistir no IndexedDB.');
@@ -2235,6 +2262,14 @@ window.lerMateriaisBruto = function() {
 
 window.salvarMateriaisBruto = function(jsonString) {
     _materiaisRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_MATERIAIS_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[MATERIAIS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_MATERIAIS_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[MATERIAIS] Falha ao persistir no IndexedDB.');
@@ -2279,6 +2314,14 @@ window.lerGlossarioBruto = function() {
 
 window.salvarGlossarioBruto = function(jsonString) {
     _glossarioRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_GLOSSARIO_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[GLOSSARIO] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_GLOSSARIO_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[GLOSSARIO] Falha ao persistir no IndexedDB.');
@@ -2331,6 +2374,14 @@ window.lerFlashcardsBruto = function() {
 
 window.salvarFlashcardsBruto = function(jsonString) {
     _flashcardsRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_FLASHCARDS_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[FLASHCARDS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_FLASHCARDS_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[FLASHCARDS] Falha ao persistir no IndexedDB.');
@@ -2377,6 +2428,14 @@ window.lerCronogramaBruto = function() {
 
 window.salvarCronogramaBruto = function(jsonString) {
     _cronogramaRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
+    // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_CRONOGRAMA_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[CRONOGRAMA] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_CRONOGRAMA_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[CRONOGRAMA] Falha ao persistir no IndexedDB.');
@@ -2425,6 +2484,17 @@ window.lerPlannerBruto = function() {
 
 window.salvarPlannerBruto = function(jsonString) {
     _plannerRuntimeCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Também é o que
+    // dashboard.html (documento separado, sem acesso a este cache em
+    // memória) lê como fallback quando o IndexedDB ainda não respondeu. Se
+    // não couber, falha em silêncio — IndexedDB continua sendo a fonte
+    // primária nesse caso.
+    try {
+        localStorage.setItem(window.CHAVE_PLANNER_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[PLANNER] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_PLANNER_RUNTIME_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[PLANNER] Falha ao persistir no IndexedDB.');
@@ -2484,6 +2554,16 @@ window.lerAcervoProvasBruto = function() {
 
 window.salvarAcervoProvasBruto = function(jsonString) {
     _acervoProvasCache = jsonString;
+    // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
+    // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber (é justamente
+    // a chave que motivou esta migração — pode facilmente passar dos ~5MB
+    // de cota), falha em silêncio: IndexedDB continua sendo a única fonte
+    // primária nesse caso, sem regressão pro bug que a migração corrigiu.
+    try {
+        localStorage.setItem(window.CHAVE_ACERVO_PROVAS, jsonString);
+    } catch (e) {
+        console.warn('[ACERVO] Não coube a cópia de segurança no localStorage (sem impacto — IndexedDB continua sendo a fonte primária):', e);
+    }
     if (!window._idbDisponivel) return Promise.resolve(false);
     return idbSet(window.CHAVE_ACERVO_PROVAS_IDB, jsonString).then(function(ok) {
         if (!ok) console.warn('[ACERVO] Falha ao persistir no IndexedDB.');
