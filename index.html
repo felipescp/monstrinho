@@ -16648,6 +16648,7 @@ else if (auditId) {
             SI = 0;
             renderSim(); renderNav(); renderTabs();
             if(D.blocos[0] && D.blocos[0].questoes[0]) setQA(D.blocos[0].questoes[0].id);
+            setTimeout(function(){ if(g('mc')) g('mc').scrollTop = 0; }, 100);
             autoSave();
         } else if (provaAlvo && !conteudoOficialOk) {
             document.getElementById('mc').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger); font-weight: bold;">Não foi possível carregar o conteúdo completo desta bateria oficial agora (falha ao buscar do servidor). Verifique sua conexão e tente novamente — se persistir, recarregue a página (F5).</div>';
@@ -17272,7 +17273,7 @@ function _api(p,sys,cb){fetch('https://api.anthropic.com/v1/messages',{method:'P
 // =========================================================
 
 // ── LANÇAR ────────────────────────────────────────────────
-function lancar(){MODO_REVISAO=false;if(!D.blocos.length){alert('Nenhuma questão encontrada.');tela('tela-upload');return;}SIMS.push({cfg:JSON.parse(JSON.stringify(C)),dados:JSON.parse(JSON.stringify(D)),stats:null,qSalva:null,data:new Date().toISOString()});SI=SIMS.length-1;tela(null);tela('tela-simulado');;g('b1-limpar').disabled=true;renderSim();renderNav();var pq=D.blocos[0].questoes[0];if(pq)setQA(pq.id);renderTabs();autoSave();renderSessoes();}
+function lancar(){MODO_REVISAO=false;if(!D.blocos.length){alert('Nenhuma questão encontrada.');tela('tela-upload');return;}SIMS.push({cfg:JSON.parse(JSON.stringify(C)),dados:JSON.parse(JSON.stringify(D)),stats:null,qSalva:null,data:new Date().toISOString()});SI=SIMS.length-1;tela(null);tela('tela-simulado');;g('b1-limpar').disabled=true;renderSim();renderNav();var pq=D.blocos[0].questoes[0];if(pq)setQA(pq.id);setTimeout(function(){if(g('mc'))g('mc').scrollTop=0;},100);renderTabs();autoSave();renderSessoes();}
 
 
 // ==========================================
@@ -21344,12 +21345,18 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
 // Abertura visual unificada
     tela('tela-simulado');
     
-    renderSim(); 
-    renderNav(); 
+    renderSim();
+    renderNav();
     renderTabs();
     if(D.blocos[0] && D.blocos[0].questoes[0]) setQA(D.blocos[0].questoes[0].id);
+    // #mc tem scroll PRÓPRIO (independente do scroll da janela) — ao abrir
+    // uma bateria nova, ele herda o scrollTop que ficou de qualquer aba
+    // aberta antes (o innerHTML='' de renderSim() não garante reset síncrono
+    // do scrollTop no mesmo tick). Mesmo padrão de correção já usado na
+    // importação de arquivo de simulados (ver reader.onload acima).
+    setTimeout(function(){ if(g('mc')) g('mc').scrollTop = 0; }, 100);
     autoSave();
-    
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } finally {
