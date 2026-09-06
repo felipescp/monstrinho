@@ -2539,6 +2539,16 @@ window.repararSimuladosNaoSincronizados = async function() {
     let dbPlanner = {};
     try { dbPlanner = JSON.parse(dbStr); } catch (e) { dbPlanner = {}; }
 
+    // Lápide de exclusões deliberadas do Histórico de Baterias (dashboard.html,
+    // botão "✖" -> executarExclusaoSimulado) — mesmo padrão de
+    // window._marcarExcluidosAcervo, chave PRÓPRIA (não a do acervo: os dois
+    // espaços de id podem coincidir, ex. "sim_<timestamp>"). Sem isto, o
+    // Arquivo Morto (imutável) continua tendo o snapshot finalizado, então
+    // este reparo — que roda em TODO carregamento de página — reinseria de
+    // volta em simulados_avulsos qualquer exclusão manual no próximo F5.
+    let idsExcluidosHistorico = {};
+    try { idsExcluidosHistorico = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
+
     let idsJaSincronizados = new Set();
     (dbPlanner.simulados_avulsos || []).forEach(function(r) {
         if (r && r.id_original) idsJaSincronizados.add(r.id_original);
@@ -2566,6 +2576,7 @@ window.repararSimuladosNaoSincronizados = async function() {
         let snap = arquivoMorto[examId];
         if (!snap || !snap.stats || !snap.cfg || !snap.dados) return;
         if (idsJaSincronizados.has(examId)) return;
+        if (idsExcluidosHistorico[examId]) return;
         try {
             window.sincronizarResultadoComPlanner(snap);
             reparados.push(examId);

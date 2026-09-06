@@ -915,7 +915,27 @@ async function loadFactualDatabase() {
         };
 
         window.executarExclusaoSimulado = function(id) {
-            if (db.simulados_avulsos) db.simulados_avulsos = db.simulados_avulsos.filter(sim => String(sim.id) !== String(id));
+            if (db.simulados_avulsos) {
+                // Lápide por id_original (o id do Arquivo Morto, IMUTÁVEL —
+                // diferente do id próprio deste registro em simulados_avulsos,
+                // gerado de novo a cada sincronização). Sem isto,
+                // window.repararSimuladosNaoSincronizados (index.html), que
+                // roda em TODO carregamento de página pra recuperar simulados
+                // que ficaram presos no Arquivo Morto sem nunca terem
+                // sincronizado, não tinha como distinguir essa exclusão
+                // deliberada de um simulado genuinamente esquecido — e
+                // reinseria de volta no próximo F5.
+                let alvo = db.simulados_avulsos.find(sim => String(sim.id) === String(id));
+                if (alvo && alvo.id_original) {
+                    try {
+                        let excluidos = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}');
+                        if (!excluidos || typeof excluidos !== 'object' || Array.isArray(excluidos)) excluidos = {};
+                        excluidos[String(alvo.id_original)] = new Date().toISOString();
+                        localStorage.setItem('tjpe_v1__planner_historico_excluidos', JSON.stringify(excluidos));
+                    } catch (e) {}
+                }
+                db.simulados_avulsos = db.simulados_avulsos.filter(sim => String(sim.id) !== String(id));
+            }
             save();
         }
         window.deletarSimuladoGlobal = function(id, event) {
