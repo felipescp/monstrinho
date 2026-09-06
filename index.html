@@ -22223,7 +22223,14 @@ window.importarAcervoJson = function() {
 // window.__acervoOficialFalhas__ pra uma última tentativa em
 // garantirConteudoOficialCompleto(), no momento de abrir a bateria (ver
 // iniciarSimuladoDaVitrine/fluxo ?simId=).
-window.importarAcervoOficial = async function(url) {
+// Só a parte de REDE (fetch + parse + re-tentativas) — separada de
+// importarAcervoOficial pra permitir buscar vários arquivos em PARALELO
+// (ver carregarAcervosOficiais) sem paralelizar também o processamento
+// (processarImportacaoAcervo usa RUNTIME_LOCK; chamar em paralelo faria a
+// maioria ser descartada em silêncio por "importação bloqueada"). Retorna
+// os dados em caso de sucesso, ou null se esgotar as tentativas (mesma
+// lápide em window.__acervoOficialFalhas__ de antes).
+window._buscarAcervoOficialComRetry = async function(url) {
     const MAX_TENTATIVAS = 3;
 
     for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
@@ -22238,14 +22245,7 @@ window.importarAcervoOficial = async function(url) {
                 throw new Error('Falha ao carregar acervo oficial.');
             }
 
-            const dadosImportados = await r.json();
-
-            window.processarImportacaoAcervo(
-                dadosImportados,
-                { origemOficial: true, urlOrigem: url }
-            );
-
-            return;
+            return await r.json();
 
         } catch (e) {
             if (tentativa < MAX_TENTATIVAS) {
@@ -22261,7 +22261,24 @@ window.importarAcervoOficial = async function(url) {
 
             if (!Array.isArray(window.__acervoOficialFalhas__)) window.__acervoOficialFalhas__ = [];
             window.__acervoOficialFalhas__.push(url);
+            return null;
         }
+    }
+};
+
+// Busca UMA url e já processa o resultado (fetch + merge no acervo) — usado
+// pelo fallback sob-demanda de garantirConteudoOficialCompleto (uma URL de
+// cada vez, ali realmente faz sentido ser sequencial). O carregamento em
+// massa do boot (carregarAcervosOficiais) NÃO usa mais esta função para as
+// 37 URLs do manifesto — busca todas em paralelo via
+// _buscarAcervoOficialComRetry e processa o resultado depois, sequencial.
+window.importarAcervoOficial = async function(url) {
+    const dadosImportados = await window._buscarAcervoOficialComRetry(url);
+    if (dadosImportados !== null && dadosImportados !== undefined) {
+        window.processarImportacaoAcervo(
+            dadosImportados,
+            { origemOficial: true, urlOrigem: url }
+        );
     }
 };
 
@@ -22343,8 +22360,7 @@ window.ACERVO_OFICIAL_IDS = new Set(
 
    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
    // Adicionar uma bateria oficial nova = 1 linha nova no .txt, sem tocar
-   // aqui. Espera sequencial (não paralelo) — mesmo padrão de antes, quando
-   // a lista de await estava hardcoded neste arquivo.
+   // aqui.
    let manifestoTexto = '';
    try {
       // Cache-buster: mesmo motivo do fetch(url) em importarAcervoOficial —
@@ -22357,9 +22373,25 @@ window.ACERVO_OFICIAL_IDS = new Set(
       console.warn('[ACERVO OFICIAL] Falha ao carregar manifesto:', e);
    }
    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-   for (const caminho of caminhosManifesto) {
-      await window.importarAcervoOficial(caminho);
-   }
+
+   // Busca todos os arquivos do manifesto em PARALELO (antes era 1 de cada
+   // vez, em série — 37 idas e voltas sequenciais deixavam o boot lento o
+   // bastante pra um F5 impaciente interromper no meio do caminho, e cada
+   // bateria só ficava com o conteúdo completo em memória depois que SUA
+   // VEZ chegasse na fila). O PROCESSAMENTO de cada resultado
+   // (processarImportacaoAcervo, que usa RUNTIME_LOCK) continua sequencial
+   // e síncrono, sem esperar rede — por isso não há disputa de lock, mesmo
+   // com a busca sendo concorrente.
+   let resultadosManifesto = await Promise.all(caminhosManifesto.map(function(caminho) {
+      return window._buscarAcervoOficialComRetry(caminho).then(function(dados) {
+         return { caminho: caminho, dados: dados };
+      });
+   }));
+   resultadosManifesto.forEach(function(r) {
+      if (r.dados !== null && r.dados !== undefined) {
+         window.processarImportacaoAcervo(r.dados, { origemOficial: true, urlOrigem: r.caminho });
+      }
+   });
 
 
 // =========================================================
