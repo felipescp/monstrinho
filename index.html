@@ -16683,6 +16683,9 @@ else if (auditId) {
 }
     else if (simId) {
     tela(null); tela('tela-simulado');
+    // Mesma corrida de iniciarSimuladoDaVitrine: garante que o cache do
+    // acervo (IndexedDB) já hidratou antes de ler.
+    await window.__acervoProvasHidratacaoPromise__;
     let acervo = [];
     try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch(e){}
     let provaAlvo = acervo.find(p => p.id === simId);
@@ -21371,9 +21374,15 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
     // 1. Limpa modais sobrepostos
     document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
 
+    // Garante que o cache do acervo (IndexedDB) já hidratou antes de ler —
+    // clicar bem no início do carregamento da página podia pegar o cache
+    // ainda vazio (corrida, não acervo genuinamente vazio) e mostrar "Prova
+    // não encontrada" sem motivo real. Resolve na hora se já tiver hidratado.
+    await window.__acervoProvasHidratacaoPromise__;
+
     let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let provaAlvo = acervo.find(p => p.id === simId);
-    
+
     if (!provaAlvo) { alert('Erro: Prova não encontrada no acervo.'); return; }
 
     // Baterias oficiais ficam rasas no localStorage para não duplicar o
@@ -22287,7 +22296,17 @@ window.garantirConteudoOficialCompleto = async function(item) {
 
 window.carregarAcervosOficiais = async function() {
 
-
+    // CRÍTICO: sem isto, esta função podia rodar ANTES do IndexedDB
+    // terminar de hidratar o cache do acervo (window.lerAcervoProvasBruto()
+    // devolvendo null/vazio por pura corrida, não por o acervo estar
+    // realmente vazio). Como processarImportacaoAcervo (chamada logo
+    // abaixo, por importarAcervoOficial) REESCREVE o acervo inteiro a
+    // partir do que leu, uma corrida perdida aqui não só falhava a
+    // exibição — sobrescrevia o acervo real (baterias pessoais incluídas)
+    // por um catálogo incompleto, causando "Prova não encontrada no
+    // acervo" e a mesma bateria oficial "não encontrada no servidor" de
+    // forma constante, em todo carregamento de página.
+    await window.__acervoProvasHidratacaoPromise__;
 
 // =========================================================
 // CATÁLOGO FACTUAL / ACERVO SOBERANO
