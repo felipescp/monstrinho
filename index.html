@@ -2460,6 +2460,62 @@ window.__plannerHidratacaoPromise__ = (async function() {
 
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_PLANNER_RUNTIME] = { ler: window.lerPlannerBruto, salvar: window.salvarPlannerBruto };
 
+// =========================================================================
+// CAMADA DE ACESSO: ACERVO DE BATERIAS (tjpe_v1__cordeiro_acervo_provas)
+// =========================================================================
+// Mesmo padrão das camadas acima — QuotaExceededError confirmado em
+// salvarProvaNoAcervo() ao salvar uma bateria pessoal nova. As 82 baterias
+// oficiais do manifesto, já salvas em versão "rasa" (sem enunciado/
+// explicação), somam ~1,8 MB sozinhas; baterias pessoais são salvas
+// cheias (~93 KB de média cada) — bastam poucas dezenas pra estourar os
+// ~5 MB de cota do localStorage. Ao contrário das 6 seções de conteúdo,
+// não existe um único ACERVO_RUNTIME.carregar()/salvar() — leitura/escrita
+// acontecem direto em dezenas de funções (Vitrine, edição, exclusão,
+// importação, catálogo oficial); cada uma passou a chamar
+// lerAcervoProvasBruto()/salvarAcervoProvasBruto() no lugar de
+// localStorage.getItem/setItem, sem mudar mais nada da própria lógica.
+window.CHAVE_ACERVO_PROVAS = 'tjpe_v1__cordeiro_acervo_provas';
+window.CHAVE_ACERVO_PROVAS_IDB = 'cordeiro_acervo_provas';
+let _acervoProvasCache = null;
+
+window.lerAcervoProvasBruto = function() {
+    return _acervoProvasCache;
+};
+
+window.salvarAcervoProvasBruto = function(jsonString) {
+    _acervoProvasCache = jsonString;
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_ACERVO_PROVAS_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[ACERVO] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__acervoProvasHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_ACERVO_PROVAS_IDB);
+        if (valor !== undefined) { _acervoProvasCache = valor; return; }
+
+        // Ainda não migrado — cai pro localStorage, migra, só apaga a
+        // origem DEPOIS de confirmar a gravação no IndexedDB.
+        let bruto = localStorage.getItem(window.CHAVE_ACERVO_PROVAS);
+        _acervoProvasCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_ACERVO_PROVAS_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_ACERVO_PROVAS); } catch (e) {} }
+        }
+    } finally {
+        // Se algo já renderizou a Vitrine antes da hidratação terminar
+        // (cache ainda vazio), corrige a tela agora com o valor de verdade —
+        // mesmo espírito do finally do Arquivo Morto/Esquemas.
+        if (typeof window.renderHomeDashboard === 'function') {
+            try { window.renderHomeDashboard(); } catch (e) {}
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ACERVO_PROVAS] = { ler: window.lerAcervoProvasBruto, salvar: window.salvarAcervoProvasBruto };
+
 // Reparo de simulados finalizados que nunca chegaram ao Planner/Dashboard —
 // sequela do bug de QuotaExceededError corrigido acima. finalizarSimulado()
 // grava primeiro no Arquivo Morto (já em IndexedDB, então sempre teve
@@ -6626,7 +6682,7 @@ window.CRONOGRAMA_RUNTIME = {
         let loc = this._resolverL2doItem(item);
         if (!loc) return [];
         let acervo = [];
-        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { acervo = []; }
         return acervo.filter(function(p) {
             let tax = p && (p.id_taxonomia || (p.cfg && p.cfg.id_taxonomia));
             if (!tax) return false;
@@ -6644,7 +6700,7 @@ window.CRONOGRAMA_RUNTIME = {
     // _bateriasAssociadas.
     _construirSetChavesL2ComBaterias: function() {
         let acervo = [];
-        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { acervo = []; }
         let set = new Set();
         if (!window.FLASHCARDS_RUNTIME) return set;
         acervo.forEach(function(p) {
@@ -6962,7 +7018,7 @@ window.CRONOGRAMA_RUNTIME = {
 
         let manuaisIds = Array.isArray(item.simuladosVinculados) ? item.simuladosVinculados : [];
         let acervo = [];
-        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { acervo = []; }
         // Baterias incluídas manualmente que já aparecem na correspondência
         // automática ficam de fora daqui — a inclusão em si continua salva
         // em simuladosVinculados, só a exibição duplicada é que é filtrada.
@@ -7048,7 +7104,7 @@ window.CRONOGRAMA_RUNTIME = {
         let vinculados = (item && Array.isArray(item.simuladosVinculados)) ? item.simuladosVinculados : [];
 
         let acervo = [];
-        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { acervo = []; }
+        try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { acervo = []; }
 
         let termoNorm = (termo || '').trim().toLowerCase();
         let filtrados = acervo.filter(function(p) {
@@ -14831,7 +14887,7 @@ window.ProvasEngine = {
                     // Normalização segura do payload de entrada
                     var novosItens = Array.isArray(parsed) ? parsed : (parsed.data && Array.isArray(parsed.data)) ? parsed.data : [parsed];
                     
-                    var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+                    var acervoSoberano = JSON.parse(window.lerAcervoProvasBruto() || '[]');
                     if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
                     
                     // Deduplicação estrita via ID no catálogo factual
@@ -14844,7 +14900,7 @@ window.ProvasEngine = {
                     });
                     
                     // 1. Gravação exclusiva no Catálogo Factual
-                    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(Array.from(mapa.values())));
+                    window.salvarAcervoProvasBruto(JSON.stringify(Array.from(mapa.values())));
                     
                     // renderHomeDashboard() em vez do antigo enxerto por item —
                     // aquele visava containers de uma Vitrine de 4 colunas que
@@ -14869,7 +14925,7 @@ window.ProvasEngine = {
             e.preventDefault();
             e.stopPropagation();
         }
-        var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+        var acervoSoberano = JSON.parse(window.lerAcervoProvasBruto() || '[]');
         if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
         
         var provasAnteriores = acervoSoberano.filter(function(item) {
@@ -14893,7 +14949,7 @@ window.ProvasEngine = {
 
     excluir: function() {
         if (confirm('Atenção: Isso apagará as provas anteriores desta coluna do catálogo. O histórico longitudinal não será afetado. Deseja continuar?')) {
-            var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+            var acervoSoberano = JSON.parse(window.lerAcervoProvasBruto() || '[]');
             if (!Array.isArray(acervoSoberano)) acervoSoberano = [];
             
             var itensParaRemover = acervoSoberano.filter(function(item) {
@@ -14903,7 +14959,7 @@ window.ProvasEngine = {
             var acervoLimpo = acervoSoberano.filter(function(item) {
                 return item.tipo === 'mc' && item.metadados_mc && item.metadados_mc.classificacao && item.metadados_mc.classificacao.toUpperCase().includes('SIMULADO');
             });
-            localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervoLimpo));
+            window.salvarAcervoProvasBruto(JSON.stringify(acervoLimpo));
             
             // Remoção Assíncrona com Suavização Visual (UX Hardening)
             itensParaRemover.forEach(function(item) {
@@ -15034,7 +15090,7 @@ window.zerarAcervoTotal = function() {
     // Advertência em duas camadas para evitar erros fatais
     if(confirm("🚨 ATENÇÃO: Isso apagará TODOS os simulados e playlists salvos permanentemente. Deseja prosseguir?")) {
         if(prompt("Digite 'DELETAR' para confirmar a exclusão total:") === 'DELETAR') {
-            localStorage.removeItem('tjpe_v1__cordeiro_acervo_provas');
+            window.salvarAcervoProvasBruto('[]');
             
             // Recarrega a vitrine corretamente na arquitetura do Simulador
             if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
@@ -15346,9 +15402,7 @@ function autoSave(){
 
 window.ACERVO_OFICIAL_IDS = new Set(
    JSON.parse(
-      localStorage.getItem(
-         'tjpe_v1__cordeiro_acervo_provas'
-      ) || '[]'
+      window.lerAcervoProvasBruto() || '[]'
    ).map(x => x.id)
 );
 
@@ -15419,9 +15473,7 @@ function autoLoad(cb){
       let oficiais = new Set(
 
          JSON.parse(
-            localStorage.getItem(
-               'tjpe_v1__cordeiro_acervo_provas'
-            ) || '[]'
+            window.lerAcervoProvasBruto() || '[]'
          ).map(x => x.id)
 
       );
@@ -15739,7 +15791,7 @@ if (listPA) listPA.remove();
 window.renderHomeDashboard = function() {
     let acervo = [];
     try {
-        acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+        acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     } catch(e) { console.error("Erro ao ler o acervo de provas."); }
 
     // ==========================================
@@ -16181,7 +16233,7 @@ window.exportarBateriasSelecionadas = function() {
     let ids = Object.keys(window.__selecionadosBaterias__ || {});
     if (ids.length === 0) { alert('Nenhuma bateria selecionada.'); return; }
     let idsSet = new Set(ids);
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let grupo = acervo.filter(function(p) { return p && idsSet.has(p.id); });
     if (grupo.length === 0) { alert('Nenhuma das baterias selecionadas foi encontrada no acervo.'); return; }
     downloadArquivo(JSON.stringify(grupo, null, 2), `grupo-selecionadas-${Date.now()}.json`, 'application/json');
@@ -16199,9 +16251,9 @@ window.excluirBateriasSelecionadas = function() {
 
     let idsSet = new Set(ids);
 
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     acervo = acervo.filter(function(p) { return !(p && idsSet.has(p.id)); });
-    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
+    window.salvarAcervoProvasBruto(JSON.stringify(acervo));
 
     // Lápide de exclusão em lote — mesmo motivo/mesma chave de
     // excluirSimuladoIndividual (ver comentário lá): sem isso, a
@@ -16501,7 +16553,7 @@ window.addEventListener('load', async function() {
 
     else if (isAdmin && !taxId) {
         tela('tela-home'); 
-        window.acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas')) || [];
+        window.acervo = JSON.parse(window.lerAcervoProvasBruto()) || [];
         if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
         renderTabs();
         setTimeout(() => { window.abrirModalCriacao(); }, 50);
@@ -16541,12 +16593,12 @@ else if (auditId) {
     else if (simId) {
     tela(null); tela('tela-simulado');
     let acervo = [];
-    try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch(e){}
+    try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch(e){}
     let provaAlvo = acervo.find(p => p.id === simId);
 
      if (!provaAlvo && window.__bootOficialPromise__) {
         await window.__bootOficialPromise__;
-        try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch(e){}
+        try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch(e){}
         provaAlvo = acervo.find(p => p.id === simId);
     } else if (provaAlvo && provaAlvo.origem_oficial && window.__bootOficialPromise__) {
         // Encontrada, mas "rasa" (é oficial) — espera o boot terminar antes de
@@ -17299,7 +17351,7 @@ function salvarProvaNoAcervo() {
 
         let acervo = [];
         try {
-            let raw = localStorage.getItem('tjpe_v1__cordeiro_acervo_provas');
+            let raw = window.lerAcervoProvasBruto();
             if(raw) acervo = JSON.parse(raw);
             if(!Array.isArray(acervo)) acervo = [];
         } catch(e) {}
@@ -17340,7 +17392,7 @@ if (isEdicao) {
         }
         
 // Salva as alterações no banco local
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
+        window.salvarAcervoProvasBruto(JSON.stringify(acervo));
         
         // Fecha o modal limpando as variáveis
         if(typeof window.cancelarEdicaoAcervo === 'function') window.cancelarEdicaoAcervo();
@@ -20758,7 +20810,7 @@ function restaurarEstadoTempo(ul) {
 // =========================================================
 
 window.baixarSimuladoAcervo = function(id) {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let prova = acervo.find(p => p.id === id);
     if(prova) {
         // Envelopamos em um array para manter o padrão antigo do seu sistema
@@ -20791,11 +20843,11 @@ window.excluirSimuladoIndividual = function(id) {
     if (!confirm('Excluir definitivamente esta bateria/playlist do catálogo? (Esta ação não afeta o histórico de resoluções já gravadas)')) return;
 
     // 1. Purga Factual no Catálogo de Provas (Soberania de Dados)
-    var acervoSoberano = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    var acervoSoberano = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     var acervoFiltrado = acervoSoberano.filter(function(p) {
         return p && p.id !== id;
     });
-    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervoFiltrado));
+    window.salvarAcervoProvasBruto(JSON.stringify(acervoFiltrado));
 
     // 1.5. Lápide de exclusão — a exclusão local NUNCA é reenviada sozinha
     // pro backup na nuvem (só "☁️⬆️ Salvar" faz isso, manual). Sem
@@ -20914,7 +20966,7 @@ window.excluirSimuladoIndividual = function(id) {
 };
 
 window.exportarAcervoCompleto = function() {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     if(acervo.length === 0) { alert('O acervo está vazio!'); return; }
     
     let dataStr = JSON.stringify(acervo, null, 2);
@@ -21019,7 +21071,7 @@ window.cancelarEdicaoAcervo = function() {
 };
 
 window.editarSimuladoAcervo = function(id) {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let prova = acervo.find(p => p.id === id);
     if(!prova) return;
 
@@ -21227,7 +21279,7 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
     // 1. Limpa modais sobrepostos
     document.querySelectorAll('div[style*="z-index: 9999"]').forEach(el => el.remove());
 
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let provaAlvo = acervo.find(p => p.id === simId);
     
     if (!provaAlvo) { alert('Erro: Prova não encontrada no acervo.'); return; }
@@ -22168,9 +22220,7 @@ window.carregarAcervosOficiais = async function() {
 
 window.ACERVO_OFICIAL_IDS = new Set(
    JSON.parse(
-      localStorage.getItem(
-         'tjpe_v1__cordeiro_acervo_provas'
-      ) || '[]'
+      window.lerAcervoProvasBruto() || '[]'
    ).map(x => x.id)
 );
 
@@ -22220,7 +22270,7 @@ window.ACERVO_OFICIAL_IDS = new Set(
 // ======================================
 
 let acervo = JSON.parse(
-   localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'
+   window.lerAcervoProvasBruto() || '[]'
 );
 
 window.ACERVO_OFICIAL = acervo;
@@ -22262,7 +22312,7 @@ window.repararAcervoOficialOrfao = function() {
     if (!window.ACERVO_OFICIAL_FULL) return [];
 
     let acervoLocal;
-    try { acervoLocal = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch (e) { return []; }
+    try { acervoLocal = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { return []; }
 
     let removidos = [];
     let idsRemovidos = [];
@@ -22276,7 +22326,7 @@ window.repararAcervoOficialOrfao = function() {
     });
 
     if (removidos.length > 0) {
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(restantes));
+        window.salvarAcervoProvasBruto(JSON.stringify(restantes));
         window._marcarExcluidosAcervo(idsRemovidos);
         console.info('[ACERVO OFICIAL] ' + removidos.length + ' bateria(s) oficial(is) removida(s) do catálogo local (não existem mais no arquivo-fonte):', removidos);
     }
@@ -22323,7 +22373,7 @@ window.RUNTIME_LOCK = true;
     try {
 
         let acervoLocal = JSON.parse(
-            localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'
+            window.lerAcervoProvasBruto() || '[]'
         );
         
     // ======================================
@@ -22485,9 +22535,7 @@ if (opcoes.origemOficial && opcoes.urlOrigem) {
     if (typeof window._marcarExcluidosAcervo === 'function') window._marcarExcluidosAcervo(idsPodados);
 }
 
-        localStorage.setItem(
-   'tjpe_v1__cordeiro_acervo_provas',
-   JSON.stringify(Array.from(mapa.values()))
+        window.salvarAcervoProvasBruto(JSON.stringify(Array.from(mapa.values()))
 );
 
     window.ACERVO_OFICIAL = Array.from(
@@ -22554,7 +22602,7 @@ window.exportarEntidadeJson = function(arg1, arg2) {
     // Truque mágico: aceita tanto 1 argumento (id) quanto 2 argumentos (tipo, id)
     let id = arg2 ? arg2 : arg1; 
     
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let entidade = acervo.find(p => String(p.id) === String(id));
     
     if (!entidade) { 
@@ -22571,7 +22619,7 @@ window.exportarEntidadeJson = function(arg1, arg2) {
 
 window.compartilharBateria = function(id) {
     let acervo = [];
-    try { acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]'); } catch(e) {}
+    try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch(e) {}
     let entidade = acervo.find(p => String(p.id) === String(id));
 
     if (!entidade || !entidade.origem_oficial) {
@@ -22602,7 +22650,7 @@ window.compartilharBateria = function(id) {
 };
 
 window.exportarAcervoJson = function() {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     if(acervo.length === 0) { 
         alert('O acervo está vazio.'); 
         return; 
@@ -22617,7 +22665,7 @@ window.exportarAcervoJson = function() {
 
 // 1. Exportar Grupo
 window.exportarGrupoJson = function(tipo) {
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let grupo = acervo.filter(p => filtrarPorTipo(p, tipo));
     if (grupo.length === 0) { alert('Este grupo está vazio.'); return; }
     downloadArquivo(JSON.stringify(grupo, null, 2), `grupo-${tipo}-${Date.now()}.json`, 'application/json');
@@ -22628,7 +22676,7 @@ window.importarGrupoJson = function(tipo) {
     window.triggerFileUpload(async function(data) {
         try {
             let items = Array.isArray(data) ? data : [data];
-            let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+            let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
             
             // Usamos um Map para garantir que não tenhamos duplicatas por ID
             // Se o ID já existir, ele mantém o original (preservando resultados anteriores)
@@ -22643,7 +22691,7 @@ window.importarGrupoJson = function(tipo) {
                 }
             });
             
-            localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(Array.from(map.values())));
+            window.salvarAcervoProvasBruto(JSON.stringify(Array.from(map.values())));
             
             if (typeof window.renderHomeDashboard === 'function') {
                 window.renderHomeDashboard();
@@ -22660,10 +22708,10 @@ window.importarGrupoJson = function(tipo) {
 window.excluirGrupoTotal = function(tipo) {
     if(!confirm(`⚠️ Tem certeza que deseja apagar TODAS as baterias do grupo ${tipo}?`)) return;
 
-    let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+    let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     acervo = acervo.filter(p => !filtrarPorTipo(p, tipo));
 
-    localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(acervo));
+    window.salvarAcervoProvasBruto(JSON.stringify(acervo));
     window.renderHomeDashboard();
     alert('Grupo excluído.');
 };
