@@ -26482,6 +26482,18 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-grupo-cabecalho::after { content:'▸'; font-size:10px; color:var(--text-muted); flex-shrink:0; transition:transform .15s ease; }
     #jurisprudencia-modal .jur-grupo-acordeon[open] > .jur-grupo-cabecalho::after { transform:rotate(90deg); }
     #jurisprudencia-modal .jur-grupo-contagem { font-weight:600; color:var(--text-muted); text-transform:none; letter-spacing:normal; }
+    /* Título+contagem do grupo viram UM item flexível só (junto com os
+       botões de exportar), separado da seta do acordeon (::after) —
+       senão justify-content:space-between do cabeçalho espalhava os 3
+       (texto solto, contagem, seta) em vez de manter tudo colado à
+       esquerda e só a seta na ponta direita. */
+    #jurisprudencia-modal .jur-grupo-titulo-linha { display:flex; align-items:center; gap:8px; min-width:0; }
+    /* Reaproveitado tanto em cada cabeçalho de grupo (Ano/Disciplina)
+       quanto no título do topo (ao lado do total geral) — mesmo cluster
+       de botões de exportação nos dois lugares. */
+    #jurisprudencia-modal .jur-grupo-acoes { display:inline-flex; align-items:center; gap:2px; margin-left:4px; }
+    #jurisprudencia-modal .jur-grupo-acao-btn { background:none; border:1px solid transparent; border-radius:4px; padding:1px 4px; font-size:11px; line-height:1.4; cursor:pointer; opacity:0.65; }
+    #jurisprudencia-modal .jur-grupo-acao-btn:hover { opacity:1; border-color:var(--border-color); background:var(--bg-white); }
 
     /* Fileira de atalhos, fixa acima da lista de matérias — pedido
        explícito do usuário ("acima do início dos L1"). */
@@ -26743,6 +26755,38 @@ window.carregarEsquemasOficiais = async function() {
             <input type="hidden" id="jur-etq-cor-selecionada">
             <input type="color" id="jur-etq-cor-picker" style="position:absolute; width:0; height:0; opacity:0; pointer-events:none;" onchange="window.JURISPRUDENCIA_RUNTIME.adicionarCorCustomizada(this.value)">
             <div id="jur-etq-paleta-container"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Exportar Avançado (atalhos por sistemática) — escolher quais
+     anos e disciplinas entram no arquivo, antes de exportar em .md ou
+     .html estilizado. Mesmo padrão .mo/.mdl dos demais popups. -->
+<div id="modal-jurisprudencia-exportar-avancado" class="mo">
+<style>
+    #modal-jurisprudencia-exportar-avancado { z-index: 10000; }
+    #modal-jurisprudencia-exportar-avancado .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-exportar-avancado .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-jurisprudencia-exportar-avancado .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-colunas { display:flex; gap:14px; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-coluna { flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-coluna-titulo { display:flex; justify-content:space-between; align-items:center; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-muted); }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-toggle-todos { font-size:10px; font-weight:700; color:var(--app-primary); cursor:pointer; background:none; border:none; padding:0; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-lista { display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto; border:1px solid var(--border-color); border-radius:6px; padding:6px; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-main); padding:3px 4px; border-radius:4px; cursor:pointer; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-item:hover { background:var(--bg-soft); }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-item input { flex-shrink:0; cursor:pointer; }
+    #modal-jurisprudencia-exportar-avancado .jur-expav-resumo { font-size:11px; font-weight:700; color:var(--text-main); text-align:center; padding-top:4px; border-top:1px dashed var(--border-color); }
+</style>
+    <div class="mdl" style="max-width:520px; width:95%; max-height:85vh; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">Exportar avançado</div>
+            <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharExportarAvancado()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div id="jur-expav-corpo"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.fecharExportarAvancado()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.JURISPRUDENCIA_RUNTIME.confirmarExportarAvancado()">Exportar</button>
         </div>
     </div>
 </div>
@@ -28094,14 +28138,27 @@ window.JURISPRUDENCIA_RUNTIME = {
             });
         }
 
+        // Guardado pra exportarMarkdownGrupoSistematica/exportarHtmlGrupoSistematica
+        // conseguirem achar as fichas certas pelo índice do grupo, sem
+        // precisar recalcular o agrupamento nem passar arrays inteiros por
+        // dentro de atributos onclick.
+        this._gruposSistematicaAtual = grupos;
+
         // Cada grupo é um <details> independente, sempre renderizado SEM o
         // atributo "open" — inicia contraído em toda renderização (troca de
         // filtro, busca, agrupamento), facilitando a visão geral quando há
-        // centenas de cards (ex.: "Repetitivos (76)").
-        let htmlGrupos = grupos.map(function(grupo) {
+        // centenas de cards (ex.: "Repetitivos (76)"). Os botões 📄/🎨
+        // exportam SÓ aquele grupo, direto, sem abrir nenhum seletor —
+        // stopPropagation()/preventDefault() pra não também abrir/fechar o
+        // acordeon (o clique, sem isso, bate no <summary> por baixo).
+        let htmlGrupos = grupos.map(function(grupo, indice) {
             let htmlCards = grupo.itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave, { mostrarOrigem: true }); }).join('');
+            let htmlAcoesGrupo = '<span class="jur-grupo-acoes">' +
+                '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.md)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownGrupoSistematica(' + indice + ');">📄</button>' +
+                '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.html estilizado)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlGrupoSistematica(' + indice + ');">🎨</button>' +
+            '</span>';
             return '<details class="jur-grupo-acordeon">' +
-                '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span></summary>' +
+                '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-linha"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span>' + htmlAcoesGrupo + '</span></summary>' +
                 '<div class="jur-cards-grid jur-grupo-corpo">' + htmlCards + '</div>' +
             '</details>';
         }).join('');
@@ -28109,8 +28166,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         let corpoHtml = htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">Nenhuma ficha com esse filtro.</div>';
 
         let rotuloAtalho = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
+        // 📄/🎨 do topo abrem o seletor avançado (escolher anos e
+        // disciplinas antes de exportar) — diferente dos mesmos ícones em
+        // cada grupo, que exportam direto sem perguntar nada.
         let htmlToolbar = '<div class="jur-sistematica-toolbar">' +
-            '<div class="jur-sistematica-titulo">' + self._escapar(rotuloAtalho ? rotuloAtalho.rotulo : self._modoSistematica) + ' <span class="jur-grupo-contagem">(' + lista.length + ')</span></div>' +
+            '<div class="jur-sistematica-titulo">' + self._escapar(rotuloAtalho ? rotuloAtalho.rotulo : self._modoSistematica) + ' <span class="jur-grupo-contagem">(' + lista.length + ')</span>' +
+                '<span class="jur-grupo-acoes">' +
+                    '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.md)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'md\');">📄</button>' +
+                    '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.html estilizado)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'html\');">🎨</button>' +
+                '</span>' +
+            '</div>' +
             '<div class="jur-agrupar-pills">Agrupar por: ' +
                 '<button class="fc-pill' + (self._agruparSistematicaPor === 'ano' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
                 '<button class="fc-pill' + (self._agruparSistematicaPor === 'disciplina' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
@@ -28691,6 +28756,155 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!htmlDoc) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
         let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
         downloadArquivo(htmlDoc, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
+    },
+
+    // ── EXPORTAÇÃO NOS ATALHOS POR SISTEMÁTICA (Repetitivos/Repercussão
+    // Geral/Controle Concentrado) — pedido explícito do usuário: 📄/🎨 em
+    // cada grupo (Ano ou Disciplina) exportam SÓ aquele grupo, direto, sem
+    // perguntar nada; os mesmos ícones no topo (ao lado do total geral)
+    // abrem um seletor pra escolher quais anos E disciplinas entram antes
+    // de exportar, já que ali cruza tudo. ──
+
+    _rotuloSistematicaAtual: function() {
+        let rotuloObj = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === this._modoSistematica; }, this);
+        return rotuloObj ? rotuloObj.rotulo.replace('📌 ', '') : (this._modoSistematica || 'Precedentes');
+    },
+
+    exportarMarkdownGrupoSistematica: function(indice) {
+        let grupo = (this._gruposSistematicaAtual || [])[indice];
+        if (!grupo) return;
+        let titulo = this._rotuloSistematicaAtual() + ' — ' + grupo.titulo;
+        let fichas = grupo.itens.map(function(par) { return par.item; });
+        let md = this._gerarMarkdownFichas(fichas, titulo);
+        if (!md) { alert('Nenhuma ficha nesse grupo pra exportar.'); return; }
+        downloadArquivo(md, 'jurisprudencia-' + this._slugTexto(this._rotuloSistematicaAtual()) + '-' + this._slugTexto(grupo.titulo) + '.md', 'text/markdown');
+    },
+
+    exportarHtmlGrupoSistematica: function(indice) {
+        let grupo = (this._gruposSistematicaAtual || [])[indice];
+        if (!grupo) return;
+        let titulo = this._rotuloSistematicaAtual() + ' — ' + grupo.titulo;
+        let fichas = grupo.itens.map(function(par) { return par.item; });
+        let htmlDoc = this._gerarHtmlFichas(fichas, titulo);
+        if (!htmlDoc) { alert('Nenhuma ficha nesse grupo pra exportar.'); return; }
+        downloadArquivo(htmlDoc, 'jurisprudencia-' + this._slugTexto(this._rotuloSistematicaAtual()) + '-' + this._slugTexto(grupo.titulo) + '.html', 'text/html');
+    },
+
+    // Seletor "Exportar avançado" — abre com TUDO marcado (exporta igual ao
+    // total geral se o usuário não mexer em nada); desmarcar itens estreita
+    // o recorte. formato: 'md' ou 'html', escolhido pelo botão que abriu.
+    abrirExportarAvancado: function(formato) {
+        let self = this;
+        if (!this._modoSistematica) return;
+        this._expavFormato = formato;
+        let pares = this._fichasParaExibir();
+        if (pares.length === 0) { alert('Nenhuma ficha pra exportar.'); return; }
+
+        let disciplinas = [];
+        let anos = [];
+        pares.forEach(function(par) {
+            // Mesma origem de matéria que agruparSistematicaPor('disciplina')
+            // já usa (par.chave, não item.materiaL1) — é o dado que sempre
+            // existe pra qualquer ficha dentro deste atalho, sem depender de
+            // um campo item-level que pode faltar.
+            let mat = par.chave.split(' > ')[0];
+            if (disciplinas.indexOf(mat) === -1) disciplinas.push(mat);
+            let ano = (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
+            if (anos.indexOf(ano) === -1) anos.push(ano);
+        });
+        disciplinas.sort();
+        anos.sort(function(a, b) { return b.localeCompare(a); });
+
+        this._expavDisciplinasDisponiveis = disciplinas;
+        this._expavAnosDisponiveis = anos;
+        this._expavDisciplinas = {};
+        disciplinas.forEach(function(d) { self._expavDisciplinas[d] = true; });
+        this._expavAnos = {};
+        anos.forEach(function(a) { self._expavAnos[a] = true; });
+
+        this._renderExportarAvancado();
+        document.getElementById('modal-jurisprudencia-exportar-avancado').classList.add('open');
+    },
+
+    fecharExportarAvancado: function() {
+        document.getElementById('modal-jurisprudencia-exportar-avancado').classList.remove('open');
+    },
+
+    toggleDisciplinaExportAvancado: function(nome) {
+        this._expavDisciplinas[nome] = !this._expavDisciplinas[nome];
+        this._renderExportarAvancado();
+    },
+
+    toggleAnoExportAvancado: function(ano) {
+        this._expavAnos[ano] = !this._expavAnos[ano];
+        this._renderExportarAvancado();
+    },
+
+    marcarTodasDisciplinasExportAvancado: function(marcar) {
+        let self = this;
+        (this._expavDisciplinasDisponiveis || []).forEach(function(d) { self._expavDisciplinas[d] = marcar; });
+        this._renderExportarAvancado();
+    },
+
+    marcarTodosAnosExportAvancado: function(marcar) {
+        let self = this;
+        (this._expavAnosDisponiveis || []).forEach(function(a) { self._expavAnos[a] = marcar; });
+        this._renderExportarAvancado();
+    },
+
+    _fichasSelecionadasExportAvancado: function() {
+        let self = this;
+        return this._fichasParaExibir().filter(function(par) {
+            let mat = par.chave.split(' > ')[0];
+            let ano = (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
+            return !!self._expavDisciplinas[mat] && !!self._expavAnos[ano];
+        }).map(function(par) { return par.item; });
+    },
+
+    _renderExportarAvancado: function() {
+        let self = this;
+        let corpo = document.getElementById('jur-expav-corpo');
+        if (!corpo) return;
+
+        let htmlDisciplinas = (this._expavDisciplinasDisponiveis || []).map(function(d) {
+            let marcado = !!self._expavDisciplinas[d];
+            return '<label class="jur-expav-item"><input type="checkbox" ' + (marcado ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleDisciplinaExportAvancado(\'' + d.replace(/'/g, "\\'") + '\')"> ' + self._escapar(d) + '</label>';
+        }).join('');
+
+        let htmlAnos = (this._expavAnosDisponiveis || []).map(function(a) {
+            let marcado = !!self._expavAnos[a];
+            return '<label class="jur-expav-item"><input type="checkbox" ' + (marcado ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleAnoExportAvancado(\'' + a + '\')"> ' + self._escapar(a) + '</label>';
+        }).join('');
+
+        corpo.innerHTML =
+            '<div class="jur-expav-colunas">' +
+                '<div class="jur-expav-coluna">' +
+                    '<div class="jur-expav-coluna-titulo">Disciplinas<button class="jur-expav-toggle-todos" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodasDisciplinasExportAvancado(true)">Marcar todas</button></div>' +
+                    '<div class="jur-expav-lista">' + (htmlDisciplinas || '<span class="jur-expav-item">—</span>') + '</div>' +
+                '</div>' +
+                '<div class="jur-expav-coluna">' +
+                    '<div class="jur-expav-coluna-titulo">Anos<button class="jur-expav-toggle-todos" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodosAnosExportAvancado(true)">Marcar todos</button></div>' +
+                    '<div class="jur-expav-lista">' + (htmlAnos || '<span class="jur-expav-item">—</span>') + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="jur-expav-resumo">' + this._fichasSelecionadasExportAvancado().length + ' ficha(s) serão exportadas</div>';
+    },
+
+    confirmarExportarAvancado: function() {
+        let selecionadas = this._fichasSelecionadasExportAvancado();
+        if (selecionadas.length === 0) { alert('Nenhuma ficha combina com as disciplinas/anos escolhidos.'); return; }
+
+        let rotulo = this._rotuloSistematicaAtual();
+        let slug = this._slugTexto(rotulo);
+
+        if (this._expavFormato === 'html') {
+            let htmlDoc = this._gerarHtmlFichas(selecionadas, rotulo);
+            downloadArquivo(htmlDoc, 'jurisprudencia-' + slug + '-avancado.html', 'text/html');
+        } else {
+            let md = this._gerarMarkdownFichas(selecionadas, rotulo);
+            downloadArquivo(md, 'jurisprudencia-' + slug + '-avancado.md', 'text/markdown');
+        }
+        this.fecharExportarAvancado();
     },
 
     // ── CLASSIFICAÇÃO (Muito Importante/Importante/Regular) — mesmo toggle de
