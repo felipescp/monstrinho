@@ -26494,6 +26494,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-sistematica-pill { text-align:left; padding:6px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-sistematica-pill:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-sistematica-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #jurisprudencia-modal .jur-sistematica-pill-count { opacity:0.65; font-weight:600; }
 
     /* Toolbar mínima do modo sistemática — título + contagem + toggle
        Ano/Disciplina, no lugar da toolbar normal (Tribunal/Sistemática/Ano/
@@ -27417,7 +27418,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         let htmlPills = '<div class="jur-sistematica-pills">' +
             '<div class="jur-sistematica-titulo-lateral">Precedentes</div>' +
             this._SISTEMATICAS_DESTAQUE.map(function(p) {
-                return '<button class="jur-sistematica-pill' + (self._modoSistematica === p.valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSistematica(\'' + p.valor.replace(/'/g, "\\'") + '\')">' + p.rotulo + '</button>';
+                // Total cruzando TODAS as disciplinas (mesma contagem que
+                // abrirBaralhoSistematica usa, exclui ocultas) — pedido
+                // explícito do usuário, mesmo padrão de contagem já usado ao
+                // lado de cada disciplina na lista abaixo.
+                let n = self._todasFichasPorSistematica(p.valor).length;
+                return '<button class="jur-sistematica-pill' + (self._modoSistematica === p.valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSistematica(\'' + p.valor.replace(/'/g, "\\'") + '\')">' + p.rotulo + (n > 0 ? ' <span class="jur-sistematica-pill-count">(' + n + ')</span>' : '') + '</button>';
             }).join('') +
         '</div>';
 
@@ -27581,7 +27587,14 @@ window.JURISPRUDENCIA_RUNTIME = {
                 return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
             });
         }
-        if (this._filtroCor) {
+        // "Classificar por Cor" não existe nos atalhos por sistemática
+        // (Repetitivos/Repercussão Geral/Controle Concentrado — sem esse
+        // botão na toolbar deles, ver _renderGradeCardsSistematica) — sem
+        // esta guarda, um filtro de cor deixado ativo na navegação normal
+        // (Matéria/Divisão) continuava valendo ao entrar no atalho,
+        // escondendo cards sem nenhuma indicação visual do porquê, e sem
+        // como desfazer (não tem o botão ali pra limpar).
+        if (this._filtroCor && !this._modoSistematica) {
             lista = lista.filter(function(par) {
                 // Valor-sentinela pra achar rápido o que ainda falta
                 // classificar — pedido explícito: selecionar só os "Sem
@@ -28088,7 +28101,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let htmlGrupos = grupos.map(function(grupo) {
             let htmlCards = grupo.itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave, { mostrarOrigem: true }); }).join('');
             return '<details class="jur-grupo-acordeon">' +
-                '<summary class="jur-grupo-cabecalho">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></summary>' +
+                '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span></summary>' +
                 '<div class="jur-cards-grid jur-grupo-corpo">' + htmlCards + '</div>' +
             '</details>';
         }).join('');
