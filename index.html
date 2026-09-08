@@ -3309,6 +3309,58 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: HISTÓRICO DE BATERIAS (salinha_longitudinal_runtime.simulados_avulsos) ──
+                    // Cada item tem um `id` PRÓPRIO gerado de novo a cada
+                    // sincronização (sim_<timestamp>), mas um `id_original`
+                    // ESTÁVEL — o id da configuração/sessão que gerou o
+                    // resultado (ver finalizarSimulado/
+                    // sincronizarResultadoComPlanner). A ESTRATÉGIA A
+                    // genérica (mais abaixo) casa itens de array por
+                    // id/uid/hash/codigo — ou seja, por esse `id` PRÓPRIO —
+                    // pra decidir "já existe?". Depois de excluir um
+                    // resultado pelo botão "✖" no Histórico de Baterias
+                    // (dashboard.html -> executarExclusaoSimulado, que grava
+                    // uma lápide em tjpe_v1__planner_historico_excluidos por
+                    // id_original), o backup na nuvem ainda tinha o item com
+                    // o `id` antigo: a ESTRATÉGIA A nunca reconhecia esse
+                    // `id` como "já visto" (foi removido localmente) e
+                    // reinjetava o resultado de volta a cada sincronização —
+                    // a lápide por id_original nunca chegava a ser
+                    // consultada, porque só repararSimuladosNaoSincronizados
+                    // (uma rotina de reparo separada, que NÃO faz parte do
+                    // merge) sabia dela. Era essa a causa raiz de resultados
+                    // "piratas" reaparecendo no Histórico depois de excluídos
+                    // várias vezes. Corrigido casando por id_original (não
+                    // por id) e respeitando a mesma lápide aqui também.
+                    if (subChave === 'simulados_avulsos' && Array.isArray(objImportado[subChave])) {
+                        if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
+
+                        let idsExcluidosHistoricoMerge = {};
+                        try { idsExcluidosHistoricoMerge = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
+
+                        objImportado[subChave].forEach(item => {
+                            if (!item) return;
+                            // Fallback pro próprio `id` só pra registros
+                            // antigos sem id_original (formato anterior a
+                            // essa correção) — nunca deveria faltar em dados
+                            // novos.
+                            let chaveIdentidade = item.id_original || item.id;
+                            if (!chaveIdentidade) return;
+                            if (item.id_original && idsExcluidosHistoricoMerge[item.id_original]) return; // exclusão deliberada — nunca reinjeta
+
+                            const jaExiste = objLocal[subChave].some(function(local) {
+                                if (!local) return false;
+                                return (local.id_original || local.id) === chaveIdentidade;
+                            });
+                            if (!jaExiste) {
+                                objLocal[subChave].push(item);
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: CRONOGRAMA (cronograma_runtime.excluidos) ──
                     // Lápide de exclusões { plannerId → data ISO }, dict achatado —
                     // mesma política de união pura (OR) de *_runtime.ocultos: se
