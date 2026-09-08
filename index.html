@@ -26512,13 +26512,12 @@ window.carregarEsquemasOficiais = async function() {
        fora do fluxo normal do card, pra nunca ser confundida com etiqueta
        pessoal nem com o tribunal. */
     #jurisprudencia-modal .jur-card-origem-badge { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--app-primary); }
-    /* Classificação (Muito Importante/Importante/Regular) já existente,
-       exibida como badge — mesmas 3 cores de fc-rev-dificil/medio/facil,
-       só que compacta o bastante pra caber ao lado do tribunal. */
-    #jurisprudencia-modal .jur-card-classificacao { font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; }
-    #jurisprudencia-modal .jur-card-classificacao-dificil { color:#991b1b; background:#fee2e2; border:1px solid #fecaca; }
-    #jurisprudencia-modal .jur-card-classificacao-medio { color:#92400e; background:#fef3c7; border:1px solid #fde68a; }
-    #jurisprudencia-modal .jur-card-classificacao-facil { color:#166534; background:#dcfce7; border:1px solid #bbf7d0; }
+    /* Classificação (Muito Importante/Importante/Regular) já existente —
+       reduzida a só o ÍCONE (🔴/🟡/🟢, ver title pro rótulo completo) pra
+       não disputar espaço com tribunal/(Oficial) no cabeçalho do card;
+       sempre a primeira tag à esquerda. Sem pill colorida — a cor já vem
+       do próprio emoji. */
+    #jurisprudencia-modal .jur-card-classificacao { font-size:11px; line-height:1; flex-shrink:0; }
 
     /* Grupos (Ano ou Disciplina) da grade de cards dos atalhos por
        sistemática — cada grupo é um <details> próprio (acordeon), sempre
@@ -28049,13 +28048,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         // Classificação (Muito Importante/Importante/Regular) já existente —
         // só EXIBE aqui (reclassificar continua sendo feito pelo Leitor ou
         // pelas abas de classificação, como em qualquer outro card da
-        // grade). Pedido explícito do usuário: manter a classificação de
-        // origem visível nos atalhos por sistemática.
+        // grade). Pedido explícito do usuário: reduzir ao ÍCONE (🔴/🟡/🟢),
+        // sem o texto do rótulo — cabeçalho do card estava disputando
+        // espaço demais entre tribunal/classificação/(Oficial). O rótulo
+        // completo continua acessível via title (tooltip no hover).
         let classificacaoHtml = '';
         let statusClassif = self.revisaoJurisprudencia[item.id];
         if (statusClassif && statusClassif.ultimaClassificacao) {
-            let ROTULOS_CLASSIF = { dificil: '🔴 Muito Importante', medio: '🟡 Importante', facil: '🟢 Regular' };
-            classificacaoHtml = '<span class="jur-card-classificacao jur-card-classificacao-' + statusClassif.ultimaClassificacao + '">' + (ROTULOS_CLASSIF[statusClassif.ultimaClassificacao] || '') + '</span>';
+            let ICONES_CLASSIF = { dificil: '🔴', medio: '🟡', facil: '🟢' };
+            let ROTULOS_CLASSIF = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
+            classificacaoHtml = '<span class="jur-card-classificacao jur-card-classificacao-' + statusClassif.ultimaClassificacao + '" title="' + (ROTULOS_CLASSIF[statusClassif.ultimaClassificacao] || '') + '">' + (ICONES_CLASSIF[statusClassif.ultimaClassificacao] || '') + '</span>';
         }
         // Ocultar é preferência PESSOAL de visibilidade (não edita o
         // conteúdo) — ao contrário de Editar/Excluir, disponível pra
@@ -28081,10 +28083,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             origemHtml +
             '<div class="jur-card-tags">' +
                 '<span class="jur-card-tags-esq">' +
+                    classificacaoHtml +
                     checkboxHtml +
                     etiquetaHtml +
                     '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
-                    classificacaoHtml +
                     seloOficial +
                     seloOculto +
                     seloSuperado +
