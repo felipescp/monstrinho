@@ -253,32 +253,32 @@ body { font-family: var(--font-body); background-color: var(--bg-body); color: v
            <div class="etl-insight-card" style="padding:15px; margin-bottom:20px;">
                 <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:20px;">
                     <div>
-                        <label class="evo-filtro-label">Período</label>
-                        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <label class="evo-filtro-label" style="margin-bottom:0;">Período</label>
+                            <!-- Periodicidade fixa: em vez de duas datas congeladas, um período
+                                 "janela móvel" (últimos N dias/semanas/meses) que se recalcula a
+                                 partir de HOJE toda vez que o painel abre ou é atualizado — não fica
+                                 desatualizado dia após dia como o período manual fixo. -->
+                            <label class="evo-radio-item" style="gap:6px;">
+                                <input type="checkbox" id="evo-periodicidade-fixa-check" onchange="window.evoToggleModoPeriodicidadeFixa(this.checked)">
+                                Periodicidade fixa
+                            </label>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:14px; margin-top:4px;">
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <input type="date" id="evo-periodo-de" class="evo-input-data">
                                 <span style="color:var(--text-muted); font-size:12px;">–</span>
                                 <input type="date" id="evo-periodo-ate" class="evo-input-data">
                             </div>
-                            <!-- Periodicidade fixa: em vez de duas datas congeladas, um período
-                                 "janela móvel" (últimos N dias/semanas/meses) que se recalcula a
-                                 partir de HOJE toda vez que o painel abre ou é atualizado — não fica
-                                 desatualizado dia após dia como o período manual fixo. -->
-                            <div style="display:flex; flex-direction:column; gap:4px;">
-                                <label class="evo-radio-item" style="gap:6px;">
-                                    <input type="checkbox" id="evo-periodicidade-fixa-check" onchange="window.evoToggleModoPeriodicidadeFixa(this.checked)">
-                                    Periodicidade fixa
-                                </label>
-                                <div style="display:flex; gap:6px;">
-                                    <select id="evo-periodicidade-fixa-qtd" class="evo-input-data" style="width:54px;" disabled onchange="window.evoAtualizarPeriodicidadeFixa()">
-                                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
-                                    </select>
-                                    <select id="evo-periodicidade-fixa-unidade" class="evo-input-data" disabled onchange="window.evoAtualizarPeriodicidadeFixa()">
-                                        <option value="dias">Dias</option>
-                                        <option value="semanas" selected>Semanas</option>
-                                        <option value="meses">Meses</option>
-                                    </select>
-                                </div>
+                            <div style="display:flex; gap:6px;">
+                                <select id="evo-periodicidade-fixa-qtd" class="evo-input-data" style="width:54px;" disabled onchange="window.evoAtualizarPeriodicidadeFixa()">
+                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                                </select>
+                                <select id="evo-periodicidade-fixa-unidade" class="evo-input-data" disabled onchange="window.evoAtualizarPeriodicidadeFixa()">
+                                    <option value="dias">Dias</option>
+                                    <option value="semanas" selected>Semanas</option>
+                                    <option value="meses">Meses</option>
+                                </select>
                             </div>
                         </div>
                     </div>
