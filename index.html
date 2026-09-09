@@ -18104,6 +18104,67 @@ function _escaparAtributoGlosSim(texto) {
     return (texto || '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// ── VARIAÇÃO SINGULAR/PLURAL ─────────────────────────────────────────────
+// Pedido do usuário: "barreiras atitudinais" (cadastrado no Glossário) não
+// reconhecia "barreira atitudinal" no enunciado. Cobre só os padrões
+// REGULARES e mais comuns do português (a pluralização tem muitas
+// irregularidades — "mão/mãos", "gás/gases" etc. ficam de fora de
+// propósito). O risco de errar aqui é só GERAR uma variação que nunca bate
+// com nada real (a palavra virada só é uma alternativa A MAIS no regex do
+// destaque — nunca substitui nem invalida a expressão original cadastrada).
+var _STOPWORDS_GLOS_SIM = { de: 1, da: 1, do: 1, das: 1, dos: 1, e: 1, ou: 1, em: 1, na: 1, no: 1, nas: 1, nos: 1, a: 1, o: 1, as: 1, os: 1, para: 1, com: 1, sem: 1, por: 1, ao: 1, aos: 1, à: 1, às: 1 };
+
+function _singularizarPalavraGlosSim(p) {
+    if (p.length < 4) return null;
+    if (/ões$/.test(p)) return p.slice(0, -3) + 'ão';
+    if (/ães$/.test(p)) return p.slice(0, -3) + 'ão';
+    if (/ãos$/.test(p)) return p.slice(0, -3) + 'ão';
+    if (/ais$/.test(p)) return p.slice(0, -3) + 'al'; // atitudinais -> atitudinal (exemplo relatado)
+    if (/eis$/.test(p)) return p.slice(0, -3) + 'el';
+    if (/ois$/.test(p)) return p.slice(0, -3) + 'ol';
+    if (/uis$/.test(p)) return p.slice(0, -3) + 'ul';
+    if (/ns$/.test(p)) return p.slice(0, -2) + 'm'; // jovens -> jovem
+    if (/[rz]es$/.test(p)) return p.slice(0, -2); // flores -> flor; narizes -> nariz
+    if (/s$/.test(p)) return p.slice(0, -1); // barreiras -> barreira (caso mais comum)
+    return null;
+}
+
+function _pluralizarPalavraGlosSim(p) {
+    if (p.length < 3) return null;
+    if (/al$/.test(p)) return p.slice(0, -2) + 'ais';
+    if (/el$/.test(p)) return p.slice(0, -2) + 'eis';
+    if (/ol$/.test(p)) return p.slice(0, -2) + 'ois';
+    if (/ul$/.test(p)) return p.slice(0, -2) + 'uis';
+    if (/ão$/.test(p)) return p.slice(0, -2) + 'ões'; // padrão mais comum (ação/ações) — não cobre as exceções (mão/mãos)
+    if (/m$/.test(p)) return p.slice(0, -1) + 'ns';
+    if (/[rz]$/.test(p)) return p + 'es';
+    if (/s$/.test(p)) return null; // já parece plural/invariável — não mexe
+    return p + 's';
+}
+
+// Tenta virar o NÚMERO GRAMATICAL da palavra (plural->singular ou
+// singular->plural, o que fizer sentido pra ela) — palavras-função (de, da,
+// com, ...) e sem padrão reconhecido ficam de fora (null).
+function _flipPalavraGlosSim(p) {
+    if (_STOPWORDS_GLOS_SIM[p]) return null;
+    return _singularizarPalavraGlosSim(p) || _pluralizarPalavraGlosSim(p);
+}
+
+// Vira CADA PALAVRA da expressão (já em minúsculas) pro número gramatical
+// oposto — palavras sem padrão reconhecido permanecem como estão na
+// variação (não descarta a expressão inteira por causa de 1 palavra
+// desconhecida). Retorna null se nada mudou (evita registrar uma "variação"
+// idêntica ao original).
+function _variacaoPluralSingularGlosSim(expressaoNorm) {
+    var mudou = false;
+    var variacao = expressaoNorm.split(' ').map(function(palavra) {
+        var flip = _flipPalavraGlosSim(palavra);
+        if (flip && flip !== palavra) { mudou = true; return flip; }
+        return palavra;
+    }).join(' ');
+    return mudou ? variacao : null;
+}
+
 // Cache do "matcher" (regex + tabela expressão->item) POR MATÉRIA —
 // bug relatado pelo usuário: sem cache, cada chamada varria TODO o
 // Glossário (todas as matérias, não só a da questão) e recompilava a
@@ -18132,13 +18193,27 @@ function _construirMatcherGlossario(runtime, materiaAlvo) {
             if (!porExpressao[chaveNorm]) porExpressao[chaveNorm] = item;
         });
     });
+    var expressoesLiterais = Object.keys(porExpressao);
+    if (!expressoesLiterais.length) return null;
+
+    // Variação de número gramatical (plural<->singular) de cada expressão
+    // cadastrada — pedido explícito do usuário ("barreiras atitudinais" no
+    // Glossário deveria reconhecer "barreira atitudinal" no enunciado). Só
+    // registra a variação se ainda não existir uma expressão LITERAL igual
+    // cadastrada (a literal sempre tem prioridade sobre uma variação
+    // gerada) — evita que a heurística de plural atropele um termo
+    // diferente que o usuário realmente cadastrou daquele jeito.
+    expressoesLiterais.forEach(function(chaveNorm) {
+        var variacao = _variacaoPluralSingularGlosSim(chaveNorm);
+        if (variacao && !porExpressao[variacao]) porExpressao[variacao] = porExpressao[chaveNorm];
+    });
+
     var expressoes = Object.keys(porExpressao);
-    if (!expressoes.length) return null;
     // Mais longa primeiro: garante que "Exceção de Contrato Não
     // Cumprido" vença "Contrato" quando os dois batem no mesmo trecho.
     expressoes.sort(function(a, b) { return b.length - a.length; });
     var alternativas = expressoes.map(function(chaveNorm) {
-        return porExpressao[chaveNorm].expressao.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return chaveNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     });
     // SEM lookbehind (?<!...) de propósito: é suportado só a partir do
     // Safari 16.4 (2023) — em qualquer navegador mais velho a regex
