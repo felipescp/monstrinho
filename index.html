@@ -23326,8 +23326,14 @@ window.triggerFileUpload = function(callback) {
     /* Maximizado: o cartão deve ocupar a largura toda que sobrar ao lado
        da lista, em vez de ficar preso a um teto fixo bem menor que o
        viewport (era o bug: mesmo em tela cheia, o cartão parava em 680px *
-       escala e sobrava uma margem vazia enorme dos dois lados). */
-    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-card { max-width:calc(1200px * var(--baralho-escala, 1)); }
+       escala e sobrava uma margem vazia enorme dos dois lados). A largura
+       só cresce com a escala até 2x — daí em diante (2x a 4x) crescer
+       largura já não ajuda a leitura (linha fica longa demais), então o
+       "Aumentar" passa a crescer só a FONTE do card (ver .esq-estudo-titulo/
+       .esq-estudo-texto abaixo) — era o bug reportado: "Aumentar" só
+       parecia mexer na largura da lista, o card não ficava visivelmente
+       maior depois de um certo ponto. */
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-card { max-width:calc(1200px * min(var(--baralho-escala, 1), 2)); }
     /* Rótulo "MATÉRIA > Divisão" do card ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-esquemas-baralho não é descendente de
@@ -23336,6 +23342,12 @@ window.triggerFileUpload = function(callback) {
     #modal-esquemas-baralho .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; flex-shrink:0; }
     #esquemas-modal .esq-estudo-titulo, #modal-esquemas-baralho .esq-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #esquemas-modal .esq-estudo-texto, #modal-esquemas-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
+    /* Acima de 2x, a escala já não cresce mais a largura (ver .esq-estudo-card
+       acima) — o "Aumentar" continua tendo efeito visível crescendo a fonte
+       do card em vez disso (max(0, escala-2) fica em 0 até 2x, só depois
+       passa a somar ao tamanho-base). */
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-titulo { font-size:calc(13.5px + max(0, var(--baralho-escala, 1) - 2) * 3px); }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-texto { font-size:calc(12.5px + max(0, var(--baralho-escala, 1) - 2) * 3px); }
     /* Mesmas linhas de tabela do editor (#esq-editor-corpo) — sem isto,
        o conteúdo é o mesmo HTML (_htmlCartaoEsquemaEstudo é compartilhado),
        mas as bordas só existiam no editor; aqui (abas de estrela e
@@ -23478,7 +23490,7 @@ window.triggerFileUpload = function(callback) {
        e o bloco inteiro fica centralizado no espaço extra que sobra numa
        tela larga, em vez de ficar grudado na esquerda com o resto vazio. */
     #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
-    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(1514px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(1500px * min(var(--baralho-escala, 1), 2) + 14px); margin:0 auto; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME do card,
@@ -23490,7 +23502,7 @@ window.triggerFileUpload = function(callback) {
        itens rolável abaixo dela, ambas dentro do mesmo painel lateral de
        300px — ver _renderListaBaralho() pra a estrutura HTML. */
     #modal-esquemas-baralho .esq-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
-    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-lista { width:calc(300px * min(var(--baralho-escala, 1), 2)); }
     #modal-esquemas-baralho .esq-baralho-busca-wrap { flex-shrink:0; padding:10px 10px 0 10px; }
     #modal-esquemas-baralho .esq-baralho-busca { width:100%; box-sizing:border-box; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); }
     #modal-esquemas-baralho .esq-baralho-busca:focus { outline:none; border-color:var(--app-primary); }
@@ -25376,9 +25388,27 @@ window.ESQUEMAS_RUNTIME = {
                 '</div>';
         }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhum card encontrado.</div>';
 
+        // Preserva a posição de rolagem entre renders (a div .esq-baralho-lista-itens
+        // é recriada do zero a cada innerHTML, então herdaria scrollTop:0 se
+        // não fosse restaurado manualmente — era isso que empurrava o item
+        // clicado pro rodapé da lista visível a cada clique, mesmo já estando
+        // visível antes). Só chama scrollIntoView se o item ativo realmente
+        // ficar fora da área visível após restaurar (navegação ‹›/abertura
+        // inicial num índice fora da vista) — clique num item já visível não
+        // deve mexer a barra de rolagem.
+        let listaItensElAnterior = listaEl.querySelector('.esq-baralho-lista-itens');
+        let scrollAnterior = listaItensElAnterior ? listaItensElAnterior.scrollTop : 0;
+
         listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
+        let listaItensEl = listaEl.querySelector('.esq-baralho-lista-itens');
+        if (listaItensEl) listaItensEl.scrollTop = scrollAnterior;
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
-        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+        if (ativoEl && listaItensEl) {
+            let rectAtivo = ativoEl.getBoundingClientRect();
+            let rectContainer = listaItensEl.getBoundingClientRect();
+            let foraDeVista = rectAtivo.top < rectContainer.top || rectAtivo.bottom > rectContainer.bottom;
+            if (foraDeVista) ativoEl.scrollIntoView({ block: 'nearest' });
+        }
 
         if (buscaTinhaFoco) {
             let novoInputBusca = document.getElementById('esq-baralho-busca');
