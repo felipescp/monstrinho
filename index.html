@@ -804,6 +804,19 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .rba.o { color: var(--app-primary); border-color: var(--app-primary); }
 .rba.o:hover { background: rgba(79, 70, 229, 0.05); }
 
+/* Botões da tela de Resultados com submenu .md/.html (ver botoesHTML em
+   renderResultado) — mesmo padrão .esq-export-menu/.esq-export-opcoes já
+   usado em Esquemas/Jurisprudência/Glossário (detalhes disclosure, sem
+   marcador nativo), só que reaproveitando a classe .rba no <summary> pra
+   ficar visualmente igual aos botões vizinhos da mesma fileira. */
+.rba-menu { position: relative; flex: 1; min-width: 0; }
+.rba-menu > summary { display: block; box-sizing: border-box; list-style: none; }
+.rba-menu > summary::-webkit-details-marker { display: none; }
+.rba-menu > summary::marker { content: ''; }
+.rba-opcoes { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; min-width: 170px; padding: 4px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-white); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.rba-opcoes button { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 4px; background: transparent; color: var(--text-main); font-size: 10.5px; font-weight: 700; text-align: left; cursor: pointer; white-space: nowrap; }
+.rba-opcoes button:hover { background: #f1f5f9; color: var(--app-primary); }
+
 /* AUDITORIA */
 .aud-filtros { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .aud-btn { font-size: 10px; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; padding: .4rem .85rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-white); cursor: pointer; color: var(--text-muted); transition: 0.2s; }
@@ -5526,17 +5539,11 @@ if(ri) {
         else if(a === 'novo')
             novoSim();
 
-        else if(a === 'ax')
-            exportarCadernoAxiomasTxt();
-
         else if(a === 'refazer')
             refazerErradas(i);
 
-        else if(a === 'exp-res')
-            window.exportarProvaCompletaMdHtml();
-
-        else if(a === 'exp-md')
-            window.exportarCadernoQuestoesMdHtml();
+        else if(a === 'refazer-salvas')
+            refazerQuestoesSalvas(i);
     });
 }
 </script>
@@ -19083,17 +19090,11 @@ function bindResultadoActions() {
         else if(a === 'novo')
             novoSim();
 
-        else if(a === 'ax')
-            exportarCadernoAxiomasTxt();
-
         else if(a === 'refazer')
             refazerErradas(i);
 
-        else if(a === 'exp-res')
-            window.exportarProvaCompletaMdHtml();
-
-        else if(a === 'exp-md')
-            window.exportarCadernoQuestoesMdHtml();
+        else if(a === 'refazer-salvas')
+            refazerQuestoesSalvas(i);
     });
 }
 
@@ -19201,15 +19202,32 @@ function renderResultado(idx){
 // 3. Montagem da Interface Final (Cards e Dashboard)
   var tempoCard = isMC ? '<div class="rc"><div class="num" style="font-size:22px;margin-top:6px">'+fmtT(s.tempoMedioGlobal)+'</div><div class="lab">Tempo Médio/Q</div></div>' : '';
   
-  // Nova linha de botões: Flex-nowrap, margem negativa para colar nos cards, e tamanhos reduzidos
+  // Nova linha de botões: Flex-nowrap, margem negativa para colar nos cards, e tamanhos reduzidos.
+  // Ordem: Revisar > Refazer Bateria > Refazer Erradas > Refazer Questões
+  // Salvas (substitui o antigo botão "Axiomas" — mesmo efeito de Refazer
+  // Erradas, mas nas questões marcadas com "+ Caderno" em vez das erradas)
+  // > Exportar Questões Salvas > Exportar Prova Completa (por último). Os
+  // dois últimos abrem um submenu .md/.html em vez de baixar os dois de
+  // uma vez — mesmo padrão .esq-export-menu já usado em Esquemas/
+  // Jurisprudência/Glossário (.rba-menu/.rba-opcoes reaproveitam a mesma
+  // ideia com a cara da fileira de botões daqui, ver CSS .rba-menu).
   var botoesHTML = '<div class="rbtns" style="margin-top:-0.5rem; display:flex; width:100%; gap:6px;">'+
       '<button class="rba o" data-a="vol" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Revisar Questões">← Revisar Questões</button>'+
       '<button class="rba" data-a="refazer-bateria" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Bateria (sobrescreve este resultado)">🔄 Refazer Bateria</button>'+
       '<button class="rba" data-a="refazer" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
-      '<button class="rba" data-a="exp-res" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa (.md e .html)">⬇ Exportar Prova Completa (.md e .html)</button>'+
-      '<button class="rba" data-a="exp-md" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Caderno de Questões (.md e .html)">🧠 Exportar Caderno de Questões (.md e .html)</button>'+
-      (D.cadernoAxiomas && D.cadernoAxiomas.length ? '<button class="rba" data-a="ax" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Axiomas">📌 Axiomas</button>' : '')+
-
+      (h.dados.caderno && h.dados.caderno.length ? '<button class="rba" data-a="refazer-salvas" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Questões Salvas">💾 Refazer Questões Salvas</button>' : '')+
+      '<details class="rba-menu"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Questões Salvas">🧠 Exportar Questões Salvas</summary>'+
+        '<div class="rba-opcoes">'+
+          '<button onclick="window.exportarCadernoQuestoesMd()">Exportar .md</button>'+
+          '<button onclick="window.exportarCadernoQuestoesHtml()">Exportar .html</button>'+
+        '</div>'+
+      '</details>'+
+      '<details class="rba-menu"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa">⬇ Exportar Prova Completa</summary>'+
+        '<div class="rba-opcoes">'+
+          '<button onclick="window.exportarProvaCompletaMd()">Exportar .md</button>'+
+          '<button onclick="window.exportarProvaCompletaHtml()">Exportar .html</button>'+
+        '</div>'+
+      '</details>'+
     '</div>';
 
   var ctaPlannerHTML = 
@@ -20422,6 +20440,40 @@ function refazerErradas(idx){
   trocarTab(novoSI);
 }
 
+// "💾 Refazer Questões Salvas" (tela de resultado) — mesmo mecanismo de
+// refazerErradas() acima (abre uma aba de simulado avulsa nova, SIMS.push,
+// nunca sobrescreve nem altera o resultado já finalizado em HIST[idx]),
+// só que junta as questões marcadas com "+ Caderno" (h.dados.caderno,
+// mesmo critério de exportarCadernoQuestoesMd/Html) em vez das erradas.
+function refazerQuestoesSalvas(idx){
+  var h=HIST[idx];if(!h)return;
+  var questoes=[];
+  h.dados.blocos.forEach(function(b){
+    b.questoes.forEach(function(q){
+      if(h.dados.caderno&&h.dados.caderno.indexOf(q.id)>=0){
+        questoes.push(JSON.parse(JSON.stringify(q)));
+      }
+    });
+  });
+  if(!questoes.length){
+    mostrarModal({titulo:'Sem questões salvas',mensagem:'Não há questões salvas no Caderno para refazer.',botoes:[{label:'OK',cor:'#22c55e',cb:null}]});
+    return;
+  }
+  var novoBloco={nome:'Revisão de Questões Salvas',questoes:[]};
+  questoes.forEach(function(q,i){
+    q.id=i+1;q.bn='Revisão de Questões Salvas';
+    novoBloco.questoes.push(q);
+  });
+  var nomeNovo=h.nome+' (Salvas)';
+  var novoC=JSON.parse(JSON.stringify(h.cfg));
+  novoC.nome=nomeNovo;
+  var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
+  SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
+  var novoSI=SIMS.length-1;
+  autoSave();
+  trocarTab(novoSI);
+}
+
 // ── EXPORTAR CADERNO DE QUESTÕES (.md e .html) ── botão 🧠 da tela de
 // Resultados: exporta só as questões ASSINADAS (marcadas com ⭐ durante a
 // prova) pro Caderno de Questões — mesmo critério de seleção que o antigo
@@ -20495,53 +20547,17 @@ function _gerarHtmlCadernoQuestoes() {
   return gerarDocumentoHtmlEstilizado('Caderno de Questões — ' + C.nome, corpo);
 }
 
-window.exportarCadernoQuestoesMdHtml = function() {
+// Separados em .md/.html pra alimentar o submenu "🧠 Exportar Questões
+// Salvas" (ver botoesHTML/renderResultado) — o usuário escolhe qual dos
+// dois quer, em vez de baixar ambos de uma vez.
+window.exportarCadernoQuestoesMd = function() {
   if (!D.caderno || !D.caderno.length) { alert('Caderno vazio.'); return; }
   downloadArquivo(_gerarMarkdownCadernoQuestoes(), C.nome + '_caderno.md', 'text/markdown');
+};
+window.exportarCadernoQuestoesHtml = function() {
+  if (!D.caderno || !D.caderno.length) { alert('Caderno vazio.'); return; }
   downloadArquivo(_gerarHtmlCadernoQuestoes(), C.nome + '_caderno.html', 'text/html');
 };
-
-// ── EXPORTAR CADERNO DE AXIOMAS (.TXT) ──
-function exportarCadernoAxiomasTxt(){
-  if(!D.cadernoAxiomas || !D.cadernoAxiomas.length){alert('Caderno de Axiomas vazio.');return;}
-  var SEP='================================================================================';
-  var linhas=[], gi=0;
-  
-  linhas.push(SEP);
-  linhas.push('MEU CADERNO DE AXIOMAS (REVISÃO DE VÉSPERA)');
-  linhas.push('Simulado: '+C.nome);
-  linhas.push('Data: '+new Date().toLocaleDateString('pt-BR'));
-  linhas.push('Total de axiomas salvos: '+D.cadernoAxiomas.length);
-  linhas.push(SEP);
-
-  D.blocos.forEach(function(b){
-    var axiomasBloco = b.questoes.filter(function(q){ 
-      return D.cadernoAxiomas.indexOf(q.id) >= 0 && q.axioma; 
-    });
-    
-    if(!axiomasBloco.length) return;
-    
-    linhas.push('');
-    linhas.push('BLOCO: '+b.nome.toUpperCase());
-    linhas.push('────────────────────────────────────────────────────────────────────────────────');
-    
-    axiomasBloco.forEach(function(q){
-      gi++;
-      var topico = q.topico ? q.topico : (q.taxonomia ? q.taxonomia : 'Geral');
-      linhas.push('');
-      linhas.push('TÓPICO: ' + topico);
-      linhas.push('📌 ' + q.axioma);
-    });
-  });
-
-  linhas.push('');
-  linhas.push(SEP);
-  linhas.push('FIM DO CADERNO — '+gi+' axioma(s) exportado(s).');
-  linhas.push(SEP);
-  
-  // Novo sistema de Download
-  downloadArquivo(linhas.join('\n'), C.nome + '_axiomas.txt', 'text/plain');
-}
 
 // ── EXPORTAR PROVA COMPLETA (.md e .html) ── botão ⬇ da tela de
 // Resultados: TODAS as questões da prova (não só marcadas/erradas), com
@@ -20611,9 +20627,15 @@ function _gerarHtmlProvaCompleta() {
   return gerarDocumentoHtmlEstilizado(C.nome + ' — Resultado', corpo);
 }
 
-window.exportarProvaCompletaMdHtml = function() {
+// Separados em .md/.html pra alimentar o submenu "⬇ Exportar Prova
+// Completa" (ver botoesHTML/renderResultado), mesmo motivo de
+// exportarCadernoQuestoesMd/Html acima.
+window.exportarProvaCompletaMd = function() {
   if (!D.blocos.length) { alert('Nenhum simulado em andamento.'); return; }
   downloadArquivo(_gerarMarkdownProvaCompleta(), C.nome + '_resultado.md', 'text/markdown');
+};
+window.exportarProvaCompletaHtml = function() {
+  if (!D.blocos.length) { alert('Nenhum simulado em andamento.'); return; }
   downloadArquivo(_gerarHtmlProvaCompleta(), C.nome + '_resultado.html', 'text/html');
 };
 
