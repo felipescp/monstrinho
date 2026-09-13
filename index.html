@@ -23323,7 +23323,11 @@ window.triggerFileUpload = function(callback) {
        (o rótulo de origem opcional + o card) — com flex:1 o card ocupa só
        o que sobra depois do rótulo, em vez de tentar ser 100% e estourar. */
     #modal-esquemas-baralho .esq-estudo-card { max-width:680px; flex:1; min-height:0; }
-    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
+    /* Maximizado: o cartão deve ocupar a largura toda que sobrar ao lado
+       da lista, em vez de ficar preso a um teto fixo bem menor que o
+       viewport (era o bug: mesmo em tela cheia, o cartão parava em 680px *
+       escala e sobrava uma margem vazia enorme dos dois lados). */
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-card { max-width:calc(1200px * var(--baralho-escala, 1)); }
     /* Rótulo "MATÉRIA > Divisão" do card ATUAL, só nos escopos Todos/
        Disciplina do baralho (ver renderBaralho) — precisa da própria
        regra porque #modal-esquemas-baralho não é descendente de
@@ -23474,7 +23478,7 @@ window.triggerFileUpload = function(callback) {
        e o bloco inteiro fica centralizado no espaço extra que sobra numa
        tela larga, em vez de ficar grudado na esquerda com o resto vazio. */
     #modal-esquemas-baralho .esq-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
-    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
+    #modal-esquemas-baralho.esq-baralho-maximizado .esq-baralho-corpo-wrap { max-width:calc(1514px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME do card,
