@@ -892,9 +892,24 @@ async function loadFactualDatabase() {
                 questoesResolvidas += simFeitas;
                 acertos += simAcertos;
 
-                let bucket = buckets.find(function(b) { return dataSim >= b.inicio && dataSim <= b.fim; }) || buckets[buckets.length - 1];
-                bucket.acertos += simAcertos;
-                bucket.erros += (simFeitas - simAcertos);
+                // Sem fallback pro último bucket: um sim cuja data cai no
+                // fragmento mais antigo do intervalo (descartado de propósito
+                // por evoBucketsPorPeriodicidade quando [de,ate] não é múltiplo
+                // exato da periodicidade — ver comentário lá) simplesmente não
+                // entra em nenhum bucket do gráfico. Era aqui que o bug
+                // acontecia: o "|| buckets[buckets.length-1]" jogava esse sim
+                // ANTIGO direto na semana MAIS RECENTE, inflando-a com dados que
+                // não são dela — e como a quantidade de semanas escolhida no
+                // filtro muda QUAL dia vira esse fragmento descartado, a mesma
+                // semana "07/09 a 13/09" aparecia com totais diferentes (715 vs
+                // 805) dependendo de ter sido pedido "4 Semanas" ou "6 Semanas".
+                // Os cards de resumo (Questões Resolvidas/Acertos/Erros acima)
+                // não usam bucket nenhum — já somam certo, ininterruptamente.
+                let bucket = buckets.find(function(b) { return dataSim >= b.inicio && dataSim <= b.fim; });
+                if (bucket) {
+                    bucket.acertos += simAcertos;
+                    bucket.erros += (simFeitas - simAcertos);
+                }
             });
 
             let erros = questoesResolvidas - acertos;
