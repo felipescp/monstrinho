@@ -12720,6 +12720,27 @@ function glosDivisoesValidas(materia) {
 // "editor" com toolbar de formatação: o formulário simples existente
 // (#modal-glossario-novo) já cobre criar/editar, e é isso que
 // _htmlCartaoTermoEstudo usa pra montar o cartão de estudo (abas/baralho).
+
+// Resolve a etiqueta "efetiva" de 1 item, compartilhado pelos 3 sistemas de
+// etiqueta (Esquemas/Jurisprudência/Glossário, abaixo): prioriza a
+// atribuição LOCAL (etiquetaLocal, já resolvida via etiquetaPor*/
+// etiquetas[chave] — visão do próprio usuário) e cai pro campo público
+// embutido no item oficial (item.etiqueta = {nome,cor}, gravado direto em
+// dados/esquemas|jurisprudencia|glossario/*.json) quando não há override
+// local — sem isso, uma etiqueta aplicada por um usuário em item oficial só
+// aparecia pra ele mesmo, nunca pros demais (etiquetas vivem só no
+// storage local de cada navegador, nunca em dados/*.json). Devolve
+// {id,nome,cor} igual ao formato local, com um id sintético prefixado
+// (nunca colide com um id local, que é timestamp) pra continuar funcionando
+// em qualquer comparação/dedup por id já existente (ex.: _etiquetasBaralho).
+window._etiquetaEfetivaDoItem = function(item, etiquetaLocal) {
+    if (etiquetaLocal) return etiquetaLocal;
+    if (item && item.etiqueta && item.etiqueta.nome) {
+        return { id: '__pub__' + item.etiqueta.nome, nome: item.etiqueta.nome, cor: item.etiqueta.cor || '#64748b' };
+    }
+    return null;
+};
+
 window.GLOSSARIO_RUNTIME = {
     glossario: {},
     ocultos: {},
@@ -13411,7 +13432,7 @@ window.GLOSSARIO_RUNTIME = {
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Expressão oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
-            let etiquetaDoItem = (self.etiquetas[par.chave] || {})[self.etiquetaPorTermo[item.id]];
+            let etiquetaDoItem = window._etiquetaEfetivaDoItem(item, (self.etiquetas[par.chave] || {})[self.etiquetaPorTermo[item.id]]);
             let etiquetaHtml = etiquetaDoItem
                 ? '<span class="esq-etq-pill esq-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
                 : '';
@@ -24782,7 +24803,7 @@ window.ESQUEMAS_RUNTIME = {
                 : '';
             let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Esquema oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
-            let etiquetaDoItem = (self.etiquetas[par.chave] || {})[self.etiquetaPorEsquema[item.id]];
+            let etiquetaDoItem = window._etiquetaEfetivaDoItem(item, (self.etiquetas[par.chave] || {})[self.etiquetaPorEsquema[item.id]]);
             // Fica no lado ESQUERDO do cabeçalho (.esq-card-tags-esq), extremo
             // oposto do botão de excluir (que fica à direita) — pedido
             // explícito do usuário, com referência visual anexada.
@@ -25167,10 +25188,9 @@ window.ESQUEMAS_RUNTIME = {
     _etiquetaDoEsquema: function(item) {
         if (!item) return null;
         let chave = this._localizarChavePorId(item.id);
-        if (!chave) return null;
-        let idEtiqueta = this.etiquetaPorEsquema[item.id];
-        if (!idEtiqueta) return null;
-        return (this.etiquetas[chave] || {})[idEtiqueta] || null;
+        let idEtiqueta = chave ? this.etiquetaPorEsquema[item.id] : null;
+        let etiquetaLocal = idEtiqueta ? ((this.etiquetas[chave] || {})[idEtiqueta] || null) : null;
+        return window._etiquetaEfetivaDoItem(item, etiquetaLocal);
     },
 
     // 3 estrelas=0, 2=1, 1=2, sem classificação=3 — usado pra ordenar o
@@ -28170,7 +28190,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
         let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
         let seloSuperado = superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '';
-        let etiquetaDoItem = (self.etiquetas[chave] || {})[self.etiquetaPorFicha[item.id]];
+        let etiquetaDoItem = window._etiquetaEfetivaDoItem(item, (self.etiquetas[chave] || {})[self.etiquetaPorFicha[item.id]]);
         // Mesmo padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME: lado ESQUERDO
         // do cabeçalho, junto do checkbox — extremo oposto de Ocultar/Excluir.
         let etiquetaHtml = etiquetaDoItem
@@ -29237,8 +29257,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!item) return null;
         let chave = this._chaveL2(item.materiaL1, item.divisaoL2);
         let idEtiqueta = this.etiquetaPorFicha[item.id];
-        if (!idEtiqueta) return null;
-        return (this.etiquetas[chave] || {})[idEtiqueta] || null;
+        let etiquetaLocal = idEtiqueta ? ((this.etiquetas[chave] || {})[idEtiqueta] || null) : null;
+        return window._etiquetaEfetivaDoItem(item, etiquetaLocal);
     },
 
     // dificil(Muito Importante)=0, medio(Importante)=1, facil(Regular)=2,
