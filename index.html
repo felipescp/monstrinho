@@ -19124,6 +19124,18 @@ function renderNav(){
     btnFin.style.borderColor = '#16a34a';
   }
   nav.appendChild(btnFin);
+
+  // Aviso fixo pra sessões "Refazer Erradas"/"Refazer Questões Salvas"
+  // (C._temporario, ver refazerErradas()/finalizarSimulado()) — pedido
+  // explícito do usuário, sempre visível abaixo do botão (não só na hora
+  // de clicar), pra deixar claro ANTES de finalizar que nada disso vira
+  // registro permanente.
+  if (C._temporario) {
+    var avisoTemp = document.createElement('div');
+    avisoTemp.style.cssText = 'margin-top:8px; font-size:10px; line-height:1.4; color:var(--text-muted); text-align:center;';
+    avisoTemp.textContent = 'A tela de resultados dessa bateria é temporária; nada será enviado aos Resultados.';
+    nav.appendChild(avisoTemp);
+  }
 }
 function limpar(){
   D.res={};D.fin={};D.caderno=[];D.cadernoAxiomas=[];QA=null;
@@ -20234,6 +20246,15 @@ function finalizarSimulado() {
 //
 // =========================================================
 
+                // s.cfg._temporario ("Refazer Erradas"/"Refazer Questões
+                // Salvas", ver refazerErradas() acima): pedido explícito do
+                // usuário — a tela de resultado é só pra consulta na hora,
+                // NADA disso pode virar registro permanente (Arquivo Morto/
+                // Dashboard/nuvem), senão refazer repetidamente a mesma
+                // sub-bateria polui as Estatísticas com pontos artificiais.
+                // Fecha a aba depois (fecharTab) e não sobra vestígio nenhum.
+                if (!s.cfg._temporario) {
+
                 // 1. Grava a "Fotografia" na Rota do Arquivo Morto
                 let arquivoMorto = window.lerArquivoMorto();
                 arquivoMorto[s.cfg.id] = { cfg: s.cfg, dados: s.dados, stats: s.stats, data: s.data, finalizadaEm: s.finalizadaEm };
@@ -20249,6 +20270,8 @@ function finalizarSimulado() {
                     window.parent.postMessage('SIMULADO_FINALIZADO', '*');
                 }
 
+                }
+
                 HIST = SIMS.filter(function(x){return x.stats;}).map(function(x){return mkH(x,SIMS.indexOf(x));});
                 HI = HIST.length-1;
 
@@ -20260,8 +20283,9 @@ function finalizarSimulado() {
                 // Backup automático na nuvem — dispara depois da tela de
                 // resultado já estar montada, sem aguardar (fire-and-forget):
                 // a pessoa vê os resultados na hora, o backup roda por baixo
-                // enquanto ela confere o desempenho.
-                if (typeof window.salvarNuvemAoConcluirBateria === 'function') window.salvarNuvemAoConcluirBateria();
+                // enquanto ela confere o desempenho. Pulado pra sessão
+                // temporária pelo mesmo motivo do bloco acima.
+                if (!s.cfg._temporario && typeof window.salvarNuvemAoConcluirBateria === 'function') window.salvarNuvemAoConcluirBateria();
             }}
         ]
     });
@@ -20508,6 +20532,20 @@ function refazerErradas(idx){
   var nomeNovo=h.nome+' (Erros)';
   var novoC=JSON.parse(JSON.stringify(h.cfg));
   novoC.nome=nomeNovo;
+  // ID NOVO, não o clonado de h.cfg.id — finalizarSimulado() grava em
+  // arquivoMorto[cfg.id] direto (linha ~20239); sem isto, encerrar esta
+  // sub-bateria de revisão SOBRESCREVIA o resultado original já salvo da
+  // bateria de origem (mesmo id = mesma chave no Arquivo Morto), apagando
+  // silenciosamente a % e a data reais em favor da amostra pequena de
+  // erros. Confirmado bug real, não hipotético.
+  novoC.id='sim_'+Date.now()+'_refazer';
+  // _temporario: pedido explícito do usuário — a tela de resultado desta
+  // sub-bateria é só pra consulta na hora; NADA pode ir pro Arquivo Morto/
+  // Dashboard/nuvem (ver o "if (!s.cfg._temporario)" em finalizarSimulado,
+  // que pula os 3 efeitos colaterais permanentes só pra sessões marcadas
+  // assim). Objetivo: o usuário pode refazer quantas vezes quiser sem
+  // poluir as Estatísticas — fechar a aba não deixa vestígio nenhum.
+  novoC._temporario=true;
   var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
   SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
   var novoSI=SIMS.length-1;
@@ -20517,9 +20555,11 @@ function refazerErradas(idx){
 
 // "💾 Refazer Questões Salvas" (tela de resultado) — mesmo mecanismo de
 // refazerErradas() acima (abre uma aba de simulado avulsa nova, SIMS.push,
-// nunca sobrescreve nem altera o resultado já finalizado em HIST[idx]),
-// só que junta as questões marcadas com "+ Caderno" (h.dados.caderno,
-// mesmo critério de exportarCadernoQuestoesMd/Html) em vez das erradas.
+// nunca sobrescreve nem altera o resultado já finalizado em HIST[idx], E
+// com um cfg.id NOVO — não herdado de h.cfg — pra finalizar esta aba
+// também não sobrescrever o Arquivo Morto da bateria original), só que
+// junta as questões marcadas com "+ Caderno" (h.dados.caderno, mesmo
+// critério de exportarCadernoQuestoesMd/Html) em vez das erradas.
 function refazerQuestoesSalvas(idx){
   var h=HIST[idx];if(!h)return;
   var questoes=[];
@@ -20542,6 +20582,8 @@ function refazerQuestoesSalvas(idx){
   var nomeNovo=h.nome+' (Salvas)';
   var novoC=JSON.parse(JSON.stringify(h.cfg));
   novoC.nome=nomeNovo;
+  novoC.id='sim_'+Date.now()+'_refazer'; // ver comentário em refazerErradas() acima
+  novoC._temporario=true; // idem
   var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
   SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
   var novoSI=SIMS.length-1;
