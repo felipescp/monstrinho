@@ -8976,6 +8976,20 @@ document.addEventListener('click', function(e) {
         menuRel.style.display = 'none';
     }
 });
+
+// Fecha qualquer menu de exportação em <details> (.esq-export-menu — Exportar
+// Tudo/Disciplina/Tópico de Esquemas/Jurisprudência/Glossário — e .rba-menu —
+// Exportar Questões Salvas/Prova Completa da tela de Resultados) ao clicar
+// fora dele. Nativamente um <details> só fecha se o próprio <summary> for
+// clicado de novo (toggle); sem isto, clicar em qualquer outro lugar da tela
+// deixava o menu aberto pra sempre — só o "name" compartilhado (grupo
+// mutuamente exclusivo, já usado nesses <details>) fechava um menu quando
+// OUTRO do mesmo grupo era aberto, não quando se clicava fora de todos.
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('details.esq-export-menu[open], details.rba-menu[open]').forEach(function(det) {
+        if (!det.contains(e.target)) det.open = false;
+    });
+});
 </script>
 </section>
 
@@ -19254,13 +19268,13 @@ function renderResultado(idx){
       '<button class="rba" data-a="refazer-bateria" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Bateria (sobrescreve este resultado)">🔄 Refazer Bateria</button>'+
       '<button class="rba" data-a="refazer" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
       (h.dados.caderno && h.dados.caderno.length ? '<button class="rba" data-a="refazer-salvas" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Questões Salvas">💾 Refazer Questões Salvas</button>' : '')+
-      '<details class="rba-menu"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Questões Salvas">🧠 Exportar Questões Salvas</summary>'+
+      '<details class="rba-menu" name="rba-export-grupo"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Questões Salvas">🧠 Exportar Questões Salvas</summary>'+
         '<div class="rba-opcoes">'+
           '<button onclick="window.exportarCadernoQuestoesMd()">Exportar .md</button>'+
           '<button onclick="window.exportarCadernoQuestoesHtml()">Exportar .html</button>'+
         '</div>'+
       '</details>'+
-      '<details class="rba-menu"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa">⬇ Exportar Prova Completa</summary>'+
+      '<details class="rba-menu" name="rba-export-grupo"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Prova Completa">⬇ Exportar Prova Completa</summary>'+
         '<div class="rba-opcoes">'+
           '<button onclick="window.exportarProvaCompletaMd()">Exportar .md</button>'+
           '<button onclick="window.exportarProvaCompletaHtml()">Exportar .html</button>'+
