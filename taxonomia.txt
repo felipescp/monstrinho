@@ -577,43 +577,50 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
-          "id": "civil_legislacao_especial",
-          "nivel_2": "Legislação Civil Especial",
+          "id": "civil_esp_lgpd",
+          "nivel_2": "Lei Geral de Proteção de Dados - LGPD (Lei nº 13.709/2018)",
+          "topicos": []
+        },
+        {
+          "id": "civil_esp_marco_civil_internet",
+          "nivel_2": "Marco Civil da Internet (Lei nº 12.965/2014)",
+          "topicos": []
+        },
+        {
+          "id": "civil_esp_estatuto_idoso",
+          "nivel_2": "Estatuto da Pessoa Idosa (Lei nº 10.741/2003)",
+          "topicos": []
+        },
+        {
+          "id": "civil_esp_estatuto_pcd",
+          "nivel_2": "Estatuto da Pessoa com Deficiência (Lei nº 13.146/2015)",
+          "topicos": []
+        },
+        {
+          "id": "civil_esp_locacao",
+          "nivel_2": "Locação de Imóveis Urbanos (Lei nº 8.245/1991)",
+          "topicos": []
+        },
+        {
+          "id": "civil_esp_imobiliario",
+          "nivel_2": "Legislação Imobiliária e Financeira",
           "topicos": [
             {
-              "id": "civil_esp_imobiliario",
-              "nivel_3": "Legislação Imobiliária e Financeira",
+              "id": "civil_esp_imobiliario_geral",
+              "nivel_3": "Alienação Fiduciária, Condomínios e Incorporações, Parcelamento do Solo",
               "aliases": [
                 "Alienação Fiduciária de Bem Móvel (Decreto-Lei nº 911/1969)",
                 "Condomínio e Incorporações (Lei nº 4.591/1964)",
                 "Lei nº 10.931/2004",
                 "Parcelamento do Solo Urbano (Lei nº 6.766/1979)"
               ]
-            },
-            {
-              "id": "civil_esp_locacao",
-              "nivel_3": "Locação de Imóveis Urbanos",
-              "aliases": [
-                "Lei nº 8.245/1991"
-              ]
-            },
-            {
-              "id": "civil_esp_estatutos",
-              "nivel_3": "Estatutos e Proteção de Vulneráveis",
-              "aliases": [
-                "Estatuto da Pessoa Idosa (Lei nº 10.741/2003)",
-                "Estatuto da Pessoa com Deficiência (Lei nº 13.146/2015)"
-              ]
-            },
-            {
-              "id": "civil_esp_tecnologia",
-              "nivel_3": "Direitos Digitais e Novas Tecnologias",
-              "aliases": [
-                "Lei Geral de Proteção de Dados - LGPD (Lei nº 13.709/2018)",
-                "Marco Civil da Internet (Lei nº 12.965/2014)",
-                "Resolução CNJ nº 452/2022"
-              ]
-            },
+            }
+          ]
+        },
+        {
+          "id": "civil_legislacao_especial",
+          "nivel_2": "Legislação Civil Especial",
+          "topicos": [
             {
               "id": "civil_esp_rjet",
               "nivel_3": "Regime Jurídico Emergencial e Transitório",
@@ -1987,36 +1994,52 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
+          "id": "penal_esp_drogas",
+          "nivel_2": "Lei de Drogas (Lei 11.343/06)",
+          "topicos": []
+        },
+        {
+          "id": "penal_esp_desarmamento",
+          "nivel_2": "Estatuto do Desarmamento (Lei nº 10.826/2003)",
+          "topicos": []
+        },
+        {
+          "id": "penal_esp_hediondos",
+          "nivel_2": "Lei de Crimes Hediondos (Lei nº 8.072/1990)",
+          "topicos": []
+        },
+        {
+          "id": "penal_esp_maria_da_penha",
+          "nivel_2": "Lei Maria da Penha (Lei nº 11.340/2006)",
+          "topicos": []
+        },
+        {
+          "id": "penal_esp_lavagem",
+          "nivel_2": "Lei de Lavagem de Capitais (Lei nº 9.613/98)",
+          "topicos": []
+        },
+        {
+          "id": "penal_esp_org",
+          "nivel_2": "Organização Criminosa (Lei nº 12.850/13)",
+          "topicos": []
+        },
+        {
           "id": "penal_especial",
           "nivel_2": "Legislação Penal Especial",
           "topicos": [
             {
-              "id": "penal_esp_drogas",
-              "nivel_3": "Lei de Drogas (Lei 11.343/06)",
-              "aliases": [
-                "Tráfico",
-                "Associação para o Tráfico"
-              ]
-            },
-            {
-              "id": "penal_esp_armas",
-              "nivel_3": "Desarmamento, Crimes Hediondos e Tortura",
-              "aliases": [
-                "Estatuto do Desarmamento",
-                "Lei 8.072/90",
-                "Lei nº 9.455/1997 (Tortura)"
-              ]
+              "id": "penal_esp_tortura",
+              "nivel_3": "Tortura (Lei nº 9.455/1997)",
+              "aliases": []
             },
             {
               "id": "penal_esp_vulneraveis",
-              "nivel_3": "Crimes contra Grupos Vulneráveis",
+              "nivel_3": "Crimes contra Grupos Vulneráveis (Idoso, Racismo, ECA, Henry Borel)",
               "aliases": [
-                "Lei 11.340/06",
                 "Preconceito e Discriminação (Lei 7.716/89)",
                 "Homofobia e Transfobia",
                 "Estatuto do Idoso (Crimes)",
                 "Lei Henry Borel (Lei 14.344/22)",
-                "Maria da Penha",
                 "Idoso",
                 "Racismo",
                 "ECA",
@@ -2034,15 +2057,6 @@ const TAXONOMIA_DADOS = {
               ]
             },
             {
-              "id": "penal_esp_org",
-              "nivel_3": "Organização Criminosa (Lei nº 12.850/13)",
-              "aliases": [
-                "Lei 12.850/13",
-                "Delação Premiada",
-                "Ocultação de Bens"
-              ]
-            },
-            {
               "id": "penal_esp_transito",
               "nivel_3": "Trânsito, Ambiental e Crimes Econômicos/Tributários",
               "aliases": [
@@ -2057,15 +2071,6 @@ const TAXONOMIA_DADOS = {
                 "Lei nº 13.869/2019",
                 "Condutas Vedadas",
                 "Responsabilidade Civil, Penal e Administrativa"
-              ]
-            },
-            {
-              "id": "top_1786562541539",
-              "nivel_3": "Lei de Lavagem de Capitais (Lei nº 9.613/98)",
-              "aliases": [
-                "Lei nº 9.613/1998",
-                "Ocultação e Dissimulação",
-                "COAF"
               ]
             },
             {
