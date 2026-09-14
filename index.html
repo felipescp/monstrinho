@@ -12424,6 +12424,11 @@ window.fecharMateriaisModal = function() {
     #section-glossario .esq-estudo-texto, #modal-glossario-baralho .esq-estudo-texto { font-size:12.5px; line-height:1.55; color:var(--text-main); }
 
     #section-glossario .fc-card-revisao-acoes, #modal-glossario-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    /* Botões de classificação (Estrelas) das abas — agora um filho DIRETO
+       de .fc-aba-revisao (fixo, fora do corpo rolável, ver
+       _renderCorpoAba), precisa do próprio respiro (a regra genérica acima
+       não tem padding nenhum, só fazia sentido dentro do corpo). */
+    #section-glossario .fc-aba-revisao > .fc-card-revisao-acoes { padding:10px 20px 0; flex-shrink:0; }
     #section-glossario .fc-rev-btn, #modal-glossario-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
     #section-glossario .fc-rev-estrela, #modal-glossario-baralho .fc-rev-estrela { color:#92400e; border-color:#fde68a; }
     #section-glossario .fc-rev-estrela:hover, #modal-glossario-baralho .fc-rev-estrela:hover { background:#fef3c7; }
@@ -12577,6 +12582,7 @@ window.fecharMateriaisModal = function() {
             <div class="fc-pills" id="glos-pills-1"></div>
             <div id="glos-corpo-1"></div>
         </div>
+        <div class="fc-card-revisao-acoes" id="glos-acoes-1"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('1', -1)">‹</button>
             <span id="glos-posicao-1">0 / 0</span>
@@ -12589,6 +12595,7 @@ window.fecharMateriaisModal = function() {
             <div class="fc-pills" id="glos-pills-2"></div>
             <div id="glos-corpo-2"></div>
         </div>
+        <div class="fc-card-revisao-acoes" id="glos-acoes-2"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('2', -1)">‹</button>
             <span id="glos-posicao-2">0 / 0</span>
@@ -12601,6 +12608,7 @@ window.fecharMateriaisModal = function() {
             <div class="fc-pills" id="glos-pills-3"></div>
             <div id="glos-corpo-3"></div>
         </div>
+        <div class="fc-card-revisao-acoes" id="glos-acoes-3"></div>
         <div class="fc-popup-nav">
             <button class="fc-nav-btn" onclick="window.GLOSSARIO_RUNTIME.navegarAba('3', -1)">‹</button>
             <span id="glos-posicao-3">0 / 0</span>
@@ -13686,6 +13694,8 @@ window.GLOSSARIO_RUNTIME = {
 
         if (s.ordemChaves.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhuma expressão classificada aqui ainda.</div>';
+            let acoesElVazio = document.getElementById('glos-acoes-' + aba);
+            if (acoesElVazio) acoesElVazio.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -13704,8 +13714,16 @@ window.GLOSSARIO_RUNTIME = {
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
             this._htmlCartaoTermoEstudo(card) +
-            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
-            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>';
+
+        // Botões de classificação (Estrelas) FIXOS embaixo, fora de
+        // .fc-aba-revisao-scroll — mesmo fix de ESQUEMAS_RUNTIME/
+        // JURISPRUDENCIA_RUNTIME._renderCorpoAba (pedido explícito do
+        // usuário): antes ficavam dentro do corpo rolável, então
+        // "flutuavam" em vez de ficarem sempre à mão pra classificar em
+        // sequência sem precisar rolar.
+        let acoesEl = document.getElementById('glos-acoes-' + aba);
+        if (acoesEl) acoesEl.innerHTML = botoes;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
@@ -13924,9 +13942,24 @@ window.GLOSSARIO_RUNTIME = {
                 '</div>';
         }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma expressão encontrada.</div>';
 
+        // Preserva a posição de rolagem entre renders (mesmo fix de
+        // ESQUEMAS_RUNTIME._renderListaBaralho) — ver comentário lá pro
+        // raciocínio completo (a div de itens é recriada do zero a cada
+        // innerHTML, então herdaria scrollTop:0 sem isto, empurrando o item
+        // clicado pro rodapé da lista visível a cada clique).
+        let listaItensElAnterior = listaEl.querySelector('.esq-baralho-lista-itens');
+        let scrollAnterior = listaItensElAnterior ? listaItensElAnterior.scrollTop : 0;
+
         listaEl.innerHTML = htmlBusca + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
+        let listaItensEl = listaEl.querySelector('.esq-baralho-lista-itens');
+        if (listaItensEl) listaItensEl.scrollTop = scrollAnterior;
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
-        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+        if (ativoEl && listaItensEl) {
+            let rectAtivo = ativoEl.getBoundingClientRect();
+            let rectContainer = listaItensEl.getBoundingClientRect();
+            let foraDeVista = rectAtivo.top < rectContainer.top || rectAtivo.bottom > rectContainer.bottom;
+            if (foraDeVista) ativoEl.scrollIntoView({ block: 'nearest' });
+        }
 
         if (buscaTinhaFoco) {
             let novoInputBusca = document.getElementById('glos-baralho-busca');
@@ -19006,38 +19039,6 @@ function renderNav(){
                 <div>${itensBaralhos}</div>`;
                     }
 
-                    // "Materiais associados" — seção à parte de "Baralhos
-                    // associados" (é outro tipo de conteúdo, PDFs em vez de
-                    // baralhos de estudo). Agrupado por TIPO (com Resumo e
-                    // Revisão unificados num só rótulo "Resumo/Revisão"),
-                    // não item a item — mesmo espírito das linhas de
-                    // Esquemas/Jurisprudência acima (contagem, não lista).
-                    if (window.MATERIAIS_RUNTIME) {
-                        let materiaisAssoc = window.MATERIAIS_RUNTIME.materiaisDoL2(locBaralhos.materia, locBaralhos.divisao);
-                        if (materiaisAssoc.length > 0) {
-                            let GRUPOS_MATERIAL = [
-                                { chaves: ['resumo', 'revisao'], emoji: '📄', rotulo: 'Resumo/Revisão' },
-                                { chaves: ['jurisprudencia'], emoji: '⚖️', rotulo: 'Jurisprudência' },
-                                { chaves: ['esquema'], emoji: '📗', rotulo: 'Esquema' },
-                                { chaves: ['infografico'], emoji: '🖼️', rotulo: 'Infográfico' },
-                                { chaves: ['slides'], emoji: '🖥️', rotulo: 'Slides' }
-                            ];
-                            let itensMateriais = '';
-                            GRUPOS_MATERIAL.forEach(function(grupo) {
-                                let qtd = materiaisAssoc.filter(function(m) { return grupo.chaves.indexOf(m.tipo) !== -1; }).length;
-                                if (qtd > 0) {
-                                    itensMateriais += `<div onclick="window.abrirMateriaisModal(); window.MATERIAIS_RUNTIME.selecionarDivisao('${mEsc}', '${dEsc}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;">
-                                <span>${grupo.emoji} ${grupo.rotulo}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${qtd}</span>
-                            </div>`;
-                                }
-                            });
-                            if (itensMateriais) {
-                                htmlBaralhos += `
-                <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">Materiais associados</div>
-                <div>${itensMateriais}</div>`;
-                            }
-                        }
-                    }
                 }
             }
 
@@ -23512,6 +23513,11 @@ window.triggerFileUpload = function(callback) {
     body.dark .esq-estudo-texto [style*="background"] { color:#1e293b !important; }
 
     #esquemas-modal .fc-card-revisao-acoes, #modal-esquemas-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    /* Botões de classificação (Estrelas) das abas 1/2/3 Estrelas — agora um
+       filho DIRETO de .fc-aba-revisao (fixo, fora do corpo rolável, ver
+       _renderCorpoAba), precisa do próprio respiro (a regra genérica acima
+       não tem padding nenhum, só fazia sentido dentro do corpo). */
+    #esquemas-modal .fc-aba-revisao > .fc-card-revisao-acoes { padding:10px 20px 0; flex-shrink:0; }
     #esquemas-modal .fc-rev-btn, #modal-esquemas-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
     #esquemas-modal .fc-rev-estrela, #modal-esquemas-baralho .fc-rev-estrela { color:#92400e; border-color:#fde68a; }
     #esquemas-modal .fc-rev-estrela:hover, #modal-esquemas-baralho .fc-rev-estrela:hover { background:#fef3c7; }
@@ -23565,6 +23571,7 @@ window.triggerFileUpload = function(callback) {
                 <div class="fc-pills" id="esq-pills-1"></div>
                 <div id="esq-corpo-1"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="esq-acoes-1"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('1', -1)">‹</button>
                 <span id="esq-posicao-1">0 / 0</span>
@@ -23577,6 +23584,7 @@ window.triggerFileUpload = function(callback) {
                 <div class="fc-pills" id="esq-pills-2"></div>
                 <div id="esq-corpo-2"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="esq-acoes-2"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('2', -1)">‹</button>
                 <span id="esq-posicao-2">0 / 0</span>
@@ -23589,6 +23597,7 @@ window.triggerFileUpload = function(callback) {
                 <div class="fc-pills" id="esq-pills-3"></div>
                 <div id="esq-corpo-3"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="esq-acoes-3"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.ESQUEMAS_RUNTIME.navegarAba('3', -1)">‹</button>
                 <span id="esq-posicao-3">0 / 0</span>
@@ -25177,6 +25186,8 @@ window.ESQUEMAS_RUNTIME = {
 
         if (s.ordemChaves.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhum esquema classificado aqui ainda.</div>';
+            let acoesElVazio = document.getElementById('esq-acoes-' + aba);
+            if (acoesElVazio) acoesElVazio.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -25198,8 +25209,15 @@ window.ESQUEMAS_RUNTIME = {
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
             this._htmlCartaoEsquemaEstudo(card) +
-            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>' +
-            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>';
+
+        // Botões de classificação (Estrelas) FIXOS embaixo, fora de
+        // .fc-aba-revisao-scroll — pedido explícito: antes ficavam dentro
+        // do corpo rolável, junto com o card, então "flutuavam" (saíam de
+        // vista conforme o card era comprido) em vez de ficarem sempre à
+        // mão pra classificar em sequência sem precisar rolar.
+        let acoesEl = document.getElementById('esq-acoes-' + aba);
+        if (acoesEl) acoesEl.innerHTML = botoes;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
@@ -26925,6 +26943,12 @@ window.carregarEsquemasOficiais = async function() {
 
     #jurisprudencia-modal .fc-card-revisao-status, #modal-jurisprudencia-baralho .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
     #jurisprudencia-modal .fc-card-revisao-acoes, #modal-jurisprudencia-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    /* Botões de classificação (Muito Importante/Importante/Regular) das
+       abas — agora um filho DIRETO de .fc-aba-revisao (fixo, fora do corpo
+       rolável, ver _renderCorpoAba), precisa do próprio respiro (a regra
+       genérica acima não tem padding nenhum, só fazia sentido dentro do
+       corpo). */
+    #jurisprudencia-modal .fc-aba-revisao > .fc-card-revisao-acoes { padding:10px 20px 0; flex-shrink:0; }
     #jurisprudencia-modal .fc-rev-btn, #modal-jurisprudencia-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
     #jurisprudencia-modal .fc-rev-dificil, #modal-jurisprudencia-baralho .fc-rev-dificil { color:#991b1b; border-color:#fecaca; }
     #jurisprudencia-modal .fc-rev-dificil:hover, #modal-jurisprudencia-baralho .fc-rev-dificil:hover { background:#fee2e2; }
@@ -26997,6 +27021,7 @@ window.carregarEsquemasOficiais = async function() {
                 <div class="fc-pills" id="jur-pills-dificil"></div>
                 <div id="jur-corpo-dificil"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="jur-acoes-dificil"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('dificil', -1)">‹</button>
                 <span id="jur-posicao-dificil">0 / 0</span>
@@ -27009,6 +27034,7 @@ window.carregarEsquemasOficiais = async function() {
                 <div class="fc-pills" id="jur-pills-medio"></div>
                 <div id="jur-corpo-medio"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="jur-acoes-medio"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('medio', -1)">‹</button>
                 <span id="jur-posicao-medio">0 / 0</span>
@@ -27021,6 +27047,7 @@ window.carregarEsquemasOficiais = async function() {
                 <div class="fc-pills" id="jur-pills-facil"></div>
                 <div id="jur-corpo-facil"></div>
             </div>
+            <div class="fc-card-revisao-acoes" id="jur-acoes-facil"></div>
             <div class="fc-popup-nav">
                 <button class="fc-nav-btn" onclick="window.JURISPRUDENCIA_RUNTIME.navegarAba('facil', -1)">‹</button>
                 <span id="jur-posicao-facil">0 / 0</span>
@@ -29632,9 +29659,28 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '</div>';
         }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma ficha encontrada.</div>';
 
+        // Preserva a posição de rolagem entre renders (mesmo fix de
+        // ESQUEMAS_RUNTIME._renderListaBaralho) — a div .jur-baralho-lista-itens
+        // é recriada do zero a cada innerHTML, então herdaria scrollTop:0 se
+        // não fosse restaurado manualmente — era isso que empurrava o item
+        // clicado pro rodapé da lista visível a cada clique, mesmo já estando
+        // visível antes. Só chama scrollIntoView se o item ativo realmente
+        // ficar fora da área visível após restaurar (navegação ‹›/abertura
+        // inicial num índice fora da vista) — clique num item já visível não
+        // deve mexer a barra de rolagem.
+        let listaItensElAnterior = listaEl.querySelector('.jur-baralho-lista-itens');
+        let scrollAnterior = listaItensElAnterior ? listaItensElAnterior.scrollTop : 0;
+
         listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>';
+        let listaItensEl = listaEl.querySelector('.jur-baralho-lista-itens');
+        if (listaItensEl) listaItensEl.scrollTop = scrollAnterior;
         let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
-        if (ativoEl) ativoEl.scrollIntoView({ block: 'nearest' });
+        if (ativoEl && listaItensEl) {
+            let rectAtivo = ativoEl.getBoundingClientRect();
+            let rectContainer = listaItensEl.getBoundingClientRect();
+            let foraDeVista = rectAtivo.top < rectContainer.top || rectAtivo.bottom > rectContainer.bottom;
+            if (foraDeVista) ativoEl.scrollIntoView({ block: 'nearest' });
+        }
 
         if (buscaTinhaFoco) {
             let novoInputBusca = document.getElementById('jur-baralho-busca');
@@ -29800,6 +29846,8 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         if (s.ordemChaves.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha classificada aqui ainda.</div>';
+            let acoesElVazio = document.getElementById('jur-acoes-' + aba);
+            if (acoesElVazio) acoesElVazio.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
@@ -29817,8 +29865,17 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
-            this._htmlCartaoFichaEstudo(card) +
-            '<div class="fc-card-revisao-acoes">' + botoes + '</div>';
+            this._htmlCartaoFichaEstudo(card);
+
+        // Botões de classificação (Muito Importante/Importante/Regular)
+        // FIXOS embaixo, fora de .fc-aba-revisao-scroll — pedido explícito
+        // do usuário: antes ficavam dentro do corpo rolável, junto com o
+        // card, então "flutuavam" (saíam de vista conforme o card era
+        // comprido) em vez de ficarem sempre à mão pra classificar em
+        // sequência sem precisar rolar — mesmo fix aplicado em
+        // ESQUEMAS_RUNTIME._renderCorpoAba.
+        let acoesEl = document.getElementById('jur-acoes-' + aba);
+        if (acoesEl) acoesEl.innerHTML = botoes;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
