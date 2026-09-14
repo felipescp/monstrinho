@@ -18948,7 +18948,27 @@ function renderNav(){
             // clicável, abrindo o baralho daquele tipo específico.
             let htmlBaralhos = '';
             if (window.FLASHCARDS_RUNTIME && C.id_taxonomia) {
-                let locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
+                // Prioriza o tópico da QUESTÃO ATUAL (q.topico, granularidade
+                // L1 > L2 > L3) sobre a classificação FIXA da bateria inteira
+                // (C.id_taxonomia) — depois da reorganização de taxonomia que
+                // promoveu várias leis de L3 pra L2 próprio (ex.: "Organização
+                // Criminosa"), uma bateria "Legislação Penal Especial" mista
+                // continua com id_taxonomia apontando pro L2 residual (correto
+                // pra ela, que reúne várias leis diferentes), mas cada questão
+                // dentro dela já sabe sua própria lei específica — sem isto,
+                // "Baralhos associados" sempre mostrava o residual inteiro,
+                // nunca a lei certa da questão sendo respondida no momento.
+                let locBaralhos = null;
+                let qAtualBaralhos = (typeof getQ === 'function' && typeof QA !== 'undefined') ? getQ(QA) : null;
+                if (qAtualBaralhos && qAtualBaralhos.topico && qAtualBaralhos.topico.indexOf(' > ') !== -1) {
+                    let partesTopicoQ = qAtualBaralhos.topico.split(' > ');
+                    if (partesTopicoQ.length >= 2 && partesTopicoQ[0].trim() && partesTopicoQ[1].trim()) {
+                        locBaralhos = { materia: partesTopicoQ[0].trim(), divisao: partesTopicoQ[1].trim() };
+                    }
+                }
+                if (!locBaralhos) {
+                    locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
+                }
                 if (locBaralhos) {
                     let mEsc = locBaralhos.materia.replace(/'/g, "\\'");
                     let dEsc = locBaralhos.divisao.replace(/'/g, "\\'");

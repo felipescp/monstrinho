@@ -711,6 +711,7 @@ async function loadFactualDatabase() {
 
         window.evoMudarPeriodicidade = function(valor) {
             window.__evoPeriodicidade = valor;
+            try { localStorage.setItem('tjpe_v1__evo_periodicidade', valor); } catch (e) {}
             window.atualizarEvolucaoDesempenho();
         };
 
@@ -987,6 +988,21 @@ async function loadFactualDatabase() {
             let inputDe = document.getElementById('evo-periodo-de');
             let inputAte = document.getElementById('evo-periodo-ate');
             if (!inputDe || !inputAte) return;
+
+            // Restaura a Periodicidade (Diário/Semanal/Quinzenal/Mensal) da
+            // última escolha do usuário — ao contrário de Período e
+            // Periodicidade Fixa (já persistidos), essa só vivia em
+            // window.__evoPeriodicidade, que reinicia toda vez que o script
+            // roda de novo (reabrir o modal), sempre voltando pro "semanal"
+            // padrão do HTML. Sincroniza o rádio marcado também — só setar
+            // a variável não move a bolinha na tela.
+            let periodicidadeSalva = null;
+            try { periodicidadeSalva = localStorage.getItem('tjpe_v1__evo_periodicidade'); } catch (e) {}
+            if (periodicidadeSalva) {
+                window.__evoPeriodicidade = periodicidadeSalva;
+                let radioPeriodicidade = document.querySelector('input[name="evo-periodicidade"][value="' + periodicidadeSalva + '"]');
+                if (radioPeriodicidade) radioPeriodicidade.checked = true;
+            }
 
             let checkFixa = document.getElementById('evo-periodicidade-fixa-check');
             let selQtd = document.getElementById('evo-periodicidade-fixa-qtd');
