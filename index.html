@@ -13012,8 +13012,12 @@ window.GLOSSARIO_RUNTIME = {
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
-                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
-                let et = etiquetasDoTopico[self.etiquetaPorTermo[par.item.id]];
+                let etiquetaLocal = (self.etiquetas[par.chave] || {})[self.etiquetaPorTermo[par.item.id]];
+                // Etiqueta EFETIVA (local ou pública embutida) — senão um
+                // termo só com etiqueta pública (sem override local) nunca
+                // batia com nenhuma cor aqui, mesmo já mostrando o pill
+                // certo no card.
+                let et = window._etiquetaEfetivaDoItem(par.item, etiquetaLocal);
                 return et && et.cor === self._filtroCor;
             });
         }
@@ -13285,14 +13289,26 @@ window.GLOSSARIO_RUNTIME = {
         if (!this._mostrarFiltroCor) return '';
         let self = this;
         let etiquetasTopico = this._etiquetasDoTopicoAtual();
-        if (Object.keys(etiquetasTopico).length === 0) {
-            return '<span class="esq-toggle-ocultos">Nenhuma etiqueta neste tópico ainda.</span>';
-        }
         let coresEmUso = [];
         Object.keys(etiquetasTopico).forEach(function(id) {
             let cor = etiquetasTopico[id].cor;
             if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
         });
+        // Cores de etiquetas PÚBLICAS embutidas (item.etiqueta) nos termos
+        // deste tópico, mesmo sem entrada correspondente no registro local
+        // (outro usuário aplicou, ou o termo mudou de tópico numa
+        // reorganização de taxonomia depois da etiqueta ter sido criada) —
+        // sem isso o swatch nem aparecia pra filtrar por essas cores, mesmo
+        // o pill já aparecendo certo no card.
+        let chaveAtual = this._chaveEtiquetas();
+        (this.glossario[chaveAtual] || []).forEach(function(item) {
+            if (item && item.etiqueta && item.etiqueta.cor && coresEmUso.indexOf(item.etiqueta.cor) === -1) {
+                coresEmUso.push(item.etiqueta.cor);
+            }
+        });
+        if (coresEmUso.length === 0) {
+            return '<span class="esq-toggle-ocultos">Nenhuma etiqueta neste tópico ainda.</span>';
+        }
         let swatches = coresEmUso.map(function(cor) {
             return '<span class="esq-etq-swatch esq-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.GLOSSARIO_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
         }).join('');
@@ -24337,16 +24353,19 @@ window.ESQUEMAS_RUNTIME = {
         }
         if (this._filtroCor) {
             lista = lista.filter(function(par) {
+                let etiquetaLocal = (self.etiquetas[par.chave] || {})[self.etiquetaPorEsquema[par.item.id]];
+                let et = window._etiquetaEfetivaDoItem(par.item, etiquetaLocal);
                 // Valor-sentinela pra achar rápido o que ainda falta
                 // classificar — pedido explícito: selecionar só os "Sem
                 // Etiqueta" pra aplicar em massa, sem precisar clicar item a
                 // item. Não é uma cor de verdade, então nunca bate com
-                // et.cor abaixo.
+                // et.cor abaixo. Considera a etiqueta EFETIVA (local ou
+                // pública embutida) — senão um item só com etiqueta pública
+                // (sem override local) aparecia como "sem etiqueta" aqui,
+                // mesmo já mostrando o pill certo no card.
                 if (self._filtroCor === self._SEM_ETIQUETA_SENTINELA) {
-                    return !self.etiquetaPorEsquema[par.item.id];
+                    return !et;
                 }
-                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
-                let et = etiquetasDoTopico[self.etiquetaPorEsquema[par.item.id]];
                 return et && et.cor === self._filtroCor;
             });
         }
@@ -24638,14 +24657,26 @@ window.ESQUEMAS_RUNTIME = {
         // ainda falta classificar, em vez de item por item.
         let htmlSemEtiqueta = '<span class="esq-etq-filtro-sem' + (self._filtroCor === self._SEM_ETIQUETA_SENTINELA ? ' selecionada' : '') + '" title="Filtrar só os sem etiqueta" onclick="window.ESQUEMAS_RUNTIME.filtrarPorCor(\'' + self._SEM_ETIQUETA_SENTINELA + '\')">Sem Etiqueta</span>';
         let etiquetasTopico = this._etiquetasDoTopicoAtual();
-        if (Object.keys(etiquetasTopico).length === 0) {
-            return '<span class="esq-toggle-ocultos">Cor:</span>' + htmlSemEtiqueta;
-        }
         let coresEmUso = [];
         Object.keys(etiquetasTopico).forEach(function(id) {
             let cor = etiquetasTopico[id].cor;
             if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
         });
+        // Cores de etiquetas PÚBLICAS embutidas (item.etiqueta) nos itens
+        // deste tópico, mesmo sem entrada correspondente no registro local
+        // (outro usuário aplicou, ou o item mudou de tópico numa
+        // reorganização de taxonomia depois da etiqueta ter sido criada) —
+        // sem isso o swatch nem aparecia pra filtrar por essas cores, mesmo
+        // o pill já aparecendo certo no card (ver _etiquetaDoEsquema).
+        let chaveAtual = this._chaveEtiquetas();
+        (this.esquemas[chaveAtual] || []).forEach(function(item) {
+            if (item && item.etiqueta && item.etiqueta.cor && coresEmUso.indexOf(item.etiqueta.cor) === -1) {
+                coresEmUso.push(item.etiqueta.cor);
+            }
+        });
+        if (coresEmUso.length === 0) {
+            return '<span class="esq-toggle-ocultos">Cor:</span>' + htmlSemEtiqueta;
+        }
         let swatches = coresEmUso.map(function(cor) {
             return '<span class="esq-etq-swatch esq-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.ESQUEMAS_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
         }).join('');
@@ -27846,16 +27877,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         // como desfazer (não tem o botão ali pra limpar).
         if (this._filtroCor && !this._modoSistematica) {
             lista = lista.filter(function(par) {
+                let etiquetaLocal = (self.etiquetas[par.chave] || {})[self.etiquetaPorFicha[par.item.id]];
+                let et = window._etiquetaEfetivaDoItem(par.item, etiquetaLocal);
                 // Valor-sentinela pra achar rápido o que ainda falta
                 // classificar — pedido explícito: selecionar só os "Sem
                 // Etiqueta" pra aplicar em massa, sem precisar clicar item a
                 // item. Não é uma cor de verdade, então nunca bate com
-                // et.cor abaixo.
+                // et.cor abaixo. Considera a etiqueta EFETIVA (local ou
+                // pública embutida) — senão um item só com etiqueta pública
+                // (sem override local) aparecia como "sem etiqueta" aqui,
+                // mesmo já mostrando o pill certo no card.
                 if (self._filtroCor === self._SEM_ETIQUETA_SENTINELA) {
-                    return !self.etiquetaPorFicha[par.item.id];
+                    return !et;
                 }
-                let etiquetasDoTopico = self.etiquetas[par.chave] || {};
-                let et = etiquetasDoTopico[self.etiquetaPorFicha[par.item.id]];
                 return et && et.cor === self._filtroCor;
             });
         }
@@ -28114,14 +28148,26 @@ window.JURISPRUDENCIA_RUNTIME = {
         // ainda falta classificar, em vez de item por item.
         let htmlSemEtiqueta = '<span class="jur-etq-filtro-sem' + (self._filtroCor === self._SEM_ETIQUETA_SENTINELA ? ' selecionada' : '') + '" title="Filtrar só os sem etiqueta" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarPorCor(\'' + self._SEM_ETIQUETA_SENTINELA + '\')">Sem Etiqueta</span>';
         let etiquetasTopico = this._etiquetasDoTopicoAtual();
-        if (Object.keys(etiquetasTopico).length === 0) {
-            return '<span class="jur-toggle-ocultos">Cor:</span>' + htmlSemEtiqueta;
-        }
         let coresEmUso = [];
         Object.keys(etiquetasTopico).forEach(function(id) {
             let cor = etiquetasTopico[id].cor;
             if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
         });
+        // Cores de etiquetas PÚBLICAS embutidas (item.etiqueta) nas fichas
+        // deste tópico, mesmo sem entrada correspondente no registro local
+        // (outro usuário aplicou, ou a ficha mudou de tópico numa
+        // reorganização de taxonomia depois da etiqueta ter sido criada) —
+        // sem isso o swatch nem aparecia pra filtrar por essas cores, mesmo
+        // o pill já aparecendo certo no card (ver _etiquetaDaFicha).
+        let chaveAtual = this._chaveEtiquetas();
+        (this.fichas[chaveAtual] || []).forEach(function(item) {
+            if (item && item.etiqueta && item.etiqueta.cor && coresEmUso.indexOf(item.etiqueta.cor) === -1) {
+                coresEmUso.push(item.etiqueta.cor);
+            }
+        });
+        if (coresEmUso.length === 0) {
+            return '<span class="jur-toggle-ocultos">Cor:</span>' + htmlSemEtiqueta;
+        }
         let swatches = coresEmUso.map(function(cor) {
             return '<span class="jur-etq-swatch jur-etq-swatch-filtro' + (self._filtroCor === cor ? ' selecionada' : '') + '" style="background:' + cor + ';" title="Filtrar por esta cor" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarPorCor(\'' + cor + '\')"></span>';
         }).join('');
