@@ -26800,12 +26800,22 @@ window.carregarEsquemasOficiais = async function() {
        fora do fluxo normal do card, pra nunca ser confundida com etiqueta
        pessoal nem com o tribunal. */
     #jurisprudencia-modal .jur-card-origem-badge { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--app-primary); }
-    /* Classificação (Muito Importante/Importante/Regular) já existente —
-       reduzida a só o ÍCONE (🔴/🟡/🟢, ver title pro rótulo completo) pra
-       não disputar espaço com tribunal/(Oficial) no cabeçalho do card;
-       sempre a primeira tag à esquerda. Sem pill colorida — a cor já vem
-       do próprio emoji. */
-    #jurisprudencia-modal .jur-card-classificacao { font-size:11px; line-height:1; flex-shrink:0; }
+    /* Rodapé do card: Visualizado + classificação (🔴🟡🟢), clicáveis —
+       mesma posição/padrão de #esquemas-modal/#section-glossario
+       .esq-card-classificacao (classe reaproveitada de propósito, mesmo
+       espírito de #modal-glossario-baralho .esq-etq-pill etc.). */
+    #jurisprudencia-modal .esq-card-classificacao { display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:6px; margin-top:2px; border-top:1px dashed #f1f5f9; }
+    #jurisprudencia-modal .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    /* Diferente das estrelas (1-3, hierárquicas — "3" já inclui "2" e "1"),
+       Muito Importante/Importante/Regular são 3 categorias INDEPENDENTES —
+       não faz sentido "preencher até". Só o círculo do nível ATIVO fica
+       opaco; os outros dois ficam esmaecidos (cor do próprio emoji, sem
+       trocar de cor como as estrelas fariam). */
+    #jurisprudencia-modal .jur-card-classificar { display:flex; gap:1px; flex-shrink:0; }
+    #jurisprudencia-modal .jur-classif-btn { font-size:14px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.35; }
+    #jurisprudencia-modal .jur-classif-btn:hover, #jurisprudencia-modal .jur-classif-btn.ativa { opacity:1; }
 
     /* Grupos (Ano ou Disciplina) da grade de cards dos atalhos por
        sistemática — cada grupo é um <details> próprio (acordeon), sempre
@@ -27602,6 +27612,9 @@ window.JURISPRUDENCIA_RUNTIME = {
     // acoplamento a nenhuma seção específica). { "<id_ficha>":
     // {ultimaClassificacao} } — puro sistema de distribuição, sem agendamento.
     revisaoJurisprudencia: {},
+    // { "<id_ficha>": true } — mesmo padrão de ESQUEMAS_RUNTIME.visualizados/
+    // GLOSSARIO_RUNTIME.visualizados (toggle simples, sem agendamento).
+    visualizados: {},
     // Etiquetas coloridas (nomeáveis) — ESCOPADAS POR TÓPICO (chave L2),
     // mesmíssimo padrão/motivo de ESQUEMAS_RUNTIME.etiquetas/
     // GLOSSARIO_RUNTIME.etiquetas: um tópico pode reunir dezenas de fichas
@@ -27690,6 +27703,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
         this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
         this.revisaoJurisprudencia = (bruto && typeof bruto.revisaoJurisprudencia === 'object' && !Array.isArray(bruto.revisaoJurisprudencia)) ? bruto.revisaoJurisprudencia : {};
+        this.visualizados = (bruto && typeof bruto.visualizados === 'object' && !Array.isArray(bruto.visualizados)) ? bruto.visualizados : {};
         this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
         this.etiquetaPorFicha = (bruto && typeof bruto.etiquetaPorFicha === 'object' && !Array.isArray(bruto.etiquetaPorFicha)) ? bruto.etiquetaPorFicha : {};
         this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
@@ -27716,7 +27730,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let apenasPessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
                 if (apenasPessoais.length > 0) fichasPessoais[chave] = apenasPessoais;
             });
-            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia, etiquetas: this.etiquetas, etiquetaPorFicha: this.etiquetaPorFicha, coresCustomizadas: this.coresCustomizadas }));
+            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorFicha: this.etiquetaPorFicha, coresCustomizadas: this.coresCustomizadas }));
             return true;
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
@@ -28537,20 +28551,6 @@ window.JURISPRUDENCIA_RUNTIME = {
         let etiquetaHtml = etiquetaDoItem
             ? '<span class="jur-etq-pill jur-etq-pill-card" style="background:' + etiquetaDoItem.cor + ';" title="Etiqueta: ' + self._escapar(etiquetaDoItem.nome) + '">' + self._escapar(etiquetaDoItem.nome) + '</span>'
             : '';
-        // Classificação (Muito Importante/Importante/Regular) já existente —
-        // só EXIBE aqui (reclassificar continua sendo feito pelo Leitor ou
-        // pelas abas de classificação, como em qualquer outro card da
-        // grade). Pedido explícito do usuário: reduzir ao ÍCONE (🔴/🟡/🟢),
-        // sem o texto do rótulo — cabeçalho do card estava disputando
-        // espaço demais entre tribunal/classificação/(Oficial). O rótulo
-        // completo continua acessível via title (tooltip no hover).
-        let classificacaoHtml = '';
-        let statusClassif = self.revisaoJurisprudencia[item.id];
-        if (statusClassif && statusClassif.ultimaClassificacao) {
-            let ICONES_CLASSIF = { dificil: '🔴', medio: '🟡', facil: '🟢' };
-            let ROTULOS_CLASSIF = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
-            classificacaoHtml = '<span class="jur-card-classificacao jur-card-classificacao-' + statusClassif.ultimaClassificacao + '" title="' + (ROTULOS_CLASSIF[statusClassif.ultimaClassificacao] || '') + '">' + (ICONES_CLASSIF[statusClassif.ultimaClassificacao] || '') + '</span>';
-        }
         // Ocultar é preferência PESSOAL de visibilidade (não edita o
         // conteúdo) — ao contrário de Editar/Excluir, disponível pra
         // fichas oficiais também.
@@ -28571,11 +28571,32 @@ window.JURISPRUDENCIA_RUNTIME = {
             ? '<div class="jur-card-origem-badge">' + self._escapar(chave) + '</div>'
             : '';
 
+        // Visualizado + classificação (🔴🟡🟢) — clique pára aqui
+        // (event.stopPropagation) pra não abrir a ficha junto. Clicar no
+        // MESMO círculo já ativo desmarca (window.ClassificacaoCards, mesmo
+        // toggle usado nas abas/Leitor); clicar num círculo diferente troca
+        // direto pra aquele nível. Pedido explícito do usuário: classificar
+        // sem precisar abrir o card ou o Leitor — mesmo padrão/posição de
+        // ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME (rodapé do card, não mais o
+        // ícone somente-leitura que ficava disputando espaço no cabeçalho).
+        let idEsc = item.id.replace(/'/g, "\\'");
+        let visualizado = !!self.visualizados[item.id];
+        let statusClassif = self.revisaoJurisprudencia[item.id];
+        let nivelAtual = statusClassif ? statusClassif.ultimaClassificacao : null;
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.JURISPRUDENCIA_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
+        let NIVEIS_CLASSIF = [
+            { chave: 'dificil', icone: '🔴', rotulo: 'Muito Importante' },
+            { chave: 'medio', icone: '🟡', rotulo: 'Importante' },
+            { chave: 'facil', icone: '🟢', rotulo: 'Regular' }
+        ];
+        let classificarHtml = '<span class="jur-card-classificar">' + NIVEIS_CLASSIF.map(function(n) {
+            return '<button class="jur-classif-btn' + (nivelAtual === n.chave ? ' ativa' : '') + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.marcarClassificacaoCard(\'' + idEsc + '\', \'' + n.chave + '\');" title="' + n.rotulo + '">' + n.icone + '</button>';
+        }).join('') + '</span>';
+
         return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + (superado ? ' jur-card-superado' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
             origemHtml +
             '<div class="jur-card-tags">' +
                 '<span class="jur-card-tags-esq">' +
-                    classificacaoHtml +
                     checkboxHtml +
                     etiquetaHtml +
                     '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
@@ -28590,6 +28611,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '') +
             '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>' +
             (item.dataConsulta ? '<div class="jur-card-data-consulta">Consultado em ' + self._formatarDataBR(item.dataConsulta) + '</div>' : '') +
+            '<div class="esq-card-classificacao">' + btnVisualizado + classificarHtml + '</div>' +
         '</div>';
     },
 
@@ -29460,6 +29482,23 @@ window.JURISPRUDENCIA_RUNTIME = {
     _aplicarClassificacaoJur: function(id, nivel) {
         let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoJurisprudencia[id]);
         if (novo === null) delete this.revisaoJurisprudencia[id]; else this.revisaoJurisprudencia[id] = novo;
+        this.salvar();
+    },
+
+    // Clique direto num círculo (🔴🟡🟢) do CARD na grade normal: sempre
+    // define aquele nível (ou desmarca se já era esse o nível — mesmo
+    // toggle de calcularProximo) — pedido explícito do usuário, pra
+    // classificar sem precisar abrir o card ou o Leitor. Mesmo padrão de
+    // ESQUEMAS_RUNTIME.marcarEstrelasCard/GLOSSARIO_RUNTIME.marcarEstrelasCard.
+    marcarClassificacaoCard: function(id, nivel) {
+        this._aplicarClassificacaoJur(id, nivel);
+        this._renderGradeCards();
+    },
+
+    // Mesmo padrão de ESQUEMAS_RUNTIME.toggleVisualizado/
+    // GLOSSARIO_RUNTIME.toggleVisualizado.
+    toggleVisualizado: function(id) {
+        if (this.visualizados[id]) delete this.visualizados[id]; else this.visualizados[id] = true;
         this.salvar();
     },
 
