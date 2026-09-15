@@ -18981,27 +18981,13 @@ function renderNav(){
             // clicável, abrindo o baralho daquele tipo específico.
             let htmlBaralhos = '';
             if (window.FLASHCARDS_RUNTIME && C.id_taxonomia) {
-                // Prioriza o tópico da QUESTÃO ATUAL (q.topico, granularidade
-                // L1 > L2 > L3) sobre a classificação FIXA da bateria inteira
-                // (C.id_taxonomia) — depois da reorganização de taxonomia que
-                // promoveu várias leis de L3 pra L2 próprio (ex.: "Organização
-                // Criminosa"), uma bateria "Legislação Penal Especial" mista
-                // continua com id_taxonomia apontando pro L2 residual (correto
-                // pra ela, que reúne várias leis diferentes), mas cada questão
-                // dentro dela já sabe sua própria lei específica — sem isto,
-                // "Baralhos associados" sempre mostrava o residual inteiro,
-                // nunca a lei certa da questão sendo respondida no momento.
-                let locBaralhos = null;
-                let qAtualBaralhos = (typeof getQ === 'function' && typeof QA !== 'undefined') ? getQ(QA) : null;
-                if (qAtualBaralhos && qAtualBaralhos.topico && qAtualBaralhos.topico.indexOf(' > ') !== -1) {
-                    let partesTopicoQ = qAtualBaralhos.topico.split(' > ');
-                    if (partesTopicoQ.length >= 2 && partesTopicoQ[0].trim() && partesTopicoQ[1].trim()) {
-                        locBaralhos = { materia: partesTopicoQ[0].trim(), divisao: partesTopicoQ[1].trim() };
-                    }
-                }
-                if (!locBaralhos) {
-                    locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
-                }
+                // Sempre a classificação cadastrada da BATERIA (C.id_taxonomia),
+                // nunca a do tópico da questão atual — pedido explícito do
+                // usuário: uma bateria cadastrada em "Ação Penal e Ação Civil",
+                // por exemplo, deve mostrar Esquemas/Jurisprudência associados
+                // a essa L2, mesmo que a questão específica em tela tenha uma
+                // tag de tópico diferente (ex.: "Investigação Criminal").
+                let locBaralhos = window.FLASHCARDS_RUNTIME.resolverMateriaDivisaoPorTaxonomia(C.id_taxonomia);
                 if (locBaralhos) {
                     let mEsc = locBaralhos.materia.replace(/'/g, "\\'");
                     let dEsc = locBaralhos.divisao.replace(/'/g, "\\'");
@@ -21470,6 +21456,25 @@ window.editarSimuladoAcervo = function(id) {
     // formatos não é mais suportado.
     if(g('ro-ce')) g('ro-ce').click();
     setTimeout(() => {
+        // Sem isto, cfg-tax-materia/cfg-taxonomia ficavam com o que quer que
+        // estivesse selecionado da última vez que esses <select>s foram
+        // populados nesta aba (ex.: a criação/edição de OUTRA bateria,
+        // minutos antes) — cfg-taxonomia.value = prova.id_taxonomia (linha
+        // abaixo) falha em SILÊNCIO se a option daquele id ainda não existe
+        // na lista (populada só pra outra matéria). Se o editor não notasse
+        // e reabrisse os dois selects manualmente antes de salvar,
+        // "Atualizar Simulado" gravava a classificação ERRADA e STALE por
+        // cima da bateria certa — bug relatado: card certo, com o nome
+        // certo, mas com id_taxonomia/caminho_completo de outra L2.
+        if (g('cfg-tax-materia') && prova.id_taxonomia && typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) {
+            let matDaProva = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) {
+                return m.divisoes.some(function(d) { return d.id === prova.id_taxonomia; });
+            });
+            if (matDaProva) {
+                g('cfg-tax-materia').value = matDaProva.nivel_1;
+                window.popularSelectTopicos();
+            }
+        }
         if(g('cfg-taxonomia')) g('cfg-taxonomia').value = prova.id_taxonomia || '';
         if(g('cfg-ce-estilo')) g('cfg-ce-estilo').value = prova.estilo || '';
         if(g('cfg-ce-ia')) g('cfg-ce-ia').value = prova.iaUtilizada || '';

@@ -2101,7 +2101,7 @@ const TAXONOMIA_DADOS = {
         },
         {
           "id": "pp_execucao",
-          "nivel_2": "Lei de Execução Penal (Lei nº Lei nº 7.210/1984)",
+          "nivel_2": "Lei de Execução Penal (Lei nº 7.210/1984)",
           "topicos": [
             {
               "id": "penal_lep_regimes",
