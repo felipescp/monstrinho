@@ -28011,10 +28011,19 @@ window.JURISPRUDENCIA_RUNTIME = {
             lista = lista.filter(function(par) { return (par.item.dataJulgado || '').slice(0, 4) === self._filtroAno; });
         }
         if (this._filtroBusca && this._filtroBusca.trim()) {
-            // Título E conteúdo (tese/resumo) — não só o título.
+            // Título + conteúdo (tese/resumo) + METADADOS da linha exibida no
+            // card/popup "Ver" (tribunal, órgão, processo/tema, relator,
+            // sistemática, datas) — pedido explícito: o número do julgado
+            // (ex. "EREsp 1.195.670-PR") é um dos termos mais buscados, então
+            // também precisa achar a ficha, não só o conteúdo jurídico.
             let alvo = this._normalizarBusca(this._filtroBusca);
             lista = lista.filter(function(par) {
-                let alvoTexto = self._tituloComTema(par.item) + ' ' + (par.item.tese || '') + ' ' + (par.item.resumo || '');
+                let item = par.item;
+                let alvoTexto = [
+                    self._tituloComTema(item), item.tese, item.resumo,
+                    item.tribunal, item.orgao, self._processoComTema(item), item.relator,
+                    item.sistematica, self._formatarDataBR(item.dataJulgado), self._formatarDataBR(item.dataConsulta)
+                ].filter(Boolean).join(' ');
                 return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
             });
         }
