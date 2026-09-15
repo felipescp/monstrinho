@@ -27104,6 +27104,41 @@ window.carregarEsquemasOficiais = async function() {
     </div>
 </div>
 
+<!-- MODAL: Transferir Fichas Selecionadas pra outra Disciplina > Tópico —
+     popup .mo/.mdl em cima de #jurisprudencia-modal, mesmíssimo padrão de
+     #modal-esquema-transferir/#modal-glossario-transferir. Ferramenta de
+     curadoria (não pra usuário comum) — reorganizar/adequar fichas depois
+     de uma importação em massa. -->
+<div id="modal-jurisprudencia-transferir" class="mo">
+<style>
+    #modal-jurisprudencia-transferir { z-index: 10000; }
+    #modal-jurisprudencia-transferir .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-jurisprudencia-transferir .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-jurisprudencia-transferir .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-jurisprudencia-transferir select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:12px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-jurisprudencia-transferir label { font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px; }
+</style>
+    <div class="mdl" style="max-width:400px; width:95%; padding:20px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="fc-popup-header">📦 Transferir Selecionados</div>
+            <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalTransferir()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">Move as fichas marcadas pra outra disciplina/tópico. A etiqueta (se houver) não é levada — ela é uma organização do tópico de origem.</div>
+        <div>
+            <label for="jur-transferir-materia">Disciplina de destino</label>
+            <select id="jur-transferir-materia" onchange="window.JURISPRUDENCIA_RUNTIME.atualizarDivisoesTransferir()"></select>
+        </div>
+        <div>
+            <label for="jur-transferir-divisao">Tópico de destino</label>
+            <select id="jur-transferir-divisao"><option value="">Selecione a disciplina primeiro</option></select>
+        </div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalTransferir()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.JURISPRUDENCIA_RUNTIME.confirmarTransferencia()">Transferir</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL: Exportar Avançado (atalhos por sistemática) — escolher quais
      anos e disciplinas entram no arquivo, antes de exportar em .md ou
      .html estilizado. Mesmo padrão .mo/.mdl dos demais popups. -->
@@ -28062,6 +28097,136 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderGradeCards();
     },
 
+    // Ferramenta de curadoria (não pra usuário comum, mas necessária pra
+    // ajustar/organizar fichas depois de uma importação em massa) — mesmo
+    // padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME.excluirSelecionados.
+    // Diferente de excluirFicha (individual), JURISPRUDENCIA_RUNTIME não
+    // tem um mapa "excluidos" (lápide) — nem a versão individual grava
+    // uma, então a versão em massa segue o mesmo padrão pra não introduzir
+    // uma proteção pela metade (uma lápide que não é lida de volta em
+    // carregar() nem preservada no merge de backup na nuvem não protege
+    // nada de verdade).
+    excluirSelecionados: function() {
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        if (idsSelecionados.length === 0) return;
+
+        let idsOficiais = {};
+        idsSelecionados.forEach(function(id) {
+            Object.keys(self.fichas).forEach(function(chave) {
+                let item = (self.fichas[chave] || []).find(function(f) { return f.id === id; });
+                if (item && item.origem_oficial) idsOficiais[id] = true;
+            });
+        });
+        let idsExcluiveis = idsSelecionados.filter(function(id) { return !idsOficiais[id]; });
+        let qtdOficiais = Object.keys(idsOficiais).length;
+
+        if (idsExcluiveis.length === 0) {
+            alert('Os itens selecionados são oficiais e não podem ser excluídos.');
+            return;
+        }
+
+        let aviso = 'Excluir permanentemente ' + idsExcluiveis.length + ' ficha(s) de jurisprudência selecionada(s)? Esta ação não pode ser desfeita.';
+        if (qtdOficiais > 0) aviso += '\n\n(' + qtdOficiais + ' item(ns) oficial(is) selecionado(s) será(ão) ignorado(s) — oficiais não podem ser excluídos por aqui.)';
+        if (!confirm(aviso)) return;
+
+        let idsParaExcluir = {};
+        idsExcluiveis.forEach(function(id) { idsParaExcluir[id] = true; });
+
+        Object.keys(this.fichas).forEach(function(chave) {
+            let restantes = self.fichas[chave].filter(function(f) { return !idsParaExcluir[f.id]; });
+            if (restantes.length === 0) delete self.fichas[chave];
+            else self.fichas[chave] = restantes;
+        });
+
+        this.salvar();
+        this._selecionados = {};
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+    },
+
+    // ── TRANSFERIR SELECIONADOS PRA OUTRA DISCIPLINA > TÓPICO ── mesmo
+    // padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME (etiqueta descartada no
+    // destino — pertence ao espaço de etiquetas do tópico de origem, ver
+    // _chaveEtiquetas). Diferença daqui: cada ficha carrega materiaL1/
+    // divisaoL2 PRÓPRIOS (usados na origem do baralho "Todos"/Disciplina,
+    // exportação etc.) — sem atualizar os dois junto com a chave, a ficha
+    // ficaria com a chave nova mas ainda "se descrevendo" como do tópico
+    // antigo por dentro.
+    abrirModalTransferir: function() {
+        if (Object.keys(this._selecionados).length === 0) return;
+        if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
+            alert('Taxonomia não carregada — não é possível listar disciplinas/tópicos de destino.');
+            return;
+        }
+        let selMateria = document.getElementById('jur-transferir-materia');
+        selMateria.innerHTML = '<option value="">Selecione...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
+            return '<option value="' + mat.nivel_1.replace(/"/g, '&quot;') + '">' + mat.nivel_1 + '</option>';
+        }).join('');
+        document.getElementById('jur-transferir-divisao').innerHTML = '<option value="">Selecione a disciplina primeiro</option>';
+        document.getElementById('modal-jurisprudencia-transferir').classList.add('open');
+    },
+
+    fecharModalTransferir: function() {
+        document.getElementById('modal-jurisprudencia-transferir').classList.remove('open');
+    },
+
+    atualizarDivisoesTransferir: function() {
+        let materia = document.getElementById('jur-transferir-materia').value;
+        let selDiv = document.getElementById('jur-transferir-divisao');
+        if (!materia) { selDiv.innerHTML = '<option value="">Selecione a disciplina primeiro</option>'; return; }
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+        if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
+            selDiv.innerHTML = '<option value="">Nenhum tópico cadastrado</option>';
+            return;
+        }
+        selDiv.innerHTML = '<option value="">Selecione...</option>' + mat.divisoes.map(function(div) {
+            return '<option value="' + div.nivel_2.replace(/"/g, '&quot;') + '">' + div.nivel_2 + '</option>';
+        }).join('');
+    },
+
+    confirmarTransferencia: function() {
+        let materia = document.getElementById('jur-transferir-materia').value;
+        let divisao = document.getElementById('jur-transferir-divisao').value;
+        if (!materia || !divisao) { alert('Escolha a disciplina e o tópico de destino.'); return; }
+        let chaveDestino = this._chaveL2(materia, divisao);
+        let self = this;
+        let idsSelecionados = Object.keys(this._selecionados);
+        let itensMovidos = [];
+
+        Object.keys(this.fichas).forEach(function(chaveOrigem) {
+            if (chaveOrigem === chaveDestino) return;
+            let restantes = [];
+            (self.fichas[chaveOrigem] || []).forEach(function(item) {
+                if (idsSelecionados.indexOf(item.id) !== -1) {
+                    item.materiaL1 = materia;
+                    item.divisaoL2 = divisao;
+                    itensMovidos.push(item);
+                    if (self.etiquetaPorFicha[item.id]) delete self.etiquetaPorFicha[item.id];
+                } else {
+                    restantes.push(item);
+                }
+            });
+            if (restantes.length === 0) delete self.fichas[chaveOrigem]; else self.fichas[chaveOrigem] = restantes;
+        });
+
+        if (itensMovidos.length === 0) {
+            alert('Nenhum dos selecionados foi movido (já estavam no destino escolhido).');
+            return;
+        }
+
+        if (!Array.isArray(this.fichas[chaveDestino])) this.fichas[chaveDestino] = [];
+        this.fichas[chaveDestino] = this.fichas[chaveDestino].concat(itensMovidos);
+
+        this.salvar();
+        this._selecionados = {};
+        this._modoSelecao = false;
+        this.fecharModalTransferir();
+        this._renderColunaDivisoes(this._materiaSelecionada);
+        this._renderGradeCards();
+        alert(itensMovidos.length + ' ficha(s) transferida(s) para "' + chaveDestino + '".');
+    },
+
     // "Por Temas" <-> "Data do Julgado" — botão único contextual, mesmo
     // padrão de Expandir/Recolher Tudo do Caderno.
     toggleModoExibicao: function() {
@@ -28296,8 +28461,10 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<div class="jur-tb-acoes-grupo">' +
                     '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalEtiquetas(true)">🏷️ Aplicar Etiqueta' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
