@@ -9271,7 +9271,7 @@ document.addEventListener('click', function(e) {
 // =========================================================================
 // =========================================================================
 // window.ClassificacaoCards — toggle dos 3 níveis (Difícil/Médio/Fácil, ou
-// Muito Importante/Importante/Regular em Jurisprudência), compartilhado
+// Crítico/Importante/Regular em Jurisprudência), compartilhado
 // entre FLASHCARDS_RUNTIME (revisao, por card), PRATICAR_CADERNO_RUNTIME
 // (revisaoQuestoes, por questão) e JURISPRUDENCIA_RUNTIME
 // (revisaoJurisprudencia, por ficha) — a mesma regra de toggle não fica
@@ -23396,24 +23396,25 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
     #esquemas-modal .esq-card-add:hover { background:var(--bg-accent-soft); }
 
-    /* Visualizado + estrelas no CARD da grade normal — linha discreta no
-       rodapé do card, separada do resto por um traço pontilhado. */
+    /* Visualizado + classificação (🔴🟡🟢) no CARD da grade normal — linha
+       discreta no rodapé do card, separada do resto por um traço pontilhado. */
     #esquemas-modal .esq-card-classificacao { display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:6px; margin-top:2px; border-top:1px dashed #f1f5f9; }
     #esquemas-modal .esq-btn-visualizado, #modal-esquemas-baralho .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
     #esquemas-modal .esq-btn-visualizado:hover, #modal-esquemas-baralho .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .esq-btn-visualizado.ativo, #modal-esquemas-baralho .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
-    /* row-reverse + DOM gerado em ordem [3,2,1] (ver estrelasHtml) é o que
-       permite o hover em cascata só com CSS: passar o mouse na estrela N
-       acende ela e todas as ANTERIORES (1..N), não só a que está sob o
-       cursor. O seletor "~" pega os irmãos DEPOIS no DOM — como o DOM está
-       invertido, isso corresponde às estrelas ANTES visualmente. */
-    #esquemas-modal .esq-estrelas { display:flex; flex-direction:row-reverse; gap:1px; flex-shrink:0; }
-    #esquemas-modal .esq-estrela { font-size:15px; line-height:1; border:none; background:none; cursor:pointer; color:#e2e8f0; padding:0 1px; }
-    #esquemas-modal .esq-estrela.preenchida { color:#f59e0b; }
-    #esquemas-modal .esq-estrela:hover, #esquemas-modal .esq-estrela:hover ~ .esq-estrela { color:#f59e0b; }
+    /* Diferente das estrelas (1-3, hierárquicas — "3" já inclui "2" e "1"),
+       Crítico/Importante/Regular são 3 categorias INDEPENDENTES —
+       não faz sentido "preencher até". Só o círculo do nível ATIVO fica
+       opaco; os outros dois ficam esmaecidos (cor do próprio emoji, sem
+       cascata de hover). Mesmo padrão de #jurisprudencia-modal
+       .jur-card-classificar/.jur-classif-btn. */
+    #esquemas-modal .esq-classificar { display:flex; gap:1px; flex-shrink:0; }
+    #esquemas-modal .esq-classif-btn { font-size:14px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.35; }
+    #esquemas-modal .esq-classif-btn:hover, #esquemas-modal .esq-classif-btn.ativa { opacity:1; }
 
-    /* Abas do topo: "Navegar" (grade L1/L2 acima) + 1/2/3 Estrelas —
-       mesmo padrão visual de #jurisprudencia-modal/#section-flashcards. */
+    /* Abas do topo: "Navegar" (grade L1/L2 acima) + 🔴 Crítico/
+       🟡 Importante/🟢 Regular — mesmo padrão visual de
+       #jurisprudencia-modal/#section-flashcards. */
     #esquemas-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #esquemas-modal .esq-tabs-grupo { display:flex; gap:4px; }
     #esquemas-modal .esq-tabs-baralho { display:flex; align-items:center; gap:6px; }
@@ -23452,7 +23453,7 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal span[id^="esq-posicao-"] { font-size:12px; font-weight:700; color:var(--text-muted); min-width:50px; text-align:center; }
     #esquemas-modal .fc-vazio { padding:30px 10px; text-align:center; color:var(--text-muted); font-size:12px; font-style:italic; }
 
-    /* Cartão de estudo (abas de estrela + popup Baralho) — compartilhado
+    /* Cartão de estudo (abas de classificação + popup Baralho) — compartilhado
        com #modal-esquemas-baralho via seletor combinado, mesmo padrão de
        #jurisprudencia-modal .jur-estudo-card. */
     /* Mesma cor de fundo do card normal da grade (var(--bg-white), quase
@@ -23498,7 +23499,7 @@ window.triggerFileUpload = function(callback) {
     #modal-esquemas-baralho.esq-baralho-maximizado .esq-estudo-texto { font-size:calc(12.5px + max(0, var(--baralho-escala, 1) - 1.25) * 3px); }
     /* Mesmas linhas de tabela do editor (#esq-editor-corpo) — sem isto,
        o conteúdo é o mesmo HTML (_htmlCartaoEsquemaEstudo é compartilhado),
-       mas as bordas só existiam no editor; aqui (abas de estrela e
+       mas as bordas só existiam no editor; aqui (abas de classificação e
        baralho) ficavam invisíveis, dificultando a leitura de tabelas. */
     #esquemas-modal .esq-estudo-texto table, #modal-esquemas-baralho .esq-estudo-texto table { border-collapse:collapse; width:100%; margin:8px 0; }
     #esquemas-modal .esq-estudo-texto table td, #esquemas-modal .esq-estudo-texto table th,
@@ -23518,16 +23519,29 @@ window.triggerFileUpload = function(callback) {
     body.dark .esq-estudo-texto [style*="background"] { color:#1e293b !important; }
 
     #esquemas-modal .fc-card-revisao-acoes, #modal-esquemas-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    /* Botões de classificação (Estrelas) das abas 1/2/3 Estrelas — agora um
-       filho DIRETO de .fc-aba-revisao (fixo, fora do corpo rolável, ver
-       _renderCorpoAba), precisa do próprio respiro (a regra genérica acima
-       não tem padding nenhum, só fazia sentido dentro do corpo). */
+    /* Botões de classificação (🔴🟡🟢) das abas Crítico/Importante/
+       Regular — agora um filho DIRETO de .fc-aba-revisao (fixo, fora do
+       corpo rolável, ver _renderCorpoAba), precisa do próprio respiro (a
+       regra genérica acima não tem padding nenhum, só fazia sentido dentro
+       do corpo). */
     #esquemas-modal .fc-aba-revisao > .fc-card-revisao-acoes { padding:10px 20px 0; flex-shrink:0; }
     #esquemas-modal .fc-rev-btn, #modal-esquemas-baralho .fc-rev-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; }
-    #esquemas-modal .fc-rev-estrela, #modal-esquemas-baralho .fc-rev-estrela { color:#92400e; border-color:#fde68a; }
-    #esquemas-modal .fc-rev-estrela:hover, #modal-esquemas-baralho .fc-rev-estrela:hover { background:#fef3c7; }
-    #esquemas-modal .fc-rev-estrela.ativa, #modal-esquemas-baralho .fc-rev-estrela.ativa { background:#d97706; border-color:#d97706; color:#fff; }
-    #esquemas-modal .fc-rev-estrela.ativa:hover, #modal-esquemas-baralho .fc-rev-estrela.ativa:hover { background:#b45309; }
+    /* Vermelho/âmbar/verde — mesmas cores já usadas em #jurisprudencia-modal/
+       #modal-flashcard/#section-praticar-caderno pro esquema de 3 níveis
+       (fc-rev-dificil/medio/facil; CLASSES_COR em _botoesRevisaoEsqHtml liga
+       a chave '3'/'2'/'1' real ao nome da classe de cor). */
+    #esquemas-modal .fc-rev-dificil, #modal-esquemas-baralho .fc-rev-dificil { color:#991b1b; border-color:#fecaca; }
+    #esquemas-modal .fc-rev-dificil:hover, #modal-esquemas-baralho .fc-rev-dificil:hover { background:#fee2e2; }
+    #esquemas-modal .fc-rev-medio, #modal-esquemas-baralho .fc-rev-medio { color:#92400e; border-color:#fde68a; }
+    #esquemas-modal .fc-rev-medio:hover, #modal-esquemas-baralho .fc-rev-medio:hover { background:#fef3c7; }
+    #esquemas-modal .fc-rev-facil, #modal-esquemas-baralho .fc-rev-facil { color:#166534; border-color:#bbf7d0; }
+    #esquemas-modal .fc-rev-facil:hover, #modal-esquemas-baralho .fc-rev-facil:hover { background:#dcfce7; }
+    #esquemas-modal .fc-rev-dificil.ativa, #modal-esquemas-baralho .fc-rev-dificil.ativa { background:#dc2626; border-color:#dc2626; color:#fff; }
+    #esquemas-modal .fc-rev-dificil.ativa:hover, #modal-esquemas-baralho .fc-rev-dificil.ativa:hover { background:#b91c1c; }
+    #esquemas-modal .fc-rev-medio.ativa, #modal-esquemas-baralho .fc-rev-medio.ativa { background:#d97706; border-color:#d97706; color:#fff; }
+    #esquemas-modal .fc-rev-medio.ativa:hover, #modal-esquemas-baralho .fc-rev-medio.ativa:hover { background:#b45309; }
+    #esquemas-modal .fc-rev-facil.ativa, #modal-esquemas-baralho .fc-rev-facil.ativa { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #esquemas-modal .fc-rev-facil.ativa:hover, #modal-esquemas-baralho .fc-rev-facil.ativa:hover { background:#15803d; }
 </style>
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
@@ -23545,15 +23559,15 @@ window.triggerFileUpload = function(callback) {
         <div class="fc-tabs">
             <div class="esq-tabs-grupo">
                 <button class="fc-tab ativa" id="esq-tab-grade" onclick="window.ESQUEMAS_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
-                <button class="fc-tab" id="esq-tab-1" onclick="window.ESQUEMAS_RUNTIME.trocarAba('1')">⭐ 1 Estrela <span class="fc-tab-count" id="esq-tab-1-count"></span></button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: esquemas de 1 Estrela">📤</button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas de 1 Estrela">🎨</button>
-                <button class="fc-tab" id="esq-tab-2" onclick="window.ESQUEMAS_RUNTIME.trocarAba('2')">⭐⭐ 2 Estrelas <span class="fc-tab-count" id="esq-tab-2-count"></span></button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('2')" title="Exportar MD: esquemas de 2 Estrelas">📤</button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('2')" title="Exportar HTML estilizado: esquemas de 2 Estrelas">🎨</button>
-                <button class="fc-tab" id="esq-tab-3" onclick="window.ESQUEMAS_RUNTIME.trocarAba('3')">⭐⭐⭐ 3 Estrelas <span class="fc-tab-count" id="esq-tab-3-count"></span></button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('3')" title="Exportar MD: esquemas de 3 Estrelas">📤</button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas de 3 Estrelas">🎨</button>
+                <button class="fc-tab" id="esq-tab-3" onclick="window.ESQUEMAS_RUNTIME.trocarAba('3')">🔴 Crítico <span class="fc-tab-count" id="esq-tab-3-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('3')" title="Exportar MD: esquemas Crítico">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('3')" title="Exportar HTML estilizado: esquemas Crítico">🎨</button>
+                <button class="fc-tab" id="esq-tab-2" onclick="window.ESQUEMAS_RUNTIME.trocarAba('2')">🟡 Importante <span class="fc-tab-count" id="esq-tab-2-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('2')" title="Exportar MD: esquemas Importante">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('2')" title="Exportar HTML estilizado: esquemas Importante">🎨</button>
+                <button class="fc-tab" id="esq-tab-1" onclick="window.ESQUEMAS_RUNTIME.trocarAba('1')">🟢 Regular <span class="fc-tab-count" id="esq-tab-1-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: esquemas Regular">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas Regular">🎨</button>
             </div>
             <div class="esq-tabs-baralho">
                 <details class="esq-leitor-menu leitor-dropdown">
@@ -24269,7 +24283,7 @@ window.ESQUEMAS_RUNTIME = {
                 // final (this.selecionarMateria(this._materiaSelecionada, true)),
                 // o que cobre _renderColunaDivisoes() e _renderGradeCards() juntos.
                 // _atualizarContagensAbas() sofre do mesmo problema (rótulo
-                // da aba "1/2/3 Estrelas" travado em "(0)" pra esquema
+                // da aba de classificação travado em "(0)" pra esquema
                 // oficial já classificado em sessão anterior) — recalcula
                 // aqui também.
                 window.ESQUEMAS_RUNTIME.render();
@@ -24462,8 +24476,9 @@ window.ESQUEMAS_RUNTIME = {
                 return et && et.cor === self._filtroCor;
             });
         }
-        // Ordem decrescente por estrelas (3★ primeiro, depois 2★, 1★, e por
-        // último não classificado) — pedido explícito: o usuário indica a
+        // Ordem decrescente por classificação (🔴 Crítico primeiro,
+        // depois 🟡 Importante, 🟢 Regular, e por último não classificado) —
+        // pedido explícito: o usuário indica a
         // importância e a grade reflete isso na ordem, sem precisar abrir
         // uma aba separada. .slice() pra não mutar o array já guardado.
         lista = lista.slice().sort(function(a, b) {
@@ -24959,21 +24974,29 @@ window.ESQUEMAS_RUNTIME = {
 
             let onclickCard = self._modoSelecao ? '' : (' onclick="window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
-            // Visualizado + estrelas — clique pára aqui (event.stopPropagation)
-            // pra não abrir o editor junto. Clicar na MESMA estrela já
-            // marcada desmarca (window.ClassificacaoCards, mesmo toggle
-            // usado nas abas/baralho); clicar numa estrela diferente troca
-            // direto pra aquele nível.
+            // Visualizado + classificação (🔴🟡🟢) — clique pára aqui
+            // (event.stopPropagation) pra não abrir o editor junto. Clicar
+            // no MESMO círculo já marcado desmarca (window.ClassificacaoCards,
+            // mesmo toggle usado nas abas/baralho); clicar num círculo
+            // diferente troca direto pra aquele nível. Chave interna
+            // continua '1'/'2'/'3' (revisaoEsquemas não muda) — só o rótulo/
+            // ícone exibido mudou de estrelas pra 🔴🟡🟢, mesmo padrão de
+            // JURISPRUDENCIA_RUNTIME (marcarClassificacaoCard). Diferente das
+            // estrelas (hierárquicas, "3" preenche "2" e "1" junto), essas 3
+            // categorias são INDEPENDENTES — só o círculo do nível ativo fica
+            // opaco, sem cascata/preenchimento.
             let idEsc = item.id.replace(/'/g, "\\'");
             let visualizado = !!self.visualizados[item.id];
-            let estrelasAtuais = self._estrelasAtuais(item.id);
+            let statusClassif = self.revisaoEsquemas[item.id];
+            let nivelAtual = statusClassif ? statusClassif.ultimaClassificacao : null;
             let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.ESQUEMAS_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
-            // Ordem [3,2,1] no DOM (não [1,2,3]) — junto com flex-direction:
-            // row-reverse no CSS, é isso que faz o hover em cascata (ver
-            // comentário na regra .esq-estrela do <style>). Visualmente
-            // continua aparecendo 1, 2, 3 da esquerda pra direita.
-            let estrelasHtml = '<span class="esq-estrelas">' + [3, 2, 1].map(function(n) {
-                return '<button class="esq-estrela' + (estrelasAtuais >= n ? ' preenchida' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.marcarEstrelasCard(\'' + idEsc + '\', ' + n + ');" title="' + n + ' estrela' + (n > 1 ? 's' : '') + '">★</button>';
+            let NIVEIS_CLASSIF = [
+                { chave: '3', icone: '🔴', rotulo: 'Crítico' },
+                { chave: '2', icone: '🟡', rotulo: 'Importante' },
+                { chave: '1', icone: '🟢', rotulo: 'Regular' }
+            ];
+            let classificarHtml = '<span class="esq-classificar">' + NIVEIS_CLASSIF.map(function(n) {
+                return '<button class="esq-classif-btn' + (nivelAtual === n.chave ? ' ativa' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.marcarEstrelasCard(\'' + idEsc + '\', \'' + n.chave + '\');" title="' + n.rotulo + '">' + n.icone + '</button>';
             }).join('') + '</span>';
 
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
@@ -24983,7 +25006,7 @@ window.ESQUEMAS_RUNTIME = {
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
-                '<div class="esq-card-classificacao">' + btnVisualizado + estrelasHtml + '</div>' +
+                '<div class="esq-card-classificacao">' + btnVisualizado + classificarHtml + '</div>' +
             '</div>';
         }).join('');
 
@@ -25048,15 +25071,23 @@ window.ESQUEMAS_RUNTIME = {
             return "window.ESQUEMAS_RUNTIME.marcarBaralho('" + nivel + "')";
         };
         let atual = this.revisaoEsquemas[id] ? this.revisaoEsquemas[id].ultimaClassificacao : null;
+        // Chave interna continua '1'/'2'/'3' (revisaoEsquemas não muda) — só
+        // o rótulo/ícone/ordem visual passou de estrelas pra 🔴🟡🟢, pedido
+        // explícito do usuário, pra bater com Jurisprudência. CLASSES_COR
+        // reaproveita os MESMOS nomes de classe (fc-rev-dificil/medio/facil)
+        // já usados por Jurisprudência/Flashcards/Praticar Caderno pro
+        // esquema de cor vermelho/âmbar/verde — só liga a chave real ('3')
+        // ao nome da classe de cor ('dificil'), sem mudar a chave guardada.
+        let CLASSES_COR = { '3': 'dificil', '2': 'medio', '1': 'facil' };
         let niveis = [
-            { chave: '1', rotulo: '⭐ 1 Estrela', rotuloDesmarcar: '⭐ Desmarcar' },
-            { chave: '2', rotulo: '⭐⭐ 2 Estrelas', rotuloDesmarcar: '⭐⭐ Desmarcar' },
-            { chave: '3', rotulo: '⭐⭐⭐ 3 Estrelas', rotuloDesmarcar: '⭐⭐⭐ Desmarcar' }
+            { chave: '3', rotulo: '🔴 Crítico', rotuloDesmarcar: '🔴 Desmarcar Crítico' },
+            { chave: '2', rotulo: '🟡 Importante', rotuloDesmarcar: '🟡 Desmarcar Importante' },
+            { chave: '1', rotulo: '🟢 Regular', rotuloDesmarcar: '🟢 Desmarcar Regular' }
         ];
         return niveis.map(function(n) {
             let classeAtiva = (atual === n.chave) ? ' ativa' : '';
             let rotulo = (n.chave === desmarcarNivel) ? n.rotuloDesmarcar : n.rotulo;
-            return '<button class="fc-rev-btn fc-rev-estrela' + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
+            return '<button class="fc-rev-btn fc-rev-' + CLASSES_COR[n.chave] + classeAtiva + '" onclick="' + onclickPara(n.chave) + '">' + rotulo + '</button>';
         }).join('');
     },
 
@@ -25076,7 +25107,7 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     // Bloco de conteúdo do esquema (título + HTML rico) — compartilhado
-    // entre o popup "Baralho de Esquemas" e as abas de estrela. conteudoHtml
+    // entre o popup "Baralho de Esquemas" e as abas de classificação. conteudoHtml
     // é inserido sem escapar (mesmo tratamento de abrirEditorExistente,
     // que já joga esse mesmo HTML dentro de contenteditable) — é HTML de
     // verdade, produzido pelo próprio editor, não texto puro.
@@ -25087,7 +25118,7 @@ window.ESQUEMAS_RUNTIME = {
         '</div>';
     },
 
-    // ── ABAS "⭐ 1 ESTRELA" / "⭐⭐ 2 ESTRELAS" / "⭐⭐⭐ 3 ESTRELAS" ──
+    // ── ABAS "🔴 CRÍTICO" / "🟡 IMPORTANTE" / "🟢 REGULAR" ──
     // Mesmo padrão de JURISPRUDENCIA_RUNTIME: navegador 1-a-1 inline (não
     // modal) sobre esquemas cuja classificação atual bate com a aba, com
     // pílulas de matéria pra filtrar.
@@ -25216,7 +25247,7 @@ window.ESQUEMAS_RUNTIME = {
             this._htmlCartaoEsquemaEstudo(card) +
             '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>';
 
-        // Botões de classificação (Estrelas) FIXOS embaixo, fora de
+        // Botões de classificação (🔴🟡🟢) FIXOS embaixo, fora de
         // .fc-aba-revisao-scroll — pedido explícito: antes ficavam dentro
         // do corpo rolável, junto com o card, então "flutuavam" (saíam de
         // vista conforme o card era comprido) em vez de ficarem sempre à
@@ -25251,7 +25282,7 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     // Contagem total (todas as matérias) por nível, exibida direto no
-    // rótulo de cada aba — ex.: "⭐⭐⭐ 3 Estrelas (12)". Chamada sempre que
+    // rótulo de cada aba — ex.: "🔴 Crítico (12)". Chamada sempre que
     // uma classificação muda (Baralho, abas ou clique direto no card).
     _atualizarContagensAbas: function() {
         let self = this;
@@ -25264,7 +25295,7 @@ window.ESQUEMAS_RUNTIME = {
     // ── BARALHO (Disciplina | Divisão/Tópico) ──
     // Popup de navegação livre 1-a-1 (embaralhar + ‹›), mesmo padrão de
     // JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria/Divisao. Diferente das
-    // abas de estrela: classificar um card aqui NÃO remove ele do deck (só
+    // abas de classificação: classificar um card aqui NÃO remove ele do deck (só
     // reflete a nova estrela e continua no mesmo lugar) — o objetivo deste
     // baralho é folhear e ir classificando tudo sem perder a posição, não é
     // uma fila de revisão que se esvazia. "Leitor: Todos" foi removido
@@ -25330,8 +25361,9 @@ window.ESQUEMAS_RUNTIME = {
         return window._etiquetaEfetivaDoItem(item, etiquetaLocal);
     },
 
-    // 3 estrelas=0, 2=1, 1=2, sem classificação=3 — usado pra ordenar o
-    // Leitor (mais importante primeiro), pedido explícito do usuário.
+    // '3' (🔴 Crítico)=0, '2' (🟡 Importante)=1, '1' (🟢 Regular)=2,
+    // sem classificação=3 — usado pra ordenar o Leitor (mais importante
+    // primeiro), pedido explícito do usuário.
     _rankClassificacaoEsq: function(item) {
         let ORDEM = { '3': 0, '2': 1, '1': 2 };
         let r = this.revisaoEsquemas[item.id];
@@ -25345,8 +25377,8 @@ window.ESQUEMAS_RUNTIME = {
         // etiqueta junto — pedido original, pra dar racionalidade ao volume
         // de leis diferentes misturadas, sobretudo em Legislação Especial;
         // sem etiqueta vai pro final) — dentro de cada etiqueta (e no grupo
-        // "sem etiqueta"), desempata por classificação (3 Estrelas primeiro,
-        // sem classificação por último). Pedido explícito do usuário. Sort
+        // "sem etiqueta"), desempata por classificação (🔴 Crítico
+        // primeiro, sem classificação por último). Pedido explícito do usuário. Sort
         // estável (garantido desde ES2019).
         itens = itens.slice().sort(function(a, b) {
             let ea = self._etiquetaDoEsquema(a);
@@ -26568,7 +26600,7 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(this._gerarHtmlEsquemas(resultado, item.titulo || 'Esquema', true), 'esquema-' + this._slugTexto(item.titulo || id) + '.html', 'text/html');
     },
 
-    // Botão 📤 ao lado de cada aba "N Estrela(s)" — exporta só o POOL atual
+    // Botão 📤 ao lado de cada aba de classificação — exporta só o POOL atual
     // da aba (já respeita a pílula de matéria selecionada ali, se houver),
     // mesmo padrão de JURISPRUDENCIA_RUNTIME.exportarMarkdownAba. Agrupa por
     // chave (matéria > divisão) via _localizarChavePorId, já que o esquema
@@ -26577,8 +26609,8 @@ window.ESQUEMAS_RUNTIME = {
         let s = this._estadosAba[aba];
         if (!s) return;
         let self = this;
-        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
-        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let ROTULOS_ABA = { '3': '🔴 Crítico', '2': '🟡 Importante', '1': '🟢 Regular' };
+        let SLUGS_ABA = { '3': 'critico', '2': 'importante', '1': 'regular' };
         let porChave = {};
         (s.pool || []).forEach(function(item) {
             let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
@@ -26591,14 +26623,14 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(this._gerarMarkdownEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
     },
 
-    // Botão 🎨 ao lado de cada aba "N Estrela(s)" — mesmo escopo de
+    // Botão 🎨 ao lado de cada aba de classificação — mesmo escopo de
     // exportarMarkdownAba, emitindo HTML estilizado.
     exportarHtmlAba: function(aba) {
         let s = this._estadosAba[aba];
         if (!s) return;
         let self = this;
-        let ROTULOS_ABA = { '1': '1 Estrela', '2': '2 Estrelas', '3': '3 Estrelas' };
-        let SLUGS_ABA = { '1': '1-estrela', '2': '2-estrelas', '3': '3-estrelas' };
+        let ROTULOS_ABA = { '3': '🔴 Crítico', '2': '🟡 Importante', '1': '🟢 Regular' };
+        let SLUGS_ABA = { '3': 'critico', '2': 'importante', '1': 'regular' };
         let porChave = {};
         (s.pool || []).forEach(function(item) {
             let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
@@ -26809,7 +26841,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
     /* Diferente das estrelas (1-3, hierárquicas — "3" já inclui "2" e "1"),
-       Muito Importante/Importante/Regular são 3 categorias INDEPENDENTES —
+       Crítico/Importante/Regular são 3 categorias INDEPENDENTES —
        não faz sentido "preencher até". Só o círculo do nível ATIVO fica
        opaco; os outros dois ficam esmaecidos (cor do próprio emoji, sem
        trocar de cor como as estrelas fariam). */
@@ -26875,7 +26907,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
-    /* Abas do topo: "Navegar" (grade L1/L2 acima) + Muito Importante/Importante/Regular
+    /* Abas do topo: "Navegar" (grade L1/L2 acima) + Crítico/Importante/Regular
        (repetição espaçada) — mesmo padrão visual de #section-flashcards. */
     #jurisprudencia-modal .fc-tabs { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; padding:6px 10px 0 10px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:var(--bg-white); }
     #jurisprudencia-modal .jur-tabs-grupo { display:flex; gap:4px; }
@@ -26958,7 +26990,7 @@ window.carregarEsquemasOficiais = async function() {
 
     #jurisprudencia-modal .fc-card-revisao-status, #modal-jurisprudencia-baralho .fc-card-revisao-status { font-size:10px; color:var(--text-muted); font-weight:600; }
     #jurisprudencia-modal .fc-card-revisao-acoes, #modal-jurisprudencia-baralho .fc-card-revisao-acoes { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    /* Botões de classificação (Muito Importante/Importante/Regular) das
+    /* Botões de classificação (Crítico/Importante/Regular) das
        abas — agora um filho DIRETO de .fc-aba-revisao (fixo, fora do corpo
        rolável, ver _renderCorpoAba), precisa do próprio respiro (a regra
        genérica acima não tem padding nenhum, só fazia sentido dentro do
@@ -26995,9 +27027,9 @@ window.carregarEsquemasOficiais = async function() {
         <div class="fc-tabs">
             <div class="jur-tabs-grupo">
                 <button class="fc-tab ativa" id="jur-tab-grade" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('grade')">🗂️ Navegar</button>
-                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Muito Importante <span class="fc-tab-count" id="jur-tab-dificil-count"></span></button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar MD: fichas Muito Importante">📤</button>
-                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('dificil')" title="Exportar HTML estilizado: fichas Muito Importante">🎨</button>
+                <button class="fc-tab" id="jur-tab-dificil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('dificil')">🔴 Crítico <span class="fc-tab-count" id="jur-tab-dificil-count"></span></button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('dificil')" title="Exportar MD: fichas Crítico">📤</button>
+                <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('dificil')" title="Exportar HTML estilizado: fichas Crítico">🎨</button>
                 <button class="fc-tab" id="jur-tab-medio" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('medio')">🟡 Importante <span class="fc-tab-count" id="jur-tab-medio-count"></span></button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('medio')" title="Exportar MD: fichas Importante">📤</button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('medio')" title="Exportar HTML estilizado: fichas Importante">🎨</button>
@@ -27252,7 +27284,7 @@ window.carregarEsquemasOficiais = async function() {
 
 <!-- MODAL: Baralho de Cards de Jurisprudência (Todos | Disciplina selecionada)
      — popup .mo/.mdl em cima de #jurisprudencia-modal, mesmo padrão de
-     navegação 1-a-1 (embaralhar + ‹› + classificação Muito Importante/
+     navegação 1-a-1 (embaralhar + ‹› + classificação Crítico/
      Importante/Regular) já usado em #modal-flashcard, reaproveitando
      window.ClassificacaoCards. -->
 <div id="modal-jurisprudencia-baralho" class="mo">
@@ -27755,7 +27787,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 // por disciplina na barra lateral só é montada uma vez, antes
                 // das fichas oficiais chegarem, e nunca era recalculada depois.
                 // _atualizarContagensAbas() sofre do MESMO problema — uma
-                // ficha OFICIAL já classificada (Muito Importante/Importante/
+                // ficha OFICIAL já classificada (Crítico/Importante/
                 // Regular) em sessão anterior fica de fora da 1ª contagem
                 // (fichas oficiais só entram em this.fichas depois desta
                 // Promise resolver), e como nada recalculava aqui, o rótulo
@@ -27768,7 +27800,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     // Contagem total (todas as matérias) por nível, exibida direto no rótulo
-    // de cada aba — ex.: "🔴 Muito Importante (22)". Chamada sempre que uma
+    // de cada aba — ex.: "🔴 Crítico (22)". Chamada sempre que uma
     // classificação muda (Baralho ou dentro das próprias abas).
     _atualizarContagensAbas: function() {
         let self = this;
@@ -27856,7 +27888,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         // Atalhos "Repetitivos/Repercussão Geral/Controle Concentrado" —
         // fileira fixa ACIMA da lista de matérias (pedido explícito do
-        // usuário), não mais uma aba junto de Muito Importante/Importante/
+        // usuário), não mais uma aba junto de Crítico/Importante/
         // Regular: são só outra forma de navegar até as fichas (ainda usam
         // o mesmo card, mesma classificação, mesmo ocultar/excluir), não um
         // estado pessoal de revisão.
@@ -28585,7 +28617,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let nivelAtual = statusClassif ? statusClassif.ultimaClassificacao : null;
         let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleVisualizado(\'' + idEsc + '\'); window.JURISPRUDENCIA_RUNTIME._renderGradeCards();" title="Marcar como visualizado">👁 Visualizado</button>';
         let NIVEIS_CLASSIF = [
-            { chave: 'dificil', icone: '🔴', rotulo: 'Muito Importante' },
+            { chave: 'dificil', icone: '🔴', rotulo: 'Crítico' },
             { chave: 'medio', icone: '🟡', rotulo: 'Importante' },
             { chave: 'facil', icone: '🟢', rotulo: 'Regular' }
         ];
@@ -29297,14 +29329,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(htmlDoc, 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.html', 'text/html');
     },
 
-    // Botões dentro de cada aba de classificação (Muito Importante/
+    // Botões dentro de cada aba de classificação (Crítico/
     // Importante/Regular) — exporta só o POOL atual da aba (já respeita a
     // pílula de matéria selecionada ali, se houver).
     exportarMarkdownAba: function(aba) {
         let s = this._estadosAba[aba];
         if (!s) return;
-        let ROTULOS_ABA = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
-        let SLUGS_ABA = { dificil: 'muito-importante', medio: 'importante', facil: 'regular' };
+        let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
+        let SLUGS_ABA = { dificil: 'critico', medio: 'importante', facil: 'regular' };
         let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
         let md = this._gerarMarkdownFichas(s.pool || [], titulo);
         if (!md) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
@@ -29317,8 +29349,8 @@ window.JURISPRUDENCIA_RUNTIME = {
     exportarHtmlAba: function(aba) {
         let s = this._estadosAba[aba];
         if (!s) return;
-        let ROTULOS_ABA = { dificil: 'Muito Importante', medio: 'Importante', facil: 'Regular' };
-        let SLUGS_ABA = { dificil: 'muito-importante', medio: 'importante', facil: 'regular' };
+        let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
+        let SLUGS_ABA = { dificil: 'critico', medio: 'importante', facil: 'regular' };
         let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
         let htmlDoc = this._gerarHtmlFichas(s.pool || [], titulo);
         if (!htmlDoc) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
@@ -29475,7 +29507,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.fecharExportarAvancado();
     },
 
-    // ── CLASSIFICAÇÃO (Muito Importante/Importante/Regular) — mesmo toggle de
+    // ── CLASSIFICAÇÃO (Crítico/Importante/Regular) — mesmo toggle de
     // Flashcards/Praticar Caderno via window.ClassificacaoCards, aplicado por
     // id de ficha. Puro sistema de distribuição: sem agendamento. ──
 
@@ -29505,7 +29537,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     _statusRevisaoJurTexto: function(id) {
         let r = this.revisaoJurisprudencia[id];
         if (!r || !r.ultimaClassificacao) return 'Ainda não classificado';
-        let rotulos = { dificil: '🔴 Muito Importante', medio: '🟡 Importante', facil: '🟢 Regular' };
+        let rotulos = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular' };
         return 'Classificado como: ' + (rotulos[r.ultimaClassificacao] || r.ultimaClassificacao);
     },
 
@@ -29523,10 +29555,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         let atual = this.revisaoJurisprudencia[id] ? this.revisaoJurisprudencia[id].ultimaClassificacao : null;
         // Rótulos próprios da Jurisprudência (diferente de Flashcards/
         // Praticar Caderno): "Difícil/Médio/Fácil" não fazia sentido pra
-        // julgados — trocado por Muito Importante/Importante/Regular.
+        // julgados — trocado por Crítico/Importante/Regular.
         // Chaves internas (dificil/medio/facil) e cores continuam as mesmas.
         let niveis = [
-            { chave: 'dificil', rotulo: '🔴 Muito Importante', rotuloDesmarcar: '🔴 Desmarcar Muito Importante' },
+            { chave: 'dificil', rotulo: '🔴 Crítico', rotuloDesmarcar: '🔴 Desmarcar Crítico' },
             { chave: 'medio', rotulo: '🟡 Importante', rotuloDesmarcar: '🟡 Desmarcar Importante' },
             { chave: 'facil', rotulo: '🟢 Regular', rotuloDesmarcar: '🟢 Desmarcar Regular' }
         ];
@@ -29641,7 +29673,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         return window._etiquetaEfetivaDoItem(item, etiquetaLocal);
     },
 
-    // dificil(Muito Importante)=0, medio(Importante)=1, facil(Regular)=2,
+    // dificil(Crítico)=0, medio(Importante)=1, facil(Regular)=2,
     // sem classificação=3 — usado pra ordenar o Leitor (mais importante
     // primeiro), pedido explícito do usuário.
     _rankClassificacaoJur: function(item) {
@@ -29656,7 +29688,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // Ordem padrão = por etiqueta primeiro (agrupa todo mundo da mesma
         // etiqueta junto; sem etiqueta vai pro final) — dentro de cada
         // etiqueta (e no grupo "sem etiqueta"), desempata por classificação
-        // (Muito Importante primeiro, sem classificação por último). Pedido
+        // (Crítico primeiro, sem classificação por último). Pedido
         // explícito do usuário. Sort estável (ES2019+).
         fichas = fichas.slice().sort(function(a, b) {
             let ea = self._etiquetaDaFicha(a);
@@ -30087,7 +30119,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
             this._htmlCartaoFichaEstudo(card);
 
-        // Botões de classificação (Muito Importante/Importante/Regular)
+        // Botões de classificação (Crítico/Importante/Regular)
         // FIXOS embaixo, fora de .fc-aba-revisao-scroll — pedido explícito
         // do usuário: antes ficavam dentro do corpo rolável, junto com o
         // card, então "flutuavam" (saíam de vista conforme o card era
