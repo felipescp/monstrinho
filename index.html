@@ -26785,6 +26785,7 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #jurisprudencia-modal .jur-tb-btn.ativa:hover { color:#fff; }
     #jurisprudencia-modal .jur-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    #jurisprudencia-modal .jur-tb-todo-acervo { white-space:nowrap; flex-shrink:0; }
     /* Etiquetas — mesmo padrão de #esquemas-modal/#section-glossario.
        .jur-etq-swatch é reaproveitado tanto na paleta (22px) quanto no
        filtro por cor da toolbar (16px, via .jur-etq-swatch-filtro). */
@@ -26826,12 +26827,6 @@ window.carregarEsquemasOficiais = async function() {
     /* Discreto mas visível, sem abrir o popup — não compete com tese/meta. */
     #jurisprudencia-modal .jur-card-data-consulta { font-size:8.5px; color:var(--text-muted); opacity:0.75; }
 
-    /* Badge de origem (matéria — divisão) — só aparece nos atalhos por
-       sistemática (Repetitivos/Repercussão Geral/Controle Concentrado),
-       onde uma ficha pode vir de qualquer disciplina. Fica ACIMA das tags,
-       fora do fluxo normal do card, pra nunca ser confundida com etiqueta
-       pessoal nem com o tribunal. */
-    #jurisprudencia-modal .jur-card-origem-badge { font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.02em; color:var(--app-primary); }
     /* Rodapé do card: Visualizado + classificação (🔴🟡🟢), clicáveis —
        mesma posição/padrão de #esquemas-modal/#section-glossario
        .esq-card-classificacao (classe reaproveitada de propósito, mesmo
@@ -27721,8 +27716,17 @@ window.JURISPRUDENCIA_RUNTIME = {
     // padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME) — título E conteúdo
     // (tese/resumo), não só o título.
     _filtroBusca: '',
+    // Checkbox "Todo acervo" ao lado da busca — quando ativo, ignora a
+    // Matéria/Divisão selecionadas e cruza TODAS as disciplinas (ver
+    // _fichasParaExibir), pra achar um card em qualquer lugar do acervo
+    // sem precisar navegar até a divisão certa primeiro.
+    _buscaTodoAcervo: false,
     _normalizarBusca: function(texto) {
         return (texto || '').toString().toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
+    },
+    toggleBuscaTodoAcervo: function() {
+        this._buscaTodoAcervo = !this._buscaTodoAcervo;
+        this._renderGradeCards();
     },
     filtrarJurisprudenciaGrade: function(texto) {
         this._filtroBusca = texto || '';
@@ -28017,6 +28021,18 @@ window.JURISPRUDENCIA_RUNTIME = {
             let resultado = [];
             Object.keys(this.fichas).sort().forEach(function(chave) {
                 (self.fichas[chave] || []).forEach(function(m) { if (m.sistematica === alvo) resultado.push({ item: m, chave: chave }); });
+            });
+            return resultado;
+        }
+        // "Todo acervo" (checkbox ao lado da busca) — ignora Matéria/Divisão
+        // selecionadas e cruza TODAS as disciplinas, mesmo padrão do atalho
+        // por sistemática acima. Pedido explícito do usuário: poder buscar
+        // um card em qualquer lugar do acervo sem precisar navegar até a
+        // divisão certa primeiro.
+        if (this._buscaTodoAcervo) {
+            let resultado = [];
+            Object.keys(this.fichas).sort().forEach(function(chave) {
+                (self.fichas[chave] || []).forEach(function(m) { resultado.push({ item: m, chave: chave }); });
             });
             return resultado;
         }
@@ -28515,6 +28531,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         // ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME. Busca por título E conteúdo
         // (tese/resumo), ver _listaFiltrada.
         let htmlBusca = '<input type="text" id="jur-busca-grade" class="jur-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + this._escapar(this._filtroBusca) + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarJurisprudenciaGrade(this.value)">';
+        // Pedido explícito do usuário: opção ao lado da busca pra cruzar
+        // TODAS as disciplinas (ignora Matéria/Divisão selecionadas) — ver
+        // _fichasParaExibir. A origem (L1 > L2) já aparece em todo card
+        // (.fc-card-origem), então os resultados de disciplinas diferentes
+        // continuam identificáveis mesmo fora da coluna selecionada.
+        let htmlTodoAcervo = '<label class="jur-toggle-ocultos jur-tb-todo-acervo"><input type="checkbox" ' + (this._buscaTodoAcervo ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleBuscaTodoAcervo()"> Todo acervo</label>';
         let htmlAcoes;
         if (this._modoSelecao) {
             htmlAcoes =
@@ -28526,7 +28548,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+                '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             htmlAcoes =
                 '<div class="jur-tb-acoes-grupo">' +
@@ -28537,7 +28559,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     this._renderFiltroCores() +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlBusca + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+                '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
 
         let self = this;
@@ -28559,12 +28581,14 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     // Card individual da grade — extraído pra ser reaproveitado tanto pela
     // navegação normal (Matéria/Divisão) quanto pelos atalhos cruzando
-    // disciplinas (_renderGradeCardsSistematica). opts.mostrarOrigem exibe
-    // a matéria/divisão de origem no card — obrigatório nos atalhos (uma
-    // ficha ali pode vir de qualquer disciplina), dispensável na navegação
-    // normal (a origem já está implícita na coluna selecionada).
-    _htmlCardGrade: function(item, chave, opts) {
-        opts = opts || {};
+    // disciplinas (_renderGradeCardsSistematica) e pela busca "Todo
+    // acervo" (que também mistura fichas de várias disciplinas). A
+    // origem (L1 > L2) aparece sempre, em letra pequena e cinza — mesmo
+    // padrão .fc-card-origem já usado nos cards de Esquemas e nas
+    // baterias da Vitrine — pedido explícito do usuário, pra identificar
+    // a origem do card sem precisar abrir nem depender da coluna
+    // selecionada (que nem sempre corresponde, nesses 2 casos).
+    _htmlCardGrade: function(item, chave) {
         let self = this;
         let oculto = !!self.ocultos[item.id];
         let selecionado = !!self._selecionados[item.id];
@@ -28599,9 +28623,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let onclickCard = self._modoSelecao ? '' : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
-        let origemHtml = opts.mostrarOrigem
-            ? '<div class="jur-card-origem-badge">' + self._escapar(chave) + '</div>'
-            : '';
+        let origemHtml = '<div class="fc-card-origem">' + self._escapar(chave) + '</div>';
 
         // Visualizado + classificação (🔴🟡🟢) — clique pára aqui
         // (event.stopPropagation) pra não abrir a ficha junto. Clicar no
@@ -28672,7 +28694,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
 
         let lista = this._listaFiltrada();
-        let htmlCards = lista.map(function(par) { return self._htmlCardGrade(par.item, par.chave, {}); }).join('');
+        let htmlCards = lista.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('');
 
         let corpoHtml;
         if (htmlCards) {
@@ -28752,7 +28774,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // stopPropagation()/preventDefault() pra não também abrir/fechar o
         // acordeon (o clique, sem isso, bate no <summary> por baixo).
         let htmlGrupos = grupos.map(function(grupo, indice) {
-            let htmlCards = grupo.itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave, { mostrarOrigem: true }); }).join('');
+            let htmlCards = grupo.itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('');
             let htmlAcoesGrupo = '<span class="jur-grupo-acoes">' +
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.md)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownGrupoSistematica(' + indice + ');">📄</button>' +
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.html estilizado)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlGrupoSistematica(' + indice + ');">🎨</button>' +
@@ -29525,6 +29547,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     marcarClassificacaoCard: function(id, nivel) {
         this._aplicarClassificacaoJur(id, nivel);
         this._renderGradeCards();
+        this._atualizarContagensAbas();
     },
 
     // Mesmo padrão de ESQUEMAS_RUNTIME.toggleVisualizado/
