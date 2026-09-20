@@ -23484,8 +23484,16 @@ window.triggerFileUpload = function(callback) {
        .fc-aba-revisao só organiza; quem rola é .fc-aba-revisao-scroll; o
        ‹› fica fora do fluxo rolável, em posição fixa. */
     #esquemas-modal .fc-aba-revisao { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+    /* Pedido explícito do usuário: "Todas/Disciplinas" saiu de uma fileira
+       horizontal no topo (ocupava várias linhas) e virou barra lateral
+       esquerda — mesma posição/padrão já usado na aba "Navegar"
+       (#esq-col-materias) e replicado de #jurisprudencia-modal. */
+    #esquemas-modal .fc-aba-revisao-corpo { flex:1; min-height:0; display:flex; overflow:hidden; }
+    #esquemas-modal .fc-aba-revisao-sidebar { width:220px; flex-shrink:0; overflow-y:auto; padding:10px; background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #esquemas-modal .fc-aba-revisao-scroll { flex:1; min-height:0; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #esquemas-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    #esquemas-modal .fc-aba-revisao-sidebar .fc-pills { flex-direction:column; flex-wrap:nowrap; justify-content:flex-start; max-width:none; gap:4px; }
+    #esquemas-modal .fc-aba-revisao-sidebar .fc-pill { width:100%; box-sizing:border-box; border-radius:6px; text-align:left; }
     #esquemas-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #esquemas-modal .fc-pill:hover { border-color:var(--app-primary); }
     #esquemas-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -23630,9 +23638,13 @@ window.triggerFileUpload = function(callback) {
         </div>
 
         <div class="fc-aba-revisao" id="esq-aba-1" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="esq-pills-1"></div>
-                <div id="esq-corpo-1"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="esq-pills-1"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="esq-corpo-1"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-1"></div>
             <div class="fc-popup-nav">
@@ -23643,9 +23655,13 @@ window.triggerFileUpload = function(callback) {
         </div>
 
         <div class="fc-aba-revisao" id="esq-aba-2" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="esq-pills-2"></div>
-                <div id="esq-corpo-2"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="esq-pills-2"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="esq-corpo-2"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-2"></div>
             <div class="fc-popup-nav">
@@ -23656,9 +23672,13 @@ window.triggerFileUpload = function(callback) {
         </div>
 
         <div class="fc-aba-revisao" id="esq-aba-3" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="esq-pills-3"></div>
-                <div id="esq-corpo-3"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="esq-pills-3"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="esq-corpo-3"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-3"></div>
             <div class="fc-popup-nav">
@@ -27036,14 +27056,27 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .esq-export-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
 
     /* .fc-aba-revisao não rola mais sozinha — vira só um contêiner flex-
-       column com 2 regiões: .fc-aba-revisao-scroll (pills+card, rolável,
-       cresce/encolhe) e .fc-popup-nav (‹›, ALTURA FIXA fora do fluxo
-       rolável). Sem essa separação, o ‹› "flutuava" seguindo a altura do
-       card — cards de tese/resumo mais longos empurravam a navegação mais
-       pra baixo, mudando de posição a cada ficha (bug relatado). */
+       column com 2 regiões: .fc-aba-revisao-corpo (sidebar+card, cresce/
+       encolhe) e .fc-popup-nav (‹›, ALTURA FIXA fora do fluxo rolável).
+       Sem essa separação, o ‹› "flutuava" seguindo a altura do card —
+       cards de tese/resumo mais longos empurravam a navegação mais pra
+       baixo, mudando de posição a cada ficha (bug relatado). */
     #jurisprudencia-modal .fc-aba-revisao { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+    /* Pedido explícito do usuário: "Todas/Disciplinas" saiu de uma fileira
+       horizontal no topo (ocupava várias linhas, empurrando o card pra
+       baixo) e virou barra lateral esquerda — mesma posição/padrão já
+       usado na aba "Navegar" (#jur-col-materias). */
+    #jurisprudencia-modal .fc-aba-revisao-corpo { flex:1; min-height:0; display:flex; overflow:hidden; }
+    #jurisprudencia-modal .fc-aba-revisao-sidebar { width:220px; flex-shrink:0; overflow-y:auto; padding:10px; background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #jurisprudencia-modal .fc-aba-revisao-scroll { flex:1; min-height:0; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #jurisprudencia-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
+    /* Dentro da barra lateral (não mais um wrap horizontal), cada pill vira
+       um item de lista full-width, alinhado à esquerda — mesmo componente
+       (.fc-pill), reaproveitado sem alterar sua regra de base (usada
+       também nas pills "Agrupar por: Ano/Disciplina" da toolbar do atalho,
+       que continuam horizontais). */
+    #jurisprudencia-modal .fc-aba-revisao-sidebar .fc-pills { flex-direction:column; flex-wrap:nowrap; justify-content:flex-start; max-width:none; gap:4px; }
+    #jurisprudencia-modal .fc-aba-revisao-sidebar .fc-pill { width:100%; box-sizing:border-box; border-radius:6px; text-align:left; }
     #jurisprudencia-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .fc-pill:hover { border-color:var(--app-primary); }
     #jurisprudencia-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -27148,9 +27181,13 @@ window.carregarEsquemasOficiais = async function() {
         </div>
 
         <div class="fc-aba-revisao" id="jur-aba-dificil" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="jur-pills-dificil"></div>
-                <div id="jur-corpo-dificil"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="jur-pills-dificil"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="jur-corpo-dificil"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-dificil"></div>
             <div class="fc-popup-nav">
@@ -27161,9 +27198,13 @@ window.carregarEsquemasOficiais = async function() {
         </div>
 
         <div class="fc-aba-revisao" id="jur-aba-medio" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="jur-pills-medio"></div>
-                <div id="jur-corpo-medio"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="jur-pills-medio"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="jur-corpo-medio"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-medio"></div>
             <div class="fc-popup-nav">
@@ -27174,9 +27215,13 @@ window.carregarEsquemasOficiais = async function() {
         </div>
 
         <div class="fc-aba-revisao" id="jur-aba-facil" style="display:none;">
-            <div class="fc-aba-revisao-scroll">
-                <div class="fc-pills" id="jur-pills-facil"></div>
-                <div id="jur-corpo-facil"></div>
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="jur-pills-facil"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll">
+                    <div id="jur-corpo-facil"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-facil"></div>
             <div class="fc-popup-nav">
