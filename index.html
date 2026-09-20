@@ -1679,10 +1679,25 @@ try {
             <!-- COLUNA 1: Baterias Focadas (Com Taxonomia) -->
             <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
                 <div class="v-acc-header" style="cursor:default; background:var(--bg-soft); flex-shrink: 0; padding: 8px 15px;">
-                    <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F
-                        <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-left:4px;">Ocultar Oficiais</button>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <!-- Pedido explícito do usuário: painel com o total de baterias
+                             DISPONÍVEIS (mesmo recorte usado nas contagens da coluna de
+                             matérias, já reflete "Ocultar Oficiais" global) e quantas já
+                             foram CONCLUÍDAS (têm registro no Arquivo Morto) — atualizado
+                             em window.renderHomeDashboard(). -->
+                        <div style="display:flex; flex-direction:column; gap:1px; font-size:9px; font-weight:700; color:var(--text-muted); line-height:1.35; white-space:nowrap;">
+                            <span>Disponíveis: <b style="color:var(--text-main);" id="contagem-baterias-disponiveis">0</b></span>
+                            <span>Concluídas: <b style="color:var(--success);" id="contagem-baterias-concluidas">0</b></span>
+                        </div>
+                        <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F
+                            <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-left:4px;">Ocultar Oficiais</button>
+                        </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                        <!-- Pedido explícito do usuário: busca por NOME da bateria, ao
+                             lado esquerdo de "Selecionar" — mesmo padrão/posição já usado
+                             em Esquemas/Jurisprudência/Glossário. -->
+                        <input type="text" id="busca-baterias-vf" placeholder="🔎 Buscar..." title="Busca pelo nome da bateria" oninput="window.filtrarBuscaBateriasVF(this.value)" style="padding:4px 8px; font-size:9px; font-family:var(--font-body); border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-main); width:130px; box-sizing:border-box;">
                         <button id="btn-selecionar-baterias" onclick="event.stopPropagation(); window.toggleModoSelecaoBaterias()" title="Selecionar baterias específicas pra exportar num grupo — mesma modalidade de 'Exportar Grupo' (kebab ⋮), apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Selecionar</button>
                         <div style="position: relative;">
     <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
@@ -16075,8 +16090,23 @@ window.renderHomeDashboard = function() {
         provasCE = provasCE.filter(function(p) { return !p.origem_oficial; });
     }
 
+    // Lido AQUI (não só dentro de renderizarListaBaterias, mais abaixo) pra
+    // ficar disponível também pro badge de "realizadas/não realizadas" por
+    // disciplina (coluna 1) e pro painel "Disponíveis/Concluídas" (ao lado
+    // de "Baterias V/F") — pedido explícito do usuário. renderizarListaBaterias
+    // e as demais funções abaixo (exibirTodasBaterias, filtrarProvasCE etc.)
+    // enxergam esta mesma variável por closure, sem precisar reler.
+    let arquivoMorto = window.lerArquivoMorto();
+
+    // Painel "Disponíveis/Concluídas" — mesmo recorte de provasCE usado nas
+    // contagens da coluna de matérias (já reflete "Ocultar Oficiais" global).
+    let elDisponiveis = document.getElementById('contagem-baterias-disponiveis');
+    let elConcluidas = document.getElementById('contagem-baterias-concluidas');
+    if (elDisponiveis) elDisponiveis.textContent = provasCE.length;
+    if (elConcluidas) elConcluidas.textContent = provasCE.filter(function(p) { return !!arquivoMorto[p.id]; }).length;
+
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
-    
+
     if (colMaterias && listCE) {
         if (!taxBase || taxBase.length === 0) {
             colMaterias.innerHTML = '<div style="padding:15px; color:var(--danger); font-size:11px; font-weight:bold;">Falha ao injetar taxonomia.js.</div>';
@@ -16084,8 +16114,20 @@ window.renderHomeDashboard = function() {
             let htmlMaterias = '';
 
             taxBase.forEach((mat) => {
-                let qtdMat = provasCE.filter(p => p.materia === mat.nivel_1.toUpperCase()).length;
-                let badgeMat = qtdMat > 0 ? `<span style="font-size:9px; background:var(--app-primary); color:white; padding:2px 5px; border-radius:4px; margin-left:5px;">${qtdMat}</span>` : '';
+                let itensMat = provasCE.filter(p => p.materia === mat.nivel_1.toUpperCase());
+                let qtdMat = itensMat.length;
+                // Pedido explícito do usuário: além do total (badge sólido,
+                // já existia), mostrar a quebra realizadas/não realizadas —
+                // fundo transparente, texto verde (realizadas) e escuro
+                // (não realizadas). realizadas = tem registro no Arquivo
+                // Morto (mesmo critério de "isResolvido" usado nos cards).
+                let qtdRealizadasMat = itensMat.filter(p => !!arquivoMorto[p.id]).length;
+                let qtdNaoRealizadasMat = qtdMat - qtdRealizadasMat;
+                let badgeMat = qtdMat > 0
+                    ? `<span style="font-size:9px; background:var(--app-primary); color:white; padding:2px 5px; border-radius:4px; margin-left:5px;">${qtdMat}</span>` +
+                      `<span style="font-size:9px; background:transparent; color:var(--success); font-weight:800; padding:2px 4px;" title="Realizadas">${qtdRealizadasMat}</span>` +
+                      `<span style="font-size:9px; background:transparent; color:var(--text-main); font-weight:800; padding:2px 4px;" title="Não realizadas">${qtdNaoRealizadasMat}</span>`
+                    : '';
                 let corMat = typeof getMateriaColor === 'function' ? getMateriaColor(mat.nivel_1) : 'var(--text-main)';
 
 // COLUNA 1: Disciplinas
@@ -16157,6 +16199,15 @@ window.renderHomeDashboard = function() {
             // Mostra direto todas as baterias da matéria — não espera a escolha de um tópico
             window.filtrarProvasCE(materiaNome);
         };
+// Normaliza pra busca insensível a maiúsculas/acentos — mesmo algoritmo já
+// usado em toda busca por texto do app (ex.: ESQUEMAS_RUNTIME._normalizarBusca),
+// só que auto-contido (não depende de REGEX_DIACRITICOS de outro <script>,
+// que só é atribuída bem mais abaixo no arquivo — a 1ª renderHomeDashboard()
+// roda antes disso).
+function normalizarBuscaBateriasVF(texto) {
+    return (texto || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
 function renderizarListaBaterias(filtradas, headerHtml) {
                 let cabecalhoDireita = document.getElementById('header-filtro-ce');
                 if (cabecalhoDireita) {
@@ -16169,6 +16220,15 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                 // reloads (mesmo padrão do "Mostrar ocultos" de Materiais).
                 if (window.__ocultarOficiaisBaterias__) {
                     filtradas = filtradas.filter(function(p) { return !p.origem_oficial; });
+                }
+
+                // Busca por NOME da bateria (ao lado de "Selecionar", pedido
+                // explícito do usuário) — mesmo esquema de "aplicar sempre em
+                // cima do que já está sendo exibido" do "Ocultar Oficiais"
+                // acima, valendo tanto em "Todas" quanto em Matéria/Tópico.
+                if (window.__buscaBateriasVF__ && window.__buscaBateriasVF__.trim()) {
+                    let alvoBusca = normalizarBuscaBateriasVF(window.__buscaBateriasVF__);
+                    filtradas = filtradas.filter(function(p) { return normalizarBuscaBateriasVF(p.nome).indexOf(alvoBusca) !== -1; });
                 }
 
                 // Ordenação (botões A-Z / Por Data) — não persiste entre
@@ -16207,8 +16267,9 @@ function renderizarListaBaterias(filtradas, headerHtml) {
 // - sessão persistente.
 //
 // =========================================================
-                // 1. Puxa o índice de provas já finalizadas para fazer a validação visual
-                let arquivoMorto = window.lerArquivoMorto();
+                // 1. Índice de provas já finalizadas (validação visual) — lido
+                // no topo de renderHomeDashboard() agora, não mais aqui; esta
+                // função enxerga a mesma variável `arquivoMorto` por closure.
 
                 // 1b. Fallback de "Resolvida em" pra baterias finalizadas ANTES de
                 // finalizadaEm existir — sincronizarResultadoComPlanner já grava
@@ -16365,6 +16426,20 @@ window.exibirMateriaSelecionada = function() {
         let cabecalhoDireita = document.getElementById('header-filtro-ce');
         if (cabecalhoDireita) cabecalhoDireita.textContent = 'SELECIONE UM TÓPICO';
         if (listCE) listCE.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic;">Selecione um tópico.</div>';
+    }
+};
+
+// Busca por nome (campo ao lado de "Selecionar", no cabeçalho do painel) —
+// reaplica a view corrente (Todas ou Matéria/Tópico), mesmo padrão de
+// ordenarListaBaterias()/toggleOcultarOficiaisBaterias() logo abaixo. O
+// filtro em si mora em renderizarListaBaterias() (ver normalizarBuscaBateriasVF),
+// pra valer nos dois modos sem duplicar lógica.
+window.filtrarBuscaBateriasVF = function(texto) {
+    window.__buscaBateriasVF__ = texto || '';
+    if (window.__modoListaAtivo === 'todas') {
+        window.exibirTodasBaterias();
+    } else if (window.__ultimoFiltroCE) {
+        window.filtrarProvasCE(window.__ultimoFiltroCE.materia, window.__ultimoFiltroCE.divisao);
     }
 };
 
