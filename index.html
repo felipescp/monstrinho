@@ -27902,7 +27902,14 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Baseado em item.sistematica, campo que já existe em cada ficha (nada
     // novo a rastrear). null = navegação normal por Matéria/Divisão.
     _modoSistematica: null,
-    _agruparSistematicaPor: 'ano', // 'ano' | 'disciplina' | 'importancia'
+    // Pedido explícito do usuário: seleção CUMULADA — cada eixo é um toggle
+    // independente (não mais radio single-select), combinados numa chave
+    // composta. Ordem de PRIORIDADE (externo -> interno) é sempre fixa
+    // ('ano' > 'disciplina' > 'importancia' > 'tribunal'), independente da
+    // ordem em que o usuário clicou nos pills — ver agruparSistematicaPor()
+    // e _renderGradeCardsSistematica(). Nunca fica vazio: tirar o último
+    // eixo ativo volta pro padrão ['ano'].
+    _agruparSistematicaPor: ['ano'], // subconjunto de ['ano','disciplina','importancia','tribunal']
     _SISTEMATICAS_DESTAQUE: [
         { valor: 'Súmula Vinculante', rotulo: '📌 Súmulas Vinculantes' },
         { valor: 'Súmula', rotulo: '📌 Súmulas' },
@@ -29075,7 +29082,8 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     // Corpo dos atalhos por sistemática (Repetitivos/Repercussão Geral/
     // Controle Concentrado) — lista achatada cruzando todas as disciplinas,
-    // agrupada por Ano, Disciplina ou Importância (_agruparSistematicaPor). Dentro de
+    // agrupada por Ano/Disciplina/Importância/Tribunal, cumulativamente —
+    // 1 ou mais eixos ao mesmo tempo (_agruparSistematicaPor). Dentro de
     // cada grupo, sempre por data do julgado (mais recente primeiro). A
     // origem (matéria — divisão) fica SEMPRE visível em cada card,
     // independente do agrupamento escolhido — pedido explícito do usuário.
@@ -29089,51 +29097,60 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let lista = this._listaFiltrada();
 
-        let grupos = [];
-        if (this._agruparSistematicaPor === 'disciplina') {
-            let porMateria = {};
-            lista.forEach(function(par) {
-                let mat = par.chave.split(' > ')[0];
-                if (!porMateria[mat]) porMateria[mat] = [];
-                porMateria[mat].push(par);
-            });
-            Object.keys(porMateria).sort().forEach(function(mat) {
-                let itens = porMateria[mat].slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
-                grupos.push({ titulo: mat, itens: itens });
-            });
-        } else if (this._agruparSistematicaPor === 'importancia') {
-            // Mesmas 3 chaves de revisaoJurisprudencia[id].ultimaClassificacao
-            // usadas no rodapé do card e no filtro "Classificar por:
-            // Importância" da navegação normal — aqui como eixo de
-            // AGRUPAMENTO (pedido explícito do usuário), não de filtro.
-            // Ordem fixa Crítico -> Importante -> Regular -> Sem
-            // Classificação (não alfabética), refletindo a hierarquia de
-            // prioridade de revisão.
-            let ORDEM = ['dificil', 'medio', 'facil', '_sem'];
-            let ROTULOS = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
-            let porNivel = { dificil: [], medio: [], facil: [], _sem: [] };
-            lista.forEach(function(par) {
-                let r = self.revisaoJurisprudencia[par.item.id];
-                let nivel = (r && porNivel.hasOwnProperty(r.ultimaClassificacao)) ? r.ultimaClassificacao : '_sem';
-                porNivel[nivel].push(par);
-            });
-            ORDEM.forEach(function(nivel) {
-                if (porNivel[nivel].length === 0) return;
-                let itens = porNivel[nivel].slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
-                grupos.push({ titulo: ROTULOS[nivel], itens: itens });
-            });
-        } else {
-            let porAno = {};
-            lista.forEach(function(par) {
-                let ano = (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
-                if (!porAno[ano]) porAno[ano] = [];
-                porAno[ano].push(par);
-            });
-            Object.keys(porAno).sort(function(a, b) { return b.localeCompare(a); }).forEach(function(ano) {
-                let itens = porAno[ano].slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
-                grupos.push({ titulo: ano, itens: itens });
-            });
+        // Agrupamento CUMULADO (pedido explícito do usuário): monta uma
+        // chave composta com todos os eixos ativos, na ordem fixa de
+        // prioridade ORDEM_EIXOS (externo -> interno) — ex.: Ano+Disciplina
+        // ativos gera grupos "2024 · Direito Constitucional",
+        // "2024 · Direito Penal", "2023 · Direito Constitucional" etc.
+        // "tribunal" só é respeitado dentro do atalho Súmulas (mesmo que
+        // tenha ficado marcado de uma navegação anterior — o pill nem
+        // aparece fora dali, ver htmlAgruparPills abaixo).
+        let ORDEM_EIXOS = ['ano', 'disciplina', 'importancia', 'tribunal'];
+        let ROTULOS_IMPORTANCIA = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
+        let RANK_IMPORTANCIA = { dificil: 0, medio: 1, facil: 2, _sem: 3 };
+        function valorDoEixo(eixo, par) {
+            if (eixo === 'ano') return (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
+            if (eixo === 'disciplina') return par.chave.split(' > ')[0];
+            if (eixo === 'tribunal') return par.item.tribunal || 'Sem tribunal';
+            let r = self.revisaoJurisprudencia[par.item.id];
+            return (r && RANK_IMPORTANCIA.hasOwnProperty(r.ultimaClassificacao)) ? r.ultimaClassificacao : '_sem';
         }
+        function rotuloDoEixo(eixo, valor) { return eixo === 'importancia' ? ROTULOS_IMPORTANCIA[valor] : valor; }
+        function compararValoresEixo(eixo, va, vb) {
+            if (eixo === 'ano') return vb.localeCompare(va); // mais recente primeiro
+            if (eixo === 'importancia') return RANK_IMPORTANCIA[va] - RANK_IMPORTANCIA[vb];
+            return va.localeCompare(vb, 'pt-BR'); // disciplina/tribunal: alfabética
+        }
+
+        let eixosAtivos = ORDEM_EIXOS.filter(function(e) {
+            return self._agruparSistematicaPor.indexOf(e) !== -1 && (e !== 'tribunal' || self._modoSistematica === 'Súmula');
+        });
+        if (eixosAtivos.length === 0) eixosAtivos = ['ano'];
+
+        let mapaGrupos = {};
+        lista.forEach(function(par) {
+            let valores = eixosAtivos.map(function(eixo) { return valorDoEixo(eixo, par); });
+            let chave = valores.join('');
+            if (!mapaGrupos[chave]) {
+                mapaGrupos[chave] = {
+                    valores: valores,
+                    titulo: eixosAtivos.map(function(eixo, i) { return rotuloDoEixo(eixo, valores[i]); }).join(' · '),
+                    itens: [],
+                };
+            }
+            mapaGrupos[chave].itens.push(par);
+        });
+        let grupos = Object.keys(mapaGrupos).map(function(k) { return mapaGrupos[k]; });
+        grupos.sort(function(a, b) {
+            for (let i = 0; i < eixosAtivos.length; i++) {
+                let c = compararValoresEixo(eixosAtivos[i], a.valores[i], b.valores[i]);
+                if (c !== 0) return c;
+            }
+            return 0;
+        });
+        grupos.forEach(function(g) {
+            g.itens = g.itens.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
+        });
 
         // Guardado pra exportarMarkdownGrupoSistematica/exportarHtmlGrupoSistematica
         // conseguirem achar as fichas certas pelo índice do grupo, sem
@@ -29175,13 +29192,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         // divisões" na navegação normal, comportamento consistente.
         let htmlBuscaAtalho = '<input type="text" id="jur-busca-sistematica" class="jur-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + self._escapar(self._filtroBusca) + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarJurisprudenciaGrade(this.value)">';
         // Seletor de Tribunal — SÓ no atalho "Súmulas" (não em "Súmulas
-        // Vinculantes"), pedido explícito do usuário: TODOS/STJ/STF, as
-        // duas cortes que de fato publicam súmulas comuns.
+        // Vinculantes"), pedido explícito do usuário: TODOS/STJ/STF/TSE, as
+        // 3 cortes que de fato publicam súmulas comuns cobertas pelo
+        // acervo. "Julgados comuns" (navegação normal por Disciplinas) usa
+        // outro seletor — o de htmlFiltrosSecundarios/_valoresDistintosParaFiltros,
+        // já 100% dinâmico (reflete os tribunais realmente presentes nos
+        // dados), então não precisa de TSE hardcoded ali: aparece sozinho
+        // assim que houver ficha com tribunal:"TSE".
         let htmlTribunalSumula = (self._modoSistematica === 'Súmula')
             ? '<label class="jur-filtro-mini">Tribunal <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarTribunal(this.value)">' +
                 '<option value=""' + (!self._filtroTribunal ? ' selected' : '') + '>TODOS</option>' +
                 '<option value="STJ"' + (self._filtroTribunal === 'STJ' ? ' selected' : '') + '>STJ</option>' +
                 '<option value="STF"' + (self._filtroTribunal === 'STF' ? ' selected' : '') + '>STF</option>' +
+                '<option value="TSE"' + (self._filtroTribunal === 'TSE' ? ' selected' : '') + '>TSE</option>' +
               '</select></label>'
             : '';
         let htmlFerramentas = '<div class="jur-toolbar-linha2">' +
@@ -29201,9 +29224,13 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '</span>' +
                 '</div>' +
                 '<div class="jur-agrupar-pills">Agrupar por: ' +
-                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'ano' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
-                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'disciplina' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
-                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'importancia' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('disciplina') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('importancia') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
+                    // Pedido explícito do usuário: eixo "Tribunal" só aparece
+                    // dentro do atalho Súmulas (é o único onde múltiplos
+                    // tribunais — STF/STJ/TSE — convivem de fato).
+                    (self._modoSistematica === 'Súmula' ? '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('tribunal') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'tribunal\')">Tribunal</button>' : '') +
                 '</div>' +
             '</div>' +
             htmlFerramentas +
@@ -29215,8 +29242,18 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (novoScroll) novoScroll.scrollTop = posicaoScroll;
     },
 
+    // Pedido explícito do usuário: seleção CUMULADA — clicar num pill já
+    // ativo o desliga (toggle), clicar num inativo o liga, sem exclusão
+    // mútua entre eixos. Nunca deixa esvaziar de vez: tirar o último eixo
+    // ativo volta pro padrão ['ano'], pra sempre existir algum agrupamento.
     agruparSistematicaPor: function(valor) {
-        this._agruparSistematicaPor = valor;
+        let idx = this._agruparSistematicaPor.indexOf(valor);
+        if (idx !== -1) {
+            this._agruparSistematicaPor.splice(idx, 1);
+            if (this._agruparSistematicaPor.length === 0) this._agruparSistematicaPor.push('ano');
+        } else {
+            this._agruparSistematicaPor.push(valor);
+        }
         this._renderGradeCards();
     },
 
