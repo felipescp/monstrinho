@@ -27449,7 +27449,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMO PODE SER COBRADO EM PROVA: ..." — ignorado —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMENTÁRIO: ..." — aceita também o rótulo antigo "COMO PODE SER COBRADO EM PROVA:", útil pra súmulas curtas com boa explicação doutrinária —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
         <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="jur-import-preview"></div>
         <div class="mfoot">
@@ -27487,6 +27487,8 @@ window.carregarEsquemasOficiais = async function() {
         <div class="jur-ver-texto" id="jur-ver-tese"></div>
         <div class="jur-ver-label">Resumo do Caso</div>
         <div class="jur-ver-texto" id="jur-ver-resumo"></div>
+        <div class="jur-ver-label" id="jur-ver-comentario-label" style="display:none;">Comentário</div>
+        <div class="jur-ver-texto" id="jur-ver-comentario" style="display:none;"></div>
         <div class="jur-ver-label">Conexões</div>
         <div class="jur-ver-texto" id="jur-ver-conexoes"></div>
         <div class="jur-ver-label" id="jur-ver-link-label" style="display:none;">Link</div>
@@ -27652,7 +27654,12 @@ const JUR_RE_SISTEMATICA = /^Sistemática:\s*([\s\S]+)$/i;
 const JUR_RE_TEMA_EMBUTIDO_NA_SISTEMATICA = /^(.*?)\s*[—-]\s*Tema\s+(\d+)\s*$/i;
 const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
-const JUR_RE_COMOCOBRAR = /^COMO PODE SER COBRADO EM PROVA:?/i;
+// Aceita os dois rótulos como sinônimos do MESMO campo — "COMENTÁRIO" é o
+// rótulo novo (pedido explícito do usuário, pra súmulas: enunciado curto
+// mas com bastante explicação doutrinária), "COMO PODE SER COBRADO EM
+// PROVA" é o rótulo antigo, mantido por compatibilidade com textos já
+// formatados nesse padrão. Ambos alimentam ficha.comentario.
+const JUR_RE_COMENTARIO = /^(?:COMENT[ÁA]RIO|COMO PODE SER COBRADO EM PROVA):?\s*([\s\S]*)$/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
 const JUR_RE_LINK = /^LINK:\s*([\s\S]+)$/i;
 const JUR_RE_DATACONSULTA = /^DATA DA CONSULTA:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
@@ -27663,14 +27670,15 @@ const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" �
 // mesmo sem \n antes dele.
 const JUR_RE_L2_GLOBAL = /#{0,6}\s*\bL2:\s*([^\n]*)/g;
 
-// Só "como pode ser cobrado" precisa engolir linhas subsequentes não
-// rotuladas (seus sub-itens "Objetiva:/Discursiva/Oral:", sempre
-// descartados). Generalizar esse comportamento pra tese/resumo/conexões
+// Só "comentario" precisa engolir linhas subsequentes não rotuladas — o
+// texto de cada uma delas é ACUMULADO no campo (pedido explícito do
+// usuário: antes elas eram só "engolidas" e descartadas, ver histórico
+// abaixo). Generalizar esse comportamento pra tese/resumo/conexões
 // (tentando lidar com parágrafos quebrados em várias linhas) foi tentado e
 // causou um bug real: uma ficha órfã vizinha (sem "Tribunal:") era engolida
 // como "continuação" da ficha anterior, sobrescrevendo processo/relator/
 // data dela. Mantido restrito só ao caso necessário e testado.
-const JUR_CAMPOS_ACUMULAVEIS = { comocobrar: true };
+const JUR_CAMPOS_ACUMULAVEIS = { comentario: true };
 
 function jurRemoverLinhasGrupo(texto) {
     return texto.split('\n').filter(function(linha) { return !JUR_RE_GRUPO.test(linha.trim()); }).join('\n');
@@ -27686,7 +27694,7 @@ function jurClassificarLinha(l) {
     if (JUR_RE_SISTEMATICA.test(l)) return 'sistematica';
     if (JUR_RE_TESE.test(l)) return 'tese';
     if (JUR_RE_RESUMO.test(l)) return 'resumo';
-    if (JUR_RE_COMOCOBRAR.test(l)) return 'comocobrar';
+    if (JUR_RE_COMENTARIO.test(l)) return 'comentario';
     if (JUR_RE_CONEXOES.test(l)) return 'conexoes';
     if (JUR_RE_LINK.test(l)) return 'link';
     if (JUR_RE_DATACONSULTA.test(l)) return 'dataconsulta';
@@ -27694,7 +27702,7 @@ function jurClassificarLinha(l) {
 }
 
 function jurCriarFichaVazia() {
-    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', conexoes: '', link: '', dataConsulta: '' };
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', comentario: '', conexoes: '', link: '', dataConsulta: '' };
 }
 
 function jurAplicarCampoNaLinha(ficha, tipo, linha) {
@@ -27724,6 +27732,12 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
     } else if (tipo === 'resumo') {
         m = JUR_RE_RESUMO.exec(linha);
         ficha.resumo = m[1].trim();
+    } else if (tipo === 'comentario') {
+        m = JUR_RE_COMENTARIO.exec(linha);
+        // Pode vir vazio (rótulo sozinho na linha, conteúdo só nas linhas
+        // seguintes — acumuladas em jurParsearLinhasDivisao) ou já trazer
+        // texto colado na mesma linha do rótulo.
+        ficha.comentario = m[1] ? m[1].trim() : '';
     } else if (tipo === 'conexoes') {
         m = JUR_RE_CONEXOES.exec(linha);
         ficha.conexoes = m[1].trim();
@@ -27734,7 +27748,6 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
         m = JUR_RE_DATACONSULTA.exec(linha);
         ficha.dataConsulta = m[3] + '-' + m[2] + '-' + m[1]; // ISO AAAA-MM-DD
     }
-    // 'comocobrar' -> intencionalmente não faz nada (campo descartado).
 }
 
 // Varre as linhas de UMA divisão já isolada, extraindo fichas válidas
@@ -27761,12 +27774,19 @@ function jurParsearLinhasDivisao(linhas) {
                 let tipoJ = jurClassificarLinha(linhas[j]);
                 if (tipoJ === null) {
                     // Guarda de segurança: só continua "dentro" do bloco
-                    // "como pode ser cobrado" se a linha seguinte não
-                    // parecer o início de uma ficha nova (pro caso de
-                    // CONEXÕES ter sido omitido antes da próxima ficha).
+                    // "comentário" se a linha seguinte não parecer o início
+                    // de uma ficha nova (pro caso de CONEXÕES ter sido
+                    // omitido antes da próxima ficha).
                     let proximoTipo = (j + 1 < linhas.length) ? jurClassificarLinha(linhas[j + 1]) : null;
                     let provavelNovoTitulo = (proximoTipo === 'tribunal');
                     if (!provavelNovoTitulo && JUR_CAMPOS_ACUMULAVEIS[ultimoTipo]) {
+                        // Acumula o texto da linha no campo corrente — hoje
+                        // só "comentario" é acumulável (pedido explícito do
+                        // usuário: preservar o conteúdo, não só "engolir"
+                        // as linhas pra não confundir a ficha vizinha).
+                        if (ultimoTipo === 'comentario') {
+                            ficha.comentario = ficha.comentario ? (ficha.comentario + '\n' + linhas[j]) : linhas[j];
+                        }
                         j++;
                         continue;
                     }
@@ -27882,7 +27902,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Baseado em item.sistematica, campo que já existe em cada ficha (nada
     // novo a rastrear). null = navegação normal por Matéria/Divisão.
     _modoSistematica: null,
-    _agruparSistematicaPor: 'ano', // 'ano' | 'disciplina'
+    _agruparSistematicaPor: 'ano', // 'ano' | 'disciplina' | 'importancia'
     _SISTEMATICAS_DESTAQUE: [
         { valor: 'Súmula Vinculante', rotulo: '📌 Súmulas Vinculantes' },
         { valor: 'Súmula', rotulo: '📌 Súmulas' },
@@ -27918,7 +27938,15 @@ window.JURISPRUDENCIA_RUNTIME = {
     _selecionados: {},
     _filtroCor: '', // '' = todas as cores; senão, uma cor da paleta (fixa ou customizada) ou _SEM_ETIQUETA_SENTINELA
     _SEM_ETIQUETA_SENTINELA: '__sem_etiqueta__', // valor especial de _filtroCor — nunca é uma cor de verdade
-    _mostrarFiltroCor: false, // toggle do botão "Classificar por Cor"
+    _mostrarFiltroCor: false, // toggle do botão "Cor" (bifurcado de "Classificar por Cor" — só na navegação normal por Disciplinas)
+    // "Classificar por: Cor / Importância" — pedido explícito do usuário:
+    // bifurcar em 2 opções independentes (só na navegação normal por
+    // Disciplinas; nos atalhos por sistemática a Importância já existe como
+    // eixo de AGRUPAMENTO, ver _agruparSistematicaPor). Nível segue as
+    // mesmas 3 chaves de revisaoJurisprudencia[id].ultimaClassificacao
+    // ('dificil'=Crítico/'medio'=Importante/'facil'=Regular).
+    _filtroImportancia: '', // '' = todos os níveis; senão 'dificil'|'medio'|'facil'
+    _mostrarFiltroImportancia: false, // toggle do botão "Importância"
     _modoExibicao: 'temas', // 'temas' | 'data'
     _resultadoPreVisualizado: null, // guarda o parse entre "Pré-visualizar" e "Confirmar"
     _verAtual: null, // {chave, id} da ficha aberta no popup "Ver" — usado por alternarSuperado/atualizarSupersedidoPor
@@ -28165,6 +28193,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         // silenciosamente ao trocar de modo, sem indicação clara do porquê.
         this._filtroCor = '';
         this._mostrarFiltroCor = false;
+        // Idem pro filtro de Importância — só existe na navegação normal
+        // por Disciplinas (nos atalhos, Importância já é um eixo de
+        // agrupamento, não um filtro de chips); sem isto, um nível deixado
+        // filtrado na navegação normal continuaria filtrando por baixo dos
+        // panos ao trocar pra um atalho, sem nenhum chip visível ali pra
+        // explicar ou desfazer.
+        this._filtroImportancia = '';
+        this._mostrarFiltroImportancia = false;
         // Idem pro Tribunal — o seletor TODOS/STJ/STF só existe dentro do
         // atalho "Súmulas" (ver _renderGradeCardsSistematica), mas
         // _listaFiltrada() aplica _filtroTribunal em QUALQUER modo; sem
@@ -28282,6 +28318,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         return resultado;
     },
 
+    // Existe pelo menos 1 card oculto no recorte ATUAL (matéria/divisão
+    // selecionada, "Todo acervo" ou atalho por sistemática — o mesmo
+    // recorte-base de _fichasParaExibir, ANTES de qualquer filtro)? Usado
+    // só pra decidir se o checkbox "Mostrar ocultos" ocupa espaço na
+    // toolbar — pedido explícito do usuário: não faz sentido o controle
+    // aparecer quando não há nada pra revelar.
+    _temAlgumOcultoNoEscopoAtual: function() {
+        let self = this;
+        return this._fichasParaExibir().some(function(par) { return !!self.ocultos[par.item.id]; });
+    },
+
     // Aplica ocultos/ocultarOficiais (mesma lógica de Materiais/Esquemas) e,
     // em modo "data", ordena por dataJulgado desc (mais recente primeiro) —
     // sempre dentro do filtro atual de matéria/divisão.
@@ -28313,7 +28360,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             lista = lista.filter(function(par) {
                 let item = par.item;
                 let alvoTexto = [
-                    self._tituloComTema(item), item.tese, item.resumo,
+                    self._tituloComTema(item), item.tese, item.resumo, item.comentario,
                     item.tribunal, item.orgao, self._processoComTema(item), item.relator,
                     item.sistematica, self._formatarDataBR(item.dataJulgado), self._formatarDataBR(item.dataConsulta)
                 ].filter(Boolean).join(' ');
@@ -28341,6 +28388,16 @@ window.JURISPRUDENCIA_RUNTIME = {
                     return !et;
                 }
                 return et && et.cor === self._filtroCor;
+            });
+        }
+        // "Classificar por: Importância" (bifurcado de Cor, só na
+        // navegação normal por Disciplinas) — filtra pela classificação
+        // pessoal Crítico/Importante/Regular (revisaoJurisprudencia), a
+        // mesma usada no rodapé do card e no Leitor de Precedentes.
+        if (this._filtroImportancia) {
+            lista = lista.filter(function(par) {
+                let r = self.revisaoJurisprudencia[par.item.id];
+                return !!r && r.ultimaClassificacao === self._filtroImportancia;
             });
         }
         if (this._modoExibicao === 'data') {
@@ -28719,9 +28776,51 @@ window.JURISPRUDENCIA_RUNTIME = {
             alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de classificar por cor.');
             return;
         }
+        // "Classificar por: Cor / Importância" são 2 opções bifurcadas —
+        // só uma fileira de chips fica aberta por vez (mesmo espírito das
+        // pills "Agrupar por: Ano/Disciplina/Importância"), então abrir Cor
+        // fecha Importância se estiver aberta.
+        this._mostrarFiltroImportancia = false;
+        this._filtroImportancia = '';
         this._mostrarFiltroCor = !this._mostrarFiltroCor;
         if (!this._mostrarFiltroCor) this._filtroCor = '';
         this._renderGradeCards();
+    },
+
+    // Bifurcação de "🎨 Classificar por Cor": mesmo botão de fileira de
+    // chips, mas filtrando pela classificação pessoal Crítico/Importante/
+    // Regular (revisaoJurisprudencia) em vez de por etiqueta colorida. Só
+    // existe na navegação normal por Disciplinas — nos atalhos por
+    // sistemática, Importância já é um eixo de AGRUPAMENTO (ver
+    // agruparSistematicaPor), não faria sentido ter os dois ao mesmo tempo.
+    toggleFiltroImportancia: function() {
+        this._mostrarFiltroCor = false;
+        this._filtroCor = '';
+        this._mostrarFiltroImportancia = !this._mostrarFiltroImportancia;
+        if (!this._mostrarFiltroImportancia) this._filtroImportancia = '';
+        this._renderGradeCards();
+    },
+
+    filtrarPorImportancia: function(nivel) {
+        this._filtroImportancia = (this._filtroImportancia === nivel) ? '' : nivel; // clicar no nível já ativo limpa o filtro
+        this._renderGradeCards();
+    },
+
+    // Mesmo padrão de _renderFiltroCores (conteúdo encaixado na toolbar,
+    // logo depois do botão "Importância") — 3 chips fixos (não depende de
+    // etiquetas cadastradas, é sempre Crítico/Importante/Regular).
+    _renderFiltroImportancia: function() {
+        if (!this._mostrarFiltroImportancia) return '';
+        let self = this;
+        let NIVEIS = [
+            { chave: 'dificil', rotulo: '🔴 Crítico' },
+            { chave: 'medio', rotulo: '🟡 Importante' },
+            { chave: 'facil', rotulo: '🟢 Regular' }
+        ];
+        let pills = NIVEIS.map(function(n) {
+            return '<button class="fc-pill' + (self._filtroImportancia === n.chave ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarPorImportancia(\'' + n.chave + '\')">' + n.rotulo + '</button>';
+        }).join('');
+        return '<span class="jur-toggle-ocultos">Nível:</span>' + pills;
     },
 
     // Retorna só o CONTEÚDO (sem embrulho próprio) — é encaixado dentro do
@@ -28795,14 +28894,24 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
+            // Pedido explícito do usuário: o "Mostrar ocultos" só faz
+            // sentido — e só deve OCUPAR ESPAÇO — quando existe pelo menos
+            // 1 card oculto no recorte atual (matéria/divisão selecionada,
+            // ou "Todo acervo"/atalho, conforme _fichasParaExibir).
+            let htmlMostrarOcultos = this._temAlgumOcultoNoEscopoAtual()
+                ? '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>'
+                : '';
             htmlAcoes =
                 '<div class="jur-tb-acoes-grupo">' +
                     '<button class="jur-tb-btn' + (this._modoExibicao === 'data' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoExibicao()">' + (this._modoExibicao === 'data' ? 'Por Temas' : 'Data do Julgado') + '</button>' +
-                    '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
+                    htmlMostrarOcultos +
                     '<button class="jur-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleOcultarOficiais()">' + (this._ocultarOficiais ? 'Exibir Oficiais' : 'Ocultar Oficiais') + '</button>' +
                     '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
-                    '<button class="jur-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
+                    '<span class="jur-toggle-ocultos">Classificar por:</span>' +
+                    '<button class="jur-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Cor</button>' +
+                    '<button class="jur-tb-btn' + (this._mostrarFiltroImportancia ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroImportancia()">Importância</button>' +
                     this._renderFiltroCores() +
+                    this._renderFiltroImportancia() +
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
@@ -28966,7 +29075,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     // Corpo dos atalhos por sistemática (Repetitivos/Repercussão Geral/
     // Controle Concentrado) — lista achatada cruzando todas as disciplinas,
-    // agrupada por Ano ou por Disciplina (_agruparSistematicaPor). Dentro de
+    // agrupada por Ano, Disciplina ou Importância (_agruparSistematicaPor). Dentro de
     // cada grupo, sempre por data do julgado (mais recente primeiro). A
     // origem (matéria — divisão) fica SEMPRE visível em cada card,
     // independente do agrupamento escolhido — pedido explícito do usuário.
@@ -28991,6 +29100,27 @@ window.JURISPRUDENCIA_RUNTIME = {
             Object.keys(porMateria).sort().forEach(function(mat) {
                 let itens = porMateria[mat].slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
                 grupos.push({ titulo: mat, itens: itens });
+            });
+        } else if (this._agruparSistematicaPor === 'importancia') {
+            // Mesmas 3 chaves de revisaoJurisprudencia[id].ultimaClassificacao
+            // usadas no rodapé do card e no filtro "Classificar por:
+            // Importância" da navegação normal — aqui como eixo de
+            // AGRUPAMENTO (pedido explícito do usuário), não de filtro.
+            // Ordem fixa Crítico -> Importante -> Regular -> Sem
+            // Classificação (não alfabética), refletindo a hierarquia de
+            // prioridade de revisão.
+            let ORDEM = ['dificil', 'medio', 'facil', '_sem'];
+            let ROTULOS = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
+            let porNivel = { dificil: [], medio: [], facil: [], _sem: [] };
+            lista.forEach(function(par) {
+                let r = self.revisaoJurisprudencia[par.item.id];
+                let nivel = (r && porNivel.hasOwnProperty(r.ultimaClassificacao)) ? r.ultimaClassificacao : '_sem';
+                porNivel[nivel].push(par);
+            });
+            ORDEM.forEach(function(nivel) {
+                if (porNivel[nivel].length === 0) return;
+                let itens = porNivel[nivel].slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
+                grupos.push({ titulo: ROTULOS[nivel], itens: itens });
             });
         } else {
             let porAno = {};
@@ -29073,6 +29203,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<div class="jur-agrupar-pills">Agrupar por: ' +
                     '<button class="fc-pill' + (self._agruparSistematicaPor === 'ano' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
                     '<button class="fc-pill' + (self._agruparSistematicaPor === 'disciplina' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'importancia' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
                 '</div>' +
             '</div>' +
             htmlFerramentas +
@@ -29102,6 +29233,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderBlocoSuperado(item);
         document.getElementById('jur-ver-tese').textContent = item.tese || '—';
         document.getElementById('jur-ver-resumo').textContent = item.resumo || '—';
+        // Comentário é opcional (nem toda ficha tem — sobretudo fichas
+        // antigas, importadas antes deste campo existir) — mesmo padrão do
+        // bloco de Link logo abaixo: rótulo e texto só aparecem quando há
+        // conteúdo, em vez de mostrar "Comentário: —" pra maioria das fichas.
+        let temComentario = !!item.comentario;
+        document.getElementById('jur-ver-comentario-label').style.display = temComentario ? 'block' : 'none';
+        let comentarioEl = document.getElementById('jur-ver-comentario');
+        comentarioEl.style.display = temComentario ? 'block' : 'none';
+        comentarioEl.textContent = temComentario ? item.comentario : '';
         document.getElementById('jur-ver-conexoes').textContent = item.conexoes || '—';
         // Link é opcional (nem toda ficha antiga/importada tem um) — o
         // rótulo e o bloco só aparecem quando existe, em vez de mostrar
@@ -29540,6 +29680,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (meta.length > 0) linhas.push(meta.join('\n'), '');
                     if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', self._blockquote(f.tese), '');
                     if (f.resumo) linhas.push('**Resumo do Caso:**', '', self._blockquote(f.resumo), '');
+                    if (f.comentario) linhas.push('**Comentário:**', '', self._blockquote(f.comentario), '');
                     if (f.conexoes) linhas.push('**Conexões:**', '', self._blockquote(f.conexoes), '');
                     if (f.link) linhas.push('**Link:** ' + f.link, '');
                     linhas.push('---', '');
@@ -29592,6 +29733,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (meta.length > 0) corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
                     if (f.tese) corpo += '<div class="doc-callout-label">Tese Fixada / Decisão</div><div class="doc-callout">' + self._escapar(f.tese) + '</div>';
                     if (f.resumo) corpo += '<div class="doc-callout-label">Resumo do Caso</div><div class="doc-callout">' + self._escapar(f.resumo) + '</div>';
+                    if (f.comentario) corpo += '<div class="doc-callout-label">Comentário</div><div class="doc-callout">' + self._escapar(f.comentario) + '</div>';
                     if (f.conexoes) corpo += '<div class="doc-callout-label">Conexões</div><div class="doc-callout">' + self._escapar(f.conexoes) + '</div>';
                     if (f.link) corpo += '<div class="doc-callout-label">Link</div><div class="doc-callout"><a href="' + self._escapar(f.link) + '" target="_blank" rel="noopener noreferrer">' + self._escapar(f.link) + '</a></div>';
                     corpo += '</div>';
@@ -29880,6 +30022,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="jur-estudo-texto">' + this._escapar(item.tese || '—') + '</div>' +
             '<div class="jur-estudo-label">Resumo do Caso</div>' +
             '<div class="jur-estudo-texto">' + this._escapar(item.resumo || '—') + '</div>' +
+            (item.comentario ? '<div class="jur-estudo-label">Comentário</div><div class="jur-estudo-texto">' + this._escapar(item.comentario) + '</div>' : '') +
             (item.link ? '<div class="jur-estudo-label">Link</div><div class="jur-estudo-texto"><a href="' + this._escapar(item.link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--app-primary); word-break:break-all;">' + this._escapar(item.link) + '</a></div>' : '') +
         '</div>';
     },
