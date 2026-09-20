@@ -1679,25 +1679,24 @@ try {
             <!-- COLUNA 1: Baterias Focadas (Com Taxonomia) -->
             <div class="v-acc-item active" style="margin:0; display:flex; flex-direction:column; height: 100%; max-height: 80vh;">
                 <div class="v-acc-header" style="cursor:default; background:var(--bg-soft); flex-shrink: 0; padding: 8px 15px;">
-                    <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F</div>
                         <!-- Pedido explícito do usuário: painel com o total de baterias
                              DISPONÍVEIS (mesmo recorte usado nas contagens da coluna de
                              matérias, já reflete "Ocultar Oficiais" global) e quantas já
                              foram CONCLUÍDAS (têm registro no Arquivo Morto) — atualizado
-                             em window.renderHomeDashboard(). -->
-                        <div style="display:flex; flex-direction:column; gap:1px; font-size:9px; font-weight:700; color:var(--text-muted); line-height:1.35; white-space:nowrap;">
-                            <span>Disponíveis: <b style="color:var(--text-main);" id="contagem-baterias-disponiveis">0</b></span>
-                            <span>Concluídas: <b style="color:var(--success);" id="contagem-baterias-concluidas">0</b></span>
-                        </div>
-                        <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F
-                            <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer; margin-left:4px;">Ocultar Oficiais</button>
+                             em window.renderHomeDashboard(). Ao lado DIREITO do título,
+                             numa linha só. -->
+                        <div style="font-size:9px; font-weight:700; color:var(--text-muted); white-space:nowrap; padding-left:10px; border-left:1px solid var(--border-color);">
+                            <b style="color:var(--text-main);" id="contagem-baterias-disponiveis">0</b> disponíveis / <b style="color:var(--success);" id="contagem-baterias-concluidas">0</b> concluídas
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                        <!-- Pedido explícito do usuário: busca por NOME da bateria, ao
-                             lado esquerdo de "Selecionar" — mesmo padrão/posição já usado
-                             em Esquemas/Jurisprudência/Glossário. -->
+                        <!-- Pedido explícito do usuário: ordem Buscar | Ocultar Oficiais |
+                             Selecionar. Busca filtra exclusivamente pelo NOME da bateria —
+                             mesmo padrão/posição já usado em Esquemas/Jurisprudência/Glossário. -->
                         <input type="text" id="busca-baterias-vf" placeholder="🔎 Buscar..." title="Busca pelo nome da bateria" oninput="window.filtrarBuscaBateriasVF(this.value)" style="padding:4px 8px; font-size:9px; font-family:var(--font-body); border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-main); width:130px; box-sizing:border-box;">
+                        <button id="btn-ocultar-oficiais-vitrine" onclick="event.stopPropagation(); window.toggleOcultarOficiaisGlobalVitrine()" title="Ocultar TODAS as baterias oficiais, inclusive das contagens da coluna de matérias — só as pessoais continuam visíveis em qualquer coluna" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Ocultar Oficiais</button>
                         <button id="btn-selecionar-baterias" onclick="event.stopPropagation(); window.toggleModoSelecaoBaterias()" title="Selecionar baterias específicas pra exportar num grupo — mesma modalidade de 'Exportar Grupo' (kebab ⋮), apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Selecionar</button>
                         <div style="position: relative;">
     <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
@@ -16118,7 +16117,7 @@ window.renderHomeDashboard = function() {
                 let qtdMat = itensMat.length;
                 // Pedido explícito do usuário: além do total (badge sólido,
                 // já existia), mostrar a quebra realizadas/não realizadas —
-                // fundo transparente, texto verde (realizadas) e escuro
+                // fundo transparente, texto verde (realizadas) e vermelho
                 // (não realizadas). realizadas = tem registro no Arquivo
                 // Morto (mesmo critério de "isResolvido" usado nos cards).
                 let qtdRealizadasMat = itensMat.filter(p => !!arquivoMorto[p.id]).length;
@@ -16126,7 +16125,7 @@ window.renderHomeDashboard = function() {
                 let badgeMat = qtdMat > 0
                     ? `<span style="font-size:9px; background:var(--app-primary); color:white; padding:2px 5px; border-radius:4px; margin-left:5px;">${qtdMat}</span>` +
                       `<span style="font-size:9px; background:transparent; color:var(--success); font-weight:800; padding:2px 4px;" title="Realizadas">${qtdRealizadasMat}</span>` +
-                      `<span style="font-size:9px; background:transparent; color:var(--text-main); font-weight:800; padding:2px 4px;" title="Não realizadas">${qtdNaoRealizadasMat}</span>`
+                      `<span style="font-size:9px; background:transparent; color:var(--danger); font-weight:800; padding:2px 4px;" title="Não realizadas">${qtdNaoRealizadasMat}</span>`
                     : '';
                 let corMat = typeof getMateriaColor === 'function' ? getMateriaColor(mat.nivel_1) : 'var(--text-main)';
 
