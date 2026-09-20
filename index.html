@@ -25344,16 +25344,17 @@ window.ESQUEMAS_RUNTIME = {
 
         corpo.innerHTML =
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
-            this._htmlCartaoEsquemaEstudo(card) +
-            '<div class="fc-card-revisao-acoes">' + btnVisualizado + '</div>';
+            this._htmlCartaoEsquemaEstudo(card);
 
-        // Botões de classificação (🔴🟡🟢) FIXOS embaixo, fora de
-        // .fc-aba-revisao-scroll — pedido explícito: antes ficavam dentro
-        // do corpo rolável, junto com o card, então "flutuavam" (saíam de
-        // vista conforme o card era comprido) em vez de ficarem sempre à
-        // mão pra classificar em sequência sem precisar rolar.
+        // Visualizado + botões de classificação (🔴🟡🟢) JUNTOS, FIXOS
+        // embaixo, fora de .fc-aba-revisao-scroll — pedido explícito do
+        // usuário: Visualizado ficava sozinho dentro do corpo rolável,
+        // separado dos botões de classificação; agora os dois ficam lado a
+        // lado no mesmo rodapé fixo, mesmo padrão já usado no Leitor/
+        // Baralho (ver renderBaralho: btnVisualizado + botoes no mesmo
+        // #esq-baralho-acoes) e replicado em JURISPRUDENCIA_RUNTIME.
         let acoesEl = document.getElementById('esq-acoes-' + aba);
-        if (acoesEl) acoesEl.innerHTML = botoes;
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado + botoes;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
@@ -30321,6 +30322,13 @@ window.JURISPRUDENCIA_RUNTIME = {
         let card = this._fichaAtualDaAba(aba);
         let origem = [card.materiaL1, card.divisaoL2].filter(function(x) { return !!x; }).join(' — ');
 
+        // Pedido explícito do usuário: "👁 Marcar como Visualizado" também
+        // disponível aqui, JUNTO dos botões de classificação no rodapé fixo
+        // — mesmo padrão já usado no Leitor/Baralho (ver renderBaralho:
+        // btnVisualizado + botoes no mesmo #jur-baralho-acoes).
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.JURISPRUDENCIA_RUNTIME._renderCorpoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+
         // O botão da classificação ATUAL do card (sempre a própria aba, já
         // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
         // com .ativa, e com o rótulo "Desmarcar X" — clicar nele já desmarca.
@@ -30333,15 +30341,15 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="fc-card-origem">' + this._escapar(origem) + '</div>' +
             this._htmlCartaoFichaEstudo(card);
 
-        // Botões de classificação (Crítico/Importante/Regular)
-        // FIXOS embaixo, fora de .fc-aba-revisao-scroll — pedido explícito
-        // do usuário: antes ficavam dentro do corpo rolável, junto com o
-        // card, então "flutuavam" (saíam de vista conforme o card era
-        // comprido) em vez de ficarem sempre à mão pra classificar em
-        // sequência sem precisar rolar — mesmo fix aplicado em
+        // Visualizado + botões de classificação (Crítico/Importante/
+        // Regular) FIXOS embaixo, fora de .fc-aba-revisao-scroll — pedido
+        // explícito do usuário: antes ficavam dentro do corpo rolável,
+        // junto com o card, então "flutuavam" (saíam de vista conforme o
+        // card era comprido) em vez de ficarem sempre à mão pra classificar
+        // em sequência sem precisar rolar — mesmo fix aplicado em
         // ESQUEMAS_RUNTIME._renderCorpoAba.
         let acoesEl = document.getElementById('jur-acoes-' + aba);
-        if (acoesEl) acoesEl.innerHTML = botoes;
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado + botoes;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + s.ordemChaves.length;
     },
