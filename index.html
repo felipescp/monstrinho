@@ -1681,14 +1681,17 @@ try {
                 <div class="v-acc-header" style="cursor:default; background:var(--bg-soft); flex-shrink: 0; padding: 8px 15px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div class="v-acc-title"><div class="v-acc-icon" style="color: var(--app-primary); background: rgba(79, 70, 229, 0.1); width: 28px; height: 28px; font-size: 14px;">⚖️</div> Baterias V/F</div>
-                        <!-- Pedido explícito do usuário: painel com o total de baterias
-                             DISPONÍVEIS (mesmo recorte usado nas contagens da coluna de
-                             matérias, já reflete "Ocultar Oficiais" global) e quantas já
-                             foram CONCLUÍDAS (têm registro no Arquivo Morto) — atualizado
-                             em window.renderHomeDashboard(). Ao lado DIREITO do título,
-                             numa linha só. -->
-                        <div style="font-size:9px; font-weight:700; color:var(--text-muted); white-space:nowrap; padding-left:10px; border-left:1px solid var(--border-color);">
-                            <b style="color:var(--text-main);" id="contagem-baterias-disponiveis">0</b> disponíveis / <b style="color:var(--success);" id="contagem-baterias-concluidas">0</b> concluídas
+                        <!-- Pedido explícito do usuário: painel com DISPONÍVEIS (mesmo
+                             recorte usado nas contagens da coluna de matérias, já reflete
+                             "Ocultar Oficiais" global) / CONCLUÍDAS (têm registro no
+                             Arquivo Morto) / NÃO CONCLUÍDAS — atualizado em
+                             window.renderHomeDashboard(). Ao lado DIREITO do título, em 3
+                             linhas; número em "placar" (fonte monoespaçada + fundo),
+                             discreto. -->
+                        <div style="display:flex; flex-direction:column; gap:2px; font-size:9px; font-weight:700; color:var(--text-muted); white-space:nowrap; padding-left:10px; border-left:1px solid var(--border-color);">
+                            <div style="display:flex; align-items:center; gap:5px;"><span style="font-family:'Courier New', monospace; font-weight:800; font-size:10.5px; letter-spacing:0.5px; color:var(--text-main); background:#f1f5f9; border-radius:4px; padding:1px 6px; min-width:22px; text-align:center; display:inline-block;" id="contagem-baterias-disponiveis">0</span> disponíveis</div>
+                            <div style="display:flex; align-items:center; gap:5px;"><span style="font-family:'Courier New', monospace; font-weight:800; font-size:10.5px; letter-spacing:0.5px; color:#166534; background:#dcfce7; border-radius:4px; padding:1px 6px; min-width:22px; text-align:center; display:inline-block;" id="contagem-baterias-concluidas">0</span> concluídas</div>
+                            <div style="display:flex; align-items:center; gap:5px;"><span style="font-family:'Courier New', monospace; font-weight:800; font-size:10.5px; letter-spacing:0.5px; color:#991b1b; background:#fee2e2; border-radius:4px; padding:1px 6px; min-width:22px; text-align:center; display:inline-block;" id="contagem-baterias-nao-concluidas">0</span> não concluídas</div>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -16097,12 +16100,17 @@ window.renderHomeDashboard = function() {
     // enxergam esta mesma variável por closure, sem precisar reler.
     let arquivoMorto = window.lerArquivoMorto();
 
-    // Painel "Disponíveis/Concluídas" — mesmo recorte de provasCE usado nas
-    // contagens da coluna de matérias (já reflete "Ocultar Oficiais" global).
+    // Painel "Disponíveis/Concluídas/Não concluídas" — mesmo recorte de
+    // provasCE usado nas contagens da coluna de matérias (já reflete
+    // "Ocultar Oficiais" global).
     let elDisponiveis = document.getElementById('contagem-baterias-disponiveis');
     let elConcluidas = document.getElementById('contagem-baterias-concluidas');
-    if (elDisponiveis) elDisponiveis.textContent = provasCE.length;
-    if (elConcluidas) elConcluidas.textContent = provasCE.filter(function(p) { return !!arquivoMorto[p.id]; }).length;
+    let elNaoConcluidas = document.getElementById('contagem-baterias-nao-concluidas');
+    let qtdDisponiveisVitrine = provasCE.length;
+    let qtdConcluidasVitrine = provasCE.filter(function(p) { return !!arquivoMorto[p.id]; }).length;
+    if (elDisponiveis) elDisponiveis.textContent = qtdDisponiveisVitrine;
+    if (elConcluidas) elConcluidas.textContent = qtdConcluidasVitrine;
+    if (elNaoConcluidas) elNaoConcluidas.textContent = qtdDisponiveisVitrine - qtdConcluidasVitrine;
 
     let taxBase = (typeof TAXONOMIA_DADOS !== 'undefined') ? TAXONOMIA_DADOS.taxonomia_concursos : [];
 
