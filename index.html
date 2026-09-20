@@ -4620,7 +4620,8 @@ window.SALINHA_GIST_SYNC = {
         }
     },
 
-exportarNuvem: async function(botao) {
+exportarNuvem: async function(botao, opts) {
+        opts = opts || {};
         // Lock compartilhado com exportarNuvemSilenciosa() — mesmo desativada
         // hoje (ver verificarSalvamentoPeriodicoNuvem), protege contra dois
         // salvamentos manuais disparados em cliques duplos, e já deixa a
@@ -4682,17 +4683,24 @@ exportarNuvem: async function(botao) {
             // misturadas quanto request PATCH gigante demais pro Gist aceitar.
             await this._enviarBackupComVersionamento(gistId, token, partes);
 
-            mostrarModal({
-                titulo: '☁️ Backup enviado com sucesso',
-                mensagemHtml: true,
-                // Login com GitHub descobre o Gist sozinho por conta (ver
-                // _descobrirGistExistente) — não precisa mais copiar/colar
-                // nenhum ID entre dispositivos, então o campo de cópia saiu
-                // daqui junto com o fluxo antigo do ⚙️.
-                mensagem:
-                    '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>',
-                botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
-            });
+            // suprimirModalSucesso: usado por salvarNuvemAoConcluirBateria(),
+            // que já mostra seu PRÓPRIO popup ("☁️ Salvando bateria
+            // concluída...") na hora — sem isto, um SEGUNDO modal genérico
+            // apareceria empilhado por cima alguns segundos depois, quando
+            // o envio de verdade terminasse.
+            if (!opts.suprimirModalSucesso) {
+                mostrarModal({
+                    titulo: '☁️ Backup enviado com sucesso',
+                    mensagemHtml: true,
+                    // Login com GitHub descobre o Gist sozinho por conta (ver
+                    // _descobrirGistExistente) — não precisa mais copiar/colar
+                    // nenhum ID entre dispositivos, então o campo de cópia saiu
+                    // daqui junto com o fluxo antigo do ⚙️.
+                    mensagem:
+                        '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>',
+                    botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
+                });
+            }
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
@@ -5318,14 +5326,14 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
 };
 
 // Salvamento automático na nuvem ao CONCLUIR uma bateria — pedido
-// explícito do usuário: mesmo botão, mesma mensagem "⏳ Salvando..." e o
-// mesmo modal de sucesso do "☁️⬆️ Salvar" manual, disparado sozinho
-// enquanto a pessoa confere os resultados (não aguardado — não atrasa a
-// transição pra tela de resultado). Diferente do salvamento periódico
+// explícito do usuário: mesmo botão e o mesmo mecanismo do "☁️⬆️ Salvar"
+// manual (exportarNuvem, com lock+retry com backoff prontos), disparado
+// sozinho enquanto a pessoa confere os resultados (não aguardado — não
+// atrasa a transição pra tela de resultado, já feita por finalizarSimulado()
+// ANTES de chamar esta função). Diferente do salvamento periódico
 // (verificarSalvamentoPeriodicoNuvem, hoje desativado por causa de uma
 // corrida 409 investigada antes), este é um gatilho por EVENTO significativo
-// (fim de bateria), não um timer arbitrário — risco de corrida bem menor,
-// e exportarNuvem() já tem lock+retry com backoff prontos pra isso.
+// (fim de bateria), não um timer arbitrário — risco de corrida bem menor.
 // Mesma regra de exportarNuvemSilenciosa(): só faz algo se token E gistId
 // já estiverem configurados (a pessoa já salvou manualmente pelo menos uma
 // vez) — nunca força login nem cria Gist novo sozinha, e nunca interrompe
@@ -5341,7 +5349,21 @@ window.salvarNuvemAoConcluirBateria = function() {
     if (!visivel(botao)) botao = document.getElementById('btn-salvar-nuvem-mobile');
     if (!visivel(botao)) botao = null;
 
-    window.SALINHA_GIST_SYNC.exportarNuvem(botao);
+    // Pedido explícito do usuário: o único aviso de hoje era o próprio
+    // botão trocando pra "⏳ Salvando..." — discreto demais, passava
+    // despercebido. Este popup aparece NA HORA, já em cima da tela de
+    // Resultados (que finalizarSimulado() já mostrou antes de chamar esta
+    // função — não atrasa a transição), com OK só pra fechar.
+    // suprimirModalSucesso evita um SEGUNDO modal genérico ("☁️ Backup
+    // enviado com sucesso") empilhado por cima deste alguns segundos
+    // depois, quando o envio de verdade terminar no fundo.
+    mostrarModal({
+        titulo: '☁️ Salvando bateria concluída...',
+        mensagem: 'O resultado desta bateria está sendo salvo automaticamente no seu backup na nuvem.',
+        botoes: [{ label: 'OK', cor: 'var(--app-primary)' }]
+    });
+
+    window.SALINHA_GIST_SYNC.exportarNuvem(botao, { suprimirModalSucesso: true });
 };
 
 // Gancho de ativação: reaproveita autoSave() (chamada em ~20 lugares a
@@ -20549,29 +20571,44 @@ function refazerErradas(idx){
 // critério de exportarCadernoQuestoesMd/Html) em vez das erradas.
 function refazerQuestoesSalvas(idx){
   var h=HIST[idx];if(!h)return;
-  var questoes=[];
+  // Agrupa por bloco de ORIGEM (b.nome), em vez de jogar tudo num único
+  // bloco "Revisão de Questões Salvas" — pedido explícito do usuário: o
+  // navegador lateral (renderNav, um <h3> por bloco) mostrava só um título
+  // genérico pra todas as questões salvas, perdendo de onde cada uma veio.
+  var porBloco=[];
+  var indicePorNome={};
   h.dados.blocos.forEach(function(b){
     b.questoes.forEach(function(q){
       if(h.dados.caderno&&h.dados.caderno.indexOf(q.id)>=0){
-        questoes.push(JSON.parse(JSON.stringify(q)));
+        if(!(b.nome in indicePorNome)){
+          indicePorNome[b.nome]=porBloco.length;
+          porBloco.push({nome:b.nome,questoes:[]});
+        }
+        porBloco[indicePorNome[b.nome]].questoes.push(JSON.parse(JSON.stringify(q)));
       }
     });
   });
-  if(!questoes.length){
+  var totalQuestoes=porBloco.reduce(function(s,b){return s+b.questoes.length;},0);
+  if(!totalQuestoes){
     mostrarModal({titulo:'Sem questões salvas',mensagem:'Não há questões salvas no Caderno para refazer.',botoes:[{label:'OK',cor:'#22c55e',cb:null}]});
     return;
   }
-  var novoBloco={nome:'Revisão de Questões Salvas',questoes:[]};
-  questoes.forEach(function(q,i){
-    q.id=i+1;q.bn='Revisão de Questões Salvas';
-    novoBloco.questoes.push(q);
+  var novosBlocos=[];
+  var gi=0;
+  porBloco.forEach(function(b){
+    var novoBloco={nome:b.nome,questoes:[]};
+    b.questoes.forEach(function(q){
+      gi++;q.id=gi;q.bn=b.nome; // id sequencial ÚNICO na sessão nova, mas o bn (título do bloco) preserva a origem
+      novoBloco.questoes.push(q);
+    });
+    novosBlocos.push(novoBloco);
   });
   var nomeNovo=h.nome+' (Salvas)';
   var novoC=JSON.parse(JSON.stringify(h.cfg));
   novoC.nome=nomeNovo;
   novoC.id='sim_'+Date.now()+'_refazer'; // ver comentário em refazerErradas() acima
   novoC._temporario=true; // idem
-  var novoD={blocos:[novoBloco],res:{},fin:{},caderno:[]};
+  var novoD={blocos:novosBlocos,res:{},fin:{},caderno:[]};
   SIMS.push({cfg:novoC,dados:novoD,stats:null,qSalva:null,data:new Date().toISOString()});
   var novoSI=SIMS.length-1;
   autoSave();
@@ -23358,6 +23395,7 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-tb-btn.ativa:hover { color:#fff; }
     #esquemas-modal .esq-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
     #esquemas-modal .esq-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
+    #esquemas-modal .esq-tb-todo-acervo { white-space:nowrap; flex-shrink:0; }
     /* Swatches de filtro por cor na toolbar — mesma bolinha do seletor do
        modal de etiquetas, só que menor e sem o "criar nova" ao redor. */
     #esquemas-modal .esq-etq-swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:inline-block; }
@@ -23376,6 +23414,12 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-card-oculto { opacity:0.5; }
     #esquemas-modal .esq-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
     #esquemas-modal .esq-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
+    /* Agrupa 🙈/🎨/🗑️ num ÚNICO item flex — mesmo padrão/correção de
+       .jur-card-tags-dir (Jurisprudência): sem isto, "justify-content:
+       space-between" em .esq-card-tags tratava os 3 botões como itens
+       separados, espalhando-os pelo card em vez de deixá-los juntos no
+       extremo direito. Pedido explícito do usuário. */
+    #esquemas-modal .esq-card-tags-dir { display:flex; align-items:center; gap:2px; flex-shrink:0; }
     #esquemas-modal .esq-card-checkbox { cursor:pointer; flex-shrink:0; }
     #esquemas-modal .esq-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
     #esquemas-modal .esq-card-preview { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
@@ -24177,6 +24221,12 @@ window.ESQUEMAS_RUNTIME = {
     _SEM_ETIQUETA_SENTINELA: '__sem_etiqueta__', // valor especial de _filtroCor — nunca é uma cor de verdade
     _mostrarFiltroCor: false, // toggle do botão "Classificar por Cor"
     _filtroBusca: '', // texto do campo de busca por título, na barra de ferramentas da grade (ao lado de "Selecionar")
+    // Checkbox "Todo acervo" ao lado da busca, mesmo padrão de
+    // JURISPRUDENCIA_RUNTIME — quando ativo, ignora a Matéria/Divisão
+    // selecionadas e cruza TODAS as disciplinas (ver _esquemasParaExibir),
+    // pra achar um esquema em qualquer lugar do acervo sem precisar navegar
+    // até a divisão certa primeiro.
+    _buscaTodoAcervo: false,
     _modalEtiquetasModoAplicar: false, // true = clicar numa etiqueta APLICA aos selecionados, em vez de só gerenciar
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -24326,6 +24376,11 @@ window.ESQUEMAS_RUNTIME = {
         this._renderGradeCards();
     },
 
+    toggleBuscaTodoAcervo: function() {
+        this._buscaTodoAcervo = !this._buscaTodoAcervo;
+        this._renderGradeCards();
+    },
+
     // Contagem bruta (ignora ocultos — é só indicação de volume, mesmo
     // espírito de contarCardsDaMateria/contarCardsDoL2 do Flashcards) pros
     // badges de quantidade no L1/L2.
@@ -24422,6 +24477,18 @@ window.ESQUEMAS_RUNTIME = {
 
     _esquemasParaExibir: function() {
         let self = this;
+        // "Todo acervo" (checkbox ao lado da busca) — ignora Matéria/Divisão
+        // selecionadas e cruza TODAS as disciplinas, mesmo padrão de
+        // JURISPRUDENCIA_RUNTIME._fichasParaExibir. Pedido explícito do
+        // usuário: poder buscar um esquema em qualquer lugar do acervo sem
+        // precisar navegar até a divisão certa primeiro.
+        if (this._buscaTodoAcervo) {
+            let resultado = [];
+            Object.keys(this.esquemas).sort().forEach(function(chave) {
+                (self.esquemas[chave] || []).forEach(function(m) { resultado.push({ item: m, chave: chave }); });
+            });
+            return resultado;
+        }
         if (!this._materiaSelecionada) return [];
         if (this._divisaoSelecionada) {
             let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
@@ -24878,6 +24945,12 @@ window.ESQUEMAS_RUNTIME = {
         // foco/cursor durante a digitação é preservado à parte, em
         // _renderGradeCards().
         let htmlBusca = '<input type="text" id="esq-busca-grade" class="esq-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + this._escapar(this._filtroBusca) + '" oninput="window.ESQUEMAS_RUNTIME.filtrarEsquemasGrade(this.value)">';
+        // Pedido explícito do usuário: opção ao lado da busca pra cruzar
+        // TODAS as disciplinas (ignora Matéria/Divisão selecionadas), mesmo
+        // padrão de JURISPRUDENCIA_RUNTIME — ver _esquemasParaExibir. A
+        // origem (L1 > L2) passa a aparecer em todo card (.fc-card-origem)
+        // pra continuar identificável mesmo fora da coluna selecionada.
+        let htmlTodoAcervo = '<label class="esq-toggle-ocultos esq-tb-todo-acervo"><input type="checkbox" ' + (this._buscaTodoAcervo ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleBuscaTodoAcervo()"> Todo acervo</label>';
         let htmlAcoes;
         if (this._modoSelecao) {
             htmlAcoes =
@@ -24889,7 +24962,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             htmlAcoes =
                 '<div class="esq-tb-acoes-grupo">' +
@@ -24899,7 +24972,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     this._renderFiltroCores() +
                 '</div>' +
-                '<div class="esq-tb-busca-grupo">' + htmlBusca + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+                '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
         return '<div class="esq-toolbar">' + htmlAcoes + '</div>';
     },
@@ -24944,6 +25017,12 @@ window.ESQUEMAS_RUNTIME = {
             let checkboxHtml = self._modoSelecao
                 ? '<input type="checkbox" class="esq-card-checkbox" onclick="event.stopPropagation();" ' + (selecionado ? 'checked' : '') + ' onchange="window.ESQUEMAS_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
                 : '';
+            // Origem (L1 > L2) no topo do card — mesmo padrão .fc-card-origem
+            // já usado no Leitor/Baralho e, agora, também em Jurisprudência.
+            // Necessário sobretudo com "Todo acervo" ativo (busca cruzando
+            // disciplinas): sem isto, cards de divisões diferentes ficam
+            // indistinguíveis fora da coluna selecionada.
+            let origemHtml = '<div class="fc-card-origem">' + self._escapar(par.chave) + '</div>';
             let seloOficial = item.origem_oficial ? '<span class="esq-selo-oficial" title="Esquema oficial">(Oficial)</span>' : '';
             let seloOculto = oculto ? '<span class="esq-selo-oculto">🙈 Oculto</span>' : '';
             let etiquetaDoItem = window._etiquetaEfetivaDoItem(item, (self.etiquetas[par.chave] || {})[self.etiquetaPorEsquema[item.id]]);
@@ -25000,9 +25079,10 @@ window.ESQUEMAS_RUNTIME = {
             }).join('') + '</span>';
 
             return '<div class="esq-card' + (oculto ? ' esq-card-oculto' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
+                origemHtml +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
-                    btnOcultarHtml + btnExportarHtml + btnExcluirHtml +
+                    '<span class="esq-card-tags-dir">' + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
@@ -26889,10 +26969,14 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-sistematica-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #jurisprudencia-modal .jur-sistematica-pill-count { opacity:0.65; font-weight:600; }
 
-    /* Toolbar mínima do modo sistemática — título + contagem + toggle
-       Ano/Disciplina, no lugar da toolbar normal (Tribunal/Sistemática/Ano/
-       Selecionar/Etiquetas não fazem sentido cruzando todas as disciplinas). */
-    #jurisprudencia-modal .jur-sistematica-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding:10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    /* Toolbar do modo sistemática — linha 1 (título + contagem + toggle
+       Ano/Disciplina) e linha 2 (🏷️ Etiquetas/🎨 Classificar por Cor/
+       🔎 Buscar, mesmas ferramentas da toolbar normal — Sistemática/Ano/
+       Selecionar continuam sem sentido cruzando todas as disciplinas, mas
+       Etiquetas/Cor/Busca passaram a existir aqui também, pedido explícito
+       do usuário; Tribunal só aparece dentro do atalho "Súmulas"). */
+    #jurisprudencia-modal .jur-sistematica-toolbar { flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #jurisprudencia-modal .jur-sistematica-toolbar-linha1 { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; }
     #jurisprudencia-modal .jur-sistematica-titulo { font-size:12px; font-weight:800; color:var(--text-main); }
     #jurisprudencia-modal .jur-agrupar-pills { display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; color:var(--text-muted); }
     #jurisprudencia-modal .jur-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
@@ -27947,6 +28031,20 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._materiaSelecionada = null;
         this._divisaoSelecionada = null;
         this._filtroBusca = '';
+        // Idem pro filtro de cor — agora que "🎨 Classificar por Cor"
+        // também existe nos atalhos (ver _renderFiltroCores), sem isto uma
+        // cor deixada ativa na navegação normal continuaria filtrando
+        // silenciosamente ao trocar de modo, sem indicação clara do porquê.
+        this._filtroCor = '';
+        this._mostrarFiltroCor = false;
+        // Idem pro Tribunal — o seletor TODOS/STJ/STF só existe dentro do
+        // atalho "Súmulas" (ver _renderGradeCardsSistematica), mas
+        // _listaFiltrada() aplica _filtroTribunal em QUALQUER modo; sem
+        // isto, um tribunal deixado selecionado na navegação normal (ou
+        // num atalho "Súmulas" anterior) continuaria filtrando por baixo
+        // dos panos nos outros atalhos, sem nenhum seletor visível ali pra
+        // explicar ou desfazer.
+        this._filtroTribunal = '';
         this.render();
     },
 
@@ -28094,14 +28192,12 @@ window.JURISPRUDENCIA_RUNTIME = {
                 return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
             });
         }
-        // "Classificar por Cor" não existe nos atalhos por sistemática
-        // (Repetitivos/Repercussão Geral/Controle Concentrado — sem esse
-        // botão na toolbar deles, ver _renderGradeCardsSistematica) — sem
-        // esta guarda, um filtro de cor deixado ativo na navegação normal
-        // (Matéria/Divisão) continuava valendo ao entrar no atalho,
-        // escondendo cards sem nenhuma indicação visual do porquê, e sem
-        // como desfazer (não tem o botão ali pra limpar).
-        if (this._filtroCor && !this._modoSistematica) {
+        // "Classificar por Cor" agora também existe nos atalhos por
+        // sistemática (Súmulas/Repetitivos/Repercussão Geral/Controle
+        // Concentrado — pedido explícito do usuário, ver
+        // _renderGradeCardsSistematica/_renderFiltroCores), então o filtro
+        // se aplica igual nos dois modos.
+        if (this._filtroCor) {
             lista = lista.filter(function(par) {
                 let etiquetaLocal = (self.etiquetas[par.chave] || {})[self.etiquetaPorFicha[par.item.id]];
                 let et = window._etiquetaEfetivaDoItem(par.item, etiquetaLocal);
@@ -28481,10 +28577,17 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     // Botão "🎨 Classificar por Cor" — mostra/esconde a fileira de swatches
-    // com as cores em uso NESTE tópico. Fechar o filtro também limpa a cor
-    // escolhida (sai do modo "filtrado").
+    // com as cores em uso NESTE tópico (ou, nos atalhos por sistemática,
+    // em todo o recorte atual — ver _renderFiltroCores). Fechar o filtro
+    // também limpa a cor escolhida (sai do modo "filtrado").
     toggleFiltroCor: function() {
-        if (!this._chaveEtiquetas()) {
+        // Nos atalhos por sistemática (_modoSistematica) não existe um
+        // tópico único selecionado — a checagem de _chaveEtiquetas() só
+        // vale pra navegação normal por Matéria/Divisão. Pedido explícito
+        // do usuário: "🎨 Classificar por Cor" também disponível nos
+        // atalhos (Súmulas/Repetitivos/Repercussão Geral/Controle
+        // Concentrado).
+        if (!this._modoSistematica && !this._chaveEtiquetas()) {
             alert('Selecione uma disciplina E um tópico específico (não "Todas as divisões") antes de classificar por cor.');
             return;
         }
@@ -28503,24 +28606,33 @@ window.JURISPRUDENCIA_RUNTIME = {
         // criada ainda) — pedido explícito: selecionar de uma vez só o que
         // ainda falta classificar, em vez de item por item.
         let htmlSemEtiqueta = '<span class="jur-etq-filtro-sem' + (self._filtroCor === self._SEM_ETIQUETA_SENTINELA ? ' selecionada' : '') + '" title="Filtrar só os sem etiqueta" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarPorCor(\'' + self._SEM_ETIQUETA_SENTINELA + '\')">Sem Etiqueta</span>';
-        let etiquetasTopico = this._etiquetasDoTopicoAtual();
         let coresEmUso = [];
-        Object.keys(etiquetasTopico).forEach(function(id) {
-            let cor = etiquetasTopico[id].cor;
-            if (coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor);
-        });
-        // Cores de etiquetas PÚBLICAS embutidas (item.etiqueta) nas fichas
-        // deste tópico, mesmo sem entrada correspondente no registro local
-        // (outro usuário aplicou, ou a ficha mudou de tópico numa
-        // reorganização de taxonomia depois da etiqueta ter sido criada) —
-        // sem isso o swatch nem aparecia pra filtrar por essas cores, mesmo
-        // o pill já aparecendo certo no card (ver _etiquetaDaFicha).
-        let chaveAtual = this._chaveEtiquetas();
-        (this.fichas[chaveAtual] || []).forEach(function(item) {
-            if (item && item.etiqueta && item.etiqueta.cor && coresEmUso.indexOf(item.etiqueta.cor) === -1) {
-                coresEmUso.push(item.etiqueta.cor);
-            }
-        });
+        function registrarCor(cor) { if (cor && coresEmUso.indexOf(cor) === -1) coresEmUso.push(cor); }
+        if (this._modoSistematica) {
+            // Atalhos por sistemática (Súmulas/Repetitivos/Repercussão
+            // Geral/Controle Concentrado) cruzam VÁRIAS disciplinas/tópicos
+            // — precisa varrer TODAS as chaves do recorte atual, não só 1
+            // tópico. Pedido explícito do usuário: "🎨 Classificar por Cor"
+            // também disponível nos atalhos, não só na navegação normal.
+            this._fichasParaExibir().forEach(function(par) {
+                let etiquetaLocal = (self.etiquetas[par.chave] || {})[self.etiquetaPorFicha[par.item.id]];
+                let et = window._etiquetaEfetivaDoItem(par.item, etiquetaLocal);
+                if (et) registrarCor(et.cor);
+            });
+        } else {
+            let etiquetasTopico = this._etiquetasDoTopicoAtual();
+            Object.keys(etiquetasTopico).forEach(function(id) { registrarCor(etiquetasTopico[id].cor); });
+            // Cores de etiquetas PÚBLICAS embutidas (item.etiqueta) nas fichas
+            // deste tópico, mesmo sem entrada correspondente no registro local
+            // (outro usuário aplicou, ou a ficha mudou de tópico numa
+            // reorganização de taxonomia depois da etiqueta ter sido criada) —
+            // sem isso o swatch nem aparecia pra filtrar por essas cores, mesmo
+            // o pill já aparecendo certo no card (ver _etiquetaDaFicha).
+            let chaveAtual = this._chaveEtiquetas();
+            (this.fichas[chaveAtual] || []).forEach(function(item) {
+                if (item && item.etiqueta && item.etiqueta.cor) registrarCor(item.etiqueta.cor);
+            });
+        }
         if (coresEmUso.length === 0) {
             return '<span class="jur-toggle-ocultos">Cor:</span>' + htmlSemEtiqueta;
         }
@@ -28796,17 +28908,46 @@ window.JURISPRUDENCIA_RUNTIME = {
         // 📄/🎨 do topo abrem o seletor avançado (escolher anos e
         // disciplinas antes de exportar) — diferente dos mesmos ícones em
         // cada grupo, que exportam direto sem perguntar nada.
+        // Pedido explícito do usuário: os atalhos por sistemática também
+        // ganham 🏷️ Etiquetas, 🎨 Classificar por Cor e 🔎 Buscar — mesmas
+        // ferramentas/funções já usadas na navegação normal (_listaFiltrada
+        // já aplica busca/cor sem diferenciar o modo, ver acima). Etiquetas
+        // continua exigindo um tópico específico (abrirModalEtiquetas already
+        // guards isso) — mesmo aviso que já aparece hoje em "Todas as
+        // divisões" na navegação normal, comportamento consistente.
+        let htmlBuscaAtalho = '<input type="text" id="jur-busca-sistematica" class="jur-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + self._escapar(self._filtroBusca) + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarJurisprudenciaGrade(this.value)">';
+        // Seletor de Tribunal — SÓ no atalho "Súmulas" (não em "Súmulas
+        // Vinculantes"), pedido explícito do usuário: TODOS/STJ/STF, as
+        // duas cortes que de fato publicam súmulas comuns.
+        let htmlTribunalSumula = (self._modoSistematica === 'Súmula')
+            ? '<label class="jur-filtro-mini">Tribunal <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarTribunal(this.value)">' +
+                '<option value=""' + (!self._filtroTribunal ? ' selected' : '') + '>TODOS</option>' +
+                '<option value="STJ"' + (self._filtroTribunal === 'STJ' ? ' selected' : '') + '>STJ</option>' +
+                '<option value="STF"' + (self._filtroTribunal === 'STF' ? ' selected' : '') + '>STF</option>' +
+              '</select></label>'
+            : '';
+        let htmlFerramentas = '<div class="jur-toolbar-linha2">' +
+            '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalEtiquetas(false)">🏷️ Etiquetas</button>' +
+            '<button class="jur-tb-btn' + (self._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
+            self._renderFiltroCores() +
+            htmlTribunalSumula +
+            '<span class="jur-tb-busca-grupo">' + htmlBuscaAtalho + '</span>' +
+        '</div>';
+
         let htmlToolbar = '<div class="jur-sistematica-toolbar">' +
-            '<div class="jur-sistematica-titulo">' + self._escapar(rotuloAtalho ? rotuloAtalho.rotulo : self._modoSistematica) + ' <span class="jur-grupo-contagem">(' + lista.length + ')</span>' +
-                '<span class="jur-grupo-acoes">' +
-                    '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.md)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'md\');">📄</button>' +
-                    '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.html estilizado)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'html\');">🎨</button>' +
-                '</span>' +
+            '<div class="jur-sistematica-toolbar-linha1">' +
+                '<div class="jur-sistematica-titulo">' + self._escapar(rotuloAtalho ? rotuloAtalho.rotulo : self._modoSistematica) + ' <span class="jur-grupo-contagem">(' + lista.length + ')</span>' +
+                    '<span class="jur-grupo-acoes">' +
+                        '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.md)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'md\');">📄</button>' +
+                        '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.html estilizado)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'html\');">🎨</button>' +
+                    '</span>' +
+                '</div>' +
+                '<div class="jur-agrupar-pills">Agrupar por: ' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'ano' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
+                    '<button class="fc-pill' + (self._agruparSistematicaPor === 'disciplina' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
+                '</div>' +
             '</div>' +
-            '<div class="jur-agrupar-pills">Agrupar por: ' +
-                '<button class="fc-pill' + (self._agruparSistematicaPor === 'ano' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
-                '<button class="fc-pill' + (self._agruparSistematicaPor === 'disciplina' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
-            '</div>' +
+            htmlFerramentas +
         '</div>';
 
         col.innerHTML = htmlToolbar + '<div class="jur-grade-scroll">' + corpoHtml + '</div>';
