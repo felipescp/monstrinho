@@ -27917,6 +27917,15 @@ window.JURISPRUDENCIA_RUNTIME = {
     // e _renderGradeCardsSistematica(). Nunca fica vazio: tirar o último
     // eixo ativo volta pro padrão ['ano'].
     _agruparSistematicaPor: ['ano'], // subconjunto de ['ano','disciplina','importancia','tribunal']
+    // "Exibir Todas / Recolher Todas" (pedido explícito do usuário, ao lado
+    // do Buscar) — evita ter que clicar grupo por grupo pra abrir/fechar os
+    // acordeons de Ano/Disciplina/Importância. Controla o atributo "open"
+    // de TODOS os <details class="jur-grupo-acordeon"> ao renderizar (ver
+    // _renderGradeCardsSistematica); não precisa reset em toggleModoSistematica
+    // — cada abertura de atalho já é um _renderGradeCardsSistematica() do
+    // zero, então mantém o último estado escolhido entre atalhos (ex.: se o
+    // usuário prefere tudo aberto, continua tudo aberto ao trocar de atalho).
+    _todosGruposSistematicaAbertos: false,
     _SISTEMATICAS_DESTAQUE: [
         { valor: 'Súmula Vinculante', rotulo: '📌 Súmulas Vinculantes' },
         { valor: 'Súmula', rotulo: '📌 Súmulas' },
@@ -29179,20 +29188,23 @@ window.JURISPRUDENCIA_RUNTIME = {
         // dentro de atributos onclick.
         this._gruposSistematicaAtual = grupos;
 
-        // Cada grupo é um <details> independente, sempre renderizado SEM o
-        // atributo "open" — inicia contraído em toda renderização (troca de
-        // filtro, busca, agrupamento), facilitando a visão geral quando há
-        // centenas de cards (ex.: "Repetitivos (76)"). Os botões 📄/🎨
-        // exportam SÓ aquele grupo, direto, sem abrir nenhum seletor —
-        // stopPropagation()/preventDefault() pra não também abrir/fechar o
-        // acordeon (o clique, sem isso, bate no <summary> por baixo).
+        // Cada grupo é um <details> independente. Por padrão renderiza SEM o
+        // atributo "open" — inicia contraído, facilitando a visão geral
+        // quando há centenas de cards (ex.: "Repetitivos (76)") — mas o
+        // botão "📁 Exibir Todas"/"📂 Recolher Todas" (ao lado do Buscar,
+        // pedido explícito do usuário) força TODOS abertos/fechados de uma
+        // vez via _todosGruposSistematicaAbertos, sem precisar clicar grupo
+        // por grupo. Os botões 📄/🎨 exportam SÓ aquele grupo, direto, sem
+        // abrir nenhum seletor — stopPropagation()/preventDefault() pra não
+        // também abrir/fechar o acordeon (o clique, sem isso, bate no
+        // <summary> por baixo).
         let htmlGrupos = grupos.map(function(grupo, indice) {
             let htmlCards = grupo.itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('');
             let htmlAcoesGrupo = '<span class="jur-grupo-acoes">' +
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.md)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownGrupoSistematica(' + indice + ');">📄</button>' +
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.html estilizado)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlGrupoSistematica(' + indice + ');">🎨</button>' +
             '</span>';
-            return '<details class="jur-grupo-acordeon">' +
+            return '<details class="jur-grupo-acordeon"' + (self._todosGruposSistematicaAbertos ? ' open' : '') + '>' +
                 '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-linha"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span>' + htmlAcoesGrupo + '</span></summary>' +
                 '<div class="jur-cards-grid jur-grupo-corpo">' + htmlCards + '</div>' +
             '</details>';
@@ -29212,6 +29224,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         // guards isso) — mesmo aviso que já aparece hoje em "Todas as
         // divisões" na navegação normal, comportamento consistente.
         let htmlBuscaAtalho = '<input type="text" id="jur-busca-sistematica" class="jur-tb-busca" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" value="' + self._escapar(self._filtroBusca) + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarJurisprudenciaGrade(this.value)">';
+        // "Exibir Todas / Recolher Todas" — pedido explícito do usuário, ao
+        // lado do Buscar, pra abrir/fechar os acordeons de Ano/Disciplina/
+        // Importância de uma vez, sem clicar grupo por grupo. Só aparece
+        // havendo pelo menos 1 grupo (nada a expandir/recolher em "Nenhuma
+        // ficha com esse filtro").
+        let htmlExibirTodas = grupos.length > 0
+            ? '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleTodosGruposSistematica()">' + (self._todosGruposSistematicaAbertos ? '📂 Recolher Todas' : '📁 Exibir Todas') + '</button>'
+            : '';
         // Seletor de Tribunal — SÓ no atalho "Súmulas" (não em "Súmulas
         // Vinculantes"), pedido explícito do usuário: TODOS/STJ/STF/TSE, as
         // 3 cortes que de fato publicam súmulas comuns cobertas pelo
@@ -29233,7 +29253,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<button class="jur-tb-btn' + (self._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
             self._renderFiltroCores() +
             htmlTribunalSumula +
-            '<span class="jur-tb-busca-grupo">' + htmlBuscaAtalho + '</span>' +
+            '<span class="jur-tb-busca-grupo">' + htmlExibirTodas + htmlBuscaAtalho + '</span>' +
         '</div>';
 
         let htmlToolbar = '<div class="jur-sistematica-toolbar">' +
@@ -29261,6 +29281,14 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let novoScroll = col.querySelector('.jur-grade-scroll');
         if (novoScroll) novoScroll.scrollTop = posicaoScroll;
+    },
+
+    // "📁 Exibir Todas / 📂 Recolher Todas" (ao lado do Buscar) — alterna o
+    // estado global e re-renderiza; cada <details class="jur-grupo-acordeon">
+    // sai com (ou sem) o atributo "open" conforme _todosGruposSistematicaAbertos.
+    toggleTodosGruposSistematica: function() {
+        this._todosGruposSistematicaAbertos = !this._todosGruposSistematicaAbertos;
+        this._renderGradeCardsSistematica();
     },
 
     // Pedido explícito do usuário: seleção CUMULADA — clicar num pill já
