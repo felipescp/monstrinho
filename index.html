@@ -27020,9 +27020,9 @@ window.carregarEsquemasOficiais = async function() {
        .esq-card-classificacao (classe reaproveitada de propósito, mesmo
        espírito de #modal-glossario-baralho .esq-etq-pill etc.). */
     #jurisprudencia-modal .esq-card-classificacao { display:flex; align-items:center; justify-content:space-between; gap:6px; padding-top:6px; margin-top:2px; border-top:1px dashed #f1f5f9; }
-    #jurisprudencia-modal .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
-    #jurisprudencia-modal .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
-    #jurisprudencia-modal .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+    #jurisprudencia-modal .esq-btn-visualizado, #modal-jurisprudencia-baralho .esq-btn-visualizado { font-size:9px; font-weight:700; padding:2px 7px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .esq-btn-visualizado:hover, #modal-jurisprudencia-baralho .esq-btn-visualizado:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .esq-btn-visualizado.ativo, #modal-jurisprudencia-baralho .esq-btn-visualizado.ativo { background:#dcfce7; border-color:#bbf7d0; color:#166534; }
     /* Diferente das estrelas (1-3, hierárquicas — "3" já inclui "2" e "1"),
        Crítico/Importante/Regular são 3 categorias INDEPENDENTES —
        não faz sentido "preencher até". Só o círculo do nível ATIVO fica
@@ -27587,8 +27587,14 @@ window.carregarEsquemasOficiais = async function() {
        regra porque #modal-jurisprudencia-baralho não é descendente de
        #jurisprudencia-modal (é outro modal de topo). */
     #modal-jurisprudencia-baralho .fc-card-origem { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em; }
-    #modal-jurisprudencia-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; border-top:1px solid var(--border-color); padding-top:12px; }
+    /* Rodapé: "Marcar como visualizado" fica discreto, na mesma linha do
+       Fechar (à esquerda dele) — mesmo padrão de #modal-esquemas-baralho
+       .fc-popup-footer / #esq-baralho-acoes. */
+    #modal-jurisprudencia-baralho .fc-popup-footer { display:flex; flex-wrap:wrap; align-items:center; gap:8px; justify-content:space-between; border-top:1px solid var(--border-color); padding-top:12px; flex-shrink:0; }
     #modal-jurisprudencia-baralho .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-jurisprudencia-baralho #jur-baralho-acoes { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    #modal-jurisprudencia-baralho #jur-baralho-acoes .esq-btn-visualizado,
+    #modal-jurisprudencia-baralho #jur-baralho-acoes .fc-rev-btn { padding:3px 8px; font-size:9.5px; }
 </style>
     <div class="mdl">
         <div class="fc-popup-header">
@@ -27616,6 +27622,7 @@ window.carregarEsquemasOficiais = async function() {
         </div>
 
         <div class="fc-popup-footer">
+            <div class="fc-card-revisao-acoes" id="jur-baralho-acoes"></div>
             <button class="fc-footer-btn" onclick="window.JURISPRUDENCIA_RUNTIME.fecharBaralho()">Fechar</button>
         </div>
     </div>
@@ -28216,6 +28223,13 @@ window.JURISPRUDENCIA_RUNTIME = {
         // dos panos nos outros atalhos, sem nenhum seletor visível ali pra
         // explicar ou desfazer.
         this._filtroTribunal = '';
+        // Idem pro filtro secundário "Sistemática" (dropdown da navegação
+        // normal, ver filtrarSistematica) — não tem controle visível dentro
+        // do atalho, mas _listaFiltrada() já ignora este filtro quando
+        // _modoSistematica está ativo (ver comentário lá); resetado aqui só
+        // por higiene, pra o dropdown não reaparecer com um valor antigo
+        // "grudado" ao voltar pra navegação normal por matéria.
+        this._filtroSistematica = '';
         this.render();
     },
 
@@ -28351,7 +28365,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (this._filtroTribunal) {
             lista = lista.filter(function(par) { return par.item.tribunal === self._filtroTribunal; });
         }
-        if (this._filtroSistematica) {
+        // Só se aplica na navegação normal por Matéria/Divisão — dentro de
+        // um atalho por sistemática (_modoSistematica) essa dimensão já
+        // está fixada pelo próprio atalho, então respeitar também este
+        // filtro (deixado selecionado numa navegação anterior por matéria)
+        // zerava silenciosamente a lista sempre que o valor preso aqui não
+        // batia com o do atalho aberto (bug relatado: só o atalho cujo
+        // valor coincidia com este resíduo mostrava cards).
+        if (this._filtroSistematica && !this._modoSistematica) {
             lista = lista.filter(function(par) { return par.item.sistematica === self._filtroSistematica; });
         }
         if (this._filtroAno) {
@@ -30297,6 +30318,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         return deck[s.indiceAtual];
     },
 
+    // Mesmo padrão de ESQUEMAS_RUNTIME.toggleVisualizadoBaralho /
+    // GLOSSARIO_RUNTIME.toggleVisualizadoBaralho.
+    toggleVisualizadoBaralho: function() {
+        let card = this._fichaBaralhoAtual();
+        if (!card) return;
+        this.toggleVisualizado(card.id);
+        this.renderBaralho();
+    },
+
     proximoBaralho: function() {
         let s = this._baralhoState;
         let deck = this._deckBaralhoAtual();
@@ -30441,17 +30471,21 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._baralhoState;
         if (!s) return;
         let corpo = document.getElementById('jur-baralho-corpo');
+        let acoesEl = document.getElementById('jur-baralho-acoes');
         let posEl = document.getElementById('jur-baralho-posicao');
         let deck = this._deckBaralhoAtual();
         this._renderListaBaralho();
 
         if (deck.length === 0) {
             corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha aqui ainda.</div>';
+            if (acoesEl) acoesEl.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
         }
 
         let card = this._fichaBaralhoAtual();
+        let visualizado = !!this.visualizados[card.id];
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleVisualizadoBaralho()">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
 
         // Nos escopos "Todos"/"Disciplina" o baralho mistura vários
         // tópicos (e, em "Todos", várias disciplinas) — o cabeçalho fixo
@@ -30467,6 +30501,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         corpo.innerHTML = htmlOrigem + this._htmlCartaoFichaEstudo(card) +
             '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoJurTexto(card.id)) + '</div>' +
             '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</div>';
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },
