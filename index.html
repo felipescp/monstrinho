@@ -29124,6 +29124,18 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let scrollAnterior = col.querySelector('.jur-grade-scroll');
         let posicaoScroll = scrollAnterior ? scrollAnterior.scrollTop : 0;
+        // Preserva foco/cursor do campo de busca entre re-renders — mesmo
+        // padrão de _renderGradeCards() (ver comentário lá): filtrarJurisprudenciaGrade()
+        // chama este método a cada tecla digitada, e como col.innerHTML
+        // reconstrói o <input> do zero a cada vez, sem isto o foco cairia a
+        // cada caractere, exigindo clicar de novo no campo pra continuar
+        // digitando (bug relatado — só reproduzia aqui, no atalho por
+        // sistemática, porque _renderGradeCards() já tinha essa restauração
+        // pro "jur-busca-grade" da navegação normal, mas ela nunca cobria
+        // o "jur-busca-sistematica" deste outro caminho de renderização).
+        let inputBuscaAnterior = document.getElementById('jur-busca-sistematica');
+        let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
+        let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
         let lista = this._listaFiltrada();
 
@@ -29281,6 +29293,14 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let novoScroll = col.querySelector('.jur-grade-scroll');
         if (novoScroll) novoScroll.scrollTop = posicaoScroll;
+
+        if (buscaTinhaFoco) {
+            let novoInputBusca = document.getElementById('jur-busca-sistematica');
+            if (novoInputBusca) {
+                novoInputBusca.focus();
+                novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
     },
 
     // "📁 Exibir Todas / 📂 Recolher Todas" (ao lado do Buscar) — alterna o
