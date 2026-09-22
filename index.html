@@ -25403,6 +25403,10 @@ window.ESQUEMAS_RUNTIME = {
         this._renderPillsAba(aba);
         this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
+        // Mantém o rótulo do topo da aba sempre em sincronia com a
+        // contagem real — mesmo motivo de JURISPRUDENCIA_RUNTIME.renderAbaRevisao
+        // (ver comentário lá).
+        this._atualizarContagensAbas();
     },
 
     _renderPillsAba: function(aba) {
@@ -30803,6 +30807,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderPillsAba(aba);
         this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
+        // Mantém o rótulo do topo da aba ("🟡 Importante (N)") sempre em
+        // sincronia com a contagem real — antes só era recalculado ao
+        // classificar uma ficha ou quando as fichas oficiais terminavam de
+        // carregar (ver init()), então podia ficar defasado (ex.: "(516)")
+        // mesmo com a barra lateral já mostrando o total correto ("(600)"),
+        // até o usuário disparar um desses dois eventos. Chamar aqui, toda
+        // vez que a aba é (re)renderizada, fecha essa janela de inconsistência.
+        this._atualizarContagensAbas();
     },
 
     _renderPillsAba: function(aba) {
