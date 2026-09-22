@@ -23576,6 +23576,17 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
     #esquemas-modal .fc-aba-revisao-sidebar .fc-pills { flex-direction:column; flex-wrap:nowrap; justify-content:flex-start; max-width:none; gap:4px; }
     #esquemas-modal .fc-aba-revisao-sidebar .fc-pill { width:100%; box-sizing:border-box; border-radius:6px; text-align:left; }
+    /* Sidebar DIREITA (Visualizados/Não Visualizados) — mesma caixa da
+       sidebar esquerda (matérias), só espelhada: borda do lado esquerdo em
+       vez do direito, pra separar visualmente do card no meio. Pedido
+       explícito do usuário: "mesmo grupo do lado esquerdo", só que dividido
+       em 2 blocos (Visualizados/Não Visualizados), cada um com um botão de
+       aplicar em lote ao lado do pill. */
+    #esquemas-modal .fc-aba-revisao-sidebar.fc-aba-revisao-sidebar-dir { border-right:none; border-left:1px solid var(--border-color); }
+    #esquemas-modal .fc-visualizado-grupo { display:flex; align-items:center; gap:4px; margin-bottom:6px; }
+    #esquemas-modal .fc-visualizado-grupo .fc-pill { flex:1; min-width:0; }
+    #esquemas-modal .fc-visualizado-lote-btn { flex-shrink:0; border:1px solid var(--border-color); background:var(--bg-white); border-radius:6px; font-size:13px; padding:4px 6px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #esquemas-modal .fc-visualizado-lote-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #esquemas-modal .fc-pill:hover { border-color:var(--app-primary); }
     #esquemas-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -23727,6 +23738,9 @@ window.triggerFileUpload = function(callback) {
                 <div class="fc-aba-revisao-scroll">
                     <div id="esq-corpo-1"></div>
                 </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="esq-pills-visualizado-1"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-1"></div>
             <div class="fc-popup-nav">
@@ -23744,6 +23758,9 @@ window.triggerFileUpload = function(callback) {
                 <div class="fc-aba-revisao-scroll">
                     <div id="esq-corpo-2"></div>
                 </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="esq-pills-visualizado-2"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-2"></div>
             <div class="fc-popup-nav">
@@ -23760,6 +23777,9 @@ window.triggerFileUpload = function(callback) {
                 </div>
                 <div class="fc-aba-revisao-scroll">
                     <div id="esq-corpo-3"></div>
+                </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="esq-pills-visualizado-3"></div>
                 </div>
             </div>
             <div class="fc-card-revisao-acoes" id="esq-acoes-3"></div>
@@ -23834,8 +23854,22 @@ window.triggerFileUpload = function(callback) {
     /* Pill da etiqueta (a mesma etiqueta colorida/nomeável já usada na
        grade e no modal "Etiquetas do tópico" — ver this.etiquetas/
        etiquetaPorEsquema), em segunda linha sob o título do item. */
-    #modal-esquemas-baralho .esq-baralho-lista-item-etiqueta { display:inline-block; margin-top:3px; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-etiqueta { display:flex; align-items:center; gap:6px; margin-top:3px; }
     #modal-esquemas-baralho .esq-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    /* 👁 ao lado da etiqueta (pedido explícito do usuário) — badge circular
+       colorido por trás do emoji (o próprio glifo do emoji não muda de cor
+       via CSS), verde = visualizado / vermelho = não visualizado. Sempre
+       aparece, com ou sem etiqueta no item. */
+    #modal-esquemas-baralho .esq-baralho-lista-item-olho { flex-shrink:0; width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; line-height:1; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-olho.visualizado { background:#dcfce7; }
+    #modal-esquemas-baralho .esq-baralho-lista-item-olho.nao-visualizado { background:#fee2e2; }
+    /* "Mostrar: Todos | Visualizados | Não visualizados" — fixo abaixo da
+       listagem (pedido explícito do usuário), mesma linha de raciocínio de
+       .esq-baralho-etiquetas (filtro secundário da lista lateral). */
+    #modal-esquemas-baralho .esq-baralho-mostrar-filtro { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:5px; padding:8px 10px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); }
+    #modal-esquemas-baralho .esq-baralho-mostrar-btn { padding:3px 8px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-esquemas-baralho .esq-baralho-mostrar-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-esquemas-baralho .esq-baralho-mostrar-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     /* Barra de pills de etiqueta — fixa no topo, não rola junto com a lista.
        Clicar numa etiqueta ISOLA ela na LISTAGEM apenas — não navega nem
        troca o card exibido à direita (ver toggleFiltroEtiquetaBaralho). */
@@ -24337,10 +24371,15 @@ window.ESQUEMAS_RUNTIME = {
     // o pool/ordem/índice de cada aba de estrela, independente da navegação
     // L1/L2 da aba "grade".
     _abaAtiva: 'grade',
+    // visualizadoFiltro: null = ambos; true = só Visualizados; false = só
+    // Não Visualizados — mesmo padrão de JURISPRUDENCIA_RUNTIME (ver
+    // _renderPillsVisualizadoAba), pedido explícito do usuário: sidebar
+    // direita do Leitor, espelhando a esquerda (matérias), dividida em
+    // Visualizados/Não Visualizados com botão de aplicar em lote.
     _estadosAba: {
-        '1': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
-        '2': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
-        '3': { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+        '1': { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '2': { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        '3': { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
     },
     // Popup "Baralho de Esquemas" (Todos | Disciplina | Divisão/Tópico) —
     // mesmo padrão de JURISPRUDENCIA_RUNTIME._baralhoState.
@@ -25353,12 +25392,16 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     renderAbaRevisao: function(aba) {
+        let self = this;
         let s = this._estadosAba[aba];
         let pool = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        if (s.visualizadoFiltro === true) pool = pool.filter(function(e) { return !!self.visualizados[e.id]; });
+        else if (s.visualizadoFiltro === false) pool = pool.filter(function(e) { return !self.visualizados[e.id]; });
         s.pool = pool;
         s.ordemChaves = pool.map(function(e) { return e.id; });
         s.indiceAtual = 0;
         this._renderPillsAba(aba);
+        this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
     },
 
@@ -25379,6 +25422,51 @@ window.ESQUEMAS_RUNTIME = {
     filtrarAba: function(aba, materia) {
         let s = this._estadosAba[aba];
         s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    // Sidebar DIREITA do Leitor (pedido explícito do usuário) — mesmo padrão
+    // de JURISPRUDENCIA_RUNTIME._renderPillsVisualizadoAba: mesmo grupo da
+    // sidebar esquerda (matérias), dividido em Visualizados/Não
+    // Visualizados, contagens respeitando a matéria já selecionada à
+    // esquerda mas SEMPRE ignorando o próprio visualizadoFiltro (pra nunca
+    // sumir um dos 2 pills). Cada grupo tem, ao lado, um botão de aplicar
+    // aquele estado a TODOS os itens do escopo atual.
+    _renderPillsVisualizadoAba: function(aba) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let pillsEl = document.getElementById('esq-pills-visualizado-' + aba);
+        if (!pillsEl) return;
+        let base = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        let nVisualizados = base.filter(function(e) { return !!self.visualizados[e.id]; }).length;
+        let nNaoVisualizados = base.length - nVisualizados;
+        pillsEl.innerHTML =
+            '<div class="fc-visualizado-grupo">' +
+                '<button class="fc-pill' + (s.visualizadoFiltro === true ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarVisualizadoAba(\'' + aba + '\', true)">👁 Visualizados (' + nVisualizados + ')</button>' +
+                (nVisualizados > 0 ? '<button class="fc-visualizado-lote-btn" title="Aplicar Não Visualizado a todos os Visualizados" onclick="window.ESQUEMAS_RUNTIME.aplicarVisualizadoLoteAba(\'' + aba + '\', false)">↺</button>' : '') +
+            '</div>' +
+            '<div class="fc-visualizado-grupo">' +
+                '<button class="fc-pill' + (s.visualizadoFiltro === false ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarVisualizadoAba(\'' + aba + '\', false)">◻ Não Visualizados (' + nNaoVisualizados + ')</button>' +
+                (nNaoVisualizados > 0 ? '<button class="fc-visualizado-lote-btn" title="Aplicar Visualizado a todos os Não Visualizados" onclick="window.ESQUEMAS_RUNTIME.aplicarVisualizadoLoteAba(\'' + aba + '\', true)">👁</button>' : '') +
+            '</div>';
+    },
+
+    filtrarVisualizadoAba: function(aba, valor) {
+        let s = this._estadosAba[aba];
+        s.visualizadoFiltro = (s.visualizadoFiltro === valor) ? null : valor;
+        this.renderAbaRevisao(aba);
+    },
+
+    aplicarVisualizadoLoteAba: function(aba, novoValor) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let base = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        base.forEach(function(e) {
+            let jaVisualizado = !!self.visualizados[e.id];
+            if (novoValor && !jaVisualizado) self.visualizados[e.id] = true;
+            else if (!novoValor && jaVisualizado) delete self.visualizados[e.id];
+        });
+        this.salvar();
         this.renderAbaRevisao(aba);
     },
 
@@ -25414,7 +25502,9 @@ window.ESQUEMAS_RUNTIME = {
         let origem = this._localizarChavePorId(card.id) || '';
 
         let visualizado = !!this.visualizados[card.id];
-        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.ESQUEMAS_RUNTIME._renderCorpoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+        // Também refresca a sidebar direita (Visualizados/Não Visualizados)
+        // — mesmo motivo de JURISPRUDENCIA_RUNTIME._renderCorpoAba.
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.ESQUEMAS_RUNTIME._renderCorpoAba(\'' + aba + '\'); window.ESQUEMAS_RUNTIME._renderPillsVisualizadoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
 
         // O botão da classificação ATUAL do card (sempre a própria aba, já
         // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
@@ -25460,6 +25550,7 @@ window.ESQUEMAS_RUNTIME = {
         if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
 
         this._renderPillsAba(aba);
+        this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
         this._atualizarContagensAbas();
     },
@@ -25582,7 +25673,10 @@ window.ESQUEMAS_RUNTIME = {
             ordemChaves: itens.map(function(e) { return e.id; }),
             indiceAtual: 0,
             filtroEtiqueta: null,
-            filtroBusca: ''
+            filtroBusca: '',
+            // "Mostrar: Todos | Visualizados | Não visualizados" (ver
+            // _renderListaBaralho) — null = todos.
+            filtroVisualizado: null
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -25769,18 +25863,34 @@ window.ESQUEMAS_RUNTIME = {
             let etiquetaDoItem = self._etiquetaDoEsquema(item);
             if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
             if (buscaNormalizada && self._normalizarBusca(item.titulo || '').indexOf(buscaNormalizada) === -1) return '';
+            let visualizado = !!self.visualizados[item.id];
+            if (s.filtroVisualizado === true && !visualizado) return '';
+            if (s.filtroVisualizado === false && visualizado) return '';
 
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="esq-baralho-lista-item-origem">' + self._escapar(self._localizarChavePorId(item.id) || '') + '</div>'
                 : '';
-            let etiquetaHtml = etiquetaDoItem
-                ? '<div class="esq-baralho-lista-item-etiqueta"><span class="esq-etq-pill" style="background:' + etiquetaDoItem.cor + ';">' + self._escapar(etiquetaDoItem.nome) + '</span></div>'
+            let etiquetaPillHtml = etiquetaDoItem
+                ? '<span class="esq-etq-pill" style="background:' + etiquetaDoItem.cor + ';">' + self._escapar(etiquetaDoItem.nome) + '</span>'
                 : '';
+            // Pedido explícito do usuário: 👁 ao lado do item, paralelo à
+            // etiqueta (mesma linha) — verde se já visualizado, vermelho se
+            // não. Sempre aparece, mesmo em item sem etiqueta nenhuma.
+            let olhoHtml = '<span class="esq-baralho-lista-item-olho ' + (visualizado ? 'visualizado' : 'nao-visualizado') + '" title="' + (visualizado ? 'Visualizado' : 'Não visualizado') + '">👁</span>';
+            let etiquetaHtml = '<div class="esq-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + '</div>';
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
         }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhum card encontrado.</div>';
+
+        // "Mostrar: Todos | Visualizados | Não visualizados" — pedido
+        // explícito do usuário, abaixo da listagem.
+        let htmlMostrar = '<div class="esq-baralho-mostrar-filtro">Mostrar: ' +
+            '<button class="esq-baralho-mostrar-btn' + (!s.filtroVisualizado ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarVisualizadoBaralho(null)">Todos</button>' +
+            '<button class="esq-baralho-mostrar-btn' + (s.filtroVisualizado === true ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarVisualizadoBaralho(true)">Visualizados</button>' +
+            '<button class="esq-baralho-mostrar-btn' + (s.filtroVisualizado === false ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarVisualizadoBaralho(false)">Não visualizados</button>' +
+        '</div>';
 
         // Preserva a posição de rolagem entre renders (a div .esq-baralho-lista-itens
         // é recriada do zero a cada innerHTML, então herdaria scrollTop:0 se
@@ -25793,7 +25903,7 @@ window.ESQUEMAS_RUNTIME = {
         let listaItensElAnterior = listaEl.querySelector('.esq-baralho-lista-itens');
         let scrollAnterior = listaItensElAnterior ? listaItensElAnterior.scrollTop : 0;
 
-        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>';
+        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="esq-baralho-lista-itens">' + htmlItens + '</div>' + htmlMostrar;
         let listaItensEl = listaEl.querySelector('.esq-baralho-lista-itens');
         if (listaItensEl) listaItensEl.scrollTop = scrollAnterior;
         let ativoEl = listaEl.querySelector('.esq-baralho-lista-item.ativo');
@@ -25819,6 +25929,16 @@ window.ESQUEMAS_RUNTIME = {
         let s = this._baralhoState;
         if (!s) return;
         s.filtroBusca = texto || '';
+        this._renderListaBaralho();
+    },
+
+    // "Mostrar: Todos | Visualizados | Não visualizados" (abaixo da
+    // listagem) — pedido explícito do usuário. Mesmo espírito de
+    // toggleFiltroEtiquetaBaralho, mas com 3 estados.
+    filtrarVisualizadoBaralho: function(valor) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroVisualizado = valor;
         this._renderListaBaralho();
     },
 
@@ -27160,6 +27280,13 @@ window.carregarEsquemasOficiais = async function() {
        que continuam horizontais). */
     #jurisprudencia-modal .fc-aba-revisao-sidebar .fc-pills { flex-direction:column; flex-wrap:nowrap; justify-content:flex-start; max-width:none; gap:4px; }
     #jurisprudencia-modal .fc-aba-revisao-sidebar .fc-pill { width:100%; box-sizing:border-box; border-radius:6px; text-align:left; }
+    /* Sidebar DIREITA (Visualizados/Não Visualizados) — mesmo padrão de
+       #esquemas-modal (ver comentário lá). */
+    #jurisprudencia-modal .fc-aba-revisao-sidebar.fc-aba-revisao-sidebar-dir { border-right:none; border-left:1px solid var(--border-color); }
+    #jurisprudencia-modal .fc-visualizado-grupo { display:flex; align-items:center; gap:4px; margin-bottom:6px; }
+    #jurisprudencia-modal .fc-visualizado-grupo .fc-pill { flex:1; min-width:0; }
+    #jurisprudencia-modal .fc-visualizado-lote-btn { flex-shrink:0; border:1px solid var(--border-color); background:var(--bg-white); border-radius:6px; font-size:13px; padding:4px 6px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #jurisprudencia-modal .fc-visualizado-lote-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .fc-pill:hover { border-color:var(--app-primary); }
     #jurisprudencia-modal .fc-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -27271,6 +27398,9 @@ window.carregarEsquemasOficiais = async function() {
                 <div class="fc-aba-revisao-scroll">
                     <div id="jur-corpo-dificil"></div>
                 </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="jur-pills-visualizado-dificil"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-dificil"></div>
             <div class="fc-popup-nav">
@@ -27288,6 +27418,9 @@ window.carregarEsquemasOficiais = async function() {
                 <div class="fc-aba-revisao-scroll">
                     <div id="jur-corpo-medio"></div>
                 </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="jur-pills-visualizado-medio"></div>
+                </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-medio"></div>
             <div class="fc-popup-nav">
@@ -27304,6 +27437,9 @@ window.carregarEsquemasOficiais = async function() {
                 </div>
                 <div class="fc-aba-revisao-scroll">
                     <div id="jur-corpo-facil"></div>
+                </div>
+                <div class="fc-aba-revisao-sidebar fc-aba-revisao-sidebar-dir">
+                    <div id="jur-pills-visualizado-facil"></div>
                 </div>
             </div>
             <div class="fc-card-revisao-acoes" id="jur-acoes-facil"></div>
@@ -27568,8 +27704,19 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-nome { display:block; font-size:11.5px; font-weight:600; line-height:1.4; color:var(--text-main); white-space:normal; overflow-wrap:break-word; }
     /* Pill da etiqueta — mesma etiqueta colorida/nomeável da grade e do
        modal "Etiquetas do tópico" (this.etiquetas/etiquetaPorFicha). */
-    #modal-jurisprudencia-baralho .jur-baralho-lista-item-etiqueta { display:inline-block; margin-top:3px; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-etiqueta { display:flex; align-items:center; gap:6px; margin-top:3px; }
     #modal-jurisprudencia-baralho .esq-etq-pill { font-size:9px; font-weight:700; color:#fff; padding:2px 8px; border-radius:99px; white-space:nowrap; }
+    /* 👁 ao lado da etiqueta (pedido explícito do usuário) — mesmo padrão de
+       #modal-esquemas-baralho (ver comentário lá). */
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho { flex-shrink:0; width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; line-height:1; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.visualizado { background:#dcfce7; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.nao-visualizado { background:#fee2e2; }
+    /* "Mostrar: Todos | Visualizados | Não visualizados" — mesmo padrão de
+       #modal-esquemas-baralho. */
+    #modal-jurisprudencia-baralho .jur-baralho-mostrar-filtro { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:5px; padding:8px 10px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); }
+    #modal-jurisprudencia-baralho .jur-baralho-mostrar-btn { padding:3px 8px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:9.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #modal-jurisprudencia-baralho .jur-baralho-mostrar-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-baralho .jur-baralho-mostrar-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     /* Barra de pills de etiqueta — fixa no topo. Clicar numa etiqueta ISOLA
        ela na LISTAGEM apenas — não navega nem troca a ficha exibida à
        direita (ver toggleFiltroEtiquetaBaralho). */
@@ -27939,10 +28086,16 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Caderno). _estadosAba guarda o pool/ordem/índice de cada aba de
     // dificuldade, independente da navegação L1/L2 da aba "grade".
     _abaAtiva: 'grade',
+    // visualizadoFiltro: null = ambos; true = só Visualizados; false = só
+    // Não Visualizados — segunda dimensão de filtro da aba de revisão,
+    // independente de materiaFiltro (ver _renderPillsVisualizadoAba),
+    // pedido explícito do usuário: mesmo grupo da sidebar esquerda
+    // (matérias), só que do lado direito do Leitor, dividido em
+    // Visualizados/Não Visualizados, cada um com botão de aplicar em lote.
     _estadosAba: {
-        dificil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
-        medio: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
-        facil: { materiaFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
+        dificil: { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        medio: { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 },
+        facil: { materiaFiltro: null, visualizadoFiltro: null, pool: [], ordemChaves: [], indiceAtual: 0 }
     },
     // Popup "Baralho de Cards" (Todos | Disciplina selecionada) — mesmo
     // padrão de FLASHCARDS_RUNTIME._popupState (embaralhar + ‹› + navegação
@@ -30255,7 +30408,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             ordemChaves: fichas.map(function(f) { return f.id; }),
             indiceAtual: 0,
             filtroEtiqueta: null,
-            filtroBusca: ''
+            filtroBusca: '',
+            // "Mostrar: Todos | Visualizados | Não visualizados" (ver
+            // _renderListaBaralho) — null = todos.
+            filtroVisualizado: null
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
@@ -30453,18 +30609,36 @@ window.JURISPRUDENCIA_RUNTIME = {
             let etiquetaDoItem = self._etiquetaDaFicha(item);
             if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
             if (buscaNormalizada && self._normalizarBusca(item.titulo || '').indexOf(buscaNormalizada) === -1) return '';
+            let visualizado = !!self.visualizados[item.id];
+            if (s.filtroVisualizado === true && !visualizado) return '';
+            if (s.filtroVisualizado === false && visualizado) return '';
 
             let titulo = item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="jur-baralho-lista-item-origem">' + self._escapar([item.materiaL1, item.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
                 : '';
-            let etiquetaHtml = etiquetaDoItem
-                ? '<div class="jur-baralho-lista-item-etiqueta"><span class="esq-etq-pill" style="background:' + etiquetaDoItem.cor + ';">' + self._escapar(etiquetaDoItem.nome) + '</span></div>'
+            let etiquetaPillHtml = etiquetaDoItem
+                ? '<span class="esq-etq-pill" style="background:' + etiquetaDoItem.cor + ';">' + self._escapar(etiquetaDoItem.nome) + '</span>'
                 : '';
+            // Pedido explícito do usuário: 👁 ao lado do item, paralelo à
+            // etiqueta (mesma linha) — verde se já visualizado, vermelho se
+            // não. Sempre aparece, mesmo em item sem etiqueta nenhuma (por
+            // isso a linha em si deixou de ser condicional a ter etiqueta).
+            let olhoHtml = '<span class="jur-baralho-lista-item-olho ' + (visualizado ? 'visualizado' : 'nao-visualizado') + '" title="' + (visualizado ? 'Visualizado' : 'Não visualizado') + '">👁</span>';
+            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + '</div>';
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
         }).join('') || '<div class="fc-vazio" style="padding:1rem;">Nenhuma ficha encontrada.</div>';
+
+        // "Mostrar: Todos | Visualizados | Não visualizados" — pedido
+        // explícito do usuário, abaixo da listagem. Filtra a MESMA lista
+        // (deck.map acima), não precisa recalcular nada aqui.
+        let htmlMostrar = '<div class="jur-baralho-mostrar-filtro">Mostrar: ' +
+            '<button class="jur-baralho-mostrar-btn' + (!s.filtroVisualizado ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoBaralho(null)">Todos</button>' +
+            '<button class="jur-baralho-mostrar-btn' + (s.filtroVisualizado === true ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoBaralho(true)">Visualizados</button>' +
+            '<button class="jur-baralho-mostrar-btn' + (s.filtroVisualizado === false ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoBaralho(false)">Não visualizados</button>' +
+        '</div>';
 
         // Preserva a posição de rolagem entre renders (mesmo fix de
         // ESQUEMAS_RUNTIME._renderListaBaralho) — a div .jur-baralho-lista-itens
@@ -30478,7 +30652,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let listaItensElAnterior = listaEl.querySelector('.jur-baralho-lista-itens');
         let scrollAnterior = listaItensElAnterior ? listaItensElAnterior.scrollTop : 0;
 
-        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>';
+        listaEl.innerHTML = htmlBusca + htmlEtiquetas + '<div class="jur-baralho-lista-itens">' + htmlItens + '</div>' + htmlMostrar;
         let listaItensEl = listaEl.querySelector('.jur-baralho-lista-itens');
         if (listaItensEl) listaItensEl.scrollTop = scrollAnterior;
         let ativoEl = listaEl.querySelector('.jur-baralho-lista-item.ativo');
@@ -30504,6 +30678,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._baralhoState;
         if (!s) return;
         s.filtroBusca = texto || '';
+        this._renderListaBaralho();
+    },
+
+    // "Mostrar: Todos | Visualizados | Não visualizados" (abaixo da
+    // listagem) — pedido explícito do usuário. Mesmo espírito de
+    // toggleFiltroEtiquetaBaralho, mas com 3 estados (não é toggle liga/
+    // desliga de um só valor).
+    filtrarVisualizadoBaralho: function(valor) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtroVisualizado = valor;
         this._renderListaBaralho();
     },
 
@@ -30607,12 +30792,16 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     renderAbaRevisao: function(aba) {
+        let self = this;
         let s = this._estadosAba[aba];
         let pool = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        if (s.visualizadoFiltro === true) pool = pool.filter(function(f) { return !!self.visualizados[f.id]; });
+        else if (s.visualizadoFiltro === false) pool = pool.filter(function(f) { return !self.visualizados[f.id]; });
         s.pool = pool;
         s.ordemChaves = pool.map(function(f) { return f.id; });
         s.indiceAtual = 0;
         this._renderPillsAba(aba);
+        this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
     },
 
@@ -30633,6 +30822,59 @@ window.JURISPRUDENCIA_RUNTIME = {
     filtrarAba: function(aba, materia) {
         let s = this._estadosAba[aba];
         s.materiaFiltro = materia;
+        this.renderAbaRevisao(aba);
+    },
+
+    // Sidebar DIREITA do Leitor (pedido explícito do usuário): mesmo grupo
+    // da sidebar esquerda (matérias), só dividido em Visualizados/Não
+    // Visualizados — contagens respeitam a matéria já selecionada à
+    // esquerda (materiaFiltro), mas SEMPRE calculadas ignorando o próprio
+    // visualizadoFiltro, pra nunca sumir um dos 2 pills do grupo. Cada
+    // grupo tem, ao lado do pill, um botão de aplicar aquele estado a TODOS
+    // os itens do escopo atual (👁 Visualizados → botão desmarca todos;
+    // ◻ Não Visualizados → botão marca todos).
+    _renderPillsVisualizadoAba: function(aba) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let pillsEl = document.getElementById('jur-pills-visualizado-' + aba);
+        if (!pillsEl) return;
+        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let nVisualizados = base.filter(function(f) { return !!self.visualizados[f.id]; }).length;
+        let nNaoVisualizados = base.length - nVisualizados;
+        pillsEl.innerHTML =
+            '<div class="fc-visualizado-grupo">' +
+                '<button class="fc-pill' + (s.visualizadoFiltro === true ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoAba(\'' + aba + '\', true)">👁 Visualizados (' + nVisualizados + ')</button>' +
+                (nVisualizados > 0 ? '<button class="fc-visualizado-lote-btn" title="Aplicar Não Visualizado a todos os Visualizados" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarVisualizadoLoteAba(\'' + aba + '\', false)">↺</button>' : '') +
+            '</div>' +
+            '<div class="fc-visualizado-grupo">' +
+                '<button class="fc-pill' + (s.visualizadoFiltro === false ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoAba(\'' + aba + '\', false)">◻ Não Visualizados (' + nNaoVisualizados + ')</button>' +
+                (nNaoVisualizados > 0 ? '<button class="fc-visualizado-lote-btn" title="Aplicar Visualizado a todos os Não Visualizados" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarVisualizadoLoteAba(\'' + aba + '\', true)">👁</button>' : '') +
+            '</div>';
+    },
+
+    // Clicar no pill já ativo desliga o filtro (toggle) — não existe um
+    // "Todos" aqui porque o grupo já é só esses 2 estados; desligar volta a
+    // mostrar os 2 juntos.
+    filtrarVisualizadoAba: function(aba, valor) {
+        let s = this._estadosAba[aba];
+        s.visualizadoFiltro = (s.visualizadoFiltro === valor) ? null : valor;
+        this.renderAbaRevisao(aba);
+    },
+
+    // Botão "extremidade" de cada grupo — aplica novoValor (true=visualizado/
+    // false=não visualizado) a TODOS os itens do escopo atual (materiaFiltro
+    // já selecionado à esquerda, se houver), sem precisar abrir item por
+    // item. Só mexe em quem realmente muda de estado.
+    aplicarVisualizadoLoteAba: function(aba, novoValor) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        base.forEach(function(f) {
+            let jaVisualizado = !!self.visualizados[f.id];
+            if (novoValor && !jaVisualizado) self.visualizados[f.id] = true;
+            else if (!novoValor && jaVisualizado) delete self.visualizados[f.id];
+        });
+        this.salvar();
         this.renderAbaRevisao(aba);
     },
 
@@ -30672,7 +30914,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         // — mesmo padrão já usado no Leitor/Baralho (ver renderBaralho:
         // btnVisualizado + botoes no mesmo #jur-baralho-acoes).
         let visualizado = !!this.visualizados[card.id];
-        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.JURISPRUDENCIA_RUNTIME._renderCorpoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
+        // Também refresca a sidebar direita (Visualizados/Não Visualizados)
+        // — sem isto, marcar/desmarcar aqui deixava as contagens de lá
+        // desatualizadas até trocar de matéria ou reabrir a aba.
+        let btnVisualizado = '<button class="esq-btn-visualizado' + (visualizado ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleVisualizado(\'' + card.id + '\'); window.JURISPRUDENCIA_RUNTIME._renderCorpoAba(\'' + aba + '\'); window.JURISPRUDENCIA_RUNTIME._renderPillsVisualizadoAba(\'' + aba + '\');">👁 ' + (visualizado ? 'Visualizado' : 'Marcar como visualizado') + '</button>';
 
         // O botão da classificação ATUAL do card (sempre a própria aba, já
         // que o pool é filtrado por ultimaClassificacao === aba) sai marcado
@@ -30715,6 +30960,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
 
         this._renderPillsAba(aba);
+        this._renderPillsVisualizadoAba(aba);
         this._renderCorpoAba(aba);
         this._atualizarContagensAbas();
     }
