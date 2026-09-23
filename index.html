@@ -3722,8 +3722,12 @@ window.SALINHA_BACKUP = {
                     // ── CASO ESPECIAL: ESQUEMAS (esquemas_runtime.revisaoEsquemas) ──
                     // Mesmíssimo formato/problema/política de
                     // jurisprudencia_runtime.revisaoJurisprudencia: dicionário achatado
-                    // {id_esquema → {ultimaClassificacao}} (estrelas 1-3). União pura,
-                    // mantém a versão local em caso de mesmo esquema classificado dos 2 lados.
+                    // {id_esquema → {ultimaClassificacao, atualizadoEm}}. Quando o MESMO
+                    // esquema já foi classificado dos 2 lados (valores possivelmente
+                    // diferentes), não dava mais só pra preencher vazio — resolve por
+                    // timestamp (o mais recente vence). Sem atualizadoEm (dado salvo
+                    // antes desta correção) conta como 0, então uma classificação nova
+                    // sempre vence uma antiga sem data.
                     if (chaveSemPrefixoMerge === 'esquemas_runtime' && subChave === 'revisaoEsquemas' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -3737,6 +3741,14 @@ window.SALINHA_BACKUP = {
                             if (!remoto || typeof remoto !== 'object') return;
 
                             if (local === undefined) {
+                                objLocal[subChave][idEsquema] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                                return;
+                            }
+                            const tsRemoto = typeof remoto.atualizadoEm === 'number' ? remoto.atualizadoEm : 0;
+                            const tsLocal = typeof local.atualizadoEm === 'number' ? local.atualizadoEm : 0;
+                            if (tsRemoto > tsLocal) {
                                 objLocal[subChave][idEsquema] = remoto;
                                 entidadesInjetadas++;
                                 persistirChave = true;
@@ -3934,7 +3946,12 @@ window.SALINHA_BACKUP = {
 
                     // ── CASO ESPECIAL: GLOSSÁRIO (glossario_runtime.revisaoGlossario) ──
                     // Mesmíssimo formato/problema/política de esquemas_runtime.revisaoEsquemas:
-                    // dicionário achatado {id_termo → {ultimaClassificacao}} (estrelas 1-3).
+                    // dicionário achatado {id_termo → {ultimaClassificacao, atualizadoEm}}.
+                    // Quando o MESMO termo já foi classificado dos 2 lados (valores
+                    // possivelmente diferentes), não dava mais só pra preencher vazio —
+                    // resolve por timestamp (o mais recente vence). Sem atualizadoEm
+                    // (dado salvo antes desta correção) conta como 0, então uma
+                    // classificação nova sempre vence uma antiga sem data.
                     if (chaveSemPrefixoMerge === 'glossario_runtime' && subChave === 'revisaoGlossario' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -3948,6 +3965,14 @@ window.SALINHA_BACKUP = {
                             if (!remoto || typeof remoto !== 'object') return;
 
                             if (local === undefined) {
+                                objLocal[subChave][idTermo] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                                return;
+                            }
+                            const tsRemoto = typeof remoto.atualizadoEm === 'number' ? remoto.atualizadoEm : 0;
+                            const tsLocal = typeof local.atualizadoEm === 'number' ? local.atualizadoEm : 0;
+                            if (tsRemoto > tsLocal) {
                                 objLocal[subChave][idTermo] = remoto;
                                 entidadesInjetadas++;
                                 persistirChave = true;
@@ -4111,10 +4136,17 @@ window.SALINHA_BACKUP = {
                     }
 
                     // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.revisaoJurisprudencia) ──
-                    // Mesmíssimo formato/problema/política de flashcards_runtime.revisao e
-                    // praticar_caderno_runtime.revisaoQuestoes: dicionário achatado
-                    // {id_ficha → {ultimaClassificacao}}. União pura, mantém a versão
-                    // local em caso de mesma ficha classificada dos 2 lados.
+                    // Mesmíssimo formato/problema/política de esquemas_runtime.revisaoEsquemas/
+                    // glossario_runtime.revisaoGlossario: dicionário achatado
+                    // {id_ficha → {ultimaClassificacao, atualizadoEm}}. Quando a MESMA
+                    // ficha já foi classificada dos 2 lados (valores possivelmente
+                    // diferentes — ex.: um aparelho marcou Crítico, outro Importante),
+                    // só preencher vazio não bastava: os dois lados já tinham valor pra
+                    // quase toda ficha, então o merge nunca mudava nada (bug relatado:
+                    // "as abas continuam exclusivamente locais"). Resolve por timestamp
+                    // agora — o mais recente vence. Sem atualizadoEm (dado salvo antes
+                    // desta correção) conta como 0, então uma classificação nova sempre
+                    // vence uma antiga sem data.
                     if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'revisaoJurisprudencia' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -4128,6 +4160,14 @@ window.SALINHA_BACKUP = {
                             if (!remoto || typeof remoto !== 'object') return;
 
                             if (local === undefined) {
+                                objLocal[subChave][idFicha] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                                return;
+                            }
+                            const tsRemoto = typeof remoto.atualizadoEm === 'number' ? remoto.atualizadoEm : 0;
+                            const tsLocal = typeof local.atualizadoEm === 'number' ? local.atualizadoEm : 0;
+                            if (tsRemoto > tsLocal) {
                                 objLocal[subChave][idFicha] = remoto;
                                 entidadesInjetadas++;
                                 persistirChave = true;
@@ -9348,12 +9388,19 @@ document.addEventListener('click', function(e) {
 window.ClassificacaoCards = {
     // nivel: 'dificil'|'medio'|'facil'. estadoAtual: o valor atual (ou
     // undefined/null, se nunca classificado). Retorna o NOVO estado
-    // {ultimaClassificacao: nivel}, ou `null` se o clique deve DESMARCAR
-    // (toggle: nivel clicado já é a classificação atual — chamador deve
-    // apagar a entrada nesse caso).
+    // {ultimaClassificacao: nivel, atualizadoEm: <epoch ms>}, ou `null` se
+    // o clique deve DESMARCAR (toggle: nivel clicado já é a classificação
+    // atual — chamador deve apagar a entrada nesse caso).
+    // atualizadoEm existe pra resolver conflito no merge de backup na nuvem
+    // (ver aplicarPayloadMerge — Jurisprudência/Esquemas/Glossário): quando
+    // a MESMA ficha já foi classificada nos dois lados (de jeitos
+    // diferentes), a estratégia de só preencher vazio não tinha como saber
+    // qual versão é a certa — agora vence a mais recente. Ausente (dado
+    // salvo antes desta correção) conta como 0 no merge, então qualquer
+    // classificação nova sempre vence uma antiga sem data.
     calcularProximo: function(nivel, estadoAtual) {
         if (estadoAtual && estadoAtual.ultimaClassificacao === nivel) return null;
-        return { ultimaClassificacao: nivel };
+        return { ultimaClassificacao: nivel, atualizadoEm: Date.now() };
     }
 };
 
