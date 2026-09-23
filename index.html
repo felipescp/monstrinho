@@ -4136,6 +4136,33 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.visualizados) ──
+                    // Mesma política de união pura (OR) de esquemas_runtime.visualizados/
+                    // glossario_runtime.visualizados — "já vi essa ficha" é uma flag
+                    // pessoal, nunca "desmarca" por causa do merge. Faltava este caso
+                    // (só existia pra Esquemas/Glossário): sem ele, a chave caía na
+                    // ESTRATÉGIA B genérica, que só copia a sub-chave inteira se
+                    // objLocal.visualizados nunca tivesse existido — como salvar()
+                    // sempre grava esta chave (mesmo vazia, {}), na prática toda ficha
+                    // marcada como visualizada num computador se perdia ao sincronizar
+                    // com outro que já tivesse qualquer visualizado próprio.
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'visualizados' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idFicha => {
+                            if (objImportado[subChave][idFicha] && !objLocal[subChave][idFicha]) {
+                                objLocal[subChave][idFicha] = true;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
                     // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.etiquetaPorFicha) ──
                     // Mesmíssimo padrão de esquemas_runtime.etiquetaPorEsquema/
                     // glossario_runtime.etiquetaPorTermo — atribuição achatada
