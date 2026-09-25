@@ -27884,6 +27884,26 @@ const JUR_RE_SISTEMATICA = /^Sistemática:\s*([\s\S]+)$/i;
 // "Recurso Repetitivo"). Separado em dois campos: sistematica (categoria
 // pura) + tema (só o número), exibidos depois no título/processo do card.
 const JUR_RE_TEMA_EMBUTIDO_NA_SISTEMATICA = /^(.*?)\s*[—-]\s*Tema\s+(\d+)\s*$/i;
+// Qualquer OUTRO sufixo depois de " — " ("Caso isolado (Turma) — Info 888",
+// "Controle Concentrado — Info 1171", "Repercussão Geral — Tema 27 (e Tema
+// 312)") também inflava o filtro Sistemática com dezenas de entradas quase
+// iguais (bug relatado: "virou uma bagunça novamente"). A Sistemática é
+// SEMPRE só a categoria pura (texto antes do " — "); o resto vai pra
+// sistematicaDetalhe (não se perde, só sai do filtro/agrupamento).
+// Idempotente — pode rodar várias vezes na mesma ficha.
+function jurNormalizarSistematicaFicha(f) {
+    if (!f || typeof f.sistematica !== 'string') return f;
+    let partes = f.sistematica.split(/\s+[—–]\s+/);
+    if (partes.length > 1) {
+        let pura = partes[0].trim();
+        let detalhe = partes.slice(1).join(' — ').trim();
+        if (detalhe && !f.sistematicaDetalhe) f.sistematicaDetalhe = detalhe;
+        f.sistematica = pura;
+    } else {
+        f.sistematica = f.sistematica.trim();
+    }
+    return f;
+}
 const JUR_RE_TESE = /^TESE FIXADA\s*\/\s*DECIS[ÃA]O:\s*([\s\S]+)$/i;
 const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 // Aceita os dois rótulos como sinônimos do MESMO campo — "COMENTÁRIO" é o
@@ -27958,6 +27978,7 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
         } else {
             ficha.sistematica = bruto;
         }
+        jurNormalizarSistematicaFicha(ficha);
     } else if (tipo === 'tese') {
         m = JUR_RE_TESE.exec(linha);
         ficha.tese = m[1].trim();
@@ -28242,6 +28263,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
         this.etiquetaPorFicha = (bruto && typeof bruto.etiquetaPorFicha === 'object' && !Array.isArray(bruto.etiquetaPorFicha)) ? bruto.etiquetaPorFicha : {};
         this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
+        // Fichas pessoais já salvas com sufixo "— Info N" na Sistemática.
+        Object.keys(this.fichas).forEach(function(chave) {
+            (this.fichas[chave] || []).forEach(jurNormalizarSistematicaFicha);
+        }, this);
         this._bootstrapped = true;
     },
 
@@ -29564,7 +29589,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!item) return;
         this._verAtual = { chave: chave, id: id };
         document.getElementById('jur-ver-titulo').textContent = this._tituloComTema(item) || 'Ficha';
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
         if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
         document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
         this._renderBlocoSuperado(item);
@@ -30351,7 +30376,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // essencial pra revisão; texto completo com conexões continua só no
     // popup "Ver", acessível pela grade).
     _htmlCartaoFichaEstudo: function(item) {
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica].filter(function(x) { return !!x; });
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
             '<div class="jur-estudo-titulo">' + this._escapar(this._tituloComTema(item)) + '</div>' +
             '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
@@ -31105,6 +31130,7 @@ window.importarJurisprudenciaOficial = async function(url) {
             itens.forEach(function(item) {
                 if (!item || !item.id) return;
                 item.origem_oficial = true;
+                jurNormalizarSistematicaFicha(item);
                 const idx = arr.findIndex(function(m) { return m.id === item.id; });
                 if (idx === -1) arr.push(item); else arr[idx] = item;
             });
