@@ -28172,6 +28172,13 @@ window.JURISPRUDENCIA_RUNTIME = {
     // zero, então mantém o último estado escolhido entre atalhos (ex.: se o
     // usuário prefere tudo aberto, continua tudo aberto ao trocar de atalho).
     _todosGruposSistematicaAbertos: false,
+    // Estado aberto/fechado de CADA acordeon, por chave de grupo (atalho +
+    // eixos + valores). Bug relatado: classificar um card (Crítico/
+    // Importante/Regular, cor etc.) re-renderiza a grade do zero e todos os
+    // acordeons voltavam ao padrão (recolhidos), obrigando a reabrir o grupo
+    // a cada classificação. Agora cada <details> só abre/fecha por clique
+    // expresso no cabeçalho (ou por "Exibir/Recolher Todas", que zera isto).
+    _estadoGruposSistematica: {},
     _SISTEMATICAS_DESTAQUE: [
         { valor: 'Súmula Vinculante', rotulo: '📌 Súmulas Vinculantes' },
         { valor: 'Súmula', rotulo: '📌 Súmulas' },
@@ -29472,7 +29479,11 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.md)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownGrupoSistematica(' + indice + ');">📄</button>' +
                 '<button class="jur-grupo-acao-btn" title="Exportar este grupo (.html estilizado)" onclick="event.stopPropagation(); event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlGrupoSistematica(' + indice + ');">🎨</button>' +
             '</span>';
-            return '<details class="jur-grupo-acordeon"' + (self._todosGruposSistematicaAbertos ? ' open' : '') + '>' +
+            let chaveGrupo = self._modoSistematica + '|' + eixosAtivos.join('+') + '|' + grupo.valores.join('|');
+            let aberto = self._estadoGruposSistematica.hasOwnProperty(chaveGrupo)
+                ? self._estadoGruposSistematica[chaveGrupo]
+                : self._todosGruposSistematicaAbertos;
+            return '<details class="jur-grupo-acordeon" data-chave-grupo="' + self._escapar(chaveGrupo) + '"' + (aberto ? ' open' : '') + ' ontoggle="window.JURISPRUDENCIA_RUNTIME._registrarToggleGrupoSistematica(this)">' +
                 '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-linha"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span>' + htmlAcoesGrupo + '</span></summary>' +
                 '<div class="jur-cards-grid jur-grupo-corpo">' + htmlCards + '</div>' +
             '</details>';
@@ -29564,7 +29575,15 @@ window.JURISPRUDENCIA_RUNTIME = {
     // sai com (ou sem) o atributo "open" conforme _todosGruposSistematicaAbertos.
     toggleTodosGruposSistematica: function() {
         this._todosGruposSistematicaAbertos = !this._todosGruposSistematicaAbertos;
+        this._estadoGruposSistematica = {};
         this._renderGradeCardsSistematica();
+    },
+
+    // ontoggle de cada <details class="jur-grupo-acordeon"> — memoriza o
+    // estado escolhido pelo usuário pra sobreviver aos re-renders.
+    _registrarToggleGrupoSistematica: function(el) {
+        let chave = el && el.getAttribute('data-chave-grupo');
+        if (chave) this._estadoGruposSistematica[chave] = el.open;
     },
 
     // Pedido explícito do usuário: seleção CUMULADA — clicar num pill já
