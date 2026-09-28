@@ -11688,10 +11688,100 @@ window.FLASHCARDS_NB_RUNTIME = {
         this.excluidos = (bruto && ehDict(bruto.excluidos)) ? bruto.excluidos : {};
         this.posicoes = (bruto && ehDict(bruto.posicoes)) ? bruto.posicoes : {};
         this._bootstrapped = true;
+        this._consolidarDuplicados();
     },
 
     _garantirCarregado: function() {
         if (!this._bootstrapped) this.carregar();
+    },
+
+    // ── IDENTIDADE DO BARALHO: 1 arquivo .json = 1 flashcard ──
+    // O mesmo arquivo importado/exportado de novo nunca vira um 2º baralho:
+    // dentro da mesma L2, o nome (sem acento/caixa/espaço extra) identifica o
+    // baralho, e o MAIS NOVO (criadoEm) sempre substitui o antigo — empate
+    // vai pro oficial. O progresso dos cards que continuam iguais (mesma
+    // frente) é migrado pro baralho que ficou.
+    _normNome: function(nome) {
+        return this._normalizar(nome).replace(/\s+/g, ' ').trim();
+    },
+
+    _hashTexto: function(texto) {
+        let h = 5381;
+        for (let i = 0; i < texto.length; i++) h = ((h << 5) + h + texto.charCodeAt(i)) | 0;
+        return (h >>> 0).toString(36);
+    },
+
+    // Id do card derivado da FRENTE (não da posição): reimportar o arquivo
+    // atualizado mantém o progresso dos cards inalterados, mesmo se a ordem mudar.
+    _cardsComIdPorConteudo: function(idDeck, cards) {
+        let self = this;
+        let vistos = {};
+        return cards.map(function(c) {
+            let base = self._hashTexto(self._normNome(c.f));
+            vistos[base] = (vistos[base] || 0) + 1;
+            return { id: idDeck + '_' + base + (vistos[base] > 1 ? '_' + vistos[base] : ''), f: c.f, b: c.b };
+        });
+    },
+
+    _migrarEstado: function(deckAntigo, deckNovo) {
+        let self = this;
+        let porFrente = {};
+        deckNovo.cards.forEach(function(c) {
+            let k = self._normNome(c.f);
+            if (!(k in porFrente)) porFrente[k] = c.id;
+        });
+        deckAntigo.cards.forEach(function(c) {
+            let e = self.estado[c.id];
+            if (!e) return;
+            let destino = porFrente[self._normNome(c.f)];
+            if (destino === c.id) return;
+            if (destino) {
+                let atual = self.estado[destino];
+                if (!atual || (Number(atual.atualizadoEm) || 0) < (Number(e.atualizadoEm) || 0)) self.estado[destino] = e;
+            }
+            delete self.estado[c.id];
+        });
+    },
+
+    _consolidarDuplicados: function() {
+        let self = this;
+        let mudou = false;
+        Object.keys(this.decks).forEach(function(chave) {
+            let arr = self.decks[chave];
+            if (!Array.isArray(arr) || arr.length < 2) return;
+            let grupos = {};
+            arr.forEach(function(d) {
+                let k = self._normNome(d.nome);
+                if (!grupos[k]) grupos[k] = [];
+                grupos[k].push(d);
+            });
+            let perdedores = [];
+            Object.keys(grupos).forEach(function(k) {
+                let g = grupos[k];
+                if (g.length < 2) return;
+                let vencedor = g.reduce(function(a, b) {
+                    let ta = Date.parse(a.criadoEm) || 0;
+                    let tb = Date.parse(b.criadoEm) || 0;
+                    if (tb > ta) return b;
+                    if (tb < ta) return a;
+                    return (b.origem_oficial && !a.origem_oficial) ? b : a;
+                });
+                g.forEach(function(d) {
+                    if (d === vencedor) return;
+                    self._migrarEstado(d, vencedor);
+                    perdedores.push({ deck: d, vencedorId: vencedor.id });
+                });
+            });
+            if (perdedores.length === 0) return;
+            mudou = true;
+            self.decks[chave] = arr.filter(function(d) { return !perdedores.some(function(p) { return p.deck === d; }); });
+            perdedores.forEach(function(p) {
+                delete self.posicoes[p.deck.id];
+                // Lápide só pro perdedor PESSOAL (evita que o backup o traga de volta).
+                if (!p.deck.origem_oficial && p.deck.id !== p.vencedorId) self.excluidos[p.deck.id] = new Date().toISOString();
+            });
+        });
+        return mudou;
     },
 
     // Baralhos OFICIAIS (origem_oficial) nunca são gravados aqui —
@@ -12034,14 +12124,24 @@ window.FLASHCARDS_NB_RUNTIME = {
 
         this._garantirCarregado();
         let chave = this._chaveL2(materia, divisao);
-        let existentes = this.decks[chave] || [];
-        let duplicado = existentes.some(function(d) { return d.nome === nome && (d.cards || []).length === imp.cards.length; });
-        if (duplicado && !confirm('Já existe um baralho "' + nome + '" com ' + imp.cards.length + ' flashcards nesta divisão. Importar mesmo assim?')) return;
-
-        let idDeck = this._novoId('fcd_');
-        let cards = imp.cards.map(function(c, i) { return { id: idDeck + '_' + (i + 1), f: c.f, b: c.b }; });
         if (!Array.isArray(this.decks[chave])) this.decks[chave] = [];
-        this.decks[chave].push({ id: idDeck, nome: nome, criadoEm: new Date().toISOString(), arquivo: imp.nomeArquivo, topicos: imp.topicos || [], cards: cards });
+        // 1 arquivo = 1 baralho: mesmo nome nesta L2 = mesmo baralho. Se já
+        // existe um PESSOAL, o importado o substitui no mesmo lugar (mesmo id),
+        // levando o progresso dos cards que não mudaram. Se o existente é
+        // OFICIAL, o novo entra como pessoal e _consolidarDuplicados decide
+        // pelo mais novo (o dono pode reimportar e reexportar uma versão nova).
+        let nomeNorm = this._normNome(nome);
+        let existente = this.decks[chave].find(function(d) { return !d.origem_oficial && window.FLASHCARDS_NB_RUNTIME._normNome(d.nome) === nomeNorm; });
+        let idDeck = existente ? existente.id : this._novoId('fcd_');
+        let novoDeck = { id: idDeck, nome: nome, criadoEm: new Date().toISOString(), arquivo: imp.nomeArquivo, topicos: imp.topicos || [], cards: this._cardsComIdPorConteudo(idDeck, imp.cards) };
+        if (existente) {
+            this._migrarEstado(existente, novoDeck);
+            delete this.posicoes[idDeck];
+            this.decks[chave][this.decks[chave].indexOf(existente)] = novoDeck;
+        } else {
+            this.decks[chave].push(novoDeck);
+        }
+        this._consolidarDuplicados();
         if (!this.salvar()) alert('Atenção: o baralho foi importado, mas não foi possível gravá-lo (armazenamento cheio). Ele será perdido ao recarregar a página.');
 
         this._importacao = null;
@@ -12484,6 +12584,9 @@ window.importarFlashcardOficial = async function(url) {
             });
         });
 
+        // 1 arquivo = 1 baralho: se o mesmo baralho já veio de outro arquivo
+        // (ou existe cópia pessoal), o mais novo vence.
+        runtime._consolidarDuplicados();
         runtime.salvar();
     } catch (e) {
         console.warn('[FLASHCARDS OFICIAIS] erro:', e);
