@@ -25175,6 +25175,8 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
@@ -25266,7 +25268,10 @@ window.ESQUEMAS_RUNTIME = {
             let previewTxt = (item.conteudoHtml || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
             if (previewTxt.length > 90) previewTxt = previewTxt.slice(0, 90) + '…';
 
-            let onclickCard = self._modoSelecao ? '' : (' onclick="window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
+            // Em modo seleção, clicar em QUALQUER ponto do card marca/desmarca
+            // (não só no checkbox, que mantém stopPropagation + onchange próprio
+            // pra não alternar duas vezes).
+            let onclickCard = self._modoSelecao ? (' onclick="window.ESQUEMAS_RUNTIME.toggleSelecionado(\'' + item.id.replace(/'/g, "\\'") + '\')" style="cursor:pointer;"') : (' onclick="window.ESQUEMAS_RUNTIME.abrirEditorExistente(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
             // Visualizado + classificação (🔴🟡🟢) — clique pára aqui
             // (event.stopPropagation) pra não abrir o editor junto. Clicar
@@ -26979,6 +26984,34 @@ window.ESQUEMAS_RUNTIME = {
         let resultado = {};
         resultado[chave] = [item];
         downloadArquivo(this._gerarHtmlEsquemas(resultado, item.titulo || 'Esquema', true), 'esquema-' + this._slugTexto(item.titulo || id) + '.html', 'text/html');
+    },
+
+    // "📤 Exportar Selecionados" (modo Selecionar da grade) — agrupa os itens
+    // marcados por chave (matéria > divisão) e reusa os geradores .md/.html.
+    _selecionadosPorChave: function() {
+        let self = this;
+        let porChave = {};
+        Object.keys(this._selecionados).forEach(function(id) {
+            Object.keys(self.esquemas).forEach(function(chave) {
+                let item = (self.esquemas[chave] || []).find(function(e) { return e.id === id; });
+                if (!item) return;
+                if (!porChave[chave]) porChave[chave] = [];
+                porChave[chave].push(item);
+            });
+        });
+        return porChave;
+    },
+
+    exportarSelecionadosMarkdown: function() {
+        let porChave = this._selecionadosPorChave();
+        if (Object.keys(porChave).length === 0) { alert('Nenhum esquema selecionado pra exportar.'); return; }
+        downloadArquivo(this._gerarMarkdownEsquemas(porChave, 'Esquemas — Selecionados'), 'esquemas-selecionados.md', 'text/markdown');
+    },
+
+    exportarSelecionadosHtml: function() {
+        let porChave = this._selecionadosPorChave();
+        if (Object.keys(porChave).length === 0) { alert('Nenhum esquema selecionado pra exportar.'); return; }
+        downloadArquivo(this._gerarHtmlEsquemas(porChave, 'Esquemas — Selecionados'), 'esquemas-selecionados.html', 'text/html');
     },
 
     // Botão 📤 ao lado de cada aba de classificação — exporta só o POOL atual
@@ -29190,6 +29223,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
@@ -29275,7 +29310,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         let metaPartes = [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado)].filter(function(x) { return !!x; });
         let metaLinha = metaPartes.join(' · ');
 
-        let onclickCard = self._modoSelecao ? '' : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
+        // Em modo seleção, clicar em QUALQUER ponto do card marca/desmarca
+        // (não só no checkbox, que mantém stopPropagation + onchange próprio
+        // pra não alternar duas vezes).
+        let onclickCard = self._modoSelecao ? (' onclick="window.JURISPRUDENCIA_RUNTIME.toggleSelecionado(\'' + item.id.replace(/'/g, "\\'") + '\')" style="cursor:pointer;"') : (' onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')"');
 
         let origemHtml = '<div class="fc-card-origem">' + self._escapar(chave) + '</div>';
 
@@ -30161,6 +30199,43 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!md) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
         let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
         downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
+    },
+
+    // "📤/🎨 Exportar Selecionados" (modo Selecionar da grade) — reusa os
+    // geradores de fichas. Os geradores descartam fichas ocultas; como aqui a
+    // seleção é explícita, o filtro é suspenso só durante a geração.
+    _fichasSelecionadas: function() {
+        let self = this;
+        let lista = [];
+        Object.keys(this.fichas).forEach(function(chave) {
+            (self.fichas[chave] || []).forEach(function(f) {
+                if (f && self._selecionados[f.id]) lista.push(f);
+            });
+        });
+        return lista;
+    },
+
+    _exportarSelecionados: function(gerar, extensao, mime) {
+        let fichas = this._fichasSelecionadas();
+        if (fichas.length === 0) { alert('Nenhuma ficha selecionada pra exportar.'); return; }
+        let ocultosOriginal = this.ocultos;
+        let conteudo;
+        try {
+            this.ocultos = {};
+            conteudo = gerar.call(this, fichas, 'Jurisprudência — Selecionadas');
+        } finally {
+            this.ocultos = ocultosOriginal;
+        }
+        if (!conteudo) { alert('Nenhuma ficha selecionada pra exportar.'); return; }
+        downloadArquivo(conteudo, 'jurisprudencia-selecionadas.' + extensao, mime);
+    },
+
+    exportarSelecionadosMarkdown: function() {
+        this._exportarSelecionados(this._gerarMarkdownFichas, 'md', 'text/markdown');
+    },
+
+    exportarSelecionadosHtml: function() {
+        this._exportarSelecionados(this._gerarHtmlFichas, 'html', 'text/html');
     },
 
     // Botão 🎨 ao lado de cada aba de classificação — mesmo escopo de
