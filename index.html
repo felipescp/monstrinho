@@ -1532,7 +1532,7 @@ try {
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item" id="btn-nav-materiais" onclick="window.abrirMateriaisModal()" style="cursor:pointer;" title="Materiais">📚 MATERIAIS</div>
+        <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
         <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
@@ -2279,56 +2279,58 @@ window.__jurisprudenciaHidratacaoPromise__ = (async function() {
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_JURISPRUDENCIA_RUNTIME] = { ler: window.lerJurisprudenciaBruto, salvar: window.salvarJurisprudenciaBruto };
 
 // =========================================================================
-// CAMADA DE ACESSO: MATERIAIS (tjpe_v1__materiais_runtime)
+// CAMADA DE ACESSO: FLASHCARDS NOTEBOOK (tjpe_v1__flashcards_nb_runtime)
 // =========================================================================
-// Mesmo padrão de Esquemas/Jurisprudência acima.
-window.CHAVE_MATERIAIS_RUNTIME = 'tjpe_v1__materiais_runtime';
-window.CHAVE_MATERIAIS_RUNTIME_IDB = 'materiais_runtime';
-let _materiaisRuntimeCache = null;
+// Mesmo padrão de Esquemas/Jurisprudência acima. (Substitui a antiga
+// camada de Materiais; independente de tjpe_v1__flashcards_runtime, que
+// guarda as fichas/baralhos de Axiomas.)
+window.CHAVE_FLASHCARDS_NB_RUNTIME = 'tjpe_v1__flashcards_nb_runtime';
+window.CHAVE_FLASHCARDS_NB_RUNTIME_IDB = 'flashcards_nb_runtime';
+let _flashcardsNbRuntimeCache = null;
 
-window.lerMateriaisBruto = function() {
-    return _materiaisRuntimeCache;
+window.lerFlashcardsNbBruto = function() {
+    return _flashcardsNbRuntimeCache;
 };
 
-window.salvarMateriaisBruto = function(jsonString) {
-    _materiaisRuntimeCache = jsonString;
+window.salvarFlashcardsNbBruto = function(jsonString) {
+    _flashcardsNbRuntimeCache = jsonString;
     // Cópia redundante no localStorage, sempre — best-effort (mesmo padrão
     // de salvarSessaoAtiva/salvarArquivoMorto). Se não couber, falha em
     // silêncio — IndexedDB continua sendo a fonte primária nesse caso.
     try {
-        localStorage.setItem(window.CHAVE_MATERIAIS_RUNTIME, jsonString);
+        localStorage.setItem(window.CHAVE_FLASHCARDS_NB_RUNTIME, jsonString);
     } catch (e) {
-        console.warn('[MATERIAIS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+        console.warn('[FLASHCARDS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
     }
     if (!window._idbDisponivel) return Promise.resolve(false);
-    return idbSet(window.CHAVE_MATERIAIS_RUNTIME_IDB, jsonString).then(function(ok) {
-        if (!ok) console.warn('[MATERIAIS] Falha ao persistir no IndexedDB.');
+    return idbSet(window.CHAVE_FLASHCARDS_NB_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[FLASHCARDS] Falha ao persistir no IndexedDB.');
         return ok;
     });
 };
 
-window.__materiaisHidratacaoPromise__ = (async function() {
+window.__flashcardsNbHidratacaoPromise__ = (async function() {
     try {
-        let valor = await idbGet(window.CHAVE_MATERIAIS_RUNTIME_IDB);
-        if (valor !== undefined) { _materiaisRuntimeCache = valor; return; }
+        let valor = await idbGet(window.CHAVE_FLASHCARDS_NB_RUNTIME_IDB);
+        if (valor !== undefined) { _flashcardsNbRuntimeCache = valor; return; }
 
-        let bruto = localStorage.getItem(window.CHAVE_MATERIAIS_RUNTIME);
-        _materiaisRuntimeCache = bruto;
+        let bruto = localStorage.getItem(window.CHAVE_FLASHCARDS_NB_RUNTIME);
+        _flashcardsNbRuntimeCache = bruto;
         if (bruto !== null && window._idbDisponivel) {
-            const ok = await idbSet(window.CHAVE_MATERIAIS_RUNTIME_IDB, bruto);
-            if (ok) { try { localStorage.removeItem(window.CHAVE_MATERIAIS_RUNTIME); } catch (e) {} }
+            const ok = await idbSet(window.CHAVE_FLASHCARDS_NB_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_FLASHCARDS_NB_RUNTIME); } catch (e) {} }
         }
     } finally {
-        if (window.MATERIAIS_RUNTIME) {
-            window.MATERIAIS_RUNTIME.carregar();
-            if (typeof window.MATERIAIS_RUNTIME.render === 'function') {
-                try { window.MATERIAIS_RUNTIME.render(); } catch (e) {}
+        if (window.FLASHCARDS_NB_RUNTIME) {
+            window.FLASHCARDS_NB_RUNTIME.carregar();
+            if (typeof window.FLASHCARDS_NB_RUNTIME.render === 'function') {
+                try { window.FLASHCARDS_NB_RUNTIME.render(); } catch (e) {}
             }
         }
     }
 })();
 
-window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_MATERIAIS_RUNTIME] = { ler: window.lerMateriaisBruto, salvar: window.salvarMateriaisBruto };
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_FLASHCARDS_NB_RUNTIME] = { ler: window.lerFlashcardsNbBruto, salvar: window.salvarFlashcardsNbBruto };
 
 // =========================================================================
 // CAMADA DE ACESSO: GLOSSÁRIO (tjpe_v1__glossario_runtime)
@@ -2959,8 +2961,8 @@ window.SALINHA_BACKUP = {
         // PRATICAR CADERNO DE QUESTÕES
         'tjpe_v1__praticar_caderno_runtime',
 
-        // MATERIAIS
-        'tjpe_v1__materiais_runtime',
+        // FLASHCARDS NOTEBOOK (baralhos importados do NotebookLM)
+        'tjpe_v1__flashcards_nb_runtime',
 
         // ESQUEMAS E TABELAS
         'tjpe_v1__esquemas_runtime',
@@ -3537,38 +3539,54 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
-                    // ── CASO ESPECIAL: MATERIAIS (materiais_runtime.materiais) ──
-                    // Mesmíssima forma/problema/solução de flashcards_runtime.manuais:
-                    // dicionário achatado {"MATÉRIA > Divisão" → array de materiais}.
-                    // Desce 1 nível e mescla os materiais por id — união, mantém a
-                    // versão local em caso de mesmo id dos dois lados.
-                    // Materiais OFICIAIS (origem_oficial) nunca entram nem sobrevivem
-                    // no resultado — são conteúdo do repositório, sempre buscados de
-                    // novo via carregarMateriaisOficiais() a cada load; deixá-los
-                    // aqui só duplica conteúdo no localStorage/backup sem necessidade
-                    // (mesma causa raiz do QuotaExceededError já corrigido em
-                    // esquemas_runtime.esquemas — a limpeza abaixo também cura
-                    // progressivamente qualquer um que tenha sobrado de antes).
-                    if (chaveSemPrefixoMerge === 'materiais_runtime' && subChave === 'materiais' &&
+                    // ── CASO ESPECIAL: FLASHCARDS NOTEBOOK (flashcards_nb_runtime.excluidos) ──
+                    // Lápide de baralhos excluídos { idBaralho → data ISO } — união pura
+                    // (OR): se qualquer lado já excluiu, o resultado mantém a exclusão
+                    // (mesma política de esquemas_runtime.excluidos).
+                    if (chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'excluidos' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
                             objLocal[subChave] = {};
                         }
 
+                        Object.keys(objImportado[subChave]).forEach(idBaralho => {
+                            if (objImportado[subChave][idBaralho] && !objLocal[subChave][idBaralho]) {
+                                objLocal[subChave][idBaralho] = objImportado[subChave][idBaralho];
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: FLASHCARDS NOTEBOOK (flashcards_nb_runtime.decks) ──
+                    // Dicionário achatado {"MATÉRIA > Divisão" → array de baralhos}. Une
+                    // por id (mantém a versão local em caso de mesmo id) e respeita a
+                    // lápide de exclusões dos DOIS lados — sem isso, um baralho excluído
+                    // voltava no próximo merge (mesmo bug já corrigido em esquemas e
+                    // cronograma). Não depende da ordem em que "excluidos" é processado.
+                    if (chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'decks' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+                        const excluidosDeck = Object.assign({}, (objImportado.excluidos && typeof objImportado.excluidos === 'object') ? objImportado.excluidos : {}, (objLocal.excluidos && typeof objLocal.excluidos === 'object') ? objLocal.excluidos : {});
+
                         Object.keys(objImportado[subChave]).forEach(chaveL2 => {
-                            const materiaisImportados = objImportado[subChave][chaveL2];
-                            if (!Array.isArray(materiaisImportados)) return;
+                            const importados = objImportado[subChave][chaveL2];
+                            if (!Array.isArray(importados)) return;
                             if (!Array.isArray(objLocal[subChave][chaveL2])) {
                                 objLocal[subChave][chaveL2] = [];
                             }
-                            materiaisImportados.forEach(material => {
-                                if (!material || !material.id || material.origem_oficial) return;
+                            importados.forEach(deck => {
+                                if (!deck || !deck.id || excluidosDeck[deck.id]) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
-                                    return local && local.id === material.id;
+                                    return local && local.id === deck.id;
                                 });
                                 if (!jaExiste) {
-                                    objLocal[subChave][chaveL2].push(material);
+                                    objLocal[subChave][chaveL2].push(deck);
                                     entidadesInjetadas++;
                                     persistirChave = true;
                                 }
@@ -3577,8 +3595,8 @@ window.SALINHA_BACKUP = {
 
                         Object.keys(objLocal[subChave]).forEach(chaveL2 => {
                             const antes = objLocal[subChave][chaveL2].length;
-                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(item) {
-                                return item && !item.origem_oficial;
+                            objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(deck) {
+                                return deck && !excluidosDeck[deck.id];
                             });
                             if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
                             if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
@@ -3587,22 +3605,46 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
-                    // ── CASO ESPECIAL: MATERIAIS (materiais_runtime.ocultos) ──
-                    // Dict achatado {"<id_material>": true} — não existe "versão mais
-                    // autoritativa": é um flag booleano de visibilidade pessoal.
-                    // Política: união pura (OR) — se qualquer um dos lados já ocultou
-                    // aquele id, o resultado mesclado mantém oculto; nunca "reaparece"
-                    // por causa do merge.
-                    if (chaveSemPrefixoMerge === 'materiais_runtime' && subChave === 'ocultos' &&
+                    // ── CASO ESPECIAL: FLASHCARDS NOTEBOOK (flashcards_nb_runtime.estado) ──
+                    // {"<idCard>": {ultimaClassificacao, realizada, atualizadoEm}} — a
+                    // MESMA card pode ter sido mexida nos dois lados: vence o
+                    // atualizadoEm mais recente (ausente conta como 0; sem entrada
+                    // local, entra a remota).
+                    if (chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'estado' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
                             objLocal[subChave] = {};
                         }
 
-                        Object.keys(objImportado[subChave]).forEach(idMaterial => {
-                            if (objImportado[subChave][idMaterial] && !objLocal[subChave][idMaterial]) {
-                                objLocal[subChave][idMaterial] = true;
+                        Object.keys(objImportado[subChave]).forEach(idCard => {
+                            const remoto = objImportado[subChave][idCard];
+                            if (!remoto || typeof remoto !== 'object') return;
+                            const local = objLocal[subChave][idCard];
+                            const tRemoto = Number(remoto.atualizadoEm) || 0;
+                            const tLocal = local ? (Number(local.atualizadoEm) || 0) : -1;
+                            if (!local || tRemoto > tLocal) {
+                                objLocal[subChave][idCard] = remoto;
+                                entidadesInjetadas++;
+                                persistirChave = true;
+                            }
+                        });
+                        return; // essa subChave já foi tratada — não cai no ramo genérico
+                    }
+
+                    // ── CASO ESPECIAL: FLASHCARDS NOTEBOOK (flashcards_nb_runtime.posicoes) ──
+                    // {"<idBaralho>": "<idCard>"} — só "onde parei": preenche o que
+                    // falta, nunca sobrescreve a posição local.
+                    if (chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'posicoes' &&
+                        typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
+
+                        if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
+                            objLocal[subChave] = {};
+                        }
+
+                        Object.keys(objImportado[subChave]).forEach(idBaralho => {
+                            if (objImportado[subChave][idBaralho] && !objLocal[subChave][idBaralho]) {
+                                objLocal[subChave][idBaralho] = objImportado[subChave][idBaralho];
                                 entidadesInjetadas++;
                                 persistirChave = true;
                             }
@@ -5869,18 +5911,6 @@ if(ri) {
     #crono-relacionados-menu .crono-sim-item-nome { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-main); font-weight:600; cursor:pointer; }
     #crono-relacionados-menu .crono-sim-item-remover { flex-shrink:0; border:none; background:none; color:var(--text-muted); cursor:pointer; font-size:12px; padding:2px 4px; }
     #crono-relacionados-menu .crono-sim-item-remover:hover { color:var(--danger); }
-    /* Etiqueta de tipo na aba "Materiais" — vários materiais aqui têm o
-       MESMO título (ex.: "Resumo" e "Revisão" do mesmo tema), sem isto não
-       dava pra distinguir qual é qual sem abrir. Mesmas cores de
-       #section-materiais .mat-tag-*; Resumo e Revisão aparecem unificados
-       aqui como um só rótulo "Resumo/Revisão". */
-    #crono-relacionados-menu .crono-mat-tag { flex-shrink:0; font-size:8.5px; font-weight:800; padding:1px 6px; border-radius:99px; white-space:nowrap; }
-    #crono-relacionados-menu .crono-mat-tag-jurisprudencia { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
-    #crono-relacionados-menu .crono-mat-tag-resumo,
-    #crono-relacionados-menu .crono-mat-tag-revisao { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; }
-    #crono-relacionados-menu .crono-mat-tag-esquema { background:#dcfce7; color:#16a34a; border:1px solid #86efac; }
-    #crono-relacionados-menu .crono-mat-tag-infografico { background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; }
-    #crono-relacionados-menu .crono-mat-tag-slides { background:#fce7f3; color:#db2777; border:1px solid #f9a8d4; }
     #crono-relacionados-menu .crono-sim-vazio { padding:6px 12px 10px 12px; font-size:10px; color:var(--text-muted); font-style:italic; }
     #crono-relacionados-menu .crono-sim-add-btn { margin:8px 12px 12px 12px; padding:7px; border-radius:6px; border:1px dashed var(--app-primary); background:none; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0; }
     #crono-relacionados-menu .crono-sim-add-btn:hover { background:var(--bg-accent-soft); }
@@ -6493,7 +6523,7 @@ window.CRONOGRAMA_RUNTIME = {
         // são indexados diretamente por chave L2 nos seus próprios runtimes
         // (dict lookup, barato o bastante pra calcular por card).
         let porTipo = this._relacionadosPorTipo(item);
-        let temAlgumRelacionado = porTipo.baterias || porTipo.axiomas || porTipo.questoes || porTipo.jurisprudencia || porTipo.materiais || porTipo.esquemas;
+        let temAlgumRelacionado = porTipo.baterias || porTipo.axiomas || porTipo.questoes || porTipo.jurisprudencia || porTipo.flashcards || porTipo.esquemas;
 
         // "data" vem opcionalmente do JSON importado (por item, não por dia —
         // ver processarImportacao). Só formata em BR quando é ISO "só-dia"
@@ -6923,10 +6953,10 @@ window.CRONOGRAMA_RUNTIME = {
         ));
         let temQuestoes = !!(loc && window.PRATICAR_CADERNO_RUNTIME && window.PRATICAR_CADERNO_RUNTIME.listarQuestoesDoL2(loc.materia, loc.divisao).length > 0);
         let temFichas = !!(loc && window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME.fichasDoL2(loc.materia, loc.divisao).length > 0);
-        let temMateriais = !!(loc && window.MATERIAIS_RUNTIME && window.MATERIAIS_RUNTIME.materiaisDoL2(loc.materia, loc.divisao).length > 0);
+        let temFlashcards = !!(loc && window.FLASHCARDS_NB_RUNTIME && window.FLASHCARDS_NB_RUNTIME.decksDoL2(loc.materia, loc.divisao).length > 0);
         let temEsquemas = !!(loc && window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME.esquemasDoL2(loc.materia, loc.divisao).length > 0);
 
-        return { baterias: temBaterias, axiomas: temAxiomas, questoes: temQuestoes, jurisprudencia: temFichas, materiais: temMateriais, esquemas: temEsquemas };
+        return { baterias: temBaterias, axiomas: temAxiomas, questoes: temQuestoes, jurisprudencia: temFichas, flashcards: temFlashcards, esquemas: temEsquemas };
     },
 
     // Baterias do catálogo cuja matéria+divisão (L2) batem com a do card —
@@ -7022,7 +7052,7 @@ window.CRONOGRAMA_RUNTIME = {
             { chave: 'axiomas', rotulo: '🗂️ Axiomas' },
             { chave: 'questoes', rotulo: '📓 Questões' },
             { chave: 'jurisprudencia', rotulo: '⚖️ Jurisp.' },
-            { chave: 'materiais', rotulo: '📚 Materiais' },
+            { chave: 'flashcards', rotulo: '🗂️ Flashcards' },
             { chave: 'esquemas', rotulo: '📄 Esquemas' }
         ];
         // Cor da miniaba reflete se aquele tipo tem conteúdo pra essa L2 —
@@ -7051,7 +7081,7 @@ window.CRONOGRAMA_RUNTIME = {
         if (aba === 'axiomas') htmlCorpo = this._renderAbaAxiomas(item);
         else if (aba === 'questoes') htmlCorpo = this._renderAbaQuestoes(item);
         else if (aba === 'jurisprudencia') htmlCorpo = this._renderAbaJurisprudencia(item);
-        else if (aba === 'materiais') htmlCorpo = this._renderAbaMateriais(item);
+        else if (aba === 'flashcards') htmlCorpo = this._renderAbaFlashcards(item);
         else if (aba === 'esquemas') htmlCorpo = this._renderAbaEsquemas(item);
         else htmlCorpo = this._renderAbaBaterias(item, itemId);
 
@@ -7159,40 +7189,24 @@ window.CRONOGRAMA_RUNTIME = {
         }).join('') + '</div>';
     },
 
-    // Aba "📚 Materiais" — materiais dessa L2 (MATERIAIS_RUNTIME.
-    // materiaisDoL2, novo método). abrirMateriaisModal() precisa rodar
-    // antes de abrirPdf() pelo mesmo motivo do Axiomas acima: o modal do
-    // PDF vive dentro de #section-materiais, que precisa estar visível.
-    _renderAbaMateriais: function(item) {
+    // Aba "🗂️ Flashcards" — baralhos importados do NotebookLM dessa L2
+    // (FLASHCARDS_NB_RUNTIME.decksDoL2). O clique abre direto o estudo do
+    // baralho: o modal de estudo é independente do modal principal.
+    _renderAbaFlashcards: function(item) {
         let loc = this._resolverL2doItem(item);
-        if (!loc || !window.MATERIAIS_RUNTIME) {
+        if (!loc || !window.FLASHCARDS_NB_RUNTIME) {
             return '<div class="crono-sim-vazio">Card sem taxonomia — sem correspondência automática.</div>';
         }
-        let materiais = window.MATERIAIS_RUNTIME.materiaisDoL2(loc.materia, loc.divisao);
-        if (materiais.length === 0) {
-            return '<div class="crono-sim-vazio">Nenhum material para essa matéria/divisão.</div>';
+        let R = window.FLASHCARDS_NB_RUNTIME;
+        let decks = R.decksDoL2(loc.materia, loc.divisao);
+        if (decks.length === 0) {
+            return '<div class="crono-sim-vazio">Nenhum baralho de flashcards para essa matéria/divisão.</div>';
         }
-        let escaparAspas = function(s) { return (s || '').replace(/"/g, '&quot;'); };
-        let chaveL2 = loc.materia + ' > ' + loc.divisao;
-        let materiaEsc = loc.materia.replace(/'/g, "\\'");
-        let divisaoEsc = loc.divisao.replace(/'/g, "\\'");
-        // Rótulos por tipo (mesmas chaves de MATERIAIS_RUNTIME.TIPOS) — Resumo
-        // e Revisão unificados num só rótulo "Resumo/Revisão" aqui.
-        let ETIQUETAS_TIPO_MATERIAL = {
-            jurisprudencia: 'Jurisprudência',
-            resumo: 'Resumo/Revisão',
-            revisao: 'Resumo/Revisão',
-            esquema: 'Esquema',
-            infografico: 'Infográfico',
-            slides: 'Slides'
-        };
-        return '<div class="crono-sim-lista" style="max-height:220px;">' + materiais.map(function(m) {
-            let chaveEsc = chaveL2.replace(/'/g, "\\'");
-            let rotuloTipo = ETIQUETAS_TIPO_MATERIAL[m.tipo];
-            let etiquetaHtml = rotuloTipo ? ('<span class="crono-mat-tag crono-mat-tag-' + m.tipo + '">' + rotuloTipo + '</span>') : '';
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.abrirMateriaisModal(); window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + materiaEsc + '\', \'' + divisaoEsc + '\'); window.MATERIAIS_RUNTIME.abrirPdf(\'' + chaveEsc + '\', \'' + m.id + '\');" title="' + escaparAspas(m.titulo) + '">' +
-                '<span class="crono-sim-item-nome">📚 ' + (m.titulo || '(sem título)') + '</span>' +
-                etiquetaHtml +
+        return '<div class="crono-sim-lista" style="max-height:220px;">' + decks.map(function(d) {
+            let r = R._resumoDeck(d);
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\');" title="' + R._escapar(d.nome) + '">' +
+                '<span class="crono-sim-item-nome">🗂️ ' + R._escapar(d.nome || '(sem nome)') + '</span>' +
+                '<span style="flex-shrink:0; font-size:9px; color:var(--text-muted); font-weight:800; background:#f1f5f9; padding:2px 5px; border-radius:4px; border:1px solid var(--border-color);">' + r.realizadas + '/' + r.total + '</span>' +
             '</div>';
         }).join('') + '</div>';
     },
@@ -11433,194 +11447,237 @@ window.fecharPraticarCadernoModal = function() {
 </script>
 </section>
 
-<!-- SEÇÃO: MATERIAIS (jurisprudência, resumos, esquemas etc.)
-     Mesmo menu L1 (matérias) > L2 (divisões) do Flashcards, reaproveitando
-     as mesmas classes .fc-materia-item/.fc-divisao-item (visual idêntico).
-     3ª coluna mostra a grade de cards do L2 selecionado, ou agregado da
-     matéria inteira com "Todas as divisões" (mesmo padrão do Flashcards). -->
-<!-- Modal (não mais .tela) — abre por cima da tela atual (ex.: Cronograma),
-     igual Esquemas/Jurisprudência, em vez de trocar de tela e perder o
-     que estava aberto embaixo. Ver window.abrirMateriaisModal/
-     fecharMateriaisModal. IDs internos (mat-col-materias etc.) e todo o
-     CSS/JS que os referencia continuam exatamente iguais — só a moldura
-     externa mudou. -->
-<section id="section-materiais" style="display:none; position:fixed; inset:0; z-index:9999; width:100%; flex-direction:column; overflow:hidden; background:var(--bg-body);">
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FLASHCARDS (estilo NotebookLM) — substitui a antiga seção Materiais.
+     Mesmo modelo de Esquemas/Jurisprudência: modal .analytics-modal com
+     L1 (matéria) > L2 (divisão) > grade de cards. Aqui cada "card" da
+     grade é um BARALHO importado de um .json no padrão de exportação do
+     NotebookLM ({"flashcards":[{"f":"frente","b":"verso"}]}); clicar nele
+     abre o estudo (carta que vira, ‹ ›, Difícil/Média/Fácil e
+     Realizada/Não realizada pra avanço progressivo).
+     Dados: decks {"MATÉRIA > Divisão": [ {id, nome, criadoEm, cards:[{id,f,b}]} ]},
+     estado {"<idCard>": {ultimaClassificacao, realizada, atualizadoEm}},
+     excluidos {"<idBaralho>": ISO} (lápide pro merge de backup) e
+     posicoes {"<idBaralho>": "<idCard>"} (onde parou). Totalmente
+     independente do módulo de fichas de Axiomas (FLASHCARDS_RUNTIME).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="fcnb-modal" class="analytics-modal">
 <style>
-    #section-materiais .fc-grid { display:grid; grid-template-columns: 0.55fr 0.45fr 2fr; flex:1; overflow:hidden; }
-    #section-materiais .fc-col { overflow-y:auto; padding:10px; }
-    #section-materiais #mat-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
-    #section-materiais #mat-col-divisoes { border-right:1px solid var(--border-color); }
-    #section-materiais #mat-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
-    #section-materiais .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
-    #section-materiais .fc-materia-item:hover { background:var(--bg-accent-soft); }
-    #section-materiais .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
-    #section-materiais .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
-    #section-materiais .fc-materia-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
-    #section-materiais .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
-    #section-materiais .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
-    #section-materiais .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
-    #section-materiais .fc-divisao-item.ativa { color:var(--app-primary); background:var(--bg-accent-soft); }
-    #section-materiais .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
-
-    /* Barra de ferramentas fixa no topo da 3ª coluna (filtro de Tipo +
-       ações de ocultar/selecionar) — só ela e a grade abaixo formam o
-       #mat-col-cards, que agora é flex-column com overflow:hidden; quem
-       rola é .mat-grade-scroll, não a coluna inteira (senão a barra
-       sumiria ao rolar a lista). */
-    #section-materiais .mat-toolbar { flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
-    #section-materiais .mat-toolbar-linha { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
-    #section-materiais .mat-toolbar-acoes { justify-content:space-between; }
-    #section-materiais .mat-filtro-pill { padding:4px 10px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #section-materiais .mat-filtro-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
-    #section-materiais .mat-tb-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
-    #section-materiais .mat-tb-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
-    #section-materiais .mat-tb-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
-    #section-materiais .mat-tb-btn.ativa:hover { color:#fff; }
-    #section-materiais .mat-tb-btn:disabled { opacity:0.5; cursor:not-allowed; }
-    #section-materiais .mat-tb-btn:disabled:hover { border-color:var(--border-color); color:var(--text-main); }
-    #section-materiais .mat-tb-acoes-grupo { display:flex; flex-wrap:wrap; gap:6px; }
-    #section-materiais .mat-toggle-ocultos { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:var(--text-muted); cursor:pointer; user-select:none; }
-
-    #section-materiais .mat-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
-
-    /* Grade de cards — mesmo espírito de .crono-days-grid, mas em colunas
-       flexíveis (não 7 fixas) já que a quantidade de materiais é livre. */
-    #section-materiais .mat-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; align-content:start; padding:2px; }
-
-    /* Card de material — mesma estrutura de .crono-card (corpo com tags +
-       título + descrição, footer com ação), borda esquerda colorida igual. */
-    #section-materiais .mat-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:3px solid #5b8fd6; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; }
-    #section-materiais .mat-card-oculto { opacity:0.5; }
-    #section-materiais .mat-card-tags { display:flex; align-items:center; justify-content:space-between; gap:4px; }
-    #section-materiais .mat-card-tags-esq { display:flex; align-items:center; gap:5px; flex-wrap:wrap; min-width:0; }
-    #section-materiais .mat-card-checkbox { cursor:pointer; flex-shrink:0; }
-    #section-materiais .mat-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
-    #section-materiais .mat-card-desc { font-size:10.5px; color:var(--text-muted); line-height:1.4; flex:1; }
-    #section-materiais .mat-card-base { font-size:9.5px; color:var(--text-muted); font-style:italic; }
-    #section-materiais .mat-card-footer { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:2px; }
-    #section-materiais .mat-btn-abrir { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--app-primary); background:none; color:var(--app-primary); cursor:pointer; }
-    #section-materiais .mat-btn-abrir:hover { background:var(--bg-accent-soft); }
-    #section-materiais .mat-btn-editar { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:none; color:var(--text-muted); cursor:pointer; }
-    #section-materiais .mat-btn-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
-    #section-materiais .mat-btn-excluir { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; flex-shrink:0; }
-    #section-materiais .mat-btn-excluir:hover { color:var(--danger); }
-    /* Etiqueta discreta — vermelho sobre branco, mesmo padrão usado na
-       linha de metadados das baterias oficiais na Vitrine. */
-    #section-materiais .mat-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; }
-    #section-materiais .mat-selo-oculto { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 6px; white-space:nowrap; flex-shrink:0; }
-
-    /* Tag de tipo — mesmo padrão pílula (pastel + borda + texto saturado)
-       das tags de prioridade do Cronograma (.crono-tag-critica/alta/...),
-       uma cor por tipo, 6 cores distintas entre si. */
-    #section-materiais .mat-tag { font-family:var(--font-display); font-size:9px; font-weight:700; padding:1px 6px; border-radius:99px; white-space:nowrap; }
-    #section-materiais .mat-tag-jurisprudencia { background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; } /* vermelho */
-    #section-materiais .mat-tag-resumo         { background:#dbeafe; color:#2563eb; border:1px solid #93c5fd; } /* azul */
-    #section-materiais .mat-tag-revisao        { background:#fef9c3; color:#a16207; border:1px solid #fde68a; } /* âmbar */
-    #section-materiais .mat-tag-esquema        { background:#dcfce7; color:#16a34a; border:1px solid #86efac; } /* verde */
-    #section-materiais .mat-tag-infografico    { background:#ede9fe; color:#7c3aed; border:1px solid #c4b5fd; } /* roxo */
-    #section-materiais .mat-tag-slides         { background:#fce7f3; color:#db2777; border:1px solid #f9a8d4; } /* rosa */
-
-    /* Tile "+ Adicionar Material" — mesmo espírito de .fc-tile-add do
-       Flashcards, adaptado pro formato retangular dos cards de material. */
-    #section-materiais .mat-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; }
-    #section-materiais .mat-card-add:hover { background:var(--bg-accent-soft); }
-
-    /* Modal "Novo Material" — mesmo padrão de #modal-flashcard-bulk, mas
-       (diferente dele) é SIBLING de #section-materiais no HTML, não filho
-       — igual #modal-esquema-editor. .mo tem z-index:200; desde que
-       #section-materiais virou modal (z-index:9999), sem isto este popup
-       renderizava atrás dela, inacessível sem fechar a seção primeiro. */
-    #modal-materiais-novo { z-index: 10000; }
-    #modal-materiais-novo .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
-    #modal-materiais-novo .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
-    #modal-materiais-novo .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
-    #modal-materiais-novo .fc-form-campo { margin-bottom:0; }
-    #modal-materiais-novo .fc-form-campo input[type="text"], #modal-materiais-novo .fc-form-campo select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
-    #modal-materiais-novo .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
-    #modal-materiais-novo .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
-    #modal-materiais-novo .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
-
-    /* Modal "Visualizar PDF" — tamanho padrão já perto do limite da
-       viewport (900px de max-width era estreito demais em telas largas,
-       mesmo o modal tendo "cara" de quase-tela-cheia). .mat-pdf-maximizado
-       (alternada pelo botão ⛶) precisa ir além disso — o padrão (96vw/92vh)
-       já é quase tela cheia, então só "esticar mais um pouco" (99vw/99vh,
-       como era antes) mal se percebia (poucos pixels de diferença,
-       relatado pelo usuário). Maximizado agora vai a 100vw/100vh de
-       verdade, sem respiro nenhum (padding zerado no .mo e quase zerado no
-       .mdl) e sem cantos arredondados — cobre o espaço TODO disponível,
-       em vez de só crescer marginalmente a partir de um estado que já
-       era quase tela cheia. z-index:10000 pelo mesmo motivo de
-       #modal-materiais-novo acima — sem isto o PDF abria atrás de
-       #section-materiais (z-index:9999). */
-    #modal-materiais-pdf { z-index: 10000; }
-    /* max-height:none é essencial aqui — a regra base .mdl (linha ~571) trava
-       max-height:88vh, que senão limitaria a altura mesmo com height:92vh/100vh
-       definido abaixo (max-height sempre vence sobre height, não importa a
-       especificidade da propriedade "height" isolada). */
-    #modal-materiais-pdf .mdl { max-width:1400px; max-height:none; width:96vw; height:92vh; padding:16px; display:flex; flex-direction:column; gap:8px; border-radius:12px; transition:max-width 0.15s ease, width 0.15s ease, height 0.15s ease, border-radius 0.15s ease; }
-    #modal-materiais-pdf.mat-pdf-maximizado { padding:0; }
-    #modal-materiais-pdf.mat-pdf-maximizado .mdl { max-width:none; max-height:none; width:100vw; height:100vh; padding:8px; border-radius:0; }
-    #modal-materiais-pdf .mat-pdf-header { display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-    #modal-materiais-pdf .mat-pdf-titulo { font-family:var(--font-display); font-size:14px; font-weight:800; color:var(--text-main); }
-    #modal-materiais-pdf .mat-pdf-maximizar { background:none; border:none; font-size:17px; cursor:pointer; color:var(--text-muted); line-height:1; }
-    #modal-materiais-pdf .mat-pdf-maximizar:hover { color:var(--app-primary); }
-    #modal-materiais-pdf .mat-pdf-fechar { background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
-    #modal-materiais-pdf .mat-pdf-fechar:hover { color:var(--danger); }
-    #modal-materiais-pdf iframe { flex:1; width:100%; border:1px solid var(--border-color); border-radius:8px; background:#fff; }
+    #fcnb-modal.modal-maximizado .analytics-modal-content { width:100vw; height:100vh; border-radius:0; }
+    #fcnb-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
+    #fcnb-modal .fcnb-cabecalho-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-left:auto; }
+    #fcnb-modal .fcnb-cabecalho-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #fcnb-modal .fcnb-cabecalho-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #fcnb-modal .analytics-modal-content { padding:0; }
+    #fcnb-modal .fc-grid { display:grid; grid-template-columns: 0.55fr 0.45fr 2fr; flex:1; overflow:hidden; }
+    #fcnb-modal .fc-col { overflow-y:auto; padding:10px; }
+    #fcnb-modal #fcnb-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
+    #fcnb-modal #fcnb-col-divisoes { border-right:1px solid var(--border-color); }
+    #fcnb-modal #fcnb-col-cards { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; }
+    #fcnb-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #fcnb-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
+    #fcnb-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
+    #fcnb-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #fcnb-modal .fc-materia-count, #fcnb-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #fcnb-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #fcnb-modal .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
+    #fcnb-modal .fc-divisao-item.ativa { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #fcnb-modal .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; }
+    #fcnb-modal .fcnb-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; padding:10px 10px 8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #fcnb-modal .fcnb-tb-busca { padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:10px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); box-sizing:border-box; width:190px; }
+    #fcnb-modal .fcnb-tb-busca:focus { outline:none; border-color:var(--app-primary); }
+    #fcnb-modal .fcnb-tb-info { font-size:10px; font-weight:700; color:var(--text-muted); }
+    #fcnb-modal .fcnb-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
+    #fcnb-modal .fcnb-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; align-content:start; padding:2px; }
+    #fcnb-modal .fcnb-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:3px solid #6366f1; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; cursor:pointer; }
+    #fcnb-modal .fcnb-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+    #fcnb-modal .fcnb-card-topo { display:flex; align-items:center; justify-content:space-between; gap:4px; min-height:18px; }
+    #fcnb-modal .fcnb-card-l2 { font-size:9px; font-weight:700; color:var(--text-muted); background:#f1f5f9; border:1px solid var(--border-color); border-radius:99px; padding:1px 7px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #fcnb-modal .fcnb-card-acoes { display:flex; gap:2px; margin-left:auto; flex-shrink:0; }
+    #fcnb-modal .fcnb-btn-icone { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; }
+    #fcnb-modal .fcnb-btn-icone:hover { color:var(--app-primary); }
+    #fcnb-modal .fcnb-btn-icone.perigo:hover { color:var(--danger); }
+    #fcnb-modal .fcnb-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    #fcnb-modal .fcnb-card-meta { font-size:10.5px; color:var(--text-muted); }
+    #fcnb-modal .fcnb-progresso { height:6px; border-radius:99px; background:#e2e8f0; overflow:hidden; }
+    #fcnb-modal .fcnb-progresso > div { height:100%; background:#16a34a; border-radius:99px; transition:width 0.2s; }
+    #fcnb-modal .fcnb-card-rodape { display:flex; align-items:center; justify-content:space-between; gap:6px; font-size:10px; font-weight:700; color:var(--text-muted); }
+    #fcnb-modal .fcnb-btn-abrir { font-size:10px; font-weight:800; text-transform:uppercase; padding:5px 10px; border-radius:6px; border:1px solid var(--app-primary); background:none; color:var(--app-primary); cursor:pointer; align-self:flex-end; }
+    #fcnb-modal .fcnb-btn-abrir:hover { background:var(--bg-accent-soft); }
+    #fcnb-modal .fcnb-card-add { border:1px dashed var(--app-primary); border-radius:8px; display:flex; align-items:center; justify-content:center; min-height:90px; color:var(--app-primary); font-size:11px; font-weight:700; cursor:pointer; background:transparent; transition:background 0.15s; text-align:center; padding:8px; }
+    #fcnb-modal .fcnb-card-add:hover { background:var(--bg-accent-soft); }
 </style>
+    <div class="analytics-modal-content">
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">🗂️ Flashcards</div>
+            <div class="fcnb-cabecalho-acoes">
+                <button class="fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
+                <button class="analytics-close-btn" id="fcnb-modal-btn-maximizar" onclick="window.alternarMaximizarFlashcardsNbModal()" title="Maximizar">⛶</button>
+                <button class="analytics-close-btn" onclick="window.fecharFlashcardsNbModal()">&#x2715;</button>
+            </div>
+        </div>
+        <div class="fc-grid" id="fcnb-grid">
+            <div class="fc-col" id="fcnb-col-materias"></div>
+            <div class="fc-col" id="fcnb-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="fcnb-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+        <input type="file" id="fcnb-input-arquivo" accept=".json,application/json" style="display:none;" onchange="window.FLASHCARDS_NB_RUNTIME.aoEscolherArquivo(this)">
+    </div>
+</div>
 
-    <div class="analytics-modal-header" style="flex-shrink:0;">
-        <div class="analytics-modal-title">📚 Materiais</div>
-        <button class="analytics-close-btn" onclick="window.fecharMateriaisModal()">✕</button>
+<!-- MODAL: Importar Flashcards (.json) — pede a L2 (matéria + divisão),
+     mesmo par de selects da criação de bateria. -->
+<div id="modal-fcnb-importar" class="mo">
+<style>
+    #modal-fcnb-importar { z-index: 10000; }
+    #modal-fcnb-importar .mdl { max-width:480px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; }
+    #modal-fcnb-importar .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-fcnb-importar .fc-form-campo { margin-bottom:0; }
+    #modal-fcnb-importar .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-fcnb-importar .fc-form-campo input[type="text"], #modal-fcnb-importar .fc-form-campo select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-fcnb-importar .fcnb-imp-resumo { font-size:12px; color:var(--text-main); line-height:1.5; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:8px; padding:10px; }
+    #modal-fcnb-importar .fcnb-imp-resumo small { color:var(--text-muted); }
+    #modal-fcnb-importar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-fcnb-importar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-fcnb-importar .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
+</style>
+    <div class="mdl">
+        <div class="fc-popup-header">📥 Importar Flashcards</div>
+        <div class="fcnb-imp-resumo" id="fcnb-imp-resumo"></div>
+        <div style="display:flex; gap:10px;">
+            <div class="fc-form-campo" style="flex:1;">
+                <label>Matéria</label>
+                <select id="fcnb-imp-materia" onchange="window.FLASHCARDS_NB_RUNTIME.aoTrocarMateriaImportar()"></select>
+            </div>
+            <div class="fc-form-campo" style="flex:1;">
+                <label>Divisão (L2)</label>
+                <select id="fcnb-imp-divisao"></select>
+            </div>
+        </div>
+        <div class="fc-form-campo">
+            <label>Nome do baralho</label>
+            <input type="text" id="fcnb-imp-nome" placeholder="Ex.: Direito Tributário — Multas e Confisco">
+        </div>
+        <div id="fcnb-imp-erro" class="fc-form-erro" style="display:none;"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.FLASHCARDS_NB_RUNTIME.fecharModalImportar()">Cancelar</button>
+            <button class="fc-footer-btn primario" onclick="window.FLASHCARDS_NB_RUNTIME.confirmarImportacao()">Importar</button>
+        </div>
     </div>
-    <div class="fc-grid" id="mat-grid">
-        <div class="fc-col" id="mat-col-materias"></div>
-        <div class="fc-col" id="mat-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
-        <div class="fc-col" id="mat-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+</div>
+
+<!-- MODAL: Estudo (tela cheia, escuro, estilo NotebookLM) -->
+<div id="modal-fcnb-estudo" class="mo">
+<style>
+    #modal-fcnb-estudo { z-index: 10000; padding:0; background:#131314; backdrop-filter:none; align-items:stretch; justify-content:stretch; }
+    #modal-fcnb-estudo .fcnb-est { width:100%; height:100%; display:flex; flex-direction:column; background:#202124; color:#e8eaed; font-family:var(--font-body); overflow:hidden; }
+    #modal-fcnb-estudo button { font-family:var(--font-body); }
+    #modal-fcnb-estudo .fcnb-est-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 22px 6px 22px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-est-titulo { font-size:20px; font-weight:600; color:#f1f3f4; line-height:1.25; }
+    #modal-fcnb-estudo .fcnb-est-sub { font-size:11px; color:#9aa0a6; margin-top:3px; }
+    #modal-fcnb-estudo .fcnb-est-topo-acoes { display:flex; gap:6px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-est-icone { width:36px; height:36px; border-radius:50%; border:none; background:transparent; color:#bdc1c6; font-size:16px; cursor:pointer; }
+    #modal-fcnb-estudo .fcnb-est-icone:hover { background:#3c4043; color:#fff; }
+    #modal-fcnb-estudo .fcnb-est-icone.ativo { background:#3c4043; color:#8ab4f8; }
+    #modal-fcnb-estudo .fcnb-est-filtros { display:flex; flex-wrap:wrap; gap:6px; padding:6px 22px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-pill { padding:5px 12px; border-radius:99px; border:1px solid #5f6368; background:transparent; color:#bdc1c6; font-size:11px; font-weight:600; cursor:pointer; }
+    #modal-fcnb-estudo .fcnb-pill:hover { border-color:#8ab4f8; color:#e8eaed; }
+    #modal-fcnb-estudo .fcnb-pill.ativa { background:#8ab4f8; border-color:#8ab4f8; color:#202124; }
+    #modal-fcnb-estudo .fcnb-est-progresso { display:flex; align-items:center; gap:10px; padding:4px 22px 0 22px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-est-barra { flex:1; height:6px; border-radius:99px; background:#3c4043; overflow:hidden; }
+    #modal-fcnb-estudo .fcnb-est-barra > div { height:100%; background:#34a853; border-radius:99px; transition:width 0.2s; }
+    #modal-fcnb-estudo .fcnb-est-progresso-txt { font-size:11px; color:#9aa0a6; white-space:nowrap; }
+    #modal-fcnb-estudo .fcnb-est-dica { text-align:center; font-size:12px; color:#80868b; padding:10px 0 4px 0; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-est-palco { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:6px 22px; }
+    #modal-fcnb-estudo .fcnb-carta { width:min(620px, 100%); height:min(470px, 100%); box-sizing:border-box; border-radius:26px; background:#303134; padding:22px 26px; display:flex; flex-direction:column; cursor:pointer; user-select:none; border:1px solid transparent; }
+    #modal-fcnb-estudo .fcnb-carta.verso { background:#202124; border-color:#5f6368; }
+    #modal-fcnb-estudo .fcnb-carta-topo { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:#9aa0a6; flex-shrink:0; min-height:20px; }
+    #modal-fcnb-estudo .fcnb-carta-selos { display:flex; gap:6px; font-size:11px; }
+    #modal-fcnb-estudo .fcnb-selo { padding:2px 8px; border-radius:99px; font-weight:700; }
+    #modal-fcnb-estudo .fcnb-selo.dificil { background:#5c2b29; color:#f28b82; }
+    #modal-fcnb-estudo .fcnb-selo.medio { background:#5c4a1f; color:#fdd663; }
+    #modal-fcnb-estudo .fcnb-selo.facil { background:#1e4620; color:#81c995; }
+    #modal-fcnb-estudo .fcnb-selo.realizada { background:#174ea6; color:#d2e3fc; }
+    #modal-fcnb-estudo .fcnb-carta-corpo { flex:1; min-height:0; display:flex; align-items:center; overflow-y:auto; }
+    #modal-fcnb-estudo .fcnb-carta-texto { width:100%; font-size:28px; line-height:1.4; color:#f1f3f4; white-space:pre-wrap; word-wrap:break-word; padding:8px 0; }
+    #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:23px; }
+    #modal-fcnb-estudo .fcnb-carta-texto.longo { font-size:19px; }
+    #modal-fcnb-estudo .fcnb-carta-dica { text-align:center; font-size:12px; color:#80868b; flex-shrink:0; min-height:18px; }
+    #modal-fcnb-estudo .fcnb-est-vazio { text-align:center; color:#bdc1c6; font-size:15px; line-height:1.6; max-width:420px; }
+    #modal-fcnb-estudo .fcnb-est-vazio button { margin-top:12px; }
+    #modal-fcnb-estudo .fcnb-est-nav { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; padding:12px 22px 20px 22px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-nav-seta { width:54px; height:54px; border-radius:50%; border:1px solid #5f6368; background:transparent; color:#8ab4f8; font-size:22px; cursor:pointer; }
+    #modal-fcnb-estudo .fcnb-nav-seta:hover { background:#3c4043; }
+    #modal-fcnb-estudo .fcnb-nav-seta:disabled { opacity:0.3; cursor:default; }
+    #modal-fcnb-estudo .fcnb-acao { padding:12px 18px; border-radius:99px; border:1px solid #5f6368; background:transparent; color:#e8eaed; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+    #modal-fcnb-estudo .fcnb-acao:hover { background:#3c4043; }
+    #modal-fcnb-estudo .fcnb-acao.dificil.ativa { background:#c5221f; border-color:#c5221f; color:#fff; }
+    #modal-fcnb-estudo .fcnb-acao.medio.ativa { background:#e37400; border-color:#e37400; color:#fff; }
+    #modal-fcnb-estudo .fcnb-acao.facil.ativa { background:#188038; border-color:#188038; color:#fff; }
+    #modal-fcnb-estudo .fcnb-acao.realizada.ativa { background:#1a73e8; border-color:#1a73e8; color:#fff; }
+    #modal-fcnb-estudo .fcnb-acao:disabled { opacity:0.35; cursor:default; }
+    #modal-fcnb-estudo .fcnb-sep { width:1px; height:30px; background:#3c4043; margin:0 4px; }
+    @media (max-width:640px) {
+        #modal-fcnb-estudo .fcnb-carta-texto { font-size:22px; }
+        #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:19px; }
+        #modal-fcnb-estudo .fcnb-carta-texto.longo { font-size:16px; }
+        #modal-fcnb-estudo .fcnb-acao { padding:10px 12px; font-size:12px; }
+        #modal-fcnb-estudo .fcnb-sep { display:none; }
+    }
+</style>
+    <div class="fcnb-est">
+        <div class="fcnb-est-topo">
+            <div>
+                <div class="fcnb-est-titulo" id="fcnb-est-titulo"></div>
+                <div class="fcnb-est-sub" id="fcnb-est-sub"></div>
+            </div>
+            <div class="fcnb-est-topo-acoes">
+                <button class="fcnb-est-icone" id="fcnb-est-btn-embaralhar" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.alternarEmbaralhar()" title="Embaralhar">🔀</button>
+                <button class="fcnb-est-icone" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.reiniciarProgressoAtual()" title="Reiniciar o progresso deste baralho">↺</button>
+                <button class="fcnb-est-icone" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.fecharEstudo()" title="Fechar (Esc)">✕</button>
+            </div>
+        </div>
+        <div class="fcnb-est-filtros" id="fcnb-est-filtros"></div>
+        <div class="fcnb-est-progresso">
+            <div class="fcnb-est-barra"><div id="fcnb-est-barra-preenchida" style="width:0%;"></div></div>
+            <span class="fcnb-est-progresso-txt" id="fcnb-est-progresso-txt"></span>
+        </div>
+        <div class="fcnb-est-dica">Pressione a barra de espaço para virar o cartão e as setas “←” / “→” para navegar</div>
+        <div class="fcnb-est-palco" id="fcnb-est-palco"></div>
+        <div class="fcnb-est-nav">
+            <button class="fcnb-nav-seta" id="fcnb-btn-anterior" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.navegar(-1)" title="Anterior (←)">←</button>
+            <button class="fcnb-acao dificil" id="fcnb-btn-dificil" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.marcarDificuldade('dificil')" title="Difícil (1)">🔴 Difícil</button>
+            <button class="fcnb-acao medio" id="fcnb-btn-medio" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.marcarDificuldade('medio')" title="Média (2)">🟡 Média</button>
+            <button class="fcnb-acao facil" id="fcnb-btn-facil" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.marcarDificuldade('facil')" title="Fácil (3)">🟢 Fácil</button>
+            <span class="fcnb-sep"></span>
+            <button class="fcnb-acao realizada" id="fcnb-btn-realizada" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.alternarRealizada()" title="Realizada / Não realizada (R)">✓ Realizada</button>
+            <button class="fcnb-nav-seta" id="fcnb-btn-proximo" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.navegar(1)" title="Próximo (→)">→</button>
+        </div>
     </div>
+</div>
 
 <script>
-// ── MATERIAIS (jurisprudência, resumos, esquemas, infográficos, slides,
-// revisões) — mesmo menu L1/L2 do Flashcards. Estrutura de dados:
-// materiais: { "MATÉRIA > Divisão": [ {id, tipo, titulo, descricao, urlPdf,
-// criadoEm}, ... ] } — mesma forma achatada de flashcards_runtime.manuais,
-// pra reaproveitar exatamente o mesmo caso especial de merge no backup.
-window.MATERIAIS_RUNTIME = {
-    materiais: {},
-    // Estado de visibilidade PESSOAL — separado do material em si, nunca
-    // afeta o dado oficial nem o de outros usuários. {"<id_material>": true}
-    // = oculto da grade normal pra este usuário. Mesmo espírito de
-    // favoritos/revisao já usados em Flashcards, mesma STORAGE_KEY.
-    ocultos: {},
-    STORAGE_KEY: 'tjpe_v1__materiais_runtime',
+window.FLASHCARDS_NB_RUNTIME = {
+    decks: {},
+    estado: {},
+    excluidos: {},
+    posicoes: {},
     _materiaSelecionada: null,
-    _divisaoSelecionada: null, // null = "todas as divisões" (modo agregado)
+    _divisaoSelecionada: null, // null = "todas as divisões"
     _bootstrapped: false,
-
-    // Estado de filtro/seleção — não persiste (reseta a cada init/troca de tela).
-    _filtroTipos: [],     // vazio = "Todos"; senão, união dos tipos marcados
-    _mostrarOcultos: false,
-    _ocultarOficiais: false, // esconde TODOS os materiais origem_oficial, independente de ocultos
-    _modoSelecao: false,
-    _selecionados: {},    // {"<id_material>": true} — só durante o modo seleção
-    _editandoId: null,    // id do material sendo editado no modal — null = criando um novo
-    _editandoChave: null,
-
-    TIPOS: [
-        { chave: 'jurisprudencia', rotulo: 'Jurisprudência' },
-        { chave: 'resumo', rotulo: 'Resumo' },
-        { chave: 'revisao', rotulo: 'Revisão' },
-        { chave: 'esquema', rotulo: 'Esquema' },
-        { chave: 'infografico', rotulo: 'Infográfico' },
-        { chave: 'slides', rotulo: 'Slides' }
-    ],
+    _filtroBusca: '',
+    _importacao: null,
+    _est: null, // sessão de estudo em andamento
+    _timerPosicao: null,
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(window.lerMateriaisBruto() || 'null'); } catch (e) { bruto = null; }
-        this.materiais = (bruto && typeof bruto.materiais === 'object' && !Array.isArray(bruto.materiais)) ? bruto.materiais : {};
-        this.ocultos = (bruto && typeof bruto.ocultos === 'object' && !Array.isArray(bruto.ocultos)) ? bruto.ocultos : {};
+        try { bruto = JSON.parse(window.lerFlashcardsNbBruto() || 'null'); } catch (e) { bruto = null; }
+        let ehDict = function(v) { return v && typeof v === 'object' && !Array.isArray(v); };
+        this.decks = (bruto && ehDict(bruto.decks)) ? bruto.decks : {};
+        this.estado = (bruto && ehDict(bruto.estado)) ? bruto.estado : {};
+        this.excluidos = (bruto && ehDict(bruto.excluidos)) ? bruto.excluidos : {};
+        this.posicoes = (bruto && ehDict(bruto.posicoes)) ? bruto.posicoes : {};
         this._bootstrapped = true;
     },
 
@@ -11628,764 +11685,688 @@ window.MATERIAIS_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
-    // Materiais OFICIAIS nunca são gravados aqui — importarMaterialOficial()
-    // já os funde de novo em this.materiais a cada carregamento (buscados
-    // do repositório, dados/materiais/*.json), então persisti-los aqui só
-    // duplicaria esse conteúdo no localStorage E no backup na nuvem (que
-    // lê o valor salvo aqui direto) sem necessidade — foi exatamente isso
-    // que estourou a cota de armazenamento em Esquemas. Só os campos
-    // PESSOAIS sobre um material oficial (ex.: ocultos) continuam salvos,
-    // já que vivem à parte, num mapa por id, não dentro do próprio item.
     salvar: function() {
         try {
-            let self = this;
-            let materiaisPessoais = {};
-            Object.keys(this.materiais).forEach(function(chave) {
-                let apenasPessoais = (self.materiais[chave] || []).filter(function(m) { return !m.origem_oficial; });
-                if (apenasPessoais.length > 0) materiaisPessoais[chave] = apenasPessoais;
-            });
-            window.salvarMateriaisBruto(JSON.stringify({ materiais: materiaisPessoais, ocultos: this.ocultos }));
+            window.salvarFlashcardsNbBruto(JSON.stringify({ decks: this.decks, estado: this.estado, excluidos: this.excluidos, posicoes: this.posicoes }));
             return true;
         } catch (e) {
-            console.warn('[MATERIAIS] Falha ao salvar:', e);
+            console.warn('[FLASHCARDS] Falha ao salvar:', e);
             return false;
         }
     },
 
     init: function() {
         this.carregar();
-        this.render(); // render imediato com o que já tem em cache local
-        // Materiais oficiais são buscados de novo aqui (idempotente, upsert
-        // por id) — não depende só da corrida do boot; se algo novo chegou
-        // (ou o boot ainda não tinha terminado), re-renderiza depois.
-        if (typeof window.carregarMateriaisOficiais === 'function') {
-            window.carregarMateriaisOficiais().then(function() {
-                // render() (não só _renderGradeCards()) — mesma correção de
-                // ESQUEMAS_RUNTIME.init(): a contagem por disciplina na barra
-                // lateral só é montada uma vez, antes dos oficiais chegarem, e
-                // nunca era recalculada depois.
-                window.MATERIAIS_RUNTIME.render();
-            });
-        }
+        this.render();
     },
 
-    _chaveL2: function(materia, divisao) {
-        return materia + ' > ' + divisao;
-    },
+    _chaveL2: function(materia, divisao) { return materia + ' > ' + divisao; },
 
     _escapar: function(str) {
-        return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     },
 
-    _tipoInfo: function(chaveTipo) {
-        let t = this.TIPOS.find(function(x) { return x.chave === chaveTipo; });
-        return t || this.TIPOS[1]; // fallback: "Resumo"
+    _normalizar: function(texto) {
+        return String(texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     },
 
-    // Contagem bruta (ignora ocultos/filtro de tipo — é só indicação de
-    // volume, mesmo espírito de contarCardsDaMateria/contarCardsDoL2 do
-    // Flashcards) pros badges de quantidade no L1/L2.
-    _contarMateriaisDaMateria: function(materia) {
+    _novoId: function(prefixo) {
+        return prefixo + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    },
+
+    // Baralhos dessa L2 — usado por fora do modal (painel "Conteúdo
+    // Relacionado" do Cronograma).
+    decksDoL2: function(materia, divisao) {
+        this._garantirCarregado();
+        return this.decks[this._chaveL2(materia, divisao)] || [];
+    },
+
+    _acharDeck: function(idDeck) {
+        let chaves = Object.keys(this.decks);
+        for (let i = 0; i < chaves.length; i++) {
+            let arr = this.decks[chaves[i]] || [];
+            for (let j = 0; j < arr.length; j++) {
+                if (arr[j] && arr[j].id === idDeck) return { deck: arr[j], chave: chaves[i] };
+            }
+        }
+        return null;
+    },
+
+    _resumoDeck: function(deck) {
         let self = this;
-        let total = 0;
+        let r = { total: (deck.cards || []).length, realizadas: 0, dificil: 0, medio: 0, facil: 0 };
+        (deck.cards || []).forEach(function(c) {
+            let e = self.estado[c.id];
+            if (!e) return;
+            if (e.realizada) r.realizadas++;
+            if (e.ultimaClassificacao === 'dificil') r.dificil++;
+            else if (e.ultimaClassificacao === 'medio') r.medio++;
+            else if (e.ultimaClassificacao === 'facil') r.facil++;
+        });
+        return r;
+    },
+
+    _contarDecksDaMateria: function(materia) {
+        let self = this;
         let prefixo = materia + ' > ';
-        Object.keys(this.materiais).forEach(function(chave) {
-            if (chave.indexOf(prefixo) === 0) total += (self.materiais[chave] || []).length;
+        let total = 0;
+        Object.keys(this.decks).forEach(function(chave) {
+            if (chave.indexOf(prefixo) === 0) total += (self.decks[chave] || []).length;
         });
         return total;
     },
-    _contarMateriaisDoL2: function(materia, divisao) {
-        return (this.materiais[this._chaveL2(materia, divisao)] || []).length;
+
+    _contarDecksDoL2: function(materia, divisao) {
+        return (this.decks[this._chaveL2(materia, divisao)] || []).length;
     },
 
-    // Materiais VISÍVEIS (exclui ocultos) dessa L2 — usado por fora da seção
-    // (card do Cronograma) pra listar conteúdo relacionado. Mesmo padrão de
-    // FLASHCARDS_RUNTIME.listarBaralhosDoL2: método público, parametrizado,
-    // sem depender de _materiaSelecionada/_divisaoSelecionada (que só fazem
-    // sentido pra navegação interna da própria seção).
-    materiaisDoL2: function(materia, divisao) {
-        this._garantirCarregado();
-        let self = this;
-        return (this.materiais[this._chaveL2(materia, divisao)] || []).filter(function(m) { return !self.ocultos[m.id]; });
-    },
+    // ── NAVEGAÇÃO L1 > L2 (mesmo padrão de Esquemas/Jurisprudência) ──
 
     render: function() {
-        let colMaterias = document.getElementById('mat-col-materias');
+        let colMaterias = document.getElementById('fcnb-col-materias');
         if (!colMaterias) return;
         let self = this;
-
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
             colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
             return;
         }
-
         colMaterias.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
             let ativa = mat.nivel_1 === self._materiaSelecionada;
-            let n = self._contarMateriaisDaMateria(mat.nivel_1);
-            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
-                '<span class="fc-materia-nome">' + mat.nivel_1 + '</span>' +
+            let n = self._contarDecksDaMateria(mat.nivel_1);
+            return '<div class="fc-materia-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarMateria(\'' + mat.nivel_1.replace(/'/g, "\\'") + '\')">' +
+                '<span class="fc-materia-nome">' + self._escapar(mat.nivel_1) + '</span>' +
                 '<span style="display:flex; align-items:center; gap:4px;">' +
                     (n > 0 ? ('<span class="fc-materia-count">' + n + '</span>') : '') +
                     '<span style="color:var(--text-muted); font-size:12px;">›</span>' +
                 '</span>' +
             '</div>';
         }).join('');
-
-        // NÃO usar selecionarMateria() aqui — ela reseta _divisaoSelecionada
-        // pra null, o que apagava a divisão já escolhida (ex.: entrando aqui
-        // via "Materiais associados" do simulado ativo, que já chama
-        // selecionarDivisao() antes desta Promise resolver) assim que os
-        // oficiais chegavam, ~poucos segundos depois — o usuário via a
-        // divisão certa por um instante e depois caía sozinho em "Todas as
-        // divisões". Preserva a divisão já ativa, só atualiza as colunas 2/3.
         if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
     },
 
-    selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+    selecionarMateria: function(nivel1) {
         this._materiaSelecionada = nivel1;
         this._divisaoSelecionada = null;
-        if (!semRerenderSidebarMaterias) {
-            document.querySelectorAll('#mat-col-materias .fc-materia-item').forEach(function(el) { el.classList.remove('ativa'); });
-            let alvo = Array.from(document.querySelectorAll('#mat-col-materias .fc-materia-item')).find(function(el) {
-                return el.querySelector('.fc-materia-nome').textContent === nivel1;
-            });
-            if (alvo) alvo.classList.add('ativa');
-        }
+        this._filtroBusca = '';
+        let self = this;
+        Array.from(document.querySelectorAll('#fcnb-col-materias .fc-materia-item')).forEach(function(el) {
+            el.classList.toggle('ativa', el.querySelector('.fc-materia-nome').textContent === nivel1);
+        });
         this._renderColunaDivisoes(nivel1);
         this._renderGradeCards();
     },
 
     _renderColunaDivisoes: function(nivel1) {
-        let colDivisoes = document.getElementById('mat-col-divisoes');
-        if (!colDivisoes) return;
+        let col = document.getElementById('fcnb-col-divisoes');
+        if (!col) return;
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === nivel1; });
         if (!mat || !Array.isArray(mat.divisoes) || mat.divisoes.length === 0) {
-            colDivisoes.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
+            col.innerHTML = '<div class="fc-vazio-col">Nenhuma divisão cadastrada.</div>';
             return;
         }
-
         let self = this;
-        let totalMateria = this._contarMateriaisDaMateria(nivel1);
-        colDivisoes.innerHTML =
-            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', null)">' +
-                '<span>Todas as divisões</span><span class="fc-divisao-count">' + totalMateria + '</span>' +
+        let n1Esc = nivel1.replace(/'/g, "\\'");
+        col.innerHTML =
+            '<div class="fc-divisao-item' + (!self._divisaoSelecionada ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarDivisao(\'' + n1Esc + '\', null)">' +
+                '<span>Todas as divisões</span><span class="fc-divisao-count">' + self._contarDecksDaMateria(nivel1) + '</span>' +
             '</div>' +
             mat.divisoes.map(function(div) {
-                let n = self._contarMateriaisDoL2(nivel1, div.nivel_2);
                 let ativa = self._divisaoSelecionada === div.nivel_2;
-                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.selecionarDivisao(\'' + nivel1.replace(/'/g, "\\'") + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + div.nivel_2 + '</span><span class="fc-divisao-count">' + n + '</span>' +
+                return '<div class="fc-divisao-item' + (ativa ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarDivisao(\'' + n1Esc + '\', \'' + div.nivel_2.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + self._escapar(div.nivel_2) + '</span><span class="fc-divisao-count">' + self._contarDecksDoL2(nivel1, div.nivel_2) + '</span>' +
                 '</div>';
             }).join('');
     },
 
-    // divisao === null -> "Todas as divisões" (agrega todas as chaves L2
-    // da matéria, mesmo padrão do modo agregado do Flashcards).
     selecionarDivisao: function(materia, divisao) {
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
+        this._filtroBusca = '';
         this._renderColunaDivisoes(materia);
         this._renderGradeCards();
     },
 
-    // Lista [{item, chave}] pra exibir: só a chave L2 escolhida, ou agregado
-    // de todas as chaves "MATÉRIA > *" quando divisão === null.
-    _materiaisParaExibir: function() {
+    // [{deck, chave}] da L2 escolhida, ou de todas as L2 da matéria.
+    _decksParaExibir: function() {
         let self = this;
         if (!this._materiaSelecionada) return [];
+        let chaves;
         if (this._divisaoSelecionada) {
-            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-            return (this.materiais[chave] || []).map(function(m) { return { item: m, chave: chave }; });
+            chaves = [this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada)];
+        } else {
+            let prefixo = this._materiaSelecionada + ' > ';
+            chaves = Object.keys(this.decks).filter(function(c) { return c.indexOf(prefixo) === 0; }).sort();
         }
-        let prefixo = this._materiaSelecionada + ' > ';
-        let resultado = [];
-        Object.keys(this.materiais).sort().forEach(function(chave) {
-            if (chave.indexOf(prefixo) === 0) {
-                (self.materiais[chave] || []).forEach(function(m) { resultado.push({ item: m, chave: chave }); });
-            }
+        let lista = [];
+        chaves.forEach(function(chave) {
+            (self.decks[chave] || []).forEach(function(d) { lista.push({ deck: d, chave: chave }); });
         });
-        return resultado;
-    },
-
-    // Aplica o filtro de Tipo (união — qualquer tipo marcado passa) e o
-    // filtro de ocultos (exclui ocultos, a menos que _mostrarOcultos esteja
-    // ligado) sobre _materiaisParaExibir(). É a MESMA lista usada tanto pra
-    // renderizar os cards quanto por "Selecionar Todos" — garante que a
-    // seleção em massa respeita exatamente o que está visível no momento.
-    _listaFiltrada: function() {
-        let self = this;
-        let lista = this._materiaisParaExibir();
-        if (this._filtroTipos.length > 0) {
-            lista = lista.filter(function(par) { return self._filtroTipos.indexOf(par.item.tipo) !== -1; });
-        }
-        if (!this._mostrarOcultos) {
-            lista = lista.filter(function(par) { return !self.ocultos[par.item.id]; });
-        }
-        if (this._ocultarOficiais) {
-            lista = lista.filter(function(par) { return !par.item.origem_oficial; });
-        }
         return lista;
     },
 
-    // Alterna um GRUPO de tipos de uma vez (chip "Resumo/Revisão" alterna
-    // ['resumo','revisao'] juntos; os demais chips passam um grupo de 1
-    // elemento). Estado ligado/desligado é por grupo — evita o botão da
-    // grade filtrar por 1 tipo mas o card individual ainda mostrar o outro.
-    toggleFiltroTipoGrupo: function(tipos) {
-        let self = this;
-        let algumAtivo = tipos.some(function(t) { return self._filtroTipos.indexOf(t) !== -1; });
-        if (algumAtivo) {
-            this._filtroTipos = this._filtroTipos.filter(function(t) { return tipos.indexOf(t) === -1; });
-        } else {
-            tipos.forEach(function(t) { if (self._filtroTipos.indexOf(t) === -1) self._filtroTipos.push(t); });
-        }
-        this._renderGradeCards();
-    },
-
-    limparFiltroTipo: function() {
-        this._filtroTipos = [];
-        this._renderGradeCards();
-    },
-
-    toggleMostrarOcultos: function() {
-        this._mostrarOcultos = !this._mostrarOcultos;
-        this._renderGradeCards();
-    },
-
-    toggleOcultarOficiais: function() {
-        this._ocultarOficiais = !this._ocultarOficiais;
-        this._renderGradeCards();
-    },
-
-    toggleModoSelecao: function() {
-        this._modoSelecao = !this._modoSelecao;
-        this._selecionados = {};
-        this._renderGradeCards();
-    },
-
-    toggleSelecionado: function(id) {
-        if (this._selecionados[id]) delete this._selecionados[id]; else this._selecionados[id] = true;
-        this._renderGradeCards();
-    },
-
-    // Marca tudo que está visível NESTE MOMENTO (já filtrado por Tipo e por
-    // "mostrar ocultos") — nunca a lista completa de materiais existentes.
-    selecionarTodosVisiveis: function() {
-        let self = this;
-        this._listaFiltrada().forEach(function(par) { self._selecionados[par.item.id] = true; });
-        this._renderGradeCards();
-    },
-
-    ocultarSelecionados: function() {
-        let self = this;
-        Object.keys(this._selecionados).forEach(function(id) { self.ocultos[id] = true; });
-        this.salvar();
-        this._selecionados = {};
-        this._renderGradeCards();
-    },
-
-    exibirSelecionados: function() {
-        let self = this;
-        Object.keys(this._selecionados).forEach(function(id) { delete self.ocultos[id]; });
-        this.salvar();
-        this._selecionados = {};
-        this._renderGradeCards();
-    },
-
-    _renderToolbar: function() {
-        let self = this;
-        // Chips de filtro — Resumo e Revisão aparecem como UM ÚNICO botão
-        // "Resumo/Revisão" (mesma unificação já feita no rótulo do painel
-        // "Conteúdo Relacionado" do Cronograma); os demais tipos continuam
-        // 1 chip cada. O material individual continua guardando seu tipo
-        // original ('resumo' ou 'revisao') — só a navegação por chip agrupa.
-        let CHIPS_FILTRO_TIPO = [
-            { rotulo: 'Jurisprudência', tipos: ['jurisprudencia'] },
-            { rotulo: 'Resumo/Revisão', tipos: ['resumo', 'revisao'] },
-            { rotulo: 'Esquema', tipos: ['esquema'] },
-            { rotulo: 'Infográfico', tipos: ['infografico'] },
-            { rotulo: 'Slides', tipos: ['slides'] }
-        ];
-        let chipsHtml = '<span class="mat-filtro-pill' + (this._filtroTipos.length === 0 ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.limparFiltroTipo()">Todos</span>' +
-            CHIPS_FILTRO_TIPO.map(function(c) {
-                let ativa = c.tipos.some(function(t) { return self._filtroTipos.indexOf(t) !== -1; });
-                let tiposAttr = c.tipos.map(function(t) { return "'" + t + "'"; }).join(',');
-                return '<span class="mat-filtro-pill' + (ativa ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleFiltroTipoGrupo([' + tiposAttr + '])">' + c.rotulo + '</span>';
-            }).join('');
-
-        let qtdSel = Object.keys(this._selecionados).length;
-        let htmlAcoes;
-        if (this._modoSelecao) {
-            htmlAcoes =
-                '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.selecionarTodosVisiveis()">Selecionar Todos</button>' +
-                    '<button class="mat-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.MATERIAIS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                    '<button class="mat-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.MATERIAIS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                '</div>' +
-                '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Cancelar</button>';
-        } else {
-            htmlAcoes =
-                '<div class="mat-tb-acoes-grupo">' +
-                    '<label class="mat-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.MATERIAIS_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>' +
-                    '<button class="mat-tb-btn' + (this._ocultarOficiais ? ' ativa' : '') + '" onclick="window.MATERIAIS_RUNTIME.toggleOcultarOficiais()">Ocultar Oficiais</button>' +
-                '</div>' +
-                '<div class="mat-tb-acoes-grupo">' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTudo()" title="Exportar todos os materiais visíveis (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Tudo</button>' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarDisciplina()" title="Exportar os materiais visíveis da disciplina selecionada (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Disciplina</button>' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.exportarTopico()" title="Exportar os materiais visíveis do tópico selecionado (pessoais + oficiais, exceto ocultos) em JSON">📤 Exportar Tópico</button>' +
-                    '<button class="mat-tb-btn" onclick="window.MATERIAIS_RUNTIME.toggleModoSelecao()">Selecionar</button>' +
-                '</div>';
-        }
-
-        return '<div class="mat-toolbar">' +
-            '<div class="mat-toolbar-linha">' + chipsHtml + '</div>' +
-            '<div class="mat-toolbar-linha mat-toolbar-acoes">' + htmlAcoes + '</div>' +
-        '</div>';
-    },
-
     _renderGradeCards: function() {
-        let col = document.getElementById('mat-col-cards');
+        let col = document.getElementById('fcnb-col-cards');
         if (!col) return;
-        let self = this;
-
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
             return;
         }
+        col.innerHTML =
+            '<div class="fcnb-toolbar">' +
+                '<input type="text" id="fcnb-busca" class="fcnb-tb-busca" placeholder="🔎 Buscar baralho..." value="' + this._escapar(this._filtroBusca) + '" oninput="window.FLASHCARDS_NB_RUNTIME.filtrarBusca(this.value)">' +
+                '<span class="fcnb-tb-info" id="fcnb-tb-info"></span>' +
+            '</div>' +
+            '<div class="fcnb-grade-scroll" id="fcnb-grade-scroll"></div>';
+        this._renderGradeInterna();
+    },
 
-        let lista = this._listaFiltrada();
-        // "+ Adicionar Material" exige uma divisão específica escolhida (mesma
-        // regra do "+ Adicionar Flashcards") e some durante o modo seleção.
-        let mostrarAdicionar = !!this._divisaoSelecionada && !this._modoSelecao;
+    filtrarBusca: function(texto) {
+        this._filtroBusca = texto || '';
+        this._renderGradeInterna();
+    },
 
-        let htmlCards = lista.map(function(par) {
-            let item = par.item;
-            let info = self._tipoInfo(item.tipo);
-            let oculto = !!self.ocultos[item.id];
-            let selecionado = !!self._selecionados[item.id];
-            let podeExcluir = !item.origem_oficial;
+    _renderGradeInterna: function() {
+        let scroll = document.getElementById('fcnb-grade-scroll');
+        if (!scroll) return;
+        let self = this;
+        let busca = this._normalizar(this._filtroBusca);
+        let lista = this._decksParaExibir().filter(function(par) { return !busca || self._normalizar(par.deck.nome).indexOf(busca) !== -1; });
+        lista.sort(function(a, b) { return String(a.deck.nome).localeCompare(String(b.deck.nome), 'pt-BR'); });
 
-            let checkboxHtml = self._modoSelecao
-                ? '<input type="checkbox" class="mat-card-checkbox" ' + (selecionado ? 'checked' : '') + ' onchange="window.MATERIAIS_RUNTIME.toggleSelecionado(\'' + item.id + '\')">'
-                : '';
-            let seloOficial = item.origem_oficial ? '<span class="mat-selo-oficial" title="Material oficial">(Oficial)</span>' : '';
-            let seloOculto = oculto ? '<span class="mat-selo-oculto">🙈 Oculto</span>' : '';
-            // Materiais oficiais não são excluíveis/editáveis pelo usuário —
-            // só quem publica o JSON no repositório consegue mudar (mesma
-            // regra das baterias oficiais).
-            let btnExcluirHtml = (!self._modoSelecao && podeExcluir)
-                ? '<button class="mat-btn-excluir" onclick="window.MATERIAIS_RUNTIME.excluirMaterial(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Excluir material">🗑️</button>'
-                : '';
-            let btnEditarHtml = (!self._modoSelecao && podeExcluir)
-                ? '<button class="mat-btn-editar" onclick="window.MATERIAIS_RUNTIME.abrirModalEditar(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')" title="Editar material">✏️ Editar</button>'
-                : '';
-            let materialBaseHtml = item.materialBase ? '<div class="mat-card-base">Material base: ' + self._escapar(item.materialBase) + '</div>' : '';
-
-            return '<div class="mat-card' + (oculto ? ' mat-card-oculto' : '') + '">' +
-                '<div class="mat-card-tags">' +
-                    '<span class="mat-card-tags-esq">' +
-                        checkboxHtml +
-                        '<span class="mat-tag mat-tag-' + item.tipo + '">' + info.rotulo + '</span>' +
-                        seloOficial +
-                        seloOculto +
+        let mostrarL2 = !this._divisaoSelecionada;
+        let cardsHtml = lista.map(function(par) {
+            let d = par.deck;
+            let r = self._resumoDeck(d);
+            let pct = r.total > 0 ? Math.round((r.realizadas / r.total) * 100) : 0;
+            let l2 = par.chave.split(' > ').slice(1).join(' > ');
+            return '<div class="fcnb-card" onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\')" title="Abrir flashcards">' +
+                '<div class="fcnb-card-topo">' +
+                    (mostrarL2 ? '<span class="fcnb-card-l2" title="' + self._escapar(l2) + '">' + self._escapar(l2) + '</span>' : '') +
+                    '<span class="fcnb-card-acoes">' +
+                        '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.renomearDeck(\'' + d.id + '\')" title="Renomear">✏️</button>' +
+                        '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.reiniciarProgresso(\'' + d.id + '\')" title="Reiniciar progresso">↺</button>' +
+                        '<button class="fcnb-btn-icone perigo" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.excluirDeck(\'' + d.id + '\')" title="Excluir baralho">🗑️</button>' +
                     '</span>' +
-                    btnExcluirHtml +
                 '</div>' +
-                '<div class="mat-card-titulo">' + self._escapar(item.titulo) + '</div>' +
-                '<div class="mat-card-desc">' + self._escapar(item.descricao) + '</div>' +
-                materialBaseHtml +
-                '<div class="mat-card-footer">' +
-                    btnEditarHtml +
-                    '<button class="mat-btn-abrir" onclick="window.MATERIAIS_RUNTIME.abrirPdf(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + item.id + '\')">Abrir</button>' +
-                '</div>' +
+                '<div class="fcnb-card-titulo">' + self._escapar(d.nome) + '</div>' +
+                '<div class="fcnb-card-meta">' + r.total + ' flashcard' + (r.total === 1 ? '' : 's') + '</div>' +
+                '<div class="fcnb-progresso"><div style="width:' + pct + '%;"></div></div>' +
+                '<div class="fcnb-card-rodape"><span>' + r.realizadas + '/' + r.total + ' realizados</span><span>🔴 ' + r.dificil + ' · 🟡 ' + r.medio + ' · 🟢 ' + r.facil + '</span></div>' +
+                '<button class="fcnb-btn-abrir" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\')">Abrir flashcards</button>' +
             '</div>';
         }).join('');
 
-        let htmlAdicionar = mostrarAdicionar
-            ? '<div class="mat-card-add" onclick="window.MATERIAIS_RUNTIME.abrirModalNovo()">➕ Adicionar Material</div>'
-            : '';
-
-        let corpoHtml;
-        if (htmlCards || htmlAdicionar) {
-            corpoHtml = '<div class="mat-cards-grid">' + htmlCards + htmlAdicionar + '</div>';
-        } else if (this._filtroTipos.length > 0) {
-            corpoHtml = '<div class="fc-vazio-col">Nenhum material com esse filtro de tipo.</div>';
-        } else if (this._divisaoSelecionada) {
-            corpoHtml = '<div class="fc-vazio-col">Nenhum material aqui ainda.</div>';
-        } else {
-            corpoHtml = '<div class="fc-vazio-col">Escolha uma divisão específica pra adicionar o primeiro material.</div>';
+        let aviso = '';
+        if (lista.length === 0) {
+            aviso = '<div class="fc-vazio-col" style="grid-column:1/-1;">' + (busca ? 'Nenhum baralho encontrado para essa busca.' : 'Nenhum baralho nesta divisão ainda. Importe um arquivo .json do NotebookLM.') + '</div>';
         }
-
-        col.innerHTML = this._renderToolbar() + '<div class="mat-grade-scroll">' + corpoHtml + '</div>';
+        scroll.innerHTML = '<div class="fcnb-cards-grid">' + cardsHtml + aviso +
+            '<div class="fcnb-card-add" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">➕ Importar flashcards (.json)</div></div>';
+        let info = document.getElementById('fcnb-tb-info');
+        if (info) info.textContent = lista.length + ' baralho' + (lista.length === 1 ? '' : 's');
     },
 
-    // ── MODAL "NOVO MATERIAL" ──
+    // ── IMPORTAÇÃO (.json no padrão do NotebookLM) ──
 
-    abrirModalNovo: function() {
-        if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
-        this._editandoId = null;
-        this._editandoChave = null;
-        document.getElementById('mat-modal-cabecalho').textContent = '📎 Novo Material';
-        let selTipo = document.getElementById('mat-form-tipo');
-        selTipo.innerHTML = this.TIPOS.map(function(t) { return '<option value="' + t.chave + '">' + t.rotulo + '</option>'; }).join('');
-        document.getElementById('mat-form-titulo').value = '';
-        document.getElementById('mat-form-descricao').value = '';
-        document.getElementById('mat-form-url').value = '';
-        document.getElementById('mat-form-materialbase').value = '';
-        document.getElementById('mat-form-erro').style.display = 'none';
-        document.getElementById('modal-materiais-novo').classList.add('open');
-        setTimeout(function() { let t = document.getElementById('mat-form-titulo'); if (t) t.focus(); }, 50);
+    escolherArquivo: function() {
+        let input = document.getElementById('fcnb-input-arquivo');
+        if (input) { input.value = ''; input.click(); }
     },
 
-    // Materiais oficiais nunca chegam aqui (o botão ✏️ nem é renderizado
-    // pra eles), mas a função ainda assim confirma o item antes de editar.
-    abrirModalEditar: function(chave, id) {
-        let item = (this.materiais[chave] || []).find(function(m) { return m.id === id; });
-        if (!item || item.origem_oficial) return;
-        this._editandoId = id;
-        this._editandoChave = chave;
-        document.getElementById('mat-modal-cabecalho').textContent = '✏️ Editar Material';
-        let selTipo = document.getElementById('mat-form-tipo');
-        selTipo.innerHTML = this.TIPOS.map(function(t) { return '<option value="' + t.chave + '">' + t.rotulo + '</option>'; }).join('');
-        selTipo.value = item.tipo;
-        document.getElementById('mat-form-titulo').value = item.titulo || '';
-        document.getElementById('mat-form-descricao').value = item.descricao || '';
-        document.getElementById('mat-form-url').value = item.urlPdf || '';
-        document.getElementById('mat-form-materialbase').value = item.materialBase || '';
-        document.getElementById('mat-form-erro').style.display = 'none';
-        document.getElementById('modal-materiais-novo').classList.add('open');
-        setTimeout(function() { let t = document.getElementById('mat-form-titulo'); if (t) t.focus(); }, 50);
+    aoEscolherArquivo: function(input) {
+        let self = this;
+        let arquivo = input && input.files && input.files[0];
+        if (!arquivo) return;
+        let leitor = new FileReader();
+        leitor.onload = function() {
+            let resultado = self._parsearJson(String(leitor.result || ''));
+            if (!resultado.ok) { alert('Não foi possível importar "' + arquivo.name + '".\n\n' + resultado.erro); return; }
+            self._importacao = { nomeArquivo: arquivo.name, cards: resultado.cards, ignorados: resultado.ignorados, topicos: resultado.topicos };
+            self.abrirModalImportar();
+        };
+        leitor.onerror = function() { alert('Falha ao ler o arquivo.'); };
+        leitor.readAsText(arquivo, 'UTF-8');
+        input.value = '';
     },
 
-    fecharModalNovo: function() {
-        document.getElementById('modal-materiais-novo').classList.remove('open');
-        this._editandoId = null;
-        this._editandoChave = null;
+    // Aceita o padrão do NotebookLM/Gemini ({flashcards:[{f,b}], topics:{...}})
+    // e, por tolerância, arrays diretos e chaves equivalentes (front/back,
+    // frente/verso, pergunta/resposta).
+    _parsearJson: function(texto) {
+        let obj;
+        try { obj = JSON.parse(texto.replace(/^﻿/, '')); }
+        catch (e) { return { ok: false, erro: 'O arquivo não é um JSON válido (' + e.message + ').' }; }
+        let lista = Array.isArray(obj) ? obj : (obj && (obj.flashcards || obj.cards || obj.cartoes));
+        if (!Array.isArray(lista)) return { ok: false, erro: 'Não encontrei a lista "flashcards" no arquivo. O formato esperado é {"flashcards":[{"f":"frente","b":"verso"}]}.' };
+        let cards = [];
+        let ignorados = 0;
+        lista.forEach(function(item) {
+            if (!item || typeof item !== 'object') { ignorados++; return; }
+            let f = item.f != null ? item.f : (item.front != null ? item.front : (item.frente != null ? item.frente : (item.pergunta != null ? item.pergunta : item.question)));
+            let b = item.b != null ? item.b : (item.back != null ? item.back : (item.verso != null ? item.verso : (item.resposta != null ? item.resposta : item.answer)));
+            f = String(f == null ? '' : f).trim();
+            b = String(b == null ? '' : b).trim();
+            if (!f || !b) { ignorados++; return; }
+            cards.push({ f: f, b: b });
+        });
+        if (cards.length === 0) return { ok: false, erro: 'Nenhum flashcard válido (cada item precisa de frente "f" e verso "b").' };
+        let topicos = (obj && !Array.isArray(obj) && obj.topics && Array.isArray(obj.topics.covered)) ? obj.topics.covered.map(String) : [];
+        return { ok: true, cards: cards, ignorados: ignorados, topicos: topicos };
     },
 
-    salvarNovoMaterial: function() {
-        let erroEl = document.getElementById('mat-form-erro');
-        let tipo = document.getElementById('mat-form-tipo').value;
-        let titulo = (document.getElementById('mat-form-titulo').value || '').trim();
-        let descricao = (document.getElementById('mat-form-descricao').value || '').trim();
-        let urlPdf = (document.getElementById('mat-form-url').value || '').trim();
-        let materialBase = (document.getElementById('mat-form-materialbase').value || '').trim();
+    abrirModalImportar: function() {
+        let imp = this._importacao;
+        if (!imp) return;
+        let selMat = document.getElementById('fcnb-imp-materia');
+        selMat.innerHTML = '<option value="">1. Selecione a matéria...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
+            return '<option value="' + m.nivel_1.replace(/"/g, '&quot;') + '">' + m.nivel_1 + '</option>';
+        }).join('');
+        if (this._materiaSelecionada) selMat.value = this._materiaSelecionada;
+        this.aoTrocarMateriaImportar();
+        if (this._materiaSelecionada && this._divisaoSelecionada) document.getElementById('fcnb-imp-divisao').value = this._divisaoSelecionada;
 
-        if (!titulo) {
-            erroEl.textContent = 'Informe um título.';
-            erroEl.style.display = 'block';
-            return;
-        }
-        if (!urlPdf) {
-            erroEl.textContent = 'Informe a URL do PDF.';
-            erroEl.style.display = 'block';
-            return;
-        }
+        document.getElementById('fcnb-imp-nome').value = String(imp.nomeArquivo || '').replace(/\.json$/i, '').trim();
+        document.getElementById('fcnb-imp-resumo').innerHTML =
+            '<strong>' + this._escapar(imp.nomeArquivo) + '</strong><br>' +
+            imp.cards.length + ' flashcard' + (imp.cards.length === 1 ? '' : 's') + ' reconhecido' + (imp.cards.length === 1 ? '' : 's') +
+            (imp.ignorados > 0 ? ' <small>(' + imp.ignorados + ' item(ns) sem frente ou verso ignorado(s))</small>' : '') +
+            '<br><small>Ex.: “' + this._escapar(imp.cards[0].f.slice(0, 110)) + (imp.cards[0].f.length > 110 ? '…' : '') + '”</small>';
+        document.getElementById('fcnb-imp-erro').style.display = 'none';
+        document.getElementById('modal-fcnb-importar').classList.add('open');
+    },
 
-        if (this._editandoId) {
-            let arr = this.materiais[this._editandoChave];
-            let item = arr && arr.find(function(m) { return m.id === window.MATERIAIS_RUNTIME._editandoId; });
-            if (item && !item.origem_oficial) {
-                item.tipo = tipo;
-                item.titulo = titulo;
-                item.descricao = descricao;
-                item.urlPdf = urlPdf;
-                item.materialBase = materialBase;
-            }
-        } else {
-            let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-            if (!Array.isArray(this.materiais[chave])) this.materiais[chave] = [];
-            this.materiais[chave].push({
-                id: 'mat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-                tipo: tipo,
-                titulo: titulo,
-                descricao: descricao,
-                urlPdf: urlPdf,
-                materialBase: materialBase,
-                criadoEm: new Date().toISOString()
-            });
-        }
+    aoTrocarMateriaImportar: function() {
+        let materia = document.getElementById('fcnb-imp-materia').value;
+        let selDiv = document.getElementById('fcnb-imp-divisao');
+        selDiv.innerHTML = '<option value="">2. Selecione a divisão (L2)...</option>';
+        if (!materia) return;
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+        if (!mat) return;
+        mat.divisoes.forEach(function(div) {
+            let opt = document.createElement('option');
+            opt.value = div.nivel_2;
+            opt.textContent = div.nivel_2;
+            selDiv.appendChild(opt);
+        });
+    },
+
+    fecharModalImportar: function() {
+        document.getElementById('modal-fcnb-importar').classList.remove('open');
+        this._importacao = null;
+    },
+
+    confirmarImportacao: function() {
+        let imp = this._importacao;
+        let erroEl = document.getElementById('fcnb-imp-erro');
+        let mostrarErro = function(msg) { erroEl.textContent = msg; erroEl.style.display = 'block'; };
+        if (!imp) return;
+        let materia = document.getElementById('fcnb-imp-materia').value;
+        let divisao = document.getElementById('fcnb-imp-divisao').value;
+        let nome = (document.getElementById('fcnb-imp-nome').value || '').trim();
+        if (!materia || !divisao) { mostrarErro('Escolha a matéria e a divisão (L2).'); return; }
+        if (!nome) { mostrarErro('Dê um nome ao baralho.'); return; }
+
+        this._garantirCarregado();
+        let chave = this._chaveL2(materia, divisao);
+        let existentes = this.decks[chave] || [];
+        let duplicado = existentes.some(function(d) { return d.nome === nome && (d.cards || []).length === imp.cards.length; });
+        if (duplicado && !confirm('Já existe um baralho "' + nome + '" com ' + imp.cards.length + ' flashcards nesta divisão. Importar mesmo assim?')) return;
+
+        let idDeck = this._novoId('fcd_');
+        let cards = imp.cards.map(function(c, i) { return { id: idDeck + '_' + (i + 1), f: c.f, b: c.b }; });
+        if (!Array.isArray(this.decks[chave])) this.decks[chave] = [];
+        this.decks[chave].push({ id: idDeck, nome: nome, criadoEm: new Date().toISOString(), arquivo: imp.nomeArquivo, topicos: imp.topicos || [], cards: cards });
+        if (!this.salvar()) alert('Atenção: o baralho foi importado, mas não foi possível gravá-lo (armazenamento cheio). Ele será perdido ao recarregar a página.');
+
+        this._importacao = null;
+        document.getElementById('modal-fcnb-importar').classList.remove('open');
+        this._materiaSelecionada = materia;
+        this._divisaoSelecionada = divisao;
+        this._filtroBusca = '';
+        this.render();
+    },
+
+    // ── GERENCIAMENTO DE BARALHOS ──
+
+    renomearDeck: function(idDeck) {
+        let achado = this._acharDeck(idDeck);
+        if (!achado) return;
+        let novo = prompt('Novo nome do baralho:', achado.deck.nome);
+        if (novo === null) return;
+        novo = novo.trim();
+        if (!novo) return;
+        achado.deck.nome = novo;
         this.salvar();
-        this.fecharModalNovo();
-        this._renderGradeCards();
+        this._renderGradeInterna();
     },
 
-    excluirMaterial: function(chave, id) {
-        if (!Array.isArray(this.materiais[chave])) return;
-        let item = this.materiais[chave].find(function(m) { return m.id === id; });
-        if (item && item.origem_oficial) return; // materiais oficiais não são excluíveis pelo usuário
-        if (!confirm('Excluir este material?')) return;
-        this.materiais[chave] = this.materiais[chave].filter(function(m) { return m.id !== id; });
-        if (this.materiais[chave].length === 0) delete this.materiais[chave];
+    excluirDeck: function(idDeck) {
+        let achado = this._acharDeck(idDeck);
+        if (!achado) return;
+        if (!confirm('Excluir o baralho "' + achado.deck.nome + '" (' + achado.deck.cards.length + ' flashcards) e todo o progresso dele? Não dá para desfazer.')) return;
+        let self = this;
+        achado.deck.cards.forEach(function(c) { delete self.estado[c.id]; });
+        this.decks[achado.chave] = this.decks[achado.chave].filter(function(d) { return d.id !== idDeck; });
+        if (this.decks[achado.chave].length === 0) delete this.decks[achado.chave];
+        delete this.posicoes[idDeck];
+        this.excluidos[idDeck] = new Date().toISOString();
         this.salvar();
-        this._renderGradeCards();
+        this.render();
     },
 
-    // Exporta TODOS os materiais VISÍVEIS (de todas as matérias/divisões, não
-    // só a selecionada no momento) num único JSON, na mesma forma que
-    // importarMaterialOficial() espera — pronto pra salvar em
-    // dados/materiais/*.json e registrar em carregarMateriaisOficiais().
-    // Diferente de Esquemas/Jurisprudência (que só exportam PESSOAIS, porque
-    // lá cada usuário publica o próprio conteúdo pro repositório): aqui o
-    // objetivo é um snapshot completo do que está visível, então oficiais
-    // entram também. Só o que está OCULTO (ocultos[id], visibilidade pessoal)
-    // fica de fora — ocultar é como "remover" um oficial da própria vista
-    // sem afetar o catálogo compartilhado, e isso vale pra exportação também.
-    // urlPdf é exportado exatamente como foi digitado — inclusive caminhos
-    // relativos tipo "dados/materiais/pdfs/x.pdf", que resolvem certo tanto
-    // na visualização (iframe) quanto depois de publicado (URL relativa
-    // resolve contra a página que a usa).
-    exportarTudo: function() {
-        this._garantirCarregado();
+    _zerarEstadoDoDeck: function(deck) {
         let self = this;
-        let resultado = {};
-        let total = 0;
+        let agora = Date.now();
+        // Mantém a entrada (zerada, com carimbo novo) em vez de apagar: sem
+        // isso o merge de backup traria de volta o progresso antigo do outro lado.
+        deck.cards.forEach(function(c) {
+            if (self.estado[c.id]) self.estado[c.id] = { ultimaClassificacao: null, realizada: false, atualizadoEm: agora };
+        });
+        delete this.posicoes[deck.id];
+    },
 
-        Object.keys(this.materiais).sort().forEach(function(chave) {
-            let visiveis = (self.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
-            if (visiveis.length > 0) {
-                resultado[chave] = visiveis;
-                total += visiveis.length;
+    reiniciarProgresso: function(idDeck) {
+        let achado = this._acharDeck(idDeck);
+        if (!achado) return;
+        if (!confirm('Zerar o progresso (realizados e dificuldade) do baralho "' + achado.deck.nome + '"?')) return;
+        this._zerarEstadoDoDeck(achado.deck);
+        this.salvar();
+        this._renderGradeInterna();
+    },
+
+    // ── ESTUDO ──
+
+    FILTROS: [
+        { chave: 'todos', rotulo: 'Todos' },
+        { chave: 'nao_realizados', rotulo: 'Não realizados' },
+        { chave: 'realizados', rotulo: 'Realizados' },
+        { chave: 'dificil', rotulo: '🔴 Difícil' },
+        { chave: 'medio', rotulo: '🟡 Média' },
+        { chave: 'facil', rotulo: '🟢 Fácil' }
+    ],
+
+    _passaFiltro: function(card, filtro) {
+        let e = this.estado[card.id] || {};
+        switch (filtro) {
+            case 'nao_realizados': return !e.realizada;
+            case 'realizados': return !!e.realizada;
+            case 'dificil': case 'medio': case 'facil': return e.ultimaClassificacao === filtro;
+            default: return true;
+        }
+    },
+
+    abrirEstudo: function(idDeck) {
+        this._garantirCarregado();
+        let achado = this._acharDeck(idDeck);
+        if (!achado) { alert('Baralho não encontrado.'); return; }
+        this._est = { deckId: idDeck, chave: achado.chave, filtro: 'todos', embaralhar: false, ordemBase: achado.deck.cards.map(function(c) { return c.id; }), ordem: [], idx: 0, virado: false };
+        let idPos = this.posicoes[idDeck];
+        this._recalcularOrdem(idPos || null);
+        document.getElementById('modal-fcnb-estudo').classList.add('open');
+        this._renderEstudo();
+    },
+
+    fecharEstudo: function() {
+        document.getElementById('modal-fcnb-estudo').classList.remove('open');
+        this._salvarPosicaoAgora();
+        this._est = null;
+        this._renderGradeInterna();
+        // A contagem de progresso da grade/lateral pode ter mudado.
+        if (document.getElementById('fcnb-col-materias')) this.render();
+    },
+
+    _deckAtual: function() {
+        if (!this._est) return null;
+        let achado = this._acharDeck(this._est.deckId);
+        return achado ? achado.deck : null;
+    },
+
+    _cardPorId: function(deck, id) {
+        for (let i = 0; i < deck.cards.length; i++) if (deck.cards[i].id === id) return deck.cards[i];
+        return null;
+    },
+
+    // Reconstrói a lista filtrada (na ordem-base) e posiciona no card
+    // `manterId` se ele ainda estiver na lista; senão mantém o índice
+    // (que passa a apontar pro card seguinte, ex.: ao marcar "realizado"
+    // com o filtro "Não realizados" ativo).
+    _recalcularOrdem: function(manterId) {
+        let est = this._est;
+        let deck = this._deckAtual();
+        if (!est || !deck) return;
+        let self = this;
+        let ordem = est.ordemBase.filter(function(id) {
+            let c = self._cardPorId(deck, id);
+            return c && self._passaFiltro(c, est.filtro);
+        });
+        est.ordem = ordem;
+        let pos = manterId ? ordem.indexOf(manterId) : -1;
+        if (pos >= 0) est.idx = pos;
+        else est.idx = Math.max(0, Math.min(est.idx, ordem.length - 1));
+        est.virado = false;
+    },
+
+    _cardAtual: function() {
+        let est = this._est;
+        let deck = this._deckAtual();
+        if (!est || !deck || est.ordem.length === 0) return null;
+        return this._cardPorId(deck, est.ordem[est.idx]);
+    },
+
+    _renderEstudo: function() {
+        let est = this._est;
+        let deck = this._deckAtual();
+        if (!est || !deck) return;
+        let self = this;
+
+        document.getElementById('fcnb-est-titulo').textContent = deck.nome;
+        document.getElementById('fcnb-est-sub').textContent = est.chave;
+        document.getElementById('fcnb-est-btn-embaralhar').classList.toggle('ativo', est.embaralhar);
+
+        let resumo = this._resumoDeck(deck);
+        document.getElementById('fcnb-est-filtros').innerHTML = this.FILTROS.map(function(f) {
+            let n = deck.cards.filter(function(c) { return self._passaFiltro(c, f.chave); }).length;
+            return '<button class="fcnb-pill' + (est.filtro === f.chave ? ' ativa' : '') + '" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.definirFiltro(\'' + f.chave + '\')">' + f.rotulo + ' (' + n + ')</button>';
+        }).join('');
+
+        let pct = resumo.total > 0 ? (resumo.realizadas / resumo.total) * 100 : 0;
+        document.getElementById('fcnb-est-barra-preenchida').style.width = pct + '%';
+        document.getElementById('fcnb-est-progresso-txt').textContent = resumo.realizadas + ' de ' + resumo.total + ' realizados · 🔴 ' + resumo.dificil + ' · 🟡 ' + resumo.medio + ' · 🟢 ' + resumo.facil;
+
+        let palco = document.getElementById('fcnb-est-palco');
+        let card = this._cardAtual();
+        let temCard = !!card;
+        ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada'].forEach(function(id) { document.getElementById(id).disabled = !temCard; });
+        document.getElementById('fcnb-btn-anterior').disabled = !temCard || est.idx <= 0;
+        document.getElementById('fcnb-btn-proximo').disabled = !temCard || est.idx >= est.ordem.length - 1;
+
+        if (!card) {
+            let msg;
+            if (est.filtro === 'nao_realizados' && resumo.total > 0 && resumo.realizadas === resumo.total) msg = '🎉 Todos os flashcards deste baralho foram realizados.';
+            else msg = 'Nenhum flashcard neste filtro.';
+            palco.innerHTML = '<div class="fcnb-est-vazio">' + msg + '<br>' +
+                '<button class="fcnb-pill" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.definirFiltro(\'todos\')">Ver todos</button> ' +
+                (resumo.realizadas > 0 ? '<button class="fcnb-pill" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.reiniciarProgressoAtual()">↺ Reiniciar progresso</button>' : '') +
+                '</div>';
+            ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada'].forEach(function(id) { document.getElementById(id).classList.remove('ativa'); });
+            return;
+        }
+
+        let e = this.estado[card.id] || {};
+        let texto = est.virado ? card.b : card.f;
+        let classeTam = texto.length > 260 ? ' longo' : (texto.length > 130 ? ' medio' : '');
+        let selos = '';
+        if (e.ultimaClassificacao === 'dificil') selos += '<span class="fcnb-selo dificil">Difícil</span>';
+        else if (e.ultimaClassificacao === 'medio') selos += '<span class="fcnb-selo medio">Média</span>';
+        else if (e.ultimaClassificacao === 'facil') selos += '<span class="fcnb-selo facil">Fácil</span>';
+        if (e.realizada) selos += '<span class="fcnb-selo realizada">✓ Realizado</span>';
+
+        palco.innerHTML =
+            '<div class="fcnb-carta' + (est.virado ? ' verso' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.virar()">' +
+                '<div class="fcnb-carta-topo"><span>' + (est.idx + 1) + ' / ' + est.ordem.length + '</span><span class="fcnb-carta-selos">' + selos + '</span></div>' +
+                '<div class="fcnb-carta-corpo"><div class="fcnb-carta-texto' + classeTam + '">' + this._escapar(texto) + '</div></div>' +
+                '<div class="fcnb-carta-dica">' + (est.virado ? 'Clique para voltar à pergunta' : 'Veja a resposta') + '</div>' +
+            '</div>';
+
+        document.getElementById('fcnb-btn-dificil').classList.toggle('ativa', e.ultimaClassificacao === 'dificil');
+        document.getElementById('fcnb-btn-medio').classList.toggle('ativa', e.ultimaClassificacao === 'medio');
+        document.getElementById('fcnb-btn-facil').classList.toggle('ativa', e.ultimaClassificacao === 'facil');
+        let btnReal = document.getElementById('fcnb-btn-realizada');
+        btnReal.classList.toggle('ativa', !!e.realizada);
+        btnReal.textContent = e.realizada ? '✓ Realizada' : '○ Não realizada';
+    },
+
+    virar: function() {
+        if (!this._est || !this._cardAtual()) return;
+        this._est.virado = !this._est.virado;
+        this._renderEstudo();
+    },
+
+    navegar: function(delta) {
+        let est = this._est;
+        if (!est || est.ordem.length === 0) return;
+        let novo = est.idx + delta;
+        if (novo < 0 || novo >= est.ordem.length) return;
+        est.idx = novo;
+        est.virado = false;
+        this._agendarPosicao();
+        this._renderEstudo();
+    },
+
+    definirFiltro: function(filtro) {
+        let est = this._est;
+        if (!est) return;
+        let atual = this._cardAtual();
+        est.filtro = filtro;
+        this._recalcularOrdem(atual ? atual.id : null);
+        this._renderEstudo();
+    },
+
+    alternarEmbaralhar: function() {
+        let est = this._est;
+        let deck = this._deckAtual();
+        if (!est || !deck) return;
+        let atual = this._cardAtual();
+        est.embaralhar = !est.embaralhar;
+        let ids = deck.cards.map(function(c) { return c.id; });
+        if (est.embaralhar) {
+            for (let i = ids.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                let t = ids[i]; ids[i] = ids[j]; ids[j] = t;
             }
-        });
-
-        if (total === 0) {
-            alert('Nenhum material pra exportar (só existem materiais ocultos aqui, ou nenhum material ainda).');
-            return;
         }
-
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-tudo.json', 'application/json');
+        est.ordemBase = ids;
+        this._recalcularOrdem(atual ? atual.id : null);
+        this._renderEstudo();
     },
 
-    // Exporta os materiais VISÍVEIS só da DISCIPLINA (matéria/L1) selecionada
-    // na barra lateral — mesmo padrão de ESQUEMAS_RUNTIME/JURISPRUDENCIA_RUNTIME.
-    // exportarDisciplina(), mas incluindo oficiais (ver nota em exportarTudo acima).
-    exportarDisciplina: function() {
-        this._garantirCarregado();
-        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+    _setEstado: function(idCard, patch) {
+        let e = Object.assign({ ultimaClassificacao: null, realizada: false }, this.estado[idCard] || {}, patch);
+        e.atualizadoEm = Date.now();
+        this.estado[idCard] = e;
+        this.salvar();
+    },
+
+    marcarDificuldade: function(nivel) {
+        let card = this._cardAtual();
+        if (!card) return;
+        let proximo = window.ClassificacaoCards.calcularProximo(nivel, this.estado[card.id]);
+        let estavaVirado = this._est.virado;
+        this._setEstado(card.id, { ultimaClassificacao: proximo === null ? null : proximo.ultimaClassificacao });
+        this._recalcularOrdem(card.id);
+        // Classificar costuma acontecer depois de ver a resposta: mantém a carta virada.
+        let atualApos = this._cardAtual();
+        if (atualApos && atualApos.id === card.id) this._est.virado = estavaVirado;
+        this._renderEstudo();
+    },
+
+    // Marcar como realizado avança pro próximo; com o filtro "Não
+    // realizados", o card sai da lista e o índice já aponta pro seguinte.
+    alternarRealizada: function() {
+        let card = this._cardAtual();
+        let est = this._est;
+        if (!card || !est) return;
+        let e = this.estado[card.id] || {};
+        let ficouRealizada = !e.realizada;
+        this._setEstado(card.id, { realizada: ficouRealizada });
+        this._recalcularOrdem(card.id);
+        if (ficouRealizada && this._cardAtual() && this._cardAtual().id === card.id && est.idx < est.ordem.length - 1) est.idx++;
+        est.virado = false;
+        this._agendarPosicao();
+        this._renderEstudo();
+    },
+
+    reiniciarProgressoAtual: function() {
+        let deck = this._deckAtual();
+        if (!deck) return;
+        if (!confirm('Zerar o progresso (realizados e dificuldade) do baralho "' + deck.nome + '"?')) return;
+        this._zerarEstadoDoDeck(deck);
+        this.salvar();
+        this._est.filtro = 'todos';
+        this._est.idx = 0;
+        this._recalcularOrdem(null);
+        this._renderEstudo();
+    },
+
+    _agendarPosicao: function() {
         let self = this;
-        let prefixo = this._materiaSelecionada + ' > ';
-        let resultado = {};
-        let total = 0;
-
-        Object.keys(this.materiais).sort().forEach(function(chave) {
-            if (chave.indexOf(prefixo) !== 0) return;
-            let visiveis = (self.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
-            if (visiveis.length > 0) {
-                resultado[chave] = visiveis;
-                total += visiveis.length;
-            }
-        });
-
-        if (total === 0) {
-            alert('Nenhum material pra exportar em "' + this._materiaSelecionada + '" (só existem materiais ocultos aqui, ou nenhum material ainda).');
-            return;
-        }
-
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+        if (this._timerPosicao) clearTimeout(this._timerPosicao);
+        this._timerPosicao = setTimeout(function() { self._salvarPosicaoAgora(); }, 500);
     },
 
-    // Exporta os materiais VISÍVEIS só do TÓPICO (divisão/L2) selecionado.
-    exportarTopico: function() {
-        this._garantirCarregado();
-        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
-        let self = this;
-        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let visiveis = (this.materiais[chave] || []).filter(function(m) { return !self.ocultos[m.id]; });
-
-        if (visiveis.length === 0) {
-            alert('Nenhum material pra exportar em "' + chave + '" (só existem materiais ocultos aqui, ou nenhum material ainda).');
-            return;
-        }
-
-        let resultado = {};
-        resultado[chave] = visiveis;
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'materiais-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'application/json');
+    _salvarPosicaoAgora: function() {
+        if (this._timerPosicao) { clearTimeout(this._timerPosicao); this._timerPosicao = null; }
+        let card = this._cardAtual();
+        if (!this._est || !card) return;
+        this.posicoes[this._est.deckId] = card.id;
+        this.salvar();
     },
 
-    // Slug de nome de arquivo — mesmo algoritmo de ESQUEMAS_RUNTIME._slugTexto/
-    // JURISPRUDENCIA_RUNTIME._slugTexto.
-    _slugTexto: function(texto) {
-        return (texto || '').toLowerCase()
-            .normalize('NFD').replace(REGEX_DIACRITICOS, '')
-            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    },
-
-    // ── MODAL "VISUALIZAR PDF" ──
-    // Tamanho padrão já bem maior que antes (900px -> quase a tela toda,
-    // ver CSS #modal-materiais-pdf .mdl) + botão "⛶ Maximizar" pra quem
-    // quiser ainda mais espaço (praticamente borda a borda). Cada abertura
-    // sempre começa no tamanho padrão (não maximizado) — maximizar é uma
-    // escolha por sessão de leitura, não uma preferência que persiste.
-
-    _pdfMaximizado: false,
-
-    abrirPdf: function(chave, id) {
-        let item = (this.materiais[chave] || []).find(function(m) { return m.id === id; });
-        if (!item || !item.urlPdf) return;
-        this._pdfMaximizado = false;
-        document.getElementById('modal-materiais-pdf').classList.remove('mat-pdf-maximizado');
-        this._atualizarBotaoMaximizarPdf();
-        document.getElementById('mat-pdf-titulo').textContent = item.titulo || 'Material';
-        document.getElementById('mat-pdf-frame').src = item.urlPdf;
-        document.getElementById('modal-materiais-pdf').classList.add('open');
-    },
-
-    alternarMaximizarPdf: function() {
-        this._pdfMaximizado = !this._pdfMaximizado;
-        document.getElementById('modal-materiais-pdf').classList.toggle('mat-pdf-maximizado', this._pdfMaximizado);
-        this._atualizarBotaoMaximizarPdf();
-    },
-
-    _atualizarBotaoMaximizarPdf: function() {
-        let btn = document.getElementById('mat-pdf-btn-maximizar');
-        if (!btn) return;
-        btn.textContent = this._pdfMaximizado ? '🗗' : '⛶';
-        btn.title = this._pdfMaximizado ? 'Restaurar tamanho' : 'Maximizar';
-    },
-
-    fecharPdf: function() {
-        document.getElementById('modal-materiais-pdf').classList.remove('open');
-        document.getElementById('modal-materiais-pdf').classList.remove('mat-pdf-maximizado');
-        this._pdfMaximizado = false;
-        document.getElementById('mat-pdf-frame').src = ''; // libera a memória do PDF carregado
+    _onKey: function(ev) {
+        let modal = document.getElementById('modal-fcnb-estudo');
+        if (!modal || !modal.classList.contains('open')) return;
+        let tag = (ev.target && ev.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        let R = window.FLASHCARDS_NB_RUNTIME;
+        if (ev.key === ' ' || ev.code === 'Space') { ev.preventDefault(); R.virar(); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); R.navegar(1); }
+        else if (ev.key === 'ArrowLeft') { ev.preventDefault(); R.navegar(-1); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); R.fecharEstudo(); }
+        else if (ev.key === '1') R.marcarDificuldade('dificil');
+        else if (ev.key === '2') R.marcarDificuldade('medio');
+        else if (ev.key === '3') R.marcarDificuldade('facil');
+        else if (ev.key === 'r' || ev.key === 'R') R.alternarRealizada();
     }
 };
+document.addEventListener('keydown', function(ev) { window.FLASHCARDS_NB_RUNTIME._onKey(ev); });
 
-// ── MATERIAIS OFICIAIS — publicados no repositório, disponíveis pra todo
-// mundo automaticamente. Espelha carregarAcervosOficiais() das baterias,
-// mas SEM o truque de armazenamento raso: um material é só um punhado de
-// strings curtas (o PDF em si nunca é armazenado, só referenciado por URL),
-// então cabe inteiro no localStorage sem risco de estourar cota — não
-// precisa de ACERVO_OFICIAL_FULL nem de stub em memória.
-window.importarMaterialOficial = async function(url) {
-    try {
-        // Cache-buster: sem isso, editar o CONTEÚDO de um material já
-        // publicado (mesmo nome de arquivo) fica preso no cache HTTP do
-        // GitHub Pages (max-age=600) até 10min depois de publicado — F5 na
-        // página não ajuda, só revalida o index.html, não este fetch().
-        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
-        if (!r.ok) throw new Error('Falha ao carregar materiais oficiais.');
-        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, tipo, titulo, descricao, urlPdf, materialBase?, criadoEm} ] }
-
-        window.MATERIAIS_RUNTIME._garantirCarregado();
-        const runtime = window.MATERIAIS_RUNTIME;
-
-        Object.keys(dados).forEach(function(chaveL2) {
-            const itens = dados[chaveL2];
-            if (!Array.isArray(itens)) return;
-            if (!Array.isArray(runtime.materiais[chaveL2])) runtime.materiais[chaveL2] = [];
-            const arr = runtime.materiais[chaveL2];
-
-            itens.forEach(function(item) {
-                if (!item || !item.id) return;
-                item.origem_oficial = true;
-                const idx = arr.findIndex(function(m) { return m.id === item.id; });
-                // Upsert por id — mesmo princípio do Map de processarImportacaoAcervo:
-                // sempre substitui pelo id (não duplica em recargas repetidas), e
-                // mantém o conteúdo sempre sincronizado com o JSON publicado.
-                if (idx === -1) arr.push(item); else arr[idx] = item;
-            });
-        });
-
-        runtime.salvar();
-    } catch (e) {
-        console.warn('[MATERIAIS OFICIAIS] erro:', e);
-    }
-};
-
-window.carregarMateriaisOficiais = async function() {
-    window.MATERIAIS_RUNTIME._garantirCarregado();
-
-    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
-    // Publicar um material novo = 1 linha nova em dados/manifesto-materiais.txt,
-    // sem tocar em index.html — mesmo padrão de carregarAcervosOficiais()
-    // pra baterias. Espera sequencial (não paralelo).
-    let manifestoTexto = '';
-    try {
-        // Cache-buster: mesmo motivo do fetch(url) em importarMaterialOficial
-        // — sem isso, uma linha nova no manifesto fica invisível por até
-        // 10min (max-age=600 do GitHub Pages), mesmo com F5 na página.
-        const rManifesto = await fetch('dados/manifesto-materiais.txt?v=' + Date.now());
-        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
-        else console.warn('[MATERIAIS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
-    } catch (e) {
-        console.warn('[MATERIAIS OFICIAIS] Falha ao carregar manifesto:', e);
-    }
-    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    for (const caminho of caminhosManifesto) {
-        await window.importarMaterialOficial(caminho);
-    }
-};
-
-// Abre/fecha Materiais como MODAL sobre a tela atual (ex.: Cronograma),
-// em vez de trocar de tela e perder o que estava aberto embaixo — mesmo
-// padrão de abrirEsquemasModal/fecharEsquemasModal.
-window.abrirMateriaisModal = function() {
+window.abrirFlashcardsNbModal = function() {
     if (!window.exigirLoginParaSecao()) return;
-    const modal = document.getElementById('section-materiais');
+    const modal = document.getElementById('fcnb-modal');
     if (!modal) return;
-    modal.style.display = 'flex';
+    modal.classList.remove('modal-maximizado');
+    const btnMax = document.getElementById('fcnb-modal-btn-maximizar');
+    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
+    modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-    if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init();
+    window.FLASHCARDS_NB_RUNTIME.init();
 };
 
-window.fecharMateriaisModal = function() {
-    const modal = document.getElementById('section-materiais');
+window.alternarMaximizarFlashcardsNbModal = function() {
+    const modal = document.getElementById('fcnb-modal');
     if (!modal) return;
-    modal.style.display = 'none';
+    const maximizado = modal.classList.toggle('modal-maximizado');
+    const btn = document.getElementById('fcnb-modal-btn-maximizar');
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+};
+
+window.fecharFlashcardsNbModal = function() {
+    const modal = document.getElementById('fcnb-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
     document.body.style.overflow = '';
 };
 </script>
-</section>
-
-<!-- MODAL: Novo Material (seção Materiais) — mesmo padrão .mo/.mdl de
-     #modal-flashcard-bulk. -->
-<div id="modal-materiais-novo" class="mo">
-    <div class="mdl">
-        <div class="fc-popup-header" id="mat-modal-cabecalho">📎 Novo Material</div>
-        <div class="fc-form-campo">
-            <label>Tipo</label>
-            <select id="mat-form-tipo"></select>
-        </div>
-        <div class="fc-form-campo">
-            <label>Título</label>
-            <input type="text" id="mat-form-titulo" placeholder="Ex.: Súmula 479 do STJ">
-        </div>
-        <div class="fc-form-campo">
-            <label>Descrição</label>
-            <input type="text" id="mat-form-descricao" placeholder="Breve descrição (opcional)">
-        </div>
-        <div class="fc-form-campo">
-            <label>URL do PDF</label>
-            <input type="text" id="mat-form-url" placeholder="https://... ou caminho relativo, ex.: dados/materiais/pdfs/arquivo.pdf">
-        </div>
-        <div class="fc-form-campo">
-            <label>Material base</label>
-            <input type="text" id="mat-form-materialbase" placeholder="Ex.: nome do livro/curso de origem (opcional)">
-        </div>
-        <div id="mat-form-erro" class="fc-form-erro" style="display:none;"></div>
-        <div class="mfoot">
-            <button class="fc-footer-btn" onclick="window.MATERIAIS_RUNTIME.fecharModalNovo()">Cancelar</button>
-            <button class="fc-footer-btn primario" onclick="window.MATERIAIS_RUNTIME.salvarNovoMaterial()">Salvar</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL: Visualizar PDF (seção Materiais) — iframe com src dinâmico,
-     setado por MATERIAIS_RUNTIME.abrirPdf() ao clicar "Abrir" num card. -->
-<div id="modal-materiais-pdf" class="mo">
-    <div class="mdl">
-        <div class="mat-pdf-header">
-            <div class="mat-pdf-titulo" id="mat-pdf-titulo"></div>
-            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                <button class="mat-pdf-maximizar" id="mat-pdf-btn-maximizar" onclick="window.MATERIAIS_RUNTIME.alternarMaximizarPdf()" title="Maximizar">⛶</button>
-                <button class="mat-pdf-fechar" onclick="window.MATERIAIS_RUNTIME.fecharPdf()" title="Fechar">✖</button>
-            </div>
-        </div>
-        <iframe id="mat-pdf-frame" src=""></iframe>
-    </div>
-</div>
 
 <!-- SEÇÃO: GLOSSÁRIO — mesmo padrão L1(matéria)>L2(divisão) de Materiais,
      mas SEM o conceito de "oficial" (é conteúdo 100% pessoal, sem
@@ -16071,7 +16052,7 @@ if (id === 'tela-home') {
 }
 
 if (target) {
-    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards' || id === 'section-praticar-caderno' || id === 'section-materiais') {
+    if (id === 'tela-simulado' || id === 'section-cronograma' || id === 'section-flashcards' || id === 'section-praticar-caderno') {
         target.style.display = 'flex';
     } else {
         target.style.display = 'block';
@@ -17124,8 +17105,7 @@ else if (auditId) {
             const SECOES_RESTAURAVEIS = {
                 'section-cronograma': function() { if (window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init(); },
                 'section-flashcards': function() { if (window.FLASHCARDS_RUNTIME) window.FLASHCARDS_RUNTIME.init(); },
-                'section-praticar-caderno': function() { if (window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); },
-                'section-materiais': function() { if (window.MATERIAIS_RUNTIME) window.MATERIAIS_RUNTIME.init(); }
+                'section-praticar-caderno': function() { if (window.PRATICAR_CADERNO_RUNTIME) window.PRATICAR_CADERNO_RUNTIME.init(); }
             };
 
             if (activeModule && SECOES_RESTAURAVEIS[activeModule] && document.getElementById(activeModule) && window.exigirLoginParaSecao && window.exigirLoginParaSecao()) {
@@ -19091,10 +19071,6 @@ window.garantirOficiaisParaBaralhosAssociados = function() {
     if (window.JURISPRUDENCIA_RUNTIME) {
         window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
         if (typeof window.carregarJurisprudenciaOficial === 'function') promessas.push(window.carregarJurisprudenciaOficial());
-    }
-    if (window.MATERIAIS_RUNTIME) {
-        window.MATERIAIS_RUNTIME._garantirCarregado();
-        if (typeof window.carregarMateriaisOficiais === 'function') promessas.push(window.carregarMateriaisOficiais());
     }
     if (window.GLOSSARIO_RUNTIME) {
         window.GLOSSARIO_RUNTIME._garantirCarregado();
@@ -31292,7 +31268,6 @@ function _comBuscaOficialUnica(nomeFuncao) {
         return emAndamento;
     };
 }
-_comBuscaOficialUnica('carregarMateriaisOficiais');
 _comBuscaOficialUnica('carregarEsquemasOficiais');
 _comBuscaOficialUnica('carregarJurisprudenciaOficial');
 _comBuscaOficialUnica('carregarGlossarioOficial');
@@ -31301,7 +31276,6 @@ window.__bootOficialPromise__ = (async function(){
    try {
       await window.carregarAcervosOficiais();
       if (typeof window.repararAcervoOficialOrfao === 'function') window.repararAcervoOficialOrfao();
-      if (typeof window.carregarMateriaisOficiais === 'function') await window.carregarMateriaisOficiais();
       if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
       if (typeof window.carregarJurisprudenciaOficial === 'function') await window.carregarJurisprudenciaOficial();
       if (typeof window.carregarGlossarioOficial === 'function') await window.carregarGlossarioOficial();
