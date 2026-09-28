@@ -11569,8 +11569,8 @@ window.fecharPraticarCadernoModal = function() {
 <!-- MODAL: Estudo (tela cheia, escuro, estilo NotebookLM) -->
 <div id="modal-fcnb-estudo" class="mo">
 <style>
-    #modal-fcnb-estudo { z-index: 10000; padding:0; background:#131314; backdrop-filter:none; align-items:stretch; justify-content:stretch; }
-    #modal-fcnb-estudo .fcnb-est { width:100%; height:100%; display:flex; flex-direction:column; background:#202124; color:#e8eaed; font-family:var(--font-body); overflow:hidden; }
+    #modal-fcnb-estudo { z-index: 10000; }
+    #modal-fcnb-estudo .fcnb-est { width:min(1000px, 100%); height:min(760px, 100%); display:flex; flex-direction:column; background:#202124; color:#e8eaed; font-family:var(--font-body); overflow:hidden; border-radius:16px; box-shadow:0 25px 50px rgba(0,0,0,0.4); }
     #modal-fcnb-estudo button { font-family:var(--font-body); }
     #modal-fcnb-estudo .fcnb-est-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:16px 22px 6px 22px; flex-shrink:0; }
     #modal-fcnb-estudo .fcnb-est-titulo { font-size:20px; font-weight:600; color:#f1f3f4; line-height:1.25; }
@@ -19173,9 +19173,18 @@ function renderNav(){
                         }
                     }
 
+                    if (window.FLASHCARDS_NB_RUNTIME) {
+                        window.FLASHCARDS_NB_RUNTIME.decksDoL2(locBaralhos.materia, locBaralhos.divisao).forEach(function(deckNb) {
+                            let rNb = window.FLASHCARDS_NB_RUNTIME._resumoDeck(deckNb);
+                            itensBaralhos += `<div onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudo('${deckNb.id}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;" title="Flashcards — ${window.FLASHCARDS_NB_RUNTIME._escapar(deckNb.nome)}">
+                                <span>🃏 ${window.FLASHCARDS_NB_RUNTIME._escapar(deckNb.nome)}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${rNb.realizadas}/${rNb.total}</span>
+                            </div>`;
+                        });
+                    }
+
                     if (itensBaralhos) {
                         htmlBaralhos = `
-                <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">Baralhos associados</div>
+                <div style="font-size: 9px; font-weight: 800; color: var(--app-primary); text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; letter-spacing: 0.5px;">Materiais associados</div>
                 <div>${itensBaralhos}</div>`;
                     }
 
