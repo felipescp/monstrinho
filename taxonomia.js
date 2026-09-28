@@ -4928,6 +4928,766 @@ const TAXONOMIA_DADOS = {
       ]
     },
     {
+      "id": "inst",
+      "nivel_1": "Direito Institucional (Magistratura, MP e Defensoria)",
+      "divisoes": [
+        {
+          "id": "inst_dpe",
+          "nivel_2": "Defensoria Pública (LC 80/94)",
+          "topicos": [
+            {
+              "id": "inst_dpe_princ",
+              "nivel_3": "Histórico, Princípios Institucionais, Autonomia e Objetivos",
+              "aliases": [
+                "indivisibilidade",
+                "independência funcional",
+                "assistência jurídica integral e gratuita",
+                "custos vulnerabilis",
+                "ec 45/04 e ec 80/14",
+                "capacidade postulatória e poder de requisição"
+              ]
+            },
+            {
+              "id": "inst_dpe_modelos",
+              "nivel_3": "Modelos de Assistência Jurídica e Evolução do Acesso à Justiça",
+              "aliases": [
+                "ondas renovatórias (cappelletti e garth)",
+                "modelo judicare",
+                "salaried staff",
+                "advocacia pro bono"
+              ]
+            },
+            {
+              "id": "inst_dpe_org",
+              "nivel_3": "Organização: Órgãos de Administração Superior e Execução",
+              "aliases": [
+                "conselho superior",
+                "defensor público-geral",
+                "corregedoria-geral",
+                "ouvidoria"
+              ]
+            },
+            {
+              "id": "inst_dpe_carreira",
+              "nivel_3": "Ingresso, Carreira, Promoção e Remoção",
+              "aliases": [
+                "estágio probatório",
+                "critérios de promoção"
+              ]
+            },
+            {
+              "id": "inst_dpe_garantias",
+              "nivel_3": "Garantias, Prerrogativas, Direitos e Vedações do Defensor",
+              "aliases": [
+                "intimação pessoal",
+                "prazo em dobro",
+                "inamovibilidade",
+                "poder de requisição"
+              ]
+            },
+            {
+              "id": "inst_dpe_estadual",
+              "nivel_3": "Legislação Estadual, Normas Internas e Resoluções do CSDPE",
+              "aliases": [
+                "critérios de hipossuficiência",
+                "denegação de atendimento",
+                "leis orgânicas estaduais",
+                "participação popular (ouvidoria externa)",
+                "fundo de aparelhamento (faj)"
+              ]
+            },
+            {
+              "id": "inst_dpe_funcoes",
+              "nivel_3": "Funções Institucionais e Legitimidade de Atuação (Jurisprudência)",
+              "aliases": [
+                "ação civil pública pela dpe",
+                "curadoria especial",
+                "atuação a favor de pessoa jurídica",
+                "tutela coletiva",
+                "conflito de atribuições"
+              ]
+            },
+            {
+              "id": "inst_dpe_auxiliares",
+              "nivel_3": "Órgãos Auxiliares, Fundos e Escolas da Defensoria",
+              "aliases": [
+                "fundo de assistência/aparelhamento (faj/fundep)",
+                "escola superior da defensoria pública",
+                "centros de atendimento multidisciplinar",
+                "participação popular"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inst_mp_principios",
+          "nivel_2": "Ministério Público: Princípios, Organização e Carreira (CF/1988 e Lei nº 8.625/1993)",
+          "topicos": [
+            {
+              "id": "inst_mp_principios",
+              "nivel_3": "Princípios Institucionais, Autonomia e CNMP",
+              "aliases": [
+                "unidade",
+                "indivisibilidade",
+                "independência funcional"
+              ]
+            },
+            {
+              "id": "inst_mp_organizacao",
+              "nivel_3": "Organização (MPE) e Órgãos de Administração Superior e Colégios",
+              "aliases": [
+                "procurador-geral de justiça",
+                "colégio de procuradores",
+                "conselho superior do mp",
+                "corregedoria-geral",
+                "eleição e destituição do pgj",
+                "Carreira: Ingresso, Promoção (Antiguidade e Merecimento) e Vitaliciamento"
+              ]
+            },
+            {
+              "id": "inst_mp_garantias",
+              "nivel_3": "Garantias, Prerrogativas, Vedações e Processo Disciplinar",
+              "aliases": [
+                "vitaliciedade",
+                "irredutibilidade de subsídio",
+                "atividade político-partidária"
+              ]
+            },
+            {
+              "id": "inst_mp_leg_estadual",
+              "nivel_3": "Legislação Estadual do Ministério Público",
+              "aliases": [
+                "leis orgânicas estaduais (lompe)",
+                "regimentos internos",
+                "eleição do procurador-geral de justiça nos estados"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inst_mp_resolucoes",
+          "nivel_2": "Ministério Público: Resoluções do CNMP e Procedimentos Extrajudiciais",
+          "topicos": [
+            {
+              "id": "inst_mp_res_inquerito",
+              "nivel_3": "Inquérito Civil e Procedimento Investigatório Criminal (Res. CNMP nº 23/2007 e nº 181/2017)",
+              "aliases": [
+                "instauração, prazo e prorrogação",
+                "arquivamento e controle pelo conselho superior do mp",
+                "procedimento investigatório criminal (pic)",
+                "Controle Externo da Atividade Policial (Res. CNMP nº 20/2007)"
+              ]
+            },
+            {
+              "id": "inst_mp_res_noticia_fato",
+              "nivel_3": "Notícia de Fato, Procedimento Administrativo e Recomendações (Res. CNMP nº 174/2017 e nº 164/2017)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mp_res_autocomposicao",
+              "nivel_3": "Autocomposição no Âmbito do Ministério Público (Res. CNMP nº 118/2014)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mp_res_vulneraveis",
+              "nivel_3": "Atuação do MP na Proteção de Crianças, Idosos e Vítimas de Violência (Res. CNMP nº 243/2021, nº 287/2024, nº 293/2024 e nº 154/2016)",
+              "aliases": [
+                "política institucional de proteção integral e apoio às vítimas",
+                "convivência familiar e comunitária",
+                "pessoas idosas em instituições de longa permanência"
+              ]
+            },
+            {
+              "id": "inst_mp_res_seguranca_publica",
+              "nivel_3": "Atuação do MP na Investigação de Crimes em Contexto de Segurança Pública (Res. CNMP nº 310/2025)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mp_res_outras",
+              "nivel_3": "Demais Resoluções do CNMP",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "inst_mpu",
+          "nivel_2": "Ministério Público da União (LC nº 75/1993) e MP Eleitoral",
+          "topicos": [
+            {
+              "id": "inst_mpu_disposicoes_gerais",
+              "nivel_3": "Disposições Gerais da LC nº 75/1993 (arts. 1º a 36)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mpu_ramos_mpf",
+              "nivel_3": "Dos Ramos do MPU — Ministério Público Federal (MPF)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mpu_ramos_mpt",
+              "nivel_3": "Dos Ramos do MPU — Ministério Público do Trabalho (MPT)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mpu_ramos_mpm",
+              "nivel_3": "Dos Ramos do MPU — Ministério Público Militar (MPM)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mpu_ramos_mpdft",
+              "nivel_3": "Dos Ramos do MPU — Ministério Público do Distrito Federal e Territórios (MPDFT)",
+              "aliases": []
+            },
+            {
+              "id": "inst_mpu_eleitoral",
+              "nivel_3": "Ministério Público Eleitoral",
+              "aliases": [
+                "promotor e procurador eleitoral"
+              ]
+            },
+            {
+              "id": "inst_mpu_disposicoes_estatutarias",
+              "nivel_3": "Disposições Estatutárias Especiais da LC nº 75/1993 (arts. 182 a 265)",
+              "aliases": []
+            }
+          ]
+        },
+        {
+          "id": "inst_magis",
+          "nivel_2": "Magistratura e Organização Judiciária",
+          "topicos": [
+            {
+              "id": "inst_mag_princ",
+              "nivel_3": "Princípios, Autonomia e Conselho Nacional de Justiça (CNJ)",
+              "aliases": [
+                "independência judicial"
+              ]
+            },
+            {
+              "id": "inst_mag_carreira",
+              "nivel_3": "Ingresso, Promoção, Remoção e Vitaliciedade",
+              "aliases": [
+                "escalonamento na carreira"
+              ]
+            },
+            {
+              "id": "inst_mag_garantias",
+              "nivel_3": "Direitos, Deveres, Prerrogativas e Processo Disciplinar",
+              "aliases": [
+                "aposentadoria compulsória",
+                "sanções disciplinares"
+              ]
+            },
+            {
+              "id": "inst_mag_coje",
+              "nivel_3": "Códigos de Organização e Divisão Judiciárias Estaduais (COJE)",
+              "aliases": [
+                "comarcas e entrâncias (criação e classificação)",
+                "varas especializadas",
+                "órgão especial",
+                "tribunal pleno"
+              ]
+            },
+            {
+              "id": "inst_mag_serventuarios",
+              "nivel_3": "Serventuários, Auxiliares da Justiça e Justiça de Paz",
+              "aliases": [
+                "juiz de paz",
+                "escrivães",
+                "oficiais de justiça",
+                "regimes de lotação e permuta de serventuários"
+              ]
+            },
+            {
+              "id": "inst_mag_jec",
+              "nivel_3": "Sistema dos Juizados Especiais e Turmas Recursais",
+              "aliases": [
+                "turma de uniformização",
+                "conflitos de competência nos juizados"
+              ]
+            },
+            {
+              "id": "inst_mag_orgaos_cupula",
+              "nivel_3": "Órgãos Diretivos e de Cúpula dos Tribunais",
+              "aliases": [
+                "presidente e vice-presidente do tj",
+                "corregedoria-geral da justiça",
+                "conselho da magistratura"
+              ]
+            },
+            {
+              "id": "inst_mag_fundos_regimento",
+              "nivel_3": "Regimento Interno, Fundos Especiais e Custas",
+              "aliases": [
+                "funjuris / fundos de reaparelhamento",
+                "regimento interno",
+                "sessões do tribunal pleno e turmas",
+                "súmulas locais do tj"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "div_1788098112108",
+          "nivel_2": "CNJ: Atos Normativos",
+          "topicos": [
+            {
+              "id": "top_1788098150902",
+              "nivel_3": "Atos Normativos do CNJ",
+              "aliases": [
+                "Resoluções",
+                "Provimentos",
+                "Recomendações"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "penal_militar",
+      "nivel_1": "Direito Penal Militar",
+      "divisoes": [
+        {
+          "id": "pmil_geral",
+          "nivel_2": "Aplicação da Lei Penal Militar e Conceito de Crime Militar",
+          "topicos": [
+            {
+              "id": "pmil_ger_aplicacao",
+              "nivel_3": "Princípios e Aplicação da Lei Penal Militar no Tempo, no Espaço e em Relação às Pessoas",
+              "aliases": [
+                "código penal militar (decreto-lei nº 1.001/1969)",
+                "legalidade e anterioridade",
+                "retroatividade da lei mais benigna",
+                "tempo e lugar do crime",
+                "territorialidade temperada",
+                "extraterritorialidade",
+                "militares da reserva e reformados",
+                "equiparação a militar"
+              ]
+            },
+            {
+              "id": "pmil_ger_crime_militar",
+              "nivel_3": "Conceito de Crime Militar: Próprio, Impróprio e por Extensão (arts. 9º e 10 do CPM)",
+              "aliases": [
+                "crime propriamente militar",
+                "crime impropriamente militar",
+                "crimes militares por extensão (lei nº 13.491/2017)",
+                "critério ratione legis",
+                "crime doloso contra a vida de civil (lei nº 9.299/1996)",
+                "civil como sujeito ativo",
+                "tempo de paz e tempo de guerra"
+              ]
+            },
+            {
+              "id": "pmil_ger_teoria",
+              "nivel_3": "Teoria do Crime, Excludentes e Concurso de Agentes no Código Penal Militar",
+              "aliases": [
+                "dolo e culpa (art. 33)",
+                "erro de fato e erro de direito",
+                "tentativa e desistência voluntária",
+                "estado de necessidade",
+                "legítima defesa",
+                "estrito cumprimento do dever legal",
+                "obediência hierárquica (art. 38)",
+                "coação irresistível",
+                "embriaguez",
+                "concurso de agentes (art. 53)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_penas",
+          "nivel_2": "Penas, Medidas de Segurança e Extinção da Punibilidade no Direito Penal Militar",
+          "topicos": [
+            {
+              "id": "pmil_pen_penas",
+              "nivel_3": "Penas Principais e Acessórias e Aplicação da Pena",
+              "aliases": [
+                "pena de morte em tempo de guerra",
+                "reclusão e detenção",
+                "impedimento e suspensão do exercício do posto",
+                "reforma",
+                "perda de posto e patente",
+                "indignidade para o oficialato",
+                "exclusão das forças armadas",
+                "cálculo da pena",
+                "suspensão condicional da pena",
+                "livramento condicional",
+                "reincidência"
+              ]
+            },
+            {
+              "id": "pmil_pen_medidas",
+              "nivel_3": "Medidas de Segurança e Efeitos da Condenação",
+              "aliases": [
+                "internação em manicômio judiciário",
+                "medidas patrimoniais",
+                "efeitos da condenação",
+                "inimputabilidade e semi-imputabilidade"
+              ]
+            },
+            {
+              "id": "pmil_pen_extincao",
+              "nivel_3": "Extinção da Punibilidade e Prescrição Penal Militar",
+              "aliases": [
+                "morte do agente",
+                "anistia, graça e indulto",
+                "prescrição da pretensão punitiva e executória",
+                "prescrição na deserção",
+                "reabilitação",
+                "perdão e renúncia"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_disciplina",
+          "nivel_2": "Crimes contra a Autoridade, a Disciplina e o Serviço Militar",
+          "topicos": [
+            {
+              "id": "pmil_dis_autoridade",
+              "nivel_3": "Crimes contra a Autoridade e a Disciplina Militar (arts. 149 a 182)",
+              "aliases": [
+                "motim e revolta",
+                "aliciação e incitamento",
+                "violência contra superior e contra militar de serviço",
+                "desrespeito a superior, a símbolo nacional e a farda",
+                "insubordinação e recusa de obediência",
+                "abuso de requisição militar",
+                "violência contra inferior",
+                "ofensa aviltante a inferior"
+              ]
+            },
+            {
+              "id": "pmil_dis_servico",
+              "nivel_3": "Crimes contra o Serviço e o Dever Militar (arts. 183 a 204)",
+              "aliases": [
+                "insubmissão",
+                "deserção",
+                "abandono de posto",
+                "dormir em serviço",
+                "embriaguez em serviço",
+                "prazo de graça",
+                "deserção especial",
+                "libertação e evasão de preso"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_pessoa_patrimonio",
+          "nivel_2": "Crimes contra a Pessoa e o Patrimônio no Código Penal Militar",
+          "topicos": [
+            {
+              "id": "pmil_pp_pessoa",
+              "nivel_3": "Crimes contra a Pessoa (arts. 205 a 239)",
+              "aliases": [
+                "homicídio",
+                "lesão corporal",
+                "rixa",
+                "omissão de socorro",
+                "calúnia, difamação e injúria",
+                "crimes sexuais",
+                "violação de domicílio e de correspondência",
+                "adpf 291 (art. 235)"
+              ]
+            },
+            {
+              "id": "pmil_pp_patrimonio",
+              "nivel_3": "Crimes contra o Patrimônio (arts. 240 a 267)",
+              "aliases": [
+                "furto e furto de uso",
+                "roubo e extorsão",
+                "apropriação indébita",
+                "estelionato",
+                "receptação",
+                "dano",
+                "princípio da insignificância no crime militar"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_incolumidade_administracao",
+          "nivel_2": "Crimes contra a Incolumidade Pública, a Administração Militar e a Administração da Justiça Militar",
+          "topicos": [
+            {
+              "id": "pmil_ia_incolumidade",
+              "nivel_3": "Crimes contra a Incolumidade Pública (arts. 268 a 298)",
+              "aliases": [
+                "incêndio e explosão",
+                "perigo comum",
+                "posse e uso de entorpecente (art. 290)",
+                "princípio da especialidade e lei de drogas",
+                "crimes de perigo"
+              ]
+            },
+            {
+              "id": "pmil_ia_administracao",
+              "nivel_3": "Crimes contra a Administração Militar (arts. 299 a 339)",
+              "aliases": [
+                "desacato a militar",
+                "peculato",
+                "concussão",
+                "corrupção passiva e ativa",
+                "prevaricação",
+                "falsidade ideológica e falsificação de documento",
+                "uso indevido de uniforme, distintivo ou insígnia",
+                "crimes praticados por particular contra a administração militar"
+              ]
+            },
+            {
+              "id": "pmil_ia_justica",
+              "nivel_3": "Crimes contra a Administração da Justiça Militar (arts. 340 a 354)",
+              "aliases": [
+                "denunciação caluniosa",
+                "falso testemunho ou perícia",
+                "coação no curso do processo",
+                "fraude processual",
+                "favorecimento pessoal e real",
+                "exercício arbitrário de função"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_seguranca_guerra",
+          "nivel_2": "Crimes contra a Segurança Externa do País e Crimes Militares em Tempo de Guerra",
+          "topicos": [
+            {
+              "id": "pmil_sg_seguranca",
+              "nivel_3": "Crimes contra a Segurança Externa do País (arts. 136 a 148)",
+              "aliases": [
+                "traição",
+                "favor ao inimigo",
+                "espionagem",
+                "tentativa contra a soberania do brasil",
+                "aliciação de militar",
+                "coação a comandante"
+              ]
+            },
+            {
+              "id": "pmil_sg_guerra",
+              "nivel_3": "Crimes Militares em Tempo de Guerra (arts. 355 a 408)",
+              "aliases": [
+                "conceito de tempo de guerra",
+                "covardia",
+                "rendição e capitulação",
+                "pilhagem",
+                "crimes contra a população civil",
+                "pena de morte e fuzilamento (art. 5º, xlvii, a, da cf)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pmil_hierarquia",
+          "nivel_2": "Hierarquia, Disciplina e Legislação Militar Correlata",
+          "topicos": [
+            {
+              "id": "pmil_hie_estatuto",
+              "nivel_3": "Estatuto dos Militares, Transgressões e Sanções Disciplinares",
+              "aliases": [
+                "hierarquia e disciplina (art. 142 da cf)",
+                "estatuto dos militares (lei nº 6.880/1980)",
+                "regulamentos disciplinares",
+                "transgressão disciplinar e crime militar",
+                "independência das instâncias penal e administrativa",
+                "lei nº 13.967/2019 (fim da prisão disciplinar de policiais e bombeiros militares)",
+                "perda do posto e da patente de oficial",
+                "perda da graduação de praças (art. 125, § 4º, da cf)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proc_penal_militar",
+      "nivel_1": "Direito Processual Penal Militar",
+      "divisoes": [
+        {
+          "id": "ppmil_lei",
+          "nivel_2": "Lei Processual Penal Militar: Princípios, Aplicação e Nulidades",
+          "topicos": [
+            {
+              "id": "ppmil_lei_aplicacao",
+              "nivel_3": "Princípios e Aplicação da Lei Processual Penal Militar (arts. 1º a 6º do CPPM)",
+              "aliases": [
+                "código de processo penal militar (decreto-lei nº 1.002/1969)",
+                "aplicação da lei processual no tempo e no espaço",
+                "aplicação subsidiária do cpp (art. 3º)",
+                "interpretação e analogia",
+                "devido processo legal",
+                "contraditório e ampla defesa"
+              ]
+            },
+            {
+              "id": "ppmil_lei_nulidades",
+              "nivel_3": "Nulidades e Institutos Despenalizadores no Processo Penal Militar",
+              "aliases": [
+                "nulidades absolutas e relativas",
+                "inaplicabilidade da lei nº 9.099/1995 (art. 90-a)",
+                "transação penal e suspensão condicional do processo",
+                "acordo de não persecução penal e crime militar",
+                "princípio do prejuízo"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ppmil_organizacao",
+          "nivel_2": "Justiça Militar: Organização e Competência",
+          "topicos": [
+            {
+              "id": "ppmil_org_estrutura",
+              "nivel_3": "Organização da Justiça Militar da União e dos Estados (Lei nº 8.457/1992 e art. 125 da CF)",
+              "aliases": [
+                "superior tribunal militar",
+                "auditorias militares",
+                "conselho especial e conselho permanente de justiça",
+                "juiz federal da justiça militar (lei nº 13.774/2018)",
+                "julgamento monocrático",
+                "tribunais de justiça militar estaduais",
+                "juiz de direito do juízo militar (art. 125, § 5º, da cf)",
+                "ministério público militar"
+              ]
+            },
+            {
+              "id": "ppmil_org_competencia",
+              "nivel_3": "Competência da Justiça Militar, Conexão e Foro Privilegiado",
+              "aliases": [
+                "competência da justiça militar da união (art. 124 da cf)",
+                "competência da justiça militar estadual (art. 125, § 4º, da cf)",
+                "julgamento de civis pela justiça militar da união",
+                "competência do tribunal do júri (art. 9º, parágrafo único, do cpm)",
+                "súmula 53 do stj",
+                "súmula 6 do stj",
+                "súmula 75 do stj",
+                "súmula 78 do stj",
+                "súmula 90 do stj",
+                "súmula 172 do stj",
+                "conexão e continência"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ppmil_investigacao",
+          "nivel_2": "Investigação Criminal Militar e Prisão Provisória",
+          "topicos": [
+            {
+              "id": "ppmil_inv_ipm",
+              "nivel_3": "Polícia Judiciária Militar e Inquérito Policial Militar (arts. 7º a 28 do CPPM)",
+              "aliases": [
+                "encarregado do inquérito",
+                "prazo de conclusão do ipm",
+                "sigilo do inquérito",
+                "arquivamento do inquérito",
+                "notícia do crime",
+                "indiciamento",
+                "incomunicabilidade"
+              ]
+            },
+            {
+              "id": "ppmil_inv_prisoes",
+              "nivel_3": "Prisão em Flagrante, Prisão Preventiva, Menagem e Liberdade Provisória (arts. 243 a 281 do CPPM)",
+              "aliases": [
+                "auto de prisão em flagrante",
+                "prisão preventiva",
+                "menagem",
+                "liberdade provisória",
+                "audiência de custódia",
+                "detenção cautelar",
+                "relaxamento da prisão"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ppmil_acao_processo",
+          "nivel_2": "Ação Penal Militar, Processo Ordinário e Processos Especiais",
+          "topicos": [
+            {
+              "id": "ppmil_ap_acao",
+              "nivel_3": "Ação Penal Militar: Denúncia, Requisição e Arquivamento",
+              "aliases": [
+                "ação penal pública incondicionada",
+                "requisição do ministro",
+                "prazo para oferecimento da denúncia",
+                "arquivamento pelo juiz",
+                "ação penal privada subsidiária",
+                "titularidade do ministério público militar"
+              ]
+            },
+            {
+              "id": "ppmil_ap_processo",
+              "nivel_3": "Processo Ordinário: Instrução, Interrogatório, Provas e Sentença (arts. 292 a 445 do CPPM)",
+              "aliases": [
+                "recebimento da denúncia",
+                "citação",
+                "interrogatório como último ato da instrução (hc 127.900/am)",
+                "testemunhas",
+                "prova pericial",
+                "acareação e reconhecimento",
+                "busca e apreensão",
+                "incidente de insanidade mental",
+                "sessão de julgamento do conselho de justiça",
+                "sentença"
+              ]
+            },
+            {
+              "id": "ppmil_ap_especiais",
+              "nivel_3": "Processos Especiais: Deserção, Insubmissão, Habeas Corpus e Revisão Criminal",
+              "aliases": [
+                "processo de deserção",
+                "captura ou apresentação do desertor",
+                "processo de insubmissão",
+                "habeas corpus",
+                "revisão criminal",
+                "conselho de justificação e conselho de disciplina",
+                "restauração de autos"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ppmil_recursos_execucao",
+          "nivel_2": "Recursos e Execução Penal Militar",
+          "topicos": [
+            {
+              "id": "ppmil_re_recursos",
+              "nivel_3": "Recursos no Processo Penal Militar (arts. 508 a 592 do CPPM)",
+              "aliases": [
+                "apelação",
+                "recurso em sentido estrito",
+                "embargos infringentes e de nulidade",
+                "correição parcial",
+                "carta testemunhável",
+                "recurso de ofício",
+                "recurso extraordinário e recurso especial"
+              ]
+            },
+            {
+              "id": "ppmil_re_execucao",
+              "nivel_3": "Execução da Pena Militar, Livramento Condicional e Indulto",
+              "aliases": [
+                "execução de pena em estabelecimento militar",
+                "aplicação subsidiária da lep",
+                "competência do juízo da execução",
+                "súmula 192 do stj",
+                "livramento condicional",
+                "indulto e graça",
+                "medidas de segurança"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "agrario",
       "nivel_1": "Direito Agrário",
       "divisoes": [
@@ -5308,6 +6068,588 @@ const TAXONOMIA_DADOS = {
       ]
     },
     {
+      "id": "trab",
+      "nivel_1": "Direito do Trabalho",
+      "divisoes": [
+        {
+          "id": "trab_intro",
+          "nivel_2": "Princípios, Fontes e Aplicação do Direito do Trabalho",
+          "topicos": [
+            {
+              "id": "trab_int_principios",
+              "nivel_3": "Princípios do Direito do Trabalho",
+              "aliases": [
+                "princípio da proteção",
+                "in dubio pro operario",
+                "norma mais favorável",
+                "condição mais benéfica",
+                "primazia da realidade",
+                "irrenunciabilidade",
+                "continuidade da relação de emprego",
+                "intangibilidade salarial",
+                "não discriminação"
+              ]
+            },
+            {
+              "id": "trab_int_fontes",
+              "nivel_3": "Fontes, Hierarquia das Normas e Eficácia no Tempo e no Espaço (arts. 1º a 12 da CLT)",
+              "aliases": [
+                "art. 8º da clt",
+                "direito comum como fonte subsidiária",
+                "convenção e acordo coletivo",
+                "prevalência do negociado sobre o legislado (arts. 611-A e 611-B)",
+                "sentença normativa",
+                "usos e costumes",
+                "territorialidade",
+                "trabalhador no exterior (lei nº 7.064/1982)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_relacao",
+          "nivel_2": "Relação de Trabalho e Relação de Emprego",
+          "topicos": [
+            {
+              "id": "trab_rel_sujeitos",
+              "nivel_3": "Empregado, Empregador, Grupo Econômico e Sucessão Trabalhista",
+              "aliases": [
+                "pessoalidade",
+                "não eventualidade",
+                "onerosidade",
+                "subordinação jurídica, estrutural e algorítmica",
+                "arts. 2º e 3º da clt",
+                "grupo econômico (art. 2º, §§ 2º e 3º)",
+                "sucessão de empregadores (arts. 10 e 448)",
+                "empregado hipersuficiente (art. 444, parágrafo único)",
+                "responsabilidade do sócio retirante"
+              ]
+            },
+            {
+              "id": "trab_rel_nao_emprego",
+              "nivel_3": "Trabalho sem Vínculo e Formas Atípicas de Contratação",
+              "aliases": [
+                "trabalhador autônomo (art. 442-B)",
+                "trabalhador eventual e avulso",
+                "voluntário (lei nº 9.608/1998)",
+                "estagiário (lei nº 11.788/2008)",
+                "aprendiz (art. 428)",
+                "terceirização (lei nº 6.019/1974 e súmula 331 do tst)",
+                "licitude da terceirização (adpf 324 e tema 725 do stf)",
+                "trabalho temporário",
+                "contrato intermitente (art. 443, § 3º)",
+                "teletrabalho (arts. 75-A a 75-E)",
+                "pejotização",
+                "motoristas de aplicativo (tema 1291 do stf)"
+              ]
+            },
+            {
+              "id": "trab_rel_categorias",
+              "nivel_3": "Empregados Domésticos, Rurais e Categorias Diferenciadas",
+              "aliases": [
+                "empregado doméstico (lc nº 150/2015)",
+                "empregado rural (lei nº 5.889/1973)",
+                "bancário (art. 224)",
+                "professor",
+                "motorista profissional (lei nº 13.103/2015)",
+                "atleta profissional",
+                "jornalista",
+                "advogado empregado",
+                "aeronauta e marítimo"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_contrato",
+          "nivel_2": "Contrato Individual de Trabalho",
+          "topicos": [
+            {
+              "id": "trab_ct_formacao",
+              "nivel_3": "Formação, Modalidades e Alteração do Contrato",
+              "aliases": [
+                "contrato por prazo determinado (art. 443)",
+                "contrato de experiência",
+                "requisitos de validade",
+                "jus variandi",
+                "alteração unilateral lesiva (art. 468)",
+                "reversão ao cargo efetivo",
+                "transferência do empregado (art. 469)",
+                "cláusula de não concorrência",
+                "nulidade do contrato (ente público sem concurso, súmula 363 do tst)"
+              ]
+            },
+            {
+              "id": "trab_ct_suspensao",
+              "nivel_3": "Suspensão e Interrupção do Contrato",
+              "aliases": [
+                "arts. 471 a 476-a",
+                "afastamento previdenciário",
+                "licença-maternidade",
+                "faltas justificadas (art. 473)",
+                "suspensão para qualificação profissional",
+                "greve",
+                "diferença entre suspensão e interrupção"
+              ]
+            },
+            {
+              "id": "trab_ct_extincao",
+              "nivel_3": "Extinção do Contrato: Modalidades de Dispensa, Aviso Prévio e Verbas Rescisórias",
+              "aliases": [
+                "justa causa (art. 482)",
+                "rescisão indireta (art. 483)",
+                "dispensa sem justa causa",
+                "pedido de demissão",
+                "culpa recíproca",
+                "distrato (art. 484-a)",
+                "aviso prévio proporcional (lei nº 12.506/2011)",
+                "prazo para pagamento (art. 477)",
+                "multa de 40% do fgts",
+                "dispensa coletiva (tema 638 do stf)",
+                "programa de demissão voluntária"
+              ]
+            },
+            {
+              "id": "trab_ct_estabilidades",
+              "nivel_3": "Estabilidades e Garantias Provisórias de Emprego",
+              "aliases": [
+                "gestante (súmula 244 do tst)",
+                "cipeiro",
+                "dirigente sindical (súmula 369 do tst)",
+                "acidentário (art. 118 da lei nº 8.213/1991)",
+                "dispensa discriminatória (lei nº 9.029/1995)",
+                "estabilidade decenal e fgts",
+                "reintegração"
+              ]
+            },
+            {
+              "id": "trab_ct_prescricao",
+              "nivel_3": "Prescrição, Decadência e Quitação",
+              "aliases": [
+                "prescrição bienal e quinquenal (art. 7º, xxix, da cf)",
+                "art. 11 da clt",
+                "prescrição intercorrente (art. 11-a)",
+                "súmula 308 do tst",
+                "prescrição total e parcial",
+                "fgts (tema 608 do stf)",
+                "quitação anual das obrigações trabalhistas"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_jornada",
+          "nivel_2": "Duração do Trabalho, Intervalos e Férias",
+          "topicos": [
+            {
+              "id": "trab_jor_jornada",
+              "nivel_3": "Jornada de Trabalho, Horas Extras e Compensação",
+              "aliases": [
+                "art. 7º, xiii, da cf",
+                "tempo à disposição do empregador (art. 4º)",
+                "banco de horas",
+                "regime 12x36",
+                "turnos ininterruptos de revezamento",
+                "trabalho noturno (art. 73)",
+                "sobreaviso e prontidão",
+                "cargos de confiança e trabalho externo (art. 62)",
+                "adicional de horas extras",
+                "súmula 85 do tst"
+              ]
+            },
+            {
+              "id": "trab_jor_descansos",
+              "nivel_3": "Intervalos, Repouso Semanal Remunerado, Feriados e Férias",
+              "aliases": [
+                "intervalo intrajornada (art. 71)",
+                "intervalo interjornada (art. 66)",
+                "repouso semanal remunerado (lei nº 605/1949)",
+                "férias (arts. 129 a 153)",
+                "abono pecuniário",
+                "fracionamento das férias",
+                "terço constitucional",
+                "pagamento em dobro"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_saude",
+          "nivel_2": "Segurança, Saúde e Proteção Especial do Trabalho",
+          "topicos": [
+            {
+              "id": "trab_sau_seguranca",
+              "nivel_3": "Segurança e Medicina do Trabalho, Insalubridade e Periculosidade (arts. 154 a 201)",
+              "aliases": [
+                "normas regulamentadoras",
+                "adicional de insalubridade",
+                "adicional de periculosidade (art. 193)",
+                "equipamento de proteção individual",
+                "cipa",
+                "acidente do trabalho e doença ocupacional",
+                "responsabilidade civil do empregador",
+                "dano moral trabalhista (arts. 223-a a 223-g)"
+              ]
+            },
+            {
+              "id": "trab_sau_protecao",
+              "nivel_3": "Proteção do Trabalho da Mulher, do Menor e da Pessoa com Deficiência",
+              "aliases": [
+                "arts. 372 a 441 da clt",
+                "licença-maternidade",
+                "proteção à maternidade",
+                "trabalho do menor (art. 7º, xxxiii, da cf)",
+                "aprendizagem",
+                "reserva de vagas (art. 93 da lei nº 8.213/1991)",
+                "igualdade de remuneração entre homens e mulheres (lei nº 14.611/2023)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_remuneracao",
+          "nivel_2": "Remuneração, Salário e FGTS",
+          "topicos": [
+            {
+              "id": "trab_rem_salario",
+              "nivel_3": "Salário, Remuneração e Equiparação Salarial (arts. 457 a 467)",
+              "aliases": [
+                "parcelas integrantes e não integrantes",
+                "gorjetas",
+                "comissões",
+                "gratificações e prêmios",
+                "salário-utilidade",
+                "ajuda de custo e diárias",
+                "13º salário",
+                "equiparação salarial (art. 461)",
+                "desvio e acúmulo de função",
+                "irredutibilidade e intangibilidade salarial",
+                "salário mínimo e piso salarial"
+              ]
+            },
+            {
+              "id": "trab_rem_fgts",
+              "nivel_3": "Fundo de Garantia do Tempo de Serviço (Lei nº 8.036/1990)",
+              "aliases": [
+                "depósitos mensais",
+                "multa rescisória",
+                "saque e movimentação da conta vinculada",
+                "natureza jurídica",
+                "contribuição social (lc nº 110/2001)",
+                "prescrição do fgts"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trab_coletivo",
+          "nivel_2": "Direito Coletivo do Trabalho",
+          "topicos": [
+            {
+              "id": "trab_col_sindical",
+              "nivel_3": "Organização Sindical e Representação dos Trabalhadores",
+              "aliases": [
+                "liberdade sindical",
+                "unicidade sindical (art. 8º, ii, da cf)",
+                "base territorial",
+                "contribuição sindical facultativa (adi 5794)",
+                "contribuição assistencial (tema 935 do stf)",
+                "sindicato, federação e confederação",
+                "representação dos empregados na empresa (art. 510-a)",
+                "substituição processual"
+              ]
+            },
+            {
+              "id": "trab_col_negociacao",
+              "nivel_3": "Negociação Coletiva, Convenção e Acordo Coletivo",
+              "aliases": [
+                "convenção coletiva de trabalho",
+                "acordo coletivo de trabalho",
+                "arts. 611-a e 611-b da clt",
+                "tema 1046 do stf",
+                "ultratividade (súmula 277 do tst e adpf 323)",
+                "mediação e arbitragem coletiva",
+                "cláusulas normativas e obrigacionais"
+              ]
+            },
+            {
+              "id": "trab_col_greve",
+              "nivel_3": "Greve (Lei nº 7.783/1989)",
+              "aliases": [
+                "serviços essenciais",
+                "abusividade da greve",
+                "lockout",
+                "greve de servidores públicos",
+                "efeitos sobre o contrato de trabalho",
+                "desconto dos dias parados"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proc_trab",
+      "nivel_1": "Direito Processual do Trabalho",
+      "divisoes": [
+        {
+          "id": "ptrab_principios",
+          "nivel_2": "Princípios, Fontes e Aplicação Subsidiária do CPC",
+          "topicos": [
+            {
+              "id": "ptrab_pri_principios",
+              "nivel_3": "Princípios do Processo do Trabalho",
+              "aliases": [
+                "proteção processual",
+                "oralidade",
+                "simplicidade e informalidade",
+                "conciliação",
+                "jus postulandi (art. 791)",
+                "irrecorribilidade imediata das interlocutórias (art. 893, § 1º)",
+                "concentração dos atos",
+                "impulso oficial"
+              ]
+            },
+            {
+              "id": "ptrab_pri_subsidiariedade",
+              "nivel_3": "Fontes e Aplicação Subsidiária e Supletiva do CPC (art. 769 da CLT e art. 15 do CPC)",
+              "aliases": [
+                "omissão e compatibilidade",
+                "lacunas normativa, ontológica e axiológica",
+                "instrução normativa nº 39 do tst",
+                "lei de execução fiscal na execução trabalhista (art. 889)",
+                "art. 876 e seguintes da clt"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_organizacao",
+          "nivel_2": "Organização e Competência da Justiça do Trabalho",
+          "topicos": [
+            {
+              "id": "ptrab_org_estrutura",
+              "nivel_3": "Órgãos da Justiça do Trabalho e Ministério Público do Trabalho",
+              "aliases": [
+                "art. 111 da cf",
+                "tribunal superior do trabalho",
+                "tribunais regionais do trabalho",
+                "varas do trabalho",
+                "conselho superior da justiça do trabalho",
+                "ministério público do trabalho (art. 83 da lc nº 75/1993)"
+              ]
+            },
+            {
+              "id": "ptrab_org_competencia",
+              "nivel_3": "Competência Material, Funcional e Territorial",
+              "aliases": [
+                "art. 114 da cf",
+                "emenda constitucional nº 45/2004",
+                "servidores estatutários (adi 3395)",
+                "acidente de trabalho (súmula vinculante 22)",
+                "dano moral decorrente da relação de trabalho",
+                "ações possessórias e penalidades administrativas",
+                "competência territorial (art. 651)",
+                "execução de contribuições previdenciárias (súmula vinculante 53)",
+                "conflito de competência"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_partes",
+          "nivel_2": "Partes, Procuradores e Atos Processuais",
+          "topicos": [
+            {
+              "id": "ptrab_par_partes",
+              "nivel_3": "Capacidade, Representação, Justiça Gratuita e Honorários",
+              "aliases": [
+                "jus postulandi",
+                "assistência judiciária sindical (lei nº 5.584/1970)",
+                "justiça gratuita (art. 790, §§ 3º e 4º)",
+                "honorários advocatícios sucumbenciais (art. 791-a)",
+                "honorários periciais",
+                "preposto (art. 843, § 3º)",
+                "litigância de má-fé (art. 793-a)",
+                "litisconsórcio e intervenção de terceiros",
+                "incidente de desconsideração da personalidade jurídica (art. 855-a)"
+              ]
+            },
+            {
+              "id": "ptrab_par_atos",
+              "nivel_3": "Atos, Prazos, Notificações, Custas e Nulidades",
+              "aliases": [
+                "prazos em dias úteis (art. 775)",
+                "notificação postal (súmula 16 do tst)",
+                "processo judicial eletrônico",
+                "custas processuais (art. 789)",
+                "nulidades (arts. 794 a 798)",
+                "preclusão",
+                "audiência e sua ordem (art. 813)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_conhecimento",
+          "nivel_2": "Procedimentos, Audiência e Provas",
+          "topicos": [
+            {
+              "id": "ptrab_con_procedimentos",
+              "nivel_3": "Reclamação Trabalhista e Procedimentos (Ordinário, Sumaríssimo e Sumário)",
+              "aliases": [
+                "reclamação escrita e verbal (art. 840)",
+                "pedido certo, determinado e com indicação de valor",
+                "rito sumaríssimo (arts. 852-a a 852-i)",
+                "rito sumário (lei nº 5.584/1970)",
+                "inquérito para apuração de falta grave (art. 853)",
+                "homologação de acordo extrajudicial (arts. 855-b a 855-e)",
+                "tutela provisória no processo do trabalho"
+              ]
+            },
+            {
+              "id": "ptrab_con_audiencia",
+              "nivel_3": "Audiência, Defesa, Revelia e Confissão",
+              "aliases": [
+                "audiência una",
+                "arquivamento e ausência do reclamante (art. 844)",
+                "revelia e confissão ficta",
+                "contestação, exceções e reconvenção",
+                "exceção de incompetência (art. 800)",
+                "proposta de conciliação",
+                "razões finais e sentença"
+              ]
+            },
+            {
+              "id": "ptrab_con_provas",
+              "nivel_3": "Provas no Processo do Trabalho",
+              "aliases": [
+                "ônus da prova (art. 818)",
+                "distribuição dinâmica do ônus",
+                "testemunhas (limite de três e de duas no sumaríssimo)",
+                "prova pericial",
+                "prova emprestada",
+                "registro de horário (súmula 338 do tst)",
+                "depoimento pessoal e confissão",
+                "inspeção judicial"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_recursos",
+          "nivel_2": "Recursos Trabalhistas",
+          "topicos": [
+            {
+              "id": "ptrab_rec_teoria",
+              "nivel_3": "Teoria Geral e Pressupostos Recursais",
+              "aliases": [
+                "prazo de oito dias",
+                "efeito devolutivo (art. 899)",
+                "depósito recursal",
+                "custas e deserção",
+                "transcendência (art. 896-a)",
+                "fungibilidade",
+                "irrecorribilidade das decisões interlocutórias"
+              ]
+            },
+            {
+              "id": "ptrab_rec_especies",
+              "nivel_3": "Recursos em Espécie: Ordinário, Agravos, Embargos e Recurso de Revista",
+              "aliases": [
+                "recurso ordinário",
+                "agravo de petição",
+                "agravo de instrumento",
+                "recurso de revista (art. 896)",
+                "embargos no tst (art. 894)",
+                "embargos de declaração",
+                "recurso extraordinário",
+                "recursos repetitivos (arts. 896-b e 896-c)",
+                "remessa necessária (decreto-lei nº 779/1969)"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_execucao",
+          "nivel_2": "Liquidação e Execução Trabalhista",
+          "topicos": [
+            {
+              "id": "ptrab_exe_liquidacao",
+              "nivel_3": "Liquidação de Sentença e Atualização do Crédito",
+              "aliases": [
+                "cálculos, arbitramento e artigos",
+                "impugnação à conta de liquidação",
+                "correção monetária e juros (adc 58)",
+                "contribuições previdenciárias e imposto de renda",
+                "coisa julgada e liquidação"
+              ]
+            },
+            {
+              "id": "ptrab_exe_execucao",
+              "nivel_3": "Execução, Penhora, Embargos e Responsabilidade Patrimonial",
+              "aliases": [
+                "título executivo judicial e extrajudicial (art. 876)",
+                "penhora e impenhorabilidade",
+                "sisbajud",
+                "embargos à execução (art. 884)",
+                "execução provisória",
+                "desconsideração da personalidade jurídica",
+                "prescrição intercorrente (art. 11-a)",
+                "certidão negativa de débitos trabalhistas",
+                "fraude à execução",
+                "hasta pública e adjudicação"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ptrab_coletivo",
+          "nivel_2": "Dissídios Coletivos, Ações Coletivas e Ações Especiais",
+          "topicos": [
+            {
+              "id": "ptrab_col_dissidio",
+              "nivel_3": "Dissídio Coletivo e Sentença Normativa",
+              "aliases": [
+                "dissídio econômico e jurídico",
+                "comum acordo (art. 114, § 2º, da cf)",
+                "dissídio de greve",
+                "poder normativo da justiça do trabalho",
+                "ação de cumprimento (art. 872)",
+                "extensão e revisão de sentença normativa",
+                "seção de dissídios coletivos do tst"
+              ]
+            },
+            {
+              "id": "ptrab_col_acoes",
+              "nivel_3": "Ação Civil Pública e Tutelas Coletivas Trabalhistas",
+              "aliases": [
+                "legitimidade do ministério público do trabalho",
+                "dano moral coletivo",
+                "termo de ajuste de conduta",
+                "inquérito civil",
+                "substituição processual sindical",
+                "direitos individuais homogêneos"
+              ]
+            },
+            {
+              "id": "ptrab_col_especiais",
+              "nivel_3": "Mandado de Segurança, Ação Rescisória e Demais Ações Especiais",
+              "aliases": [
+                "mandado de segurança (súmula 414 do tst)",
+                "ação rescisória (súmulas 83 e 299 do tst)",
+                "habeas corpus",
+                "ação anulatória",
+                "ação de consignação em pagamento",
+                "ação monitória",
+                "embargos de terceiro"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "dip_dipr",
       "nivel_1": "Direito Internacional Público e Privado",
       "divisoes": [
@@ -5520,323 +6862,6 @@ const TAXONOMIA_DADOS = {
                 "Cláusula Social",
                 "Dumping Social",
                 "Solução de Controvérsias"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "inst",
-      "nivel_1": "Direito Institucional (Magistratura, MP e Defensoria)",
-      "divisoes": [
-        {
-          "id": "inst_dpe",
-          "nivel_2": "Defensoria Pública (LC 80/94)",
-          "topicos": [
-            {
-              "id": "inst_dpe_princ",
-              "nivel_3": "Histórico, Princípios Institucionais, Autonomia e Objetivos",
-              "aliases": [
-                "indivisibilidade",
-                "independência funcional",
-                "assistência jurídica integral e gratuita",
-                "custos vulnerabilis",
-                "ec 45/04 e ec 80/14",
-                "capacidade postulatória e poder de requisição"
-              ]
-            },
-            {
-              "id": "inst_dpe_modelos",
-              "nivel_3": "Modelos de Assistência Jurídica e Evolução do Acesso à Justiça",
-              "aliases": [
-                "ondas renovatórias (cappelletti e garth)",
-                "modelo judicare",
-                "salaried staff",
-                "advocacia pro bono"
-              ]
-            },
-            {
-              "id": "inst_dpe_org",
-              "nivel_3": "Organização: Órgãos de Administração Superior e Execução",
-              "aliases": [
-                "conselho superior",
-                "defensor público-geral",
-                "corregedoria-geral",
-                "ouvidoria"
-              ]
-            },
-            {
-              "id": "inst_dpe_carreira",
-              "nivel_3": "Ingresso, Carreira, Promoção e Remoção",
-              "aliases": [
-                "estágio probatório",
-                "critérios de promoção"
-              ]
-            },
-            {
-              "id": "inst_dpe_garantias",
-              "nivel_3": "Garantias, Prerrogativas, Direitos e Vedações do Defensor",
-              "aliases": [
-                "intimação pessoal",
-                "prazo em dobro",
-                "inamovibilidade",
-                "poder de requisição"
-              ]
-            },
-            {
-              "id": "inst_dpe_estadual",
-              "nivel_3": "Legislação Estadual, Normas Internas e Resoluções do CSDPE",
-              "aliases": [
-                "critérios de hipossuficiência",
-                "denegação de atendimento",
-                "leis orgânicas estaduais",
-                "participação popular (ouvidoria externa)",
-                "fundo de aparelhamento (faj)"
-              ]
-            },
-            {
-              "id": "inst_dpe_funcoes",
-              "nivel_3": "Funções Institucionais e Legitimidade de Atuação (Jurisprudência)",
-              "aliases": [
-                "ação civil pública pela dpe",
-                "curadoria especial",
-                "atuação a favor de pessoa jurídica",
-                "tutela coletiva",
-                "conflito de atribuições"
-              ]
-            },
-            {
-              "id": "inst_dpe_auxiliares",
-              "nivel_3": "Órgãos Auxiliares, Fundos e Escolas da Defensoria",
-              "aliases": [
-                "fundo de assistência/aparelhamento (faj/fundep)",
-                "escola superior da defensoria pública",
-                "centros de atendimento multidisciplinar",
-                "participação popular"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "inst_mp_principios",
-          "nivel_2": "Ministério Público: Princípios, Organização e Carreira (CF/1988 e Lei nº 8.625/1993)",
-          "topicos": [
-            {
-              "id": "inst_mp_principios",
-              "nivel_3": "Princípios Institucionais, Autonomia e CNMP",
-              "aliases": [
-                "unidade",
-                "indivisibilidade",
-                "independência funcional"
-              ]
-            },
-            {
-              "id": "inst_mp_organizacao",
-              "nivel_3": "Organização (MPE) e Órgãos de Administração Superior e Colégios",
-              "aliases": [
-                "procurador-geral de justiça",
-                "colégio de procuradores",
-                "conselho superior do mp",
-                "corregedoria-geral",
-                "eleição e destituição do pgj",
-                "Carreira: Ingresso, Promoção (Antiguidade e Merecimento) e Vitaliciamento"
-              ]
-            },
-            {
-              "id": "inst_mp_garantias",
-              "nivel_3": "Garantias, Prerrogativas, Vedações e Processo Disciplinar",
-              "aliases": [
-                "vitaliciedade",
-                "irredutibilidade de subsídio",
-                "atividade político-partidária"
-              ]
-            },
-            {
-              "id": "inst_mp_leg_estadual",
-              "nivel_3": "Legislação Estadual do Ministério Público",
-              "aliases": [
-                "leis orgânicas estaduais (lompe)",
-                "regimentos internos",
-                "eleição do procurador-geral de justiça nos estados"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "inst_mp_resolucoes",
-          "nivel_2": "Ministério Público: Resoluções do CNMP e Procedimentos Extrajudiciais",
-          "topicos": [
-            {
-              "id": "inst_mp_res_inquerito",
-              "nivel_3": "Inquérito Civil e Procedimento Investigatório Criminal (Res. CNMP nº 23/2007 e nº 181/2017)",
-              "aliases": [
-                "instauração, prazo e prorrogação",
-                "arquivamento e controle pelo conselho superior do mp",
-                "procedimento investigatório criminal (pic)",
-                "Controle Externo da Atividade Policial (Res. CNMP nº 20/2007)"
-              ]
-            },
-            {
-              "id": "inst_mp_res_noticia_fato",
-              "nivel_3": "Notícia de Fato, Procedimento Administrativo e Recomendações (Res. CNMP nº 174/2017 e nº 164/2017)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mp_res_autocomposicao",
-              "nivel_3": "Autocomposição no Âmbito do Ministério Público (Res. CNMP nº 118/2014)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mp_res_vulneraveis",
-              "nivel_3": "Atuação do MP na Proteção de Crianças, Idosos e Vítimas de Violência (Res. CNMP nº 243/2021, nº 287/2024, nº 293/2024 e nº 154/2016)",
-              "aliases": [
-                "política institucional de proteção integral e apoio às vítimas",
-                "convivência familiar e comunitária",
-                "pessoas idosas em instituições de longa permanência"
-              ]
-            },
-            {
-              "id": "inst_mp_res_seguranca_publica",
-              "nivel_3": "Atuação do MP na Investigação de Crimes em Contexto de Segurança Pública (Res. CNMP nº 310/2025)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mp_res_outras",
-              "nivel_3": "Demais Resoluções do CNMP",
-              "aliases": []
-            }
-          ]
-        },
-        {
-          "id": "inst_mpu",
-          "nivel_2": "Ministério Público da União (LC nº 75/1993) e MP Eleitoral",
-          "topicos": [
-            {
-              "id": "inst_mpu_disposicoes_gerais",
-              "nivel_3": "Disposições Gerais da LC nº 75/1993 (arts. 1º a 36)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mpu_ramos_mpf",
-              "nivel_3": "Dos Ramos do MPU — Ministério Público Federal (MPF)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mpu_ramos_mpt",
-              "nivel_3": "Dos Ramos do MPU — Ministério Público do Trabalho (MPT)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mpu_ramos_mpm",
-              "nivel_3": "Dos Ramos do MPU — Ministério Público Militar (MPM)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mpu_ramos_mpdft",
-              "nivel_3": "Dos Ramos do MPU — Ministério Público do Distrito Federal e Territórios (MPDFT)",
-              "aliases": []
-            },
-            {
-              "id": "inst_mpu_eleitoral",
-              "nivel_3": "Ministério Público Eleitoral",
-              "aliases": [
-                "promotor e procurador eleitoral"
-              ]
-            },
-            {
-              "id": "inst_mpu_disposicoes_estatutarias",
-              "nivel_3": "Disposições Estatutárias Especiais da LC nº 75/1993 (arts. 182 a 265)",
-              "aliases": []
-            }
-          ]
-        },
-        {
-          "id": "inst_magis",
-          "nivel_2": "Magistratura e Organização Judiciária",
-          "topicos": [
-            {
-              "id": "inst_mag_princ",
-              "nivel_3": "Princípios, Autonomia e Conselho Nacional de Justiça (CNJ)",
-              "aliases": [
-                "independência judicial"
-              ]
-            },
-            {
-              "id": "inst_mag_carreira",
-              "nivel_3": "Ingresso, Promoção, Remoção e Vitaliciedade",
-              "aliases": [
-                "escalonamento na carreira"
-              ]
-            },
-            {
-              "id": "inst_mag_garantias",
-              "nivel_3": "Direitos, Deveres, Prerrogativas e Processo Disciplinar",
-              "aliases": [
-                "aposentadoria compulsória",
-                "sanções disciplinares"
-              ]
-            },
-            {
-              "id": "inst_mag_coje",
-              "nivel_3": "Códigos de Organização e Divisão Judiciárias Estaduais (COJE)",
-              "aliases": [
-                "comarcas e entrâncias (criação e classificação)",
-                "varas especializadas",
-                "órgão especial",
-                "tribunal pleno"
-              ]
-            },
-            {
-              "id": "inst_mag_serventuarios",
-              "nivel_3": "Serventuários, Auxiliares da Justiça e Justiça de Paz",
-              "aliases": [
-                "juiz de paz",
-                "escrivães",
-                "oficiais de justiça",
-                "regimes de lotação e permuta de serventuários"
-              ]
-            },
-            {
-              "id": "inst_mag_jec",
-              "nivel_3": "Sistema dos Juizados Especiais e Turmas Recursais",
-              "aliases": [
-                "turma de uniformização",
-                "conflitos de competência nos juizados"
-              ]
-            },
-            {
-              "id": "inst_mag_orgaos_cupula",
-              "nivel_3": "Órgãos Diretivos e de Cúpula dos Tribunais",
-              "aliases": [
-                "presidente e vice-presidente do tj",
-                "corregedoria-geral da justiça",
-                "conselho da magistratura"
-              ]
-            },
-            {
-              "id": "inst_mag_fundos_regimento",
-              "nivel_3": "Regimento Interno, Fundos Especiais e Custas",
-              "aliases": [
-                "funjuris / fundos de reaparelhamento",
-                "regimento interno",
-                "sessões do tribunal pleno e turmas",
-                "súmulas locais do tj"
-              ]
-            }
-          ]
-        },
-        {
-          "id": "div_1788098112108",
-          "nivel_2": "CNJ: Atos Normativos",
-          "topicos": [
-            {
-              "id": "top_1788098150902",
-              "nivel_3": "Atos Normativos do CNJ",
-              "aliases": [
-                "Resoluções",
-                "Provimentos",
-                "Recomendações"
               ]
             }
           ]
