@@ -3581,7 +3581,7 @@ window.SALINHA_BACKUP = {
                                 objLocal[subChave][chaveL2] = [];
                             }
                             importados.forEach(deck => {
-                                if (!deck || !deck.id || excluidosDeck[deck.id]) return;
+                                if (!deck || !deck.id || excluidosDeck[deck.id] || deck.origem_oficial) return;
                                 const jaExiste = objLocal[subChave][chaveL2].some(function(local) {
                                     return local && local.id === deck.id;
                                 });
@@ -3596,7 +3596,7 @@ window.SALINHA_BACKUP = {
                         Object.keys(objLocal[subChave]).forEach(chaveL2 => {
                             const antes = objLocal[subChave][chaveL2].length;
                             objLocal[subChave][chaveL2] = objLocal[subChave][chaveL2].filter(function(deck) {
-                                return deck && !excluidosDeck[deck.id];
+                                return deck && !excluidosDeck[deck.id] && !deck.origem_oficial;
                             });
                             if (objLocal[subChave][chaveL2].length !== antes) persistirChave = true;
                             if (objLocal[subChave][chaveL2].length === 0) delete objLocal[subChave][chaveL2];
@@ -11497,6 +11497,14 @@ window.fecharPraticarCadernoModal = function() {
     #fcnb-modal .fcnb-btn-icone { font-size:12px; border:none; background:none; color:var(--text-muted); cursor:pointer; padding:2px 4px; line-height:1; }
     #fcnb-modal .fcnb-btn-icone:hover { color:var(--app-primary); }
     #fcnb-modal .fcnb-btn-icone.perigo:hover { color:var(--danger); }
+    #fcnb-modal .fcnb-selo-oficial { font-size:8px; font-weight:800; color:#dc2626; background:#fff; border:1px solid #fca5a5; padding:1px 4px; border-radius:3px; flex-shrink:0; align-self:center; }
+    #fcnb-modal .fcnb-export-menu { position:relative; }
+    #fcnb-modal .fcnb-export-menu summary { list-style:none; background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #fcnb-modal .fcnb-export-menu summary::-webkit-details-marker { display:none; }
+    #fcnb-modal .fcnb-export-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #fcnb-modal .fcnb-export-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); right:0; min-width:190px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #fcnb-modal .fcnb-export-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; }
+    #fcnb-modal .fcnb-export-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
     #fcnb-modal .fcnb-card-titulo { font-size:12px; font-weight:700; color:var(--text-main); line-height:1.35; }
     #fcnb-modal .fcnb-card-meta { font-size:10.5px; color:var(--text-muted); }
     #fcnb-modal .fcnb-progresso { height:6px; border-radius:99px; background:#e2e8f0; overflow:hidden; }
@@ -11512,6 +11520,7 @@ window.fecharPraticarCadernoModal = function() {
             <div class="analytics-modal-title">🗂️ Flashcards</div>
             <div class="fcnb-cabecalho-acoes">
                 <button class="fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
+                <details class="fcnb-export-menu" title="Gera o .json no formato dos baralhos oficiais: salve em dados/flashcards/ e acrescente o caminho em dados/manifesto-flashcards.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="fcnb-export-opcoes"><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTudo()">Tudo</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarDisciplina()">Disciplina selecionada</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTopico()">Tópico (L2) selecionado</button></div></details>
                 <button class="analytics-close-btn" id="fcnb-modal-btn-maximizar" onclick="window.alternarMaximizarFlashcardsNbModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharFlashcardsNbModal()">&#x2715;</button>
             </div>
@@ -11685,9 +11694,20 @@ window.FLASHCARDS_NB_RUNTIME = {
         if (!this._bootstrapped) this.carregar();
     },
 
+    // Baralhos OFICIAIS (origem_oficial) nunca são gravados aqui —
+    // carregarFlashcardsOficiais() os funde de novo a cada carregamento
+    // (dados/flashcards/*.json); persisti-los só duplicaria conteúdo no
+    // armazenamento e no backup. O progresso (estado) dos cards deles, por
+    // id, continua sendo salvo normalmente.
     salvar: function() {
         try {
-            window.salvarFlashcardsNbBruto(JSON.stringify({ decks: this.decks, estado: this.estado, excluidos: this.excluidos, posicoes: this.posicoes }));
+            let self = this;
+            let decksPessoais = {};
+            Object.keys(this.decks).forEach(function(chave) {
+                let pessoais = (self.decks[chave] || []).filter(function(d) { return !d.origem_oficial; });
+                if (pessoais.length > 0) decksPessoais[chave] = pessoais;
+            });
+            window.salvarFlashcardsNbBruto(JSON.stringify({ decks: decksPessoais, estado: this.estado, excluidos: this.excluidos, posicoes: this.posicoes }));
             return true;
         } catch (e) {
             console.warn('[FLASHCARDS] Falha ao salvar:', e);
@@ -11698,6 +11718,11 @@ window.FLASHCARDS_NB_RUNTIME = {
     init: function() {
         this.carregar();
         this.render();
+        if (typeof window.carregarFlashcardsOficiais === 'function') {
+            window.carregarFlashcardsOficiais().then(function() {
+                window.FLASHCARDS_NB_RUNTIME.render();
+            });
+        }
     },
 
     _chaveL2: function(materia, divisao) { return materia + ' > ' + divisao; },
@@ -11883,9 +11908,10 @@ window.FLASHCARDS_NB_RUNTIME = {
                 '<div class="fcnb-card-topo">' +
                     (mostrarL2 ? '<span class="fcnb-card-l2" title="' + self._escapar(l2) + '">' + self._escapar(l2) + '</span>' : '') +
                     '<span class="fcnb-card-acoes">' +
-                        '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.renomearDeck(\'' + d.id + '\')" title="Renomear">✏️</button>' +
+                        (d.origem_oficial ? '<span class="fcnb-selo-oficial" title="Baralho oficial">(Oficial)</span>' : '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.renomearDeck(\'' + d.id + '\')" title="Renomear">✏️</button>') +
+                        '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.exportarDeck(\'' + d.id + '\')" title="Exportar este baralho (.json)">📤</button>' +
                         '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.reiniciarProgresso(\'' + d.id + '\')" title="Reiniciar progresso">↺</button>' +
-                        '<button class="fcnb-btn-icone perigo" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.excluirDeck(\'' + d.id + '\')" title="Excluir baralho">🗑️</button>' +
+                        (d.origem_oficial ? '' : '<button class="fcnb-btn-icone perigo" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.excluirDeck(\'' + d.id + '\')" title="Excluir baralho">🗑️</button>') +
                     '</span>' +
                 '</div>' +
                 '<div class="fcnb-card-titulo">' + self._escapar(d.nome) + '</div>' +
@@ -12030,7 +12056,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 
     renomearDeck: function(idDeck) {
         let achado = this._acharDeck(idDeck);
-        if (!achado) return;
+        if (!achado || achado.deck.origem_oficial) return;
         let novo = prompt('Novo nome do baralho:', achado.deck.nome);
         if (novo === null) return;
         novo = novo.trim();
@@ -12042,7 +12068,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 
     excluirDeck: function(idDeck) {
         let achado = this._acharDeck(idDeck);
-        if (!achado) return;
+        if (!achado || achado.deck.origem_oficial) return; // baralhos oficiais não são excluíveis pelo usuário
         if (!confirm('Excluir o baralho "' + achado.deck.nome + '" (' + achado.deck.cards.length + ' flashcards) e todo o progresso dele? Não dá para desfazer.')) return;
         let self = this;
         achado.deck.cards.forEach(function(c) { delete self.estado[c.id]; });
@@ -12052,6 +12078,69 @@ window.FLASHCARDS_NB_RUNTIME = {
         this.excluidos[idDeck] = new Date().toISOString();
         this.salvar();
         this.render();
+    },
+
+    // ── EXPORTAÇÃO (.json no formato dos baralhos OFICIAIS) ──
+    // Formato = o que importarFlashcardOficial() lê: { "MATÉRIA > Divisão":
+    // [ {id, nome, criadoEm, topicos, cards:[{id,f,b}]} ] }. Pra publicar:
+    // salvar o arquivo em dados/flashcards/ e acrescentar o caminho
+    // (dados/flashcards/<arquivo>.json) em dados/manifesto-flashcards.txt.
+    // Os ids (do baralho e dos cards) são preservados: o progresso de quem
+    // já estudou a cópia pessoal continua valendo na oficial. Progresso em
+    // si (realizados/dificuldade) nunca vai no arquivo.
+    _slugTexto: function(texto) {
+        return String(texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    },
+
+    _copiaParaExportar: function(deck) {
+        return {
+            id: deck.id,
+            nome: deck.nome,
+            criadoEm: deck.criadoEm || new Date().toISOString(),
+            topicos: Array.isArray(deck.topicos) ? deck.topicos : [],
+            cards: (deck.cards || []).map(function(c) { return { id: c.id, f: c.f, b: c.b }; })
+        };
+    },
+
+    _exportarChaves: function(chaves, nomeArquivo, descricao) {
+        let self = this;
+        let resultado = {};
+        let total = 0;
+        chaves.sort().forEach(function(chave) {
+            let lista = (self.decks[chave] || []).map(function(d) { return self._copiaParaExportar(d); });
+            if (lista.length > 0) { resultado[chave] = lista; total += lista.length; }
+        });
+        if (total === 0) { alert('Nenhum baralho para exportar ' + descricao + '.'); return; }
+        downloadArquivo(JSON.stringify(resultado, null, 2), nomeArquivo, 'application/json');
+    },
+
+    exportarTudo: function() {
+        this._garantirCarregado();
+        this._exportarChaves(Object.keys(this.decks), 'flashcards-tudo.json', '(ainda não há baralhos)');
+    },
+
+    exportarDisciplina: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
+        let prefixo = this._materiaSelecionada + ' > ';
+        let chaves = Object.keys(this.decks).filter(function(c) { return c.indexOf(prefixo) === 0; });
+        this._exportarChaves(chaves, 'flashcards-' + this._slugTexto(this._materiaSelecionada) + '.json', 'em "' + this._materiaSelecionada + '"');
+    },
+
+    exportarTopico: function() {
+        this._garantirCarregado();
+        if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
+        let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        this._exportarChaves([chave], 'flashcards-' + this._slugTexto(this._materiaSelecionada) + '-' + this._slugTexto(this._divisaoSelecionada) + '.json', 'em "' + chave + '"');
+    },
+
+    exportarDeck: function(idDeck) {
+        let achado = this._acharDeck(idDeck);
+        if (!achado) return;
+        let resultado = {};
+        resultado[achado.chave] = [this._copiaParaExportar(achado.deck)];
+        downloadArquivo(JSON.stringify(resultado, null, 2), 'flashcards-' + this._slugTexto(achado.deck.nome) + '.json', 'application/json');
     },
 
     _zerarEstadoDoDeck: function(deck) {
@@ -12365,6 +12454,59 @@ window.fecharFlashcardsNbModal = function() {
     if (!modal) return;
     modal.classList.remove('active');
     document.body.style.overflow = '';
+};
+
+// ── FLASHCARDS OFICIAIS — publicados no repositório (dados/flashcards/*.json),
+// disponíveis pra todo mundo automaticamente. Mesmo padrão de
+// importarEsquemaOficial/carregarEsquemasOficiais: upsert por id do baralho.
+window.importarFlashcardOficial = async function(url) {
+    try {
+        // Cache-buster: sem isso, um arquivo já publicado (mesmo nome)
+        // fica preso no cache HTTP do GitHub Pages por até 10min.
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
+        if (!r.ok) throw new Error('Falha ao carregar flashcards oficiais (' + url + ').');
+        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, nome, criadoEm, topicos, cards:[{id,f,b}]} ] }
+
+        window.FLASHCARDS_NB_RUNTIME._garantirCarregado();
+        const runtime = window.FLASHCARDS_NB_RUNTIME;
+
+        Object.keys(dados).forEach(function(chaveL2) {
+            const itens = dados[chaveL2];
+            if (!Array.isArray(itens)) return;
+            if (!Array.isArray(runtime.decks[chaveL2])) runtime.decks[chaveL2] = [];
+            const arr = runtime.decks[chaveL2];
+
+            itens.forEach(function(item) {
+                if (!item || !item.id || !Array.isArray(item.cards)) return;
+                item.origem_oficial = true;
+                const idx = arr.findIndex(function(d) { return d.id === item.id; });
+                if (idx === -1) arr.push(item); else arr[idx] = item;
+            });
+        });
+
+        runtime.salvar();
+    } catch (e) {
+        console.warn('[FLASHCARDS OFICIAIS] erro:', e);
+    }
+};
+
+window.carregarFlashcardsOficiais = async function() {
+    window.FLASHCARDS_NB_RUNTIME._garantirCarregado();
+
+    // Manifesto: 1 caminho relativo por linha, linhas vazias ignoradas.
+    // Publicar um baralho novo = 1 linha nova em dados/manifesto-flashcards.txt.
+    let manifestoTexto = '';
+    try {
+        const rManifesto = await fetch('dados/manifesto-flashcards.txt?v=' + Date.now());
+        if (rManifesto.ok) manifestoTexto = await rManifesto.text();
+        else console.warn('[FLASHCARDS OFICIAIS] Falha ao carregar manifesto: HTTP', rManifesto.status);
+    } catch (e) {
+        console.warn('[FLASHCARDS OFICIAIS] Falha ao carregar manifesto:', e);
+    }
+    const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    for (const caminho of caminhosManifesto) {
+        await window.importarFlashcardOficial(caminho);
+    }
 };
 </script>
 
@@ -19064,6 +19206,10 @@ window.garantirOficiaisParaBaralhosAssociados = function() {
     if (window._baralhosAssociadosSincronizados) return;
     window._baralhosAssociadosSincronizados = true;
     let promessas = [];
+    if (window.FLASHCARDS_NB_RUNTIME) {
+        window.FLASHCARDS_NB_RUNTIME._garantirCarregado();
+        if (typeof window.carregarFlashcardsOficiais === 'function') promessas.push(window.carregarFlashcardsOficiais());
+    }
     if (window.ESQUEMAS_RUNTIME) {
         window.ESQUEMAS_RUNTIME._garantirCarregado();
         if (typeof window.carregarEsquemasOficiais === 'function') promessas.push(window.carregarEsquemasOficiais());
@@ -31277,6 +31423,7 @@ function _comBuscaOficialUnica(nomeFuncao) {
         return emAndamento;
     };
 }
+_comBuscaOficialUnica('carregarFlashcardsOficiais');
 _comBuscaOficialUnica('carregarEsquemasOficiais');
 _comBuscaOficialUnica('carregarJurisprudenciaOficial');
 _comBuscaOficialUnica('carregarGlossarioOficial');
@@ -31285,6 +31432,7 @@ window.__bootOficialPromise__ = (async function(){
    try {
       await window.carregarAcervosOficiais();
       if (typeof window.repararAcervoOficialOrfao === 'function') window.repararAcervoOficialOrfao();
+      if (typeof window.carregarFlashcardsOficiais === 'function') await window.carregarFlashcardsOficiais();
       if (typeof window.carregarEsquemasOficiais === 'function') await window.carregarEsquemasOficiais();
       if (typeof window.carregarJurisprudenciaOficial === 'function') await window.carregarJurisprudenciaOficial();
       if (typeof window.carregarGlossarioOficial === 'function') await window.carregarGlossarioOficial();
