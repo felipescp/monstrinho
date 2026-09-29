@@ -1047,8 +1047,8 @@ const TAXONOMIA_DADOS = {
           ]
         },
         {
-          "id": "pc_coletivo",
-          "nivel_2": "Microssistema de Tutela Coletiva e Ações Constitucionais",
+          "id": "pc_div_acp",
+          "nivel_2": "Ação Civil Pública e Tutela Coletiva (Lei nº 7.347/1985)",
           "topicos": [
             {
               "id": "pc_col_teoria",
@@ -1057,34 +1057,146 @@ const TAXONOMIA_DADOS = {
                 "direitos difusos, coletivos e individuais homogêneos",
                 "coisa julgada secundum eventum litis",
                 "fluid recovery (recuperação fluida)",
-                "legitimidade ativa e adequação"
+                "legitimidade ativa e adequação",
+                "microssistema processual coletivo (lacp + cdc)"
               ]
             },
             {
-              "id": "pc_col_acp_ap",
-              "nivel_3": "Ação Civil Pública e Ação Popular",
+              "id": "pc_acp_regime",
+              "nivel_3": "Ação Civil Pública: Objeto, Legitimidade e Procedimento",
               "aliases": [
                 "lei 7.347/85",
-                "lei 4.717/65",
+                "inquérito civil",
+                "termo de ajustamento de conduta (tac)",
                 "litisconsórcio no processo coletivo",
-                "fundo de defesa dos direitos difusos"
-              ]
-            },
-            {
-              "id": "pc_col_remedios",
-              "nivel_3": "Remédios Constitucionais Processuais",
-              "aliases": [
-                "mandado de segurança (lei 12.016/09)",
-                "mandado de injunção (lei 13.300/16)",
-                "habeas data (lei 9.507/97)",
-                "reclamação"
+                "fundo de defesa dos direitos difusos",
+                "competência (foro do local do dano)",
+                "execução coletiva e legitimidade subsidiária do ministério público (art. 15 da lacp)"
               ]
             }
           ]
         },
         {
-          "id": "div_1786556855082",
-          "nivel_2": "Legislação Processual Civil Especial",
+          "id": "pc_div_apopular",
+          "nivel_2": "Ação Popular (Lei nº 4.717/1965)",
+          "topicos": [
+            {
+              "id": "pc_apop_cabimento",
+              "nivel_3": "Cabimento, Legitimidade e Objeto",
+              "aliases": [
+                "lei 4.717/65",
+                "legitimidade ativa do cidadão",
+                "título de eleitor",
+                "atos lesivos ao patrimônio público",
+                "moralidade administrativa",
+                "meio ambiente e patrimônio histórico e cultural"
+              ]
+            },
+            {
+              "id": "pc_apop_procedimento",
+              "nivel_3": "Procedimento, Sentença e Efeitos",
+              "aliases": [
+                "citação dos beneficiários do ato",
+                "prazo de contestação",
+                "sentença e coisa julgada secundum eventum litis",
+                "isenção de custas e ônus de sucumbência salvo má-fé",
+                "prescrição quinquenal"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pc_div_ms",
+          "nivel_2": "Mandado de Segurança e Medidas contra o Poder Público (Lei nº 12.016/2009 e Lei nº 8.437/1992)",
+          "topicos": [
+            {
+              "id": "pc_col_remedios",
+              "nivel_3": "Mandado de Segurança: Cabimento e Legitimidade",
+              "aliases": [
+                "mandado de segurança (lei 12.016/09)",
+                "direito líquido e certo",
+                "ato de autoridade",
+                "impetração contra lei em tese (súmula 266 do stf)",
+                "decadência de 120 dias",
+                "mandado de segurança coletivo"
+              ]
+            },
+            {
+              "id": "pc_ms_procedimento",
+              "nivel_3": "Mandado de Segurança: Procedimento, Liminar e Sentença",
+              "aliases": [
+                "informações da autoridade coatora",
+                "liminar em mandado de segurança",
+                "reexame necessário",
+                "vedação a honorários (súmula 512 do stf)",
+                "coisa julgada e ação própria"
+              ]
+            },
+            {
+              "id": "pc_esp_cautelar_poder_publico",
+              "nivel_3": "Medidas Cautelares contra Atos do Poder Público (Lei nº 8.437/1992)",
+              "aliases": [
+                "medida cautelar contra o poder público",
+                "suspensão de liminar",
+                "vedação a liminar contra a fazenda pública"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pc_div_mi",
+          "nivel_2": "Mandado de Injunção (Lei nº 13.300/2016)",
+          "topicos": [
+            {
+              "id": "pc_mi_geral",
+              "nivel_3": "Cabimento, Legitimidade e Efeitos da Decisão",
+              "aliases": [
+                "lei 13.300/16",
+                "mandado de injunção (lei 13.300/16)",
+                "omissão normativa",
+                "mora legislativa",
+                "mandado de injunção coletivo",
+                "eficácia inter partes e erga omnes"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pc_div_hd",
+          "nivel_2": "Habeas Data (Lei nº 9.507/1997)",
+          "topicos": [
+            {
+              "id": "pc_hd_geral",
+              "nivel_3": "Cabimento, Legitimidade e Procedimento",
+              "aliases": [
+                "lei 9.507/97",
+                "habeas data (lei 9.507/97)",
+                "direito de acesso e retificação de informações",
+                "interesse de agir e prévio requerimento administrativo",
+                "súmula 2 do stj"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pc_div_reclamacao",
+          "nivel_2": "Reclamação Constitucional (CPC, arts. 988 a 993)",
+          "topicos": [
+            {
+              "id": "pc_reclamacao_geral",
+              "nivel_3": "Cabimento, Legitimidade e Efeitos",
+              "aliases": [
+                "reclamação",
+                "garantia da autoridade das decisões",
+                "cabimento contra ato que contraria súmula vinculante ou tema de repercussão geral",
+                "legitimidade"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pc_div_mediacao",
+          "nivel_2": "Mediação e Conciliação (Lei nº 13.140/2015)",
           "topicos": [
             {
               "id": "pc_esp_mediacao",
@@ -1097,7 +1209,13 @@ const TAXONOMIA_DADOS = {
                 "mediação (lei 13.140/15)",
                 "confidencialidade"
               ]
-            },
+            }
+          ]
+        },
+        {
+          "id": "pc_div_jec",
+          "nivel_2": "Juizados Especiais Cíveis e da Fazenda Pública (Leis nº 9.099/1995 e 12.153/2009)",
+          "topicos": [
             {
               "id": "pc_esp_jec",
               "nivel_3": "Juizados Especiais Cíveis e da Fazenda Pública (Leis nº 9.099/1995 e 12.153/2009)",
@@ -1108,7 +1226,13 @@ const TAXONOMIA_DADOS = {
                 "jec",
                 "jefp"
               ]
-            },
+            }
+          ]
+        },
+        {
+          "id": "pc_div_arbitragem",
+          "nivel_2": "Arbitragem (Lei nº 9.307/1996)",
+          "topicos": [
             {
               "id": "pc_esp_arbitragem",
               "nivel_3": "Arbitragem (Lei nº 9.307/1996)",
@@ -1119,15 +1243,6 @@ const TAXONOMIA_DADOS = {
                 "compromisso arbitral",
                 "sentença arbitral",
                 "arbitragem (lei 9.307/96)"
-              ]
-            },
-            {
-              "id": "pc_esp_cautelar_poder_publico",
-              "nivel_3": "Medidas Cautelares contra Atos do Poder Público (Lei nº 8.437/1992)",
-              "aliases": [
-                "medida cautelar contra o poder público",
-                "suspensão de liminar",
-                "vedação a liminar contra a fazenda pública"
               ]
             }
           ]

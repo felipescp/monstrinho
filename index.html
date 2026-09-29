@@ -2112,6 +2112,13 @@ window.lerSessaoAtiva = async function() {
 };
 
 window.salvarSessaoAtiva = function(dados) {
+    // Preenche a lápide de abas fechadas (window.__sessaoAtivaExcluidos) se
+    // quem chamou não incluiu — cobre TODOS os call sites que montam o
+    // objeto na mão (autoSave() na sessão vazia, fecharTab() ao zerar),
+    // sem precisar caçar cada um: ver comentário em __sessaoAtivaExcluidos.
+    if (dados && typeof dados === 'object' && !Array.isArray(dados) && !dados.excluidos) {
+        dados.excluidos = window.__sessaoAtivaExcluidos || {};
+    }
     // Cópia redundante no localStorage, sempre — best-effort, nunca deve
     // impedir a gravação no IndexedDB (fonte primária) se falhar por
     // qualquer motivo (ex.: cota do dispositivo). Ver comentário acima:
@@ -2151,6 +2158,20 @@ window.__migrarSessaoAtivaSeNecessario__ = async function(dadosLidos) {
 // qualquer chamador (autoLoad, handler de 'load') tentar consumir esta
 // Promise — nenhum deles pode rodar antes dela ter sido criada.
 window.__sessaoAtivaPromise__ = window.lerSessaoAtiva();
+
+// Lápide de abas FECHADAS DE PROPÓSITO pelo usuário ({idAba: dataISO}) —
+// mesmo espírito de *_runtime.excluidos (Esquemas/Cronograma/Acervo).
+// Sem isto, fechar uma aba só a remove do array local; se a nuvem ainda
+// tiver uma cópia de antes do fechamento (o envio periódico é o único
+// gatilho de export, e não é imediato), o próximo F5 chamava
+// importarNuvemSilenciosa() → aplicarPayloadMerge() → via "sessão ativa é
+// puramente aditiva", a aba fechada REAPARECIA — e como isso conta como
+// "mudou", disparava location.reload() de novo, um ciclo só limitado pelo
+// guard de reload (3 tentativas/60s). Hidratada em importarRuntime() (as
+// 2 rotas de boot) e sempre incluída em toda gravação (ver
+// salvarSessaoAtiva) — nenhum autoSave() no meio do caminho apaga a marca
+// sem querer, mesmo os que montam o objeto na mão.
+window.__sessaoAtivaExcluidos = {};
 
 // =========================================================================
 // CAMADA DE ACESSO: ESQUEMAS (tjpe_v1__esquemas_runtime)
@@ -2617,6 +2638,11 @@ window.__acervoProvasHidratacaoPromise__ = (async function() {
             if (ok) { try { localStorage.removeItem(window.CHAVE_ACERVO_PROVAS); } catch (e) {} }
         }
     } finally {
+        // Ver window._migrarAcervoPCLegislacaoEspecial — roda 1x, ANTES do
+        // primeiro render, pra qualquer bateria pessoal já nascer com a
+        // classificação nova (senão o 1º render mostraria o id_taxonomia
+        // antigo/órfão por um instante).
+        try { if (typeof window._migrarAcervoPCLegislacaoEspecial === 'function') window._migrarAcervoPCLegislacaoEspecial(); } catch (e) { console.warn('[MIGRAÇÃO PC] Falha ao migrar acervo:', e); }
         // Se algo já renderizou a Vitrine antes da hidratação terminar
         // (cache ainda vazio), corrige a tela agora com o valor de verdade —
         // mesmo espírito do finally do Arquivo Morto/Esquemas.
@@ -4429,9 +4455,34 @@ window.SALINHA_BACKUP = {
                     }
                     if (!Array.isArray(objLocal.sims)) objLocal.sims = [];
 
+                    // ── LÁPIDE DE ABAS FECHADAS (objLocal.excluidos) ──
+                    // {idAba: dataISO} — união pura (OR), mesma política de
+                    // *_runtime.excluidos (Esquemas/Cronograma/Acervo): se
+                    // qualquer lado já fechou aquela aba de propósito
+                    // (fecharTab), o resultado mesclado mantém a exclusão.
+                    // Sem isto, o laço abaixo (puramente aditivo por
+                    // natureza — precisa continuar assim pra não perder aba
+                    // aberta só em OUTRO dispositivo) reinjetava pra sempre
+                    // uma aba que só sumiu daqui porque o usuário a fechou
+                    // — e como isso conta como "mudou", disparava o reload
+                    // automático (importarNuvemSilenciosa), num ciclo só
+                    // limitado pelo guard de reload (3 tentativas/60s).
+                    if (!objLocal.excluidos || typeof objLocal.excluidos !== 'object' || Array.isArray(objLocal.excluidos)) {
+                        objLocal.excluidos = {};
+                    }
+                    let excluidosRemotos = (objImportado.excluidos && typeof objImportado.excluidos === 'object' && !Array.isArray(objImportado.excluidos)) ? objImportado.excluidos : {};
+                    Object.keys(excluidosRemotos).forEach(function(idAba) {
+                        if (excluidosRemotos[idAba] && !objLocal.excluidos[idAba]) {
+                            objLocal.excluidos[idAba] = excluidosRemotos[idAba];
+                            entidadesInjetadas++;
+                            mudouSessaoAtiva = true;
+                        }
+                    });
+
                     objImportado.sims.forEach(simImportado => {
                         if (!simImportado || !simImportado.cfg || !simImportado.cfg.id) return;
                         let idImportado = simImportado.cfg.id;
+                        if (objLocal.excluidos[idImportado]) return; // fechada de propósito — nunca reaparece
                         let simLocalExistente = objLocal.sims.find(simLocal => simLocal && simLocal.cfg && simLocal.cfg.id === idImportado);
                         if (!simLocalExistente) {
                             objLocal.sims.push(simImportado);
@@ -4480,6 +4531,12 @@ window.SALINHA_BACKUP = {
                 }
 
                 if (mudouSessaoAtiva) {
+                    // Sincroniza a lápide em memória com a versão mesclada
+                    // ANTES de salvar — senão um autoSave() disparado
+                    // segundos depois (build fresh via exportarRuntime(),
+                    // que lê window.__sessaoAtivaExcluidos) sobrescreveria a
+                    // gravação acima com uma lápide menor/desatualizada.
+                    if (objLocal.excluidos) window.__sessaoAtivaExcluidos = objLocal.excluidos;
                     const ok = await window.salvarSessaoAtiva(objLocal);
                     if (ok) chavesMutadas++;
                     else chavesComErro.push('clube_simulado_auto (sessão ativa)');
@@ -9418,6 +9475,145 @@ window.ClassificacaoCards = {
     }
 };
 
+// =========================================================================
+// MIGRAÇÃO (2026-09): Direito Processual Civil > "Legislação Processual
+// Civil Especial" e "Microssistema de Tutela Coletiva e Ações
+// Constitucionais" foram desmembradas em L2 próprios por legislação (Ação
+// Civil Pública, Ação Popular, Mandado de Segurança, Mandado de Injunção,
+// Habeas Data, Reclamação, Mediação, Juizados Especiais, Arbitragem) — ver
+// taxonomia.js. Esses 2 nós somem da taxonomia; sem esta migração,
+// qualquer esquema/ficha/termo/bateria PESSOAL do usuário que ainda
+// apontasse pra eles ficaria órfão (chave/id que MAPA_TAXONOMIA não
+// resolve mais). Classifica cada item pelo próprio texto (mesma heurística
+// usada para reclassificar o conteúdo oficial nos arquivos dados/*.json) —
+// só entra em ação se o usuário realmente tiver algo salvo nessas 2 chaves;
+// pessoal comum (a grande maioria) não é afetado.
+window._PC_LEGISLACAO_ESPECIAL_MIGRACAO = {
+    CHAVE_ESP: 'Direito Processual Civil > Legislação Processual Civil Especial',
+    CHAVE_COL: 'Direito Processual Civil > Microssistema de Tutela Coletiva e Ações Constitucionais',
+    NOVA: {
+        jec: 'Direito Processual Civil > Juizados Especiais Cíveis e da Fazenda Pública (Leis nº 9.099/1995 e 12.153/2009)',
+        arbitragem: 'Direito Processual Civil > Arbitragem (Lei nº 9.307/1996)',
+        mediacao: 'Direito Processual Civil > Mediação e Conciliação (Lei nº 13.140/2015)',
+        acp: 'Direito Processual Civil > Ação Civil Pública e Tutela Coletiva (Lei nº 7.347/1985)',
+        ap: 'Direito Processual Civil > Ação Popular (Lei nº 4.717/1965)',
+        ms: 'Direito Processual Civil > Mandado de Segurança e Medidas contra o Poder Público (Lei nº 12.016/2009 e Lei nº 8.437/1992)',
+        mi: 'Direito Processual Civil > Mandado de Injunção (Lei nº 13.300/2016)',
+        hd: 'Direito Processual Civil > Habeas Data (Lei nº 9.507/1997)',
+        reclamacao: 'Direito Processual Civil > Reclamação Constitucional (CPC, arts. 988 a 993)'
+    },
+    ID_TAXONOMIA_POR_NOVA_CHAVE: {
+        'Direito Processual Civil > Juizados Especiais Cíveis e da Fazenda Pública (Leis nº 9.099/1995 e 12.153/2009)': 'pc_div_jec',
+        'Direito Processual Civil > Arbitragem (Lei nº 9.307/1996)': 'pc_div_arbitragem',
+        'Direito Processual Civil > Mediação e Conciliação (Lei nº 13.140/2015)': 'pc_div_mediacao',
+        'Direito Processual Civil > Ação Civil Pública e Tutela Coletiva (Lei nº 7.347/1985)': 'pc_div_acp',
+        'Direito Processual Civil > Ação Popular (Lei nº 4.717/1965)': 'pc_div_apopular',
+        'Direito Processual Civil > Mandado de Segurança e Medidas contra o Poder Público (Lei nº 12.016/2009 e Lei nº 8.437/1992)': 'pc_div_ms',
+        'Direito Processual Civil > Mandado de Injunção (Lei nº 13.300/2016)': 'pc_div_mi',
+        'Direito Processual Civil > Habeas Data (Lei nº 9.507/1997)': 'pc_div_hd',
+        'Direito Processual Civil > Reclamação Constitucional (CPC, arts. 988 a 993)': 'pc_div_reclamacao'
+    },
+    _normalizar: function(t) {
+        return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    },
+    // Ordem importa: do mais específico pro mais genérico. Sem match claro,
+    // cai em ACP (a Teoria Geral do Processo Coletivo ficou hospedada lá).
+    classificar: function(texto) {
+        let t = this._normalizar(texto);
+        if (t.indexOf('juizado') !== -1 || t.indexOf('jefp') !== -1 || /\bjec\b/.test(t)) return this.NOVA.jec;
+        if (t.indexOf('arbitr') !== -1) return this.NOVA.arbitragem;
+        if (t.indexOf('mediacao') !== -1 || t.indexOf('conciliacao') !== -1) return this.NOVA.mediacao;
+        if (t.indexOf('acao popular') !== -1) return this.NOVA.ap;
+        if (t.indexOf('mandado de seguranca') !== -1) return this.NOVA.ms;
+        if (t.indexOf('mandado de injuncao') !== -1) return this.NOVA.mi;
+        if (t.indexOf('habeas data') !== -1) return this.NOVA.hd;
+        if (t.indexOf('reclamacao') !== -1) return this.NOVA.reclamacao;
+        return this.NOVA.acp;
+    },
+    // Migra um dict {chaveL2: [itens]} (Esquemas/Jurisprudência/Glossário)
+    // IN-PLACE — devolve true se algo mudou (chamador decide se/quando salvar).
+    // aoMover(item, novaChave), opcional, roda antes do item entrar na nova
+    // lista (usado pela Jurisprudência pra sincronizar o campo divisaoL2).
+    migrarDict: function(dict, extrairTextoDoItem, aoMover) {
+        if (!dict || typeof dict !== 'object') return false;
+        let self = this;
+        let mudou = false;
+        [this.CHAVE_ESP, this.CHAVE_COL].forEach(function(chaveAntiga) {
+            let itens = dict[chaveAntiga];
+            if (!Array.isArray(itens)) return;
+            mudou = true;
+            itens.forEach(function(item) {
+                let destino = self.classificar(extrairTextoDoItem(item));
+                if (typeof aoMover === 'function') aoMover(item, destino);
+                if (!Array.isArray(dict[destino])) dict[destino] = [];
+                dict[destino].push(item);
+            });
+            delete dict[chaveAntiga];
+        });
+        return mudou;
+    }
+};
+
+// Acervo de baterias pessoais (window.lerAcervoProvasBruto) — id_taxonomia
+// aqui é um id (não uma string de chave), então a corrupção seria pior:
+// MAPA_TAXONOMIA[id] passa a devolver undefined pros 2 ids antigos
+// (div_1786556855082/pc_coletivo), e a bateria perderia todo "Conteúdo
+// Relacionado"/"Materiais associados" silenciosamente. Roda 1x (flag em
+// localStorage) — cada QUESTÃO cujo próprio topico ainda usa uma das 2
+// chaves antigas é reclassificada individualmente (cobre baterias
+// "mistas", que têm mais de um assunto); a bateria em si (id_taxonomia/
+// caminho_completo) segue a maioria das questões reclassificadas, ou o
+// nome da bateria se nenhuma questão bateu (bateria vazia/sem detalhe).
+window._migrarAcervoPCLegislacaoEspecial = function() {
+    let FLAG = 'tjpe_v1__migracao_pc_legislacao_especial_2026_09';
+    try { if (localStorage.getItem(FLAG) === '1') return; } catch (e) {}
+    let acervo;
+    try { acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { return; }
+    if (!Array.isArray(acervo)) return;
+
+    let M = window._PC_LEGISLACAO_ESPECIAL_MIGRACAO;
+    let IDS_ANTIGOS = { div_1786556855082: true, pc_coletivo: true };
+    let mudou = false;
+
+    acervo.forEach(function(prova) {
+        if (!prova) return;
+        let taxAtual = prova.id_taxonomia || (prova.cfg && prova.cfg.id_taxonomia);
+        let precisaProva = !!(taxAtual && IDS_ANTIGOS[taxAtual]);
+        let contagemDestino = {};
+
+        if (prova.dados && Array.isArray(prova.dados.blocos)) {
+            prova.dados.blocos.forEach(function(bloco) {
+                (bloco.questoes || []).forEach(function(q) {
+                    if (!q || !q.topico) return;
+                    let partes = q.topico.split(' > ');
+                    if (partes.length < 2) return;
+                    let chaveAntigaDaQuestao = partes[0] + ' > ' + partes[1];
+                    if (chaveAntigaDaQuestao !== M.CHAVE_ESP && chaveAntigaDaQuestao !== M.CHAVE_COL) return;
+                    let destino = M.classificar((partes[2] || '') + ' ' + (q.enunciado || ''));
+                    let novoL2 = destino.split(' > ').slice(1).join(' > ');
+                    q.topico = partes[0] + ' > ' + novoL2 + (partes.length > 2 ? ' > ' + partes.slice(2).join(' > ') : '');
+                    contagemDestino[destino] = (contagemDestino[destino] || 0) + 1;
+                    mudou = true;
+                });
+            });
+        }
+
+        if (precisaProva) {
+            let destinoProva = null, max = 0;
+            Object.keys(contagemDestino).forEach(function(d) { if (contagemDestino[d] > max) { max = contagemDestino[d]; destinoProva = d; } });
+            if (!destinoProva) destinoProva = M.classificar(prova.nome || '');
+            let novoId = M.ID_TAXONOMIA_POR_NOVA_CHAVE[destinoProva];
+            prova.id_taxonomia = novoId;
+            prova.caminho_completo = destinoProva;
+            if (prova.cfg) { prova.cfg.id_taxonomia = novoId; prova.cfg.caminho_completo = destinoProva; }
+            mudou = true;
+        }
+    });
+
+    try { localStorage.setItem(FLAG, '1'); } catch (e) {}
+    if (mudou) window.salvarAcervoProvasBruto(JSON.stringify(acervo));
+};
+
 window.FLASHCARDS_RUNTIME = {
     manuais: {},
     revisao: {}, // { "<chave>": { ultimaClassificacao } } — puro sistema de distribuição, substitui favoritos
@@ -13170,6 +13366,11 @@ window.GLOSSARIO_RUNTIME = {
         this.etiquetaPorTermo = (bruto && typeof bruto.etiquetaPorTermo === 'object' && !Array.isArray(bruto.etiquetaPorTermo)) ? bruto.etiquetaPorTermo : {};
         this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
         this._bootstrapped = true;
+        // Ver window._PC_LEGISLACAO_ESPECIAL_MIGRACAO — protege termos
+        // pessoais salvos nos 2 nós de Processual Civil desmembrados em 2026-09.
+        if (window._PC_LEGISLACAO_ESPECIAL_MIGRACAO.migrarDict(this.glossario, function(it) { return (it && it.expressao) || ''; })) {
+            this.salvar();
+        }
     },
 
     _garantirCarregado: function() {
@@ -15346,7 +15547,9 @@ window.exportarRuntime = function(){
 
       sims: SIMS,
 
-      si: SI
+      si: SI,
+
+      excluidos: window.__sessaoAtivaExcluidos || {}
 
    };
 
@@ -15374,6 +15577,12 @@ if(
 ){
    throw new Error('Runtime inválido');
 }
+
+      // Hidrata a lápide de abas fechadas a partir do próprio snapshot
+      // restaurado — ver window.__sessaoAtivaExcluidos. Único ponto de
+      // hidratação: as 2 rotas de boot que chamam importarRuntime() (F5
+      // direto e o fallback por URL) passam por aqui.
+      window.__sessaoAtivaExcluidos = (runtime && runtime.excluidos && typeof runtime.excluidos === 'object' && !Array.isArray(runtime.excluidos)) ? runtime.excluidos : {};
 
       SIMS = runtime.sims;
 
@@ -18312,6 +18521,10 @@ function fecharTab(i){
 
   if(sim && sim.stats){
 
+    // Ver window.__sessaoAtivaExcluidos: sem esta marca, um sync com uma
+    // cópia da nuvem anterior a este fechamento reabre esta aba sozinho.
+    if (sim.cfg && sim.cfg.id) window.__sessaoAtivaExcluidos[sim.cfg.id] = new Date().toISOString();
+
     SIMS.splice(i,1);
 
     if(!SIMS.length){
@@ -18379,6 +18592,10 @@ function fecharTab(i){
   );
 
   if (!confirmar) return;
+
+  // Ver window.__sessaoAtivaExcluidos: sem esta marca, um sync com uma
+  // cópia da nuvem anterior a este fechamento reabre esta aba sozinho.
+  if (sim.cfg && sim.cfg.id) window.__sessaoAtivaExcluidos[sim.cfg.id] = new Date().toISOString();
 
   SIMS.splice(i,1);
 
@@ -24718,6 +24935,11 @@ window.ESQUEMAS_RUNTIME = {
         this.etiquetaPorEsquema = (bruto && typeof bruto.etiquetaPorEsquema === 'object' && !Array.isArray(bruto.etiquetaPorEsquema)) ? bruto.etiquetaPorEsquema : {};
         this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
         this._bootstrapped = true;
+        // Ver window._PC_LEGISLACAO_ESPECIAL_MIGRACAO — protege esquemas
+        // pessoais salvos nos 2 nós de Processual Civil desmembrados em 2026-09.
+        if (window._PC_LEGISLACAO_ESPECIAL_MIGRACAO.migrarDict(this.esquemas, function(it) { return (it && it.titulo) || ''; })) {
+            this.salvar();
+        }
     },
 
     _garantirCarregado: function() {
@@ -28542,6 +28764,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             (this.fichas[chave] || []).forEach(jurNormalizarSistematicaFicha);
         }, this);
         this._bootstrapped = true;
+        // Ver window._PC_LEGISLACAO_ESPECIAL_MIGRACAO — protege fichas
+        // pessoais salvas nos 2 nós de Processual Civil desmembrados em
+        // 2026-09; sincroniza divisaoL2 (campo redundante à chave) junto.
+        if (window._PC_LEGISLACAO_ESPECIAL_MIGRACAO.migrarDict(this.fichas, function(it) { return (it && it.titulo) || ''; }, function(item, novaChave) {
+            if (item) item.divisaoL2 = novaChave.split(' > ').slice(1).join(' > ');
+        })) {
+            this.salvar();
+        }
     },
 
     _garantirCarregado: function() {
