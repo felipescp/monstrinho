@@ -9472,6 +9472,39 @@ window.ClassificacaoCards = {
     calcularProximo: function(nivel, estadoAtual) {
         if (estadoAtual && estadoAtual.ultimaClassificacao === nivel) return null;
         return { ultimaClassificacao: nivel, atualizadoEm: Date.now() };
+    },
+
+    // Botão "Aplicar Classificação de Prioridade do Sistema" (Jurisprudência/
+    // Esquemas) — aplica o campo editorial classificacaoOficial ('crítico'/
+    // 'importante'/'regular', gravado direto em dados/jurisprudencia|esquemas/
+    // *.json) como sugestão, SEM JAMAIS sobrescrever uma classificação que o
+    // usuário já deu de próprio punho: dado legado sem "origem" conta como
+    // manual (protegido) — só entradas com origem:'sistema' (escritas por
+    // este mesmo botão numa chamada anterior) podem ser atualizadas de novo
+    // se o valor oficial tiver mudado. Uma vez que o usuário classifique (ou
+    // reclassifique) manualmente, _aplicarClassificacaoJur/Esq marca
+    // origem:'manual' e o campo fica definitivamente fora do alcance deste
+    // botão, mesmo que ele seja clicado de novo depois — só volta a ser
+    // elegível se o usuário desmarcar a própria classificação (apaga a
+    // entrada). dict: {chaveL2: [itens]}; revisao: objeto revisaoX, mutado
+    // in-place; mapaNivel: valor de classificacaoOficial -> chave de nível
+    // própria do módulo (Jurisprudência usa 'dificil'/'medio'/'facil',
+    // Esquemas usa '3'/'2'/'1'). Retorna quantos itens foram preenchidos/
+    // atualizados nesta chamada.
+    aplicarSugestaoSistema: function(dict, revisao, mapaNivel) {
+        let aplicados = 0;
+        Object.keys(dict || {}).forEach(function(chave) {
+            (dict[chave] || []).forEach(function(item) {
+                let nivel = mapaNivel[item.classificacaoOficial];
+                if (!nivel) return;
+                let atual = revisao[item.id];
+                if (atual && atual.origem !== 'sistema') return;
+                if (atual && atual.ultimaClassificacao === nivel) return;
+                revisao[item.id] = { ultimaClassificacao: nivel, atualizadoEm: Date.now(), origem: 'sistema' };
+                aplicados++;
+            });
+        });
+        return aplicados;
     }
 };
 
@@ -24225,6 +24258,7 @@ window.triggerFileUpload = function(callback) {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
+                <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
                 <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
@@ -25809,8 +25843,24 @@ window.ESQUEMAS_RUNTIME = {
 
     _aplicarClassificacaoEsq: function(id, nivel) {
         let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoEsquemas[id]);
-        if (novo === null) delete this.revisaoEsquemas[id]; else this.revisaoEsquemas[id] = novo;
+        if (novo === null) { delete this.revisaoEsquemas[id]; } else { novo.origem = 'manual'; this.revisaoEsquemas[id] = novo; }
         this.salvar();
+    },
+
+    // Mapa classificacaoOficial ('crítico'/'importante'/'regular', campo
+    // editorial dos JSONs oficiais) -> chave de nível própria desta seção
+    // (Esquemas usa '3'/'2'/'1', diferente de Jurisprudência).
+    MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': '3', 'importante': '2', 'regular': '1' },
+
+    // Botão "Aplicar Classificação de Prioridade do Sistema" — ver
+    // window.ClassificacaoCards.aplicarSugestaoSistema para a regra completa
+    // (nunca sobrescreve classificação pessoal já dada pelo usuário).
+    aplicarClassificacaoSistema: function() {
+        let n = window.ClassificacaoCards.aplicarSugestaoSistema(this.esquemas, this.revisaoEsquemas, this.MAPA_CLASSIFICACAO_OFICIAL);
+        this.salvar();
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+        alert(n > 0 ? n + ' esquema(s) receberam a classificação sugerida pelo sistema.' : 'Nenhum esquema novo para classificar: todos os esquemas com classificação oficial já têm uma classificação sua.');
     },
 
     // Clique direto numa estrela do CARD na grade normal: sempre define
@@ -27971,6 +28021,7 @@ window.carregarEsquemasOficiais = async function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:10px;">
+                <button onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
                 <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
                 <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
@@ -30934,8 +30985,23 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     _aplicarClassificacaoJur: function(id, nivel) {
         let novo = window.ClassificacaoCards.calcularProximo(nivel, this.revisaoJurisprudencia[id]);
-        if (novo === null) delete this.revisaoJurisprudencia[id]; else this.revisaoJurisprudencia[id] = novo;
+        if (novo === null) { delete this.revisaoJurisprudencia[id]; } else { novo.origem = 'manual'; this.revisaoJurisprudencia[id] = novo; }
         this.salvar();
+    },
+
+    // Mapa classificacaoOficial ('crítico'/'importante'/'regular', campo
+    // editorial dos JSONs oficiais) -> chave de nível própria desta seção.
+    MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': 'dificil', 'importante': 'medio', 'regular': 'facil' },
+
+    // Botão "Aplicar Classificação de Prioridade do Sistema" — ver
+    // window.ClassificacaoCards.aplicarSugestaoSistema para a regra completa
+    // (nunca sobrescreve classificação pessoal já dada pelo usuário).
+    aplicarClassificacaoSistema: function() {
+        let n = window.ClassificacaoCards.aplicarSugestaoSistema(this.fichas, this.revisaoJurisprudencia, this.MAPA_CLASSIFICACAO_OFICIAL);
+        this.salvar();
+        this._renderGradeCards();
+        this._atualizarContagensAbas();
+        alert(n > 0 ? n + ' ficha(s) receberam a classificação sugerida pelo sistema.' : 'Nenhuma ficha nova para classificar: todas as fichas com classificação oficial já têm uma classificação sua.');
     },
 
     // Clique direto num círculo (🔴🟡🟢) do CARD na grade normal: sempre
