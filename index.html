@@ -24110,6 +24110,10 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-leitor-menu summary { list-style:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
     #esquemas-modal .esq-leitor-menu summary::-webkit-details-marker { display:none; }
     #esquemas-modal .esq-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    /* Mesmo botão/tamanho/borda do "Leitor" (esq-leitor-menu summary) —
+       ver #jurisprudencia-modal .jur-aplicar-sistema-btn (mesmo pedido). */
+    #esquemas-modal .esq-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #esquemas-modal .esq-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .esq-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:130px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
     #esquemas-modal .esq-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
     #esquemas-modal .esq-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
@@ -24280,7 +24284,7 @@ window.triggerFileUpload = function(callback) {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: esquemas Regular">📤</button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas Regular">🎨</button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
-                <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
+                <button class="esq-aplicar-sistema-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
             </div>
             <div class="esq-tabs-baralho">
                 <details class="esq-leitor-menu leitor-dropdown">
@@ -27895,6 +27899,12 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-leitor-menu summary { list-style:none; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
     #jurisprudencia-modal .jur-leitor-menu summary::-webkit-details-marker { display:none; }
     #jurisprudencia-modal .jur-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    /* Mesmo botão/tamanho/borda do "Leitor" (jur-leitor-menu summary) —
+       pedido explícito do usuário, pra "Aplicar Classificação de
+       Prioridade do Sistema" combinar visualmente com o resto da linha
+       de abas, em vez do botão maior usado no cabeçalho do modal. */
+    #jurisprudencia-modal .jur-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .jur-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:150px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
     #jurisprudencia-modal .jur-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
     #jurisprudencia-modal .jur-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
@@ -28045,7 +28055,7 @@ window.carregarEsquemasOficiais = async function() {
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar MD: fichas Regular">📤</button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
+                <button class="jur-aplicar-sistema-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
             </div>
             <div class="jur-tabs-baralho">
                 <details class="jur-leitor-menu leitor-dropdown" name="jur-leitor-grupo">
