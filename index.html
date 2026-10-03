@@ -30338,6 +30338,34 @@ window.JURISPRUDENCIA_RUNTIME = {
         return parsearImportacaoJurisprudencia(texto);
     },
 
+    // Normaliza um "processo" (ex.: "REsp 1.234.567-SP") pra comparação
+    // tolerante a diferença de pontuação/maiúsculas (ex.: "REsp 1234567-SP"
+    // ou "resp 1.234.567 sp") — minúsculo, sem acento, só alfanumérico.
+    _normalizarProcesso: function(s) {
+        return String(s || '').toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '').replace(/[^a-z0-9]+/g, '');
+    },
+
+    // Índice processo-normalizado -> [{titulo, materiaL1, divisaoL2}], de
+    // TODAS as fichas já existentes no acervo (todas as matérias, não só a
+    // selecionada — o mesmo julgado pode ter sido lançado sob outra
+    // disciplina). Usado por prevvisualizarImportacao pra avisar duplicata
+    // ANTES de confirmar a importação (pedido explícito do usuário: o
+    // parser da Importação em Massa não detectava um julgado que já existia
+    // no acervo, arriscando ficha repetida).
+    _indiceProcessosExistentes: function() {
+        let self = this;
+        let indice = {};
+        Object.values(this.fichas).forEach(function(lista) {
+            (lista || []).forEach(function(f) {
+                if (!f.processo) return;
+                let chave = self._normalizarProcesso(f.processo);
+                if (!indice[chave]) indice[chave] = [];
+                indice[chave].push({ titulo: f.titulo, processo: f.processo, materiaL1: f.materiaL1, divisaoL2: f.divisaoL2 });
+            });
+        });
+        return indice;
+    },
+
     prevvisualizarImportacao: function() {
         let texto = document.getElementById('jur-import-textarea').value || '';
         let saida = this._parsearImportacao(texto);
@@ -30376,6 +30404,31 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
             : '';
 
+        // Detecta, NA PRÉVIA (antes de confirmar), fichas cujo "processo" já
+        // existe em QUALQUER matéria do acervo — pedido explícito do
+        // usuário: o parser da Importação em Massa não alertava sobre um
+        // julgado do lote que já constava no acervo, arriscando ficha
+        // duplicada. NÃO bloqueia a importação (o usuário pode querer
+        // importar mesmo assim, ex.: complementar/corrigir) — só avisa,
+        // apontando de qual julgado se trata e onde ele já está.
+        let indiceExistentes = this._indiceProcessosExistentes();
+        let duplicatas = [];
+        Object.keys(saida.porDivisao).forEach(function(div) {
+            saida.porDivisao[div].fichas.forEach(function(f) {
+                if (!f.processo) return;
+                let existentes = indiceExistentes[self._normalizarProcesso(f.processo)];
+                if (existentes && existentes.length > 0) duplicatas.push({ processo: f.processo, tituloNovo: f.titulo, existentes: existentes });
+            });
+        });
+        let avisoDuplicatas = duplicatas.length > 0
+            ? '<div style="color:#92400e; margin-top:6px; border:1px solid var(--warning); border-radius:6px; padding:6px 8px; background:#fffbeb;"><strong>⚠️ ' + duplicatas.length + ' ficha(s) do lote já parecem existir no acervo</strong> (mesmo número de processo):<br>' +
+                duplicatas.map(function(d) {
+                    let onde = d.existentes.map(function(e) { return self._escapar(e.materiaL1 + ' > ' + e.divisaoL2 + ': "' + e.titulo + '"'); }).join('; ');
+                    return '• <strong>' + self._escapar(d.processo) + '</strong> ("' + self._escapar(d.tituloNovo) + '") — já consta em ' + onde;
+                }).join('<br>') +
+                '</div>'
+            : '';
+
         if (saida.totalFichas === 0) {
             previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão "Tribunal: X | Órgão: Y".' +
                 (saida.totalMalformadas > 0 ? ' (' + saida.totalMalformadas + ' fragmento(s) parecido(s) com ficha, mas sem a linha "Tribunal:".)' : '') +
@@ -30393,7 +30446,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
             (saida.totalMalformadas > 0 ? ', <span style="color:var(--danger);">' + saida.totalMalformadas + ' ignorada(s) por formato inválido</span>' : '') +
-            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas + avisoInvalidas;
+            (saida.totalSemL2 > 0 ? ', <span style="color:var(--danger);">' + saida.totalSemL2 + ' ignorada(s) por falta de "### L2:" identificável</span>' : '') + ':</div>' + linhas + avisoInvalidas + avisoDuplicatas;
         previewEl.style.display = 'block';
         btnConfirmar.disabled = false;
     },
