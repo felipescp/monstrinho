@@ -28773,6 +28773,16 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Baseado em item.sistematica, campo que já existe em cada ficha (nada
     // novo a rastrear). null = navegação normal por Matéria/Divisão.
     _modoSistematica: null,
+    // Atalho "📰 Informativos" — reaproveita o mesmo modo dos atalhos por
+    // sistemática (_modoSistematica recebe o sentinela abaixo), cruzando
+    // TODAS as disciplinas pelo campo item.informativo ("847" ou "EE 24").
+    // _infSelecionado = null (todos os informativos) ou a chave
+    // "TRIBUNAL|número" escolhida na coluna do meio.
+    _MODO_INFORMATIVO: '__informativo__',
+    _infSelecionado: null,
+    // Filtro "Informativo" da navegação normal (2ª linha da toolbar) —
+    // mesma chave "TRIBUNAL|número"; vazio = todos.
+    _filtroInformativo: '',
     // Pedido explícito do usuário: seleção CUMULADA — cada eixo é um toggle
     // independente (não mais radio single-select), combinados numa chave
     // composta. Ordem de PRIORIDADE (externo -> interno) é sempre fixa
@@ -29003,6 +29013,60 @@ window.JURISPRUDENCIA_RUNTIME = {
         return processo + ' (' + (item.sistematica || 'Tema') + ' — Tema ' + item.tema + ')';
     },
 
+    // ── INFORMATIVO (campo item.informativo: "847" ou "EE 24" para Edição
+    // Extraordinária; vazio em súmulas e cards sem fonte localizada) ──
+    _valorInformativo: function(item) {
+        return (item && item.informativo) ? String(item.informativo).trim() : '';
+    },
+    _rotuloInformativo: function(item) {
+        let v = this._valorInformativo(item);
+        if (!v) return '';
+        let m = /^EE\s*(\d+)$/i.exec(v);
+        return m ? 'Info ' + m[1] + ' (Edição Extraordinária)' : 'Info ' + v;
+    },
+    _chaveInformativo: function(item) {
+        let v = this._valorInformativo(item);
+        return v ? (item.tribunal || '?') + '|' + v : '';
+    },
+    _rotuloChaveInformativo: function(chave) {
+        let partes = (chave || '').split('|');
+        let m = /^EE\s*(\d+)$/i.exec(partes[1] || '');
+        return partes[0] + ' · ' + (m ? 'Edição Extraordinária ' + m[1] : 'Informativo ' + (partes[1] || ''));
+    },
+    // Ordem: STJ, STF, TSE (demais depois); dentro do tribunal, informativos
+    // comuns do mais recente ao mais antigo e, por último, as Edições
+    // Extraordinárias (também da mais recente à mais antiga).
+    _compararChavesInformativo: function(a, b) {
+        let ORDEM = { STJ: 0, STF: 1, TSE: 2 };
+        let pa = a.split('|'), pb = b.split('|');
+        let ta = ORDEM.hasOwnProperty(pa[0]) ? ORDEM[pa[0]] : 9, tb = ORDEM.hasOwnProperty(pb[0]) ? ORDEM[pb[0]] : 9;
+        if (ta !== tb) return ta - tb;
+        let ea = /^EE/i.test(pa[1]) ? 1 : 0, eb = /^EE/i.test(pb[1]) ? 1 : 0;
+        if (ea !== eb) return ea - eb;
+        return (parseInt((pb[1] || '').replace(/\D/g, ''), 10) || 0) - (parseInt((pa[1] || '').replace(/\D/g, ''), 10) || 0);
+    },
+    // Todas as fichas com informativo, cruzando disciplinas (exclui ocultas,
+    // mesma regra de _todasFichasPorSistematica).
+    _todasFichasComInformativo: function() {
+        let self = this;
+        let resultado = [];
+        Object.keys(this.fichas).forEach(function(chave) {
+            (self.fichas[chave] || []).forEach(function(f) { if (self._valorInformativo(f) && !self.ocultos[f.id]) resultado.push(f); });
+        });
+        return resultado;
+    },
+    toggleModoInformativo: function() {
+        this._infSelecionado = null;
+        this.toggleModoSistematica(this._MODO_INFORMATIVO);
+    },
+    selecionarInformativo: function(chave) {
+        this._infSelecionado = chave || null;
+        this._estadoGruposSistematica = {};
+        this._renderColunaDivisoesSistematica();
+        this._renderGradeCards();
+    },
+    filtrarInformativo: function(valor) { this._filtroInformativo = valor; this._renderGradeCards(); },
+
     // 'vigente' é o default pra fichas novas (o parser de importação NUNCA
     // grava este campo — nasce ausente) e pras já existentes antes deste
     // recurso (também ausente). Só passa a existir de fato no objeto quando
@@ -29063,6 +29127,10 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let n = self._todasFichasPorSistematica(p.valor).length;
                 return '<button class="jur-sistematica-pill' + (self._modoSistematica === p.valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSistematica(\'' + p.valor.replace(/'/g, "\\'") + '\')">' + p.rotulo + (n > 0 ? ' <span class="jur-sistematica-pill-count">(' + n + ')</span>' : '') + '</button>';
             }).join('') +
+            (function() {
+                let nInf = self._todasFichasComInformativo().length;
+                return '<button class="jur-sistematica-pill' + (self._modoSistematica === self._MODO_INFORMATIVO ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoInformativo()">📰 Informativos' + (nInf > 0 ? ' <span class="jur-sistematica-pill-count">(' + nInf + ')</span>' : '') + '</button>';
+            })() +
         '</div>';
 
         colMaterias.innerHTML = htmlPills + TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
@@ -29135,6 +29203,34 @@ window.JURISPRUDENCIA_RUNTIME = {
         let colDivisoes = document.getElementById('jur-col-divisoes');
         if (!colDivisoes) return;
         let self = this;
+        // Atalho "📰 Informativos": a coluna do meio vira a lista de
+        // informativos (por tribunal, do mais recente ao mais antigo, com a
+        // contagem de cada um); clicar num deles mostra só os seus cards.
+        if (this._modoSistematica === this._MODO_INFORMATIVO) {
+            let contagem = {};
+            this._todasFichasComInformativo().forEach(function(f) {
+                let k = self._chaveInformativo(f);
+                contagem[k] = (contagem[k] || 0) + 1;
+            });
+            let chaves = Object.keys(contagem).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
+            let total = chaves.reduce(function(acc, k) { return acc + contagem[k]; }, 0);
+            let html = '<div class="fc-divisao-item' + (!self._infSelecionado ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarInformativo(null)">' +
+                '<span>Todos os informativos</span><span class="fc-divisao-count">' + total + '</span></div>';
+            let tribunalAtual = null;
+            chaves.forEach(function(k) {
+                let partes = k.split('|');
+                if (partes[0] !== tribunalAtual) {
+                    tribunalAtual = partes[0];
+                    html += '<div class="jur-sistematica-titulo-lateral" style="margin:10px 0 4px;">' + self._escapar(tribunalAtual) + '</div>';
+                }
+                let m = /^EE\s*(\d+)$/i.exec(partes[1]);
+                let rotulo = m ? 'Ed. Extraordinária ' + m[1] : 'Informativo ' + partes[1];
+                html += '<div class="fc-divisao-item' + (self._infSelecionado === k ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarInformativo(\'' + k.replace(/'/g, "\\'") + '\')">' +
+                    '<span>' + self._escapar(rotulo) + '</span><span class="fc-divisao-count">' + contagem[k] + '</span></div>';
+            });
+            colDivisoes.innerHTML = chaves.length ? html : '<div class="fc-vazio-col">Nenhum card com informativo ainda.</div>';
+            return;
+        }
         let n = this._fichasParaExibir().length;
         let rotulo = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
         colDivisoes.innerHTML = '<div class="fc-vazio-col">' + this._escapar(rotulo ? rotulo.rotulo : this._modoSistematica) +
@@ -29202,6 +29298,17 @@ window.JURISPRUDENCIA_RUNTIME = {
         // Divisão selecionadas (que nem existem nesse modo). Retornando
         // aqui, _listaFiltrada() (ocultos/oficiais/busca/etc.) e a ordenação
         // por data continuam funcionando iguais, sem duplicar lógica.
+        if (this._modoSistematica === this._MODO_INFORMATIVO) {
+            let alvoInf = this._infSelecionado;
+            let resultadoInf = [];
+            Object.keys(this.fichas).sort().forEach(function(chave) {
+                (self.fichas[chave] || []).forEach(function(m) {
+                    let k = self._chaveInformativo(m);
+                    if (k && (!alvoInf || k === alvoInf)) resultadoInf.push({ item: m, chave: chave });
+                });
+            });
+            return resultadoInf;
+        }
         if (this._modoSistematica) {
             let alvo = this._modoSistematica;
             let resultado = [];
@@ -29276,6 +29383,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (this._filtroAno) {
             lista = lista.filter(function(par) { return (par.item.dataJulgado || '').slice(0, 4) === self._filtroAno; });
         }
+        if (this._filtroInformativo && !this._modoSistematica) {
+            lista = lista.filter(function(par) { return self._chaveInformativo(par.item) === self._filtroInformativo; });
+        }
         if (this._filtroBusca && this._filtroBusca.trim()) {
             // Título + conteúdo (tese/resumo) + METADADOS da linha exibida no
             // card/popup "Ver" (tribunal, órgão, processo/tema, relator,
@@ -29288,7 +29398,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let alvoTexto = [
                     self._tituloComTema(item), item.tese, item.resumo, item.comentario,
                     item.tribunal, item.orgao, self._processoComTema(item), item.relator,
-                    item.sistematica, self._formatarDataBR(item.dataJulgado), self._formatarDataBR(item.dataConsulta)
+                    item.sistematica, self._formatarDataBR(item.dataJulgado), self._formatarDataBR(item.dataConsulta),
+                    self._rotuloInformativo(item)
                 ].filter(Boolean).join(' ');
                 return self._normalizarBusca(alvoTexto).indexOf(alvo) !== -1;
             });
@@ -29342,7 +29453,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         let tribunais = Array.from(new Set(base.map(function(p) { return p.item.tribunal; }).filter(Boolean))).sort();
         let sistematicas = Array.from(new Set(base.map(function(p) { return p.item.sistematica; }).filter(Boolean))).sort();
         let anos = Array.from(new Set(base.map(function(p) { return (p.item.dataJulgado || '').slice(0, 4); }).filter(Boolean))).sort().reverse();
-        return { tribunais: tribunais, sistematicas: sistematicas, anos: anos };
+        let self = this;
+        let informativos = Array.from(new Set(base.map(function(p) { return self._chaveInformativo(p.item); }).filter(Boolean))).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
+        return { tribunais: tribunais, sistematicas: sistematicas, anos: anos, informativos: informativos };
     },
 
     filtrarTribunal: function(valor) { this._filtroTribunal = valor; this._renderGradeCards(); },
@@ -29856,6 +29969,11 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<label class="jur-filtro-mini">Tribunal <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarTribunal(this.value)">' + opcoes(distintos.tribunais, this._filtroTribunal) + '</select></label>' +
                 '<label class="jur-filtro-mini">Sistemática <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarSistematica(this.value)">' + opcoes(distintos.sistematicas, this._filtroSistematica) + '</select></label>' +
                 '<label class="jur-filtro-mini">Ano <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarAno(this.value)">' + opcoes(distintos.anos, this._filtroAno) + '</select></label>' +
+                '<label class="jur-filtro-mini">Informativo <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarInformativo(this.value)">' +
+                    '<option value="">Todos</option>' + (distintos.informativos || []).map(function(k) {
+                        return '<option value="' + self._escapar(k) + '"' + (k === self._filtroInformativo ? ' selected' : '') + '>' + self._escapar(self._rotuloChaveInformativo(k)) + '</option>';
+                    }).join('') +
+                '</select></label>' +
             '</div>';
 
         return '<div class="jur-toolbar"><div class="jur-toolbar-linha1">' + htmlAcoes + '</div>' + htmlFiltrosSecundarios + '</div>';
@@ -29900,7 +30018,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             : '';
 
         let teseTrunc = (item.tese || '').length > 130 ? item.tese.slice(0, 130) + '…' : (item.tese || '');
-        let metaPartes = [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado)].filter(function(x) { return !!x; });
+        let metaPartes = [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado), self._rotuloInformativo(item)].filter(function(x) { return !!x; });
         let metaLinha = metaPartes.join(' · ');
 
         // Em modo seleção, clicar em QUALQUER ponto do card marca/desmarca
@@ -30044,15 +30162,21 @@ window.JURISPRUDENCIA_RUNTIME = {
         let ORDEM_EIXOS = ['ano', 'disciplina', 'importancia', 'tribunal'];
         let ROTULOS_IMPORTANCIA = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
         let RANK_IMPORTANCIA = { dificil: 0, medio: 1, facil: 2, _sem: 3 };
+        let modoInf = self._modoSistematica === self._MODO_INFORMATIVO;
         function valorDoEixo(eixo, par) {
+            if (eixo === 'informativo') return self._chaveInformativo(par.item);
             if (eixo === 'ano') return (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
             if (eixo === 'disciplina') return par.chave.split(' > ')[0];
             if (eixo === 'tribunal') return par.item.tribunal || 'Sem tribunal';
             let r = self.revisaoJurisprudencia[par.item.id];
             return (r && RANK_IMPORTANCIA.hasOwnProperty(r.ultimaClassificacao)) ? r.ultimaClassificacao : '_sem';
         }
-        function rotuloDoEixo(eixo, valor) { return eixo === 'importancia' ? ROTULOS_IMPORTANCIA[valor] : valor; }
+        function rotuloDoEixo(eixo, valor) {
+            if (eixo === 'informativo') return self._rotuloChaveInformativo(valor);
+            return eixo === 'importancia' ? ROTULOS_IMPORTANCIA[valor] : valor;
+        }
         function compararValoresEixo(eixo, va, vb) {
+            if (eixo === 'informativo') return self._compararChavesInformativo(va, vb);
             if (eixo === 'ano') return vb.localeCompare(va); // mais recente primeiro
             if (eixo === 'importancia') return RANK_IMPORTANCIA[va] - RANK_IMPORTANCIA[vb];
             return va.localeCompare(vb, 'pt-BR'); // disciplina/tribunal: alfabética
@@ -30062,6 +30186,11 @@ window.JURISPRUDENCIA_RUNTIME = {
             return self._agruparSistematicaPor.indexOf(e) !== -1 && (e !== 'tribunal' || self._modoSistematica === 'Súmula');
         });
         if (eixosAtivos.length === 0) eixosAtivos = ['ano'];
+        // No atalho "📰 Informativos" o eixo externo é sempre o próprio
+        // informativo; Disciplina e Importância continuam opcionais por dentro.
+        if (modoInf) {
+            eixosAtivos = ['informativo'].concat(eixosAtivos.filter(function(e) { return e === 'disciplina' || e === 'importancia'; }));
+        }
 
         let mapaGrupos = {};
         lista.forEach(function(par) {
@@ -30113,7 +30242,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             let chaveGrupo = self._modoSistematica + '|' + eixosAtivos.join('+') + '|' + grupo.valores.join('|');
             let aberto = self._estadoGruposSistematica.hasOwnProperty(chaveGrupo)
                 ? self._estadoGruposSistematica[chaveGrupo]
-                : self._todosGruposSistematicaAbertos;
+                : (self._todosGruposSistematicaAbertos || (modoInf && !!self._infSelecionado));
             return '<details class="jur-grupo-acordeon" data-chave-grupo="' + self._escapar(chaveGrupo) + '"' + (aberto ? ' open' : '') + ' ontoggle="window.JURISPRUDENCIA_RUNTIME._registrarToggleGrupoSistematica(this)">' +
                 '<summary class="jur-grupo-cabecalho"><span class="jur-grupo-titulo-linha"><span class="jur-grupo-titulo-txt">' + self._escapar(grupo.titulo) + ' <span class="jur-grupo-contagem">(' + grupo.itens.length + ')</span></span>' + htmlAcoesGrupo + '</span></summary>' +
                 '<div class="jur-cards-grid jur-grupo-corpo">' + htmlCards + '</div>' +
@@ -30122,7 +30251,9 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let corpoHtml = htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">Nenhuma ficha com esse filtro.</div>';
 
-        let rotuloAtalho = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
+        let rotuloAtalho = modoInf
+            ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
+            : this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
         // 📄/🎨 do topo abrem o seletor avançado (escolher anos e
         // disciplinas antes de exportar) — diferente dos mesmos ícones em
         // cada grupo, que exportam direto sem perguntar nada.
@@ -30175,7 +30306,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '</span>' +
                 '</div>' +
                 '<div class="jur-agrupar-pills">Agrupar por: ' +
-                    '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>' +
+                    (modoInf ? '<button class="fc-pill ativa" disabled title="No atalho Informativos o agrupamento externo é sempre o informativo">Informativo</button>' : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>') +
                     '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('disciplina') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
                     '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('importancia') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
                     // Pedido explícito do usuário: eixo "Tribunal" só aparece
@@ -30239,7 +30370,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!item) return;
         this._verAtual = { chave: chave, id: id };
         document.getElementById('jur-ver-titulo').textContent = this._tituloComTema(item) || 'Ficha';
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
         if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
         document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
         this._renderBlocoSuperado(item);
@@ -30741,6 +30872,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (f.processo) meta.push('- **Processo:** ' + self._processoComTema(f));
                     if (f.relator) meta.push('- **Relator:** ' + f.relator);
                     if (f.dataJulgado) meta.push('- **Data:** ' + self._formatarDataBR(f.dataJulgado));
+                    if (self._valorInformativo(f)) meta.push('- **Informativo:** ' + self._rotuloInformativo(f));
                     if (f.sistematica) meta.push('- **Sistemática:** ' + f.sistematica);
                     if (meta.length > 0) linhas.push(meta.join('\n'), '');
                     if (f.tese) linhas.push('**Tese Fixada / Decisão:**', '', self._blockquote(f.tese), '');
@@ -30794,6 +30926,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     if (f.processo) meta.push('<span><b>Processo:</b> ' + self._escapar(self._processoComTema(f)) + '</span>');
                     if (f.relator) meta.push('<span><b>Relator:</b> ' + self._escapar(f.relator) + '</span>');
                     if (f.dataJulgado) meta.push('<span><b>Data:</b> ' + self._escapar(self._formatarDataBR(f.dataJulgado)) + '</span>');
+                    if (self._valorInformativo(f)) meta.push('<span><b>Informativo:</b> ' + self._escapar(self._rotuloInformativo(f)) + '</span>');
                     if (f.sistematica) meta.push('<span><b>Sistemática:</b> ' + self._escapar(f.sistematica) + '</span>');
                     if (meta.length > 0) corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
                     if (f.tese) corpo += '<div class="doc-callout-label">Tese Fixada / Decisão</div><div class="doc-callout">' + self._escapar(f.tese) + '</div>';
@@ -30906,6 +31039,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // de exportar, já que ali cruza tudo. ──
 
     _rotuloSistematicaAtual: function() {
+        if (this._modoSistematica === this._MODO_INFORMATIVO) return 'Informativos';
         let rotuloObj = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === this._modoSistematica; }, this);
         return rotuloObj ? rotuloObj.rotulo.replace('📌 ', '') : (this._modoSistematica || 'Precedentes');
     },
@@ -31131,7 +31265,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // essencial pra revisão; texto completo com conexões continua só no
     // popup "Ver", acessível pela grade).
     _htmlCartaoFichaEstudo: function(item) {
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
+        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
             '<div class="jur-estudo-titulo">' + this._escapar(this._tituloComTema(item)) + '</div>' +
             '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
