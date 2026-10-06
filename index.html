@@ -27989,6 +27989,10 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-aba-revisao-sidebar.fc-aba-revisao-sidebar-dir { border-right:none; border-left:1px solid var(--border-color); }
     #jurisprudencia-modal .fc-visualizado-grupo { display:flex; align-items:center; gap:4px; margin-bottom:6px; }
     #jurisprudencia-modal .fc-visualizado-grupo .fc-pill { flex:1; min-width:0; }
+    #jurisprudencia-modal .jur-exibir-sistematica { margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); }
+    #jurisprudencia-modal .jur-exibir-titulo { font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+    #jurisprudencia-modal .jur-exibir-opcao { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 2px; cursor:pointer; }
+    #jurisprudencia-modal .jur-exibir-opcao input { margin:0; cursor:pointer; flex-shrink:0; }
     #jurisprudencia-modal .fc-visualizado-lote-btn { flex-shrink:0; border:1px solid var(--border-color); background:var(--bg-white); border-radius:6px; font-size:13px; padding:4px 6px; cursor:pointer; color:var(--text-muted); line-height:1; }
     #jurisprudencia-modal .fc-visualizado-lote-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .fc-pill { padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
@@ -31883,7 +31887,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     renderAbaRevisao: function(aba) {
         let self = this;
         let s = this._estadosAba[aba];
-        let pool = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let pool = this._baseAbaComSistematica(aba);
         if (s.visualizadoFiltro === true) pool = pool.filter(function(f) { return !!self.visualizados[f.id]; });
         else if (s.visualizadoFiltro === false) pool = pool.filter(function(f) { return !self.visualizados[f.id]; });
         s.pool = pool;
@@ -31953,7 +31957,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._estadosAba[aba];
         let pillsEl = document.getElementById('jur-pills-visualizado-' + aba);
         if (!pillsEl) return;
-        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let base = this._baseAbaComSistematica(aba);
         let nVisualizados = base.filter(function(f) { return !!self.visualizados[f.id]; }).length;
         let nNaoVisualizados = base.length - nVisualizados;
         pillsEl.innerHTML =
@@ -31964,7 +31968,69 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="fc-visualizado-grupo">' +
                 '<button class="fc-pill' + (s.visualizadoFiltro === false ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarVisualizadoAba(\'' + aba + '\', false)">◻ Não Visualizados (' + nNaoVisualizados + ')</button>' +
                 (nNaoVisualizados > 0 ? '<button class="fc-visualizado-lote-btn" title="Aplicar Visualizado a todos os Não Visualizados" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarVisualizadoLoteAba(\'' + aba + '\', true)">👁</button>' : '') +
-            '</div>';
+            '</div>' +
+            this._htmlExibirSistematicaAba(aba);
+    },
+
+    // "Exibir:" (pedido explícito do usuário) — abaixo de Visualizados/Não
+    // Visualizados, um checkbox por tipo de Sistemática presente na aba
+    // (respeitando a matéria selecionada à esquerda). Tudo marcado por
+    // padrão; desmarcar esconde aquele tipo do Leitor, das contagens de
+    // Visualizados e dos botões de lote. Guarda os OCULTOS (não os
+    // visíveis), pra que um tipo que apareça depois já entre marcado.
+    // Estado por aba (Crítico/Importante/Regular), não persiste.
+    _ORDEM_SISTEMATICAS_ABA: ['Súmula Vinculante', 'Súmula', 'Recurso Repetitivo', 'Repercussão Geral', 'Controle Concentrado', 'IAC'],
+    _SEM_SISTEMATICA_ABA: 'Sem sistemática',
+
+    _sistematicaDaFicha: function(f) {
+        return (f.sistematica || '').trim() || this._SEM_SISTEMATICA_ABA;
+    },
+
+    _baseAbaComSistematica: function(aba) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let ocultas = s.sistematicasOcultas || {};
+        if (Object.keys(ocultas).length === 0) return base;
+        return base.filter(function(f) { return !ocultas[self._sistematicaDaFicha(f)]; });
+    },
+
+    _htmlExibirSistematicaAba: function(aba) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        let ocultas = s.sistematicasOcultas || {};
+        let contagens = {};
+        this.listarFichasPorClassificacao(s.materiaFiltro, aba).forEach(function(f) {
+            let t = self._sistematicaDaFicha(f);
+            contagens[t] = (contagens[t] || 0) + 1;
+        });
+        let ordem = this._ORDEM_SISTEMATICAS_ABA;
+        let tipos = Object.keys(contagens).sort(function(a, b) {
+            if (a === self._SEM_SISTEMATICA_ABA) return 1;
+            if (b === self._SEM_SISTEMATICA_ABA) return -1;
+            let ia = ordem.indexOf(a), ib = ordem.indexOf(b);
+            if (ia === -1) ia = ordem.length;
+            if (ib === -1) ib = ordem.length;
+            return ia !== ib ? ia - ib : a.localeCompare(b, 'pt-BR');
+        });
+        if (tipos.length === 0) return '';
+        return '<div class="jur-exibir-sistematica">' +
+            '<div class="jur-exibir-titulo">Exibir:</div>' +
+            tipos.map(function(t) {
+                return '<label class="jur-exibir-opcao"><input type="checkbox"' + (ocultas[t] ? '' : ' checked') +
+                    ' data-sistematica="' + self._escapar(t) + '"' +
+                    ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleSistematicaAba(\'' + aba + '\', this.getAttribute(\'data-sistematica\'))">' +
+                    '<span>' + self._escapar(t) + ' (' + contagens[t] + ')</span></label>';
+            }).join('') +
+        '</div>';
+    },
+
+    toggleSistematicaAba: function(aba, tipo) {
+        let s = this._estadosAba[aba];
+        if (!s.sistematicasOcultas) s.sistematicasOcultas = {};
+        if (s.sistematicasOcultas[tipo]) delete s.sistematicasOcultas[tipo];
+        else s.sistematicasOcultas[tipo] = true;
+        this.renderAbaRevisao(aba);
     },
 
     // Clicar no pill já ativo desliga o filtro (toggle) — não existe um
@@ -31982,8 +32048,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // item. Só mexe em quem realmente muda de estado.
     aplicarVisualizadoLoteAba: function(aba, novoValor) {
         let self = this;
-        let s = this._estadosAba[aba];
-        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let base = this._baseAbaComSistematica(aba);
         base.forEach(function(f) {
             let jaVisualizado = !!self.visualizados[f.id];
             if (novoValor && !jaVisualizado) self.visualizados[f.id] = true;
