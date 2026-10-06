@@ -27869,6 +27869,9 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-toggle-tribunal-inf-btn { flex:1; text-align:center; padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-toggle-tribunal-inf-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-toggle-tribunal-inf-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    /* ✓ ao lado do informativo quando TODOS os cards dele já foram
+       marcados "visualizado" — ver toggleVisualizado/_renderColunaDivisoesSistematica. */
+    #jurisprudencia-modal .jur-inf-check { color:var(--success); font-weight:900; }
 
     /* Toolbar do modo sistemática — linha 1 (título + contagem + toggle
        Ano/Disciplina) e linha 2 (🏷️ Etiquetas/🎨 Classificar por Cor/
@@ -29250,9 +29253,15 @@ window.JURISPRUDENCIA_RUNTIME = {
                 : '';
             let fichasInf = self._filtroTribunal ? todasInf.filter(function(f) { return f.tribunal === self._filtroTribunal; }) : todasInf;
             let contagem = {};
+            // idsPorChave guarda os ids de cada informativo, só pra checar
+            // se TODOS já foram marcados "visualizado" (ver btnVisualizado/
+            // toggleVisualizado) — usado abaixo pro ✓ automático ao lado do
+            // informativo, pedido explícito do usuário.
+            let idsPorChave = {};
             fichasInf.forEach(function(f) {
                 let k = self._chaveInformativo(f);
                 contagem[k] = (contagem[k] || 0) + 1;
+                (idsPorChave[k] || (idsPorChave[k] = [])).push(f.id);
             });
             let chaves = Object.keys(contagem).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
             let total = chaves.reduce(function(acc, k) { return acc + contagem[k]; }, 0);
@@ -29267,8 +29276,15 @@ window.JURISPRUDENCIA_RUNTIME = {
                 }
                 let m = /^EE\s*(\d+)$/i.exec(partes[1]);
                 let rotulo = m ? 'Ed. Extraordinária ' + m[1] : 'Informativo ' + partes[1];
+                // ✓ automático: TODOS os cards deste informativo já foram
+                // marcados "visualizado" (botão 👁 Visualizado do card) —
+                // pedido explícito do usuário, pra ver de relance quais
+                // informativos já foram integralmente lidos, sem abrir
+                // cada um. Recalculado a cada render (nenhum estado próprio
+                // — "completo" é só uma consequência de self.visualizados).
+                let completo = (idsPorChave[k] || []).every(function(id) { return !!self.visualizados[id]; });
                 html += '<div class="fc-divisao-item' + (self._infSelecionado === k ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarInformativo(\'' + k.replace(/'/g, "\\'") + '\')">' +
-                    '<span>' + self._escapar(rotulo) + '</span><span class="fc-divisao-count">' + contagem[k] + '</span></div>';
+                    '<span>' + self._escapar(rotulo) + (completo ? ' <span class="jur-inf-check" title="Todos os cards deste informativo já foram visualizados">✓</span>' : '') + '</span><span class="fc-divisao-count">' + contagem[k] + '</span></div>';
             });
             colDivisoes.innerHTML = chaves.length ? html : '<div class="fc-vazio-col">Nenhum card com informativo ainda.</div>';
             return;
@@ -31264,6 +31280,13 @@ window.JURISPRUDENCIA_RUNTIME = {
     toggleVisualizado: function(id) {
         if (this.visualizados[id]) delete this.visualizados[id]; else this.visualizados[id] = true;
         this.salvar();
+        // Atualiza o ✓ automático ao lado de cada informativo (ver
+        // _renderColunaDivisoesSistematica) na hora, sem esperar o usuário
+        // trocar de informativo ou reabrir o modal — ele depende de
+        // visualizados, que acabou de mudar. Só nesse modo: nos demais a
+        // coluna do meio é a navegação normal por matéria/divisão, que não
+        // tem nada pra recalcular aqui.
+        if (this._modoSistematica === this._MODO_INFORMATIVO) this._renderColunaDivisoesSistematica();
     },
 
     _statusRevisaoJurTexto: function(id) {
