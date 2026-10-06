@@ -27862,6 +27862,13 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-sistematica-pill:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #jurisprudencia-modal .jur-sistematica-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #jurisprudencia-modal .jur-sistematica-pill-count { opacity:0.65; font-weight:600; }
+    /* Toggle STJ/STF (ou outro tribunal presente) no topo da coluna de
+       informativos — pedido explícito do usuário: antes era uma lista
+       corrida só, com STF sempre lá embaixo depois de rolar todo o STJ. */
+    #jurisprudencia-modal .jur-toggle-tribunal-inf { display:flex; gap:4px; padding:0 0 10px 0; margin-bottom:6px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; }
+    #jurisprudencia-modal .jur-toggle-tribunal-inf-btn { flex:1; text-align:center; padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #jurisprudencia-modal .jur-toggle-tribunal-inf-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-toggle-tribunal-inf-btn.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
 
     /* Toolbar do modo sistemática — linha 1 (título + contagem + toggle
        Ano/Disciplina) e linha 2 (🏷️ Etiquetas/🎨 Classificar por Cor/
@@ -29067,6 +29074,24 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
     filtrarInformativo: function(valor) { this._filtroInformativo = valor; this._renderGradeCards(); },
 
+    // Toggle TODOS/STJ/STF (ver _renderColunaDivisoesSistematica) — reaproveita
+    // _filtroTribunal (o mesmo já respeitado por _listaFiltrada em QUALQUER
+    // modo), só que aqui também redesenha a COLUNA do meio (lista de
+    // informativos), não só a grade de cards: sem isso o toggle filtraria os
+    // cards exibidos mas a lista de informativos continuaria mostrando os 2
+    // tribunais misturados. Se o informativo selecionado não pertence ao
+    // tribunal pra onde o usuário trocou, desmarca (evita grade vazia
+    // "grudada" num informativo que sumiu da lista filtrada).
+    toggleFiltroTribunalInformativo: function(tribunal) {
+        this._filtroTribunal = (this._filtroTribunal === tribunal) ? '' : tribunal;
+        if (this._infSelecionado) {
+            let tribSel = this._infSelecionado.split('|')[0];
+            if (this._filtroTribunal && tribSel !== this._filtroTribunal) this._infSelecionado = null;
+        }
+        this._renderColunaDivisoesSistematica();
+        this._renderGradeCards();
+    },
+
     // 'vigente' é o default pra fichas novas (o parser de importação NUNCA
     // grava este campo — nasce ausente) e pras já existentes antes deste
     // recurso (também ausente). Só passa a existir de fato no objeto quando
@@ -29207,14 +29232,31 @@ window.JURISPRUDENCIA_RUNTIME = {
         // informativos (por tribunal, do mais recente ao mais antigo, com a
         // contagem de cada um); clicar num deles mostra só os seus cards.
         if (this._modoSistematica === this._MODO_INFORMATIVO) {
+            let todasInf = this._todasFichasComInformativo();
+            // Toggle STJ/STF (ou outro tribunal com informativo) — derivado
+            // dos tribunais realmente presentes, pra não travar em só 2
+            // opções se um dia aparecer informativo de outro tribunal (ex.:
+            // TSE, que já tem prioridade reservada em _compararChavesInformativo).
+            let ORDEM_TRIB = { STJ: 0, STF: 1, TSE: 2 };
+            let tribunaisPresentes = Array.from(new Set(todasInf.map(function(f) { return f.tribunal || '?'; })))
+                .sort(function(a, b) { return (ORDEM_TRIB.hasOwnProperty(a) ? ORDEM_TRIB[a] : 9) - (ORDEM_TRIB.hasOwnProperty(b) ? ORDEM_TRIB[b] : 9); });
+            let htmlToggle = tribunaisPresentes.length > 1
+                ? '<div class="jur-toggle-tribunal-inf">' +
+                    '<button class="jur-toggle-tribunal-inf-btn' + (!self._filtroTribunal ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroTribunalInformativo(\'\')">TODOS</button>' +
+                    tribunaisPresentes.map(function(t) {
+                        return '<button class="jur-toggle-tribunal-inf-btn' + (self._filtroTribunal === t ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroTribunalInformativo(\'' + t.replace(/'/g, "\\'") + '\')">' + self._escapar(t) + '</button>';
+                    }).join('') +
+                '</div>'
+                : '';
+            let fichasInf = self._filtroTribunal ? todasInf.filter(function(f) { return f.tribunal === self._filtroTribunal; }) : todasInf;
             let contagem = {};
-            this._todasFichasComInformativo().forEach(function(f) {
+            fichasInf.forEach(function(f) {
                 let k = self._chaveInformativo(f);
                 contagem[k] = (contagem[k] || 0) + 1;
             });
             let chaves = Object.keys(contagem).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
             let total = chaves.reduce(function(acc, k) { return acc + contagem[k]; }, 0);
-            let html = '<div class="fc-divisao-item' + (!self._infSelecionado ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarInformativo(null)">' +
+            let html = htmlToggle + '<div class="fc-divisao-item' + (!self._infSelecionado ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarInformativo(null)">' +
                 '<span>Todos os informativos</span><span class="fc-divisao-count">' + total + '</span></div>';
             let tribunalAtual = null;
             chaves.forEach(function(k) {
