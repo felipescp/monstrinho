@@ -27991,6 +27991,9 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-visualizado-grupo .fc-pill { flex:1; min-width:0; }
     #jurisprudencia-modal .jur-exibir-sistematica { margin-top:10px; padding-top:10px; border-top:1px solid var(--border-color); }
     #jurisprudencia-modal .jur-exibir-titulo { font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; }
+    #jurisprudencia-modal .jur-exibir-todos { display:flex; gap:4px; margin-bottom:6px; }
+    #jurisprudencia-modal .jur-exibir-todos-btn { flex:1; border:1px solid var(--border-color); background:var(--bg-white); border-radius:6px; font-size:11px; font-weight:700; padding:4px 6px; cursor:pointer; color:var(--text-muted); }
+    #jurisprudencia-modal .jur-exibir-todos-btn:hover { color:var(--app-primary); border-color:var(--app-primary); }
     #jurisprudencia-modal .jur-exibir-opcao { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 2px; cursor:pointer; }
     #jurisprudencia-modal .jur-exibir-opcao input { margin:0; cursor:pointer; flex-shrink:0; }
     #jurisprudencia-modal .fc-visualizado-lote-btn { flex-shrink:0; border:1px solid var(--border-color); background:var(--bg-white); border-radius:6px; font-size:13px; padding:4px 6px; cursor:pointer; color:var(--text-muted); line-height:1; }
@@ -32016,6 +32019,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (tipos.length === 0) return '';
         return '<div class="jur-exibir-sistematica">' +
             '<div class="jur-exibir-titulo">Exibir:</div>' +
+            '<div class="jur-exibir-todos">' +
+                '<button class="jur-exibir-todos-btn" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodasSistematicasAba(\'' + aba + '\', false)">Desmarcar todos</button>' +
+                '<button class="jur-exibir-todos-btn" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodasSistematicasAba(\'' + aba + '\', true)">Marcar todos</button>' +
+            '</div>' +
             tipos.map(function(t) {
                 return '<label class="jur-exibir-opcao"><input type="checkbox"' + (ocultas[t] ? '' : ' checked') +
                     ' data-sistematica="' + self._escapar(t) + '"' +
@@ -32030,6 +32037,20 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!s.sistematicasOcultas) s.sistematicasOcultas = {};
         if (s.sistematicasOcultas[tipo]) delete s.sistematicasOcultas[tipo];
         else s.sistematicasOcultas[tipo] = true;
+        this.renderAbaRevisao(aba);
+    },
+
+    // "Marcar todos" zera os ocultos; "Desmarcar todos" oculta todos os
+    // tipos presentes na aba (respeitando a matéria selecionada à esquerda).
+    marcarTodasSistematicasAba: function(aba, marcar) {
+        let self = this;
+        let s = this._estadosAba[aba];
+        s.sistematicasOcultas = {};
+        if (!marcar) {
+            this.listarFichasPorClassificacao(s.materiaFiltro, aba).forEach(function(f) {
+                s.sistematicasOcultas[self._sistematicaDaFicha(f)] = true;
+            });
+        }
         this.renderAbaRevisao(aba);
     },
 
