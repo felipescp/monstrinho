@@ -28456,6 +28456,10 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho #jur-baralho-acoes { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
     #modal-jurisprudencia-baralho #jur-baralho-acoes .esq-btn-visualizado,
     #modal-jurisprudencia-baralho #jur-baralho-acoes .fc-rev-btn { padding:3px 8px; font-size:9.5px; }
+    #modal-jurisprudencia-baralho .jur-baralho-linha-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; margin-top:8px; }
+    #modal-jurisprudencia-baralho .jur-baralho-linha-acoes .fc-card-revisao-acoes { display:flex; flex-wrap:wrap; gap:6px; margin:0; }
+    #modal-jurisprudencia-baralho .jur-baralho-linha-acoes .esq-btn-visualizado { padding:7px 12px; font-size:11px; font-weight:700; }
+    #modal-jurisprudencia-baralho .jur-baralho-sep { width:1px; align-self:stretch; min-height:22px; background:var(--border-color); }
 </style>
     <div class="mdl">
         <div class="fc-popup-header">
@@ -31334,9 +31338,9 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     // Bloco de conteúdo da ficha (título + meta + tese + resumo, sem truncar)
     // — compartilhado entre o popup "Baralho de Cards" e as abas de
-    // dificuldade. CONEXÕES fica de fora aqui (cartão de estudo foca no
-    // essencial pra revisão; texto completo com conexões continua só no
-    // popup "Ver", acessível pela grade).
+    // dificuldade. CONEXÕES agora também aparece aqui (pedido explícito do
+    // usuário — antes ficava só no popup "Ver"), depois do Comentário e
+    // antes do Link; só quando a ficha tem o campo.
     _htmlCartaoFichaEstudo: function(item) {
         let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
@@ -31347,6 +31351,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="jur-estudo-label">Resumo do Caso</div>' +
             '<div class="jur-estudo-texto">' + this._escapar(item.resumo || '—') + '</div>' +
             (item.comentario ? '<div class="jur-estudo-label">Comentário</div><div class="jur-estudo-texto">' + this._escapar(item.comentario) + '</div>' : '') +
+            (item.conexoes ? '<div class="jur-estudo-label">Conexões</div><div class="jur-estudo-texto">' + this._escapar(item.conexoes) + '</div>' : '') +
             (item.link ? '<div class="jur-estudo-label">Link</div><div class="jur-estudo-texto"><a href="' + this._escapar(item.link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--app-primary); word-break:break-all;">' + this._escapar(item.link) + '</a></div>' : '') +
         '</div>';
     },
@@ -31809,10 +31814,17 @@ window.JURISPRUDENCIA_RUNTIME = {
             ? '<div class="fc-card-origem">' + this._escapar([card.materiaL1, card.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
             : '';
 
+        // Pedido explícito do usuário: "Visualizado" saiu do rodapé (ficava
+        // isolado no canto) e foi pra MESMA linha da classificação, logo
+        // abaixo do card: 👁 Visualizado | Classificado como: 🔴 🟡 🟢.
         corpo.innerHTML = htmlOrigem + this._htmlCartaoFichaEstudo(card) +
-            '<div class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoJurTexto(card.id)) + '</div>' +
-            '<div class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</div>';
-        if (acoesEl) acoesEl.innerHTML = btnVisualizado;
+            '<div class="jur-baralho-linha-acoes">' +
+                btnVisualizado +
+                '<span class="jur-baralho-sep"></span>' +
+                '<span class="fc-card-revisao-status">' + this._escapar(this._statusRevisaoJurTexto(card.id)) + '</span>' +
+                '<span class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</span>' +
+            '</div>';
+        if (acoesEl) acoesEl.innerHTML = '';
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },
