@@ -28079,10 +28079,11 @@ window.carregarEsquemasOficiais = async function() {
             </div>
             <div class="jur-tabs-baralho">
                 <details class="jur-leitor-menu leitor-dropdown" name="jur-leitor-grupo">
-                    <summary title="Leitor navegável — escolha entre a disciplina ou a divisão/tópico selecionada na barra lateral">📖 Leitor ▾</summary>
+                    <summary title="Leitor navegável — escolha entre a disciplina, a divisão/tópico ou o informativo selecionado">📖 Leitor ▾</summary>
                     <div class="jur-leitor-opcoes">
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">Disciplina</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">Divisão/Tópico</button>
+                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoInformativo()" title="Leitor navegável só com as fichas do informativo selecionado (atalho 📰 Informativos ou filtro Informativo da barra de ferramentas)">Informativo</button>
                     </div>
                 </details>
                 <details class="jur-leitor-mais-menu leitor-dropdown" name="jur-leitor-grupo">
@@ -31379,6 +31380,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o leitor da divisão/tópico.'); return; }
         let fichas = this.fichasDoL2(this._materiaSelecionada, this._divisaoSelecionada);
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, fichas);
+    },
+
+    // Leitor restrito a UM informativo (chave "TRIBUNAL|número"), cruzando
+    // todas as disciplinas — pedido explícito do usuário. Usa o informativo
+    // escolhido na coluna do meio do atalho "📰 Informativos" ou, na
+    // navegação normal, o filtro "Informativo" da barra de ferramentas.
+    abrirBaralhoInformativo: function() {
+        this._garantirCarregado();
+        let self = this;
+        let alvo = (this._modoSistematica === this._MODO_INFORMATIVO) ? this._infSelecionado : this._filtroInformativo;
+        if (!alvo) { alert('Selecione um informativo antes de abrir o leitor do informativo (atalho 📰 Informativos ou filtro Informativo).'); return; }
+        let fichas = this._todasFichasComInformativo().filter(function(f) { return self._chaveInformativo(f) === alvo; });
+        this._abrirBaralho('informativo', this._rotuloChaveInformativo(alvo), fichas);
     },
 
     // Entrada direta pro baralho de uma L2 vinda de FORA da seção (painel
