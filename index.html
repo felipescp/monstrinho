@@ -28425,6 +28425,7 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho { flex-shrink:0; width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; line-height:1; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.visualizado { background:#dcfce7; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.nao-visualizado { background:#fee2e2; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-semaforo { flex-shrink:0; font-size:11px; line-height:1; }
     /* "Mostrar: Todos | Visualizados | Não visualizados" — mesmo padrão de
        #modal-esquemas-baralho. */
     #modal-jurisprudencia-baralho .jur-baralho-mostrar-filtro { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:5px; padding:8px 10px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); }
@@ -31702,7 +31703,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             // não. Sempre aparece, mesmo em item sem etiqueta nenhuma (por
             // isso a linha em si deixou de ser condicional a ter etiqueta).
             let olhoHtml = '<span class="jur-baralho-lista-item-olho ' + (visualizado ? 'visualizado' : 'nao-visualizado') + '" title="' + (visualizado ? 'Visualizado' : 'Não visualizado') + '">👁</span>';
-            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + '</div>';
+            // Semáforo da classificação ao lado do 👁 (pedido explícito do
+            // usuário) — a lista já vem ordenada Crítico→Regular, mas sem
+            // nada que mostrasse isso. Sem classificação = sem semáforo.
+            let SEMAFORO = { dificil: ['🔴', 'Crítico'], medio: ['🟡', 'Importante'], facil: ['🟢', 'Regular'] };
+            let rClassif = self.revisaoJurisprudencia[item.id];
+            let semaforo = rClassif && SEMAFORO[rClassif.ultimaClassificacao];
+            let semaforoHtml = semaforo ? '<span class="jur-baralho-lista-item-semaforo" title="' + semaforo[1] + '">' + semaforo[0] + '</span>' : '';
+            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + semaforoHtml + '</div>';
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
