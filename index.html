@@ -31630,25 +31630,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.renderBaralho();
     },
 
-    // Classifica o card ATUAL do popup e remove ele do deck corrente — a
-    // navegação avança pro próximo automaticamente (mesmo padrão de
-    // marcarNaAba, nas abas de dificuldade). Sai do deck SEMPRE, mesmo se a
-    // classificação escolhida repetir uma anterior — é aqui, no baralho de
-    // navegação livre (Todos/Disciplina/Divisão), que a classificação
-    // inicial acontece; as abas de dificuldade são só a fila de revisão.
+    // Classifica o card ATUAL do popup. Pedido explícito do usuário: a
+    // ficha PERMANECE no Leitor (antes saía do deck e a navegação pulava
+    // pra próxima, o que fazia o card "sumir"). Nada de reordenar a lista
+    // nem trocar de ficha — só atualiza o status/botões da classificação;
+    // avançar continua sendo comando expresso (‹ › ou clique na lista).
     marcarBaralho: function(nivel) {
         let s = this._baralhoState;
         let card = this._fichaBaralhoAtual();
         if (!card || !s) return;
         this._aplicarClassificacaoJur(card.id, nivel);
-
-        let idMarcado = card.id;
-        s.ordemChaves = s.ordemChaves.filter(function(id) { return id !== idMarcado; });
-        s.cardsBase = s.cardsBase.filter(function(f) { return f.id !== idMarcado; });
-        if (s.indiceAtual >= s.ordemChaves.length) s.indiceAtual = 0;
-
         this.renderBaralho();
         this._atualizarContagensAbas();
+        if (typeof this._renderGradeCards === 'function') this._renderGradeCards();
     },
 
     // Lista lateral com TODAS as fichas do escopo atual (Todos/Disciplina/
@@ -31656,8 +31650,8 @@ window.JURISPRUDENCIA_RUNTIME = {
     // navegação de "Conteúdo Relacionado" no Cronograma, somada às setas
     // ‹ › já existentes. Chamada sempre junto de renderBaralho() (inclusive
     // no caminho de deck vazio), pra ficar sempre em sincronia com
-    // _baralhoState (inclusive depois de embaralhar/classificar, que em
-    // Jurisprudência remove a ficha classificada do deck).
+    // _baralhoState (inclusive depois de embaralhar/classificar — a ficha
+    // classificada continua no deck, só muda o status).
     _renderListaBaralho: function() {
         let listaEl = document.getElementById('jur-baralho-lista');
         if (!listaEl) return;
