@@ -11789,6 +11789,8 @@ window.fecharPraticarCadernoModal = function() {
     #fcnb-modal .fcnb-cabecalho-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-left:auto; }
     #fcnb-modal .fcnb-cabecalho-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
     #fcnb-modal .fcnb-cabecalho-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #fcnb-modal .fcnb-btn-criar { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #fcnb-modal .fcnb-btn-criar:hover { color:#fff; filter:brightness(1.1); }
     #fcnb-modal .analytics-modal-content { padding:0; }
     #fcnb-modal .fc-grid { display:grid; grid-template-columns: 0.55fr 0.45fr 2fr; flex:1; overflow:hidden; }
     #fcnb-modal .fc-col { overflow-y:auto; padding:10px; }
@@ -11840,6 +11842,7 @@ window.fecharPraticarCadernoModal = function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">🗂️ Flashcards</div>
             <div class="fcnb-cabecalho-acoes">
+                <button class="fcnb-cabecalho-btn fcnb-btn-criar" onclick="window.FLASHCARDS_NB_RUNTIME.abrirModalCriar()">+ Criar Flashcard</button>
                 <button class="fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
                 <details class="fcnb-export-menu" title="Gera o .json no formato dos baralhos oficiais: salve em dados/flashcards/ e acrescente o caminho em dados/manifesto-flashcards.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="fcnb-export-opcoes"><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTudo()">Tudo</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarDisciplina()">Disciplina selecionada</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTopico()">Tópico (L2) selecionado</button></div></details>
                 <button class="analytics-close-btn" id="fcnb-modal-btn-maximizar" onclick="window.alternarMaximizarFlashcardsNbModal()" title="Maximizar">⛶</button>
@@ -11896,6 +11899,62 @@ window.fecharPraticarCadernoModal = function() {
     </div>
 </div>
 
+<!-- MODAL: + Criar Flashcard — colar o texto gerado (mesmo fluxo da
+     criação de questões: campo pra colar o material), lido por
+     parsearFlashcardsTexto(). Cada card traz "T = Matéria > Divisão >
+     Subtópico", então a L2 sai do próprio texto; os selects só valem pros
+     cards cujo T não bateu com a taxonomia. -->
+<div id="modal-fcnb-criar" class="mo">
+<style>
+    #modal-fcnb-criar { z-index: 10000; }
+    #modal-fcnb-criar .mdl { max-width:960px; width:96%; height:92vh; max-height:92vh; padding:22px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; }
+    #modal-fcnb-criar .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); display:flex; justify-content:space-between; align-items:center; }
+    #modal-fcnb-criar .fcnb-criar-fechar { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-fcnb-criar .fcnb-criar-ajuda { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-fcnb-criar .fcnb-criar-ajuda code { background:var(--bg-soft); border:1px solid var(--border-color); border-radius:4px; padding:0 4px; font-size:10.5px; }
+    #modal-fcnb-criar textarea { flex:1; min-height:200px; width:100%; box-sizing:border-box; resize:none; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-family:var(--font-body); font-size:12.5px; line-height:1.55; background:var(--bg-white); color:var(--text-main); }
+    #modal-fcnb-criar textarea:focus { outline:none; border-color:var(--app-primary); }
+    #modal-fcnb-criar .fcnb-criar-status { font-size:12px; color:var(--text-main); line-height:1.5; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; max-height:110px; overflow-y:auto; }
+    #modal-fcnb-criar .fcnb-criar-status .ok { color:#15803d; font-weight:700; }
+    #modal-fcnb-criar .fcnb-criar-status .aviso { color:#b45309; font-weight:700; }
+    #modal-fcnb-criar .fcnb-criar-linha { display:flex; gap:10px; flex-wrap:wrap; }
+    #modal-fcnb-criar .fc-form-campo { flex:1; min-width:200px; }
+    #modal-fcnb-criar .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-fcnb-criar .fc-form-campo input, #modal-fcnb-criar .fc-form-campo select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-fcnb-criar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-fcnb-criar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-fcnb-criar .fc-footer-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-fcnb-criar .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
+</style>
+    <div class="mdl">
+        <div class="fc-popup-header"><span>+ Criar Flashcard</span><button class="fcnb-criar-fechar" onclick="window.FLASHCARDS_NB_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
+        <div class="fcnb-criar-ajuda">Cole abaixo o texto gerado (pode colar vários lotes de uma vez, com a conversa no meio). Formato de cada card: <code>Card 01.</code> <code>T = Matéria &gt; Divisão &gt; Subtópico</code> <code>Q = pergunta</code> <code>R = resposta</code>. Linhas fora disso (BLOCO, "GERAR LOTE", "Lote concluído", avisos do Gemini) são ignoradas.</div>
+        <textarea id="fcnb-criar-texto" placeholder="Cole os flashcards aqui..." oninput="window.FLASHCARDS_NB_RUNTIME._agendarPreviaCriar()" onpaste="setTimeout(function(){ window.FLASHCARDS_NB_RUNTIME._atualizarPreviaCriar(); }, 50)"></textarea>
+        <div class="fcnb-criar-status" id="fcnb-criar-status">Aguardando...</div>
+        <div class="fcnb-criar-linha">
+            <div class="fc-form-campo" style="flex:2;">
+                <label>Nome do baralho</label>
+                <input type="text" id="fcnb-criar-nome" placeholder="Ex.: Mandado de Segurança (Lei 12.016/2009)">
+            </div>
+        </div>
+        <div class="fcnb-criar-linha" id="fcnb-criar-fallback" style="display:none;">
+            <div class="fc-form-campo">
+                <label>Matéria (cards sem T reconhecido)</label>
+                <select id="fcnb-criar-materia" onchange="window.FLASHCARDS_NB_RUNTIME.aoTrocarMateriaCriar()"></select>
+            </div>
+            <div class="fc-form-campo">
+                <label>Divisão (L2)</label>
+                <select id="fcnb-criar-divisao"></select>
+            </div>
+        </div>
+        <div id="fcnb-criar-erro" class="fc-form-erro" style="display:none;"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.FLASHCARDS_NB_RUNTIME.fecharModalCriar()">Cancelar</button>
+            <button class="fc-footer-btn primario" id="fcnb-criar-btn" onclick="window.FLASHCARDS_NB_RUNTIME.confirmarCriacao()" disabled>Criar</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL: Estudo (tela cheia, escuro, estilo NotebookLM) -->
 <div id="modal-fcnb-estudo" class="mo">
 <style>
@@ -11932,6 +11991,7 @@ window.fecharPraticarCadernoModal = function() {
     #modal-fcnb-estudo .fcnb-carta-texto { width:100%; font-size:28px; line-height:1.4; color:#f1f3f4; white-space:pre-wrap; word-wrap:break-word; padding:8px 0; }
     #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:23px; }
     #modal-fcnb-estudo .fcnb-carta-texto.longo { font-size:19px; }
+    #modal-fcnb-estudo .fcnb-carta-texto.muito-longo { font-size:16px; }
     #modal-fcnb-estudo .fcnb-carta-dica { text-align:center; font-size:12px; color:#80868b; flex-shrink:0; min-height:18px; }
     #modal-fcnb-estudo .fcnb-est-vazio { text-align:center; color:#bdc1c6; font-size:15px; line-height:1.6; max-width:420px; }
     #modal-fcnb-estudo .fcnb-est-vazio button { margin-top:12px; }
@@ -11987,6 +12047,85 @@ window.fecharPraticarCadernoModal = function() {
 </div>
 
 <script>
+// ── PARSER DE "+ CRIAR FLASHCARD" (texto colado) ──
+// Mesmo princípio do parser de questões (parsDisc): só os campos
+// reconhecidos têm efeito, e o resto (chrome do chat, "GERAR LOTE",
+// "Lote concluído", mapa de BLOCOs, avisos do Gemini) é ignorado — dá pra
+// colar vários lotes de uma vez com a conversa no meio. Formato por card:
+//   Card 01.
+//   T = Matéria > Divisão (L2) > Subtópico
+//   Q = pergunta (frente; pode continuar nas linhas seguintes)
+//   R = resposta (verso; idem)
+// "Card NN." é opcional (um novo T=/Q= depois de um R= já abre outro card).
+// O verso "Conclusão: … Base: … Ratio Essendi: …" ganha um parágrafo por
+// rótulo, pra ler melhor na carta.
+function parsearFlashcardsTexto(txt) {
+    let linhas = String(txt || '').replace(/\r/g, '').split('\n');
+    let RE_CARD = /^(?:\*\*|#+\s*)?(?:Card|Cart[ãa]o|Flashcard)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
+    let RE_T = /^(?:\*\*)?T(?:\*\*)?\s*[=:]\s*(.*)$/;
+    let RE_Q = /^(?:\*\*)?Q(?:\*\*)?\s*[=:]\s*(.*)$/;
+    let RE_R = /^(?:\*\*)?R(?:\*\*)?\s*[=:]\s*(.*)$/;
+    let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
+    let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
+    let RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules|GERAR LOTE)/i;
+    let JANELA_RUIDO_LINHAS = 40;
+    function ehMarcador(l) { return RE_CARD.test(l) || RE_T.test(l) || RE_Q.test(l) || RE_BLOCO.test(l); }
+    function proxNaoVazia(i) { for (let j = i + 1; j < linhas.length; j++) { let t = linhas[j].trim(); if (t) return t; } return ''; }
+    function marcadorNosProximos(i) {
+        let vistos = 0;
+        for (let j = i + 1; j < linhas.length && vistos < JANELA_RUIDO_LINHAS; j++) {
+            let t = linhas[j].trim(); if (!t) continue; vistos++;
+            if (ehMarcador(t)) return true;
+        }
+        return false;
+    }
+    function formatarVerso(b) {
+        return b.replace(/\s+(Base|Fundamentos?|Ratio Essendi|Observa[çc][ãa]o|Aten[çc][ãa]o)\s*:/g, '\n\n$1:').trim();
+    }
+    let cards = [], incompletos = 0, atual = null, fase = 'fora', bloco = null;
+    function fechar() {
+        if (atual) {
+            let f = atual.q.join('\n').replace(RE_CITE, '').trim();
+            let b = atual.r.join('\n').replace(RE_CITE, '').trim();
+            if (f && b) cards.push({ num: atual.num, t: atual.t, bloco: atual.bloco, f: f, b: formatarVerso(b) });
+            else if (f || b || atual.t) incompletos++;
+        }
+        atual = null; fase = 'fora';
+    }
+    function novo(num) { fechar(); atual = { num: num || null, t: '', q: [], r: [], bloco: bloco }; fase = 'card'; }
+    for (let i = 0; i < linhas.length; i++) {
+        let l = linhas[i].trim();
+        if (!l) continue;
+        let m;
+        if ((m = l.match(RE_CARD))) { novo(m[1]); continue; }
+        if ((m = l.match(RE_BLOCO))) { fechar(); bloco = m[1].trim(); continue; }
+        if ((m = l.match(RE_T))) {
+            if (!atual || atual.r.length || atual.q.length) novo(null);
+            atual.t = m[1].trim(); fase = 'card'; continue;
+        }
+        if ((m = l.match(RE_Q))) {
+            if (!atual || atual.r.length) { let t = atual && !atual.r.length ? atual.t : ''; novo(null); atual.t = t; }
+            if (m[1].trim()) atual.q.push(m[1].trim());
+            fase = 'q'; continue;
+        }
+        if ((m = l.match(RE_R)) && atual) {
+            if (m[1].trim()) atual.r.push(m[1].trim());
+            fase = 'r'; continue;
+        }
+        if (!atual) continue; // fora de card: ruído/conversa, ignora
+        if (fase === 'q') { atual.q.push(l); continue; }
+        if (fase === 'r') {
+            if (RE_RUIDO_FIM_LOTE.test(l)) { fechar(); continue; }
+            if (ehMarcador(proxNaoVazia(i))) { fechar(); continue; }
+            if (marcadorNosProximos(i)) { fechar(); continue; }
+            atual.r.push(l); continue;
+        }
+        // fase 'card' (após "Card NN."/T= sem Q ainda): linha solta é ignorada
+    }
+    fechar();
+    return { cards: cards, incompletos: incompletos };
+}
+
 window.FLASHCARDS_NB_RUNTIME = {
     decks: {},
     estado: {},
@@ -12473,6 +12612,166 @@ window.FLASHCARDS_NB_RUNTIME = {
         this.render();
     },
 
+    // ── + CRIAR FLASHCARD (texto colado) ──
+    // Cada card vai pra L2 indicada no seu "T =" (matéria e divisão
+    // comparadas sem acento/caixa com a taxonomia); um baralho por L2
+    // envolvida, todos com o nome escolhido. Se já existe baralho com esse
+    // nome naquela L2, os cards novos são ACRESCENTADOS a ele (frente
+    // repetida é ignorada) — dá pra colar lote 1, depois lote 2, no mesmo
+    // baralho, sem um substituir o outro.
+    _criacao: null,
+    _timerPreviaCriar: null,
+
+    _resolverTaxonomiaCard: function(t) {
+        let self = this;
+        let partes = String(t || '').split('>').map(function(x) { return x.trim(); }).filter(Boolean);
+        if (partes.length < 2) return null;
+        let n = function(x) { return self._normNome(String(x).replace(/\s*\(.*?\)\s*/g, ' ')); };
+        let nFull = function(x) { return self._normNome(x); };
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return nFull(m.nivel_1) === nFull(partes[0]); });
+        if (!mat) return null;
+        let div = mat.divisoes.find(function(d) { return nFull(d.nivel_2) === nFull(partes[1]); }) ||
+                  mat.divisoes.find(function(d) { return n(d.nivel_2) === n(partes[1]); });
+        if (!div) return null;
+        return { materia: mat.nivel_1, divisao: div.nivel_2, subtopico: partes.slice(2).join(' > ') };
+    },
+
+    abrirModalCriar: function() {
+        this._garantirCarregado();
+        this._criacao = null;
+        document.getElementById('fcnb-criar-texto').value = '';
+        document.getElementById('fcnb-criar-nome').value = '';
+        document.getElementById('fcnb-criar-erro').style.display = 'none';
+        let selMat = document.getElementById('fcnb-criar-materia');
+        selMat.innerHTML = '<option value="">Selecione a matéria...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
+            return '<option value="' + m.nivel_1.replace(/"/g, '&quot;') + '">' + m.nivel_1 + '</option>';
+        }).join('');
+        if (this._materiaSelecionada) selMat.value = this._materiaSelecionada;
+        this.aoTrocarMateriaCriar();
+        if (this._materiaSelecionada && this._divisaoSelecionada) document.getElementById('fcnb-criar-divisao').value = this._divisaoSelecionada;
+        this._atualizarPreviaCriar();
+        document.getElementById('modal-fcnb-criar').classList.add('open');
+        setTimeout(function() { document.getElementById('fcnb-criar-texto').focus(); }, 50);
+    },
+
+    fecharModalCriar: function() {
+        document.getElementById('modal-fcnb-criar').classList.remove('open');
+        this._criacao = null;
+    },
+
+    aoTrocarMateriaCriar: function() {
+        let materia = document.getElementById('fcnb-criar-materia').value;
+        let selDiv = document.getElementById('fcnb-criar-divisao');
+        selDiv.innerHTML = '<option value="">Selecione a divisão (L2)...</option>';
+        let mat = materia && TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
+        if (!mat) return;
+        mat.divisoes.forEach(function(div) {
+            let opt = document.createElement('option');
+            opt.value = div.nivel_2; opt.textContent = div.nivel_2;
+            selDiv.appendChild(opt);
+        });
+    },
+
+    _agendarPreviaCriar: function() {
+        let self = this;
+        clearTimeout(this._timerPreviaCriar);
+        this._timerPreviaCriar = setTimeout(function() { self._atualizarPreviaCriar(); }, 250);
+    },
+
+    _atualizarPreviaCriar: function() {
+        let self = this;
+        let texto = document.getElementById('fcnb-criar-texto').value;
+        let statusEl = document.getElementById('fcnb-criar-status');
+        let btn = document.getElementById('fcnb-criar-btn');
+        let nomeEl = document.getElementById('fcnb-criar-nome');
+        if (!texto.trim()) { statusEl.textContent = 'Aguardando...'; btn.disabled = true; this._criacao = null; document.getElementById('fcnb-criar-fallback').style.display = 'none'; return; }
+        let res = parsearFlashcardsTexto(texto);
+        let grupos = {}, semTax = 0, subtopicos = {};
+        res.cards.forEach(function(c) {
+            let tax = self._resolverTaxonomiaCard(c.t);
+            c._tax = tax;
+            if (!tax) { semTax++; return; }
+            let chave = self._chaveL2(tax.materia, tax.divisao);
+            grupos[chave] = (grupos[chave] || 0) + 1;
+            if (tax.subtopico) subtopicos[tax.subtopico] = (subtopicos[tax.subtopico] || 0) + 1;
+        });
+        this._criacao = { cards: res.cards, semTax: semTax };
+        if (res.cards.length === 0) {
+            statusEl.innerHTML = '<span class="aviso">Nenhum flashcard reconhecido.</span> Confira se cada card tem as linhas <code>Q =</code> e <code>R =</code>.';
+            btn.disabled = true;
+            document.getElementById('fcnb-criar-fallback').style.display = 'none';
+            return;
+        }
+        // Sugestão de nome: o subtópico (3º nível do T) mais frequente.
+        if (!nomeEl.value.trim() || nomeEl.dataset.sugerido === nomeEl.value) {
+            let sug = Object.keys(subtopicos).sort(function(a, b) { return subtopicos[b] - subtopicos[a]; })[0] || '';
+            if (!sug && res.cards[0].bloco) sug = res.cards[0].bloco;
+            nomeEl.value = sug; nomeEl.dataset.sugerido = sug;
+        }
+        let linhasGrupo = Object.keys(grupos).map(function(chave) { return '• ' + self._escapar(chave) + ' — ' + grupos[chave] + ' card(s)'; });
+        statusEl.innerHTML = '<span class="ok">✓ ' + res.cards.length + ' flashcard' + (res.cards.length === 1 ? '' : 's') + ' reconhecido' + (res.cards.length === 1 ? '' : 's') + '</span>' +
+            (res.incompletos ? ' <span class="aviso">(' + res.incompletos + ' incompleto(s), sem Q ou R, ignorado(s))</span>' : '') +
+            (linhasGrupo.length ? '<br>' + linhasGrupo.join('<br>') : '') +
+            (semTax ? '<br><span class="aviso">' + semTax + ' card(s) com "T =" fora da taxonomia — vão para a matéria/divisão escolhida abaixo.</span>' : '');
+        document.getElementById('fcnb-criar-fallback').style.display = semTax ? 'flex' : 'none';
+        btn.disabled = false;
+    },
+
+    confirmarCriacao: function() {
+        let self = this;
+        this._atualizarPreviaCriar();
+        let cr = this._criacao;
+        let erroEl = document.getElementById('fcnb-criar-erro');
+        let mostrarErro = function(msg) { erroEl.textContent = msg; erroEl.style.display = 'block'; };
+        erroEl.style.display = 'none';
+        if (!cr || !cr.cards.length) return;
+        let nome = (document.getElementById('fcnb-criar-nome').value || '').trim();
+        if (!nome) { mostrarErro('Dê um nome ao baralho.'); return; }
+        let fbMat = document.getElementById('fcnb-criar-materia').value;
+        let fbDiv = document.getElementById('fcnb-criar-divisao').value;
+        if (cr.semTax && (!fbMat || !fbDiv)) { mostrarErro('Escolha a matéria e a divisão para os cards cujo "T =" não foi reconhecido.'); return; }
+
+        let porChave = {};
+        cr.cards.forEach(function(c) {
+            let chave = c._tax ? self._chaveL2(c._tax.materia, c._tax.divisao) : self._chaveL2(fbMat, fbDiv);
+            if (!porChave[chave]) porChave[chave] = { cards: [], subtopicos: [] };
+            porChave[chave].cards.push({ f: c.f, b: c.b });
+            let sub = c._tax && c._tax.subtopico;
+            if (sub && porChave[chave].subtopicos.indexOf(sub) === -1) porChave[chave].subtopicos.push(sub);
+        });
+
+        let nomeNorm = this._normNome(nome);
+        let resumo = [];
+        Object.keys(porChave).forEach(function(chave) {
+            let grupo = porChave[chave];
+            if (!Array.isArray(self.decks[chave])) self.decks[chave] = [];
+            let existente = self.decks[chave].find(function(d) { return !d.origem_oficial && self._normNome(d.nome) === nomeNorm; });
+            if (existente) {
+                let jaTem = {};
+                existente.cards.forEach(function(c) { jaTem[self._normNome(c.f)] = true; });
+                let novos = grupo.cards.filter(function(c) { let k = self._normNome(c.f); if (jaTem[k]) return false; jaTem[k] = true; return true; });
+                let todos = existente.cards.map(function(c) { return { f: c.f, b: c.b }; }).concat(novos);
+                // Ids por conteúdo: os cards antigos mantêm o mesmo id (e o progresso).
+                existente.cards = self._cardsComIdPorConteudo(existente.id, todos);
+                existente.topicos = (existente.topicos || []).concat(grupo.subtopicos.filter(function(t) { return (existente.topicos || []).indexOf(t) === -1; }));
+                existente.criadoEm = new Date().toISOString();
+                resumo.push(novos.length + ' card(s) acrescentado(s) ao baralho existente em ' + chave + (grupo.cards.length - novos.length ? ' (' + (grupo.cards.length - novos.length) + ' repetido(s) ignorado(s))' : ''));
+            } else {
+                let idDeck = self._novoId('fcd_');
+                self.decks[chave].push({ id: idDeck, nome: nome, criadoEm: new Date().toISOString(), arquivo: '', topicos: grupo.subtopicos, cards: self._cardsComIdPorConteudo(idDeck, grupo.cards) });
+                resumo.push('Baralho criado em ' + chave + ' com ' + grupo.cards.length + ' card(s)');
+            }
+        });
+        if (!this.salvar()) alert('Atenção: os flashcards foram criados, mas não foi possível gravá-los (armazenamento cheio). Eles serão perdidos ao recarregar a página.');
+        let primeira = Object.keys(porChave)[0].split(' > ');
+        this._materiaSelecionada = primeira[0];
+        this._divisaoSelecionada = primeira.slice(1).join(' > ');
+        this._filtroBusca = '';
+        this.fecharModalCriar();
+        this.render();
+        alert('✓ ' + nome + '\n\n' + resumo.join('\n'));
+    },
+
     // ── GERENCIAMENTO DE BARALHOS ──
 
     renomearDeck: function(idDeck) {
@@ -12704,7 +13003,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 
         let e = this.estado[card.id] || {};
         let texto = est.virado ? card.b : card.f;
-        let classeTam = texto.length > 260 ? ' longo' : (texto.length > 130 ? ' medio' : '');
+        let classeTam = texto.length > 600 ? ' muito-longo' : (texto.length > 260 ? ' longo' : (texto.length > 130 ? ' medio' : ''));
         let selos = '';
         if (e.ultimaClassificacao === 'dificil') selos += '<span class="fcnb-selo dificil">Difícil</span>';
         else if (e.ultimaClassificacao === 'medio') selos += '<span class="fcnb-selo medio">Média</span>';
