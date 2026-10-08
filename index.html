@@ -1535,6 +1535,7 @@ try {
         <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos — memorização">⏱️ PRAZOS</div>
+        <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
         <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
         <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
@@ -2405,6 +2406,56 @@ window.__prazosHidratacaoPromise__ = (async function() {
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_PRAZOS_RUNTIME] = { ler: window.lerPrazosBruto, salvar: window.salvarPrazosBruto };
 
 // =========================================================================
+// CAMADA DE ACESSO: PENAS (tjpe_v1__penas_runtime)
+// =========================================================================
+// Mesmo padrão de Flashcards/Esquemas/Jurisprudência: cache síncrono em
+// memória + IndexedDB como fonte primária + cópia redundante no localStorage.
+window.CHAVE_PENAS_RUNTIME = 'tjpe_v1__penas_runtime';
+window.CHAVE_PENAS_RUNTIME_IDB = 'penas_runtime';
+let _penasRuntimeCache = null;
+
+window.lerPenasBruto = function() {
+    return _penasRuntimeCache;
+};
+
+window.salvarPenasBruto = function(jsonString) {
+    _penasRuntimeCache = jsonString;
+    try {
+        localStorage.setItem(window.CHAVE_PENAS_RUNTIME, jsonString);
+    } catch (e) {
+        console.warn('[PENAS] Não coube a cópia de segurança no localStorage (sem impacto):', e);
+    }
+    if (!window._idbDisponivel) return Promise.resolve(false);
+    return idbSet(window.CHAVE_PENAS_RUNTIME_IDB, jsonString).then(function(ok) {
+        if (!ok) console.warn('[PENAS] Falha ao persistir no IndexedDB.');
+        return ok;
+    });
+};
+
+window.__penasHidratacaoPromise__ = (async function() {
+    try {
+        let valor = await idbGet(window.CHAVE_PENAS_RUNTIME_IDB);
+        if (valor !== undefined) { _penasRuntimeCache = valor; return; }
+
+        let bruto = localStorage.getItem(window.CHAVE_PENAS_RUNTIME);
+        _penasRuntimeCache = bruto;
+        if (bruto !== null && window._idbDisponivel) {
+            const ok = await idbSet(window.CHAVE_PENAS_RUNTIME_IDB, bruto);
+            if (ok) { try { localStorage.removeItem(window.CHAVE_PENAS_RUNTIME); } catch (e) {} }
+        }
+    } finally {
+        if (window.PENAS_RUNTIME) {
+            window.PENAS_RUNTIME.carregar();
+            if (typeof window.PENAS_RUNTIME.render === 'function') {
+                try { window.PENAS_RUNTIME.render(); } catch (e) {}
+            }
+        }
+    }
+})();
+
+window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_PENAS_RUNTIME] = { ler: window.lerPenasBruto, salvar: window.salvarPenasBruto };
+
+// =========================================================================
 // CAMADA DE ACESSO: GLOSSÁRIO (tjpe_v1__glossario_runtime)
 // =========================================================================
 // Mesmo padrão das demais acima.
@@ -3053,6 +3104,9 @@ window.SALINHA_BACKUP = {
         // PRAZOS (memorização)
         'tjpe_v1__prazos_runtime',
 
+        // PENAS (memorização)
+        'tjpe_v1__penas_runtime',
+
         // TEMA
         'tjpe_v1__cor_tema'
     ],
@@ -3623,8 +3677,8 @@ window.SALINHA_BACKUP = {
                     // Lápide de baralhos excluídos { idBaralho → data ISO } — união pura
                     // (OR): se qualquer lado já excluiu, o resultado mantém a exclusão
                     // (mesma política de esquemas_runtime.excluidos).
-                    // (Mesma regra para prazos_runtime.excluidos.)
-                    if ((chaveSemPrefixoMerge === 'flashcards_nb_runtime' || chaveSemPrefixoMerge === 'prazos_runtime') && subChave === 'excluidos' &&
+                    // (Mesma regra para prazos_runtime.excluidos e penas_runtime.excluidos.)
+                    if ((chaveSemPrefixoMerge === 'flashcards_nb_runtime' || chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'excluidos' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -3647,8 +3701,8 @@ window.SALINHA_BACKUP = {
                     // lápide de exclusões dos DOIS lados — sem isso, um baralho excluído
                     // voltava no próximo merge (mesmo bug já corrigido em esquemas e
                     // cronograma). Não depende da ordem em que "excluidos" é processado.
-                    // (Mesma regra para prazos_runtime.itens: {"L1 > L2" → [itens]}, por id.)
-                    if (((chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'decks') || (chaveSemPrefixoMerge === 'prazos_runtime' && subChave === 'itens')) &&
+                    // (Mesma regra para prazos_runtime.itens e penas_runtime.itens: {"L1 > L2" → [itens]}, por id.)
+                    if (((chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'decks') || ((chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'itens')) &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -3692,8 +3746,8 @@ window.SALINHA_BACKUP = {
                     // MESMA card pode ter sido mexida nos dois lados: vence o
                     // atualizadoEm mais recente (ausente conta como 0; sem entrada
                     // local, entra a remota).
-                    // (Mesma regra para prazos_runtime.estado — autoavaliação 🔴🟡🟢 por prazo.)
-                    if ((chaveSemPrefixoMerge === 'flashcards_nb_runtime' || chaveSemPrefixoMerge === 'prazos_runtime') && subChave === 'estado' &&
+                    // (Mesma regra para prazos_runtime.estado e penas_runtime.estado — autoavaliação 🔴🟡🟢.)
+                    if ((chaveSemPrefixoMerge === 'flashcards_nb_runtime' || chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'estado' &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -14427,6 +14481,927 @@ window.carregarPrazosOficiais = async function() {
     }
     const caminhos = texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && l.charAt(0) !== '#'; });
     for (const c of caminhos) await window.importarPrazosOficiais(c);
+};
+</script>
+
+<!-- SEÇÃO: ⛓️ PENAS — memorização das penas (Código Penal e legislação
+     penal especial): mesma arquitetura de ⏱️ PRAZOS (L1 > L2, Tabela com
+     cortina, Treinar clica e aparece, + Criar pelo texto do Gem, base
+     oficial em dados/penas/*.json via dados/manifesto-penas.txt). Cada item
+     = um tipo penal com pena-base + listas de qualificadoras, aumentos e
+     diminuições; os INDICADORES (menor potencial ofensivo, sursis
+     processual, ANPP, prescrição em abstrato) são CALCULADOS da pena. -->
+<div id="penas-modal" class="analytics-modal">
+<style>
+    #penas-modal.modal-maximizado .analytics-modal-content { width:100vw; height:100vh; border-radius:0; }
+    #penas-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
+    #penas-modal .analytics-modal-content { padding:0; }
+    #penas-modal .pen-cabecalho-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-left:auto; }
+    #penas-modal .pen-cab-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #penas-modal .pen-cab-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #penas-modal .pen-cab-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #penas-modal .pen-export-menu { position:relative; }
+    #penas-modal .pen-export-menu summary { list-style:none; background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #penas-modal .pen-export-menu summary::-webkit-details-marker { display:none; }
+    #penas-modal .pen-export-opcoes { position:absolute; right:0; top:calc(100% + 4px); z-index:20; display:flex; flex-direction:column; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 8px 20px rgba(0,0,0,0.12); overflow:hidden; min-width:190px; }
+    #penas-modal .pen-export-opcoes button { background:none; border:none; text-align:left; padding:8px 12px; font-size:11px; font-weight:600; color:var(--text-main); cursor:pointer; }
+    #penas-modal .pen-export-opcoes button:hover { background:var(--bg-soft); color:var(--app-primary); }
+    #penas-modal .fc-grid { display:grid; grid-template-columns: 0.55fr 0.45fr 2fr; flex:1; overflow:hidden; }
+    #penas-modal .fc-col { overflow-y:auto; padding:10px; }
+    #penas-modal #pen-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
+    #penas-modal #pen-col-divisoes { border-right:1px solid var(--border-color); }
+    #penas-modal #pen-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
+    #penas-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
+    #penas-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
+    #penas-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
+    #penas-modal .fc-materia-nome { font-size:10px; font-weight:800; font-family:var(--font-display); text-transform:uppercase; color:var(--text-main); }
+    #penas-modal .fc-materia-count, #penas-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #penas-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); }
+    #penas-modal .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
+    #penas-modal .fc-divisao-item.ativa { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #penas-modal .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; line-height:1.6; }
+    #penas-modal .pen-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); }
+    #penas-modal .pen-abas { display:flex; gap:4px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:3px; }
+    #penas-modal .pen-aba { border:none; background:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:800; color:var(--text-muted); cursor:pointer; }
+    #penas-modal .pen-aba.ativa { background:var(--app-primary); color:#fff; }
+    #penas-modal .pen-busca { padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; font-family:var(--font-body); background:var(--bg-white); color:var(--text-main); width:200px; }
+    #penas-modal .pen-busca:focus { outline:none; border-color:var(--app-primary); }
+    #penas-modal .pen-info { font-size:10px; font-weight:700; color:var(--text-muted); margin-left:auto; }
+    #penas-modal .pen-scroll { flex:1; overflow:auto; padding:10px; }
+    /* Tabela com cortina */
+    #penas-modal .pen-dica { font-size:10.5px; color:var(--text-muted); margin:0 2px 8px 2px; }
+    #penas-modal table.pen-tabela { width:100%; border-collapse:separate; border-spacing:0; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; overflow:hidden; font-size:12px; }
+    #penas-modal .pen-tabela th { position:sticky; top:0; z-index:1; background:var(--bg-accent-soft); color:var(--app-primary); font-size:10px; font-weight:800; text-transform:uppercase; text-align:left; padding:8px 10px; border-bottom:1px solid var(--border-color); white-space:nowrap; }
+    #penas-modal .pen-tabela th.pen-th-cortina { cursor:pointer; user-select:none; }
+    #penas-modal .pen-tabela th.pen-th-cortina:hover { color:var(--text-main); }
+    #penas-modal .pen-tabela th .pen-olho { font-size:11px; margin-left:4px; opacity:0.8; }
+    #penas-modal .pen-tabela td { padding:8px 10px; border-bottom:1px solid #f1f5f9; vertical-align:top; color:var(--text-main); line-height:1.45; }
+    #penas-modal .pen-tabela tr.pen-grupo td { background:var(--bg-soft); font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); padding:6px 10px; }
+    #penas-modal .pen-col-pena { font-weight:800; min-width:130px; }
+    #penas-modal .pen-col-crime { min-width:200px; }
+    #penas-modal .pen-lista { margin:0; padding-left:14px; }
+    #penas-modal .pen-lista li { margin-bottom:3px; }
+    #penas-modal .pen-art { display:block; font-size:10.5px; font-weight:700; color:var(--app-primary); margin-top:2px; }
+    #penas-modal .pen-obs { display:block; font-size:10.5px; color:var(--text-muted); margin-top:3px; font-style:italic; }
+    /* Indicadores calculados da pena (chips) */
+    .pen-ind { display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:99px; margin:0 3px 3px 0; white-space:nowrap; border:1px solid; }
+    .pen-ind.sim { background:#dcfce7; color:#166534; border-color:#86efac; }
+    .pen-ind.nao { background:#f1f5f9; color:#94a3b8; border-color:#e2e8f0; text-decoration:line-through; }
+    .pen-ind.presc { background:#ede9fe; color:#5b21b6; border-color:#c4b5fd; }
+    #penas-modal .pen-col-base { color:var(--text-muted); white-space:nowrap; font-size:11px; }
+    #penas-modal .pen-col-obs { color:var(--text-muted); font-size:11px; }
+    #penas-modal .pen-l3 { display:block; font-size:9.5px; font-weight:700; color:var(--text-muted); margin-top:2px; }
+    #penas-modal .pen-celula-oculta { display:inline-block; min-width:70px; padding:2px 8px; border-radius:4px; background:repeating-linear-gradient(45deg, #cbd5e1, #cbd5e1 4px, #e2e8f0 4px, #e2e8f0 8px); color:transparent; cursor:pointer; user-select:none; }
+    #penas-modal .pen-celula-oculta:hover { outline:2px solid var(--app-primary); }
+    #penas-modal .pen-celula-revelada { animation:penRevela 0.25s ease; }
+    @keyframes penRevela { from { background:#fef08a; } to { background:transparent; } }
+    #penas-modal .pen-acoes-linha { display:flex; gap:2px; align-items:center; white-space:nowrap; }
+    #penas-modal .pen-classif-btn { font-size:13px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.3; }
+    #penas-modal .pen-classif-btn.ativa { opacity:1; }
+    #penas-modal .pen-classif-btn:hover { opacity:0.8; }
+    #penas-modal .pen-btn-icone { background:none; border:none; cursor:pointer; font-size:12px; opacity:0.6; padding:0 2px; }
+    #penas-modal .pen-btn-icone:hover { opacity:1; }
+    #penas-modal .pen-selo-oficial { font-size:9px; font-weight:800; color:#b91c1c; margin-left:4px; }
+    /* Painel "Treinar" */
+    #penas-modal .pen-treino-painel { max-width:620px; margin:10px auto; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+    #penas-modal .pen-treino-titulo { font-size:15px; font-weight:800; color:var(--text-main); }
+    #penas-modal .pen-treino-sub { font-size:11.5px; color:var(--text-muted); line-height:1.5; }
+    #penas-modal .pen-opcao { display:flex; flex-direction:column; gap:6px; }
+    #penas-modal .pen-opcao-rotulo { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); }
+    #penas-modal .pen-pills { display:flex; flex-wrap:wrap; gap:6px; }
+    #penas-modal .pen-pill { padding:6px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #penas-modal .pen-pill.ativa { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #penas-modal .pen-comecar { align-self:flex-start; padding:10px 22px; border-radius:8px; border:none; background:var(--app-primary); color:#fff; font-size:13px; font-weight:800; cursor:pointer; }
+    #penas-modal .pen-comecar:disabled { opacity:0.45; cursor:not-allowed; }
+</style>
+    <div class="analytics-modal-content">
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">⛓️ Penas</div>
+            <div class="pen-cabecalho-acoes">
+                <button class="pen-cab-btn primario" onclick="window.PENAS_RUNTIME.abrirModalCriar()">+ Criar Penas</button>
+                <details class="pen-export-menu" title="Gera o .json no formato da base oficial: salve em dados/penas/ e acrescente o caminho em dados/manifesto-penas.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="pen-export-opcoes"><button onclick="window.PENAS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PENAS_RUNTIME.exportar('materia')">Disciplina selecionada</button><button onclick="window.PENAS_RUNTIME.exportar('divisao')">Tópico (L2) selecionado</button></div></details>
+                <button class="analytics-close-btn" id="pen-modal-btn-maximizar" onclick="window.alternarMaximizarPenasModal()" title="Minimizar">🗗</button>
+                <button class="analytics-close-btn" onclick="window.fecharPenasModal()">&#x2715;</button>
+            </div>
+        </div>
+        <div class="fc-grid">
+            <div class="fc-col" id="pen-col-materias"></div>
+            <div class="fc-col" id="pen-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="pen-col-principal"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: + Criar Penas (colar a saída do Gem "Extrator de Penas") -->
+<div id="modal-penas-criar" class="mo">
+<style>
+    #modal-penas-criar { z-index: 10000; }
+    #modal-penas-criar .mdl { max-width:960px; width:96%; height:92vh; max-height:92vh; padding:22px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; }
+    #modal-penas-criar .pen-criar-cab { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); display:flex; justify-content:space-between; align-items:center; }
+    #modal-penas-criar .pen-criar-fechar { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    #modal-penas-criar .pen-criar-ajuda { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-penas-criar .pen-criar-ajuda code { background:var(--bg-soft); border:1px solid var(--border-color); border-radius:4px; padding:0 4px; font-size:10.5px; }
+    #modal-penas-criar textarea { flex:1; min-height:200px; width:100%; box-sizing:border-box; resize:none; padding:12px; border:1px solid var(--border-color); border-radius:8px; font-family:var(--font-body); font-size:12.5px; line-height:1.55; background:var(--bg-white); color:var(--text-main); }
+    #modal-penas-criar textarea:focus { outline:none; border-color:var(--app-primary); }
+    #modal-penas-criar .pen-criar-status { font-size:12px; color:var(--text-main); line-height:1.5; background:var(--bg-soft); border:1px solid var(--border-color); border-radius:8px; padding:8px 10px; max-height:120px; overflow-y:auto; }
+    #modal-penas-criar .pen-criar-status .ok { color:#15803d; font-weight:700; }
+    #modal-penas-criar .pen-criar-status .aviso { color:#b45309; font-weight:700; }
+    #modal-penas-criar .pen-criar-linha { display:flex; gap:10px; flex-wrap:wrap; }
+    #modal-penas-criar .fc-form-campo { flex:1; min-width:200px; }
+    #modal-penas-criar .fc-form-campo label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+    #modal-penas-criar .fc-form-campo select { width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; font-family:var(--font-body); font-size:13px; box-sizing:border-box; background:var(--bg-white); color:var(--text-main); }
+    #modal-penas-criar .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #modal-penas-criar .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #modal-penas-criar .fc-footer-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    #modal-penas-criar .fc-form-erro { font-size:11px; color:var(--danger); font-weight:700; }
+</style>
+    <div class="mdl">
+        <div class="pen-criar-cab"><span>+ Criar Penas</span><button class="pen-criar-fechar" onclick="window.PENAS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
+        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>T = Matéria &gt; Divisão &gt; Tópico</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
+        <textarea id="pen-criar-texto" placeholder="Cole as penas aqui..." oninput="window.PENAS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PENAS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
+        <div class="pen-criar-status" id="pen-criar-status">Aguardando...</div>
+        <div class="pen-criar-linha" id="pen-criar-fallback" style="display:none;">
+            <div class="fc-form-campo">
+                <label>Matéria (itens sem T reconhecido)</label>
+                <select id="pen-criar-materia" onchange="window.PENAS_RUNTIME._preencherDivisoesCriar()"></select>
+            </div>
+            <div class="fc-form-campo">
+                <label>Divisão (L2)</label>
+                <select id="pen-criar-divisao"></select>
+            </div>
+        </div>
+        <div id="pen-criar-erro" class="fc-form-erro" style="display:none;"></div>
+        <div class="mfoot">
+            <button class="fc-footer-btn" onclick="window.PENAS_RUNTIME.fecharModalCriar()">Cancelar</button>
+            <button class="fc-footer-btn primario" id="pen-criar-btn" onclick="window.PENAS_RUNTIME.confirmarCriacao()" disabled>Criar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: 🎯 Treino "clica e aparece" -->
+<div id="modal-penas-treino" class="mo">
+<style>
+    #modal-penas-treino { z-index: 10000; }
+    #modal-penas-treino .mdl { max-width:none; width:100vw; height:100vh; max-height:100vh; border-radius:0; padding:18px 24px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    #modal-penas-treino .pnt-topo { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    #modal-penas-treino .pnt-titulo { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
+    #modal-penas-treino .pnt-fechar { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-muted); }
+    #modal-penas-treino .pnt-progresso { display:flex; align-items:center; gap:10px; font-size:11px; font-weight:700; color:var(--text-muted); }
+    #modal-penas-treino .pnt-barra { flex:1; height:6px; background:#e2e8f0; border-radius:99px; overflow:hidden; }
+    #modal-penas-treino .pnt-barra > div { height:100%; background:var(--app-primary); transition:width 0.2s; }
+    #modal-penas-treino .pnt-palco { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow-y:auto; }
+    #modal-penas-treino .pnt-carta { width:min(860px, 100%); background:var(--bg-white); border:1px solid var(--border-color); border-left:5px solid var(--app-primary); border-radius:14px; padding:28px 32px; display:flex; flex-direction:column; gap:16px; box-shadow:0 10px 30px rgba(15,23,42,0.08); }
+    #modal-penas-treino .pnt-origem { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.03em; }
+    #modal-penas-treino .pnt-ato { font-size:clamp(18px, 1.6vw, 26px); font-weight:800; color:var(--text-main); line-height:1.3; }
+    #modal-penas-treino .pnt-campo { display:flex; flex-direction:column; gap:4px; }
+    #modal-penas-treino .pnt-rotulo { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); }
+    #modal-penas-treino .pnt-valor { font-size:clamp(14px, 1.1vw, 17px); color:var(--text-main); line-height:1.5; }
+    #modal-penas-treino .pnt-valor.pena { font-size:clamp(26px, 2.4vw, 38px); font-weight:900; color:var(--app-primary); }
+    #modal-penas-treino .pnt-oculto { align-self:flex-start; padding:10px 18px; border-radius:8px; border:2px dashed var(--app-primary); background:var(--bg-accent-soft); color:var(--app-primary); font-size:13px; font-weight:800; cursor:pointer; }
+    #modal-penas-treino .pnt-oculto.grande { font-size:16px; padding:14px 26px; }
+    #modal-penas-treino .pnt-oculto:hover { background:var(--app-primary); color:#fff; }
+    #modal-penas-treino .pnt-revelado { animation:pntRevela 0.3s ease; }
+    @keyframes pntRevela { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    #modal-penas-treino .pnt-nav { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+    #modal-penas-treino .pnt-btn { padding:12px 18px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:13px; font-weight:800; cursor:pointer; color:var(--text-main); }
+    #modal-penas-treino .pnt-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    #modal-penas-treino .pnt-btn.dificil { border-color:#fca5a5; color:#b91c1c; }
+    #modal-penas-treino .pnt-btn.medio { border-color:#fcd34d; color:#92400e; }
+    #modal-penas-treino .pnt-btn.facil { border-color:#86efac; color:#15803d; }
+    #modal-penas-treino .pnt-btn.ativa.dificil { background:#dc2626; border-color:#dc2626; color:#fff; }
+    #modal-penas-treino .pnt-btn.ativa.medio { background:#f59e0b; border-color:#f59e0b; color:#fff; }
+    #modal-penas-treino .pnt-btn.ativa.facil { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #modal-penas-treino .pnt-seta { width:50px; height:50px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:20px; cursor:pointer; color:var(--app-primary); }
+    #modal-penas-treino .pnt-seta:disabled { opacity:0.35; cursor:not-allowed; }
+    #modal-penas-treino .pnt-dica { text-align:center; font-size:11px; color:var(--text-muted); }
+    #modal-penas-treino .pnt-fim { text-align:center; display:flex; flex-direction:column; gap:14px; align-items:center; }
+    #modal-penas-treino .pen-lista { margin:0; padding-left:20px; }
+    #modal-penas-treino .pen-lista li { margin-bottom:4px; }
+    #modal-penas-treino .pen-ind { font-size:12px; padding:4px 10px; }
+    #modal-penas-treino .pnt-fim-numeros { display:flex; gap:18px; font-size:18px; font-weight:800; }
+</style>
+    <div class="mdl">
+        <div class="pnt-topo">
+            <div class="pnt-titulo" id="pnt-titulo">🎯 Treino de Penas</div>
+            <button class="pnt-fechar" onclick="window.PENAS_RUNTIME.fecharTreino()" title="Fechar (Esc)">✕</button>
+        </div>
+        <div class="pnt-progresso"><span id="pnt-pos">0 / 0</span><div class="pnt-barra"><div id="pnt-barra-cheia" style="width:0%;"></div></div><span id="pnt-placar"></span></div>
+        <div class="pnt-palco" id="pnt-palco"></div>
+        <div class="pnt-nav" id="pnt-nav">
+            <button class="pnt-seta" id="pnt-ant" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.navegarTreino(-1)" title="Anterior (←)">←</button>
+            <button class="pnt-btn dificil" id="pnt-b-dificil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('dificil')" title="Errei (1)">🔴 Errei</button>
+            <button class="pnt-btn medio" id="pnt-b-medio" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('medio')" title="Hesitei (2)">🟡 Hesitei</button>
+            <button class="pnt-btn facil" id="pnt-b-facil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('facil')" title="Acertei (3)">🟢 Acertei</button>
+            <button class="pnt-seta" id="pnt-prox" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.navegarTreino(1)" title="Próximo (→)">→</button>
+        </div>
+        <div class="pnt-dica">Espaço revela tudo · 1 / 2 / 3 avaliam e avançam · ← → navegam · Esc fecha</div>
+    </div>
+</div>
+
+<script>
+// =========================================================================
+// ⛓️ PENAS — parser, indicadores calculados, runtime, base oficial
+// =========================================================================
+
+// ── PARSER DE "+ CRIAR PENAS" (saída do Gem "Extrator de Penas") ──
+// Mesmo princípio de parsearPrazosTexto. QUALIFICADA / AUMENTO /
+// DIMINUIÇÃO podem se repetir (cada linha = uma hipótese) e viram listas.
+function parsearPenasTexto(txt) {
+    let linhas = String(txt || '').replace(/\r/g, '').split('\n');
+    let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
+    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS)(?:\*\*)?\s*[=:]\s*(.*)$/i;
+    let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
+    let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
+    let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:)/i;
+    let LISTAS = { qualificadas: 1, aumentos: 1, diminuicoes: 1 };
+    let itens = [], incompletos = 0, atual = null, campo = null;
+    function chave(c) {
+        c = c.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (c === 'T') return 't';
+        if (c === 'CRIME') return 'crime';
+        if (/^ART/.test(c)) return 'art';
+        if (c === 'PENA') return 'pena';
+        if (/^QUALIFIC/.test(c)) return 'qualificadas';
+        if (/^AUMENTO|^MAJORANTE/.test(c)) return 'aumentos';
+        if (/^DIMINUI|^MINORANTE|^PRIVILEGIO/.test(c)) return 'diminuicoes';
+        if (/^ACAO/.test(c)) return 'acao';
+        return 'obs';
+    }
+    function vazio(v) { v = String(v || '').trim(); return !v || v === '—' || v === '-' || v === '–' || /^(n[ãa]o h[áa]|nenhuma?|inexistente|n\/a)\.?$/i.test(v); }
+    function limpar(v) { v = String(v || '').replace(RE_CITE, '').replace(/\s+/g, ' ').trim(); return vazio(v) ? '' : v; }
+    function fechar() {
+        if (atual) {
+            let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs) };
+            Object.keys(LISTAS).forEach(function(k) { it[k] = atual[k].map(limpar).filter(Boolean); });
+            if (it.crime && it.pena) itens.push(it);
+            else if (it.crime || it.pena || it.t) incompletos++;
+        }
+        atual = null; campo = null;
+    }
+    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
+    for (let i = 0; i < linhas.length; i++) {
+        let l = linhas[i].trim();
+        if (!l) continue;
+        let m;
+        if (RE_ITEM.test(l)) { novo(); continue; }
+        if (RE_BLOCO.test(l)) { fechar(); continue; }
+        if ((m = l.match(RE_CAMPO))) {
+            let k = chave(m[1]);
+            if (!atual || (LISTAS[k] ? false : (atual[k] && (k === 't' || k === 'crime')))) novo();
+            if (LISTAS[k]) atual[k].push(m[2].trim()); else atual[k] = m[2].trim();
+            campo = k;
+            continue;
+        }
+        if (RE_RUIDO.test(l)) { fechar(); continue; }
+        if (atual && campo) {
+            if (LISTAS[campo]) { let arr = atual[campo]; if (arr.length) arr[arr.length - 1] += ' ' + l; }
+            else atual[campo] += ' ' + l;
+            continue;
+        }
+    }
+    fechar();
+    return { itens: itens, incompletos: incompletos };
+}
+
+// "reclusão, de 1 (um) a 4 (quatro) anos, e multa" →
+// {especie:'reclusão', minMeses:12, maxMeses:48, multa:true}
+function interpretarPenaTexto(texto) {
+    let t = String(texto || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ');
+    // Números por extenso (o CP escreve "de um a seis meses").
+    let EXT = { 'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'tres': 3, 'três': 3, 'quatro': 4, 'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, 'onze': 11, 'doze': 12, 'treze': 13, 'quatorze': 14, 'catorze': 14, 'quinze': 15, 'dezesseis': 16, 'dezessete': 17, 'dezoito': 18, 'dezenove': 19, 'vinte': 20, 'trinta': 30 };
+    t = t.replace(/\b(um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta)\b(?=\s*(?:a\b|até\b|dias?\b|m[eê]s|anos?\b))/g, function(w) { return String(EXT[w]); });
+    let esp = (t.match(/reclus[aã]o|deten[cç][aã]o|pris[aã]o simples/) || [''])[0]
+        .replace('reclusao', 'reclusão').replace('detencao', 'detenção').replace('prisao', 'prisão');
+    let UN = '(dias?|m[eê]s(?:es)?|anos?)';
+    let m = t.match(new RegExp('(\\d+)\\s*' + UN + '?\\s*(?:a|até)\\s*(\\d+)\\s*' + UN));
+    let mesesDe = function(n, un) {
+        n = parseInt(n, 10);
+        if (/^dia/.test(un)) return n / 30;
+        if (/^m/.test(un)) return n;
+        return n * 12;
+    };
+    let r = { especie: esp, minMeses: null, maxMeses: null, multa: /multa/.test(t) };
+    if (m) {
+        r.minMeses = mesesDe(m[1], m[2] || m[4]);
+        r.maxMeses = mesesDe(m[3], m[4]);
+    }
+    return r;
+}
+
+// Prazo da prescrição em abstrato pelo máximo da pena (art. 109, CP).
+function prescricaoAbstrataAnos(maxMeses) {
+    if (maxMeses == null) return null;
+    if (maxMeses > 144) return 20;
+    if (maxMeses > 96) return 16;
+    if (maxMeses > 48) return 12;
+    if (maxMeses > 24) return 8;
+    if (maxMeses >= 12) return 4;
+    return 3;
+}
+
+window.PENAS_RUNTIME = {
+    itens: {},      // { "L1 > L2": [ {id, crime, art, pena, qualificadas[], aumentos[], diminuicoes[], acao, obs, l3, origem_oficial?} ] }
+    estado: {},     // { id: {ultimaClassificacao, atualizadoEm, erros, acertos} }
+    excluidos: {},
+    _bootstrapped: false,
+    _materia: null,
+    _divisao: null,
+    _aba: 'tabela',
+    _busca: '',
+    _cortina: { pena: true },
+    _revelados: {},
+    _treinoCfg: { filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif' },
+    _treino: null,
+    _criacao: null,
+
+    // ── PERSISTÊNCIA (mesmo padrão de PRAZOS_RUNTIME) ──
+    carregar: function() {
+        let bruto = null;
+        try { bruto = JSON.parse(window.lerPenasBruto() || 'null'); } catch (e) { bruto = null; }
+        let dict = function(v) { return v && typeof v === 'object' && !Array.isArray(v); };
+        let oficiais = {};
+        Object.keys(this.itens || {}).forEach(function(ch) {
+            let of = (this.itens[ch] || []).filter(function(i) { return i.origem_oficial; });
+            if (of.length) oficiais[ch] = of;
+        }, this);
+        this.itens = (bruto && dict(bruto.itens)) ? bruto.itens : {};
+        this.estado = (bruto && dict(bruto.estado)) ? bruto.estado : {};
+        this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
+        Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
+        this._bootstrapped = true;
+    },
+    _garantirCarregado: function() { if (!this._bootstrapped) this.carregar(); },
+    salvar: function() {
+        try {
+            let self = this, pessoais = {};
+            Object.keys(this.itens).forEach(function(ch) {
+                let p = (self.itens[ch] || []).filter(function(i) { return !i.origem_oficial; });
+                if (p.length) pessoais[ch] = p;
+            });
+            window.salvarPenasBruto(JSON.stringify({ itens: pessoais, estado: this.estado, excluidos: this.excluidos }));
+            return true;
+        } catch (e) { console.warn('[PENAS] Falha ao salvar:', e); return false; }
+    },
+
+    // ── UTILITÁRIOS ──
+    _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
+    _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
+    _norm: function(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); },
+    _chaveL2: function(m, d) { return m + ' > ' + d; },
+    _hash: function(t) { let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return (h >>> 0).toString(36); },
+    _idPorConteudo: function(crime, art) { return 'pen_' + this._hash(this._norm(crime) + '|' + this._norm(art)); },
+    _slug: function(t) { return this._norm(t).replace(/\s+/g, '-'); },
+    _mesclarItens: function(chave, novos) {
+        if (!Array.isArray(this.itens[chave])) this.itens[chave] = [];
+        let arr = this.itens[chave];
+        novos.forEach(function(n) {
+            let idx = arr.findIndex(function(i) { return i.id === n.id; });
+            if (idx === -1) arr.push(n); else arr[idx] = n;
+        });
+    },
+    _todosItens: function() {
+        let self = this, lista = [];
+        Object.keys(this.itens).forEach(function(ch) {
+            (self.itens[ch] || []).forEach(function(i) { if (!self.excluidos[i.id] || i.origem_oficial) lista.push({ item: i, chave: ch }); });
+        });
+        return lista;
+    },
+    _contar: function(alvo, exato) {
+        let self = this, n = 0;
+        Object.keys(this.itens).forEach(function(ch) { if (exato ? ch === alvo : ch.indexOf(alvo + ' > ') === 0) n += (self.itens[ch] || []).length; });
+        return n;
+    },
+    _acharItem: function(id) {
+        let chaves = Object.keys(this.itens);
+        for (let i = 0; i < chaves.length; i++) {
+            let it = (this.itens[chaves[i]] || []).find(function(x) { return x.id === id; });
+            if (it) return { item: it, chave: chaves[i] };
+        }
+        return null;
+    },
+    _itensDoRecorte: function() {
+        let self = this, busca = this._norm(this._busca);
+        if (!this._materia) return [];
+        let ordemDiv = {};
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
+        ((mat && mat.divisoes) || []).forEach(function(d, i) { ordemDiv[self._chaveL2(self._materia, d.nivel_2)] = i; });
+        return this._todosItens().filter(function(p) {
+            if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
+            else if (p.chave.indexOf(self._materia + ' > ') !== 0) return false;
+            if (busca) {
+                let i = p.item;
+                let txt = [i.crime, i.art, i.pena, i.acao, i.obs, i.l3].concat(i.qualificadas || [], i.aumentos || [], i.diminuicoes || []).join(' ');
+                if (self._norm(txt).indexOf(busca) === -1) return false;
+            }
+            return true;
+        }).sort(function(a, b) {
+            let oa = ordemDiv.hasOwnProperty(a.chave) ? ordemDiv[a.chave] : 999, ob = ordemDiv.hasOwnProperty(b.chave) ? ordemDiv[b.chave] : 999;
+            if (oa !== ob) return oa - ob;
+            return String(a.item.l3 || '').localeCompare(String(b.item.l3 || ''), 'pt-BR') || (a.item._ordem || 0) - (b.item._ordem || 0);
+        });
+    },
+
+    // ── INDICADORES CALCULADOS (a partir da pena-base) ──
+    // Regras: art. 61 e art. 89 da Lei 9.099/95; art. 28-A do CPP; art. 109
+    // do CP. Calculados só da pena cominada (mínimo/máximo) — os demais
+    // requisitos de cada instituto ficam no title (tooltip) de cada chip.
+    _fmtMeses: function(m) {
+        if (m == null) return '';
+        if (m < 1) return Math.round(m * 30) + ' dias';
+        if (m % 12 === 0) return (m / 12) + (m === 12 ? ' ano' : ' anos');
+        if (m < 12) return m + (m === 1 ? ' mês' : ' meses');
+        return Math.floor(m / 12) + 'a ' + (m % 12) + 'm';
+    },
+    _indicadores: function(item) {
+        let p = interpretarPenaTexto(item.pena);
+        if (p.minMeses == null || p.maxMeses == null) return null;
+        let presc = prescricaoAbstrataAnos(p.maxMeses);
+        return {
+            pena: p,
+            lista: [
+                { rotulo: 'Menor potencial ofensivo', sim: p.maxMeses <= 24, base: 'Pena máxima não superior a 2 anos (art. 61 da Lei 9.099/95). Não se aplica à violência doméstica contra a mulher (art. 41 da Lei 11.340/06).' },
+                { rotulo: 'Sursis processual', sim: p.minMeses <= 12, base: 'Pena mínima igual ou inferior a 1 ano (art. 89 da Lei 9.099/95), além dos demais requisitos do artigo.' },
+                { rotulo: 'ANPP', sim: p.minMeses < 48, base: 'Pena mínima inferior a 4 anos (art. 28-A do CPP); exige ainda infração sem violência ou grave ameaça, confissão e os demais requisitos do artigo.' }
+            ],
+            prescricao: presc
+        };
+    },
+    _htmlIndicadores: function(item) {
+        let ind = this._indicadores(item);
+        let self = this;
+        if (!ind) return '<span style="color:var(--text-muted); font-size:11px;">—</span>';
+        return ind.lista.map(function(i) {
+            return '<span class="pen-ind ' + (i.sim ? 'sim' : 'nao') + '" title="' + self._esc(i.base) + '">' + (i.sim ? '✓ ' : '') + i.rotulo + '</span>';
+        }).join('') +
+        '<span class="pen-ind presc" title="Prescrição em abstrato pelo máximo da pena (' + this._esc(this._fmtMeses(ind.pena.maxMeses)) + ') — art. 109 do CP">Prescrição: ' + ind.prescricao + ' anos</span>';
+    },
+
+    // ── NAVEGAÇÃO ──
+    init: function() {
+        this.carregar();
+        this.render();
+        let self = this;
+        if (typeof window.carregarPenasOficiais === 'function') window.carregarPenasOficiais().then(function() { self.render(); });
+    },
+    render: function() {
+        let col = document.getElementById('pen-col-materias');
+        if (!col) return;
+        let self = this;
+        col.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
+            let n = self._contar(m.nivel_1, false);
+            return '<div class="fc-materia-item' + (m.nivel_1 === self._materia ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarMateria(\'' + self._escJs(m.nivel_1) + '\')">' +
+                '<span class="fc-materia-nome">' + self._esc(m.nivel_1) + '</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' + (n ? '<span class="fc-materia-count">' + n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
+        }).join('');
+        this._renderDivisoes();
+        this._renderPrincipal();
+    },
+    selecionarMateria: function(m) { this._materia = m; this._divisao = null; this._revelados = {}; this.render(); },
+    selecionarDivisao: function(d) { this._divisao = d || null; this._revelados = {}; this._renderDivisoes(); this._renderPrincipal(); },
+    _renderDivisoes: function() {
+        let col = document.getElementById('pen-col-divisoes');
+        if (!col) return;
+        let self = this;
+        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>'; return; }
+        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
+        col.innerHTML = '<div class="fc-divisao-item' + (!this._divisao ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + this._contar(this._materia, false) + '</span></div>' +
+            ((mat && mat.divisoes) || []).map(function(d) {
+                return '<div class="fc-divisao-item' + (self._divisao === d.nivel_2 ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarDivisao(\'' + self._escJs(d.nivel_2) + '\')"><span>' + self._esc(d.nivel_2) + '</span><span class="fc-divisao-count">' + self._contar(self._chaveL2(self._materia, d.nivel_2), true) + '</span></div>';
+            }).join('');
+    },
+    trocarAba: function(aba) { this._aba = aba; this._renderPrincipal(); },
+    filtrarBusca: function(v) { this._busca = v || ''; if (document.getElementById('pen-scroll')) this._renderCorpo(); },
+    _renderPrincipal: function() {
+        let col = document.getElementById('pen-col-principal');
+        if (!col) return;
+        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria (ex.: Direito Penal) para ver as penas.<br>Para cadastrar, use <strong>+ Criar Penas</strong> e cole a saída do Gem.</div>'; return; }
+        col.innerHTML =
+            '<div class="pen-toolbar">' +
+                '<div class="pen-abas">' +
+                    '<button class="pen-aba' + (this._aba === 'tabela' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'tabela\')">📋 Tabela</button>' +
+                    '<button class="pen-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
+                '</div>' +
+                (this._aba === 'tabela' ? '<input type="text" class="pen-busca" placeholder="🔎 Buscar..." value="' + this._esc(this._busca) + '" oninput="window.PENAS_RUNTIME.filtrarBusca(this.value)">' : '') +
+                '<span class="pen-info" id="pen-info"></span>' +
+            '</div>' +
+            '<div class="pen-scroll" id="pen-scroll"></div>';
+        this._renderCorpo();
+    },
+    _renderCorpo: function() { if (this._aba === 'treino') this._renderPainelTreino(); else this._renderTabela(); },
+
+    // ── 📋 TABELA COM CORTINA ──
+    COLUNAS: [
+        { k: 'crime', rotulo: 'Crime' },
+        { k: 'pena', rotulo: 'Pena' },
+        { k: 'qualificadas', rotulo: 'Qualificadoras' },
+        { k: 'aumentos', rotulo: 'Aumento' },
+        { k: 'diminuicoes', rotulo: 'Diminuição' },
+        { k: 'acao', rotulo: 'Ação penal' },
+        { k: 'indicadores', rotulo: 'Indicadores' }
+    ],
+    alternarCortina: function(k) {
+        this._cortina[k] = !this._cortina[k];
+        let self = this;
+        Object.keys(this._revelados).forEach(function(c) { if (c.split('|')[1] === k) delete self._revelados[c]; });
+        this._renderTabela();
+    },
+    revelarCelula: function(id, k, el) {
+        this._revelados[id + '|' + k] = true;
+        let p = this._acharItem(id);
+        if (el && p) el.outerHTML = '<span class="pen-celula-revelada">' + this._htmlValor(p.item, k) + '</span>';
+    },
+    _htmlLista: function(arr) {
+        let self = this;
+        if (!arr || !arr.length) return '<span style="color:var(--text-muted);">—</span>';
+        if (arr.length === 1) return this._esc(arr[0]);
+        return '<ul class="pen-lista">' + arr.map(function(x) { return '<li>' + self._esc(x) + '</li>'; }).join('') + '</ul>';
+    },
+    _htmlValor: function(it, k) {
+        if (k === 'crime') return this._esc(it.crime) + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '');
+        if (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes') return this._htmlLista(it[k]);
+        if (k === 'indicadores') return this._htmlIndicadores(it);
+        let v = it[k];
+        return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
+    },
+    _htmlClassif: function(id) {
+        let e = this.estado[id] || {}, self = this;
+        return [['dificil', '🔴', 'Errei'], ['medio', '🟡', 'Hesitei'], ['facil', '🟢', 'Acertei']].map(function(n) {
+            return '<button class="pen-classif-btn' + (e.ultimaClassificacao === n[0] ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.classificar(\'' + self._escJs(id) + '\', \'' + n[0] + '\')" title="' + n[2] + '">' + n[1] + '</button>';
+        }).join('');
+    },
+    _renderTabela: function() {
+        let scroll = document.getElementById('pen-scroll');
+        if (!scroll) return;
+        let self = this, lista = this._itensDoRecorte();
+        let info = document.getElementById('pen-info');
+        if (info) info.textContent = lista.length + (lista.length === 1 ? ' tipo penal' : ' tipos penais');
+        if (!lista.length) { scroll.innerHTML = '<div class="fc-vazio-col">' + (this._busca ? 'Nada encontrado para essa busca.' : 'Nenhuma pena aqui ainda.<br>Use <strong>+ Criar Penas</strong> e cole a saída do Gem.') + '</div>'; return; }
+        let cab = '<tr>' + this.COLUNAS.map(function(c) {
+            let oc = !!self._cortina[c.k];
+            return '<th class="pen-th-cortina" onclick="window.PENAS_RUNTIME.alternarCortina(\'' + c.k + '\')" title="' + (oc ? 'Mostrar a coluna' : 'Esconder a coluna (cortina)') + '">' + c.rotulo + '<span class="pen-olho">' + (oc ? '🙈' : '👁') + '</span></th>';
+        }).join('') + '<th></th></tr>';
+        let grupo = null, linhas = '';
+        lista.forEach(function(p) {
+            let it = p.item;
+            if (!self._divisao && p.chave !== grupo) { grupo = p.chave; linhas += '<tr class="pen-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>'; }
+            linhas += '<tr>' + self.COLUNAS.map(function(c) {
+                let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
+                return '<td class="pen-col-' + c.k + '">' + (oculto
+                    ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
+                    : self._htmlValor(it, c.k)) + '</td>';
+            }).join('') +
+            '<td><span class="pen-acoes-linha">' + self._htmlClassif(it.id) +
+                (it.origem_oficial ? '' : '<button class="pen-btn-icone" onclick="window.PENAS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir">🗑️</button>') +
+            '</span></td></tr>';
+        });
+        scroll.innerHTML = '<div class="pen-dica">Clique no título de uma coluna para esconder/mostrar (cortina) · clique numa célula oculta para revelá-la · passe o mouse nos indicadores para ver a regra.</div>' +
+            '<table class="pen-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
+    },
+    classificar: function(id, nivel, doTreino) {
+        let atual = this.estado[id] || {};
+        let novo = Object.assign({}, atual);
+        novo.ultimaClassificacao = (!doTreino && atual.ultimaClassificacao === nivel) ? null : nivel;
+        if (doTreino) {
+            if (nivel === 'dificil') novo.erros = (atual.erros || 0) + 1;
+            if (nivel === 'facil') novo.acertos = (atual.acertos || 0) + 1;
+        }
+        novo.atualizadoEm = Date.now();
+        this.estado[id] = novo;
+        this.salvar();
+        if (this._aba === 'tabela' && document.getElementById('pen-scroll')) this._renderTabela();
+    },
+    excluir: function(id) {
+        let p = this._acharItem(id);
+        if (!p || p.item.origem_oficial) return;
+        if (!confirm('Excluir "' + p.item.crime + '"?')) return;
+        this.itens[p.chave] = this.itens[p.chave].filter(function(i) { return i.id !== id; });
+        if (!this.itens[p.chave].length) delete this.itens[p.chave];
+        this.excluidos[id] = new Date().toISOString();
+        delete this.estado[id];
+        this.salvar();
+        this.render();
+    },
+
+    // ── 🎯 TREINAR (clica e aparece) ──
+    FILTROS_TREINO: [
+        { k: 'todos', rotulo: 'Todos' },
+        { k: 'nao_avaliados', rotulo: 'Ainda não avaliados' },
+        { k: 'dificil', rotulo: '🔴 Errei' },
+        { k: 'medio', rotulo: '🟡 Hesitei' },
+        { k: 'facil', rotulo: '🟢 Acertei' }
+    ],
+    _passaFiltroTreino: function(id, f) {
+        let e = this.estado[id] || {};
+        if (f === 'todos') return true;
+        if (f === 'nao_avaliados') return !e.ultimaClassificacao;
+        return e.ultimaClassificacao === f;
+    },
+    configTreino: function(campo, valor) { this._treinoCfg[campo] = valor; this._renderPainelTreino(); },
+    _renderPainelTreino: function() {
+        let scroll = document.getElementById('pen-scroll');
+        if (!scroll) return;
+        let self = this, cfg = this._treinoCfg, base = this._itensDoRecorte();
+        let info = document.getElementById('pen-info');
+        if (info) info.textContent = base.length + ' no recorte';
+        let pill = function(campo, valor, rotulo, n) {
+            return '<button class="pen-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
+        };
+        let disp = base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }).length;
+        scroll.innerHTML = '<div class="pen-treino-painel">' +
+            '<div class="pen-treino-titulo">🎯 Clica e aparece</div>' +
+            '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._divisao || (this._materia + ' — todas as divisões')) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
+                this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
+                pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + aumento/diminuição + ação') + '</div></div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quantidade</span><div class="pen-pills">' + pill('quantidade', 10, '10') + pill('quantidade', 20, '20') + pill('quantidade', 0, 'Todos') + '</div></div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">Ordem</span><div class="pen-pills">' + pill('embaralhar', true, '🔀 Embaralhada') + pill('embaralhar', false, 'Na ordem da tabela') + '</div></div>' +
+            '<button class="pen-comecar" onclick="window.PENAS_RUNTIME.iniciarTreino()"' + (disp ? '' : ' disabled') + '>▶ Começar (' + (cfg.quantidade && cfg.quantidade < disp ? cfg.quantidade : disp) + ')</button>' +
+        '</div>';
+    },
+    iniciarTreino: function() {
+        let self = this, cfg = this._treinoCfg;
+        let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        if (!lista.length) return;
+        if (cfg.embaralhar) for (let i = lista.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = lista[i]; lista[i] = lista[j]; lista[j] = t; }
+        if (cfg.quantidade) lista = lista.slice(0, cfg.quantidade);
+        let tudo = cfg.esconder === 'tudo';
+        let esconder = { pena: true, qualificadas: cfg.esconder !== 'pena', aumentos: tudo, diminuicoes: tudo, acao: tudo };
+        this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false };
+        document.getElementById('pnt-titulo').textContent = '🎯 Treino de Penas — ' + (this._divisao || this._materia);
+        document.getElementById('modal-penas-treino').classList.add('open');
+        this._renderTreino();
+    },
+    fecharTreino: function() {
+        document.getElementById('modal-penas-treino').classList.remove('open');
+        this._treino = null;
+        this.render();
+    },
+    CAMPOS_TREINO: ['pena', 'qualificadas', 'aumentos', 'diminuicoes', 'acao'],
+    _renderTreino: function() {
+        let tr = this._treino;
+        if (!tr) return;
+        let self = this, palco = document.getElementById('pnt-palco'), total = tr.lista.length, nAval = Object.keys(tr.avaliacoes).length;
+        document.getElementById('pnt-barra-cheia').style.width = (total ? (nAval / total) * 100 : 0) + '%';
+        let cont = { dificil: 0, medio: 0, facil: 0 };
+        Object.keys(tr.avaliacoes).forEach(function(k) { cont[tr.avaliacoes[k]]++; });
+        document.getElementById('pnt-placar').textContent = '🔴 ' + cont.dificil + ' · 🟡 ' + cont.medio + ' · 🟢 ' + cont.facil;
+        let nav = document.getElementById('pnt-nav');
+        if (tr.fim) {
+            document.getElementById('pnt-pos').textContent = total + ' / ' + total;
+            nav.style.visibility = 'hidden';
+            palco.innerHTML = '<div class="pnt-fim"><div class="pnt-ato">Treino concluído 🎉</div>' +
+                '<div class="pnt-fim-numeros"><span>🔴 ' + cont.dificil + '</span><span>🟡 ' + cont.medio + '</span><span>🟢 ' + cont.facil + '</span></div>' +
+                '<div class="pnt-nav">' + (cont.dificil + cont.medio ? '<button class="pnt-btn dificil" onclick="window.PENAS_RUNTIME.retreinarErros()">↺ Treinar de novo os 🔴 e 🟡 (' + (cont.dificil + cont.medio) + ')</button>' : '') +
+                '<button class="pnt-btn" onclick="window.PENAS_RUNTIME.fecharTreino()">Fechar</button></div></div>';
+            return;
+        }
+        nav.style.visibility = 'visible';
+        let p = tr.lista[tr.idx], it = p.item;
+        document.getElementById('pnt-pos').textContent = (tr.idx + 1) + ' / ' + total;
+        let ROT = { pena: 'Pena', qualificadas: 'Qualificadoras', aumentos: 'Aumento', diminuicoes: 'Diminuição', acao: 'Ação penal' };
+        let campo = function(k) {
+            let lista = (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes');
+            let vazio = lista ? !(it[k] && it[k].length) : !it[k];
+            if (vazio && k !== 'pena') return '';
+            let oculto = tr.esconder[k] && !tr.revelados[it.id + '|' + k];
+            let valor = lista ? self._htmlLista(it[k]) : self._esc(it[k] || '—');
+            return '<div class="pnt-campo"><span class="pnt-rotulo">' + ROT[k] + '</span>' +
+                (oculto
+                    ? '<button class="pnt-oculto' + (k === 'pena' ? ' grande' : '') + '" onclick="window.PENAS_RUNTIME.revelarTreino(\'' + k + '\')">👁 Revelar ' + ROT[k].toLowerCase() + '</button>'
+                    : '<span class="pnt-valor ' + (k === 'pena' ? 'pena' : '') + ' pnt-revelado">' + valor + '</span>') +
+            '</div>';
+        };
+        let penaRevelada = tr.revelados[it.id + '|pena'];
+        palco.innerHTML = '<div class="pnt-carta">' +
+            '<div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div>' +
+            '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
+            (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
+            this.CAMPOS_TREINO.map(campo).join('') +
+            (penaRevelada ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor pnt-revelado">' + this._htmlIndicadores(it) + '</span></div>' : '') +
+            (penaRevelada && it.obs ? '<div class="pnt-campo"><span class="pnt-rotulo">Observações</span><span class="pnt-valor pnt-revelado">' + this._esc(it.obs) + '</span></div>' : '') +
+        '</div>';
+        let av = tr.avaliacoes[it.id];
+        ['dificil', 'medio', 'facil'].forEach(function(n) { document.getElementById('pnt-b-' + n).classList.toggle('ativa', av === n); });
+        document.getElementById('pnt-ant').disabled = tr.idx === 0;
+        document.getElementById('pnt-prox').disabled = tr.idx >= total - 1 && !nAval;
+    },
+    revelarTreino: function(k) {
+        let tr = this._treino;
+        if (!tr || tr.fim) return;
+        let it = tr.lista[tr.idx].item;
+        (k ? [k] : this.CAMPOS_TREINO).forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
+        this._renderTreino();
+    },
+    avaliarTreino: function(nivel) {
+        let tr = this._treino;
+        if (!tr || tr.fim) return;
+        let it = tr.lista[tr.idx].item;
+        tr.avaliacoes[it.id] = nivel;
+        this.classificar(it.id, nivel, true);
+        this.CAMPOS_TREINO.forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
+        if (tr.idx < tr.lista.length - 1) tr.idx++;
+        else if (Object.keys(tr.avaliacoes).length >= tr.lista.length) tr.fim = true;
+        else { let prox = tr.lista.findIndex(function(p) { return !tr.avaliacoes[p.item.id]; }); if (prox >= 0) tr.idx = prox; }
+        this._renderTreino();
+    },
+    navegarTreino: function(d) {
+        let tr = this._treino;
+        if (!tr || tr.fim) return;
+        let novo = tr.idx + d;
+        if (novo < 0) return;
+        if (novo >= tr.lista.length) { if (Object.keys(tr.avaliacoes).length) { tr.fim = true; this._renderTreino(); } return; }
+        tr.idx = novo;
+        this._renderTreino();
+    },
+    retreinarErros: function() {
+        let tr = this._treino;
+        if (!tr) return;
+        let lista = tr.lista.filter(function(p) { let a = tr.avaliacoes[p.item.id]; return a === 'dificil' || a === 'medio'; });
+        this._treino = { lista: lista, idx: 0, esconder: tr.esconder, revelados: {}, avaliacoes: {}, fim: false };
+        this._renderTreino();
+    },
+    _onKey: function(ev) {
+        let modal = document.getElementById('modal-penas-treino');
+        if (!modal || !modal.classList.contains('open')) return;
+        let tag = (ev.target && ev.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        if (ev.key === ' ' || ev.code === 'Space') { ev.preventDefault(); this.revelarTreino(null); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); this.navegarTreino(1); }
+        else if (ev.key === 'ArrowLeft') { ev.preventDefault(); this.navegarTreino(-1); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); this.fecharTreino(); }
+        else if (ev.key === '1') this.avaliarTreino('dificil');
+        else if (ev.key === '2') this.avaliarTreino('medio');
+        else if (ev.key === '3') this.avaliarTreino('facil');
+    },
+
+    // ── + CRIAR PENAS ──
+    _resolverTaxonomia: function(t) { return window.PRAZOS_RUNTIME._resolverTaxonomia.call(this, t); },
+    abrirModalCriar: function() {
+        this._garantirCarregado();
+        document.getElementById('pen-criar-texto').value = '';
+        document.getElementById('pen-criar-erro').style.display = 'none';
+        let sel = document.getElementById('pen-criar-materia');
+        sel.innerHTML = '<option value="">Selecione a matéria...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return '<option value="' + m.nivel_1.replace(/"/g, '&quot;') + '">' + m.nivel_1 + '</option>'; }).join('');
+        if (this._materia) sel.value = this._materia;
+        this._preencherDivisoesCriar();
+        if (this._materia && this._divisao) document.getElementById('pen-criar-divisao').value = this._divisao;
+        this._atualizarPrevia();
+        document.getElementById('modal-penas-criar').classList.add('open');
+        setTimeout(function() { document.getElementById('pen-criar-texto').focus(); }, 50);
+    },
+    fecharModalCriar: function() { document.getElementById('modal-penas-criar').classList.remove('open'); this._criacao = null; },
+    _preencherDivisoesCriar: function() {
+        let m = document.getElementById('pen-criar-materia').value, sel = document.getElementById('pen-criar-divisao');
+        sel.innerHTML = '<option value="">Selecione a divisão (L2)...</option>';
+        let mat = m && TAXONOMIA_DADOS.taxonomia_concursos.find(function(x) { return x.nivel_1 === m; });
+        ((mat && mat.divisoes) || []).forEach(function(d) { let o = document.createElement('option'); o.value = d.nivel_2; o.textContent = d.nivel_2; sel.appendChild(o); });
+    },
+    _agendarPrevia: function() { let self = this; clearTimeout(this._timerPrevia); this._timerPrevia = setTimeout(function() { self._atualizarPrevia(); }, 250); },
+    _atualizarPrevia: function() {
+        let self = this, texto = document.getElementById('pen-criar-texto').value;
+        let st = document.getElementById('pen-criar-status'), btn = document.getElementById('pen-criar-btn'), fb = document.getElementById('pen-criar-fallback');
+        if (!texto.trim()) { st.textContent = 'Aguardando...'; btn.disabled = true; fb.style.display = 'none'; this._criacao = null; return; }
+        let res = parsearPenasTexto(texto);
+        let grupos = {}, semTax = 0, repetidos = 0, semFaixa = 0, vistos = {};
+        res.itens.forEach(function(it) {
+            it._tax = self._resolverTaxonomia(it.t);
+            it._id = self._idPorConteudo(it.crime, it.art);
+            if (vistos[it._id] || self._acharItem(it._id)) repetidos++;
+            vistos[it._id] = true;
+            if (interpretarPenaTexto(it.pena).maxMeses == null) semFaixa++;
+            if (!it._tax) { semTax++; return; }
+            let ch = self._chaveL2(it._tax.materia, it._tax.divisao);
+            grupos[ch] = (grupos[ch] || 0) + 1;
+        });
+        this._criacao = { itens: res.itens, semTax: semTax };
+        if (!res.itens.length) {
+            st.innerHTML = '<span class="aviso">Nada reconhecido.</span> Confira se cada item tem as linhas <code>CRIME =</code> e <code>PENA =</code>.';
+            btn.disabled = true; fb.style.display = 'none'; return;
+        }
+        st.innerHTML = '<span class="ok">✓ ' + res.itens.length + (res.itens.length === 1 ? ' tipo penal reconhecido' : ' tipos penais reconhecidos') + '</span>' +
+            (res.incompletos ? ' <span class="aviso">(' + res.incompletos + ' incompleto(s), sem CRIME ou PENA, ignorado(s))</span>' : '') +
+            (repetidos ? ' <span class="aviso">(' + repetidos + ' já existente(s) — serão atualizados, sem duplicar)</span>' : '') +
+            (semFaixa ? '<br><span class="aviso">' + semFaixa + ' pena(s) sem faixa "X a Y" reconhecível — ficam sem indicadores calculados.</span>' : '') +
+            Object.keys(grupos).map(function(ch) { return '<br>• ' + self._esc(ch) + ' — ' + grupos[ch]; }).join('') +
+            (semTax ? '<br><span class="aviso">' + semTax + ' item(ns) com "T =" fora da taxonomia — vão para a matéria/divisão escolhida abaixo.</span>' : '');
+        fb.style.display = semTax ? 'flex' : 'none';
+        btn.disabled = false;
+    },
+    confirmarCriacao: function() {
+        let self = this;
+        this._atualizarPrevia();
+        let cr = this._criacao, erro = document.getElementById('pen-criar-erro');
+        erro.style.display = 'none';
+        if (!cr || !cr.itens.length) return;
+        let fbM = document.getElementById('pen-criar-materia').value, fbD = document.getElementById('pen-criar-divisao').value;
+        if (cr.semTax && (!fbM || !fbD)) { erro.textContent = 'Escolha a matéria e a divisão para os itens cujo "T =" não foi reconhecido.'; erro.style.display = 'block'; return; }
+        let porChave = {}, agora = new Date().toISOString(), ordem = Date.now();
+        cr.itens.forEach(function(it, i) {
+            let ch = it._tax ? self._chaveL2(it._tax.materia, it._tax.divisao) : self._chaveL2(fbM, fbD);
+            let ex = self._acharItem(it._id);
+            if (ex && ex.item.origem_oficial) return;
+            if (ex && ex.chave !== ch) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
+            delete self.excluidos[it._id];
+            if (!porChave[ch]) porChave[ch] = [];
+            porChave[ch].push({ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, l3: it._tax ? it._tax.l3 : '', criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i });
+        });
+        let total = 0;
+        Object.keys(porChave).forEach(function(ch) { self._mesclarItens(ch, porChave[ch]); total += porChave[ch].length; });
+        if (!this.salvar()) alert('Atenção: as penas foram criadas, mas não foi possível gravá-las (armazenamento cheio).');
+        let primeira = Object.keys(porChave)[0];
+        if (primeira) { let pt = primeira.split(' > '); this._materia = pt[0]; this._divisao = pt.slice(1).join(' > '); }
+        this._aba = 'tabela';
+        this.fecharModalCriar();
+        this.render();
+        alert('✓ ' + total + (total === 1 ? ' tipo penal gravado' : ' tipos penais gravados') + (Object.keys(porChave).length > 1 ? ' em ' + Object.keys(porChave).length + ' divisões' : '') + '.');
+    },
+
+    // ── EXPORTAR (.json no formato da base oficial) ──
+    exportar: function(escopo) {
+        this._garantirCarregado();
+        let self = this, chaves = Object.keys(this.itens), nome = 'penas-tudo.json';
+        if (escopo === 'materia' || escopo === 'divisao') {
+            if (!this._materia) { alert('Selecione uma matéria antes de exportar.'); return; }
+            if (escopo === 'divisao') {
+                if (!this._divisao) { alert('Selecione uma divisão (L2) antes de exportar.'); return; }
+                let ch = this._chaveL2(this._materia, this._divisao);
+                chaves = chaves.filter(function(c) { return c === ch; });
+                nome = 'penas-' + this._slug(this._materia) + '-' + this._slug(this._divisao) + '.json';
+            } else {
+                chaves = chaves.filter(function(c) { return c.indexOf(self._materia + ' > ') === 0; });
+                nome = 'penas-' + this._slug(this._materia) + '.json';
+            }
+        }
+        let saida = {}, total = 0;
+        chaves.sort().forEach(function(ch) {
+            let lista = (self.itens[ch] || []).map(function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '', l3: i.l3 || '' }; });
+            if (lista.length) { saida[ch] = lista; total += lista.length; }
+        });
+        if (!total) { alert('Nada para exportar.'); return; }
+        downloadArquivo(JSON.stringify(saida, null, 2), nome, 'application/json');
+    }
+};
+document.addEventListener('keydown', function(ev) { window.PENAS_RUNTIME._onKey(ev); });
+
+window.abrirPenasModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('penas-modal');
+    if (!modal) return;
+    modal.classList.add('modal-maximizado');
+    const btn = document.getElementById('pen-modal-btn-maximizar');
+    if (btn) { btn.textContent = '🗗'; btn.title = 'Minimizar'; }
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    window.PENAS_RUNTIME.init();
+};
+window.alternarMaximizarPenasModal = function() {
+    const modal = document.getElementById('penas-modal');
+    if (!modal) return;
+    const max = modal.classList.toggle('modal-maximizado');
+    const btn = document.getElementById('pen-modal-btn-maximizar');
+    if (btn) { btn.textContent = max ? '🗗' : '⛶'; btn.title = max ? 'Minimizar' : 'Maximizar'; }
+};
+window.fecharPenasModal = function() {
+    const modal = document.getElementById('penas-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+};
+
+// ── BASE OFICIAL — dados/penas/*.json, listados em dados/manifesto-penas.txt ──
+window.importarPenasOficiais = async function(url) {
+    try {
+        const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const dados = await r.json();
+        const R = window.PENAS_RUNTIME;
+        R._garantirCarregado();
+        Object.keys(dados).forEach(function(chave) {
+            if (!Array.isArray(dados[chave])) return;
+            let lista = dados[chave].filter(function(i) { return i && i.crime && i.pena; }).map(function(i, idx) {
+                let item = Object.assign({ qualificadas: [], aumentos: [], diminuicoes: [] }, i, { origem_oficial: true, _ordem: idx });
+                if (!item.id) item.id = R._idPorConteudo(item.crime, item.art);
+                return item;
+            });
+            lista.forEach(function(item) {
+                let ex = R._acharItem(item.id);
+                if (ex && ex.chave !== chave) R.itens[ex.chave] = R.itens[ex.chave].filter(function(x) { return x.id !== item.id; });
+            });
+            R._mesclarItens(chave, lista);
+        });
+    } catch (e) {
+        console.warn('[PENAS OFICIAIS] erro em ' + url + ':', e);
+    }
+};
+window.carregarPenasOficiais = async function() {
+    let texto = '';
+    try {
+        const r = await fetch('dados/manifesto-penas.txt?v=' + Date.now());
+        if (r.ok) texto = await r.text();
+    } catch (e) { console.warn('[PENAS OFICIAIS] Falha ao carregar manifesto:', e); }
+    const caminhos = texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && l.charAt(0) !== '#'; });
+    for (const c of caminhos) await window.importarPenasOficiais(c);
 };
 </script>
 
