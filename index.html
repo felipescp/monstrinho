@@ -4830,6 +4830,7 @@ exportarNuvem: async function(botao, opts) {
                 return;
             }
 
+            await _aplicarImportNuvemPendente();
             let payload = await window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
             let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
@@ -5494,6 +5495,7 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
     window.__salvamentoNuvemEmAndamento = true;
     window.__salvamentoNuvemEmAndamentoDesde = Date.now();
     try {
+        await _aplicarImportNuvemPendente();
         let payload = await window.SALINHA_BACKUP.construirPayload();
         let conteudo = JSON.stringify(payload, null, 2);
         let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
@@ -5618,6 +5620,42 @@ function _syncReloadGuardZerar() {
     try { sessionStorage.removeItem(SYNC_RELOAD_GUARD_KEY); } catch (e) {}
 }
 
+// Há algum modal/popup/tela sobreposta aberta? Genérico de propósito — o
+// app tem vários padrões de modal (.mo.open, .analytics-modal.active,
+// #section-* com display:flex, mostrarModal()...). Critério: elemento
+// candidato com position:fixed, visível e cobrindo boa parte da tela. O
+// overlay "carregando da nuvem" não conta (ele é justamente quem espera).
+function _algumModalAberto() {
+    let candidatos = document.querySelectorAll('.mo, .analytics-modal, [id^="section-"], [id*="modal"], [id^="tela-"], [class*="modal"], [class*="popup"], [class*="overlay"]');
+    let minW = window.innerWidth * 0.4, minH = window.innerHeight * 0.4;
+    for (let i = 0; i < candidatos.length; i++) {
+        let el = candidatos[i];
+        if (el.id === 'overlay-carregando-nuvem') continue;
+        let cs = window.getComputedStyle(el);
+        if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
+        let r = el.getBoundingClientRect();
+        if (r.width >= minW && r.height >= minH) return true;
+    }
+    return false;
+}
+
+function _aguardarNenhumModalAberto() {
+    return new Promise(function(resolve) {
+        (function checar() {
+            if (!_algumModalAberto()) resolve();
+            else setTimeout(checar, 1500);
+        })();
+    });
+}
+
+// Chamado no início de exportarNuvem()/exportarNuvemSilenciosa() — ver
+// comentário em importarNuvemSilenciosa().
+async function _aplicarImportNuvemPendente() {
+    if (window.__importNuvemPendente) {
+        try { await window.__importNuvemPendente.aplicar(); } catch (e) { console.warn('[GIST SYNC] Falha ao aplicar merge pendente antes do envio:', e); }
+    }
+}
+
 window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
     let token = this.getToken();
     let gistId = this.getGistId();
@@ -5635,7 +5673,27 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
         // desta função (silencioso, só console.warn) já cobre o caso.
         let conteudoCompleto = await this._lerConteudoDoGist(json);
 
-        let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
+        // Persistência dos modais (pedido explícito do usuário): o download
+        // do Gist leva 10-15s ou mais, e nesse meio tempo o usuário já abriu
+        // algum modal (Jurisprudência, Leitor, Esquemas...). O merge + o
+        // location.reload() logo abaixo fechavam tudo "do nada", parecendo
+        // um F5 espontâneo. Agora o merge e o reload só acontecem quando
+        // NENHUM modal está aberto. Se o usuário salvar na nuvem enquanto
+        // isso, exportarNuvem*() aplica este merge pendente ANTES de montar
+        // o payload — senão o envio sobrescreveria na nuvem os dados mais
+        // novos de outro dispositivo que ainda não foram mesclados aqui.
+        let payloadNuvem = this._decodificarConteudoNuvem(conteudoCompleto);
+        let pendente = { promessa: null };
+        pendente.aplicar = function() {
+            if (!pendente.promessa) {
+                pendente.promessa = window.SALINHA_BACKUP.aplicarPayloadMerge(payloadNuvem);
+                if (window.__importNuvemPendente === pendente) window.__importNuvemPendente = null;
+            }
+            return pendente.promessa;
+        };
+        window.__importNuvemPendente = pendente;
+        await _aguardarNenhumModalAberto();
+        let resultado = await pendente.aplicar();
         if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
             // "Silenciosa" não deve virar alert() interrompendo a página no
             // load — mas o erro não pode ficar 100% invisível também, então
@@ -5643,6 +5701,9 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
             console.warn('[GIST SYNC] Sincronização automática mesclou parcialmente — não coube no armazenamento: ' + resultado.chavesComErro.join(', '));
         }
         if (resultado.chavesMutadas > 0) {
+            // De novo: se um salvamento manual aplicou o merge antes (com
+            // modal aberto), espera fechar antes de recarregar.
+            await _aguardarNenhumModalAberto();
             if (_syncReloadGuardPermiteReload()) {
                 location.reload();
             }
@@ -28389,7 +28450,9 @@ window.carregarEsquemasOficiais = async function() {
        bloco fica centralizado no espaço extra (ver #modal-esquemas-baralho
        para a mesma lógica comentada em detalhe). */
     #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
-    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-corpo-wrap { max-width:calc(980px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
+    /* Pedido explícito do usuário: a escala incide SÓ no cartão — a lista
+       lateral fica fixa no tamanho equivalente a 1.5x (300px * 1.5). */
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-corpo-wrap { max-width:calc(450px + 680px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME da ficha,
@@ -28401,7 +28464,7 @@ window.carregarEsquemasOficiais = async function() {
        itens rolável abaixo dela — mesmo padrão de #modal-esquemas-baralho
        (ver _renderListaBaralho() pra a estrutura HTML). */
     #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex-shrink:0; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
-    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:calc(300px * var(--baralho-escala, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:450px; }
     /* Busca por título — topo da barra lateral, acima da lista (e da barra
        de etiquetas, quando existe). Só filtra a LISTAGEM, mesmo espírito do
        filtro de etiqueta (ver toggleFiltroEtiquetaBaralho). */
@@ -28426,6 +28489,8 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.visualizado { background:#dcfce7; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.nao-visualizado { background:#fee2e2; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-semaforo { flex-shrink:0; font-size:11px; line-height:1; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-sistematica { font-size:9.5px; font-weight:700; line-height:1.2; padding:2px 7px; border-radius:99px; background:#ecfeff; color:#0e7490; border:1px solid #a5f3fc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-sistematica { background:rgba(255,255,255,0.18); color:#fff; border-color:rgba(255,255,255,0.45); }
     /* "Mostrar: Todos | Visualizados | Não visualizados" — mesmo padrão de
        #modal-esquemas-baralho. */
     #modal-jurisprudencia-baralho .jur-baralho-mostrar-filtro { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:5px; padding:8px 10px; border-top:1px solid var(--border-color); font-size:10px; font-weight:700; color:var(--text-muted); }
@@ -28470,9 +28535,9 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-popup-toolbar">
             <div class="jur-baralho-escala-controle">
-                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir lista e cartão">‹ Reduzir</button>
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir cartão">‹ Reduzir</button>
                 <span id="jur-baralho-escala-valor">1.5x</span>
-                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar cartão">Aumentar ›</button>
             </div>
         </div>
 
@@ -31499,7 +31564,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
         this._baralhoMaximizado = false;
-        this._baralhoEscala = 1.5;
+        // Último zoom escolhido pelo usuário prevalece (salvo em
+        // ajustarEscalaBaralho); 1.5x é só o padrão de quem nunca ajustou.
+        this._baralhoEscala = this._lerEscalaBaralhoSalva();
         let modalEl = document.getElementById('modal-jurisprudencia-baralho');
         modalEl.classList.remove('jur-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
@@ -31536,7 +31603,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (novo > 4) novo = 4;
         this._baralhoEscala = novo;
         document.getElementById('modal-jurisprudencia-baralho').style.setProperty('--baralho-escala', novo);
+        try { localStorage.setItem(this._CHAVE_ESCALA_BARALHO, String(novo)); } catch (e) {}
         this._atualizarControleEscalaBaralho();
+    },
+
+    _CHAVE_ESCALA_BARALHO: 'tjpe_v1__jur_baralho_escala',
+
+    _lerEscalaBaralhoSalva: function() {
+        let v = NaN;
+        try { v = parseFloat(localStorage.getItem(this._CHAVE_ESCALA_BARALHO)); } catch (e) {}
+        return (isFinite(v) && v >= 0.25 && v <= 4) ? v : 1.5;
     },
 
     _atualizarControleEscalaBaralho: function() {
@@ -31710,7 +31786,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             let rClassif = self.revisaoJurisprudencia[item.id];
             let semaforo = rClassif && SEMAFORO[rClassif.ultimaClassificacao];
             let semaforoHtml = semaforo ? '<span class="jur-baralho-lista-item-semaforo" title="' + semaforo[1] + '">' + semaforo[0] + '</span>' : '';
-            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + semaforoHtml + '</div>';
+            // Sistemática (Recurso Repetitivo, Repercussão Geral, Súmula...)
+            // logo após o semáforo — pedido explícito do usuário.
+            let sistematicaHtml = item.sistematica ? '<span class="jur-baralho-lista-item-sistematica">' + self._escapar(item.sistematica) + '</span>' : '';
+            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + semaforoHtml + sistematicaHtml + '</div>';
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
