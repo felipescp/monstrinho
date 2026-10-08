@@ -3701,7 +3701,7 @@ window.SALINHA_BACKUP = {
                     // lápide de exclusões dos DOIS lados — sem isso, um baralho excluído
                     // voltava no próximo merge (mesmo bug já corrigido em esquemas e
                     // cronograma). Não depende da ordem em que "excluidos" é processado.
-                    // (Mesma regra para prazos_runtime.itens e penas_runtime.itens: {"L1 > L2" → [itens]}, por id.)
+                    // (Mesma regra para prazos_runtime.itens e penas_runtime.itens: {"<diploma>" → [itens]}, por id.)
                     if (((chaveSemPrefixoMerge === 'flashcards_nb_runtime' && subChave === 'decks') || ((chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'itens')) &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -13637,15 +13637,15 @@ window.carregarFlashcardsOficiais = async function() {
             <div class="analytics-modal-title">⏱️ Prazos</div>
             <div class="prz-cabecalho-acoes">
                 <button class="prz-cab-btn primario" onclick="window.PRAZOS_RUNTIME.abrirModalCriar()">+ Criar Prazos</button>
-                <details class="prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('materia')">Disciplina selecionada</button><button onclick="window.PRAZOS_RUNTIME.exportar('divisao')">Tópico (L2) selecionado</button></div></details>
+                <details class="prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
                 <button class="analytics-close-btn" id="prz-modal-btn-maximizar" onclick="window.alternarMaximizarPrazosModal()" title="Minimizar">🗗</button>
                 <button class="analytics-close-btn" onclick="window.fecharPrazosModal()">&#x2715;</button>
             </div>
         </div>
         <div class="fc-grid">
             <div class="fc-col" id="prz-col-materias"></div>
-            <div class="fc-col" id="prz-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
-            <div class="fc-col" id="prz-col-principal"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="prz-col-divisoes"></div>
+            <div class="fc-col" id="prz-col-principal"></div>
         </div>
     </div>
 </div>
@@ -13675,19 +13675,9 @@ window.carregarFlashcardsOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="prz-criar-cab"><span>+ Criar Prazos</span><button class="prz-criar-fechar" onclick="window.PRAZOS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="prz-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Prazo 01.</code> <code>T = Matéria &gt; Divisão &gt; Tópico</code> <code>ATO =</code> <code>PRAZO =</code> <code>INÍCIO =</code> <code>BASE =</code> <code>OBS =</code>. Linhas fora disso (BLOCO, "GERAR LOTE", "Lote concluído"…) são ignoradas. Mesmo ATO + mesma BASE de um prazo que já existe não é duplicado.</div>
+        <div class="prz-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Prazo 01.</code> <code>ATO =</code> <code>PRAZO =</code> <code>INÍCIO =</code> <code>BASE =</code> <code>OBS =</code>. Linhas fora disso (BLOCO, T, "GERAR LOTE", "Lote concluído"…) são ignoradas. O diploma, o livro e o título vêm da BASE (ex.: <code>art. 1.003, § 5º, CPC</code>). Mesmo ATO + mesma BASE de um prazo que já existe não é duplicado.</div>
         <textarea id="prz-criar-texto" placeholder="Cole os prazos aqui..." oninput="window.PRAZOS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PRAZOS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="prz-criar-status" id="prz-criar-status">Aguardando...</div>
-        <div class="prz-criar-linha" id="prz-criar-fallback" style="display:none;">
-            <div class="fc-form-campo">
-                <label>Matéria (itens sem T reconhecido)</label>
-                <select id="prz-criar-materia" onchange="window.PRAZOS_RUNTIME._preencherDivisoesCriar()"></select>
-            </div>
-            <div class="fc-form-campo">
-                <label>Divisão (L2)</label>
-                <select id="prz-criar-divisao"></select>
-            </div>
-        </div>
         <div id="prz-criar-erro" class="fc-form-erro" style="display:none;"></div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.PRAZOS_RUNTIME.fecharModalCriar()">Cancelar</button>
@@ -13850,12 +13840,12 @@ function interpretarPrazoTexto(texto) {
 }
 
 window.PRAZOS_RUNTIME = {
-    itens: {},      // { "L1 > L2": [ {id, ato, prazo, inicio, base, obs, l3, criadoEm, origem_oficial?} ] }
+    itens: {},      // { "<id do diploma>": [ {id, ato, prazo, inicio, base, obs, criadoEm, origem_oficial?} ] } — ver ESTRUTURA_MEMO
     estado: {},     // { id: {ultimaClassificacao, atualizadoEm, erros, acertos} }
     excluidos: {},  // { id: data ISO } — lápide de itens pessoais excluídos
     _bootstrapped: false,
     _materia: null,
-    _divisao: null,   // null = todas as divisões
+    _divisao: null,   // índice do livro/título no mapa do diploma; null = todos
     _aba: 'tabela',   // 'tabela' | 'treino'
     _busca: '',
     _cortina: { prazo: true }, // colunas escondidas na Tabela (padrão: o número)
@@ -13880,6 +13870,10 @@ window.PRAZOS_RUNTIME = {
         this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
         this.comentarios = (bruto && dict(bruto.comentarios)) ? bruto.comentarios : {};
         Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
+        // Chaves antigas "Matéria > Divisão" → id do diploma. (A hidratação do
+        // IndexedDB pode chamar carregar() antes do ESTRUTURA_MIXIN existir;
+        // nesse caso a reorganização roda quando o mixin é aplicado.)
+        if (typeof this._reorganizar === 'function') this._reorganizar();
         this._bootstrapped = true;
     },
 
@@ -13920,41 +13914,8 @@ window.PRAZOS_RUNTIME = {
         });
     },
 
-    _todosItens: function() {
-        let self = this, lista = [];
-        Object.keys(this.itens).forEach(function(ch) {
-            (self.itens[ch] || []).forEach(function(i) { if (!self.excluidos[i.id] || i.origem_oficial) lista.push({ item: i, chave: ch }); });
-        });
-        return lista;
-    },
 
-    _contar: function(prefixoOuChave, exato) {
-        let self = this, n = 0;
-        Object.keys(this.itens).forEach(function(ch) {
-            if (exato ? ch === prefixoOuChave : ch.indexOf(prefixoOuChave + ' > ') === 0) n += (self.itens[ch] || []).length;
-        });
-        return n;
-    },
 
-    _itensDoRecorte: function() {
-        let self = this, busca = this._norm(this._busca);
-        if (!this._materia) return [];
-        let ordemDiv = {};
-        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
-        ((mat && mat.divisoes) || []).forEach(function(d, i) { ordemDiv[self._chaveL2(self._materia, d.nivel_2)] = i; });
-        return this._todosItens().filter(function(p) {
-            if (self._materia === '__fav__') { if (!self._ehFav(p.item.id)) return false; }
-            else if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
-            else if (p.chave.indexOf(self._materia + ' > ') !== 0) return false;
-            if (busca && self._norm([p.item.ato, p.item.prazo, p.item.inicio, p.item.base, p.item.obs, p.item.l3].join(' ')).indexOf(busca) === -1) return false;
-            return true;
-        }).sort(function(a, b) {
-            let oa = ordemDiv.hasOwnProperty(a.chave) ? ordemDiv[a.chave] : 999, ob = ordemDiv.hasOwnProperty(b.chave) ? ordemDiv[b.chave] : 999;
-            if (oa !== ob) return oa - ob;
-            // Dentro da divisão: ordem crescente de artigo (pedido do usuário).
-            return compararArtigos(a.item.art || a.item.base, b.item.art || b.item.base) || (a.item._ordem || 0) - (b.item._ordem || 0);
-        });
-    },
 
     // ── NAVEGAÇÃO ──
     init: function() {
@@ -13964,35 +13925,8 @@ window.PRAZOS_RUNTIME = {
         if (typeof window.carregarPrazosOficiais === 'function') window.carregarPrazosOficiais().then(function() { self.render(); });
     },
 
-    render: function() {
-        let col = document.getElementById('prz-col-materias');
-        if (!col) return;
-        let self = this;
-        col.innerHTML = self._htmlItemFavoritos() + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
-            let n = self._contar(m.nivel_1, false);
-            return '<div class="fc-materia-item' + (m.nivel_1 === self._materia ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.selecionarMateria(\'' + self._escJs(m.nivel_1) + '\')">' +
-                '<span class="fc-materia-nome">' + self._esc(m.nivel_1) + '</span>' +
-                '<span style="display:flex; align-items:center; gap:4px;">' + (n ? '<span class="fc-materia-count">' + n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
-        }).join('');
-        this._renderDivisoes();
-        this._renderPrincipal();
-    },
 
-    selecionarMateria: function(m) { this._materia = m; this._divisao = null; this._revelados = {}; this.render(); },
-    selecionarDivisao: function(d) { this._divisao = d || null; this._revelados = {}; this._renderDivisoes(); this._renderPrincipal(); },
 
-    _renderDivisoes: function() {
-        let col = document.getElementById('prz-col-divisoes');
-        if (!col) return;
-        let self = this;
-        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>'; return; }
-        if (this._materia === '__fav__') { col.innerHTML = '<div class="fc-vazio-col">⭐ Todos os favoritos, de todas as matérias.<br>Favorite pelo ☆ na tabela ou durante o treino.</div>'; return; }
-        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
-        col.innerHTML = '<div class="fc-divisao-item' + (!this._divisao ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.selecionarDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + this._contar(this._materia, false) + '</span></div>' +
-            ((mat && mat.divisoes) || []).map(function(d) {
-                return '<div class="fc-divisao-item' + (self._divisao === d.nivel_2 ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.selecionarDivisao(\'' + self._escJs(d.nivel_2) + '\')"><span>' + self._esc(d.nivel_2) + '</span><span class="fc-divisao-count">' + self._contar(self._chaveL2(self._materia, d.nivel_2), true) + '</span></div>';
-            }).join('');
-    },
 
     trocarAba: function(aba) { this._aba = aba; this._renderPrincipal(); },
     filtrarBusca: function(v) {
@@ -14004,7 +13938,7 @@ window.PRAZOS_RUNTIME = {
     _renderPrincipal: function() {
         let col = document.getElementById('prz-col-principal');
         if (!col) return;
-        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria para ver os prazos.<br>Para cadastrar, use <strong>+ Criar Prazos</strong> e cole a saída do Gem.</div>'; return; }
+        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma para ver os prazos.<br>Para cadastrar, use <strong>+ Criar Prazos</strong> e cole a saída do Gem.</div>'; return; }
         col.innerHTML =
             '<div class="prz-toolbar">' +
                 '<div class="prz-abas">' +
@@ -14045,7 +13979,7 @@ window.PRAZOS_RUNTIME = {
     },
 
     _htmlValor: function(it, k) {
-        if (k === 'ato') return this._esc(it.ato) + (it.l3 ? '<span class="prz-l3">' + this._esc(it.l3) + '</span>' : '') + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
+        if (k === 'ato') return this._esc(it.ato) + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
         let v = it[k];
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
     },
@@ -14073,12 +14007,12 @@ window.PRAZOS_RUNTIME = {
             let oculta = !!self._cortina[c.k];
             return '<th class="prz-th-cortina" onclick="window.PRAZOS_RUNTIME.alternarCortina(\'' + c.k + '\')" title="' + (oculta ? 'Mostrar a coluna' : 'Esconder a coluna (cortina)') + '">' + c.rotulo + '<span class="prz-olho">' + (oculta ? '🙈' : '👁') + '</span></th>';
         }).join('') + '<th></th></tr>';
-        let mostrarGrupo = !this._divisao, grupoAtual = null, linhas = '';
+        let grupoAtual = null, linhas = '';
         lista.forEach(function(p) {
-            let it = p.item;
-            if (mostrarGrupo && p.chave !== grupoAtual) {
-                grupoAtual = p.chave;
-                linhas += '<tr class="prz-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(self._materia === '__fav__' ? p.chave : p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>';
+            let it = p.item, g = self._grupoDe(p);
+            if (g.chave !== grupoAtual) {
+                grupoAtual = g.chave;
+                linhas += self._htmlLinhaGrupo(g, self.COLUNAS.length + 1);
             }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
@@ -14251,7 +14185,7 @@ window.PRAZOS_RUNTIME = {
         };
         let prazoRevelado = !tr.esconder.prazo || tr.revelados[it.id + '|prazo'];
         palco.innerHTML = '<div class="prt-carta">' +
-            '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+            '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
             campo('prazo', 'Prazo', 'prazo') +
             campo('inicio', 'Início') +
@@ -14322,28 +14256,12 @@ window.PRAZOS_RUNTIME = {
     },
 
     // ── + CRIAR PRAZOS ──
-    _resolverTaxonomia: function(t) {
-        let self = this;
-        let partes = String(t || '').split('>').map(function(x) { return x.trim(); }).filter(Boolean);
-        if (partes.length < 2) return null;
-        let semParen = function(x) { return self._norm(String(x).replace(/\s*\(.*?\)\s*/g, ' ')); };
-        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return self._norm(m.nivel_1) === self._norm(partes[0]); });
-        if (!mat) return null;
-        let div = mat.divisoes.find(function(d) { return self._norm(d.nivel_2) === self._norm(partes[1]); }) ||
-                  mat.divisoes.find(function(d) { return semParen(d.nivel_2) === semParen(partes[1]); });
-        if (!div) return null;
-        return { materia: mat.nivel_1, divisao: div.nivel_2, l3: partes.slice(2).join(' > ') };
-    },
-
+    // Diploma, livro e título saem da BASE (ESTRUTURA_MEMO). A linha "T ="
+    // de saídas antigas do Gem é ignorada.
     abrirModalCriar: function() {
         this._garantirCarregado();
         document.getElementById('prz-criar-texto').value = '';
         document.getElementById('prz-criar-erro').style.display = 'none';
-        let sel = document.getElementById('prz-criar-materia');
-        sel.innerHTML = '<option value="">Selecione a matéria...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return '<option value="' + m.nivel_1.replace(/"/g, '&quot;') + '">' + m.nivel_1 + '</option>'; }).join('');
-        if (this._materia) sel.value = this._materia;
-        this._preencherDivisoesCriar();
-        if (this._materia && this._divisao) document.getElementById('prz-criar-divisao').value = this._divisao;
         this._atualizarPrevia();
         document.getElementById('modal-prazos-criar').classList.add('open');
         setTimeout(function() { document.getElementById('prz-criar-texto').focus(); }, 50);
@@ -14352,14 +14270,6 @@ window.PRAZOS_RUNTIME = {
     fecharModalCriar: function() {
         document.getElementById('modal-prazos-criar').classList.remove('open');
         this._criacao = null;
-    },
-
-    _preencherDivisoesCriar: function() {
-        let m = document.getElementById('prz-criar-materia').value;
-        let sel = document.getElementById('prz-criar-divisao');
-        sel.innerHTML = '<option value="">Selecione a divisão (L2)...</option>';
-        let mat = m && TAXONOMIA_DADOS.taxonomia_concursos.find(function(x) { return x.nivel_1 === m; });
-        ((mat && mat.divisoes) || []).forEach(function(d) { let o = document.createElement('option'); o.value = d.nivel_2; o.textContent = d.nivel_2; sel.appendChild(o); });
     },
 
     _agendarPrevia: function() {
@@ -14372,31 +14282,29 @@ window.PRAZOS_RUNTIME = {
         let self = this;
         let texto = document.getElementById('prz-criar-texto').value;
         let st = document.getElementById('prz-criar-status'), btn = document.getElementById('prz-criar-btn');
-        let fb = document.getElementById('prz-criar-fallback');
-        if (!texto.trim()) { st.textContent = 'Aguardando...'; btn.disabled = true; fb.style.display = 'none'; this._criacao = null; return; }
+        if (!texto.trim()) { st.textContent = 'Aguardando...'; btn.disabled = true; this._criacao = null; return; }
         let res = parsearPrazosTexto(texto);
-        let grupos = {}, semTax = 0, repetidos = 0, vistos = {};
+        let grupos = {}, semDiploma = 0, repetidos = 0, vistos = {};
         res.itens.forEach(function(it) {
-            it._tax = self._resolverTaxonomia(it.t);
             it._id = self._idPorConteudo(it.ato, it.base);
             if (vistos[it._id] || self._acharItem(it._id)) repetidos++;
             vistos[it._id] = true;
-            if (!it._tax) { semTax++; return; }
-            let ch = self._chaveL2(it._tax.materia, it._tax.divisao);
-            grupos[ch] = (grupos[ch] || 0) + 1;
+            let c = self._clsTexto(it.base);
+            if (c.dip === '__outros__') semDiploma++;
+            let r = [c.dipNome, c.nivel].filter(Boolean).join(' › ');
+            grupos[r] = (grupos[r] || 0) + 1;
         });
-        this._criacao = { itens: res.itens, semTax: semTax };
+        this._criacao = { itens: res.itens };
         if (!res.itens.length) {
             st.innerHTML = '<span class="aviso">Nenhum prazo reconhecido.</span> Confira se cada item tem as linhas <code>ATO =</code> e <code>PRAZO =</code>.';
-            btn.disabled = true; fb.style.display = 'none';
+            btn.disabled = true;
             return;
         }
         st.innerHTML = '<span class="ok">✓ ' + res.itens.length + ' prazo' + (res.itens.length === 1 ? '' : 's') + ' reconhecido' + (res.itens.length === 1 ? '' : 's') + '</span>' +
             (res.incompletos ? ' <span class="aviso">(' + res.incompletos + ' incompleto(s), sem ATO ou PRAZO, ignorado(s))</span>' : '') +
             (repetidos ? ' <span class="aviso">(' + repetidos + ' já existente(s) — serão atualizados, sem duplicar)</span>' : '') +
-            Object.keys(grupos).map(function(ch) { return '<br>• ' + self._esc(ch) + ' — ' + grupos[ch]; }).join('') +
-            (semTax ? '<br><span class="aviso">' + semTax + ' item(ns) com "T =" fora da taxonomia — vão para a matéria/divisão escolhida abaixo.</span>' : '');
-        fb.style.display = semTax ? 'flex' : 'none';
+            Object.keys(grupos).map(function(g) { return '<br>• ' + self._esc(g) + ' — ' + grupos[g]; }).join('') +
+            (semDiploma ? '<br><span class="aviso">' + semDiploma + ' item(ns) sem diploma reconhecível na BASE (ex.: "art. 1.003, CPC") — ficam em "Sem diploma identificado".</span>' : '');
         btn.disabled = false;
     },
 
@@ -14404,58 +14312,26 @@ window.PRAZOS_RUNTIME = {
         let self = this;
         this._atualizarPrevia();
         let cr = this._criacao;
-        let erro = document.getElementById('prz-criar-erro');
-        erro.style.display = 'none';
+        document.getElementById('prz-criar-erro').style.display = 'none';
         if (!cr || !cr.itens.length) return;
-        let fbM = document.getElementById('prz-criar-materia').value, fbD = document.getElementById('prz-criar-divisao').value;
-        if (cr.semTax && (!fbM || !fbD)) { erro.textContent = 'Escolha a matéria e a divisão para os itens cujo "T =" não foi reconhecido.'; erro.style.display = 'block'; return; }
-        let porChave = {}, agora = new Date().toISOString(), ordem = Date.now();
+        let agora = new Date().toISOString(), ordem = Date.now(), total = 0, primeiro = null;
         cr.itens.forEach(function(it, i) {
-            let ch = it._tax ? self._chaveL2(it._tax.materia, it._tax.divisao) : self._chaveL2(fbM, fbD);
-            let existente = self._acharItem(it._id);
-            if (existente && existente.item.origem_oficial) return; // oficial já cobre este prazo
-            if (existente && existente.chave !== ch) { self.itens[existente.chave] = self.itens[existente.chave].filter(function(x) { return x.id !== it._id; }); }
+            let ex = self._acharItem(it._id);
+            if (ex && ex.item.origem_oficial) return; // oficial já cobre este prazo
+            if (ex) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
             delete self.excluidos[it._id];
-            if (!porChave[ch]) porChave[ch] = [];
-            porChave[ch].push({ id: it._id, ato: it.ato, prazo: it.prazo, inicio: it.inicio, base: it.base, obs: it.obs, l3: it._tax ? it._tax.l3 : '', criadoEm: existente ? (existente.item.criadoEm || agora) : agora, _ordem: existente ? existente.item._ordem : ordem + i });
+            let ch = self._clsTexto(it.base).dip;
+            self._mesclarItens(ch, [{ id: it._id, ato: it.ato, prazo: it.prazo, inicio: it.inicio, base: it.base, obs: it.obs, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
+            if (!primeiro) primeiro = ch;
+            total++;
         });
-        let total = 0;
-        Object.keys(porChave).forEach(function(ch) { self._mesclarItens(ch, porChave[ch]); total += porChave[ch].length; });
+        Object.keys(this.itens).forEach(function(ch) { if (!self.itens[ch].length) delete self.itens[ch]; });
         if (!this.salvar()) alert('Atenção: os prazos foram criados, mas não foi possível gravá-los (armazenamento cheio).');
-        let primeira = Object.keys(porChave)[0];
-        if (primeira) { let pt = primeira.split(' > '); this._materia = pt[0]; this._divisao = pt.slice(1).join(' > '); }
+        if (primeiro) { this._materia = primeiro; this._divisao = null; }
         this._aba = 'tabela';
         this.fecharModalCriar();
         this.render();
-        alert('✓ ' + total + ' prazo(s) gravado(s)' + (Object.keys(porChave).length > 1 ? ' em ' + Object.keys(porChave).length + ' divisões' : '') + '.');
-    },
-
-    // ── EXPORTAR (.json no formato da base oficial) ──
-    // { "L1 > L2": [ {id, ato, prazo, inicio, base, obs, l3} ] } — salvar em
-    // dados/prazos/<arquivo>.json e acrescentar o caminho em
-    // dados/manifesto-prazos.txt. Ids preservados (progresso continua valendo).
-    exportar: function(escopo) {
-        this._garantirCarregado();
-        let self = this, chaves = Object.keys(this.itens), nome = 'prazos-tudo.json';
-        if (escopo === 'materia' || escopo === 'divisao') {
-            if (!this._materia) { alert('Selecione uma matéria antes de exportar.'); return; }
-            if (escopo === 'divisao') {
-                if (!this._divisao) { alert('Selecione uma divisão (L2) antes de exportar.'); return; }
-                let ch = this._chaveL2(this._materia, this._divisao);
-                chaves = chaves.filter(function(c) { return c === ch; });
-                nome = 'prazos-' + this._slug(this._materia) + '-' + this._slug(this._divisao) + '.json';
-            } else {
-                chaves = chaves.filter(function(c) { return c.indexOf(self._materia + ' > ') === 0; });
-                nome = 'prazos-' + this._slug(this._materia) + '.json';
-            }
-        }
-        let saida = {}, total = 0;
-        chaves.sort().forEach(function(ch) {
-            let lista = (self.itens[ch] || []).map(function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', l3: i.l3 || '' }; });
-            if (lista.length) { saida[ch] = lista; total += lista.length; }
-        });
-        if (!total) { alert('Nenhum prazo para exportar.'); return; }
-        downloadArquivo(JSON.stringify(saida, null, 2), nome, 'application/json');
+        alert('✓ ' + total + ' prazo(s) gravado(s).');
     },
 
     _slug: function(t) { return this._norm(t).replace(/\s+/g, '-'); }
@@ -14626,15 +14502,15 @@ window.carregarPrazosOficiais = async function() {
             <div class="analytics-modal-title">⛓️ Penas</div>
             <div class="pen-cabecalho-acoes">
                 <button class="pen-cab-btn primario" onclick="window.PENAS_RUNTIME.abrirModalCriar()">+ Criar Penas</button>
-                <details class="pen-export-menu" title="Gera o .json no formato da base oficial: salve em dados/penas/ e acrescente o caminho em dados/manifesto-penas.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="pen-export-opcoes"><button onclick="window.PENAS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PENAS_RUNTIME.exportar('materia')">Disciplina selecionada</button><button onclick="window.PENAS_RUNTIME.exportar('divisao')">Tópico (L2) selecionado</button></div></details>
+                <details class="pen-export-menu" title="Gera o .json no formato da base oficial: salve em dados/penas/ e acrescente o caminho em dados/manifesto-penas.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="pen-export-opcoes"><button onclick="window.PENAS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PENAS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
                 <button class="analytics-close-btn" id="pen-modal-btn-maximizar" onclick="window.alternarMaximizarPenasModal()" title="Minimizar">🗗</button>
                 <button class="analytics-close-btn" onclick="window.fecharPenasModal()">&#x2715;</button>
             </div>
         </div>
         <div class="fc-grid">
             <div class="fc-col" id="pen-col-materias"></div>
-            <div class="fc-col" id="pen-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
-            <div class="fc-col" id="pen-col-principal"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="pen-col-divisoes"></div>
+            <div class="fc-col" id="pen-col-principal"></div>
         </div>
     </div>
 </div>
@@ -14664,19 +14540,9 @@ window.carregarPrazosOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="pen-criar-cab"><span>+ Criar Penas</span><button class="pen-criar-fechar" onclick="window.PENAS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>T = Matéria &gt; Divisão &gt; Tópico</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
+        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
         <textarea id="pen-criar-texto" placeholder="Cole as penas aqui..." oninput="window.PENAS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PENAS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="pen-criar-status" id="pen-criar-status">Aguardando...</div>
-        <div class="pen-criar-linha" id="pen-criar-fallback" style="display:none;">
-            <div class="fc-form-campo">
-                <label>Matéria (itens sem T reconhecido)</label>
-                <select id="pen-criar-materia" onchange="window.PENAS_RUNTIME._preencherDivisoesCriar()"></select>
-            </div>
-            <div class="fc-form-campo">
-                <label>Divisão (L2)</label>
-                <select id="pen-criar-divisao"></select>
-            </div>
-        </div>
         <div id="pen-criar-erro" class="fc-form-erro" style="display:none;"></div>
         <div class="mfoot">
             <button class="fc-footer-btn" onclick="window.PENAS_RUNTIME.fecharModalCriar()">Cancelar</button>
@@ -14755,8 +14621,8 @@ window.carregarPrazosOficiais = async function() {
 // DIMINUIÇÃO podem se repetir (cada linha = uma hipótese) e viram listas.
 function parsearPenasTexto(txt) {
     let linhas = String(txt || '').replace(/\r/g, '').split('\n');
-    let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
-    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS)(?:\*\*)?\s*[=:]\s*(.*)$/i;
+    let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo|Nota)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
+    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
     // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
@@ -14764,7 +14630,7 @@ function parsearPenasTexto(txt) {
     // grudava no último campo (OBS) do item anterior.
     let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:|^(?:Voc[êe]|ChatGPT|Gemini|Claude)\s+disse\s*:?$|^(?:Processou|Pensou|Raciocinou|Pesquisou)\s+(?:por|durante)\b|pode cometer erros)/i;
     let LISTAS = { qualificadas: 1, aumentos: 1, diminuicoes: 1 };
-    let itens = [], incompletos = 0, atual = null, campo = null;
+    let itens = [], notas = [], incompletos = 0, atual = null, campo = null;
     function chave(c) {
         c = c.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
         if (c === 'T') return 't';
@@ -14775,6 +14641,7 @@ function parsearPenasTexto(txt) {
         if (/^AUMENTO|^MAJORANTE/.test(c)) return 'aumentos';
         if (/^DIMINUI|^MINORANTE|^PRIVILEGIO/.test(c)) return 'diminuicoes';
         if (/^ACAO/.test(c)) return 'acao';
+        if (c === 'NOTA') return 'nota';
         return 'obs';
     }
     function vazio(v) { v = String(v || '').trim(); return !v || v === '—' || v === '-' || v === '–' || /^(n[ãa]o h[áa]|nenhuma?|inexistente|n\/a)\.?$/i.test(v); }
@@ -14783,12 +14650,15 @@ function parsearPenasTexto(txt) {
         if (atual) {
             let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs) };
             Object.keys(LISTAS).forEach(function(k) { it[k] = atual[k].map(limpar).filter(Boolean); });
-            if (it.crime && it.pena) itens.push(it);
+            let nota = limpar(atual.nota);
+            // "Nota NN." (ART + NOTA, sem CRIME) = nota do capítulo.
+            if (nota && !it.crime) notas.push({ art: it.art, nota: nota });
+            else if (it.crime && it.pena) itens.push(it);
             else if (it.crime || it.pena || it.t) incompletos++;
         }
         atual = null; campo = null;
     }
-    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
+    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', nota: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
     for (let i = 0; i < linhas.length; i++) {
         let l = linhas[i].trim();
         if (!l) continue;
@@ -14810,7 +14680,7 @@ function parsearPenasTexto(txt) {
         }
     }
     fechar();
-    return { itens: itens, incompletos: incompletos };
+    return { itens: itens, notas: notas, incompletos: incompletos };
 }
 
 // "reclusão, de 1 (um) a 4 (quatro) anos, e multa" →
@@ -14852,7 +14722,7 @@ function prescricaoAbstrataAnos(maxMeses) {
 }
 
 window.PENAS_RUNTIME = {
-    itens: {},      // { "L1 > L2": [ {id, crime, art, pena, qualificadas[], aumentos[], diminuicoes[], acao, obs, l3, origem_oficial?} ] }
+    itens: {},      // { "<id do diploma>": [ {id, crime, art, pena, qualificadas[], aumentos[], diminuicoes[], acao, obs, origem_oficial?} ], "__notas__": [ {id, art, nota} ] }
     estado: {},     // { id: {ultimaClassificacao, atualizadoEm, erros, acertos} }
     excluidos: {},
     _bootstrapped: false,
@@ -14881,6 +14751,10 @@ window.PENAS_RUNTIME = {
         this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
         this.comentarios = (bruto && dict(bruto.comentarios)) ? bruto.comentarios : {};
         Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
+        // Chaves antigas "Matéria > Divisão" → id do diploma. (A hidratação do
+        // IndexedDB pode chamar carregar() antes do ESTRUTURA_MIXIN existir;
+        // nesse caso a reorganização roda quando o mixin é aplicado.)
+        if (typeof this._reorganizar === 'function') this._reorganizar();
         this._bootstrapped = true;
     },
     _garantirCarregado: function() { if (!this._bootstrapped) this.carregar(); },
@@ -14912,18 +14786,6 @@ window.PENAS_RUNTIME = {
             if (idx === -1) arr.push(n); else arr[idx] = n;
         });
     },
-    _todosItens: function() {
-        let self = this, lista = [];
-        Object.keys(this.itens).forEach(function(ch) {
-            (self.itens[ch] || []).forEach(function(i) { if (!self.excluidos[i.id] || i.origem_oficial) lista.push({ item: i, chave: ch }); });
-        });
-        return lista;
-    },
-    _contar: function(alvo, exato) {
-        let self = this, n = 0;
-        Object.keys(this.itens).forEach(function(ch) { if (exato ? ch === alvo : ch.indexOf(alvo + ' > ') === 0) n += (self.itens[ch] || []).length; });
-        return n;
-    },
     _acharItem: function(id) {
         let chaves = Object.keys(this.itens);
         for (let i = 0; i < chaves.length; i++) {
@@ -14931,29 +14793,6 @@ window.PENAS_RUNTIME = {
             if (it) return { item: it, chave: chaves[i] };
         }
         return null;
-    },
-    _itensDoRecorte: function() {
-        let self = this, busca = this._norm(this._busca);
-        if (!this._materia) return [];
-        let ordemDiv = {};
-        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
-        ((mat && mat.divisoes) || []).forEach(function(d, i) { ordemDiv[self._chaveL2(self._materia, d.nivel_2)] = i; });
-        return this._todosItens().filter(function(p) {
-            if (self._materia === '__fav__') { if (!self._ehFav(p.item.id)) return false; }
-            else if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
-            else if (p.chave.indexOf(self._materia + ' > ') !== 0) return false;
-            if (busca) {
-                let i = p.item;
-                let txt = [i.crime, i.art, i.pena, i.acao, i.obs, i.l3].concat(i.qualificadas || [], i.aumentos || [], i.diminuicoes || []).join(' ');
-                if (self._norm(txt).indexOf(busca) === -1) return false;
-            }
-            return true;
-        }).sort(function(a, b) {
-            let oa = ordemDiv.hasOwnProperty(a.chave) ? ordemDiv[a.chave] : 999, ob = ordemDiv.hasOwnProperty(b.chave) ? ordemDiv[b.chave] : 999;
-            if (oa !== ob) return oa - ob;
-            // Dentro da divisão: ordem crescente de artigo (pedido do usuário).
-            return compararArtigos(a.item.art || a.item.base, b.item.art || b.item.base) || (a.item._ordem || 0) - (b.item._ordem || 0);
-        });
     },
 
     // ── INDICADORES CALCULADOS (a partir da pena-base) ──
@@ -14998,39 +14837,12 @@ window.PENAS_RUNTIME = {
         let self = this;
         if (typeof window.carregarPenasOficiais === 'function') window.carregarPenasOficiais().then(function() { self.render(); });
     },
-    render: function() {
-        let col = document.getElementById('pen-col-materias');
-        if (!col) return;
-        let self = this;
-        col.innerHTML = self._htmlItemFavoritos() + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
-            let n = self._contar(m.nivel_1, false);
-            return '<div class="fc-materia-item' + (m.nivel_1 === self._materia ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarMateria(\'' + self._escJs(m.nivel_1) + '\')">' +
-                '<span class="fc-materia-nome">' + self._esc(m.nivel_1) + '</span>' +
-                '<span style="display:flex; align-items:center; gap:4px;">' + (n ? '<span class="fc-materia-count">' + n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
-        }).join('');
-        this._renderDivisoes();
-        this._renderPrincipal();
-    },
-    selecionarMateria: function(m) { this._materia = m; this._divisao = null; this._revelados = {}; this.render(); },
-    selecionarDivisao: function(d) { this._divisao = d || null; this._revelados = {}; this._renderDivisoes(); this._renderPrincipal(); },
-    _renderDivisoes: function() {
-        let col = document.getElementById('pen-col-divisoes');
-        if (!col) return;
-        let self = this;
-        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>'; return; }
-        if (this._materia === '__fav__') { col.innerHTML = '<div class="fc-vazio-col">⭐ Todos os favoritos, de todas as matérias.<br>Favorite pelo ☆ na tabela ou durante o treino.</div>'; return; }
-        let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
-        col.innerHTML = '<div class="fc-divisao-item' + (!this._divisao ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + this._contar(this._materia, false) + '</span></div>' +
-            ((mat && mat.divisoes) || []).map(function(d) {
-                return '<div class="fc-divisao-item' + (self._divisao === d.nivel_2 ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarDivisao(\'' + self._escJs(d.nivel_2) + '\')"><span>' + self._esc(d.nivel_2) + '</span><span class="fc-divisao-count">' + self._contar(self._chaveL2(self._materia, d.nivel_2), true) + '</span></div>';
-            }).join('');
-    },
     trocarAba: function(aba) { this._aba = aba; this._renderPrincipal(); },
     filtrarBusca: function(v) { this._busca = v || ''; if (document.getElementById('pen-scroll')) this._renderCorpo(); },
     _renderPrincipal: function() {
         let col = document.getElementById('pen-col-principal');
         if (!col) return;
-        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria (ex.: Direito Penal) para ver as penas.<br>Para cadastrar, use <strong>+ Criar Penas</strong> e cole a saída do Gem.</div>'; return; }
+        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma (ex.: Código Penal) para ver as penas.<br>Para cadastrar, use <strong>+ Criar Penas</strong> e cole a saída do Gem.</div>'; return; }
         col.innerHTML =
             '<div class="pen-toolbar">' +
                 '<div class="pen-abas">' +
@@ -15097,9 +14909,10 @@ window.PENAS_RUNTIME = {
             return '<th class="pen-th-cortina" onclick="window.PENAS_RUNTIME.alternarCortina(\'' + c.k + '\')" title="' + (oc ? 'Mostrar a coluna' : 'Esconder a coluna (cortina)') + '">' + c.rotulo + '<span class="pen-olho">' + (oc ? '🙈' : '👁') + '</span></th>';
         }).join('') + '<th></th></tr>';
         let grupo = null, linhas = '';
-        lista.forEach(function(p) {
-            let it = p.item;
-            if (!self._divisao && p.chave !== grupo) { grupo = p.chave; linhas += '<tr class="pen-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(self._materia === '__fav__' ? p.chave : p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>'; }
+        this._comNotasSoltas(lista).forEach(function(p) {
+            if (p.notaArt !== undefined) { grupo = null; linhas += self._htmlLinhaGrupo(self._grupoDaNota(p.notaArt), self.COLUNAS.length + 1); return; }
+            let it = p.item, g = self._grupoDe(p);
+            if (g.chave !== grupo) { grupo = g.chave; linhas += self._htmlLinhaGrupo(g, self.COLUNAS.length + 1); }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
                 return '<td class="pen-col-' + c.k + '">' + (oculto
@@ -15241,7 +15054,7 @@ window.PENAS_RUNTIME = {
         };
         let penaRevelada = tr.revelados[it.id + '|pena'];
         palco.innerHTML = '<div class="pnt-carta">' +
-            '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+            '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
             (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
             this.CAMPOS_TREINO.map(campo).join('') +
@@ -15305,110 +15118,81 @@ window.PENAS_RUNTIME = {
     },
 
     // ── + CRIAR PENAS ──
-    _resolverTaxonomia: function(t) { return window.PRAZOS_RUNTIME._resolverTaxonomia.call(this, t); },
+    // Diploma, título e capítulo saem do ART (ESTRUTURA_MEMO). A linha "T ="
+    // de saídas antigas do Gem é ignorada. Blocos "Nota NN." viram notas
+    // do capítulo (itens.__notas__), uma por faixa de artigos.
     abrirModalCriar: function() {
         this._garantirCarregado();
         document.getElementById('pen-criar-texto').value = '';
         document.getElementById('pen-criar-erro').style.display = 'none';
-        let sel = document.getElementById('pen-criar-materia');
-        sel.innerHTML = '<option value="">Selecione a matéria...</option>' + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return '<option value="' + m.nivel_1.replace(/"/g, '&quot;') + '">' + m.nivel_1 + '</option>'; }).join('');
-        if (this._materia) sel.value = this._materia;
-        this._preencherDivisoesCriar();
-        if (this._materia && this._divisao) document.getElementById('pen-criar-divisao').value = this._divisao;
         this._atualizarPrevia();
         document.getElementById('modal-penas-criar').classList.add('open');
         setTimeout(function() { document.getElementById('pen-criar-texto').focus(); }, 50);
     },
     fecharModalCriar: function() { document.getElementById('modal-penas-criar').classList.remove('open'); this._criacao = null; },
-    _preencherDivisoesCriar: function() {
-        let m = document.getElementById('pen-criar-materia').value, sel = document.getElementById('pen-criar-divisao');
-        sel.innerHTML = '<option value="">Selecione a divisão (L2)...</option>';
-        let mat = m && TAXONOMIA_DADOS.taxonomia_concursos.find(function(x) { return x.nivel_1 === m; });
-        ((mat && mat.divisoes) || []).forEach(function(d) { let o = document.createElement('option'); o.value = d.nivel_2; o.textContent = d.nivel_2; sel.appendChild(o); });
-    },
     _agendarPrevia: function() { let self = this; clearTimeout(this._timerPrevia); this._timerPrevia = setTimeout(function() { self._atualizarPrevia(); }, 250); },
     _atualizarPrevia: function() {
         let self = this, texto = document.getElementById('pen-criar-texto').value;
-        let st = document.getElementById('pen-criar-status'), btn = document.getElementById('pen-criar-btn'), fb = document.getElementById('pen-criar-fallback');
-        if (!texto.trim()) { st.textContent = 'Aguardando...'; btn.disabled = true; fb.style.display = 'none'; this._criacao = null; return; }
+        let st = document.getElementById('pen-criar-status'), btn = document.getElementById('pen-criar-btn');
+        if (!texto.trim()) { st.textContent = 'Aguardando...'; btn.disabled = true; this._criacao = null; return; }
         let res = parsearPenasTexto(texto);
-        let grupos = {}, semTax = 0, repetidos = 0, semFaixa = 0, vistos = {};
+        let grupos = {}, repetidos = 0, semFaixa = 0, vistos = {};
         res.itens.forEach(function(it) {
-            it._tax = self._resolverTaxonomia(it.t);
             it._id = self._idPorConteudo(it.crime, it.art);
             if (vistos[it._id] || self._acharItem(it._id)) repetidos++;
             vistos[it._id] = true;
             if (interpretarPenaTexto(it.pena).maxMeses == null) semFaixa++;
-            if (!it._tax) { semTax++; return; }
-            let ch = self._chaveL2(it._tax.materia, it._tax.divisao);
-            grupos[ch] = (grupos[ch] || 0) + 1;
+            let c = self._clsTexto(it.art);
+            let r = [c.dipNome, c.nivel].filter(Boolean).join(' › ');
+            grupos[r] = (grupos[r] || 0) + 1;
         });
-        this._criacao = { itens: res.itens, semTax: semTax };
-        if (!res.itens.length) {
+        this._criacao = { itens: res.itens, notas: res.notas };
+        if (!res.itens.length && !res.notas.length) {
             st.innerHTML = '<span class="aviso">Nada reconhecido.</span> Confira se cada item tem as linhas <code>CRIME =</code> e <code>PENA =</code>.';
-            btn.disabled = true; fb.style.display = 'none'; return;
+            btn.disabled = true; return;
         }
         st.innerHTML = '<span class="ok">✓ ' + res.itens.length + (res.itens.length === 1 ? ' tipo penal reconhecido' : ' tipos penais reconhecidos') + '</span>' +
+            (res.notas.length ? ' <span class="ok">+ ' + res.notas.length + (res.notas.length === 1 ? ' nota de capítulo' : ' notas de capítulo') + '</span>' : '') +
             (res.incompletos ? ' <span class="aviso">(' + res.incompletos + ' incompleto(s), sem CRIME ou PENA, ignorado(s))</span>' : '') +
             (repetidos ? ' <span class="aviso">(' + repetidos + ' já existente(s) — serão atualizados, sem duplicar)</span>' : '') +
             (semFaixa ? '<br><span class="aviso">' + semFaixa + ' pena(s) sem faixa "X a Y" reconhecível — ficam sem indicadores calculados.</span>' : '') +
-            Object.keys(grupos).map(function(ch) { return '<br>• ' + self._esc(ch) + ' — ' + grupos[ch]; }).join('') +
-            (semTax ? '<br><span class="aviso">' + semTax + ' item(ns) com "T =" fora da taxonomia — vão para a matéria/divisão escolhida abaixo.</span>' : '');
-        fb.style.display = semTax ? 'flex' : 'none';
+            Object.keys(grupos).map(function(g) { return '<br>• ' + self._esc(g) + ' — ' + grupos[g]; }).join('');
         btn.disabled = false;
     },
     confirmarCriacao: function() {
         let self = this;
         this._atualizarPrevia();
-        let cr = this._criacao, erro = document.getElementById('pen-criar-erro');
-        erro.style.display = 'none';
-        if (!cr || !cr.itens.length) return;
-        let fbM = document.getElementById('pen-criar-materia').value, fbD = document.getElementById('pen-criar-divisao').value;
-        if (cr.semTax && (!fbM || !fbD)) { erro.textContent = 'Escolha a matéria e a divisão para os itens cujo "T =" não foi reconhecido.'; erro.style.display = 'block'; return; }
-        let porChave = {}, agora = new Date().toISOString(), ordem = Date.now();
+        let cr = this._criacao;
+        document.getElementById('pen-criar-erro').style.display = 'none';
+        if (!cr || (!cr.itens.length && !cr.notas.length)) return;
+        let agora = new Date().toISOString(), ordem = Date.now(), total = 0, primeiro = null;
         cr.itens.forEach(function(it, i) {
-            let ch = it._tax ? self._chaveL2(it._tax.materia, it._tax.divisao) : self._chaveL2(fbM, fbD);
             let ex = self._acharItem(it._id);
             if (ex && ex.item.origem_oficial) return;
-            if (ex && ex.chave !== ch) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
+            if (ex) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
             delete self.excluidos[it._id];
-            if (!porChave[ch]) porChave[ch] = [];
-            porChave[ch].push({ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, l3: it._tax ? it._tax.l3 : '', criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i });
+            let ch = self._clsTexto(it.art).dip;
+            self._mesclarItens(ch, [{ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
+            if (!primeiro) primeiro = ch;
+            total++;
         });
-        let total = 0;
-        Object.keys(porChave).forEach(function(ch) { self._mesclarItens(ch, porChave[ch]); total += porChave[ch].length; });
+        let nNotas = 0;
+        cr.notas.forEach(function(n) {
+            let id = self._idNota(n.art);
+            let ex = (self.itens.__notas__ || []).find(function(x) { return x.id === id; });
+            if (ex && ex.origem_oficial) return;
+            delete self.excluidos[id];
+            self._mesclarItens('__notas__', [{ id: id, art: n.art, nota: n.nota, criadoEm: ex ? (ex.criadoEm || agora) : agora }]);
+            if (!primeiro) primeiro = self._clsTexto(n.art).dip;
+            nNotas++;
+        });
+        Object.keys(this.itens).forEach(function(ch) { if (!self.itens[ch].length) delete self.itens[ch]; });
         if (!this.salvar()) alert('Atenção: as penas foram criadas, mas não foi possível gravá-las (armazenamento cheio).');
-        let primeira = Object.keys(porChave)[0];
-        if (primeira) { let pt = primeira.split(' > '); this._materia = pt[0]; this._divisao = pt.slice(1).join(' > '); }
+        if (primeiro) { this._materia = primeiro; this._divisao = null; }
         this._aba = 'tabela';
         this.fecharModalCriar();
         this.render();
-        alert('✓ ' + total + (total === 1 ? ' tipo penal gravado' : ' tipos penais gravados') + (Object.keys(porChave).length > 1 ? ' em ' + Object.keys(porChave).length + ' divisões' : '') + '.');
-    },
-
-    // ── EXPORTAR (.json no formato da base oficial) ──
-    exportar: function(escopo) {
-        this._garantirCarregado();
-        let self = this, chaves = Object.keys(this.itens), nome = 'penas-tudo.json';
-        if (escopo === 'materia' || escopo === 'divisao') {
-            if (!this._materia) { alert('Selecione uma matéria antes de exportar.'); return; }
-            if (escopo === 'divisao') {
-                if (!this._divisao) { alert('Selecione uma divisão (L2) antes de exportar.'); return; }
-                let ch = this._chaveL2(this._materia, this._divisao);
-                chaves = chaves.filter(function(c) { return c === ch; });
-                nome = 'penas-' + this._slug(this._materia) + '-' + this._slug(this._divisao) + '.json';
-            } else {
-                chaves = chaves.filter(function(c) { return c.indexOf(self._materia + ' > ') === 0; });
-                nome = 'penas-' + this._slug(this._materia) + '.json';
-            }
-        }
-        let saida = {}, total = 0;
-        chaves.sort().forEach(function(ch) {
-            let lista = (self.itens[ch] || []).map(function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '', l3: i.l3 || '' }; });
-            if (lista.length) { saida[ch] = lista; total += lista.length; }
-        });
-        if (!total) { alert('Nada para exportar.'); return; }
-        downloadArquivo(JSON.stringify(saida, null, 2), nome, 'application/json');
+        alert('✓ ' + total + (total === 1 ? ' tipo penal gravado' : ' tipos penais gravados') + (nNotas ? ' e ' + nNotas + (nNotas === 1 ? ' nota de capítulo' : ' notas de capítulo') : '') + '.');
     }
 };
 document.addEventListener('keydown', function(ev) { window.PENAS_RUNTIME._onKey(ev); });
@@ -15448,9 +15232,10 @@ window.importarPenasOficiais = async function(url) {
         R._garantirCarregado();
         Object.keys(dados).forEach(function(chave) {
             if (!Array.isArray(dados[chave])) return;
-            let lista = dados[chave].filter(function(i) { return i && i.crime && i.pena; }).map(function(i, idx) {
-                let item = Object.assign({ qualificadas: [], aumentos: [], diminuicoes: [] }, i, { origem_oficial: true, _ordem: idx });
-                if (!item.id) item.id = R._idPorConteudo(item.crime, item.art);
+            let ehNota = chave === '__notas__';
+            let lista = dados[chave].filter(function(i) { return i && (ehNota ? i.nota : (i.crime && i.pena)); }).map(function(i, idx) {
+                let item = ehNota ? Object.assign({}, i, { origem_oficial: true }) : Object.assign({ qualificadas: [], aumentos: [], diminuicoes: [] }, i, { origem_oficial: true, _ordem: idx });
+                if (!item.id) item.id = ehNota ? R._idNota(item.art) : R._idPorConteudo(item.crime, item.art);
                 return item;
             });
             lista.forEach(function(item) {
@@ -15840,10 +15625,6 @@ window.MEMORIZACAO_MIXIN = {
         return '<div class="fc-materia-item' + (this._materia === '__fav__' ? ' ativa' : '') + '" onclick="window.' + this._R + '.selecionarMateria(\'__fav__\')">' +
             '<span class="fc-materia-nome">⭐ Favoritos</span><span style="display:flex; align-items:center; gap:4px;">' + (n ? '<span class="fc-materia-count">' + n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
     };
-    M._rotuloRecorte = function() {
-        if (this._materia === '__fav__') return '⭐ Favoritos (todas as matérias)';
-        return this._divisao ? this._divisao : (this._materia + ' — todas as divisões');
-    };
     M._dicaModo = function(modo, oQue) {
         return {
             revelar: 'Aparece o item com a resposta escondida: tente lembrar, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei).',
@@ -15904,7 +15685,7 @@ window.MEMORIZACAO_MIXIN = {
         _rotuloItem: function(item) { return this._esc(item.ato) + (item.base ? '<small>' + this._esc(item.base) + '</small>' : ''); },
         _htmlCabecalhoJogo: function(p) {
             let it = p.item;
-            return '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+            return '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
                 '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
                 (it.base ? '<div class="prt-campo"><span class="prt-rotulo">Base legal</span><span class="prt-valor">' + this._esc(it.base) + '</span></div>' : '') +
                 (it.inicio ? '<div class="prt-campo"><span class="prt-rotulo">Início</span><span class="prt-valor">' + this._esc(it.inicio) + '</span></div>' : '');
@@ -15959,13 +15740,514 @@ window.MEMORIZACAO_MIXIN = {
         _rotuloItem: function(item) { return this._esc(item.crime) + (item.art ? '<small>' + this._esc(item.art) + '</small>' : ''); },
         _htmlCabecalhoJogo: function(p) {
             let it = p.item;
-            return '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+            return '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
                 '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
                 (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
                 (this._treino.feedback ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor">' + this._htmlIndicadores(it) + '</span></div>' : '');
         }
     });
 })();
+</script>
+
+<!-- ESTRUTURA DOS DIPLOMAS (⏱️ Prazos e ⛓️ Penas): a navegação segue a
+     própria lei, não a taxonomia geral. O DIPLOMA vem da sigla/número
+     citado em ART (Penas) ou BASE (Prazos); quando o diploma tem mapa, o
+     NÍVEL (coluna 2: Título/Livro) e o GRUPO (cabeçalho na tabela:
+     Capítulo/Título) saem do número do artigo. Diploma sem mapa = um grupo
+     só, em ordem de artigo; lei desconhecida vira "Lei nº X" sozinha.
+     Penas tem ainda as NOTAS DO CAPÍTULO (itens.__notas__), mostradas no
+     cabeçalho do capítulo. -->
+<style>
+    .memo-nota-cap { margin:6px 0 2px 0; padding:6px 8px; border-left:3px solid #f59e0b; background:#fffbeb; border-radius:4px; font-size:11.5px; font-weight:500; text-transform:none; color:var(--text-main); line-height:1.45; }
+    .memo-nota-cap .memo-nota-rot { font-size:9.5px; font-weight:800; text-transform:uppercase; color:#92400e; margin-right:4px; }
+    .memo-nota-cap .memo-nota-del { background:none; border:none; cursor:pointer; font-size:11px; opacity:0.55; padding:0 2px; }
+    .memo-nota-cap .memo-nota-del:hover { opacity:1; }
+    .fc-divisao-item.memo-vazio { opacity:0.45; }
+</style>
+<script>
+window.ESTRUTURA_MEMO = (function() {
+    // "154-B" → 15402; "1.003" → 100300. Fim sem letra cobre as letras (…99).
+    function pos(s, fim) {
+        let m = String(s).match(/^(\d+(?:\.\d{3})*)(?:-([A-Z]))?$/i);
+        let n = parseInt(m[1].replace(/\./g, ''), 10) * 100;
+        return n + (m[2] ? m[2].toUpperCase().charCodeAt(0) - 64 : (fim ? 99 : 0));
+    }
+    function lei(n) { return new RegExp('\\bLei\\s*(?:n[º°o.]*\\s*)?' + n.replace('.', '\\.?') + '(?!\\d)', 'i'); }
+    // [nome do nível, art. inicial, art. final, [[grupo, ini, fim], ...]]
+    let MAPA_CP = [
+        ['Parte Geral', '1', '120'],
+        ['Título I — Dos Crimes contra a Pessoa', '121', '154-Z', [
+            ['Cap. I — Dos Crimes contra a Vida', '121', '128'],
+            ['Cap. II — Das Lesões Corporais', '129', '129'],
+            ['Cap. III — Da Periclitação da Vida e da Saúde', '130', '136'],
+            ['Cap. IV — Da Rixa', '137', '137'],
+            ['Cap. V — Dos Crimes contra a Honra', '138', '145'],
+            ['Cap. VI — Dos Crimes contra a Liberdade Individual', '146', '154-Z']]],
+        ['Título II — Dos Crimes contra o Patrimônio', '155', '183', [
+            ['Cap. I — Do Furto', '155', '156'],
+            ['Cap. II — Do Roubo e da Extorsão', '157', '160'],
+            ['Cap. III — Da Usurpação', '161', '162'],
+            ['Cap. IV — Do Dano', '163', '167'],
+            ['Cap. V — Da Apropriação Indébita', '168', '170'],
+            ['Cap. VI — Do Estelionato e outras Fraudes', '171', '179'],
+            ['Cap. VII — Da Receptação', '180', '180'],
+            ['Cap. VIII — Disposições Gerais', '181', '183']]],
+        ['Título III — Dos Crimes contra a Propriedade Imaterial', '184', '196', [
+            ['Cap. I — Dos Crimes contra a Propriedade Intelectual', '184', '186']]],
+        ['Título IV — Dos Crimes contra a Organização do Trabalho', '197', '207'],
+        ['Título V — Dos Crimes contra o Sentimento Religioso e contra o Respeito aos Mortos', '208', '212', [
+            ['Cap. I — Dos Crimes contra o Sentimento Religioso', '208', '208'],
+            ['Cap. II — Dos Crimes contra o Respeito aos Mortos', '209', '212']]],
+        ['Título VI — Dos Crimes contra a Dignidade Sexual', '213', '234-Z', [
+            ['Cap. I — Dos Crimes contra a Liberdade Sexual', '213', '216-A'],
+            ['Cap. I-A — Da Exposição da Intimidade Sexual', '216-B', '216-Z'],
+            ['Cap. II — Dos Crimes Sexuais contra Vulnerável', '217', '218-Z'],
+            ['Cap. IV — Disposições Gerais', '223', '226'],
+            ['Cap. V — Do Lenocínio e do Tráfico de Pessoa para Fim de Prostituição ou outra Forma de Exploração Sexual', '227', '232'],
+            ['Cap. VI — Do Ultraje Público ao Pudor', '233', '234'],
+            ['Cap. VII — Disposições Gerais', '234-A', '234-Z']]],
+        ['Título VII — Dos Crimes contra a Família', '235', '249', [
+            ['Cap. I — Dos Crimes contra o Casamento', '235', '240'],
+            ['Cap. II — Dos Crimes contra o Estado de Filiação', '241', '243'],
+            ['Cap. III — Dos Crimes contra a Assistência Familiar', '244', '247'],
+            ['Cap. IV — Dos Crimes contra o Pátrio Poder, Tutela ou Curatela', '248', '249']]],
+        ['Título VIII — Dos Crimes contra a Incolumidade Pública', '250', '285', [
+            ['Cap. I — Dos Crimes de Perigo Comum', '250', '259'],
+            ['Cap. II — Dos Crimes contra a Segurança dos Meios de Comunicação e Transporte e outros Serviços Públicos', '260', '266'],
+            ['Cap. III — Dos Crimes contra a Saúde Pública', '267', '285']]],
+        ['Título IX — Dos Crimes contra a Paz Pública', '286', '288-Z'],
+        ['Título X — Dos Crimes contra a Fé Pública', '289', '311-Z', [
+            ['Cap. I — Da Moeda Falsa', '289', '292'],
+            ['Cap. II — Da Falsidade de Títulos e outros Papéis Públicos', '293', '295'],
+            ['Cap. III — Da Falsidade Documental', '296', '305'],
+            ['Cap. IV — De outras Falsidades', '306', '311'],
+            ['Cap. V — Das Fraudes em Certames de Interesse Público', '311-A', '311-Z']]],
+        ['Título XI — Dos Crimes contra a Administração Pública', '312', '359-H', [
+            ['Cap. I — Dos Crimes Praticados por Funcionário Público contra a Administração em Geral', '312', '327'],
+            ['Cap. II — Dos Crimes Praticados por Particular contra a Administração em Geral', '328', '337-A'],
+            ['Cap. II-A — Dos Crimes Praticados por Particular contra a Administração Pública Estrangeira', '337-B', '337-D'],
+            ['Cap. II-B — Dos Crimes em Licitações e Contratos Administrativos', '337-E', '337-Z'],
+            ['Cap. III — Dos Crimes contra a Administração da Justiça', '338', '359'],
+            ['Cap. IV — Dos Crimes contra as Finanças Públicas', '359-A', '359-H']]],
+        ['Título XII — Dos Crimes contra o Estado Democrático de Direito', '359-I', '359-Z', [
+            ['Cap. I — Dos Crimes contra a Soberania Nacional', '359-I', '359-K'],
+            ['Cap. II — Dos Crimes contra as Instituições Democráticas', '359-L', '359-M'],
+            ['Cap. III — Dos Crimes contra o Funcionamento das Instituições Democráticas no Processo Eleitoral', '359-N', '359-Q'],
+            ['Cap. IV — Dos Crimes contra o Funcionamento dos Serviços Essenciais', '359-R', '359-R'],
+            ['Cap. VI — Disposições Comuns', '359-S', '359-Z']]]
+    ];
+    let MAPA_CPM = [
+        ['Parte Geral', '1', '135'],
+        ['Tít. I — Dos Crimes contra a Segurança Externa do País', '136', '148'],
+        ['Tít. II — Dos Crimes contra a Autoridade ou Disciplina Militar', '149', '182'],
+        ['Tít. III — Dos Crimes contra o Serviço Militar e o Dever Militar', '183', '204'],
+        ['Tít. IV — Dos Crimes contra a Pessoa', '205', '239'],
+        ['Tít. V — Dos Crimes contra o Patrimônio', '240', '267'],
+        ['Tít. VI — Dos Crimes contra a Incolumidade Pública', '268', '297'],
+        ['Tít. VII — Dos Crimes contra a Administração Militar', '298', '339'],
+        ['Tít. VIII — Dos Crimes contra a Administração da Justiça Militar', '340', '354'],
+        ['Livro II — Dos Crimes Militares em Tempo de Guerra', '355', '410']
+    ];
+    let MAPA_CPC = [
+        ['PG · Livro I — Das Normas Processuais Civis', '1', '15'],
+        ['PG · Livro II — Da Função Jurisdicional', '16', '69'],
+        ['PG · Livro III — Dos Sujeitos do Processo', '70', '187', [
+            ['Tít. I — Das Partes e dos Procuradores', '70', '112'],
+            ['Tít. II — Do Litisconsórcio', '113', '118'],
+            ['Tít. III — Da Intervenção de Terceiros', '119', '138'],
+            ['Tít. IV — Do Juiz e dos Auxiliares da Justiça', '139', '175'],
+            ['Tít. V — Do Ministério Público', '176', '181'],
+            ['Tít. VI — Da Advocacia Pública', '182', '184'],
+            ['Tít. VII — Da Defensoria Pública', '185', '187']]],
+        ['PG · Livro IV — Dos Atos Processuais', '188', '293', [
+            ['Tít. I — Da Forma, do Tempo e do Lugar dos Atos Processuais', '188', '235'],
+            ['Tít. II — Da Comunicação dos Atos Processuais', '236', '275'],
+            ['Tít. III — Das Nulidades', '276', '283'],
+            ['Tít. IV — Da Distribuição e do Registro', '284', '290'],
+            ['Tít. V — Do Valor da Causa', '291', '293']]],
+        ['PG · Livro V — Da Tutela Provisória', '294', '311'],
+        ['PG · Livro VI — Da Formação, da Suspensão e da Extinção do Processo', '312', '317'],
+        ['PE · Livro I — Do Processo de Conhecimento e do Cumprimento de Sentença', '318', '770', [
+            ['Tít. I — Do Procedimento Comum', '318', '512'],
+            ['Tít. II — Do Cumprimento da Sentença', '513', '538'],
+            ['Tít. III — Dos Procedimentos Especiais', '539', '770']]],
+        ['PE · Livro II — Do Processo de Execução', '771', '925'],
+        ['PE · Livro III — Dos Processos nos Tribunais e dos Meios de Impugnação das Decisões Judiciais', '926', '1044', [
+            ['Tít. I — Da Ordem dos Processos e dos Processos de Competência Originária dos Tribunais', '926', '993'],
+            ['Tít. II — Dos Recursos', '994', '1044']]],
+        ['Livro Complementar — Disposições Finais e Transitórias', '1045', '1072']
+    ];
+    let MAPA_CPP = [
+        ['Livro I — Do Processo em Geral', '1', '393', [
+            ['Tít. I — Disposições Preliminares', '1', '3-Z'],
+            ['Tít. II — Do Inquérito Policial', '4', '23'],
+            ['Tít. III — Da Ação Penal', '24', '62'],
+            ['Tít. IV — Da Ação Civil', '63', '68'],
+            ['Tít. V — Da Competência', '69', '91'],
+            ['Tít. VI — Das Questões e Processos Incidentes', '92', '154'],
+            ['Tít. VII — Da Prova', '155', '250'],
+            ['Tít. VIII — Do Juiz, do MP, do Acusado e Defensor, dos Assistentes e Auxiliares da Justiça', '251', '281'],
+            ['Tít. IX — Da Prisão, das Medidas Cautelares e da Liberdade Provisória', '282', '350'],
+            ['Tít. X — Das Citações e Intimações', '351', '372'],
+            ['Tít. XI — Da Aplicação Provisória de Interdições de Direitos e Medidas de Segurança', '373', '380'],
+            ['Tít. XII — Da Sentença', '381', '393']]],
+        ['Livro II — Dos Processos em Espécie', '394', '562', [
+            ['Tít. I — Do Processo Comum', '394', '497'],
+            ['Tít. II — Dos Processos Especiais', '498', '562']]],
+        ['Livro III — Das Nulidades e dos Recursos em Geral', '563', '667', [
+            ['Tít. I — Das Nulidades', '563', '573'],
+            ['Tít. II — Dos Recursos em Geral', '574', '667']]],
+        ['Livro IV — Da Execução', '668', '779'],
+        ['Livro V — Das Relações Jurisdicionais com Autoridade Estrangeira', '780', '790'],
+        ['Livro VI — Disposições Gerais', '791', '811']
+    ];
+    // Ordem da lista = ordem na coluna 1. principal: aparece mesmo sem itens.
+    let DIPLOMAS = {
+        penas: [
+            { id: 'CP', nome: 'Código Penal', re: [/\bCP\b/i, /c[óo]digo penal(?!\s+militar)/i], mapa: MAPA_CP, principal: true },
+            { id: 'CPM', nome: 'Código Penal Militar', re: [/\bCPM\b/i, /c[óo]digo penal militar/i, /\b(?:DL|Decreto-Lei)\s*(?:n[º°o.]*\s*)?1\.?001(?!\d)/i], mapa: MAPA_CPM, principal: true },
+            { id: 'LCP', nome: 'Contravenções Penais', re: [/\bLCP\b/i, /contraven[çc][õo]es penais/i, /\b(?:DL|Decreto-Lei)\s*(?:n[º°o.]*\s*)?3\.?688(?!\d)/i] },
+            { id: 'L11343', nome: 'Lei de Drogas', re: [lei('11.343'), /lei de drogas/i] },
+            { id: 'L10826', nome: 'Estatuto do Desarmamento', re: [lei('10.826'), /estatuto do desarmamento/i] },
+            { id: 'L9455', nome: 'Lei de Tortura', re: [lei('9.455')] },
+            { id: 'L9605', nome: 'Crimes Ambientais', re: [lei('9.605')] },
+            { id: 'CTB', nome: 'Código de Trânsito', re: [/\bCTB\b/i, lei('9.503'), /c[óo]digo de tr[âa]nsito/i] },
+            { id: 'L13869', nome: 'Abuso de Autoridade', re: [lei('13.869')] },
+            { id: 'ECA', nome: 'ECA', re: [/\bECA\b/i, lei('8.069')] },
+            { id: 'CDC', nome: 'CDC', re: [/\bCDC\b/i, lei('8.078')] },
+            { id: 'L8137', nome: 'Crimes contra a Ordem Tributária', re: [lei('8.137')] },
+            { id: 'L7716', nome: 'Crimes Raciais', re: [lei('7.716')] },
+            { id: 'L10741', nome: 'Estatuto da Pessoa Idosa', re: [lei('10.741')] },
+            { id: 'L9613', nome: 'Lavagem de Capitais', re: [lei('9.613')] },
+            { id: 'L12850', nome: 'Organização Criminosa', re: [lei('12.850')] },
+            { id: 'L11340', nome: 'Maria da Penha', re: [lei('11.340'), /maria da penha/i] },
+            { id: 'L8072', nome: 'Crimes Hediondos', re: [lei('8.072')] },
+            { id: 'L7492', nome: 'Sistema Financeiro Nacional', re: [lei('7.492')] },
+            { id: 'L13260', nome: 'Terrorismo', re: [lei('13.260')] },
+            { id: 'CE', nome: 'Código Eleitoral', re: [/\bCE\b/, lei('4.737'), /c[óo]digo eleitoral/i] }
+        ],
+        prazos: [
+            { id: 'CPC', nome: 'CPC', re: [/\bCPC\b/i, /c[óo]digo de processo civil/i, lei('13.105')], mapa: MAPA_CPC, principal: true },
+            { id: 'CPP', nome: 'CPP', re: [/\bCPP\b/i, /c[óo]digo de processo penal/i, /\b(?:DL|Decreto-Lei)\s*(?:n[º°o.]*\s*)?3\.?689(?!\d)/i], mapa: MAPA_CPP, principal: true },
+            { id: 'CF', nome: 'Constituição Federal', re: [/\bCF\b/i, /\bCF\/88\b/i, /constitui[çc][ãa]o/i] },
+            { id: 'CLT', nome: 'CLT', re: [/\bCLT\b/i] },
+            { id: 'L9099', nome: 'Juizados Especiais (Lei 9.099)', re: [lei('9.099')] },
+            { id: 'L12153', nome: 'Juizados da Fazenda Pública', re: [lei('12.153')] },
+            { id: 'L10259', nome: 'Juizados Especiais Federais', re: [lei('10.259')] },
+            { id: 'LEF', nome: 'Execução Fiscal', re: [/\bLEF\b/i, lei('6.830')] },
+            { id: 'L12016', nome: 'Mandado de Segurança', re: [lei('12.016')] },
+            { id: 'L7347', nome: 'Ação Civil Pública', re: [lei('7.347')] },
+            { id: 'L8429', nome: 'Improbidade Administrativa', re: [lei('8.429')] },
+            { id: 'LEP', nome: 'Execução Penal (LEP)', re: [/\bLEP\b/i, lei('7.210')] },
+            { id: 'CP', nome: 'Código Penal', re: [/\bCP\b/i, /c[óo]digo penal(?!\s+militar)/i] },
+            { id: 'CC', nome: 'Código Civil', re: [/\bCC\b/i, /c[óo]digo civil/i, lei('10.406')] },
+            { id: 'CTN', nome: 'CTN', re: [/\bCTN\b/i, lei('5.172')] },
+            { id: 'CDC', nome: 'CDC', re: [/\bCDC\b/i, lei('8.078')] },
+            { id: 'ECA', nome: 'ECA', re: [/\bECA\b/i, lei('8.069')] },
+            { id: 'L8112', nome: 'Servidores Federais (Lei 8.112)', re: [lei('8.112')] },
+            { id: 'L9784', nome: 'Processo Administrativo (Lei 9.784)', re: [lei('9.784')] },
+            { id: 'L14133', nome: 'Licitações (Lei 14.133)', re: [lei('14.133')] }
+        ]
+    };
+    let RE_LEI = /\bLei\s*(?:n[º°o.]*\s*)?(\d{1,2}\.?\d{3})(?!\d)/i;
+    let RE_LC = /\b(?:LC|Lei Complementar)\s*(?:n[º°o.]*\s*)?(\d{1,3})(?![\d.])/i;
+    let genericos = {}; // id → nome, das leis fora da lista
+    let ORDEM_GENERICA = 1000;
+    Object.keys(DIPLOMAS).forEach(function(s) {
+        DIPLOMAS[s].forEach(function(d, i) {
+            d.ordem = i;
+            if (d.mapa) d.niveis = d.mapa.map(function(n) {
+                return { nome: n[0], ini: pos(n[1]), fim: pos(n[2], true), grupos: (n[3] || []).map(function(g) { return { nome: g[0], ini: pos(g[1]), fim: pos(g[2], true) }; }) };
+            });
+        });
+    });
+    let OUTROS = { id: '__outros__', nome: 'Sem diploma identificado', ordem: 9999 };
+
+    function identificar(secao, texto) {
+        let t = String(texto || ''), melhor = null, idx = Infinity;
+        (DIPLOMAS[secao] || []).forEach(function(d) {
+            d.re.forEach(function(re) { let m = re.exec(t); if (m && m.index < idx) { idx = m.index; melhor = d; } });
+        });
+        let m = RE_LEI.exec(t), mc = RE_LC.exec(t);
+        if (m && m.index < idx) {
+            let num = m[1].replace(/\./g, ''), id = 'L' + num;
+            genericos[id] = 'Lei nº ' + num.slice(0, num.length - 3) + '.' + num.slice(-3);
+            melhor = { id: id, nome: genericos[id], ordem: ORDEM_GENERICA }; idx = m.index;
+        }
+        if (mc && mc.index < idx) {
+            let id = 'LC' + mc[1];
+            genericos[id] = 'Lei Complementar nº ' + mc[1];
+            melhor = { id: id, nome: genericos[id], ordem: ORDEM_GENERICA };
+        }
+        if (melhor) return melhor;
+        // Penas: artigo sem diploma = Código Penal (o Gem sempre cita a lei especial).
+        if (secao === 'penas' && chaveArtigo(t)[0] !== Infinity) return DIPLOMAS.penas[0];
+        return OUTROS;
+    }
+
+    return {
+        diploma: function(secao, id) {
+            return (DIPLOMAS[secao] || []).find(function(d) { return d.id === id; }) || null;
+        },
+        nome: function(secao, id) {
+            let d = this.diploma(secao, id);
+            return d ? d.nome : (id === OUTROS.id ? OUTROS.nome : (genericos[id] || id));
+        },
+        principais: function(secao) { return (DIPLOMAS[secao] || []).filter(function(d) { return d.principal; }); },
+        // → {dip, dipNome, dipOrdem, temMapa, pos, nivel, nivelIdx, grupo, grupoIdx}
+        classificar: function(secao, texto) {
+            let d = identificar(secao, texto);
+            let k = chaveArtigo(texto), p = k[0] === Infinity ? null : k[0] * 100 + k[1];
+            let r = { dip: d.id, dipNome: d.nome, dipOrdem: d.ordem, temMapa: !!d.niveis, pos: p, nivel: null, nivelIdx: -1, grupo: null, grupoIdx: -1 };
+            // Faixas podem se sobrepor ("306 a 311" contém o 311-A): vale a
+            // mais específica, a de início mais alto.
+            let maisEspecifica = function(lista) {
+                let achou = -1;
+                lista.forEach(function(x, i) { if (p >= x.ini && p <= x.fim && (achou < 0 || x.ini > lista[achou].ini)) achou = i; });
+                return achou;
+            };
+            if (d.niveis && p != null) {
+                let i = maisEspecifica(d.niveis);
+                if (i >= 0) {
+                    r.nivel = d.niveis[i].nome; r.nivelIdx = i;
+                    let j = maisEspecifica(d.niveis[i].grupos);
+                    if (j >= 0) { r.grupo = d.niveis[i].grupos[j].nome; r.grupoIdx = j; }
+                }
+            }
+            return r;
+        }
+    };
+})();
+
+// Navegação por diploma, comum a Prazos e Penas. _materia = id do diploma
+// (ou '__fav__'); _divisao = índice do nível no mapa (null = todos; -1 =
+// fora do mapa).
+window.ESTRUTURA_MIXIN = {
+    _clsTexto: function(t) {
+        t = String(t || '');
+        if (!this._cacheCls) this._cacheCls = {};
+        return this._cacheCls[t] || (this._cacheCls[t] = ESTRUTURA_MEMO.classificar(this._secao, t));
+    },
+    _cls: function(item) { return this._clsTexto(this._artDe(item)); },
+    _nomeDiploma: function(id) { return ESTRUTURA_MEMO.nome(this._secao, id); },
+    _origemItem: function(item) { let c = this._cls(item); return [c.dipNome, c.nivel, c.grupo].filter(Boolean).join(' › '); },
+
+    // Itens válidos (sem notas, sem excluídos, sem repetição de id).
+    _todosItens: function() {
+        let self = this, lista = [], vistos = {};
+        Object.keys(this.itens).forEach(function(ch) {
+            if (ch === '__notas__') return;
+            (self.itens[ch] || []).forEach(function(i) {
+                if (!i || vistos[i.id]) return;
+                if (self.excluidos[i.id] && !i.origem_oficial) return;
+                vistos[i.id] = true;
+                lista.push({ item: i, chave: ch });
+            });
+        });
+        return lista;
+    },
+
+    // Guarda cada item sob o id do seu diploma (migra as chaves antigas
+    // "Matéria > Divisão" da taxonomia). Idempotente; roda a cada carga.
+    _reorganizar: function() {
+        let self = this, novo = {}, vistos = {};
+        Object.keys(this.itens || {}).forEach(function(ch) {
+            (self.itens[ch] || []).forEach(function(i) {
+                if (!i || !i.id || vistos[i.id]) return;
+                vistos[i.id] = true;
+                let k = ch === '__notas__' ? '__notas__' : self._cls(i).dip;
+                (novo[k] = novo[k] || []).push(i);
+            });
+        });
+        this.itens = novo;
+    },
+
+    _diplomasComItens: function() {
+        let self = this, cont = {};
+        this._todosItens().forEach(function(p) {
+            let c = self._cls(p.item);
+            (cont[c.dip] = cont[c.dip] || { id: c.dip, nome: c.dipNome, ordem: c.dipOrdem, n: 0 }).n++;
+        });
+        ESTRUTURA_MEMO.principais(this._secao).forEach(function(d) { if (!cont[d.id]) cont[d.id] = { id: d.id, nome: d.nome, ordem: d.ordem, n: 0 }; });
+        return Object.keys(cont).map(function(k) { return cont[k]; }).sort(function(a, b) { return (a.ordem - b.ordem) || a.nome.localeCompare(b.nome); });
+    },
+
+    render: function() {
+        let col = document.getElementById(this._px + '-col-materias');
+        if (!col) return;
+        let self = this, R = this._R, dips = this._diplomasComItens();
+        if (!this._materia) { let comItens = dips.find(function(d) { return d.n; }); this._materia = (comItens || dips[0]).id; this._divisao = null; }
+        col.innerHTML = this._htmlItemFavoritos() + dips.map(function(d) {
+            return '<div class="fc-materia-item' + (d.id === self._materia ? ' ativa' : '') + '" onclick="window.' + R + '.selecionarMateria(\'' + self._escJs(d.id) + '\')">' +
+                '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
+                '<span style="display:flex; align-items:center; gap:4px;">' + (d.n ? '<span class="fc-materia-count">' + d.n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
+        }).join('');
+        this._renderDivisoes();
+        this._renderPrincipal();
+    },
+    selecionarMateria: function(m) { this._materia = m; this._divisao = null; this._revelados = {}; this.render(); },
+    selecionarDivisao: function(d) { this._divisao = (d === null || d === undefined) ? null : d; this._revelados = {}; this._renderDivisoes(); this._renderPrincipal(); },
+
+    _renderDivisoes: function() {
+        let col = document.getElementById(this._px + '-col-divisoes');
+        if (!col) return;
+        let self = this, R = this._R;
+        if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma.</div>'; return; }
+        if (this._materia === '__fav__') { col.innerHTML = '<div class="fc-vazio-col">⭐ Todos os favoritos, de todos os diplomas.<br>Favorite pelo ☆ na tabela ou durante o treino.</div>'; return; }
+        let d = ESTRUTURA_MEMO.diploma(this._secao, this._materia), cont = {}, total = 0;
+        this._todosItens().forEach(function(p) {
+            let c = self._cls(p.item);
+            if (c.dip !== self._materia) return;
+            total++; cont[c.nivelIdx] = (cont[c.nivelIdx] || 0) + 1;
+        });
+        let item = function(rotulo, valor, n) {
+            return '<div class="fc-divisao-item' + (self._divisao === valor ? ' ativa' : '') + (n ? '' : ' memo-vazio') + '" onclick="window.' + R + '.selecionarDivisao(' + valor + ')"><span>' + self._esc(rotulo) + '</span><span class="fc-divisao-count">' + n + '</span></div>';
+        };
+        let html = item('Todos', null, total);
+        if (d && d.niveis) {
+            d.niveis.forEach(function(n, i) { html += item(n.nome, i, cont[i] || 0); });
+            if (cont[-1]) html += item('Sem artigo / fora do mapa', -1, cont[-1]);
+        } else html += '<div class="fc-vazio-col">Diploma sem subdivisões no mapa: os itens aparecem juntos, em ordem de artigo.</div>';
+        col.innerHTML = html;
+    },
+
+    _itensDoRecorte: function() {
+        let self = this, busca = this._norm(this._busca);
+        if (!this._materia) return [];
+        return this._todosItens().filter(function(p) {
+            let c = self._cls(p.item);
+            if (self._materia === '__fav__') { if (!self._ehFav(p.item.id)) return false; }
+            else {
+                if (c.dip !== self._materia) return false;
+                if (self._divisao !== null && c.nivelIdx !== self._divisao) return false;
+            }
+            if (busca && self._norm(self._textoBusca(p.item)).indexOf(busca) === -1) return false;
+            return true;
+        }).sort(function(a, b) {
+            let ca = self._cls(a.item), cb = self._cls(b.item);
+            if (ca.dip !== cb.dip) return (ca.dipOrdem - cb.dipOrdem) || ca.dipNome.localeCompare(cb.dipNome);
+            // O mapa segue a ordem dos artigos: ordenar por artigo já agrupa
+            // por título/capítulo.
+            return compararArtigos(self._artDe(a.item), self._artDe(b.item)) || (a.item._ordem || 0) - (b.item._ordem || 0);
+        });
+    },
+
+    _rotuloRecorte: function() {
+        if (this._materia === '__fav__') return '⭐ Favoritos';
+        let nome = this._nomeDiploma(this._materia);
+        if (this._divisao === null) return nome;
+        let d = ESTRUTURA_MEMO.diploma(this._secao, this._materia);
+        return nome + ' › ' + (this._divisao === -1 || !d ? 'Sem artigo / fora do mapa' : d.niveis[this._divisao].nome);
+    },
+
+    // Cabeçalho de grupo da tabela: capítulo (ou título, quando não há
+    // capítulo); com "Todos", leva também o título; nos favoritos, o diploma.
+    _grupoDe: function(p) {
+        let c = this._cls(p.item), partes = [], fav = this._materia === '__fav__';
+        if (fav) partes.push(c.dipNome);
+        if (c.nivelIdx >= 0) {
+            if (fav || this._divisao === null || !c.grupo) partes.push(c.nivel);
+            if (c.grupo) partes.push(c.grupo);
+        } else if (c.temMapa) partes.push(c.pos == null ? 'Sem artigo identificado' : 'Fora do mapa');
+        return { chave: c.dip + '|' + c.nivelIdx + '|' + c.grupoIdx, rotulo: partes.join(' › ') };
+    },
+    _htmlLinhaGrupo: function(g, colspan) {
+        let notas = this._htmlNotasDoGrupo(g.chave);
+        if (!g.rotulo && !notas) return '';
+        return '<tr class="' + this._px + '-grupo"><td colspan="' + colspan + '">' + this._esc(g.rotulo) + notas + '</td></tr>';
+    },
+
+    // ── 📌 NOTAS DO CAPÍTULO (só Penas: _comNotas) — itens.__notas__ ──
+    _notas: function() {
+        let self = this;
+        return (this.itens.__notas__ || []).filter(function(n) { return n && n.nota && !(self.excluidos[n.id] && !n.origem_oficial); });
+    },
+    _chaveGrupoTexto: function(t) { let c = this._clsTexto(t); return c.dip + '|' + c.nivelIdx + '|' + c.grupoIdx; },
+    _htmlNotasDoGrupo: function(chave) {
+        if (!this._comNotas) return '';
+        let self = this, R = this._R;
+        return this._notas().filter(function(n) { return self._chaveGrupoTexto(n.art) === chave; }).map(function(n) {
+            return '<div class="memo-nota-cap"><span class="memo-nota-rot">📌 Nota do capítulo' + (n.art ? ' · ' + self._esc(n.art) : '') + '</span>' + self._esc(n.nota) +
+                (n.origem_oficial ? '' : ' <button class="memo-nota-del" onclick="window.' + R + '.excluirNota(\'' + self._escJs(n.id) + '\')" title="Excluir esta nota">🗑️</button>') + '</div>';
+        }).join('');
+    },
+    // Nota cujo capítulo não tem item no recorte (ex.: CP, arts. 181 a 183,
+    // "Disposições Gerais", que não tem crime): entra como cabeçalho próprio,
+    // na posição do artigo. Volta a lista com entradas {notaArt} intercaladas.
+    _comNotasSoltas: function(lista) {
+        if (!this._comNotas || this._materia === '__fav__' || this._busca) return lista;
+        let self = this, presentes = {}, soltas = {};
+        lista.forEach(function(p) { presentes[self._grupoDe(p).chave] = true; });
+        this._notas().forEach(function(n) {
+            let c = self._clsTexto(n.art), ch = self._chaveGrupoTexto(n.art);
+            if (c.dip !== self._materia || (self._divisao !== null && c.nivelIdx !== self._divisao) || presentes[ch]) return;
+            if (!soltas[ch] || compararArtigos(n.art, soltas[ch]) < 0) soltas[ch] = n.art;
+        });
+        let out = lista.slice();
+        let artDe = function(p) { return p.notaArt !== undefined ? p.notaArt : self._artDe(p.item); };
+        Object.keys(soltas).forEach(function(ch) {
+            let art = soltas[ch];
+            let i = out.findIndex(function(p) { return compararArtigos(artDe(p), art) > 0; });
+            out.splice(i < 0 ? out.length : i, 0, { notaArt: art });
+        });
+        return out;
+    },
+    _grupoDaNota: function(art) { return this._grupoDe({ item: { art: art, base: art } }); },
+    _idNota: function(art) { return 'nota_' + this._hash(this._norm(art)); },
+    excluirNota: function(id) {
+        let lista = this.itens.__notas__ || [];
+        let n = lista.find(function(x) { return x.id === id; });
+        if (!n || n.origem_oficial) return;
+        if (!confirm('Excluir a nota do capítulo (' + (n.art || 'sem artigo') + ')?')) return;
+        this.itens.__notas__ = lista.filter(function(x) { return x.id !== id; });
+        if (!this.itens.__notas__.length) delete this.itens.__notas__;
+        this.excluidos[id] = new Date().toISOString();
+        this.salvar();
+        this.render();
+    },
+
+    // ── EXPORTAR (.json no formato da base oficial: { "<diploma>": [itens] }) ──
+    // Salvar em dados/<seção>/ e acrescentar o caminho em
+    // dados/manifesto-<seção>.txt. Ids preservados (progresso continua valendo).
+    exportar: function(escopo) {
+        this._garantirCarregado();
+        let self = this, saida = {}, total = 0, nome = this._secao + '-tudo.json';
+        if (escopo === 'diploma') {
+            if (!this._materia || this._materia === '__fav__') { alert('Selecione um diploma antes de exportar.'); return; }
+            nome = this._secao + '-' + this._slug(this._nomeDiploma(this._materia)) + '.json';
+        }
+        let doEscopo = function(t) { return escopo !== 'diploma' || self._clsTexto(t).dip === self._materia; };
+        this._todosItens().forEach(function(p) {
+            if (!doEscopo(self._artDe(p.item))) return;
+            let k = self._cls(p.item).dip;
+            (saida[k] = saida[k] || []).push(p.item);
+            total++;
+        });
+        Object.keys(saida).forEach(function(k) {
+            saida[k] = saida[k].sort(function(a, b) { return compararArtigos(self._artDe(a), self._artDe(b)); }).map(function(i) { return self._itemExportado(i); });
+        });
+        if (this._comNotas) {
+            let notas = this._notas().filter(function(n) { return doEscopo(n.art); }).map(function(n) { return { id: n.id, art: n.art || '', nota: n.nota }; });
+            if (notas.length) saida.__notas__ = notas;
+        }
+        if (!total) { alert('Nada para exportar.'); return; }
+        downloadArquivo(JSON.stringify(saida, null, 2), nome, 'application/json');
+    }
+};
+
+Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
+    _px: 'prz', _comNotas: false,
+    _artDe: function(item) { return item.base || ''; },
+    _textoBusca: function(i) { return [i.ato, i.prazo, i.inicio, i.base, i.obs].join(' '); },
+    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '' }; }
+});
+Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
+    _px: 'pen', _comNotas: true,
+    _artDe: function(item) { return item.art || ''; },
+    _textoBusca: function(i) { return [i.crime, i.art, i.pena, i.acao, i.obs].concat(i.qualificadas || [], i.aumentos || [], i.diminuicoes || []).join(' '); },
+    _itemExportado: function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '' }; }
+});
+[window.PRAZOS_RUNTIME, window.PENAS_RUNTIME].forEach(function(R) { if (R._bootstrapped) R._reorganizar(); });
 </script>
 
 <!-- SEÇÃO: GLOSSÁRIO — mesmo padrão L1(matéria)>L2(divisão) de Materiais,

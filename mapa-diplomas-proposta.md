@@ -77,6 +77,7 @@ Faixas escritas como "155–156" incluem os artigos com letra (ex.: 154-A, 154-B
 - Cap. I — Dos Crimes contra a Liberdade Sexual (213–216-A)
 - Cap. I-A — Da Exposição da Intimidade Sexual (216-B)
 - Cap. II — Dos Crimes Sexuais contra Vulnerável (217-A–218-C)
+- Cap. IV — Disposições Gerais (223–226) → **nota do capítulo**
 - Cap. V — Do Lenocínio e do Tráfico de Pessoa para Fim de Prostituição ou outra Forma de Exploração Sexual (227–230)
 - Cap. VI — Do Ultraje Público ao Pudor (233–234)
 - Cap. VII — Disposições Gerais (234-A–234-C) → **nota do capítulo**
