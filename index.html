@@ -28480,7 +28480,18 @@ window.carregarEsquemasOficiais = async function() {
     /* Faltava este bloco — sem ele, "Embaralhar" e ‹›/posição caíam no
        estilo padrão de <button>/<span> do navegador (foi o bug reportado:
        botões desestilizados no popup do Baralho). */
-    #modal-jurisprudencia-baralho .fc-popup-toolbar { display:flex; gap:8px; justify-content:center; align-items:center; }
+    #modal-jurisprudencia-baralho .fc-popup-toolbar { display:flex; flex-wrap:wrap; gap:8px 22px; justify-content:center; align-items:center; }
+    /* Canetas do marca-texto: escolhida a caneta, tudo que for selecionado
+       nos campos do card é grifado (ou apagado, na borracha) na hora. */
+    #modal-jurisprudencia-baralho .jur-grifo-canetas { display:flex; align-items:center; gap:6px; padding:3px 10px; border:1px solid var(--border-color); border-radius:99px; background:var(--bg-white); }
+    #modal-jurisprudencia-baralho .jur-grifo-canetas-rotulo { font-size:11px; font-weight:700; color:var(--text-muted); }
+    #modal-jurisprudencia-baralho .jur-grifo-caneta { width:24px; height:24px; border-radius:50%; border:2px solid rgba(0,0,0,0.12); cursor:pointer; padding:0; font-size:12px; line-height:1; }
+    #modal-jurisprudencia-baralho .jur-grifo-caneta.borracha { width:auto; border-radius:99px; padding:0 8px; background:var(--bg-white); color:var(--text-main); border-color:var(--border-color); }
+    #modal-jurisprudencia-baralho .jur-grifo-caneta.ativa { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white), 0 0 0 4px var(--app-primary); }
+    #modal-jurisprudencia-baralho.jur-caneta-ativa [data-grifo-campo] { cursor:text; }
+    #modal-jurisprudencia-baralho.jur-caneta-amarelo [data-grifo-campo]::selection, #modal-jurisprudencia-baralho.jur-caneta-amarelo [data-grifo-campo] *::selection { background:#fde047; }
+    #modal-jurisprudencia-baralho.jur-caneta-verde [data-grifo-campo]::selection, #modal-jurisprudencia-baralho.jur-caneta-verde [data-grifo-campo] *::selection { background:#86efac; }
+    #modal-jurisprudencia-baralho.jur-caneta-rosa [data-grifo-campo]::selection, #modal-jurisprudencia-baralho.jur-caneta-rosa [data-grifo-campo] *::selection { background:#f9a8d4; }
     #modal-jurisprudencia-baralho .fc-tb-btn { padding:6px 14px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     /* Controle "‹ Reduzir | Aumentar ›" da escala lista+cartão — mesmo
        padrão de #modal-esquemas-baralho .esq-baralho-escala-controle:
@@ -28629,6 +28640,7 @@ window.carregarEsquemasOficiais = async function() {
                 <span id="jur-baralho-escala-valor">1.5x</span>
                 <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar cartão">Aumentar ›</button>
             </div>
+            <div class="jur-grifo-canetas" id="jur-grifo-canetas"></div>
         </div>
 
         <div class="jur-baralho-corpo-wrap">
@@ -31769,9 +31781,45 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (pop) pop.style.display = 'none';
     },
 
+    // Caneta escolhida na barra do topo (pedido explícito do usuário:
+    // "inverter" — escolhe a caneta primeiro, depois tudo que for
+    // selecionado é grifado). null = nenhuma (aí vale o popup 🖍 sobre a
+    // seleção). Fica escolhida entre aberturas do Leitor na mesma sessão.
+    _canetaGrifo: null,
+
+    selecionarCanetaGrifo: function(cor) {
+        this._canetaGrifo = (this._canetaGrifo === cor) ? null : cor;
+        this._renderCanetasGrifo();
+        this._esconderPopupGrifo();
+        // Já havia texto selecionado ao escolher a caneta → grifa na hora.
+        if (this._canetaGrifo && this._selecaoGrifavel()) this._aoSoltarSelecaoLeitor();
+    },
+
+    _renderCanetasGrifo: function() {
+        let self = this;
+        let el = document.getElementById('jur-grifo-canetas');
+        let modalEl = document.getElementById('modal-jurisprudencia-baralho');
+        if (modalEl) {
+            modalEl.classList.toggle('jur-caneta-ativa', !!this._canetaGrifo);
+            ['amarelo', 'verde', 'rosa', 'borracha'].forEach(function(c) { modalEl.classList.toggle('jur-caneta-' + c, self._canetaGrifo === c); });
+        }
+        if (!el) return;
+        el.innerHTML = '<span class="jur-grifo-canetas-rotulo">🖍 Grifar:</span>' +
+            this._CORES_GRIFO.map(function(c) {
+                return '<button class="jur-grifo-caneta jur-grifo-' + c + (self._canetaGrifo === c ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'' + c + '\')" title="' + (self._canetaGrifo === c ? 'Desligar caneta' : 'Caneta ' + c) + '"></button>';
+            }).join('') +
+            '<button class="jur-grifo-caneta borracha' + (this._canetaGrifo === 'borracha' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'borracha\')" title="' + (this._canetaGrifo === 'borracha' ? 'Desligar borracha' : 'Borracha: apaga o grifo do que for selecionado') + '">⌫</button>';
+    },
+
     _aoSoltarSelecaoLeitor: function() {
         let sel = this._selecaoGrifavel();
         if (!sel) { this._esconderPopupGrifo(); return; }
+        if (this._canetaGrifo) {
+            this._aplicarGrifo(sel.id, sel.campo, sel.ini, sel.fim, this._canetaGrifo === 'borracha' ? null : this._canetaGrifo);
+            let s = window.getSelection(); if (s) s.removeAllRanges();
+            this.renderBaralho();
+            return;
+        }
         let pop = this._popupGrifoEl();
         pop.style.display = 'flex';
         let w = pop.offsetWidth, h = pop.offsetHeight;
@@ -31948,6 +31996,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._painelComentarioEditando = false;
         this._painelComentarioIdAtual = null;
         this._rascunhosComentario = {};
+        this._renderCanetasGrifo();
         if (!this._listenersGrifoInstalados) {
             this._listenersGrifoInstalados = true;
             let self = this;
