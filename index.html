@@ -4360,7 +4360,9 @@ window.SALINHA_BACKUP = {
                     // Comentário pessoal (💭) por ficha {id → {html, atualizadoEm}}.
                     // Mesma política de revisaoJurisprudencia: o mais recente vence
                     // (html '' é lápide de comentário apagado, também sincroniza).
-                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && (subChave === 'comentariosPessoais' || subChave === 'grifos') &&
+                    // (Mesma regra para prazos_runtime.comentarios e penas_runtime.comentarios.)
+                    if (((chaveSemPrefixoMerge === 'jurisprudencia_runtime' && (subChave === 'comentariosPessoais' || subChave === 'grifos')) ||
+                         ((chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'comentarios')) &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -13813,13 +13815,14 @@ function parsearPrazosTexto(txt) {
 // número (ex.: "em dobro", "imediatamente") fica só com o texto.
 function interpretarPrazoTexto(texto) {
     let t = String(texto || '').trim();
-    let m = t.match(/(\d+(?:[.,]\d+)?)\s*(minutos?|horas?|dias?|semanas?|m[eê]s(?:es)?|anos?)\b\s*(úteis|uteis|corridos?)?/i);
-    if (!m) return { num: null, unidade: '', contagem: '' };
-    let un = m[2].toLowerCase();
-    if (/^m[eê]s/.test(un)) un = (m[1] === '1') ? 'mês' : 'meses';
-    let cont = (m[3] || '').toLowerCase().replace('uteis', 'úteis');
+    // "de 2 a 6 horas" → num 2, ate 6 (intervalo).
+    let m = t.match(/(\d+(?:[.,]\d+)?)(?:\s*(?:a|até)\s*(\d+(?:[.,]\d+)?))?\s*(minutos?|horas?|dias?|semanas?|m[eê]s(?:es)?|anos?)\b\s*(úteis|uteis|corridos?)?/i);
+    if (!m) return { num: null, ate: null, unidade: '', contagem: '' };
+    let un = m[3].toLowerCase();
+    if (/^m[eê]s/.test(un)) un = (m[1] === '1' && !m[2]) ? 'mês' : 'meses';
+    let cont = (m[4] || '').toLowerCase().replace('uteis', 'úteis');
     if (/^corrido/.test(cont)) cont = 'corridos';
-    return { num: m[1].replace(',', '.'), unidade: un, contagem: cont };
+    return { num: m[1].replace(',', '.'), ate: m[2] ? m[2].replace(',', '.') : null, unidade: un, contagem: cont };
 }
 
 window.PRAZOS_RUNTIME = {
@@ -13833,7 +13836,7 @@ window.PRAZOS_RUNTIME = {
     _busca: '',
     _cortina: { prazo: true }, // colunas escondidas na Tabela (padrão: o número)
     _revelados: {},            // "id|coluna" revelados individualmente
-    _treinoCfg: { filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'prazo_inicio' },
+    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'prazo_inicio' },
     _treino: null,
     _criacao: null,
 
@@ -13851,6 +13854,7 @@ window.PRAZOS_RUNTIME = {
         this.itens = (bruto && dict(bruto.itens)) ? bruto.itens : {};
         this.estado = (bruto && dict(bruto.estado)) ? bruto.estado : {};
         this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
+        this.comentarios = (bruto && dict(bruto.comentarios)) ? bruto.comentarios : {};
         Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
         this._bootstrapped = true;
     },
@@ -13865,7 +13869,7 @@ window.PRAZOS_RUNTIME = {
                 let p = (self.itens[ch] || []).filter(function(i) { return !i.origem_oficial; });
                 if (p.length) pessoais[ch] = p;
             });
-            window.salvarPrazosBruto(JSON.stringify({ itens: pessoais, estado: this.estado, excluidos: this.excluidos }));
+            window.salvarPrazosBruto(JSON.stringify({ itens: pessoais, estado: this.estado, excluidos: this.excluidos, comentarios: this.comentarios || {} }));
             return true;
         } catch (e) {
             console.warn('[PRAZOS] Falha ao salvar:', e);
@@ -13915,7 +13919,8 @@ window.PRAZOS_RUNTIME = {
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
         ((mat && mat.divisoes) || []).forEach(function(d, i) { ordemDiv[self._chaveL2(self._materia, d.nivel_2)] = i; });
         return this._todosItens().filter(function(p) {
-            if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
+            if (self._materia === '__fav__') { if (!self._ehFav(p.item.id)) return false; }
+            else if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
             else if (p.chave.indexOf(self._materia + ' > ') !== 0) return false;
             if (busca && self._norm([p.item.ato, p.item.prazo, p.item.inicio, p.item.base, p.item.obs, p.item.l3].join(' ')).indexOf(busca) === -1) return false;
             return true;
@@ -13938,7 +13943,7 @@ window.PRAZOS_RUNTIME = {
         let col = document.getElementById('prz-col-materias');
         if (!col) return;
         let self = this;
-        col.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
+        col.innerHTML = self._htmlItemFavoritos() + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
             let n = self._contar(m.nivel_1, false);
             return '<div class="fc-materia-item' + (m.nivel_1 === self._materia ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.selecionarMateria(\'' + self._escJs(m.nivel_1) + '\')">' +
                 '<span class="fc-materia-nome">' + self._esc(m.nivel_1) + '</span>' +
@@ -13956,6 +13961,7 @@ window.PRAZOS_RUNTIME = {
         if (!col) return;
         let self = this;
         if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>'; return; }
+        if (this._materia === '__fav__') { col.innerHTML = '<div class="fc-vazio-col">⭐ Todos os favoritos, de todas as matérias.<br>Favorite pelo ☆ na tabela ou durante o treino.</div>'; return; }
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
         col.innerHTML = '<div class="fc-divisao-item' + (!this._divisao ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.selecionarDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + this._contar(this._materia, false) + '</span></div>' +
             ((mat && mat.divisoes) || []).map(function(d) {
@@ -14014,7 +14020,7 @@ window.PRAZOS_RUNTIME = {
     },
 
     _htmlValor: function(it, k) {
-        if (k === 'ato') return this._esc(it.ato) + (it.l3 ? '<span class="prz-l3">' + this._esc(it.l3) + '</span>' : '') + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '');
+        if (k === 'ato') return this._esc(it.ato) + (it.l3 ? '<span class="prz-l3">' + this._esc(it.l3) + '</span>' : '') + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
         let v = it[k];
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
     },
@@ -14047,7 +14053,7 @@ window.PRAZOS_RUNTIME = {
             let it = p.item;
             if (mostrarGrupo && p.chave !== grupoAtual) {
                 grupoAtual = p.chave;
-                linhas += '<tr class="prz-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>';
+                linhas += '<tr class="prz-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(self._materia === '__fav__' ? p.chave : p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>';
             }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
@@ -14056,7 +14062,7 @@ window.PRAZOS_RUNTIME = {
                     : self._htmlValor(it, c.k);
                 return '<td class="prz-col-' + c.k + '">' + conteudo + '</td>';
             }).join('') +
-            '<td><span class="prz-acoes-linha">' + self._htmlClassif(it.id) +
+            '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) +
                 (it.origem_oficial ? '' : '<button class="prz-btn-icone" onclick="window.PRAZOS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir este prazo">🗑️</button>') +
             '</span></td></tr>';
         });
@@ -14109,13 +14115,17 @@ window.PRAZOS_RUNTIME = {
         { k: 'nao_avaliados', rotulo: 'Ainda não avaliados' },
         { k: 'dificil', rotulo: '🔴 Errei' },
         { k: 'medio', rotulo: '🟡 Hesitei' },
-        { k: 'facil', rotulo: '🟢 Acertei' }
+        { k: 'facil', rotulo: '🟢 Acertei' },
+        { k: 'favoritos', rotulo: '⭐ Favoritos' },
+        { k: 'com_erros', rotulo: '⚠️ Já errados' }
     ],
 
     _passaFiltroTreino: function(id, f) {
         let e = this.estado[id] || {};
         if (f === 'todos') return true;
         if (f === 'nao_avaliados') return !e.ultimaClassificacao;
+        if (f === 'favoritos') return !!e.favorito;
+        if (f === 'com_erros') return (e.erros || 0) > 0 || Object.keys(e.camposErrados || {}).length > 0;
         return e.ultimaClassificacao === f;
     },
 
@@ -14134,11 +14144,14 @@ window.PRAZOS_RUNTIME = {
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="prz-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
-        let disponiveis = base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }).length;
-        let recorte = this._divisao ? this._divisao : (this._materia + ' — todas as divisões');
+        let disponiveis = self._filtrarParaModo(base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }), cfg.modo).length;
+        let recorte = this._rotuloRecorte();
         scroll.innerHTML = '<div class="prz-treino-painel">' +
-            '<div class="prz-treino-titulo">🎯 Clica e aparece</div>' +
-            '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. Cada prazo aparece com o número escondido: tente lembrar, revele e avalie a sua resposta (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). A avaliação fica salva e vira filtro para treinar só o que você errou.</div>' +
+            '<div class="prz-treino-titulo">🎯 Treinar</div>' +
+            '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. A avaliação de cada prazo fica salva e vira filtro (🔴, ⚠️ já errados) para treinar só o que você erra.</div>' +
+            '<div class="prz-opcao"><span class="prz-opcao-rotulo">Modo</span><div class="prz-pills">' +
+                this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
+                '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos)') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Quais prazos</span><div class="prz-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">O que esconder</span><div class="prz-pills">' +
@@ -14154,15 +14167,17 @@ window.PRAZOS_RUNTIME = {
     iniciarTreino: function() {
         let self = this, cfg = this._treinoCfg;
         let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        lista = self._filtrarParaModo(lista, cfg.modo);
         if (!lista.length) return;
         if (cfg.embaralhar) {
             for (let i = lista.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = lista[i]; lista[i] = lista[j]; lista[j] = t; }
         }
         if (cfg.quantidade) lista = lista.slice(0, cfg.quantidade);
         let esconder = { prazo: true, inicio: cfg.esconder !== 'prazo', base: cfg.esconder === 'prazo_inicio_base' };
-        this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false };
-        document.getElementById('prt-titulo').textContent = '🎯 Treino de Prazos — ' + (this._divisao || this._materia);
+        this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false, modo: cfg.modo || 'revelar' };
+        document.getElementById('prt-titulo').textContent = '🎯 Treino de Prazos — ' + this._rotuloRecorte();
         document.getElementById('modal-prazos-treino').classList.add('open');
+        this._atualizarDica();
         this._renderTreino();
     },
 
@@ -14194,9 +14209,11 @@ window.PRAZOS_RUNTIME = {
                 '<button class="prt-btn" onclick="window.PRAZOS_RUNTIME.fecharTreino()">Fechar</button></div></div>';
             return;
         }
-        nav.style.visibility = 'visible';
+        if (tr.modo === 'ligar') { nav.style.visibility = 'hidden'; document.getElementById('prt-pos').textContent = nAval + ' / ' + total; return this._renderLigar(); }
         let p = tr.lista[tr.idx], it = p.item;
         document.getElementById('prt-pos').textContent = (tr.idx + 1) + ' / ' + total;
+        if (tr.modo && tr.modo !== 'revelar') { nav.style.visibility = 'hidden'; return this._renderJogo(p); }
+        nav.style.visibility = 'visible';
         let campo = function(k, rotulo, classe) {
             let valor = it[k];
             if (!valor && k !== 'prazo') return '';
@@ -14209,12 +14226,13 @@ window.PRAZOS_RUNTIME = {
         };
         let prazoRevelado = !tr.esconder.prazo || tr.revelados[it.id + '|prazo'];
         palco.innerHTML = '<div class="prt-carta">' +
-            '<div class="prt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div>' +
+            '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
             campo('prazo', 'Prazo', 'prazo') +
             campo('inicio', 'Início') +
             campo('base', 'Base legal') +
             (prazoRevelado && it.obs ? '<div class="prt-campo"><span class="prt-rotulo">Observações</span><span class="prt-valor prt-revelado">' + this._esc(it.obs) + '</span></div>' : '') +
+            (prazoRevelado ? this._htmlComentarioBloco(it.id) : '') +
         '</div>';
         let av = tr.avaliacoes[it.id];
         ['dificil', 'medio', 'facil'].forEach(function(n) { document.getElementById('prt-b-' + n).classList.toggle('ativa', av === n); });
@@ -14259,13 +14277,14 @@ window.PRAZOS_RUNTIME = {
         let tr = this._treino;
         if (!tr) return;
         let lista = tr.lista.filter(function(p) { let a = tr.avaliacoes[p.item.id]; return a === 'dificil' || a === 'medio'; });
-        this._treino = { lista: lista, idx: 0, esconder: tr.esconder, revelados: {}, avaliacoes: {}, fim: false };
+        this._treino = { lista: lista, idx: 0, esconder: tr.esconder, revelados: {}, avaliacoes: {}, fim: false, modo: tr.modo };
         this._renderTreino();
     },
 
     _onKey: function(ev) {
         let modal = document.getElementById('modal-prazos-treino');
         if (!modal || !modal.classList.contains('open')) return;
+        if (this._treino && this._treino.modo && this._treino.modo !== 'revelar') { this._onKeyJogo(ev); return; }
         let tag = (ev.target && ev.target.tagName || '').toLowerCase();
         if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
         if (ev.key === ' ' || ev.code === 'Space') { ev.preventDefault(); this.revelarTreino(null); }
@@ -14786,7 +14805,9 @@ function interpretarPenaTexto(texto) {
         if (/^m/.test(un)) return n;
         return n * 12;
     };
-    let r = { especie: esp, minMeses: null, maxMeses: null, multa: /multa/.test(t) };
+    // multaTipo: cumulativa ("e multa") × alternativa ("ou multa"/"ou ambas").
+    let multaTipo = /\bou\s+multa|ou\s+ambas/.test(t) ? 'ou multa' : (/multa/.test(t) ? 'e multa' : 'sem multa');
+    let r = { especie: esp, minMeses: null, maxMeses: null, multa: /multa/.test(t), multaTipo: multaTipo };
     if (m) {
         r.minMeses = mesesDe(m[1], m[2] || m[4]);
         r.maxMeses = mesesDe(m[3], m[4]);
@@ -14816,7 +14837,7 @@ window.PENAS_RUNTIME = {
     _busca: '',
     _cortina: { pena: true },
     _revelados: {},
-    _treinoCfg: { filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif' },
+    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif' },
     _treino: null,
     _criacao: null,
 
@@ -14833,6 +14854,7 @@ window.PENAS_RUNTIME = {
         this.itens = (bruto && dict(bruto.itens)) ? bruto.itens : {};
         this.estado = (bruto && dict(bruto.estado)) ? bruto.estado : {};
         this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
+        this.comentarios = (bruto && dict(bruto.comentarios)) ? bruto.comentarios : {};
         Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
         this._bootstrapped = true;
     },
@@ -14844,7 +14866,7 @@ window.PENAS_RUNTIME = {
                 let p = (self.itens[ch] || []).filter(function(i) { return !i.origem_oficial; });
                 if (p.length) pessoais[ch] = p;
             });
-            window.salvarPenasBruto(JSON.stringify({ itens: pessoais, estado: this.estado, excluidos: this.excluidos }));
+            window.salvarPenasBruto(JSON.stringify({ itens: pessoais, estado: this.estado, excluidos: this.excluidos, comentarios: this.comentarios || {} }));
             return true;
         } catch (e) { console.warn('[PENAS] Falha ao salvar:', e); return false; }
     },
@@ -14892,7 +14914,8 @@ window.PENAS_RUNTIME = {
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
         ((mat && mat.divisoes) || []).forEach(function(d, i) { ordemDiv[self._chaveL2(self._materia, d.nivel_2)] = i; });
         return this._todosItens().filter(function(p) {
-            if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
+            if (self._materia === '__fav__') { if (!self._ehFav(p.item.id)) return false; }
+            else if (self._divisao) { if (p.chave !== self._chaveL2(self._materia, self._divisao)) return false; }
             else if (p.chave.indexOf(self._materia + ' > ') !== 0) return false;
             if (busca) {
                 let i = p.item;
@@ -14953,7 +14976,7 @@ window.PENAS_RUNTIME = {
         let col = document.getElementById('pen-col-materias');
         if (!col) return;
         let self = this;
-        col.innerHTML = TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
+        col.innerHTML = self._htmlItemFavoritos() + TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) {
             let n = self._contar(m.nivel_1, false);
             return '<div class="fc-materia-item' + (m.nivel_1 === self._materia ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarMateria(\'' + self._escJs(m.nivel_1) + '\')">' +
                 '<span class="fc-materia-nome">' + self._esc(m.nivel_1) + '</span>' +
@@ -14969,6 +14992,7 @@ window.PENAS_RUNTIME = {
         if (!col) return;
         let self = this;
         if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>'; return; }
+        if (this._materia === '__fav__') { col.innerHTML = '<div class="fc-vazio-col">⭐ Todos os favoritos, de todas as matérias.<br>Favorite pelo ☆ na tabela ou durante o treino.</div>'; return; }
         let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === self._materia; });
         col.innerHTML = '<div class="fc-divisao-item' + (!this._divisao ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.selecionarDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + this._contar(this._materia, false) + '</span></div>' +
             ((mat && mat.divisoes) || []).map(function(d) {
@@ -15023,7 +15047,7 @@ window.PENAS_RUNTIME = {
         return '<ul class="pen-lista">' + arr.map(function(x) { return '<li>' + self._esc(x) + '</li>'; }).join('') + '</ul>';
     },
     _htmlValor: function(it, k) {
-        if (k === 'crime') return this._esc(it.crime) + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '');
+        if (k === 'crime') return this._esc(it.crime) + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
         if (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes') return this._htmlLista(it[k]);
         if (k === 'indicadores') return this._htmlIndicadores(it);
         let v = it[k];
@@ -15049,14 +15073,14 @@ window.PENAS_RUNTIME = {
         let grupo = null, linhas = '';
         lista.forEach(function(p) {
             let it = p.item;
-            if (!self._divisao && p.chave !== grupo) { grupo = p.chave; linhas += '<tr class="pen-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>'; }
+            if (!self._divisao && p.chave !== grupo) { grupo = p.chave; linhas += '<tr class="pen-grupo"><td colspan="' + (self.COLUNAS.length + 1) + '">' + self._esc(self._materia === '__fav__' ? p.chave : p.chave.split(' > ').slice(1).join(' > ')) + '</td></tr>'; }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
                 return '<td class="pen-col-' + c.k + '">' + (oculto
                     ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
                     : self._htmlValor(it, c.k)) + '</td>';
             }).join('') +
-            '<td><span class="pen-acoes-linha">' + self._htmlClassif(it.id) +
+            '<td><span class="pen-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) +
                 (it.origem_oficial ? '' : '<button class="pen-btn-icone" onclick="window.PENAS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir">🗑️</button>') +
             '</span></td></tr>';
         });
@@ -15094,12 +15118,16 @@ window.PENAS_RUNTIME = {
         { k: 'nao_avaliados', rotulo: 'Ainda não avaliados' },
         { k: 'dificil', rotulo: '🔴 Errei' },
         { k: 'medio', rotulo: '🟡 Hesitei' },
-        { k: 'facil', rotulo: '🟢 Acertei' }
+        { k: 'facil', rotulo: '🟢 Acertei' },
+        { k: 'favoritos', rotulo: '⭐ Favoritos' },
+        { k: 'com_erros', rotulo: '⚠️ Já errados' }
     ],
     _passaFiltroTreino: function(id, f) {
         let e = this.estado[id] || {};
         if (f === 'todos') return true;
         if (f === 'nao_avaliados') return !e.ultimaClassificacao;
+        if (f === 'favoritos') return !!e.favorito;
+        if (f === 'com_erros') return (e.erros || 0) > 0 || Object.keys(e.camposErrados || {}).length > 0;
         return e.ultimaClassificacao === f;
     },
     configTreino: function(campo, valor) { this._treinoCfg[campo] = valor; this._renderPainelTreino(); },
@@ -15112,10 +15140,13 @@ window.PENAS_RUNTIME = {
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="pen-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
-        let disp = base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }).length;
+        let disp = self._filtrarParaModo(base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }), cfg.modo).length;
         scroll.innerHTML = '<div class="pen-treino-painel">' +
-            '<div class="pen-treino-titulo">🎯 Clica e aparece</div>' +
-            '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._divisao || (this._materia + ' — todas as divisões')) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
+            '<div class="pen-treino-titulo">🎯 Treinar</div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">Modo</span><div class="pen-pills">' +
+                this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
+                '<div class="pen-treino-sub">' + this._dicaModo(cfg.modo, 'a pena-base (espécie, mínimo, máximo e se a multa é cumulativa ou alternativa)') + '</div></div>' +
+            '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._rotuloRecorte()) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
@@ -15128,14 +15159,16 @@ window.PENAS_RUNTIME = {
     iniciarTreino: function() {
         let self = this, cfg = this._treinoCfg;
         let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        lista = self._filtrarParaModo(lista, cfg.modo);
         if (!lista.length) return;
         if (cfg.embaralhar) for (let i = lista.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = lista[i]; lista[i] = lista[j]; lista[j] = t; }
         if (cfg.quantidade) lista = lista.slice(0, cfg.quantidade);
         let tudo = cfg.esconder === 'tudo';
         let esconder = { pena: true, qualificadas: cfg.esconder !== 'pena', aumentos: tudo, diminuicoes: tudo, acao: tudo };
-        this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false };
-        document.getElementById('pnt-titulo').textContent = '🎯 Treino de Penas — ' + (this._divisao || this._materia);
+        this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false, modo: cfg.modo || 'revelar' };
+        document.getElementById('pnt-titulo').textContent = '🎯 Treino de Penas — ' + this._rotuloRecorte();
         document.getElementById('modal-penas-treino').classList.add('open');
+        this._atualizarDica();
         this._renderTreino();
     },
     fecharTreino: function() {
@@ -15162,9 +15195,11 @@ window.PENAS_RUNTIME = {
                 '<button class="pnt-btn" onclick="window.PENAS_RUNTIME.fecharTreino()">Fechar</button></div></div>';
             return;
         }
-        nav.style.visibility = 'visible';
+        if (tr.modo === 'ligar') { nav.style.visibility = 'hidden'; document.getElementById('pnt-pos').textContent = nAval + ' / ' + total; return this._renderLigar(); }
         let p = tr.lista[tr.idx], it = p.item;
         document.getElementById('pnt-pos').textContent = (tr.idx + 1) + ' / ' + total;
+        if (tr.modo && tr.modo !== 'revelar') { nav.style.visibility = 'hidden'; return this._renderJogo(p); }
+        nav.style.visibility = 'visible';
         let ROT = { pena: 'Pena', qualificadas: 'Qualificadoras', aumentos: 'Aumento', diminuicoes: 'Diminuição', acao: 'Ação penal' };
         let campo = function(k) {
             let lista = (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes');
@@ -15180,12 +15215,13 @@ window.PENAS_RUNTIME = {
         };
         let penaRevelada = tr.revelados[it.id + '|pena'];
         palco.innerHTML = '<div class="pnt-carta">' +
-            '<div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div>' +
+            '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
             (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
             this.CAMPOS_TREINO.map(campo).join('') +
             (penaRevelada ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor pnt-revelado">' + this._htmlIndicadores(it) + '</span></div>' : '') +
             (penaRevelada && it.obs ? '<div class="pnt-campo"><span class="pnt-rotulo">Observações</span><span class="pnt-valor pnt-revelado">' + this._esc(it.obs) + '</span></div>' : '') +
+            (penaRevelada ? this._htmlComentarioBloco(it.id) : '') +
         '</div>';
         let av = tr.avaliacoes[it.id];
         ['dificil', 'medio', 'facil'].forEach(function(n) { document.getElementById('pnt-b-' + n).classList.toggle('ativa', av === n); });
@@ -15224,12 +15260,13 @@ window.PENAS_RUNTIME = {
         let tr = this._treino;
         if (!tr) return;
         let lista = tr.lista.filter(function(p) { let a = tr.avaliacoes[p.item.id]; return a === 'dificil' || a === 'medio'; });
-        this._treino = { lista: lista, idx: 0, esconder: tr.esconder, revelados: {}, avaliacoes: {}, fim: false };
+        this._treino = { lista: lista, idx: 0, esconder: tr.esconder, revelados: {}, avaliacoes: {}, fim: false, modo: tr.modo };
         this._renderTreino();
     },
     _onKey: function(ev) {
         let modal = document.getElementById('modal-penas-treino');
         if (!modal || !modal.classList.contains('open')) return;
+        if (this._treino && this._treino.modo && this._treino.modo !== 'revelar') { this._onKeyJogo(ev); return; }
         let tag = (ev.target && ev.target.tagName || '').toLowerCase();
         if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
         if (ev.key === ' ' || ev.code === 'Space') { ev.preventDefault(); this.revelarTreino(null); }
@@ -15409,6 +15446,500 @@ window.carregarPenasOficiais = async function() {
     const caminhos = texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && l.charAt(0) !== '#'; });
     for (const c of caminhos) await window.importarPenasOficiais(c);
 };
+</script>
+
+<!-- MÓDULO COMUM DE MEMORIZAÇÃO (⏱️ Prazos e ⛓️ Penas): ⭐ favoritos, 💭
+     comentário pessoal e os jogos do Treinar (⌨️ lacuna digitada, 🔘
+     múltipla escolha, 🔗 ligar colunas) com controle dos CAMPOS errados.
+     Cada seção fornece só o que é dela (ganchos _specLacuna,
+     _formatarResposta, _distratores, _rotuloItem, _htmlCabecalhoJogo); o
+     motor abaixo é o mesmo para as duas (Object.assign no fim). -->
+<style>
+    .memo-btn-fav, .memo-btn-com { background:none; border:1px solid transparent; border-radius:6px; cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; }
+    .memo-btn-fav { color:#94a3b8; }
+    .memo-btn-fav.ativo { color:#f59e0b; }
+    .memo-btn-com { opacity:0.45; }
+    .memo-btn-com.ativo { opacity:1; background:#fff7ed; border-color:#fb923c; }
+    .memo-btn-fav:hover, .memo-btn-com:hover { border-color:var(--border-color); opacity:1; }
+    .memo-comentario { margin-top:6px; border:1px solid #fed7aa; background:#fff7ed; border-radius:6px; padding:6px 8px; font-size:11.5px; color:var(--text-main); line-height:1.45; }
+    .memo-comentario-cab { display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; color:#9a3412; margin-bottom:3px; }
+    .memo-comentario-cab button { background:var(--bg-white); border:1px solid var(--border-color); border-radius:99px; padding:1px 8px; font-size:9.5px; font-weight:700; text-transform:none; cursor:pointer; color:var(--text-main); margin-left:4px; }
+    .memo-carta-botoes { display:flex; gap:6px; }
+    .memo-carta-botoes .memo-btn-fav, .memo-carta-botoes .memo-btn-com { font-size:18px; padding:4px 8px; border-color:var(--border-color); opacity:1; }
+    .memo-carta-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    /* Jogos */
+    .memo-form { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+    .memo-campo { display:flex; flex-direction:column; gap:5px; }
+    .memo-campo label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); }
+    .memo-campo input, .memo-campo select { font-size:17px; padding:9px 10px; border:2px solid var(--border-color); border-radius:8px; background:var(--bg-white); color:var(--text-main); font-family:var(--font-body); }
+    .memo-campo input { width:96px; }
+    .memo-campo input:focus, .memo-campo select:focus { outline:none; border-color:var(--app-primary); }
+    .memo-campo .memo-tempo { display:flex; gap:6px; }
+    .memo-campo.ok input, .memo-campo.ok select { border-color:#16a34a; background:#f0fdf4; }
+    .memo-campo.erro input, .memo-campo.erro select { border-color:#dc2626; background:#fef2f2; }
+    .memo-campo .memo-certo { font-size:12px; font-weight:800; color:#b91c1c; }
+    .memo-acoes-jogo { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .memo-btn-jogo { padding:12px 22px; border-radius:99px; border:none; background:var(--app-primary); color:#fff; font-size:14px; font-weight:800; cursor:pointer; }
+    .memo-btn-jogo.secundario { background:var(--bg-white); color:var(--text-main); border:1px solid var(--border-color); }
+    .memo-feedback { border-radius:10px; padding:12px 14px; font-size:14px; line-height:1.5; }
+    .memo-feedback.facil { background:#f0fdf4; border:1px solid #86efac; color:#14532d; }
+    .memo-feedback.medio { background:#fffbeb; border:1px solid #fcd34d; color:#78350f; }
+    .memo-feedback.dificil { background:#fef2f2; border:1px solid #fca5a5; color:#7f1d1d; }
+    .memo-feedback strong { font-weight:900; }
+    .memo-opcoes { display:flex; flex-direction:column; gap:10px; }
+    .memo-opcao { text-align:left; padding:14px 16px; border-radius:10px; border:2px solid var(--border-color); background:var(--bg-white); font-size:clamp(14px, 1.1vw, 17px); font-weight:700; color:var(--text-main); cursor:pointer; display:flex; gap:12px; align-items:center; }
+    .memo-opcao:hover:not(:disabled) { border-color:var(--app-primary); }
+    .memo-opcao .memo-letra { width:28px; height:28px; border-radius:50%; background:var(--bg-soft); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; flex-shrink:0; }
+    .memo-opcao.certa { border-color:#16a34a; background:#f0fdf4; }
+    .memo-opcao.errada { border-color:#dc2626; background:#fef2f2; }
+    .memo-opcao:disabled { cursor:default; }
+    .memo-ligar { display:grid; grid-template-columns:1fr 1fr; gap:14px; width:min(1100px, 100%); }
+    .memo-ligar-col { display:flex; flex-direction:column; gap:10px; }
+    .memo-ligar-item { text-align:left; padding:12px 14px; border-radius:10px; border:2px solid var(--border-color); background:var(--bg-white); font-size:14px; font-weight:700; color:var(--text-main); cursor:pointer; line-height:1.35; }
+    .memo-ligar-item small { display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-top:2px; }
+    .memo-ligar-item:hover:not(:disabled) { border-color:var(--app-primary); }
+    .memo-ligar-item.sel { border-color:var(--app-primary); background:var(--bg-accent-soft); }
+    .memo-ligar-item.feito { border-color:#16a34a; background:#f0fdf4; color:#166534; cursor:default; }
+    .memo-ligar-item.erro { animation:memoErro 0.4s; }
+    @keyframes memoErro { 0%,100% { transform:none; } 25% { transform:translateX(-5px); border-color:#dc2626; } 75% { transform:translateX(5px); border-color:#dc2626; } }
+    .memo-ligar-cab { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:var(--text-muted); }
+</style>
+<script>
+window.MEMORIZACAO_MIXIN = {
+    // ── ⭐ FAVORITOS (flag no estado do item; sincroniza pelo merge de `estado`) ──
+    _ehFav: function(id) { return !!(this.estado[id] && this.estado[id].favorito); },
+    alternarFavorito: function(id) {
+        let e = Object.assign({}, this.estado[id] || {});
+        e.favorito = !e.favorito;
+        e.atualizadoEm = Date.now();
+        this.estado[id] = e;
+        this.salvar();
+        this._rerenderTudo();
+    },
+
+    // ── 💭 COMENTÁRIO PESSOAL (this.comentarios {id: {html, atualizadoEm}};
+    // html '' = lápide). Reaproveita o editor B/I/S #modal-caderno-comentario.
+    _comentario: function(id) { let c = this.comentarios && this.comentarios[id]; return (c && c.html) ? c.html : ''; },
+    abrirComentario: function(id) {
+        let self = this;
+        let corpo = document.getElementById('cadcom-editor-corpo');
+        window.__cadernoComentarioQidAtual = null;
+        window.__comentarioJurIdAtual = null;
+        window.__comentarioGenerico = { salvar: function(html, texto) { self._salvarComentario(id, html, texto); } };
+        corpo.innerHTML = this._comentario(id);
+        document.getElementById('modal-caderno-comentario').classList.add('open');
+        setTimeout(function() { corpo.focus(); }, 50);
+    },
+    _salvarComentario: function(id, html, texto) {
+        if (!this.comentarios) this.comentarios = {};
+        if (!texto && !this._comentario(id)) return;
+        this.comentarios[id] = { html: texto ? html : '', atualizadoEm: Date.now() };
+        this.salvar();
+        this._rerenderTudo();
+    },
+    excluirComentario: function(id) {
+        if (!this._comentario(id)) return;
+        if (!confirm('Excluir seu comentário deste item?')) return;
+        this._salvarComentario(id, '', '');
+    },
+    _htmlBotoesItem: function(id) {
+        let R = this._R, e = this._escJs(id), fav = this._ehFav(id), com = !!this._comentario(id);
+        return '<button class="memo-btn-fav' + (fav ? ' ativo' : '') + '" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); window.' + R + '.alternarFavorito(\'' + e + '\')" title="' + (fav ? 'Remover dos favoritos' : 'Favoritar') + '">' + (fav ? '★' : '☆') + '</button>' +
+            '<button class="memo-btn-com' + (com ? ' ativo' : '') + '" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); window.' + R + '.abrirComentario(\'' + e + '\')" title="' + (com ? 'Ver/editar meu comentário' : 'Adicionar comentário') + '">💭</button>';
+    },
+    _htmlComentarioBloco: function(id) {
+        let h = this._comentario(id);
+        if (!h) return '';
+        let R = this._R, e = this._escJs(id);
+        return '<div class="memo-comentario"><div class="memo-comentario-cab"><span>💭 Meu comentário</span><span>' +
+            '<button onclick="event.stopPropagation(); window.' + R + '.excluirComentario(\'' + e + '\')">✕ Excluir</button>' +
+            '<button onclick="event.stopPropagation(); window.' + R + '.abrirComentario(\'' + e + '\')">✏️ Editar</button></span></div>' +
+            '<div class="memo-comentario-corpo">' + h + '</div></div>';
+    },
+    _rerenderTudo: function() {
+        let modalTreino = document.getElementById('modal-' + this._secao + '-treino');
+        if (this._treino && modalTreino && modalTreino.classList.contains('open')) this._renderTreino();
+        let modal = document.getElementById(this._secao + '-modal');
+        if (modal && modal.classList.contains('active')) this.render();
+    },
+    _contarFavoritos: function() { let self = this; return this._todosItens().filter(function(p) { return self._ehFav(p.item.id); }).length; },
+
+    // Registro de campos errados (controle por campo) — estado[id].camposErrados.
+    _registrarCampos: function(id, campos) {
+        if (!campos || !campos.length) return;
+        let e = Object.assign({}, this.estado[id] || {});
+        let ce = Object.assign({}, e.camposErrados || {});
+        campos.forEach(function(k) { ce[k] = (ce[k] || 0) + 1; });
+        e.camposErrados = ce;
+        e.atualizadoEm = Date.now();
+        this.estado[id] = e;
+        this.salvar();
+    },
+
+    // ── JOGOS DO TREINAR ──
+    MODOS_TREINO: [
+        { k: 'revelar', rotulo: '👁 Clica e aparece' },
+        { k: 'lacuna', rotulo: '⌨️ Lacuna digitada' },
+        { k: 'multipla', rotulo: '🔘 Múltipla escolha' },
+        { k: 'ligar', rotulo: '🔗 Ligar colunas' }
+    ],
+    _filtrarParaModo: function(lista, modo) {
+        if (!modo || modo === 'revelar') return lista;
+        let self = this;
+        return lista.filter(function(p) { return !!self._specLacuna(p.item); });
+    },
+    _el: function(sufixo) { return document.getElementById(this._pfx + '-' + sufixo); },
+
+    _renderJogo: function(p) {
+        let tr = this._treino;
+        if (tr.modo === 'lacuna') return this._renderLacuna(p);
+        if (tr.modo === 'multipla') return this._renderMultipla(p);
+    },
+
+    _cartaJogo: function(p, corpo) {
+        return '<div class="' + this._pfx + '-carta">' + this._htmlCabecalhoJogo(p) + corpo +
+            (this._treino.feedback ? this._htmlComentarioBloco(p.item.id) : '') + '</div>';
+    },
+
+    // ⌨️ LACUNA DIGITADA — formulário montado pela spec da seção.
+    _renderLacuna: function(p) {
+        let tr = this._treino, self = this, R = this._R;
+        let spec = this._specLacuna(p.item);
+        let fb = tr.feedback;
+        let enter = 'onkeydown="if(event.key===\'Enter\'){event.preventDefault(); window.' + R + '.' + (fb ? 'proximoJogo' : 'verificarLacuna') + '();}"';
+        let html = '<div class="memo-form">' + spec.campos.map(function(c) {
+            let res = fb && fb.campos[c.k];
+            let cls = res ? (res.ok ? ' ok' : ' erro') : '';
+            let val = fb ? (fb.valores[c.k] || '') : '';
+            let dis = fb ? ' disabled' : '';
+            let entrada;
+            if (c.tipo === 'num') {
+                entrada = '<input type="number" min="0" step="any" data-k="' + c.k + '" value="' + self._esc(val) + '"' + dis + ' ' + enter + '>';
+            } else if (c.tipo === 'select') {
+                entrada = '<select data-k="' + c.k + '"' + dis + ' ' + enter + '><option value="">…</option>' + c.opcoes.map(function(o) { return '<option' + (o === val ? ' selected' : '') + '>' + self._esc(o) + '</option>'; }).join('') + '</select>';
+            } else { // tempo: número + unidade
+                let vu = fb ? (fb.valores[c.k + '_un'] || '') : '';
+                entrada = '<span class="memo-tempo"><input type="number" min="0" step="any" data-k="' + c.k + '" value="' + self._esc(val) + '"' + dis + ' ' + enter + '>' +
+                    '<select data-k="' + c.k + '_un"' + dis + ' ' + enter + '><option value="">…</option>' + ['dias', 'meses', 'anos'].map(function(o) { return '<option' + (o === vu ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select></span>';
+            }
+            return '<div class="memo-campo' + cls + '"><label>' + c.rotulo + '</label>' + entrada +
+                (res && !res.ok ? '<span class="memo-certo">✓ ' + self._esc(res.certo) + '</span>' : '') + '</div>';
+        }).join('') + '</div>';
+        if (fb) {
+            html += '<div class="memo-feedback ' + fb.nivel + '">' + (fb.nivel === 'facil' ? '✅ <strong>Correto!</strong>' : (fb.nivel === 'medio' ? '🟡 <strong>Quase.</strong> Confira o campo em vermelho.' : '❌ <strong>Errado.</strong>')) +
+                ' Resposta: <strong>' + this._esc(spec.respostaTexto) + '</strong></div>' +
+                '<div class="memo-acoes-jogo"><button class="memo-btn-jogo" id="memo-btn-proximo" onclick="window.' + R + '.proximoJogo()">Próximo ›</button><span style="font-size:11px; color:var(--text-muted);">Enter</span></div>';
+        } else {
+            html += '<div class="memo-acoes-jogo"><button class="memo-btn-jogo" onclick="window.' + R + '.verificarLacuna()">Verificar</button>' +
+                '<button class="memo-btn-jogo secundario" onclick="window.' + R + '.desistirLacuna()">Não lembro</button><span style="font-size:11px; color:var(--text-muted);">Enter verifica</span></div>';
+        }
+        this._el('palco').innerHTML = this._cartaJogo(p, html);
+        let foco = fb ? document.getElementById('memo-btn-proximo') : this._el('palco').querySelector('[data-k]');
+        if (foco) setTimeout(function() { foco.focus(); }, 30);
+    },
+
+    _normTexto: function(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); },
+    _mesesDe: function(n, un) { n = parseFloat(String(n).replace(',', '.')); if (isNaN(n)) return null; if (un === 'dias') return n / 30; if (un === 'meses') return n; if (un === 'anos') return n * 12; return null; },
+
+    verificarLacuna: function(desistiu) {
+        let tr = this._treino;
+        if (!tr || tr.feedback) return;
+        let self = this, p = tr.lista[tr.idx], spec = this._specLacuna(p.item);
+        let palco = this._el('palco'), valores = {}, campos = {}, errados = [], principalErrado = false;
+        palco.querySelectorAll('[data-k]').forEach(function(el) { valores[el.getAttribute('data-k')] = el.value; });
+        spec.campos.forEach(function(c) {
+            let ok;
+            if (c.tipo === 'num') ok = !desistiu && valores[c.k] !== '' && Math.abs(parseFloat(String(valores[c.k]).replace(',', '.')) - parseFloat(c.correto)) < 1e-9;
+            else if (c.tipo === 'select') ok = !desistiu && self._normTexto(valores[c.k]) === self._normTexto(c.correto);
+            else { let m = self._mesesDe(valores[c.k], valores[c.k + '_un']); ok = !desistiu && m != null && Math.abs(m - c.correto) < 0.01; }
+            campos[c.k] = { ok: ok, certo: c.certoTexto || String(c.correto) };
+            if (!ok) { errados.push(c.k); if (c.principal) principalErrado = true; }
+        });
+        let nivel = !errados.length ? 'facil' : (principalErrado ? 'dificil' : 'medio');
+        tr.feedback = { nivel: nivel, campos: campos, valores: valores };
+        this._registrarResultado(p.item.id, nivel, errados);
+        this._renderTreino();
+    },
+    desistirLacuna: function() { this.verificarLacuna(true); },
+
+    _registrarResultado: function(id, nivel, errados) {
+        let tr = this._treino;
+        tr.avaliacoes[id] = nivel;
+        this.classificar(id, nivel, true);
+        this._registrarCampos(id, errados);
+    },
+
+    proximoJogo: function() {
+        let tr = this._treino;
+        if (!tr || !tr.feedback) return;
+        tr.feedback = null;
+        if (tr.idx < tr.lista.length - 1) tr.idx++;
+        else tr.fim = true;
+        this._renderTreino();
+    },
+
+    // 🔘 MÚLTIPLA ESCOLHA — 1 certa + 3 distratores (seção gera os candidatos).
+    _embaralhar: function(a) { for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = a[i]; a[i] = a[j]; a[j] = t; } return a; },
+    _opcoesMC: function(p) {
+        let tr = this._treino;
+        tr.mc = tr.mc || {};
+        if (tr.mc[p.item.id]) return tr.mc[p.item.id];
+        let certa = this._formatarResposta(p.item), self = this;
+        let vistos = {}; vistos[self._normTexto(certa)] = true;
+        let erradas = [];
+        this._distratores(p, tr.lista).forEach(function(d) {
+            let k = self._normTexto(d);
+            if (!d || vistos[k] || erradas.length >= 3) return;
+            vistos[k] = true; erradas.push(d);
+        });
+        let ops = this._embaralhar([{ t: certa, certa: true }].concat(erradas.map(function(t) { return { t: t, certa: false }; })));
+        tr.mc[p.item.id] = ops;
+        return ops;
+    },
+    _renderMultipla: function(p) {
+        let tr = this._treino, R = this._R, self = this, fb = tr.feedback;
+        let ops = this._opcoesMC(p);
+        let html = '<div class="memo-opcoes">' + ops.map(function(o, i) {
+            let cls = '';
+            if (fb) { if (o.certa) cls = ' certa'; else if (fb.escolha === i) cls = ' errada'; }
+            return '<button class="memo-opcao' + cls + '"' + (fb ? ' disabled' : '') + ' onclick="window.' + R + '.responderMultipla(' + i + ')"><span class="memo-letra">' + 'ABCD'.charAt(i) + '</span>' + self._esc(o.t) + '</button>';
+        }).join('') + '</div>';
+        if (fb) html += '<div class="memo-feedback ' + fb.nivel + '">' + (fb.nivel === 'facil' ? '✅ <strong>Correto!</strong>' : '❌ <strong>Errado.</strong> Resposta: <strong>' + this._esc(this._formatarResposta(p.item)) + '</strong>') + '</div>' +
+            '<div class="memo-acoes-jogo"><button class="memo-btn-jogo" id="memo-btn-proximo" onclick="window.' + R + '.proximoJogo()">Próximo ›</button><span style="font-size:11px; color:var(--text-muted);">Enter</span></div>';
+        else html += '<div style="font-size:11px; color:var(--text-muted);">Teclas A–D ou 1–4 escolhem.</div>';
+        this._el('palco').innerHTML = this._cartaJogo(p, html);
+        if (fb) { let b = document.getElementById('memo-btn-proximo'); if (b) setTimeout(function() { b.focus(); }, 30); }
+    },
+    responderMultipla: function(i) {
+        let tr = this._treino;
+        if (!tr || tr.feedback) return;
+        let p = tr.lista[tr.idx], ops = this._opcoesMC(p);
+        if (!ops[i]) return;
+        let nivel = ops[i].certa ? 'facil' : 'dificil';
+        tr.feedback = { nivel: nivel, escolha: i };
+        this._registrarResultado(p.item.id, nivel, ops[i].certa ? [] : ['multipla']);
+        this._renderTreino();
+    },
+
+    // 🔗 LIGAR COLUNAS — rodadas de até 5 pares com respostas distintas.
+    _montarRodadas: function(lista) {
+        let self = this, rodadas = [], atual = [], usados = {};
+        lista.forEach(function(p) {
+            let r = self._normTexto(self._formatarResposta(p.item));
+            if (usados[r] || atual.length >= 5) { if (atual.length) rodadas.push(atual); atual = []; usados = {}; }
+            atual.push(p); usados[r] = true;
+        });
+        if (atual.length) rodadas.push(atual);
+        return rodadas.map(function(ps) { return { pares: ps, direita: self._embaralhar(ps.map(function(p, i) { return i; })), feitos: {}, erros: {}, sel: null }; });
+    },
+    _renderLigar: function() {
+        let tr = this._treino, self = this, R = this._R;
+        if (!tr.lig) tr.lig = { rodadas: this._montarRodadas(tr.lista), r: 0 };
+        let rd = tr.lig.rodadas[tr.lig.r];
+        let completa = Object.keys(rd.feitos).length === rd.pares.length;
+        let esq = rd.pares.map(function(p, i) {
+            let cls = rd.feitos[i] ? ' feito' : (rd.sel === i ? ' sel' : '');
+            return '<button class="memo-ligar-item' + cls + '" data-lado="e" data-i="' + i + '"' + (rd.feitos[i] ? ' disabled' : '') + ' onclick="window.' + R + '.ligarClique(\'e\', ' + i + ', this)">' + self._rotuloItem(p.item) + '</button>';
+        }).join('');
+        let dir = rd.direita.map(function(i) {
+            let p = rd.pares[i];
+            return '<button class="memo-ligar-item' + (rd.feitos[i] ? ' feito' : '') + '" data-lado="d" data-i="' + i + '"' + (rd.feitos[i] ? ' disabled' : '') + ' onclick="window.' + R + '.ligarClique(\'d\', ' + i + ', this)">' + self._esc(self._formatarResposta(p.item)) + '</button>';
+        }).join('');
+        this._el('palco').innerHTML = '<div class="memo-ligar">' +
+            '<div class="memo-ligar-cab"><span>Rodada ' + (tr.lig.r + 1) + ' de ' + tr.lig.rodadas.length + ' — clique num item da esquerda e depois na resposta da direita</span>' +
+                (completa ? '<button class="memo-btn-jogo" id="memo-btn-proximo" onclick="window.' + R + '.proximaRodada()">' + (tr.lig.r < tr.lig.rodadas.length - 1 ? 'Próxima rodada ›' : 'Concluir ›') + '</button>' : '') + '</div>' +
+            '<div class="memo-ligar-col">' + esq + '</div><div class="memo-ligar-col">' + dir + '</div></div>';
+        if (completa) { let b = document.getElementById('memo-btn-proximo'); if (b) setTimeout(function() { b.focus(); }, 30); }
+    },
+    ligarClique: function(lado, i, el) {
+        let tr = this._treino;
+        if (!tr || !tr.lig) return;
+        let rd = tr.lig.rodadas[tr.lig.r];
+        if (rd.feitos[i] && lado === 'e') return;
+        if (lado === 'e') { rd.sel = i; this._renderLigar(); return; }
+        if (rd.sel == null) { if (el) { el.classList.remove('erro'); void el.offsetWidth; el.classList.add('erro'); } return; }
+        if (i === rd.sel) {
+            rd.feitos[i] = true;
+            let p = rd.pares[i], err = rd.erros[i] || 0;
+            this._registrarResultado(p.item.id, err === 0 ? 'facil' : (err === 1 ? 'medio' : 'dificil'), err ? ['ligar'] : []);
+            rd.sel = null;
+            this._renderTreino();
+        } else {
+            rd.erros[rd.sel] = (rd.erros[rd.sel] || 0) + 1;
+            if (el) { el.classList.remove('erro'); void el.offsetWidth; el.classList.add('erro'); }
+        }
+    },
+    proximaRodada: function() {
+        let tr = this._treino;
+        if (!tr || !tr.lig) return;
+        if (tr.lig.r < tr.lig.rodadas.length - 1) { tr.lig.r++; this._renderTreino(); }
+        else { tr.fim = true; this._renderTreino(); }
+    },
+
+    // Rodapé de atalhos do treino conforme o modo.
+    _atualizarDica: function() {
+        let el = document.querySelector('#modal-' + this._secao + '-treino .' + this._pfx + '-dica');
+        if (!el || !this._treino) return;
+        el.textContent = {
+            revelar: 'Espaço revela tudo · 1 / 2 / 3 avaliam e avançam · ← → navegam · Esc fecha',
+            lacuna: 'Preencha os campos · Enter verifica e, depois, avança · Esc fecha',
+            multipla: 'A–D ou 1–4 escolhem · Enter avança · Esc fecha',
+            ligar: 'Clique no item da esquerda e depois na resposta da direita · Esc fecha'
+        }[this._treino.modo || 'revelar'];
+    },
+
+    _onKeyJogo: function(ev) {
+        let tr = this._treino;
+        if (ev.key === 'Escape') { ev.preventDefault(); this.fecharTreino(); return; }
+        let tag = (ev.target && ev.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'button') return;
+        if (tr.fim) return;
+        if (tr.modo === 'multipla' && !tr.feedback) {
+            let mapa = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+            let k = String(ev.key).toLowerCase();
+            if (mapa.hasOwnProperty(k)) { ev.preventDefault(); this.responderMultipla(mapa[k]); }
+            return;
+        }
+        if (ev.key === 'Enter' && tr.feedback) { ev.preventDefault(); this.proximoJogo(); }
+    }
+};
+</script>
+
+<script>
+// Ganchos de cada seção para o MEMORIZACAO_MIXIN (ver bloco acima).
+(function() {
+    let M = window.MEMORIZACAO_MIXIN;
+    M._htmlItemFavoritos = function() {
+        let n = this._contarFavoritos();
+        return '<div class="fc-materia-item' + (this._materia === '__fav__' ? ' ativa' : '') + '" onclick="window.' + this._R + '.selecionarMateria(\'__fav__\')">' +
+            '<span class="fc-materia-nome">⭐ Favoritos</span><span style="display:flex; align-items:center; gap:4px;">' + (n ? '<span class="fc-materia-count">' + n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
+    };
+    M._rotuloRecorte = function() {
+        if (this._materia === '__fav__') return '⭐ Favoritos (todas as matérias)';
+        return this._divisao ? this._divisao : (this._materia + ' — todas as divisões');
+    };
+    M._dicaModo = function(modo, oQue) {
+        return {
+            revelar: 'Aparece o item com a resposta escondida: tente lembrar, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei).',
+            lacuna: 'Você preenche ' + oQue + ' e o app confere campo a campo. Número errado = 🔴; só um detalhe errado = 🟡. Os campos errados ficam registrados.',
+            multipla: 'Quatro alternativas: a certa e três parecidas (de outros itens e pegadinhas de número, contagem ou espécie). Acerto = 🟢, erro = 🔴.',
+            ligar: 'Rodadas de até 5 pares: ligue cada item à sua resposta. Sem erro = 🟢, 1 erro = 🟡, 2 ou mais = 🔴.'
+        }[modo] || '';
+    };
+
+    // ── ⏱️ PRAZOS ──
+    let SING = { minutos: 'minuto', horas: 'hora', dias: 'dia', semanas: 'semana', meses: 'mês', anos: 'ano' };
+    function unPlural(u) {
+        u = String(u || '').toLowerCase();
+        if (/^minuto/.test(u)) return 'minutos';
+        if (/^hora/.test(u)) return 'horas';
+        if (/^dia/.test(u)) return 'dias';
+        if (/^semana/.test(u)) return 'semanas';
+        if (/^m[eê]s/.test(u)) return 'meses';
+        if (/^ano/.test(u)) return 'anos';
+        return u;
+    }
+    function fmtPrazo(n, ate, un, cont) {
+        un = unPlural(un);
+        let u = (!ate && Number(n) === 1) ? (SING[un] || un) : un;
+        return (ate ? 'de ' + n + ' a ' + ate : n) + ' ' + u + (cont ? ' ' + cont : '');
+    }
+    Object.assign(window.PRAZOS_RUNTIME, M, {
+        _R: 'PRAZOS_RUNTIME', _pfx: 'prt', _secao: 'prazos',
+        _specLacuna: function(item) {
+            let p = interpretarPrazoTexto(item.prazo);
+            if (p.num == null) return null;
+            let campos = [];
+            if (p.ate) {
+                campos.push({ k: 'num', rotulo: 'De', tipo: 'num', correto: p.num, principal: true });
+                campos.push({ k: 'ate', rotulo: 'Até', tipo: 'num', correto: p.ate, principal: true });
+            } else campos.push({ k: 'num', rotulo: 'Quantidade', tipo: 'num', correto: p.num, principal: true });
+            campos.push({ k: 'unidade', rotulo: 'Unidade', tipo: 'select', opcoes: ['minutos', 'horas', 'dias', 'semanas', 'meses', 'anos'], correto: unPlural(p.unidade), principal: true });
+            if (p.contagem) campos.push({ k: 'contagem', rotulo: 'Contagem', tipo: 'select', opcoes: ['úteis', 'corridos'], correto: p.contagem });
+            return { campos: campos, respostaTexto: item.prazo };
+        },
+        _formatarResposta: function(item) {
+            let p = interpretarPrazoTexto(item.prazo);
+            return p.num == null ? item.prazo : fmtPrazo(p.num, p.ate, p.unidade, p.contagem);
+        },
+        _distratores: function(pAlvo) {
+            let a = interpretarPrazoTexto(pAlvo.item.prazo), un = unPlural(a.unidade), out = [];
+            // Pegadinha clássica: mesmo número, contagem trocada.
+            if (a.contagem) out.push(fmtPrazo(a.num, a.ate, un, a.contagem === 'úteis' ? 'corridos' : 'úteis'));
+            let pool = this._embaralhar(this._todosItens().map(function(x) { return interpretarPrazoTexto(x.item.prazo); }).filter(function(x) { return x.num != null; }));
+            let mesmaUn = pool.filter(function(x) { return unPlural(x.unidade) === un; }).map(function(x) { return fmtPrazo(x.num, x.ate, x.unidade, x.contagem || (un === 'dias' ? a.contagem : '')); });
+            if (mesmaUn.length) out.push(mesmaUn[0]);
+            let alvoN = parseFloat(a.num);
+            let NUMS = [1, 2, 3, 5, 8, 10, 15, 20, 30, 45, 60, 90, 120, 180];
+            NUMS.filter(function(n) { return n !== alvoN; }).sort(function(x, y) { return Math.abs(x - alvoN) - Math.abs(y - alvoN); }).slice(0, 4)
+                .forEach(function(n) { out.push(fmtPrazo(n, null, un, a.contagem)); });
+            return out.concat(mesmaUn.slice(1));
+        },
+        _rotuloItem: function(item) { return this._esc(item.ato) + (item.base ? '<small>' + this._esc(item.base) + '</small>' : ''); },
+        _htmlCabecalhoJogo: function(p) {
+            let it = p.item;
+            return '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+                '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
+                (it.base ? '<div class="prt-campo"><span class="prt-rotulo">Base legal</span><span class="prt-valor">' + this._esc(it.base) + '</span></div>' : '') +
+                (it.inicio ? '<div class="prt-campo"><span class="prt-rotulo">Início</span><span class="prt-valor">' + this._esc(it.inicio) + '</span></div>' : '');
+        }
+    });
+
+    // ── ⛓️ PENAS ──
+    function fmtTempo(m) {
+        if (m == null) return '';
+        if (m >= 12 && Math.abs(m % 12) < 1e-9) { let a = m / 12; return a + (a === 1 ? ' ano' : ' anos'); }
+        if (m >= 1 && Math.abs(m - Math.round(m)) < 1e-9) return m + (m === 1 ? ' mês' : ' meses');
+        let d = Math.round(m * 30); return d + (d === 1 ? ' dia' : ' dias');
+    }
+    function unDe(txt) { let u = txt.split(' ')[1] || ''; return /^ano/.test(u) ? 'anos' : (/^m/.test(u) ? 'meses' : 'dias'); }
+    function fmtFaixa(min, max) {
+        let a = fmtTempo(min), b = fmtTempo(max);
+        if (unDe(a) === unDe(b)) return 'de ' + a.split(' ')[0] + ' a ' + b.split(' ')[0] + ' ' + unDe(b);
+        return 'de ' + a + ' a ' + b;
+    }
+    function fmtPena(p) {
+        return (p.especie ? p.especie + ', ' : '') + fmtFaixa(p.minMeses, p.maxMeses) + (p.multaTipo === 'e multa' ? ', e multa' : (p.multaTipo === 'ou multa' ? ', ou multa' : ''));
+    }
+    Object.assign(window.PENAS_RUNTIME, M, {
+        _R: 'PENAS_RUNTIME', _pfx: 'pnt', _secao: 'penas',
+        _specLacuna: function(item) {
+            let p = interpretarPenaTexto(item.pena);
+            if (p.minMeses == null || p.maxMeses == null) return null;
+            let campos = [];
+            if (p.especie) campos.push({ k: 'especie', rotulo: 'Espécie', tipo: 'select', opcoes: ['reclusão', 'detenção', 'prisão simples'], correto: p.especie });
+            campos.push({ k: 'minimo', rotulo: 'Mínimo', tipo: 'tempo', correto: p.minMeses, certoTexto: fmtTempo(p.minMeses), principal: true });
+            campos.push({ k: 'maximo', rotulo: 'Máximo', tipo: 'tempo', correto: p.maxMeses, certoTexto: fmtTempo(p.maxMeses), principal: true });
+            campos.push({ k: 'multa', rotulo: 'Multa', tipo: 'select', opcoes: ['sem multa', 'e multa', 'ou multa'], correto: p.multaTipo });
+            return { campos: campos, respostaTexto: item.pena };
+        },
+        _formatarResposta: function(item) {
+            let p = interpretarPenaTexto(item.pena);
+            return p.minMeses == null ? item.pena : fmtPena(p);
+        },
+        _distratores: function(pAlvo) {
+            let a = interpretarPenaTexto(pAlvo.item.pena), sint = [];
+            let troca = { 'reclusão': 'detenção', 'detenção': 'reclusão', 'prisão simples': 'detenção' };
+            if (a.especie) sint.push(fmtPena(Object.assign({}, a, { especie: troca[a.especie] })));
+            sint.push(fmtPena(Object.assign({}, a, { multaTipo: a.multaTipo === 'e multa' ? 'ou multa' : 'e multa' })));
+            let passo = a.maxMeses >= 24 ? 12 : (a.maxMeses >= 6 ? 3 : 1);
+            sint.push(fmtPena(Object.assign({}, a, { maxMeses: a.maxMeses + 2 * passo })));
+            if (a.minMeses - passo > 0) sint.push(fmtPena(Object.assign({}, a, { minMeses: a.minMeses - passo })));
+            else if (a.minMeses + passo < a.maxMeses) sint.push(fmtPena(Object.assign({}, a, { minMeses: a.minMeses + passo })));
+            let pool = this._embaralhar(this._todosItens().map(function(x) { return interpretarPenaTexto(x.item.pena); }).filter(function(x) { return x.minMeses != null; }).map(fmtPena));
+            sint = this._embaralhar(sint);
+            return sint.slice(0, 2).concat(pool.slice(0, 2), sint.slice(2), pool.slice(2));
+        },
+        _rotuloItem: function(item) { return this._esc(item.crime) + (item.art ? '<small>' + this._esc(item.art) + '</small>' : ''); },
+        _htmlCabecalhoJogo: function(p) {
+            let it = p.item;
+            return '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(p.chave.split(' > ').slice(1).join(' > ') + (it.l3 ? ' › ' + it.l3 : '')) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
+                '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
+                (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
+                (this._treino.feedback ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor">' + this._htmlIndicadores(it) + '</span></div>' : '');
+        }
+    });
+})();
 </script>
 
 <!-- SEÇÃO: GLOSSÁRIO — mesmo padrão L1(matéria)>L2(divisão) de Materiais,
@@ -23233,6 +23764,7 @@ window.fecharComentarioCaderno = function(){
   document.getElementById('modal-caderno-comentario').classList.remove('open');
   window.__cadernoComentarioQidAtual = null;
   window.__comentarioJurIdAtual = null;
+  window.__comentarioGenerico = null;
 };
 
 // Mesmo editor (#modal-caderno-comentario) reaproveitado pro comentário
@@ -23282,6 +23814,14 @@ window.aoColarComentario = function(event){
 };
 
 window.enviarComentarioCaderno = function(){
+  // Destino genérico (⏱️ Prazos / ⛓️ Penas — MEMORIZACAO_MIXIN.abrirComentario).
+  if(window.__comentarioGenerico){
+    var corpoG=document.getElementById('cadcom-editor-corpo');
+    var dest=window.__comentarioGenerico;
+    window.fecharComentarioCaderno();
+    dest.salvar((corpoG.innerHTML||'').trim(), (corpoG.textContent||'').trim());
+    return;
+  }
   if(window.__comentarioJurIdAtual){
     var corpoJur=document.getElementById('cadcom-editor-corpo');
     window.JURISPRUDENCIA_RUNTIME.salvarComentarioPessoal(window.__comentarioJurIdAtual, (corpoJur.innerHTML||'').trim(), (corpoJur.textContent||'').trim());
