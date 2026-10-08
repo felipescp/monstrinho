@@ -12198,7 +12198,7 @@ function parsearFlashcardsTexto(txt) {
     let RE_R = /^(?:\*\*)?R(?:\*\*)?\s*[=:]\s*(.*)$/;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
-    let RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules|GERAR LOTE)/i;
+    let RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules|GERAR LOTE|^(?:Voc[êe]|ChatGPT|Gemini|Claude)\s+disse\s*:?$|^(?:Processou|Pensou|Raciocinou)\s+(?:por|durante)\b)/i;
     let JANELA_RUIDO_LINHAS = 40;
     function ehMarcador(l) { return RE_CARD.test(l) || RE_T.test(l) || RE_Q.test(l) || RE_BLOCO.test(l); }
     function proxNaoVazia(i) { for (let j = i + 1; j < linhas.length; j++) { let t = linhas[j].trim(); if (t) return t; } return ''; }
@@ -13767,7 +13767,10 @@ function parsearPrazosTexto(txt) {
     let RE_CAMPO = /^(?:\*\*)?(T|ATO|PRAZO|IN[IÍ]CIO|BASE|OBS)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
-    let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:)/i;
+    // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
+    // "ChatGPT disse:", "Processou por alguns segundos"…) — sem isso a linha
+    // grudava no último campo (OBS) do item anterior.
+    let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:|^(?:Voc[êe]|ChatGPT|Gemini|Claude)\s+disse\s*:?$|^(?:Processou|Pensou|Raciocinou|Pesquisou)\s+(?:por|durante)\b|pode cometer erros)/i;
     let itens = [], incompletos = 0, atual = null, campo = null, bloco = null;
     function chaveCampo(c) {
         c = c.toUpperCase();
@@ -14712,7 +14715,10 @@ function parsearPenasTexto(txt) {
     let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
-    let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:)/i;
+    // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
+    // "ChatGPT disse:", "Processou por alguns segundos"…) — sem isso a linha
+    // grudava no último campo (OBS) do item anterior.
+    let RE_RUIDO = /(?:Lote conclu[íi]do|Extra[çc][ãa]o conclu[íi]da|GERAR LOTE|O Gemini [ée] uma IA|Gem personalizado|^Lote\s+\d+\s*:|^(?:Voc[êe]|ChatGPT|Gemini|Claude)\s+disse\s*:?$|^(?:Processou|Pensou|Raciocinou|Pesquisou)\s+(?:por|durante)\b|pode cometer erros)/i;
     let LISTAS = { qualificadas: 1, aumentos: 1, diminuicoes: 1 };
     let itens = [], incompletos = 0, atual = null, campo = null;
     function chave(c) {
@@ -20489,7 +20495,7 @@ function parsDisc(txt){
   // ruído nunca dispara e o texto acaba grudado na explicação da última
   // questão. Por isso é reconhecido por padrão (não string fixa — o nome
   // do lote/bloco muda a cada rodada), independente do que vier depois.
-  var RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules)/i;
+  var RE_RUIDO_FIM_LOTE = /(?:Lote conclu[íi]do|conte[úu]do estipulado foi inteiramente gerado|lista esgotada com sucesso|O Gemini [ée] uma IA e pode cometer erros|Defining Generation Rules|^(?:Voc[êe]|ChatGPT|Gemini|Claude)\s+disse\s*:?$|^(?:Processou|Pensou|Raciocinou)\s+(?:por|durante)\b)/i;
   // Quantas linhas (não-vazias) o parser tolera de "ruído" entre o fim de
   // uma explicação e o próximo marcador real (QUESTÃO/BLOCO/TÍTULO/PROVA/
   // METADADOS), antes de considerar que é mesmo continuação legítima de
