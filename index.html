@@ -14882,6 +14882,40 @@ window.PENAS_RUNTIME = {
         let p = this._acharItem(id);
         if (el && p) el.outerHTML = '<span class="pen-celula-revelada">' + this._htmlValor(p.item, k) + '</span>';
     },
+    // Lista com a RESPOSTA (pena da qualificadora / fração do aumento) em
+    // destaque; a hipótese fica sempre visível. oculto(i) → esconde só a
+    // resposta da linha i; revelarJs(i) → onclick da máscara.
+    _htmlListaComResposta: function(it, k, oculto, revelarJs) {
+        let self = this, arr = it[k] || [];
+        if (!arr.length) return '<span style="color:var(--text-muted);">—</span>';
+        let linhas = arr.map(function(l, i) {
+            let pt = self._partesLinha(k, l);
+            let resp = (oculto && oculto(i))
+                ? '<span class="pen-resp-oculta" onclick="event.stopPropagation(); ' + revelarJs(i) + '" title="Clique para revelar">' + (k === 'qualificadas' ? 'pena' : 'fração') + '</span>'
+                : '<strong class="pen-resp">' + self._esc(pt.resp) + '</strong>';
+            return self._esc(pt.antes) + resp + self._esc(pt.depois) + self._htmlNovo(pt.lei, 'Hipótese incluída ou alterada');
+        });
+        if (linhas.length === 1) return linhas[0];
+        return '<ul class="pen-lista">' + linhas.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
+    },
+    _ehLista: function(k) { return k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes'; },
+    // Tabela: cortina nas colunas de lista esconde só pena/fração de cada linha.
+    _htmlCelulaLista: function(it, k) {
+        let self = this, id = it.id;
+        let oculto = this._cortina[k] ? function(i) { return !self._revelados[id + '|' + k] && !self._revelados[id + '|' + k + '|' + i]; } : null;
+        return this._htmlListaComResposta(it, k, oculto, function(i) { return 'window.PENAS_RUNTIME.revelarLinha(\'' + self._escJs(id) + '\', \'' + k + '\', ' + i + ', this)'; });
+    },
+    revelarLinha: function(id, k, i, el) {
+        this._revelados[id + '|' + k + '|' + i] = true;
+        let p = this._acharItem(id), td = el && el.closest('td');
+        if (td && p) td.innerHTML = this._htmlCelulaLista(p.item, k);
+    },
+    revelarLinhaTreino: function(k, i) {
+        let tr = this._treino;
+        if (!tr || tr.fim) return;
+        tr.revelados[tr.lista[tr.idx].item.id + '|' + k + '|' + i] = true;
+        this._renderTreino();
+    },
     _htmlLista: function(arr) {
         let self = this;
         if (!arr || !arr.length) return '<span style="color:var(--text-muted);">—</span>';
@@ -14890,7 +14924,7 @@ window.PENAS_RUNTIME = {
     },
     _htmlValor: function(it, k) {
         if (k === 'crime') return this._esc(it.crime) + this._htmlNovo(it.alteracao, 'Pena criada ou alterada') + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
-        if (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes') return this._htmlLista(it[k]);
+        if (this._ehLista(k)) return this._htmlCelulaLista(it, k);
         if (k === 'indicadores') return this._htmlIndicadores(it);
         let v = it[k];
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
@@ -14918,6 +14952,7 @@ window.PENAS_RUNTIME = {
             let it = p.item, g = self._grupoDe(p);
             if (g.chave !== grupo) { grupo = g.chave; linhas += self._htmlLinhaGrupo(g, self.COLUNAS.length + 1); }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
+                if (self._ehLista(c.k)) return '<td class="pen-col-' + c.k + '">' + self._htmlCelulaLista(it, c.k) + '</td>';
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
                 return '<td class="pen-col-' + c.k + '">' + (oculto
                     ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
@@ -15004,7 +15039,7 @@ window.PENAS_RUNTIME = {
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             (cfg.modo === 'revelar' && cfg.alvo === 'base' ? '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
-                pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + aumento/diminuição + ação') + '</div></div>' : '') +
+                pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + penas das qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + frações de aumento/diminuição + ação') + '</div></div>' : '') +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quantidade</span><div class="pen-pills">' + pill('quantidade', 10, '10') + pill('quantidade', 20, '20') + pill('quantidade', 0, 'Todos') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Ordem</span><div class="pen-pills">' + pill('embaralhar', true, '🔀 Embaralhada') + pill('embaralhar', false, 'Na ordem da tabela') + '</div></div>' +
             '<button class="pen-comecar" onclick="window.PENAS_RUNTIME.iniciarTreino()"' + (disp ? '' : ' disabled') + '>▶ Começar (' + (cfg.quantidade && cfg.quantidade < disp ? cfg.quantidade : disp) + ')</button>' +
@@ -15061,7 +15096,17 @@ window.PENAS_RUNTIME = {
             let vazio = lista ? !(it[k] && it[k].length) : !it[k];
             if (vazio && k !== 'pena') return '';
             let oculto = tr.esconder[k] && !tr.revelados[it.id + '|' + k];
-            let valor = lista ? self._htmlLista(it[k]) : self._esc(it[k] || '—');
+            if (lista) {
+                // Hipóteses sempre visíveis; só a pena/fração de cada uma fica coberta.
+                let algumaOculta = false;
+                let html = self._htmlListaComResposta(it, k,
+                    tr.esconder[k] ? function(i) { let o = !tr.revelados[it.id + '|' + k] && !tr.revelados[it.id + '|' + k + '|' + i]; if (o) algumaOculta = true; return o; } : null,
+                    function(i) { return 'window.PENAS_RUNTIME.revelarLinhaTreino(\'' + k + '\', ' + i + ')'; });
+                return '<div class="pnt-campo"><span class="pnt-rotulo">' + ROT[k] +
+                    (algumaOculta ? ' <button class="pnt-revelar-todas" onclick="window.PENAS_RUNTIME.revelarTreino(\'' + k + '\')">👁 revelar todas</button>' : '') + '</span>' +
+                    '<span class="pnt-valor">' + html + '</span></div>';
+            }
+            let valor = self._esc(it[k] || '—');
             return '<div class="pnt-campo"><span class="pnt-rotulo">' + ROT[k] + '</span>' +
                 (oculto
                     ? '<button class="pnt-oculto' + (k === 'pena' ? ' grande' : '') + '" onclick="window.PENAS_RUNTIME.revelarTreino(\'' + k + '\')">👁 Revelar ' + ROT[k].toLowerCase() + '</button>'
@@ -15293,6 +15338,10 @@ window.carregarPenasOficiais = async function() {
     .memo-comentario-cab button { background:var(--bg-white); border:1px solid var(--border-color); border-radius:99px; padding:1px 8px; font-size:9.5px; font-weight:700; text-transform:none; cursor:pointer; color:var(--text-main); margin-left:4px; }
     .memo-carta-botoes { display:flex; gap:6px; }
     .memo-carta-botoes .memo-btn-fav, .memo-carta-botoes .memo-btn-com { font-size:18px; padding:4px 8px; border-color:var(--border-color); opacity:1; }
+    .pen-resp { font-weight:800; color:var(--app-primary); }
+    .pen-resp-oculta { display:inline-block; min-width:64px; padding:0 8px; border-radius:4px; background:repeating-linear-gradient(45deg, #cbd5e1, #cbd5e1 4px, #e2e8f0 4px, #e2e8f0 8px); color:transparent; cursor:pointer; user-select:none; vertical-align:baseline; }
+    .pen-resp-oculta:hover { outline:2px solid var(--app-primary); }
+    .pnt-revelar-todas { margin-left:6px; background:none; border:1px dashed var(--app-primary); border-radius:99px; padding:1px 8px; font-size:9.5px; font-weight:800; color:var(--app-primary); cursor:pointer; text-transform:none; }
     .memo-carta-topo { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
     /* Jogos */
     .memo-form { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
@@ -15772,8 +15821,27 @@ window.MEMORIZACAO_MIXIN = {
         u.fracao = fr; u.fracaoTexto = mv[1].trim(); u.hipotese = mv[2].trim() + ' (' + ref + ')';
         return u;
     }
+    // Linha → {antes, resp, depois, lei}: resp = pena (qualificadora) ou
+    // fração (aumento/diminuição); o resto é a hipótese, sempre visível.
+    function partesLinha(k, linha) {
+        let m = String(linha).match(RE_MARC), lei = m ? m[1] : '';
+        let t = m ? String(linha).slice(0, m.index) : String(linha);
+        let tudo = { antes: '', resp: t, depois: '', lei: lei };
+        if (k === 'qualificadas') {
+            let mm = /\s+[—–-]\s+(?=(?:reclus[aã]o|deten[cç][aã]o|pris[aã]o simples|multa)\b)/i.exec(t);
+            if (!mm) return tudo;
+            return { antes: t.slice(0, mm.index) + ' — ', resp: t.slice(mm.index + mm[0].length), depois: '', lei: lei };
+        }
+        let corte = t.indexOf(' — ');
+        if (corte < 0) return tudo;
+        if (fracoesDe(t.slice(0, corte)).length) return { antes: '', resp: t.slice(0, corte), depois: t.slice(corte), lei: lei };
+        let mv = t.slice(corte + 3).match(/^((?:aumento|diminui[çc][ãa]o|redu[çc][ãa]o|a pena [ée] aplicada em)\s+(?:d[aeo]\s+)?)(.+?)(,\s*se\b.*)$/i);
+        if (mv && fracoesDe(mv[2]).length) return { antes: t.slice(0, corte + 3) + mv[1], resp: mv[2], depois: mv[3], lei: lei };
+        return tudo;
+    }
     Object.assign(window.PENAS_RUNTIME, M, {
         _R: 'PENAS_RUNTIME', _pfx: 'pnt', _secao: 'penas',
+        _partesLinha: partesLinha,
         // "O que treinar": pena-base (o item) ou cada hipótese das listas.
         _unidades: function(lista, alvo) {
             if (!alvo || alvo === 'base') return lista;
