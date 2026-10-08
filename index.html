@@ -14736,7 +14736,7 @@ window.PENAS_RUNTIME = {
     _busca: '',
     _cortina: { pena: true },
     _revelados: {},
-    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif' },
+    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif', alvo: 'base' },
     _treino: null,
     _criacao: null,
 
@@ -14931,6 +14931,7 @@ window.PENAS_RUNTIME = {
             '<table class="pen-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
     },
     classificar: function(id, nivel, doTreino) {
+        id = this._idReal(id);
         let atual = this.estado[id] || {};
         let novo = Object.assign({}, atual);
         novo.ultimaClassificacao = (!doTreino && atual.ultimaClassificacao === nivel) ? null : nivel;
@@ -14985,17 +14986,25 @@ window.PENAS_RUNTIME = {
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="pen-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
-        let disp = self._filtrarParaModo(base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); }), cfg.modo).length;
+        let filtrados = base.filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        let disp = self._filtrarParaModo(self._unidades(filtrados, cfg.alvo), cfg.modo).length;
+        let nAlvo = function(a) { return self._filtrarParaModo(self._unidades(filtrados, a), cfg.modo).length; };
+        let oQue = { base: 'a pena-base (espécie, mínimo, máximo e se a multa é cumulativa ou alternativa)', qualificadas: 'a pena da qualificadora (espécie, mínimo, máximo e multa)', aumentos: 'a fração de aumento (fixa ou de… até…)', diminuicoes: 'a fração de diminuição (fixa ou de… até…)', todos: 'a pena ou a fração de cada hipótese' }[cfg.alvo];
         scroll.innerHTML = '<div class="pen-treino-painel">' +
             '<div class="pen-treino-titulo">🎯 Treinar</div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Modo</span><div class="pen-pills">' +
                 this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
-                '<div class="pen-treino-sub">' + this._dicaModo(cfg.modo, 'a pena-base (espécie, mínimo, máximo e se a multa é cumulativa ou alternativa)') + '</div></div>' +
+                '<div class="pen-treino-sub">' + this._dicaModo(cfg.modo, oQue) + '</div></div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que treinar</span><div class="pen-pills">' +
+                pill('alvo', 'base', 'Pena-base', nAlvo('base')) + pill('alvo', 'qualificadas', 'Qualificadoras', nAlvo('qualificadas')) +
+                pill('alvo', 'aumentos', 'Causas de aumento', nAlvo('aumentos')) + pill('alvo', 'diminuicoes', 'Causas de diminuição', nAlvo('diminuicoes')) +
+                pill('alvo', 'todos', 'Tudo', nAlvo('todos')) + '</div>' +
+                '<div class="pen-treino-sub">Fora da pena-base, cada qualificadora e cada causa de aumento ou diminuição vira uma pergunta própria: aparece a hipótese e você responde a pena ou a fração.</div></div>' +
             '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._rotuloRecorte()) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
-            '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
-                pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + aumento/diminuição + ação') + '</div></div>' +
+            (cfg.modo === 'revelar' && cfg.alvo === 'base' ? '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
+                pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + aumento/diminuição + ação') + '</div></div>' : '') +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quantidade</span><div class="pen-pills">' + pill('quantidade', 10, '10') + pill('quantidade', 20, '20') + pill('quantidade', 0, 'Todos') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Ordem</span><div class="pen-pills">' + pill('embaralhar', true, '🔀 Embaralhada') + pill('embaralhar', false, 'Na ordem da tabela') + '</div></div>' +
             '<button class="pen-comecar" onclick="window.PENAS_RUNTIME.iniciarTreino()"' + (disp ? '' : ' disabled') + '>▶ Começar (' + (cfg.quantidade && cfg.quantidade < disp ? cfg.quantidade : disp) + ')</button>' +
@@ -15004,7 +15013,7 @@ window.PENAS_RUNTIME = {
     iniciarTreino: function() {
         let self = this, cfg = this._treinoCfg;
         let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
-        lista = self._filtrarParaModo(lista, cfg.modo);
+        lista = self._filtrarParaModo(self._unidades(lista, cfg.alvo), cfg.modo);
         if (!lista.length) return;
         if (cfg.embaralhar) for (let i = lista.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = lista[i]; lista[i] = lista[j]; lista[j] = t; }
         if (cfg.quantidade) lista = lista.slice(0, cfg.quantidade);
@@ -15045,6 +15054,7 @@ window.PENAS_RUNTIME = {
         document.getElementById('pnt-pos').textContent = (tr.idx + 1) + ' / ' + total;
         if (tr.modo && tr.modo !== 'revelar') { nav.style.visibility = 'hidden'; return this._renderJogo(p); }
         nav.style.visibility = 'visible';
+        if (it._parte) return this._renderUnidadeRevelar(p);
         let ROT = { pena: 'Pena', qualificadas: 'Qualificadoras', aumentos: 'Aumento', diminuicoes: 'Diminuição', acao: 'Ação penal' };
         let campo = function(k) {
             let lista = (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes');
@@ -15077,7 +15087,7 @@ window.PENAS_RUNTIME = {
         let tr = this._treino;
         if (!tr || tr.fim) return;
         let it = tr.lista[tr.idx].item;
-        (k ? [k] : this.CAMPOS_TREINO).forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
+        (k ? [k] : this.CAMPOS_TREINO.concat(['resp'])).forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
         this._renderTreino();
     },
     avaliarTreino: function(nivel) {
@@ -15086,7 +15096,7 @@ window.PENAS_RUNTIME = {
         let it = tr.lista[tr.idx].item;
         tr.avaliacoes[it.id] = nivel;
         this.classificar(it.id, nivel, true);
-        this.CAMPOS_TREINO.forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
+        this.CAMPOS_TREINO.concat(['resp']).forEach(function(c) { tr.revelados[it.id + '|' + c] = true; });
         if (tr.idx < tr.lista.length - 1) tr.idx++;
         else if (Object.keys(tr.avaliacoes).length >= tr.lista.length) tr.fim = true;
         else { let prox = tr.lista.findIndex(function(p) { return !tr.avaliacoes[p.item.id]; }); if (prox >= 0) tr.idx = prox; }
@@ -15359,12 +15369,18 @@ window.MEMORIZACAO_MIXIN = {
         if (!confirm('Excluir seu comentário deste item?')) return;
         this._salvarComentario(id, '', '');
     },
+    // Unidade de treino (qualificadora/causa de aumento de um crime) tem id
+    // "<id do item>#q0"; favorito, comentário e avaliação são do item.
+    _idReal: function(id) { return String(id).split('#')[0]; },
+    _unidades: function(lista) { return lista; },
     _htmlBotoesItem: function(id) {
+        id = this._idReal(id);
         let R = this._R, e = this._escJs(id), fav = this._ehFav(id), com = !!this._comentario(id);
         return '<button class="memo-btn-fav' + (fav ? ' ativo' : '') + '" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); window.' + R + '.alternarFavorito(\'' + e + '\')" title="' + (fav ? 'Remover dos favoritos' : 'Favoritar') + '">' + (fav ? '★' : '☆') + '</button>' +
             '<button class="memo-btn-com' + (com ? ' ativo' : '') + '" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); window.' + R + '.abrirComentario(\'' + e + '\')" title="' + (com ? 'Ver/editar meu comentário' : 'Adicionar comentário') + '">💭</button>';
     },
     _htmlComentarioBloco: function(id) {
+        id = this._idReal(id);
         let h = this._comentario(id);
         if (!h) return '';
         let R = this._R, e = this._escJs(id);
@@ -15384,6 +15400,7 @@ window.MEMORIZACAO_MIXIN = {
     // Registro de campos errados (controle por campo) — estado[id].camposErrados.
     _registrarCampos: function(id, campos) {
         if (!campos || !campos.length) return;
+        id = this._idReal(id);
         let e = Object.assign({}, this.estado[id] || {});
         let ce = Object.assign({}, e.camposErrados || {});
         campos.forEach(function(k) { ce[k] = (ce[k] || 0) + 1; });
@@ -15714,9 +15731,91 @@ window.MEMORIZACAO_MIXIN = {
     function fmtPena(p) {
         return (p.especie ? p.especie + ', ' : '') + fmtFaixa(p.minMeses, p.maxMeses) + (p.multaTipo === 'e multa' ? ', e multa' : (p.multaTipo === 'ou multa' ? ', ou multa' : ''));
     }
+    // ── Frações das causas de aumento/diminuição ──
+    // "de 1/3 até a metade" → ['1/3', 'metade']; "dobro" → ['dobro'].
+    let FRACOES = ['1/6', '1/5', '1/4', '1/3', 'metade', '2/3', 'dobro', 'triplo'];
+    function fracoesDe(t) {
+        t = String(t || '').toLowerCase()
+            .replace(/sexta parte|um sexto/g, '1/6').replace(/um quinto/g, '1/5').replace(/um quarto/g, '1/4')
+            .replace(/ter[çc]a parte|um ter[çc]o/g, '1/3').replace(/dois ter[çc]os/g, '2/3').replace(/\b1\/2\b|meio/g, 'metade');
+        return (t.match(/\d+\/\d+|metade|dobro|triplo/g) || []).filter(function(f) { return FRACOES.indexOf(f) >= 0; }).slice(0, 2);
+    }
+    function fmtFracao(fr) {
+        if (fr.length < 2) return fr[0] || '';
+        let ate = { metade: 'até a metade', dobro: 'até o dobro', triplo: 'até o triplo' }[fr[1]];
+        return 'de ' + fr[0] + ' ' + (ate || 'a ' + fr[1]);
+    }
+    let RE_MARC = /\s*\[((?:Lei|LC|Lei Complementar|Decreto|EC|Emenda)[^\]]*)\]\s*$/i;
+    let PARTES = { qualificadas: { letra: 'q', rot: 'Qualificadora' }, aumentos: { letra: 'a', rot: 'Causa de aumento' }, diminuicoes: { letra: 'd', rot: 'Causa de diminuição' } };
+    // Uma linha da lista → unidade de treino (null se não der para perguntar).
+    function unidade(real, k, linha, i) {
+        let m = String(linha).match(RE_MARC), lei = m ? m[1] : '';
+        let t = m ? String(linha).slice(0, m.index) : String(linha);
+        let u = { id: real.id + '#' + PARTES[k].letra + i, _real: real, _parte: k, crime: real.crime, art: real.art, alteracao: lei, linha: t };
+        if (k === 'qualificadas') {
+            // "§ 4º (hipóteses) — reclusão, de 2 a 8 anos, e multa"
+            let re = /\s+[—–-]\s+(?=(?:reclus[aã]o|deten[cç][aã]o|pris[aã]o simples|multa)\b)/ig, mm, corte = -1;
+            while ((mm = re.exec(t))) { corte = mm.index; break; }
+            if (corte < 0) return null;
+            u.hipotese = t.slice(0, corte).trim();
+            u.pena = t.slice(corte).replace(/^\s*[—–-]\s*/, '').trim();
+            return u;
+        }
+        // "1/3 até a metade — hipótese (§ 2º, I)"
+        let corte = t.indexOf(' — ');
+        if (corte < 0) return null;
+        let fr = fracoesDe(t.slice(0, corte));
+        if (fr.length) { u.fracao = fr; u.fracaoTexto = t.slice(0, corte).trim(); u.hipotese = t.slice(corte + 3).trim(); return u; }
+        // Variante "§ 1º — aumento de um sexto, se o agente…"
+        let ref = t.slice(0, corte).trim(), mv = t.slice(corte + 3).match(/^(?:aumento|diminui[çc][ãa]o|redu[çc][ãa]o|a pena [ée] aplicada em)\s+(?:d[aeo]\s+)?(.+?),\s*(se\b.*)$/i);
+        if (!mv || !(fr = fracoesDe(mv[1])).length) return null;
+        u.fracao = fr; u.fracaoTexto = mv[1].trim(); u.hipotese = mv[2].trim() + ' (' + ref + ')';
+        return u;
+    }
     Object.assign(window.PENAS_RUNTIME, M, {
         _R: 'PENAS_RUNTIME', _pfx: 'pnt', _secao: 'penas',
+        // "O que treinar": pena-base (o item) ou cada hipótese das listas.
+        _unidades: function(lista, alvo) {
+            if (!alvo || alvo === 'base') return lista;
+            let out = [];
+            lista.forEach(function(p) {
+                if (alvo === 'todos') out.push(p);
+                (alvo === 'todos' ? ['qualificadas', 'aumentos', 'diminuicoes'] : [alvo]).forEach(function(k) {
+                    (p.item[k] || []).forEach(function(l, i) { let u = unidade(p.item, k, l, i); if (u) out.push({ item: u, chave: p.chave }); });
+                });
+            });
+            return out;
+        },
+        _registrarResultado: function(id, nivel, errados) {
+            this._treino.avaliacoes[id] = nivel;
+            this.classificar(id, nivel, true);
+            let p = this._treino.lista.find(function(x) { return x.item.id === id; });
+            // Erro numa hipótese marca a lista dela (qualificadas/aumentos/diminuicoes).
+            this._registrarCampos(id, (errados.length && p && p.item._parte) ? [p.item._parte] : errados);
+        },
+        _renderUnidadeRevelar: function(p) {
+            let tr = this._treino, it = p.item, self = this;
+            let rev = tr.revelados[it.id + '|resp'];
+            let resp = it._parte === 'qualificadas' ? it.pena : it.fracaoTexto;
+            document.getElementById('pnt-palco').innerHTML = '<div class="pnt-carta">' + this._htmlCabecalhoJogo(p) +
+                '<div class="pnt-campo"><span class="pnt-rotulo">' + (it._parte === 'qualificadas' ? 'Pena' : 'Fração') + '</span>' +
+                (rev ? '<span class="pnt-valor pena pnt-revelado">' + this._esc(resp) + '</span>'
+                     : '<button class="pnt-oculto grande" onclick="window.PENAS_RUNTIME.revelarTreino(\'resp\')">👁 Revelar ' + (it._parte === 'qualificadas' ? 'a pena' : 'a fração') + '</button>') + '</div>' +
+                (rev && it._parte === 'qualificadas' ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor pnt-revelado">' + this._htmlIndicadores(it) + '</span></div>' : '') +
+                (rev ? this._htmlComentarioBloco(it.id) : '') + '</div>';
+            let av = tr.avaliacoes[it.id];
+            ['dificil', 'medio', 'facil'].forEach(function(n) { document.getElementById('pnt-b-' + n).classList.toggle('ativa', av === n); });
+            document.getElementById('pnt-ant').disabled = tr.idx === 0;
+            document.getElementById('pnt-prox').disabled = tr.idx >= tr.lista.length - 1 && !Object.keys(tr.avaliacoes).length;
+        },
         _specLacuna: function(item) {
+            if (item.fracao) {
+                let ops = FRACOES.concat(['— (fração fixa)']);
+                return { campos: [
+                    { k: 'fr_de', rotulo: item.fracao.length > 1 ? 'De' : 'Fração', tipo: 'select', opcoes: FRACOES, correto: item.fracao[0], principal: true },
+                    { k: 'fr_ate', rotulo: 'Até', tipo: 'select', opcoes: ops, correto: item.fracao[1] || '— (fração fixa)', principal: true }
+                ], respostaTexto: item.fracaoTexto };
+            }
             let p = interpretarPenaTexto(item.pena);
             if (p.minMeses == null || p.maxMeses == null) return null;
             let campos = [];
@@ -15727,10 +15826,26 @@ window.MEMORIZACAO_MIXIN = {
             return { campos: campos, respostaTexto: item.pena };
         },
         _formatarResposta: function(item) {
+            if (item.fracao) return fmtFracao(item.fracao);
             let p = interpretarPenaTexto(item.pena);
             return p.minMeses == null ? item.pena : fmtPena(p);
         },
         _distratores: function(pAlvo) {
+            if (pAlvo.item.fracao) {
+                // Vizinhas na escala + frações reais de outras hipóteses.
+                let fr = pAlvo.item.fracao, i0 = FRACOES.indexOf(fr[0]), sint = [];
+                let viz = function(f, d) { let j = FRACOES.indexOf(f) + d; return FRACOES[Math.max(0, Math.min(FRACOES.length - 1, j))]; };
+                if (fr.length > 1) {
+                    sint.push(fmtFracao([viz(fr[0], -1), fr[1]]), fmtFracao([fr[0], viz(fr[1], 1)]), fmtFracao([fr[0]]), fmtFracao([fr[1]]));
+                } else {
+                    sint.push(fmtFracao([viz(fr[0], -1)]), fmtFracao([viz(fr[0], 1)]), fmtFracao([fr[0], FRACOES[Math.min(i0 + 2, FRACOES.length - 1)]]));
+                }
+                let pool = [];
+                this._todosItens().forEach(function(x) {
+                    ['aumentos', 'diminuicoes'].forEach(function(k) { (x.item[k] || []).forEach(function(l) { let c = l.indexOf(' — '); let f = c > 0 ? fracoesDe(l.slice(0, c)) : []; if (f.length) pool.push(fmtFracao(f)); }); });
+                });
+                return this._embaralhar(sint).slice(0, 2).concat(this._embaralhar(pool), sint);
+            }
             let a = interpretarPenaTexto(pAlvo.item.pena), sint = [];
             let troca = { 'reclusão': 'detenção', 'detenção': 'reclusão', 'prisão simples': 'detenção' };
             if (a.especie) sint.push(fmtPena(Object.assign({}, a, { especie: troca[a.especie] })));
@@ -15743,13 +15858,17 @@ window.MEMORIZACAO_MIXIN = {
             sint = this._embaralhar(sint);
             return sint.slice(0, 2).concat(pool.slice(0, 2), sint.slice(2), pool.slice(2));
         },
-        _rotuloItem: function(item) { return this._esc(item.crime) + this._htmlNovo(item.alteracao, 'Pena criada ou alterada') + (item.art ? '<small>' + this._esc(item.art) + '</small>' : ''); },
+        _rotuloItem: function(item) {
+            if (item._parte) return this._esc(item.crime) + ' · ' + PARTES[item._parte].rot.toLowerCase() + this._htmlNovo(item.alteracao, 'Hipótese incluída ou alterada') + '<small>' + this._esc(item.hipotese) + '</small>';
+            return this._esc(item.crime) + this._htmlNovo(item.alteracao, 'Pena criada ou alterada') + (item.art ? '<small>' + this._esc(item.art) + '</small>' : '');
+        },
         _htmlCabecalhoJogo: function(p) {
             let it = p.item;
             return '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
-                '<div class="pnt-ato">' + this._esc(it.crime) + this._htmlNovo(it.alteracao, 'Pena criada ou alterada') + '</div>' +
-                (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
-                (this._treino.feedback ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor">' + this._htmlIndicadores(it) + '</span></div>' : '');
+                '<div class="pnt-ato">' + this._esc(it.crime) + (it._parte ? '' : this._htmlNovo(it.alteracao, 'Pena criada ou alterada')) + '</div>' +
+                (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it._parte ? it.art.replace(/,\s*caput/i, '') : it.art) + '</div>' : '') +
+                (it._parte ? '<div class="pnt-campo"><span class="pnt-rotulo">' + PARTES[it._parte].rot + this._htmlNovo(it.alteracao, 'Hipótese incluída ou alterada') + '</span><span class="pnt-valor" style="font-weight:700;">' + this._esc(it.hipotese) + '</span></div>' : '') +
+                (this._treino.feedback && !it.fracao ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor">' + this._htmlIndicadores(it) + '</span></div>' : '');
         }
     });
 })();
