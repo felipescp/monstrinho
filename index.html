@@ -10335,8 +10335,8 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = divisao;
-        this._baralhoMaximizado = false;
-        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._baralhoMaximizado = true; // abre maximizado por padrão
+        document.getElementById('modal-flashcard').classList.add('fc-baralho-maximizado');
         this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
@@ -10355,8 +10355,8 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = materia;
-        this._baralhoMaximizado = false;
-        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._baralhoMaximizado = true; // abre maximizado por padrão
+        document.getElementById('modal-flashcard').classList.add('fc-baralho-maximizado');
         this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
@@ -10384,8 +10384,8 @@ window.FLASHCARDS_RUNTIME = {
             indiceAtual: 0, flipado: false
         };
         document.getElementById('fc-popup-titulo').textContent = deck.nome;
-        this._baralhoMaximizado = false;
-        document.getElementById('modal-flashcard').classList.remove('fc-baralho-maximizado');
+        this._baralhoMaximizado = true; // abre maximizado por padrão
+        document.getElementById('modal-flashcard').classList.add('fc-baralho-maximizado');
         this._atualizarBotaoMaximizarBaralho();
         document.getElementById('modal-flashcard').classList.add('open');
         this.renderPopup();
@@ -10409,7 +10409,7 @@ window.FLASHCARDS_RUNTIME = {
         let btn = document.getElementById('fc-baralho-btn-maximizar');
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
-        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+        btn.title = this._baralhoMaximizado ? 'Minimizar' : 'Maximizar';
     },
 
     _handlerTeclado: function(e) {
@@ -10946,13 +10946,17 @@ window._alternarMaximizarSecaoModal = function(secaoId, btnId) {
     if (!modal) return;
     const maximizado = modal.classList.toggle('secao-maximizada');
     const btn = document.getElementById(btnId);
-    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Minimizar' : 'Maximizar'; }
 };
+// Pedido explícito do usuário: com tanta coisa nas telas, o PADRÃO passou a
+// ser abrir MAXIMIZADO — o botão 🗗 (Minimizar) é a alternativa. Vale para
+// todos os modais/leitores/editores com ⛶ (ver também os abrir* dos modais
+// .analytics-modal e os _abrirBaralho/abrirPopup*/editor).
 window._resetarMaximizacaoSecaoModal = function(secaoId, btnId) {
     const modal = document.getElementById(secaoId);
-    if (modal) modal.classList.remove('secao-maximizada');
+    if (modal) modal.classList.add('secao-maximizada');
     const btn = document.getElementById(btnId);
-    if (btn) { btn.textContent = '⛶'; btn.title = 'Maximizar'; }
+    if (btn) { btn.textContent = '🗗'; btn.title = 'Minimizar'; }
 };
 
 // Abre/fecha Axiomas como MODAL sobre a tela atual (ex.: Cronograma), em
@@ -12849,9 +12853,10 @@ window.abrirFlashcardsNbModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('fcnb-modal');
     if (!modal) return;
-    modal.classList.remove('modal-maximizado');
+    // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
+    modal.classList.add('modal-maximizado');
     const btnMax = document.getElementById('fcnb-modal-btn-maximizar');
-    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
+    if (btnMax) { btnMax.textContent = '🗗'; btnMax.title = 'Minimizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     window.FLASHCARDS_NB_RUNTIME.init();
@@ -12862,7 +12867,7 @@ window.alternarMaximizarFlashcardsNbModal = function() {
     if (!modal) return;
     const maximizado = modal.classList.toggle('modal-maximizado');
     const btn = document.getElementById('fcnb-modal-btn-maximizar');
-    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Minimizar' : 'Maximizar'; }
 };
 
 window.fecharFlashcardsNbModal = function() {
@@ -14472,10 +14477,10 @@ window.GLOSSARIO_RUNTIME = {
             filtroBusca: ''
         };
         document.getElementById('glos-baralho-titulo').textContent = titulo;
-        this._baralhoMaximizado = false;
+        this._baralhoMaximizado = true; // abre maximizado por padrão
         this._baralhoEscala = 1.5;
         let modalEl = document.getElementById('modal-glossario-baralho');
-        modalEl.classList.remove('glos-baralho-maximizado');
+        modalEl.classList.add('glos-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
         this._atualizarControleEscalaBaralho();
@@ -14501,7 +14506,7 @@ window.GLOSSARIO_RUNTIME = {
         let btn = document.getElementById('glos-baralho-btn-maximizar');
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
-        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+        btn.title = this._baralhoMaximizado ? 'Minimizar' : 'Maximizar';
     },
 
     ajustarEscalaBaralho: function(delta) {
@@ -26425,10 +26430,10 @@ window.ESQUEMAS_RUNTIME = {
             filtroVisualizado: null
         };
         document.getElementById('esq-baralho-titulo').textContent = titulo;
-        this._baralhoMaximizado = false;
+        this._baralhoMaximizado = true; // abre maximizado por padrão
         this._baralhoEscala = 1.5;
         let modalEl = document.getElementById('modal-esquemas-baralho');
-        modalEl.classList.remove('esq-baralho-maximizado');
+        modalEl.classList.add('esq-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
         this._atualizarControleEscalaBaralho();
@@ -26454,7 +26459,7 @@ window.ESQUEMAS_RUNTIME = {
         let btn = document.getElementById('esq-baralho-btn-maximizar');
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
-        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+        btn.title = this._baralhoMaximizado ? 'Minimizar' : 'Maximizar';
     },
 
     // Escala conjunta (lista + cartão) do modo maximizado — múltiplos de
@@ -26828,8 +26833,8 @@ window.ESQUEMAS_RUNTIME = {
     // da sessão de leitura, não preferência persistida.
     _editorMaximizado: false,
     _resetarMaximizarEditor: function() {
-        this._editorMaximizado = false;
-        document.getElementById('modal-esquema-editor').classList.remove('esq-editor-maximizado');
+        this._editorMaximizado = true; // abre maximizado por padrão
+        document.getElementById('modal-esquema-editor').classList.add('esq-editor-maximizado');
         this._atualizarBotaoMaximizarEditor();
     },
     alternarMaximizarEditor: function() {
@@ -26841,7 +26846,7 @@ window.ESQUEMAS_RUNTIME = {
         let btn = document.getElementById('esq-editor-btn-maximizar');
         if (!btn) return;
         btn.textContent = this._editorMaximizado ? '🗗' : '⛶';
-        btn.title = this._editorMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+        btn.title = this._editorMaximizado ? 'Minimizar' : 'Maximizar';
     },
 
     aplicarFormatacao: function(comando) {
@@ -27732,9 +27737,10 @@ window.abrirEsquemasModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
-    modal.classList.remove('modal-maximizado');
+    // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
+    modal.classList.add('modal-maximizado');
     const btnMax = document.getElementById('esq-modal-btn-maximizar');
-    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
+    if (btnMax) { btnMax.textContent = '🗗'; btnMax.title = 'Minimizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     window.ESQUEMAS_RUNTIME.init();
@@ -27749,7 +27755,7 @@ window.alternarMaximizarEsquemasModal = function() {
     if (!modal) return;
     const maximizado = modal.classList.toggle('modal-maximizado');
     const btn = document.getElementById('esq-modal-btn-maximizar');
-    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Minimizar' : 'Maximizar'; }
 };
 
 window.fecharEsquemasModal = function() {
@@ -31801,7 +31807,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             filtroVisualizado: null
         };
         document.getElementById('jur-baralho-titulo').textContent = titulo;
-        this._baralhoMaximizado = false;
+        this._baralhoMaximizado = true; // abre maximizado por padrão
         // Último zoom escolhido pelo usuário prevalece (salvo em
         // ajustarEscalaBaralho); 1.5x é só o padrão de quem nunca ajustou.
         this._baralhoEscala = this._lerEscalaBaralhoSalva();
@@ -31810,7 +31816,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._painelComentarioIdAtual = null;
         this._rascunhosComentario = {};
         let modalEl = document.getElementById('modal-jurisprudencia-baralho');
-        modalEl.classList.remove('jur-baralho-maximizado');
+        modalEl.classList.add('jur-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
         this._atualizarBotaoMaximizarBaralho();
         this._atualizarControleEscalaBaralho();
@@ -31836,7 +31842,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let btn = document.getElementById('jur-baralho-btn-maximizar');
         if (!btn) return;
         btn.textContent = this._baralhoMaximizado ? '🗗' : '⛶';
-        btn.title = this._baralhoMaximizado ? 'Restaurar tamanho' : 'Maximizar';
+        btn.title = this._baralhoMaximizado ? 'Minimizar' : 'Maximizar';
     },
 
     ajustarEscalaBaralho: function(delta) {
@@ -32527,9 +32533,10 @@ window.abrirJurisprudenciaModal = function() {
     if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
-    modal.classList.remove('modal-maximizado');
+    // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
+    modal.classList.add('modal-maximizado');
     const btnMax = document.getElementById('jur-modal-btn-maximizar');
-    if (btnMax) { btnMax.textContent = '⛶'; btnMax.title = 'Maximizar'; }
+    if (btnMax) { btnMax.textContent = '🗗'; btnMax.title = 'Minimizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
     window.JURISPRUDENCIA_RUNTIME.init();
@@ -32541,7 +32548,7 @@ window.alternarMaximizarJurisprudenciaModal = function() {
     if (!modal) return;
     const maximizado = modal.classList.toggle('modal-maximizado');
     const btn = document.getElementById('jur-modal-btn-maximizar');
-    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Restaurar tamanho' : 'Maximizar'; }
+    if (btn) { btn.textContent = maximizado ? '🗗' : '⛶'; btn.title = maximizado ? 'Minimizar' : 'Maximizar'; }
 };
 
 window.fecharJurisprudenciaModal = function() {
