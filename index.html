@@ -28634,7 +28634,19 @@ window.carregarEsquemasOficiais = async function() {
        explícito de uniformização; antes, cada ficha dava um tamanho de
        card diferente (encolhe-pro-conteúdo até o teto de 46vh). */
     #modal-jurisprudencia-baralho .jur-estudo-card { max-width:680px; flex:1; min-height:0; }
-    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-card { max-width:calc(680px * var(--baralho-escala, 1)); }
+    /* Maximizado: o cartão ocupa toda a largura que sobrar (independe do
+       monitor) — o "Reduzir/Aumentar" passou a escalar o TEXTO (--jur-fs,
+       ver _aplicarEscalaLeitor), não a largura. */
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-card { max-width:none; }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-titulo { font-size:calc(13.5px * var(--jur-fs, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-meta { font-size:calc(11px * var(--jur-fs, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-label { font-size:calc(10px * var(--jur-fs, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-estudo-texto,
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-meu-comentario,
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-painel-com-exibicao { font-size:calc(12.5px * var(--jur-fs, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista-item-nome { font-size:calc(11.5px * var(--jur-vw, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista-item-origem { font-size:calc(9px * var(--jur-vw, 1)); }
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .fc-card-origem { font-size:calc(10px * var(--jur-vw, 1)); }
     #jurisprudencia-modal .jur-estudo-titulo, #modal-jurisprudencia-baralho .jur-estudo-titulo { font-size:13.5px; font-weight:800; color:var(--text-main); line-height:1.35; }
     #jurisprudencia-modal .jur-estudo-meta, #modal-jurisprudencia-baralho .jur-estudo-meta { font-size:11px; color:var(--text-muted); }
     #jurisprudencia-modal .jur-estudo-label, #modal-jurisprudencia-baralho .jur-estudo-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:6px; }
@@ -29019,7 +29031,10 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; width:100%; }
     /* Pedido explícito do usuário: a escala incide SÓ no cartão — a lista
        lateral fica fixa no tamanho equivalente a 1.5x (300px * 1.5). */
-    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-corpo-wrap { max-width:calc(450px + 680px * var(--baralho-escala, 1) + 14px); margin:0 auto; }
+    /* Pedido explícito do usuário: o conjunto ocupa 100% da largura em
+       qualquer monitor (antes tinha teto de largura e sobrava margem nas
+       laterais em telas largas). */
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-corpo-wrap { max-width:none; width:100%; margin:0; }
     /* Mesmo padrão visual de .crono-sim-item (Conteúdo Relacionado do
        Cronograma): 1 linha por item, truncada com reticências (nunca
        corta no meio da palavra) — cada item só mostra o NOME da ficha,
@@ -29031,7 +29046,9 @@ window.carregarEsquemasOficiais = async function() {
        itens rolável abaixo dela — mesmo padrão de #modal-esquemas-baralho
        (ver _renderListaBaralho() pra a estrutura HTML). */
     #modal-jurisprudencia-baralho .jur-baralho-lista { width:300px; flex:none; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--border-color); }
-    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:450px; }
+    /* Lista: fração fixa da tela (não muda com o zoom do cartão nem com o
+       painel do 💭), com piso e teto. */
+    #modal-jurisprudencia-baralho.jur-baralho-maximizado .jur-baralho-lista { width:clamp(300px, 24vw, 600px); }
     /* Busca por título — topo da barra lateral, acima da lista (e da barra
        de etiquetas, quando existe). Só filtra a LISTAGEM, mesmo espírito do
        filtro de etiqueta (ver toggleFiltroEtiquetaBaralho). */
@@ -29142,9 +29159,9 @@ window.carregarEsquemasOficiais = async function() {
 
         <div class="fc-popup-toolbar">
             <div class="jur-baralho-escala-controle">
-                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir cartão">‹ Reduzir</button>
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-reduzir" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(-0.25)" title="Reduzir o texto do cartão">‹ Reduzir</button>
                 <span id="jur-baralho-escala-valor">1.5x</span>
-                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar cartão">Aumentar ›</button>
+                <button class="jur-baralho-escala-btn" id="jur-baralho-escala-btn-aumentar" onclick="window.JURISPRUDENCIA_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar o texto do cartão">Aumentar ›</button>
             </div>
             <div class="jur-grifo-canetas" id="jur-grifo-canetas"></div>
         </div>
@@ -32536,6 +32553,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         let modalEl = document.getElementById('modal-jurisprudencia-baralho');
         modalEl.classList.add('jur-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
+        this._aplicarEscalaLeitor();
+        if (!this._listenerResizeLeitor) {
+            this._listenerResizeLeitor = true;
+            let selfR = this;
+            window.addEventListener('resize', function() { selfR._aplicarEscalaLeitor(); });
+        }
         this._atualizarBotaoMaximizarBaralho();
         this._atualizarControleEscalaBaralho();
         modalEl.classList.add('open');
@@ -32570,11 +32593,24 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (novo > 4) novo = 4;
         this._baralhoEscala = novo;
         document.getElementById('modal-jurisprudencia-baralho').style.setProperty('--baralho-escala', novo);
+        this._aplicarEscalaLeitor();
         try { localStorage.setItem(this._CHAVE_ESCALA_BARALHO, String(novo)); } catch (e) {}
         this._atualizarControleEscalaBaralho();
     },
 
     _CHAVE_ESCALA_BARALHO: 'tjpe_v1__jur_baralho_escala',
+
+    // Tamanho do texto proporcional à LARGURA da tela (referência 1440px),
+    // pra o Leitor maximizado ter a mesma cara em qualquer monitor — é o
+    // que o zoom manual do navegador fazia. --jur-vw vale pra lista;
+    // --jur-fs (cartão) ainda multiplica pelo Reduzir/Aumentar (1.5x = 1).
+    _aplicarEscalaLeitor: function() {
+        let modalEl = document.getElementById('modal-jurisprudencia-baralho');
+        if (!modalEl) return;
+        let vw = Math.max(0.9, Math.min(1.7, window.innerWidth / 1440));
+        modalEl.style.setProperty('--jur-vw', vw.toFixed(3));
+        modalEl.style.setProperty('--jur-fs', (vw * (this._baralhoEscala || 1.5) / 1.5).toFixed(3));
+    },
 
     _lerEscalaBaralhoSalva: function() {
         let v = NaN;
