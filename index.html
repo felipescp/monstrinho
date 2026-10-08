@@ -11790,6 +11790,19 @@ window.fecharPraticarCadernoModal = function() {
     #fcnb-modal .fcnb-cabecalho-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
     #fcnb-modal .fcnb-cabecalho-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #fcnb-modal .fcnb-btn-criar { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #fcnb-modal .fcnb-btn-favoritos.ativa { background:#fef3c7; border-color:#f59e0b; color:#92400e; }
+    /* ⭐ Favoritos: lista dos cards favoritados (coluna 3) */
+    #fcnb-modal .fcnb-fav-voltar { font-weight:800; color:var(--app-primary); }
+    #fcnb-modal .fcnb-fav-titulo { font-size:12px; font-weight:800; color:var(--text-main); }
+    #fcnb-modal .fcnb-fav-estudar { padding:6px 12px; border-radius:6px; border:none; background:var(--app-primary); color:#fff; font-size:11px; font-weight:800; cursor:pointer; }
+    #fcnb-modal .fcnb-fav-estudar:disabled { opacity:0.5; cursor:not-allowed; }
+    #fcnb-modal .fcnb-fav-lista { display:flex; flex-direction:column; gap:8px; padding:10px; }
+    #fcnb-modal .fcnb-fav-item { border:1px solid var(--border-color); border-left:3px solid #f59e0b; border-radius:8px; padding:9px 11px; background:var(--bg-white); cursor:pointer; display:flex; gap:10px; align-items:flex-start; }
+    #fcnb-modal .fcnb-fav-item:hover { border-color:var(--app-primary); border-left-color:#f59e0b; }
+    #fcnb-modal .fcnb-fav-item-corpo { flex:1; min-width:0; }
+    #fcnb-modal .fcnb-fav-item-origem { font-size:9.5px; font-weight:800; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.02em; margin-bottom:3px; overflow-wrap:break-word; }
+    #fcnb-modal .fcnb-fav-item-frente { font-size:12px; line-height:1.45; color:var(--text-main); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    #fcnb-modal .fcnb-fav-item-tirar { background:none; border:none; font-size:15px; cursor:pointer; line-height:1; padding:0 2px; }
     #fcnb-modal .fcnb-btn-criar:hover { color:#fff; filter:brightness(1.1); }
     #fcnb-modal .analytics-modal-content { padding:0; }
     #fcnb-modal .fc-grid { display:grid; grid-template-columns: 0.55fr 0.45fr 2fr; flex:1; overflow:hidden; }
@@ -11842,6 +11855,7 @@ window.fecharPraticarCadernoModal = function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">🗂️ Flashcards</div>
             <div class="fcnb-cabecalho-acoes">
+                <button class="fcnb-cabecalho-btn fcnb-btn-favoritos" id="fcnb-btn-favoritos" onclick="window.FLASHCARDS_NB_RUNTIME.alternarModoFavoritos()">⭐ Favoritos</button>
                 <button class="fcnb-cabecalho-btn fcnb-btn-criar" onclick="window.FLASHCARDS_NB_RUNTIME.abrirModalCriar()">+ Criar Flashcard</button>
                 <button class="fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
                 <details class="fcnb-export-menu" title="Gera o .json no formato dos baralhos oficiais: salve em dados/flashcards/ e acrescente o caminho em dados/manifesto-flashcards.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="fcnb-export-opcoes"><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTudo()">Tudo</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarDisciplina()">Disciplina selecionada</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTopico()">Tópico (L2) selecionado</button></div></details>
@@ -12005,6 +12019,10 @@ window.fecharPraticarCadernoModal = function() {
     #modal-fcnb-estudo .fcnb-acao.medio.ativa { background:#e37400; border-color:#e37400; color:#fff; }
     #modal-fcnb-estudo .fcnb-acao.facil.ativa { background:#188038; border-color:#188038; color:#fff; }
     #modal-fcnb-estudo .fcnb-acao.realizada.ativa { background:#1a73e8; border-color:#1a73e8; color:#fff; }
+    #modal-fcnb-estudo .fcnb-acao.favorito.ativa { background:#f9ab00; border-color:#f9ab00; color:#202124; }
+    #modal-fcnb-estudo .fcnb-selo.favorito { background:#5c4a1f; color:#fdd663; }
+    #modal-fcnb-estudo .fcnb-est-aviso-fav { text-align:center; font-size:11.5px; font-style:italic; color:#fdd663; min-height:0; max-height:0; overflow:hidden; opacity:0; transition:opacity 0.2s; padding:0 22px; flex-shrink:0; }
+    #modal-fcnb-estudo .fcnb-est-aviso-fav.visivel { opacity:1; max-height:40px; min-height:16px; padding:2px 22px; }
     #modal-fcnb-estudo .fcnb-acao:disabled { opacity:0.35; cursor:default; }
     #modal-fcnb-estudo .fcnb-sep { width:1px; height:30px; background:#3c4043; margin:0 4px; }
     @media (max-width:640px) {
@@ -12028,6 +12046,7 @@ window.fecharPraticarCadernoModal = function() {
             </div>
         </div>
         <div class="fcnb-est-filtros" id="fcnb-est-filtros"></div>
+        <div class="fcnb-est-aviso-fav" id="fcnb-est-aviso-fav"></div>
         <div class="fcnb-est-progresso">
             <div class="fcnb-est-barra"><div id="fcnb-est-barra-preenchida" style="width:0%;"></div></div>
             <span class="fcnb-est-progresso-txt" id="fcnb-est-progresso-txt"></span>
@@ -12041,6 +12060,7 @@ window.fecharPraticarCadernoModal = function() {
             <button class="fcnb-acao facil" id="fcnb-btn-facil" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.marcarDificuldade('facil')" title="Fácil (3)">🟢 Fácil</button>
             <span class="fcnb-sep"></span>
             <button class="fcnb-acao realizada" id="fcnb-btn-realizada" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.alternarRealizada()" title="Realizada / Não realizada (R)">✓ Realizada</button>
+            <button class="fcnb-acao favorito" id="fcnb-btn-favorito" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.alternarFavorito()" title="Favoritar / desfavoritar (F)">☆ Favoritar</button>
             <button class="fcnb-nav-seta" id="fcnb-btn-proximo" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.navegar(1)" title="Próximo (→)">→</button>
         </div>
     </div>
@@ -12267,6 +12287,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 
     init: function() {
         this.carregar();
+        this._modoFavoritos = false;
         this.render();
         if (typeof window.carregarFlashcardsOficiais === 'function') {
             window.carregarFlashcardsOficiais().then(function() {
@@ -12341,6 +12362,8 @@ window.FLASHCARDS_NB_RUNTIME = {
         let colMaterias = document.getElementById('fcnb-col-materias');
         if (!colMaterias) return;
         let self = this;
+        this._atualizarBotaoFavoritos();
+        if (this._modoFavoritos) { this._renderFavoritos(); return; }
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
             colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
             return;
@@ -12612,6 +12635,178 @@ window.FLASHCARDS_NB_RUNTIME = {
         this.render();
     },
 
+    // ── ⭐ FAVORITOS (mesma lógica do "+ Caderno" das questões) ──
+    // O favorito é uma flag no estado do CARD (estado[id].favorito), não do
+    // baralho: o id do card vem do texto da frente, então sobrevive a
+    // reimportar/acrescentar lotes, e o merge da nuvem de `estado` (mais
+    // recente vence) já o sincroniza. A tela de Favoritos reaproveita as 3
+    // colunas (L1 › L2 › lista) e o MESMO visualizador de estudo, com um
+    // baralho "virtual" (_est.virtual) — classificar/realizar ali altera o
+    // progresso do card original, sem duplicar nada.
+    _modoFavoritos: false,
+    _favMateria: null,   // null = "Todos os favoritos"
+    _favDivisao: null,   // null = todas as divisões da matéria
+
+    _listarFavoritos: function() {
+        let self = this;
+        let ordemL1 = {};
+        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(m, i) {
+            ordemL1[m.nivel_1] = i;
+            (m.divisoes || []).forEach(function(d, j) { ordemL1[m.nivel_1 + ' > ' + d.nivel_2] = i * 1000 + j; });
+        });
+        let chaves = Object.keys(this.decks).sort(function(a, b) {
+            let oa = ordemL1.hasOwnProperty(a) ? ordemL1[a] : 1e9, ob = ordemL1.hasOwnProperty(b) ? ordemL1[b] : 1e9;
+            return oa - ob || a.localeCompare(b, 'pt-BR');
+        });
+        let vistos = {}, lista = [];
+        chaves.forEach(function(chave) {
+            let partes = chave.split(' > ');
+            (self.decks[chave] || []).slice().sort(function(a, b) { return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); }).forEach(function(d) {
+                (d.cards || []).forEach(function(c) {
+                    let e = self.estado[c.id];
+                    if (!e || !e.favorito || vistos[c.id]) return;
+                    vistos[c.id] = true;
+                    lista.push({ card: c, chave: chave, materia: partes[0], divisao: partes.slice(1).join(' > '), deckNome: d.nome });
+                });
+            });
+        });
+        return lista;
+    },
+
+    _favoritosDoRecorte: function() {
+        let self = this;
+        return this._listarFavoritos().filter(function(f) {
+            if (self._favMateria && f.materia !== self._favMateria) return false;
+            if (self._favDivisao && f.divisao !== self._favDivisao) return false;
+            return true;
+        });
+    },
+
+    _atualizarBotaoFavoritos: function() {
+        let btn = document.getElementById('fcnb-btn-favoritos');
+        if (!btn) return;
+        let n = this._listarFavoritos().length;
+        btn.textContent = this._modoFavoritos ? '← Voltar aos baralhos' : ('⭐ Favoritos' + (n ? ' (' + n + ')' : ''));
+        btn.classList.toggle('ativa', this._modoFavoritos);
+    },
+
+    alternarModoFavoritos: function() {
+        this._garantirCarregado();
+        this._modoFavoritos = !this._modoFavoritos;
+        this._favMateria = null;
+        this._favDivisao = null;
+        this.render();
+    },
+
+    selecionarFavMateria: function(materia) {
+        this._favMateria = materia || null;
+        this._favDivisao = null;
+        this._renderFavoritos();
+    },
+
+    selecionarFavDivisao: function(divisao) {
+        this._favDivisao = divisao || null;
+        this._renderFavoritos();
+    },
+
+    _renderFavoritos: function() {
+        let self = this;
+        let colMat = document.getElementById('fcnb-col-materias');
+        let colDiv = document.getElementById('fcnb-col-divisoes');
+        let colCards = document.getElementById('fcnb-col-cards');
+        if (!colMat || !colDiv || !colCards) return;
+        let todos = this._listarFavoritos();
+        let porMateria = {}, ordemMat = [];
+        todos.forEach(function(f) {
+            if (!porMateria[f.materia]) { porMateria[f.materia] = { n: 0, divs: {}, ordemDivs: [] }; ordemMat.push(f.materia); }
+            let pm = porMateria[f.materia];
+            pm.n++;
+            if (!pm.divs[f.divisao]) { pm.divs[f.divisao] = 0; pm.ordemDivs.push(f.divisao); }
+            pm.divs[f.divisao]++;
+        });
+        let esc = function(x) { return String(x).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); };
+
+        colMat.innerHTML =
+            '<div class="fc-materia-item fcnb-fav-voltar" onclick="window.FLASHCARDS_NB_RUNTIME.alternarModoFavoritos()"><span class="fc-materia-nome">← Voltar aos baralhos</span></div>' +
+            '<div class="fc-materia-item' + (!this._favMateria ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarFavMateria(null)">' +
+                '<span class="fc-materia-nome">⭐ Todos os favoritos</span><span class="fc-materia-count">' + todos.length + '</span></div>' +
+            ordemMat.map(function(m) {
+                return '<div class="fc-materia-item' + (self._favMateria === m ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarFavMateria(\'' + esc(m) + '\')">' +
+                    '<span class="fc-materia-nome">' + self._escapar(m) + '</span>' +
+                    '<span style="display:flex; align-items:center; gap:4px;"><span class="fc-materia-count">' + porMateria[m].n + '</span><span style="color:var(--text-muted); font-size:12px;">›</span></span>' +
+                '</div>';
+            }).join('');
+
+        if (!this._favMateria) {
+            colDiv.innerHTML = '<div class="fc-vazio-col">' + (todos.length ? 'Escolha uma matéria para ver as divisões — ou estude todos os favoritos ao lado.' : 'Nenhum favorito ainda.') + '</div>';
+        } else {
+            let pm = porMateria[this._favMateria] || { n: 0, divs: {}, ordemDivs: [] };
+            colDiv.innerHTML =
+                '<div class="fc-divisao-item' + (!this._favDivisao ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarFavDivisao(null)"><span>Todas as divisões</span><span class="fc-divisao-count">' + pm.n + '</span></div>' +
+                pm.ordemDivs.map(function(d) {
+                    return '<div class="fc-divisao-item' + (self._favDivisao === d ? ' ativa' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.selecionarFavDivisao(\'' + esc(d) + '\')"><span>' + self._escapar(d) + '</span><span class="fc-divisao-count">' + pm.divs[d] + '</span></div>';
+                }).join('');
+        }
+
+        let recorte = this._favoritosDoRecorte();
+        let titulo = this._favDivisao ? this._favDivisao : (this._favMateria ? this._favMateria : 'Todos os favoritos');
+        let itens = recorte.map(function(f, i) {
+            return '<div class="fcnb-fav-item" onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudoFavoritos(' + i + ')" title="Estudar a partir deste card">' +
+                '<div class="fcnb-fav-item-corpo">' +
+                    '<div class="fcnb-fav-item-origem">' + self._escapar((self._favDivisao ? '' : (self._favMateria ? f.divisao : f.chave) + ' · ') + f.deckNome) + '</div>' +
+                    '<div class="fcnb-fav-item-frente">' + self._escapar(f.card.f) + '</div>' +
+                '</div>' +
+                '<button class="fcnb-fav-item-tirar" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.desfavoritar(\'' + esc(f.card.id) + '\')" title="Remover dos favoritos">⭐</button>' +
+            '</div>';
+        }).join('');
+        colCards.innerHTML =
+            '<div class="fcnb-toolbar"><span class="fcnb-fav-titulo">⭐ ' + this._escapar(titulo) + ' · ' + recorte.length + ' card' + (recorte.length === 1 ? '' : 's') + '</span>' +
+                '<button class="fcnb-fav-estudar" onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudoFavoritos(0)"' + (recorte.length ? '' : ' disabled') + '>▶ Estudar</button></div>' +
+            '<div class="fcnb-grade-scroll">' + (itens ? '<div class="fcnb-fav-lista">' + itens + '</div>' :
+                '<div class="fc-vazio-col">Nenhum favorito aqui.<br><br>Para favoritar, abra um baralho e clique em <strong>☆ Favoritar</strong> (ou tecla <strong>F</strong>) no card.</div>') + '</div>';
+        this._atualizarBotaoFavoritos();
+    },
+
+    desfavoritar: function(idCard) {
+        if (!this.estado[idCard]) return;
+        this._setEstado(idCard, { favorito: false });
+        this._renderFavoritos();
+    },
+
+    // Abre o visualizador padrão com os favoritos do recorte atual (Todos /
+    // L1 / L2), começando no card de índice `inicio`.
+    abrirEstudoFavoritos: function(inicio) {
+        let recorte = this._favoritosDoRecorte();
+        if (!recorte.length) return;
+        let cards = recorte.map(function(f) { return { id: f.card.id, f: f.card.f, b: f.card.b, _chave: f.chave, _deckNome: f.deckNome }; });
+        let titulo = '⭐ Favoritos — ' + (this._favDivisao ? this._favMateria + ' › ' + this._favDivisao : (this._favMateria || 'Todos'));
+        let ids = cards.map(function(c) { return c.id; });
+        this._est = { deckId: '__favoritos__', chave: '', virtual: { id: '__favoritos__', nome: titulo, cards: cards }, ordemOriginal: ids.slice(), filtro: 'todos', embaralhar: false, ordemBase: ids, ordem: [], idx: 0, virado: false };
+        this._recalcularOrdem(ids[inicio] || null);
+        document.getElementById('modal-fcnb-estudo').classList.add('open');
+        this._renderEstudo();
+    },
+
+    alternarFavorito: function() {
+        let card = this._cardAtual();
+        if (!card || !this._est) return;
+        let e = this.estado[card.id] || {};
+        let virou = !e.favorito;
+        let estavaVirado = this._est.virado;
+        this._setEstado(card.id, { favorito: virou });
+        this._est.virado = estavaVirado;
+        this._renderEstudo();
+        // Aviso de destino — mesmo espírito do "Questão enviada para Caderno ...".
+        let chave = card._chave || this._est.chave || '';
+        let aviso = document.getElementById('fcnb-est-aviso-fav');
+        if (aviso) {
+            aviso.textContent = virou ? ('⭐ Card enviado para Favoritos › ' + chave.split(' > ').join(' › ')) : 'Card removido dos Favoritos';
+            aviso.classList.add('visivel');
+            clearTimeout(this._timerAvisoFav);
+            this._timerAvisoFav = setTimeout(function() { aviso.classList.remove('visivel'); }, 2600);
+        }
+    },
+
     // ── + CRIAR FLASHCARD (texto colado) ──
     // Cada card vai pra L2 indicada no seu "T =" (matéria e divisão
     // comparadas sem acento/caixa com a taxonomia); um baralho por L2
@@ -12869,7 +13064,8 @@ window.FLASHCARDS_NB_RUNTIME = {
         // Mantém a entrada (zerada, com carimbo novo) em vez de apagar: sem
         // isso o merge de backup traria de volta o progresso antigo do outro lado.
         deck.cards.forEach(function(c) {
-            if (self.estado[c.id]) self.estado[c.id] = { ultimaClassificacao: null, realizada: false, atualizadoEm: agora };
+            // ⭐ Favorito não é "progresso": sobrevive ao reinício.
+            if (self.estado[c.id]) self.estado[c.id] = { ultimaClassificacao: null, realizada: false, favorito: !!self.estado[c.id].favorito, atualizadoEm: agora };
         });
         delete this.posicoes[deck.id];
     },
@@ -12919,6 +13115,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         document.getElementById('modal-fcnb-estudo').classList.remove('open');
         this._salvarPosicaoAgora();
         this._est = null;
+        if (this._modoFavoritos) { this.render(); return; }
         this._renderGradeInterna();
         // A contagem de progresso da grade/lateral pode ter mudado.
         if (document.getElementById('fcnb-col-materias')) this.render();
@@ -12926,6 +13123,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 
     _deckAtual: function() {
         if (!this._est) return null;
+        if (this._est.virtual) return this._est.virtual; // ⭐ Favoritos: {nome, cards} montado em abrirEstudoFavoritos
         let achado = this._acharDeck(this._est.deckId);
         return achado ? achado.deck : null;
     },
@@ -12969,7 +13167,9 @@ window.FLASHCARDS_NB_RUNTIME = {
         let self = this;
 
         document.getElementById('fcnb-est-titulo').textContent = deck.nome;
-        document.getElementById('fcnb-est-sub').textContent = est.chave;
+        // Favoritos misturam baralhos: o subtítulo mostra a origem do card atual.
+        let cardOrigem = est.virtual ? this._cardAtual() : null;
+        document.getElementById('fcnb-est-sub').textContent = cardOrigem ? (cardOrigem._chave + ' · ' + cardOrigem._deckNome) : est.chave;
         document.getElementById('fcnb-est-btn-embaralhar').classList.toggle('ativo', est.embaralhar);
 
         let resumo = this._resumoDeck(deck);
@@ -12985,7 +13185,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         let palco = document.getElementById('fcnb-est-palco');
         let card = this._cardAtual();
         let temCard = !!card;
-        ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada'].forEach(function(id) { document.getElementById(id).disabled = !temCard; });
+        ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada', 'fcnb-btn-favorito'].forEach(function(id) { document.getElementById(id).disabled = !temCard; });
         document.getElementById('fcnb-btn-anterior').disabled = !temCard || est.idx <= 0;
         document.getElementById('fcnb-btn-proximo').disabled = !temCard || est.idx >= est.ordem.length - 1;
 
@@ -12997,7 +13197,7 @@ window.FLASHCARDS_NB_RUNTIME = {
                 '<button class="fcnb-pill" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.definirFiltro(\'todos\')">Ver todos</button> ' +
                 (resumo.realizadas > 0 ? '<button class="fcnb-pill" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.reiniciarProgressoAtual()">↺ Reiniciar progresso</button>' : '') +
                 '</div>';
-            ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada'].forEach(function(id) { document.getElementById(id).classList.remove('ativa'); });
+            ['fcnb-btn-dificil', 'fcnb-btn-medio', 'fcnb-btn-facil', 'fcnb-btn-realizada', 'fcnb-btn-favorito'].forEach(function(id) { document.getElementById(id).classList.remove('ativa'); });
             return;
         }
 
@@ -13009,6 +13209,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         else if (e.ultimaClassificacao === 'medio') selos += '<span class="fcnb-selo medio">Média</span>';
         else if (e.ultimaClassificacao === 'facil') selos += '<span class="fcnb-selo facil">Fácil</span>';
         if (e.realizada) selos += '<span class="fcnb-selo realizada">✓ Realizado</span>';
+        if (e.favorito) selos += '<span class="fcnb-selo favorito">⭐ Favorito</span>';
 
         palco.innerHTML =
             '<div class="fcnb-carta' + (est.virado ? ' verso' : '') + '" onclick="window.FLASHCARDS_NB_RUNTIME.virar()">' +
@@ -13023,6 +13224,9 @@ window.FLASHCARDS_NB_RUNTIME = {
         let btnReal = document.getElementById('fcnb-btn-realizada');
         btnReal.classList.toggle('ativa', !!e.realizada);
         btnReal.textContent = e.realizada ? '✓ Realizada' : '○ Não realizada';
+        let btnFav = document.getElementById('fcnb-btn-favorito');
+        btnFav.classList.toggle('ativa', !!e.favorito);
+        btnFav.textContent = e.favorito ? '⭐ Favorito' : '☆ Favoritar';
     },
 
     virar: function() {
@@ -13057,7 +13261,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         if (!est || !deck) return;
         let atual = this._cardAtual();
         est.embaralhar = !est.embaralhar;
-        let ids = deck.cards.map(function(c) { return c.id; });
+        let ids = est.virtual ? est.ordemOriginal.slice() : deck.cards.map(function(c) { return c.id; });
         if (est.embaralhar) {
             for (let i = ids.length - 1; i > 0; i--) {
                 let j = Math.floor(Math.random() * (i + 1));
@@ -13126,7 +13330,7 @@ window.FLASHCARDS_NB_RUNTIME = {
     _salvarPosicaoAgora: function() {
         if (this._timerPosicao) { clearTimeout(this._timerPosicao); this._timerPosicao = null; }
         let card = this._cardAtual();
-        if (!this._est || !card) return;
+        if (!this._est || !card || this._est.virtual) return; // Favoritos não guardam posição
         this.posicoes[this._est.deckId] = card.id;
         this.salvar();
     },
@@ -13145,6 +13349,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         else if (ev.key === '2') R.marcarDificuldade('medio');
         else if (ev.key === '3') R.marcarDificuldade('facil');
         else if (ev.key === 'r' || ev.key === 'R') R.alternarRealizada();
+        else if (ev.key === 'f' || ev.key === 'F') R.alternarFavorito();
     }
 };
 document.addEventListener('keydown', function(ev) { window.FLASHCARDS_NB_RUNTIME._onKey(ev); });
