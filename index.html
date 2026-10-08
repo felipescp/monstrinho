@@ -29074,6 +29074,8 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-olho.nao-visualizado { background:#fee2e2; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-semaforo { flex-shrink:0; font-size:11px; line-height:1; }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item-sistematica { font-size:9.5px; font-weight:700; line-height:1.2; padding:2px 7px; border-radius:99px; background:#ecfeff; color:#0e7490; border:1px solid #a5f3fc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item-comentario { font-size:9.5px; font-weight:700; line-height:1.2; padding:2px 7px; border-radius:99px; background:#fff7ed; color:#9a3412; border:1px solid #fb923c; white-space:nowrap; flex-shrink:0; }
+    #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-comentario { background:rgba(255,255,255,0.18); color:#fff; border-color:rgba(255,255,255,0.45); }
     #modal-jurisprudencia-baralho .jur-baralho-lista-item.ativo .jur-baralho-lista-item-sistematica { background:rgba(255,255,255,0.18); color:#fff; border-color:rgba(255,255,255,0.45); }
     /* "Mostrar: Todos | Visualizados | Não visualizados" — mesmo padrão de
        #modal-esquemas-baralho. */
@@ -32795,7 +32797,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             // Sistemática (Recurso Repetitivo, Repercussão Geral, Súmula...)
             // logo após o semáforo — pedido explícito do usuário.
             let sistematicaHtml = item.sistematica ? '<span class="jur-baralho-lista-item-sistematica">' + self._escapar(item.sistematica) + '</span>' : '';
-            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + semaforoHtml + sistematicaHtml + '</div>';
+            // Tag "Comentário" quando há comentário pessoal (💭) nesse julgado.
+            let comentarioTagHtml = self._comentarioPessoal(item.id) ? '<span class="jur-baralho-lista-item-comentario" title="Tem comentário seu">Comentário</span>' : '';
+            let etiquetaHtml = '<div class="jur-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + semaforoHtml + sistematicaHtml + comentarioTagHtml + '</div>';
             return '<div class="jur-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="jur-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
