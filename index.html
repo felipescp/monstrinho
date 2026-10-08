@@ -28955,7 +28955,17 @@ window.carregarEsquemasOficiais = async function() {
        painel tem 1/3 da largura do conteúdo; o popup alarga pra caber). */
     #modal-jurisprudencia-ver .jur-ver-mdl { max-width:680px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; transition:max-width 0.15s ease; }
     #modal-jurisprudencia-ver.jur-painel-comentario-aberto .jur-ver-mdl { max-width:940px; height:88vh; }
-    #modal-jurisprudencia-ver .jur-ver-ferramentas { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-color); }
+    #modal-jurisprudencia-ver .jur-ver-mdl { position:relative; overflow:visible; }
+    #modal-jurisprudencia-ver .jur-ver-ferramentas { position:absolute; right:100%; top:24px; display:flex; flex-direction:column; align-items:center; gap:10px; padding:10px 6px; background:var(--bg-white); border-radius:12px 0 0 12px; box-shadow:-6px 4px 14px rgba(0,0,0,0.12); }
+    #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-canetas { flex-direction:column; padding:6px 4px; gap:8px; border-radius:99px; }
+    #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-canetas-rotulo { font-size:0; }
+    #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-canetas-rotulo::before { content:'🖍'; font-size:14px; }
+    #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-caneta.borracha { padding:0; width:24px; height:24px; border-radius:50%; font-size:11px; }
+    /* Tela estreita: sem espaço à esquerda do card — volta pra uma linha no topo. */
+    @media (max-width: 800px) {
+        #modal-jurisprudencia-ver .jur-ver-ferramentas { position:static; flex-direction:row; padding:0; box-shadow:none; background:none; }
+        #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-canetas { flex-direction:row; }
+    }
     #modal-jurisprudencia-ver .jur-ver-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
     #modal-jurisprudencia-ver .jur-ver-conteudo { flex:1; min-width:0; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
     #modal-jurisprudencia-ver.jur-painel-comentario-aberto .jur-ver-conteudo { flex:3 1 0; }
@@ -28991,6 +29001,13 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-ver .jur-ver-superado-input { font-size:11.5px; padding:6px 8px; border:1px solid #fbbf24; border-radius:4px; background:var(--bg-white); color:var(--text-main); outline:none; }
 </style>
     <div class="mdl jur-ver-mdl">
+        <!-- Ferramentas (pedido explícito do usuário): canetas de grifo + 💭
+             numa barra VERTICAL colada à lateral esquerda do card — sempre
+             visível, qualquer que seja o tamanho da ficha (não rola junto). -->
+        <div class="jur-ver-ferramentas">
+            <div class="jur-grifo-canetas" id="jur-ver-grifo-canetas"></div>
+            <span id="jur-ver-btn-comentario-wrap"></span>
+        </div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div class="fc-popup-header" id="jur-ver-titulo"></div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharVer()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; flex-shrink:0;" title="Fechar">✖</button>
@@ -29010,12 +29027,6 @@ window.carregarEsquemasOficiais = async function() {
         <div class="jur-ver-label" id="jur-ver-link-label" style="display:none;">Link</div>
         <div class="jur-ver-texto" id="jur-ver-link" style="display:none;"></div>
         <div id="jur-ver-meu-comentario"></div>
-        <!-- Ferramentas (pedido explícito do usuário): canetas de grifo + 💭,
-             mesmas do Leitor — no FIM da ficha, sem mexer na estrutura do card. -->
-        <div class="jur-ver-ferramentas">
-            <div class="jur-grifo-canetas" id="jur-ver-grifo-canetas"></div>
-            <span id="jur-ver-btn-comentario-wrap"></span>
-        </div>
         </div>
         <div id="jur-ver-comentario-painel"></div>
         </div>
