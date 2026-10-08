@@ -28434,6 +28434,7 @@ window.carregarEsquemasOficiais = async function() {
        opaco; os outros dois ficam esmaecidos (cor do próprio emoji, sem
        trocar de cor como as estrelas fariam). */
     #jurisprudencia-modal .jur-card-classificar { display:flex; gap:1px; flex-shrink:0; }
+    #jurisprudencia-modal .jur-card-comentario-ind { font-size:13px; line-height:1; margin-left:6px; padding:2px 5px; border-radius:6px; border:1px solid #fb923c; background:#fff7ed; cursor:pointer; }
     #jurisprudencia-modal .jur-classif-btn { font-size:14px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.35; }
     #jurisprudencia-modal .jur-classif-btn:hover, #jurisprudencia-modal .jur-classif-btn.ativa { opacity:1; }
 
@@ -30821,7 +30822,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         ];
         let classificarHtml = '<span class="jur-card-classificar">' + NIVEIS_CLASSIF.map(function(n) {
             return '<button class="jur-classif-btn' + (nivelAtual === n.chave ? ' ativa' : '') + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.marcarClassificacaoCard(\'' + idEsc + '\', \'' + n.chave + '\');" title="' + n.rotulo + '">' + n.icone + '</button>';
-        }).join('') + '</span>';
+        }).join('') +
+        // 💭 só aparece quando há comentário pessoal — clique abre o comentário.
+        (self._comentarioPessoal(item.id) ? '<button class="jur-card-comentario-ind" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirComentarioPessoal(\'' + idEsc + '\');" title="Ver/editar meu comentário">💭</button>' : '') +
+        '</span>';
 
         return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + (superado ? ' jur-card-superado' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
             origemHtml +
@@ -32204,6 +32208,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.salvar();
         if (this._baralhoState && document.getElementById('modal-jurisprudencia-baralho').classList.contains('open')) this.renderBaralho();
         if (this._abaAtiva && this._abaAtiva !== 'grade' && this._estadosAba[this._abaAtiva]) this._renderCorpoAba(this._abaAtiva);
+        // Grade (💭 nos cards só aparece com comentário).
+        let modalJur = document.getElementById('jurisprudencia-modal');
+        if (modalJur && modalJur.classList.contains('active') && (!this._abaAtiva || this._abaAtiva === 'grade')) this._renderGradeCards();
     },
 
     _htmlComentarioPessoalBloco: function(item) {
