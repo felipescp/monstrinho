@@ -28623,6 +28623,8 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .jur-meu-comentario-label, #modal-jurisprudencia-baralho .jur-meu-comentario-label { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     #jurisprudencia-modal .jur-meu-comentario-editar, #modal-jurisprudencia-baralho .jur-meu-comentario-editar { padding:3px 10px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; text-transform:none; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-meu-comentario-editar:hover, #modal-jurisprudencia-baralho .jur-meu-comentario-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-meu-comentario-botoes, #modal-jurisprudencia-baralho .jur-meu-comentario-botoes { display:flex; gap:6px; }
+    #jurisprudencia-modal .jur-meu-comentario-excluir:hover, #modal-jurisprudencia-baralho .jur-meu-comentario-excluir:hover { border-color:#dc2626 !important; color:#dc2626 !important; }
     #jurisprudencia-modal .jur-meu-comentario, #modal-jurisprudencia-baralho .jur-meu-comentario { font-size:12.5px; line-height:1.55; color:var(--text-main); background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:8px 10px; overflow-wrap:break-word; }
 </style>
     <div class="mdl">
@@ -31583,7 +31585,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!editando) {
             painel.innerHTML = cabecalho +
                 '<div class="jur-painel-com-exibicao">' + html + '</div>' +
-                '<div class="jur-painel-com-acoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.editarPainelComentario()">✏️ Editar</button></div>';
+                '<div class="jur-painel-com-acoes">' +
+                    '<button class="jur-meu-comentario-excluir" onclick="window.JURISPRUDENCIA_RUNTIME.excluirComentarioPessoal(\'' + String(card.id).replace(/'/g, "\\'") + '\')">✕ Excluir</button>' +
+                    '<button onclick="window.JURISPRUDENCIA_RUNTIME.editarPainelComentario()">✏️ Editar</button>' +
+                '</div>';
             return;
         }
         painel.innerHTML = cabecalho +
@@ -31598,6 +31603,20 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<button class="primario" onclick="window.JURISPRUDENCIA_RUNTIME.salvarPainelComentario()">Salvar</button>' +
             '</div>';
         document.getElementById('jur-painel-com-editor').innerHTML = rascunho !== undefined ? rascunho : html;
+    },
+
+    // "✕ Excluir" (ao lado de ✏️ Editar) — pede confirmação; mesma gravação
+    // de "apagar o texto e salvar" (lápide, sincroniza com a nuvem).
+    excluirComentarioPessoal: function(id) {
+        if (!this._comentarioPessoal(id)) return;
+        if (!confirm('Excluir seu comentário deste julgado?')) return;
+        if (this._painelComentarioIdAtual === id) {
+            this._limparEditorPainelComentario();
+            delete this._rascunhosComentario[id];
+            this._painelComentarioAberto = false;
+            this._painelComentarioEditando = false;
+        }
+        this.salvarComentarioPessoal(id, '', '');
     },
 
     editarPainelComentario: function() {
@@ -31669,7 +31688,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!html) return '';
         let idEsc = String(item.id).replace(/'/g, "\\'");
         return '<div class="jur-estudo-label jur-meu-comentario-label">💭 Meu comentário' +
-                '<button class="jur-meu-comentario-editar" onclick="window.JURISPRUDENCIA_RUNTIME.abrirComentarioPessoal(\'' + idEsc + '\')">✏️ Editar</button>' +
+                '<span class="jur-meu-comentario-botoes">' +
+                    '<button class="jur-meu-comentario-editar jur-meu-comentario-excluir" onclick="window.JURISPRUDENCIA_RUNTIME.excluirComentarioPessoal(\'' + idEsc + '\')">✕ Excluir</button>' +
+                    '<button class="jur-meu-comentario-editar" onclick="window.JURISPRUDENCIA_RUNTIME.abrirComentarioPessoal(\'' + idEsc + '\')">✏️ Editar</button>' +
+                '</span>' +
             '</div>' +
             '<div class="jur-meu-comentario">' + html + '</div>';
     },
