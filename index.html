@@ -13675,7 +13675,7 @@ window.carregarFlashcardsOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="prz-criar-cab"><span>+ Criar Prazos</span><button class="prz-criar-fechar" onclick="window.PRAZOS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="prz-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Prazo 01.</code> <code>ATO =</code> <code>PRAZO =</code> <code>INÍCIO =</code> <code>BASE =</code> <code>OBS =</code>. Linhas fora disso (BLOCO, T, "GERAR LOTE", "Lote concluído"…) são ignoradas. O diploma, o livro e o título vêm da BASE (ex.: <code>art. 1.003, § 5º, CPC</code>). Mesmo ATO + mesma BASE de um prazo que já existe não é duplicado.</div>
+        <div class="prz-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Prazo 01.</code> <code>ATO =</code> <code>PRAZO =</code> <code>INÍCIO =</code> <code>BASE =</code> <code>ALTERAÇÃO =</code> <code>OBS =</code>. Linhas fora disso (BLOCO, T, "GERAR LOTE", "Lote concluído"…) são ignoradas. O diploma, o livro e o título vêm da BASE (ex.: <code>art. 1.003, § 5º, CPC</code>). Mesmo ATO + mesma BASE de um prazo que já existe não é duplicado.</div>
         <textarea id="prz-criar-texto" placeholder="Cole os prazos aqui..." oninput="window.PRAZOS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PRAZOS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="prz-criar-status" id="prz-criar-status">Aguardando...</div>
         <div id="prz-criar-erro" class="fc-form-erro" style="display:none;"></div>
@@ -13756,7 +13756,7 @@ window.carregarFlashcardsOficiais = async function() {
 function parsearPrazosTexto(txt) {
     let linhas = String(txt || '').replace(/\r/g, '').split('\n');
     let RE_ITEM = /^(?:\*\*|#+\s*)?Prazo\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
-    let RE_CAMPO = /^(?:\*\*)?(T|ATO|PRAZO|IN[IÍ]CIO|BASE|OBS)(?:\*\*)?\s*[=:]\s*(.*)$/i;
+    let RE_CAMPO = /^(?:\*\*)?(T|ATO|PRAZO|IN[IÍ]CIO|BASE|OBS|ALTERA[ÇC][ÃA]O)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
     // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
@@ -13767,18 +13767,19 @@ function parsearPrazosTexto(txt) {
     function chaveCampo(c) {
         c = c.toUpperCase();
         if (c === 'INÍCIO' || c === 'INICIO') return 'inicio';
+        if (/^ALTERA/.test(c)) return 'alteracao';
         return { T: 't', ATO: 'ato', PRAZO: 'prazo', BASE: 'base', OBS: 'obs' }[c];
     }
     function limpar(v) { v = String(v || '').replace(RE_CITE, '').replace(/\s+/g, ' ').trim(); return (v === '—' || v === '-' || v === '–') ? '' : v; }
     function fechar() {
         if (atual) {
-            let it = { t: limpar(atual.t), ato: limpar(atual.ato), prazo: limpar(atual.prazo), inicio: limpar(atual.inicio), base: limpar(atual.base), obs: limpar(atual.obs), bloco: atual.bloco };
+            let it = { t: limpar(atual.t), ato: limpar(atual.ato), prazo: limpar(atual.prazo), inicio: limpar(atual.inicio), base: limpar(atual.base), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao), bloco: atual.bloco };
             if (it.ato && it.prazo) itens.push(it);
             else if (it.ato || it.prazo || it.t) incompletos++;
         }
         atual = null; campo = null;
     }
-    function novo() { fechar(); atual = { t: '', ato: '', prazo: '', inicio: '', base: '', obs: '', bloco: bloco }; }
+    function novo() { fechar(); atual = { t: '', ato: '', prazo: '', inicio: '', base: '', obs: '', alteracao: '', bloco: bloco }; }
     for (let i = 0; i < linhas.length; i++) {
         let l = linhas[i].trim();
         if (!l) continue;
@@ -13979,7 +13980,7 @@ window.PRAZOS_RUNTIME = {
     },
 
     _htmlValor: function(it, k) {
-        if (k === 'ato') return this._esc(it.ato) + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
+        if (k === 'ato') return this._esc(it.ato) + this._htmlNovo(it.alteracao) + (it.origem_oficial ? '<span class="prz-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
         let v = it[k];
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
     },
@@ -14076,7 +14077,8 @@ window.PRAZOS_RUNTIME = {
         { k: 'medio', rotulo: '🟡 Hesitei' },
         { k: 'facil', rotulo: '🟢 Acertei' },
         { k: 'favoritos', rotulo: '⭐ Favoritos' },
-        { k: 'com_erros', rotulo: '⚠️ Já errados' }
+        { k: 'com_erros', rotulo: '⚠️ Já errados' },
+        { k: 'novos', rotulo: '🆕 Novos (últimos 2 anos)' }
     ],
 
     _passaFiltroTreino: function(id, f) {
@@ -14085,6 +14087,7 @@ window.PRAZOS_RUNTIME = {
         if (f === 'nao_avaliados') return !e.ultimaClassificacao;
         if (f === 'favoritos') return !!e.favorito;
         if (f === 'com_erros') return (e.erros || 0) > 0 || Object.keys(e.camposErrados || {}).length > 0;
+        if (f === 'novos') { let p = this._acharItem(id); return !!p && this._temNovo(p.item); }
         return e.ultimaClassificacao === f;
     },
 
@@ -14186,7 +14189,7 @@ window.PRAZOS_RUNTIME = {
         let prazoRevelado = !tr.esconder.prazo || tr.revelados[it.id + '|prazo'];
         palco.innerHTML = '<div class="prt-carta">' +
             '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
-            '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
+            '<div class="prt-ato">' + this._esc(it.ato) + this._htmlNovo(it.alteracao) + '</div>' +
             campo('prazo', 'Prazo', 'prazo') +
             campo('inicio', 'Início') +
             campo('base', 'Base legal') +
@@ -14321,7 +14324,7 @@ window.PRAZOS_RUNTIME = {
             if (ex) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
             delete self.excluidos[it._id];
             let ch = self._clsTexto(it.base).dip;
-            self._mesclarItens(ch, [{ id: it._id, ato: it.ato, prazo: it.prazo, inicio: it.inicio, base: it.base, obs: it.obs, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
+            self._mesclarItens(ch, [{ id: it._id, ato: it.ato, prazo: it.prazo, inicio: it.inicio, base: it.base, obs: it.obs, alteracao: it.alteracao, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
             if (!primeiro) primeiro = ch;
             total++;
         });
@@ -14540,7 +14543,7 @@ window.carregarPrazosOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="pen-criar-cab"><span>+ Criar Penas</span><button class="pen-criar-fechar" onclick="window.PENAS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
+        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>ALTERAÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
         <textarea id="pen-criar-texto" placeholder="Cole as penas aqui..." oninput="window.PENAS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PENAS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="pen-criar-status" id="pen-criar-status">Aguardando...</div>
         <div id="pen-criar-erro" class="fc-form-erro" style="display:none;"></div>
@@ -14622,7 +14625,7 @@ window.carregarPrazosOficiais = async function() {
 function parsearPenasTexto(txt) {
     let linhas = String(txt || '').replace(/\r/g, '').split('\n');
     let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo|Nota)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
-    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA)(?:\*\*)?\s*[=:]\s*(.*)$/i;
+    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA|ALTERA[ÇC][ÃA]O)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
     // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
@@ -14642,13 +14645,14 @@ function parsearPenasTexto(txt) {
         if (/^DIMINUI|^MINORANTE|^PRIVILEGIO/.test(c)) return 'diminuicoes';
         if (/^ACAO/.test(c)) return 'acao';
         if (c === 'NOTA') return 'nota';
+        if (/^ALTERA/.test(c)) return 'alteracao';
         return 'obs';
     }
     function vazio(v) { v = String(v || '').trim(); return !v || v === '—' || v === '-' || v === '–' || /^(n[ãa]o h[áa]|nenhuma?|inexistente|n\/a)\.?$/i.test(v); }
     function limpar(v) { v = String(v || '').replace(RE_CITE, '').replace(/\s+/g, ' ').trim(); return vazio(v) ? '' : v; }
     function fechar() {
         if (atual) {
-            let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs) };
+            let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao) };
             Object.keys(LISTAS).forEach(function(k) { it[k] = atual[k].map(limpar).filter(Boolean); });
             let nota = limpar(atual.nota);
             // "Nota NN." (ART + NOTA, sem CRIME) = nota do capítulo.
@@ -14658,7 +14662,7 @@ function parsearPenasTexto(txt) {
         }
         atual = null; campo = null;
     }
-    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', nota: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
+    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', nota: '', alteracao: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
     for (let i = 0; i < linhas.length; i++) {
         let l = linhas[i].trim();
         if (!l) continue;
@@ -14881,11 +14885,11 @@ window.PENAS_RUNTIME = {
     _htmlLista: function(arr) {
         let self = this;
         if (!arr || !arr.length) return '<span style="color:var(--text-muted);">—</span>';
-        if (arr.length === 1) return this._esc(arr[0]);
-        return '<ul class="pen-lista">' + arr.map(function(x) { return '<li>' + self._esc(x) + '</li>'; }).join('') + '</ul>';
+        if (arr.length === 1) return this._htmlLinhaNovo(arr[0]);
+        return '<ul class="pen-lista">' + arr.map(function(x) { return '<li>' + self._htmlLinhaNovo(x) + '</li>'; }).join('') + '</ul>';
     },
     _htmlValor: function(it, k) {
-        if (k === 'crime') return this._esc(it.crime) + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
+        if (k === 'crime') return this._esc(it.crime) + this._htmlNovo(it.alteracao, 'Pena criada ou alterada') + (it.art ? '<span class="pen-art">' + this._esc(it.art) + '</span>' : '') + (it.obs ? '<span class="pen-obs">' + this._esc(it.obs) + '</span>' : '') + (it.origem_oficial ? '<span class="pen-selo-oficial">(Oficial)</span>' : '') + this._htmlComentarioBloco(it.id);
         if (k === 'qualificadas' || k === 'aumentos' || k === 'diminuicoes') return this._htmlLista(it[k]);
         if (k === 'indicadores') return this._htmlIndicadores(it);
         let v = it[k];
@@ -14959,7 +14963,8 @@ window.PENAS_RUNTIME = {
         { k: 'medio', rotulo: '🟡 Hesitei' },
         { k: 'facil', rotulo: '🟢 Acertei' },
         { k: 'favoritos', rotulo: '⭐ Favoritos' },
-        { k: 'com_erros', rotulo: '⚠️ Já errados' }
+        { k: 'com_erros', rotulo: '⚠️ Já errados' },
+        { k: 'novos', rotulo: '🆕 Novos (últimos 2 anos)' }
     ],
     _passaFiltroTreino: function(id, f) {
         let e = this.estado[id] || {};
@@ -14967,6 +14972,7 @@ window.PENAS_RUNTIME = {
         if (f === 'nao_avaliados') return !e.ultimaClassificacao;
         if (f === 'favoritos') return !!e.favorito;
         if (f === 'com_erros') return (e.erros || 0) > 0 || Object.keys(e.camposErrados || {}).length > 0;
+        if (f === 'novos') { let p = this._acharItem(id); return !!p && this._temNovo(p.item); }
         return e.ultimaClassificacao === f;
     },
     configTreino: function(campo, valor) { this._treinoCfg[campo] = valor; this._renderPainelTreino(); },
@@ -15055,7 +15061,7 @@ window.PENAS_RUNTIME = {
         let penaRevelada = tr.revelados[it.id + '|pena'];
         palco.innerHTML = '<div class="pnt-carta">' +
             '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
-            '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
+            '<div class="pnt-ato">' + this._esc(it.crime) + this._htmlNovo(it.alteracao, 'Pena criada ou alterada') + '</div>' +
             (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
             this.CAMPOS_TREINO.map(campo).join('') +
             (penaRevelada ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor pnt-revelado">' + this._htmlIndicadores(it) + '</span></div>' : '') +
@@ -15172,7 +15178,7 @@ window.PENAS_RUNTIME = {
             if (ex) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
             delete self.excluidos[it._id];
             let ch = self._clsTexto(it.art).dip;
-            self._mesclarItens(ch, [{ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
+            self._mesclarItens(ch, [{ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, alteracao: it.alteracao, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
             if (!primeiro) primeiro = ch;
             total++;
         });
@@ -15682,11 +15688,11 @@ window.MEMORIZACAO_MIXIN = {
                 .forEach(function(n) { out.push(fmtPrazo(n, null, un, a.contagem)); });
             return out.concat(mesmaUn.slice(1));
         },
-        _rotuloItem: function(item) { return this._esc(item.ato) + (item.base ? '<small>' + this._esc(item.base) + '</small>' : ''); },
+        _rotuloItem: function(item) { return this._esc(item.ato) + this._htmlNovo(item.alteracao) + (item.base ? '<small>' + this._esc(item.base) + '</small>' : ''); },
         _htmlCabecalhoJogo: function(p) {
             let it = p.item;
             return '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
-                '<div class="prt-ato">' + this._esc(it.ato) + '</div>' +
+                '<div class="prt-ato">' + this._esc(it.ato) + this._htmlNovo(it.alteracao) + '</div>' +
                 (it.base ? '<div class="prt-campo"><span class="prt-rotulo">Base legal</span><span class="prt-valor">' + this._esc(it.base) + '</span></div>' : '') +
                 (it.inicio ? '<div class="prt-campo"><span class="prt-rotulo">Início</span><span class="prt-valor">' + this._esc(it.inicio) + '</span></div>' : '');
         }
@@ -15737,11 +15743,11 @@ window.MEMORIZACAO_MIXIN = {
             sint = this._embaralhar(sint);
             return sint.slice(0, 2).concat(pool.slice(0, 2), sint.slice(2), pool.slice(2));
         },
-        _rotuloItem: function(item) { return this._esc(item.crime) + (item.art ? '<small>' + this._esc(item.art) + '</small>' : ''); },
+        _rotuloItem: function(item) { return this._esc(item.crime) + this._htmlNovo(item.alteracao, 'Pena criada ou alterada') + (item.art ? '<small>' + this._esc(item.art) + '</small>' : ''); },
         _htmlCabecalhoJogo: function(p) {
             let it = p.item;
             return '<div class="memo-carta-topo"><div class="pnt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
-                '<div class="pnt-ato">' + this._esc(it.crime) + '</div>' +
+                '<div class="pnt-ato">' + this._esc(it.crime) + this._htmlNovo(it.alteracao, 'Pena criada ou alterada') + '</div>' +
                 (it.art ? '<div class="pnt-valor" style="font-weight:700; color:var(--app-primary);">' + this._esc(it.art) + '</div>' : '') +
                 (this._treino.feedback ? '<div class="pnt-campo"><span class="pnt-rotulo">Indicadores</span><span class="pnt-valor">' + this._htmlIndicadores(it) + '</span></div>' : '');
         }
@@ -15763,6 +15769,7 @@ window.MEMORIZACAO_MIXIN = {
     .memo-nota-cap .memo-nota-del { background:none; border:none; cursor:pointer; font-size:11px; opacity:0.55; padding:0 2px; }
     .memo-nota-cap .memo-nota-del:hover { opacity:1; }
     .fc-divisao-item.memo-vazio { opacity:0.45; }
+    .memo-novo { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:4px; background:#dc2626; color:#fff; font-size:9px; font-weight:900; letter-spacing:0.04em; vertical-align:middle; text-transform:uppercase; cursor:help; }
 </style>
 <script>
 window.ESTRUTURA_MEMO = (function() {
@@ -16030,6 +16037,35 @@ window.ESTRUTURA_MIXIN = {
     },
     _cls: function(item) { return this._clsTexto(this._artDe(item)); },
     _nomeDiploma: function(id) { return ESTRUTURA_MEMO.nome(this._secao, id); },
+    // ── [NOVO]: pena, prazo ou causa de aumento/diminuição criada ou alterada
+    // nos últimos 2 anos. O Gem informa a lei (campo ALTERAÇÃO do item; nas
+    // linhas de QUALIFICADA/AUMENTO/DIMINUIÇÃO, "[Lei 14.994/2024]" no fim) e
+    // o app compara o ano com a data de hoje — a tag expira sozinha.
+    _anoLei: function(t) {
+        t = String(t || '');
+        let anos = (t.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number);
+        let m2 = t.match(/\/(\d{2})(?!\d)/);
+        if (!anos.length && m2) { let a = Number(m2[1]), atual = new Date().getFullYear() % 100; anos.push(a <= atual + 1 ? 2000 + a : 1900 + a); }
+        return anos.length ? Math.max.apply(null, anos) : null;
+    },
+    _leiRecente: function(t) { let a = this._anoLei(t); return a != null && a >= new Date().getFullYear() - 2; },
+    _htmlNovo: function(lei, oQue) {
+        if (!this._leiRecente(lei)) return '';
+        return '<span class="memo-novo" title="' + this._esc((oQue || 'Criado ou alterado') + ' pela ' + String(lei).replace(/^\s*(?:pela|por)\s+/i, '')) + '">Novo</span>';
+    },
+    _RE_LEI_LINHA: /\s*\[((?:Lei|LC|Lei Complementar|Decreto|EC|Emenda)[^\]]*)\]\s*$/i,
+    _htmlLinhaNovo: function(linha) {
+        let m = String(linha || '').match(this._RE_LEI_LINHA);
+        if (!m) return this._esc(linha);
+        return this._esc(String(linha).slice(0, m.index)) + this._htmlNovo(m[1], 'Hipótese incluída ou alterada');
+    },
+    _temNovo: function(item) {
+        let self = this;
+        if (this._leiRecente(item.alteracao)) return true;
+        return ['qualificadas', 'aumentos', 'diminuicoes'].some(function(k) {
+            return (item[k] || []).some(function(l) { let m = String(l).match(self._RE_LEI_LINHA); return m && self._leiRecente(m[1]); });
+        });
+    },
     _origemItem: function(item) { let c = this._cls(item); return [c.dipNome, c.nivel, c.grupo].filter(Boolean).join(' › '); },
 
     // Itens válidos (sem notas, sem excluídos, sem repetição de id).
@@ -16239,13 +16275,13 @@ Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'prz', _comNotas: false,
     _artDe: function(item) { return item.base || ''; },
     _textoBusca: function(i) { return [i.ato, i.prazo, i.inicio, i.base, i.obs].join(' '); },
-    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '' }; }
+    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '' }; }
 });
 Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'pen', _comNotas: true,
     _artDe: function(item) { return item.art || ''; },
     _textoBusca: function(i) { return [i.crime, i.art, i.pena, i.acao, i.obs].concat(i.qualificadas || [], i.aumentos || [], i.diminuicoes || []).join(' '); },
-    _itemExportado: function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '' }; }
+    _itemExportado: function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '', alteracao: i.alteracao || '' }; }
 });
 [window.PRAZOS_RUNTIME, window.PENAS_RUNTIME].forEach(function(R) { if (R._bootstrapped) R._reorganizar(); });
 </script>
