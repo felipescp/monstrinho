@@ -4244,11 +4244,12 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
-                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.comentariosPessoais) ──
+                    // ── CASO ESPECIAL: JURISPRUDÊNCIA (jurisprudencia_runtime.comentariosPessoais / .grifos) ──
+                    // (grifos: marca-texto por ficha {id → {campos, atualizadoEm}}, mesma política.)
                     // Comentário pessoal (💭) por ficha {id → {html, atualizadoEm}}.
                     // Mesma política de revisaoJurisprudencia: o mais recente vence
                     // (html '' é lápide de comentário apagado, também sincroniza).
-                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && subChave === 'comentariosPessoais' &&
+                    if (chaveSemPrefixoMerge === 'jurisprudencia_runtime' && (subChave === 'comentariosPessoais' || subChave === 'grifos') &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
                         if (!objLocal[subChave] || typeof objLocal[subChave] !== 'object' || Array.isArray(objLocal[subChave])) {
@@ -28598,6 +28599,16 @@ window.carregarEsquemasOficiais = async function() {
     /* 💭 comentário pessoal — botão herda .bcad.bcom (mesmo do Simulado
        Ativo: sem cor = sem comentário, laranja = com comentário). */
     #jurisprudencia-modal .jur-btn-comentario, #modal-jurisprudencia-baralho .jur-btn-comentario { font-size:14px; cursor:pointer; }
+    /* Marca-texto (3 cores) — texto escuro fixo pra ler bem também no modo noturno. */
+    .jur-grifo { color:#1e293b; border-radius:2px; padding:0 1px; }
+    .jur-grifo-amarelo { background:#fde047; }
+    .jur-grifo-verde { background:#86efac; }
+    .jur-grifo-rosa { background:#f9a8d4; }
+    #jur-grifo-popup { position:fixed; z-index:10100; display:none; align-items:center; gap:6px; padding:6px 8px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:99px; box-shadow:0 6px 18px rgba(0,0,0,0.18); }
+    #jur-grifo-popup .jur-grifo-popup-rotulo { font-size:13px; }
+    #jur-grifo-popup .jur-grifo-popup-cor { width:22px; height:22px; border-radius:50%; border:2px solid rgba(0,0,0,0.12); cursor:pointer; padding:0; }
+    #jur-grifo-popup .jur-grifo-popup-cor:hover { transform:scale(1.15); }
+    #jur-grifo-popup .jur-grifo-popup-borracha { background:none; border:1px solid var(--border-color); border-radius:99px; padding:2px 8px; font-size:12px; cursor:pointer; color:var(--text-main); }
     #jurisprudencia-modal .jur-meu-comentario-label, #modal-jurisprudencia-baralho .jur-meu-comentario-label { display:flex; align-items:center; justify-content:space-between; gap:8px; }
     #jurisprudencia-modal .jur-meu-comentario-editar, #modal-jurisprudencia-baralho .jur-meu-comentario-editar { padding:3px 10px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:700; text-transform:none; color:var(--text-main); cursor:pointer; }
     #jurisprudencia-modal .jur-meu-comentario-editar:hover, #modal-jurisprudencia-baralho .jur-meu-comentario-editar:hover { border-color:var(--app-primary); color:var(--app-primary); }
@@ -29073,6 +29084,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         // aparelhos; ver merge de jurisprudencia_runtime.comentariosPessoais).
         // Não confundir com item.comentario (campo da própria ficha).
         this.comentariosPessoais = (bruto && typeof bruto.comentariosPessoais === 'object' && !Array.isArray(bruto.comentariosPessoais)) ? bruto.comentariosPessoais : {};
+        // Marca-texto por ficha (ver _htmlCampoGrifavel).
+        this.grifos = (bruto && typeof bruto.grifos === 'object' && !Array.isArray(bruto.grifos)) ? bruto.grifos : {};
         // Fichas pessoais já salvas com sufixo "— Info N" na Sistemática.
         Object.keys(this.fichas).forEach(function(chave) {
             (this.fichas[chave] || []).forEach(jurNormalizarSistematicaFicha);
@@ -29108,7 +29121,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let apenasPessoais = (self.fichas[chave] || []).filter(function(f) { return !f.origem_oficial; });
                 if (apenasPessoais.length > 0) fichasPessoais[chave] = apenasPessoais;
             });
-            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorFicha: this.etiquetaPorFicha, coresCustomizadas: this.coresCustomizadas, comentariosPessoais: this.comentariosPessoais || {} }));
+            window.salvarJurisprudenciaBruto(JSON.stringify({ fichas: fichasPessoais, ocultos: this.ocultos, revisaoJurisprudencia: this.revisaoJurisprudencia, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorFicha: this.etiquetaPorFicha, coresCustomizadas: this.coresCustomizadas, comentariosPessoais: this.comentariosPessoais || {}, grifos: this.grifos || {} }));
             return true;
         } catch (e) {
             console.warn('[JURISPRUDÊNCIA] Falha ao salvar:', e);
@@ -31649,6 +31662,126 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="jur-meu-comentario">' + html + '</div>';
     },
 
+    // ── MARCA-TEXTO (grifo) NOS CARDS — pedido explícito do usuário ──
+    // Grifos ficam em this.grifos {id: {atualizadoEm, campos: {campo:
+    // [{ini, fim, cor}]}}}, por OFFSET de caractere no texto puro do campo
+    // (tese/resumo/comentario/conexoes) — o texto é exibido escapado e em
+    // pre-wrap, então o offset do textContent bate 1:1 com a string. Grifa
+    // só no Leitor (seleciona o texto → popup com 3 cores + borracha); nas
+    // abas Crítico/Importante/Regular o grifo é só exibido. Sincroniza com
+    // a nuvem por timestamp (merge de jurisprudencia_runtime.grifos).
+    _CORES_GRIFO: ['amarelo', 'verde', 'rosa'],
+
+    _htmlCampoGrifavel: function(item, campo, texto) {
+        let self = this;
+        texto = String(texto);
+        let g = this.grifos && this.grifos[item.id];
+        let faixas = (g && g.campos && Array.isArray(g.campos[campo])) ? g.campos[campo] : [];
+        let html = '';
+        let pos = 0;
+        faixas.slice().sort(function(a, b) { return a.ini - b.ini; }).forEach(function(f) {
+            let ini = Math.max(pos, Math.min(f.ini, texto.length));
+            let fim = Math.min(f.fim, texto.length);
+            if (fim <= ini || self._CORES_GRIFO.indexOf(f.cor) === -1) return;
+            html += self._escapar(texto.slice(pos, ini)) + '<mark class="jur-grifo jur-grifo-' + f.cor + '">' + self._escapar(texto.slice(ini, fim)) + '</mark>';
+            pos = fim;
+        });
+        html += this._escapar(texto.slice(pos));
+        return '<div class="jur-estudo-texto" data-grifo-id="' + this._escapar(String(item.id)) + '" data-grifo-campo="' + campo + '">' + html + '</div>';
+    },
+
+    // Aplica cor (ou null = borracha) em [ini, fim) — recorta o que já
+    // havia no trecho e junta vizinhos da mesma cor.
+    _aplicarGrifo: function(id, campo, ini, fim, cor) {
+        if (!(fim > ini)) return;
+        if (!this.grifos) this.grifos = {};
+        let g = this.grifos[id] || { campos: {} };
+        if (!g.campos) g.campos = {};
+        let novas = [];
+        (g.campos[campo] || []).forEach(function(f) {
+            if (f.fim <= ini || f.ini >= fim) { novas.push(f); return; }
+            if (f.ini < ini) novas.push({ ini: f.ini, fim: ini, cor: f.cor });
+            if (f.fim > fim) novas.push({ ini: fim, fim: f.fim, cor: f.cor });
+        });
+        if (cor) novas.push({ ini: ini, fim: fim, cor: cor });
+        novas.sort(function(a, b) { return a.ini - b.ini; });
+        let juntas = [];
+        novas.forEach(function(f) {
+            let ult = juntas[juntas.length - 1];
+            if (ult && ult.cor === f.cor && ult.fim >= f.ini) ult.fim = Math.max(ult.fim, f.fim);
+            else juntas.push({ ini: f.ini, fim: f.fim, cor: f.cor });
+        });
+        if (juntas.length) g.campos[campo] = juntas; else delete g.campos[campo];
+        g.atualizadoEm = Date.now(); // vazio continua como lápide (apagar também sincroniza)
+        this.grifos[id] = g;
+        this.salvar();
+    },
+
+    // Offset de (node, offset) dentro do texto puro de el.
+    _offsetNoCampo: function(el, node, offset) {
+        let r = document.createRange();
+        r.selectNodeContents(el);
+        r.setEnd(node, offset);
+        return r.toString().length;
+    },
+
+    _selecaoGrifavel: function() {
+        let sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+        let range = sel.getRangeAt(0);
+        let el = function(n) { n = n && (n.nodeType === 1 ? n : n.parentNode); return n && n.closest ? n.closest('#modal-jurisprudencia-baralho [data-grifo-campo]') : null; };
+        let campoEl = el(range.startContainer);
+        if (!campoEl || campoEl !== el(range.endContainer)) return null;
+        let ini = this._offsetNoCampo(campoEl, range.startContainer, range.startOffset);
+        let fim = this._offsetNoCampo(campoEl, range.endContainer, range.endOffset);
+        if (fim <= ini) return null;
+        return { id: campoEl.getAttribute('data-grifo-id'), campo: campoEl.getAttribute('data-grifo-campo'), ini: ini, fim: fim, rect: range.getBoundingClientRect() };
+    },
+
+    _popupGrifoEl: function() {
+        let pop = document.getElementById('jur-grifo-popup');
+        if (pop) return pop;
+        pop = document.createElement('div');
+        pop.id = 'jur-grifo-popup';
+        pop.innerHTML = '<span class="jur-grifo-popup-rotulo">🖍</span>' +
+            this._CORES_GRIFO.map(function(c) {
+                return '<button class="jur-grifo-popup-cor jur-grifo-' + c + '" data-cor="' + c + '" title="Grifar (' + c + ')"></button>';
+            }).join('') +
+            '<button class="jur-grifo-popup-borracha" data-cor="" title="Apagar grifo do trecho">⌫</button>';
+        // mousedown com preventDefault: clicar no popup não desfaz a seleção.
+        pop.addEventListener('mousedown', function(e) { e.preventDefault(); });
+        let self = this;
+        pop.addEventListener('click', function(e) {
+            let b = e.target.closest('button');
+            if (!b) return;
+            let sel = self._selecaoGrifavel();
+            if (sel) self._aplicarGrifo(sel.id, sel.campo, sel.ini, sel.fim, b.getAttribute('data-cor') || null);
+            let s = window.getSelection(); if (s) s.removeAllRanges();
+            self._esconderPopupGrifo();
+            self.renderBaralho();
+        });
+        document.getElementById('modal-jurisprudencia-baralho').appendChild(pop);
+        return pop;
+    },
+
+    _esconderPopupGrifo: function() {
+        let pop = document.getElementById('jur-grifo-popup');
+        if (pop) pop.style.display = 'none';
+    },
+
+    _aoSoltarSelecaoLeitor: function() {
+        let sel = this._selecaoGrifavel();
+        if (!sel) { this._esconderPopupGrifo(); return; }
+        let pop = this._popupGrifoEl();
+        pop.style.display = 'flex';
+        let w = pop.offsetWidth, h = pop.offsetHeight;
+        let left = Math.max(8, Math.min(window.innerWidth - w - 8, sel.rect.left + sel.rect.width / 2 - w / 2));
+        let top = sel.rect.top - h - 8;
+        if (top < 8) top = sel.rect.bottom + 8;
+        pop.style.left = left + 'px';
+        pop.style.top = top + 'px';
+    },
+
     _htmlCartaoFichaEstudo: function(item, opts) {
         opts = opts || {};
         let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
@@ -31656,11 +31789,11 @@ window.JURISPRUDENCIA_RUNTIME = {
             '<div class="jur-estudo-titulo">' + this._escapar(this._tituloComTema(item)) + '</div>' +
             '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
             '<div class="jur-estudo-label">Tese Fixada / Decisão</div>' +
-            '<div class="jur-estudo-texto">' + this._escapar(item.tese || '—') + '</div>' +
+            this._htmlCampoGrifavel(item, 'tese', item.tese || '—') +
             '<div class="jur-estudo-label">Resumo do Caso</div>' +
-            '<div class="jur-estudo-texto">' + this._escapar(item.resumo || '—') + '</div>' +
-            (item.comentario ? '<div class="jur-estudo-label">Comentário</div><div class="jur-estudo-texto">' + this._escapar(item.comentario) + '</div>' : '') +
-            (item.conexoes ? '<div class="jur-estudo-label">Conexões</div><div class="jur-estudo-texto">' + this._escapar(item.conexoes) + '</div>' : '') +
+            this._htmlCampoGrifavel(item, 'resumo', item.resumo || '—') +
+            (item.comentario ? '<div class="jur-estudo-label">Comentário</div>' + this._htmlCampoGrifavel(item, 'comentario', item.comentario) : '') +
+            (item.conexoes ? '<div class="jur-estudo-label">Conexões</div>' + this._htmlCampoGrifavel(item, 'conexoes', item.conexoes) : '') +
             (item.link ? '<div class="jur-estudo-label">Link</div><div class="jur-estudo-texto"><a href="' + this._escapar(item.link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--app-primary); word-break:break-all;">' + this._escapar(item.link) + '</a></div>' : '') +
             (opts.semComentarioPessoal ? '' : this._htmlComentarioPessoalBloco(item)) +
         '</div>';
@@ -31815,6 +31948,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._painelComentarioEditando = false;
         this._painelComentarioIdAtual = null;
         this._rascunhosComentario = {};
+        if (!this._listenersGrifoInstalados) {
+            this._listenersGrifoInstalados = true;
+            let self = this;
+            let modalGrifo = document.getElementById('modal-jurisprudencia-baralho');
+            let aoSoltar = function() { setTimeout(function() { self._aoSoltarSelecaoLeitor(); }, 0); };
+            modalGrifo.addEventListener('mouseup', aoSoltar);
+            modalGrifo.addEventListener('touchend', aoSoltar);
+            modalGrifo.addEventListener('keyup', function(e) { if (e.shiftKey) aoSoltar(); });
+            modalGrifo.addEventListener('scroll', function() { self._esconderPopupGrifo(); }, true);
+        }
         let modalEl = document.getElementById('modal-jurisprudencia-baralho');
         modalEl.classList.add('jur-baralho-maximizado');
         modalEl.style.setProperty('--baralho-escala', this._baralhoEscala);
@@ -31826,6 +31969,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     fecharBaralho: function() {
+        this._esconderPopupGrifo();
         document.getElementById('modal-jurisprudencia-baralho').classList.remove('open');
         document.getElementById('modal-jurisprudencia-baralho').classList.remove('jur-baralho-maximizado');
         this._baralhoMaximizado = false;
@@ -32118,6 +32262,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     renderBaralho: function() {
         let s = this._baralhoState;
         if (!s) return;
+        this._esconderPopupGrifo();
         let corpo = document.getElementById('jur-baralho-corpo');
         let acoesEl = document.getElementById('jur-baralho-acoes');
         let posEl = document.getElementById('jur-baralho-posicao');
