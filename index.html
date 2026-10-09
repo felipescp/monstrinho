@@ -36817,6 +36817,8 @@ window.LEGISLACAO = (function() {
               re: /\bCPP\b|C[óo]digo\s+de\s+Processo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*3\.?689/g },
         CDC: { nome: 'CDC', arquivo: 'dados/legislacao/cdc.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm',
               re: /\bCDC\b|C[óo]digo\s+de\s+Defesa\s+do\s+Consumidor|Lei\s*n?[º°o.]*\s*8\.?078/g },
+        CTN: { nome: 'CTN', arquivo: 'dados/legislacao/ctn.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l5172compilado.htm',
+              re: /\bCTN\b|C[óo]digo\s+Tribut[áa]rio\s+Nacional|Lei\s*n?[º°o.]*\s*5\.?172/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36901,6 +36903,11 @@ window.LEGISLACAO = (function() {
         usa(a);
         if (p[2]) {
             let par = a.par && a.par[p[2]];
+            // Parágrafo único que virou §§ (ex.: CTN 174, LC 236/2026): mostra o § 1º e avisa.
+            if (!par && p[2] === 'pu' && a.par && a.par['1']) {
+                html += '<div class="lei-aviso">⚠️ O artigo não tem mais parágrafo único: hoje ele se divide em parágrafos. Abaixo, o § 1º.</div>';
+                p = p.slice(); p[2] = '1'; par = a.par['1'];
+            }
             if (!par) html += '<div class="lei-disp">' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2]) + ' não localizado.</div>';
             else { html += '<div class="lei-disp"><b>' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2] + 'º') + (par.rubrica ? ' (' + esc(par.rubrica) + ')' : '') + ':</b> ' + txt(par) + '</div>'; usa(par); alvo = par; }
         }
