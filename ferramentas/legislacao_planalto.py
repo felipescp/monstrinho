@@ -169,7 +169,7 @@ def converter(md, inicio=None, fim=None):
             seg.setdefault('inc', {})[m.group(1)] = inc
             rubrica = None
             continue
-        m = re.match(r'^Pena\s*[-–—:]\s*(.*)$', l, re.I)
+        m = re.match(r'^Penas?\s*[-–—:]\s*(.*)$', l, re.I)
         if m:
             texto, alt, rev = separa_anotacoes(m.group(1))
             seg['pena'] = (seg.get('pena', '') + ' / ' if seg.get('pena') else '') + texto
