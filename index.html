@@ -752,6 +752,14 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
     border: 5px solid transparent;
 }
 #glos-tooltip-flutuante.acima::after { top: 100%; border-top-color: #1e293b; }
+/* Balão do julgado citado nas Conexões (Jurisprudência). */
+#glos-tooltip-flutuante.jur-ref-balao { max-width: min(480px, 92vw); font-size: 12px; padding: 10px 12px; }
+#glos-tooltip-flutuante .jur-ref-cab { font-weight: 800; color: #fde68a; font-size: 11px; margin-bottom: 4px; }
+#glos-tooltip-flutuante .jur-ref-rot { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #93c5fd; margin-right: 4px; }
+#glos-tooltip-flutuante .jur-ref-sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 8px 0; }
+#glos-tooltip-flutuante .jur-ref-dica { margin-top: 6px; font-size: 10px; color: #cbd5e1; font-style: italic; }
+.jur-ref { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: pointer; color: inherit; }
+.jur-ref:hover { color: var(--app-primary); }
 #glos-tooltip-flutuante.abaixo::after { bottom: 100%; border-bottom-color: #1e293b; }
 
 /* Motivo do erro — mesmo padrão .rg/.ro/.sel do seletor de tipo de bateria
@@ -22707,11 +22715,14 @@ function _glosGarantirTooltipEl() {
     return el;
 }
 
-function _glosMostrarTooltip(trigger) {
+function _glosMostrarTooltip(trigger, conteudoHtml) {
     var significado = trigger.getAttribute('data-significado');
-    if (!significado) return;
+    if (!significado && !conteudoHtml) return;
     var el = _glosGarantirTooltipEl();
-    el.textContent = significado;
+    // conteudoHtml: balão rico (julgado citado nas Conexões — ver
+    // JURISPRUDENCIA_RUNTIME._htmlTooltipRef), mais largo que o do glossário.
+    if (conteudoHtml) { el.innerHTML = conteudoHtml; el.classList.add('jur-ref-balao'); }
+    else { el.textContent = significado; el.classList.remove('jur-ref-balao'); }
     el.style.display = 'block';
     el.classList.remove('acima', 'abaixo');
 
@@ -22760,9 +22771,11 @@ function _glosEsconderTooltip() {
 document.addEventListener('mouseover', function(e) {
     var alvo = e.target.closest && e.target.closest('.glos-termo-sim');
     if (alvo) _glosMostrarTooltip(alvo);
+    var ref = e.target.closest && e.target.closest('.jur-ref');
+    if (ref && window.JURISPRUDENCIA_RUNTIME) _glosMostrarTooltip(ref, window.JURISPRUDENCIA_RUNTIME._htmlTooltipRef(ref.getAttribute('data-jur-ref')));
 });
 document.addEventListener('mouseout', function(e) {
-    var alvo = e.target.closest && e.target.closest('.glos-termo-sim');
+    var alvo = e.target.closest && e.target.closest('.glos-termo-sim, .jur-ref');
     if (alvo && !alvo.contains(e.relatedTarget)) _glosEsconderTooltip();
 });
 // Rolar com o balão aberto: position:fixed não acompanha o termo durante o
@@ -31984,7 +31997,7 @@ window.carregarEsquemasOficiais = async function() {
      truncar) — popup .mo/.mdl. -->
 <div id="modal-jurisprudencia-ver" class="mo">
 <style>
-    #modal-jurisprudencia-ver { z-index: 10000; }
+    #modal-jurisprudencia-ver { z-index: 10001; } /* acima do Leitor: a conexão clicada no Leitor abre a ficha por cima */
     #modal-jurisprudencia-ver .fc-popup-header { font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main); line-height:1.3; }
     #modal-jurisprudencia-ver .jur-ver-label { font-size:10px; font-weight:800; text-transform:uppercase; color:var(--app-primary); margin-top:10px; margin-bottom:4px; }
     #modal-jurisprudencia-ver .jur-ver-texto { font-size:12.5px; line-height:1.6; color:var(--text-main); white-space:pre-wrap; }
@@ -35426,7 +35439,94 @@ window.JURISPRUDENCIA_RUNTIME = {
             pos = fim;
         });
         html += this._escapar(texto.slice(pos));
+        if (campo === 'conexoes') html = this._htmlComRefs(item, texto, faixas);
         return '<div class="jur-estudo-texto" data-grifo-id="' + this._escapar(String(item.id)) + '" data-grifo-campo="' + campo + '">' + html + '</div>';
+    },
+
+    // ── CONEXÕES → JULGADOS DO ACERVO (hover mostra a tese; clique abre a ficha) ──
+    // Citações como "ADI 6615/MT", "REsp 1.949.761-MG", "AgRg no HC 123.456"
+    // viram a chave CLASSE + número (sem pontos/UF) e são procuradas no
+    // índice dos "processo" de todas as fichas. Só destaca o que existe no
+    // acervo e não é a própria ficha. O destaque é um <span> por trecho:
+    // o textContent não muda, então os offsets dos grifos continuam valendo.
+    _RE_REF_PROCESSO: /\b((?:(?:AgRg|AgInt|EDcl|ED|EREsp|EAREsp)\s+(?:n[oa]s?\s+)?)?(ADI|ADC|ADO|ADPF|RE|ARE|REsp|AREsp|EREsp|HC|RHC|MS|RMS|MI|Rcl|RCL|CC|Pet|Inq|AP|APn|IAC|IRDR|RCD|AI|ACO|SL|STP|SS|Recurso\s+Especial|Recurso\s+Extraordin[áa]rio))(?:\s*n[º°o.]*)?\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:\s*[\/-]\s*[A-Z]{2}\b)?/g,
+    _chaveRef: function(classe, numero) {
+        let c = String(classe).replace(/\s+/g, ' ').trim();
+        if (/^recurso especial$/i.test(c)) c = 'REsp';
+        else if (/^recurso extraordin/i.test(c)) c = 'RE';
+        return c.toUpperCase() + ' ' + String(numero).replace(/\./g, '');
+    },
+    _chavesDoTexto: function(texto) {
+        let out = [], re = new RegExp(this._RE_REF_PROCESSO.source, 'g'), m;
+        while ((m = re.exec(String(texto || '')))) out.push({ ini: m.index, fim: m.index + m[0].length, chave: this._chaveRef(m[2], m[3]) });
+        return out;
+    },
+    // Índice chave → [{chave da L2, id}], refeito quando o acervo muda.
+    _indiceRefs: function() {
+        let self = this, total = 0;
+        Object.keys(this.fichas).forEach(function(ch) { total += (self.fichas[ch] || []).length; });
+        let assinatura = Object.keys(this.fichas).length + ':' + total;
+        if (this._idxRefs && this._idxRefs.assinatura === assinatura) return this._idxRefs.mapa;
+        let mapa = {};
+        Object.keys(this.fichas).forEach(function(ch) {
+            (self.fichas[ch] || []).forEach(function(f) {
+                if (!f || self.ocultos[f.id]) return;
+                let vistas = {};
+                self._chavesDoTexto(f.processo).forEach(function(r) {
+                    if (vistas[r.chave]) return;
+                    vistas[r.chave] = true;
+                    (mapa[r.chave] = mapa[r.chave] || []).push({ chave: ch, id: f.id });
+                });
+            });
+        });
+        this._idxRefs = { assinatura: assinatura, mapa: mapa };
+        return mapa;
+    },
+    _fichaPorRef: function(r) { return (this.fichas[r.chave] || []).find(function(f) { return f.id === r.id; }) || null; },
+    // Monta o HTML do campo com grifos (<mark>) e julgados citados (<span
+    // class="jur-ref">), cortando o texto em todos os pontos de fronteira.
+    _htmlComRefs: function(item, texto, faixas) {
+        let self = this, idx = this._indiceRefs();
+        let proprias = {};
+        this._chavesDoTexto(item.processo).forEach(function(r) { proprias[r.chave] = true; });
+        let refs = this._chavesDoTexto(texto).filter(function(r) { return idx[r.chave] && !proprias[r.chave]; });
+        let grifos = faixas.filter(function(f) { return self._CORES_GRIFO.indexOf(f.cor) !== -1 && f.fim > f.ini; });
+        let pontos = [0, texto.length];
+        refs.concat(grifos).forEach(function(x) { pontos.push(Math.max(0, Math.min(x.ini, texto.length)), Math.max(0, Math.min(x.fim, texto.length))); });
+        pontos = pontos.filter(function(v, i, a) { return a.indexOf(v) === i; }).sort(function(a, b) { return a - b; });
+        let html = '';
+        for (let i = 0; i < pontos.length - 1; i++) {
+            let a = pontos[i], b = pontos[i + 1];
+            if (b <= a) continue;
+            let pedaco = this._escapar(texto.slice(a, b));
+            let r = refs.find(function(x) { return x.ini <= a && x.fim >= b; });
+            if (r) pedaco = '<span class="jur-ref" data-jur-ref="' + this._escapar(r.chave) + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute(\'data-jur-ref\'))">' + pedaco + '</span>';
+            let g = grifos.find(function(f) { return f.ini <= a && f.fim >= b; });
+            if (g) pedaco = '<mark class="jur-grifo jur-grifo-' + g.cor + '">' + pedaco + '</mark>';
+            html += pedaco;
+        }
+        return html;
+    },
+    _htmlTooltipRef: function(chave) {
+        let self = this, lista = (this._indiceRefs()[chave] || []).map(function(r) { return self._fichaPorRef(r); }).filter(Boolean);
+        if (!lista.length) return '';
+        let corta = function(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, '') + '…' : t; };
+        let mostrar = lista.slice(0, 2);
+        return mostrar.map(function(f) {
+            let cab = [f.tribunal, f.processo, f.dataJulgado ? self._formatarDataBR(f.dataJulgado) : '', f.tema ? 'Tema ' + f.tema : '', f.sistematica].filter(Boolean).join(' · ');
+            let corpo = f.tese ? '<span class="jur-ref-rot">Tese</span>' + self._escapar(corta(f.tese, mostrar.length > 1 ? 380 : 700))
+                : (f.resumo ? '<span class="jur-ref-rot">Resumo</span>' + self._escapar(corta(f.resumo, 380)) : self._escapar(f.titulo || ''));
+            return '<div class="jur-ref-cab">' + self._escapar(cab) + '</div><div>' + corpo + '</div>';
+        }).join('<div class="jur-ref-sep"></div>') +
+        (lista.length > 2 ? '<div class="jur-ref-dica">+ ' + (lista.length - 2) + ' ficha(s) do mesmo processo</div>' : '') +
+        '<div class="jur-ref-dica">Clique para abrir a ficha</div>';
+    },
+    abrirRef: function(chave) {
+        let r = (this._indiceRefs()[chave] || [])[0];
+        if (!r) return;
+        if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
+        // Já numa ficha "Ver": troca de ficha sem fechar o popup.
+        this.abrirVer(r.chave, r.id);
     },
 
     // Aplica cor (ou null = borracha) em [ini, fim) — recorta o que já
