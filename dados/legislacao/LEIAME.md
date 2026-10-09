@@ -18,6 +18,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Recuperação Judicial e Falência (Lei 11.101/2005) | `lei-11101.json` | 09/10/2026 |
 | Ação Civil Pública (Lei 7.347/1985) | `lei-7347.json` | 09/10/2026 |
 | Planos de Saúde (Lei 9.656/1998) | `lei-9656.json` | 09/10/2026 |
+| Crimes Ambientais (Lei 9.605/1998) | `lei-9605.json` | 09/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
