@@ -102,7 +102,16 @@ def linhas_md(caminho):
         l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
         # Títulos em Markdown ("#### CAPÍTULO II", "##### DA PREVENÇÃO"): não são dispositivo.
         if re.match(r'^\s*#{1,6}\s', l): continue
-        yield l
+        # Vários artigos revogados na mesma linha ("Art. 232. (Revogado…) Art. 233. (Revogado…)").
+        # Só quebra depois de uma anotação de revogação/veto: texto citado entre
+        # aspas (ex.: ECA art. 263, "1) Art. 121…") continua inteiro.
+        partes, ini = [], 0
+        for mm in re.finditer(r'(?<=[)\]])[\s\u00a0]+(?=Art\.\s*\d)', l):
+            if re.search(r'Revogad|VETAD', l[ini:mm.start()], re.I):
+                partes.append(l[ini:mm.start()]); ini = mm.end()
+        partes.append(l[ini:])
+        for parte in partes:
+            yield parte if parte.endswith('\n') else parte + '\n'
 
 def converter(md, inicio=None, fim=None):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
