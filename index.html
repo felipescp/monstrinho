@@ -36830,6 +36830,8 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*11\.?101|Lei\s+de\s+(?:Recupera[çc][ãa]o\s+(?:Judicial\s+)?e\s+)?Fal[êe]ncias?|\bLREF\b/g },
         L7347: { nome: 'Lei 7.347', arquivo: 'dados/legislacao/lei-7347.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7347compilada.htm',
               re: /Lei\s*n?[º°o.]*\s*7\.?347|Lei\s+da\s+A[çc][ãa]o\s+Civil\s+P[úu]blica|\bLACP\b/g },
+        L9656: { nome: 'Lei 9.656', arquivo: 'dados/legislacao/lei-9656.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9656compilado.htm',
+              re: /Lei\s*n?[º°o.]*\s*9\.?656|Lei\s+dos\s+Planos\s+de\s+Sa[úu]de/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36920,7 +36922,7 @@ window.LEGISLACAO = (function() {
                 p = p.slice(); p[2] = '1'; par = a.par['1'];
             }
             if (!par) html += '<div class="lei-disp">' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2]) + ' não localizado.</div>';
-            else { html += '<div class="lei-disp"><b>' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2] + 'º') + (par.rubrica ? ' (' + esc(par.rubrica) + ')' : '') + ':</b> ' + txt(par) + '</div>'; usa(par); alvo = par; }
+            else { html += '<div class="lei-disp"><b>' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2].replace(/^(\d)(?=$|-)/, '$1º')) + (par.rubrica ? ' (' + esc(par.rubrica) + ')' : '') + ':</b> ' + txt(par) + '</div>'; usa(par); alvo = par; }
         }
         if (p[3]) p[3].split(',').forEach(function(ri) {
             let inc = alvo.inc && alvo.inc[ri];
