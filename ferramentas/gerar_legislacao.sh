@@ -1,0 +1,14 @@
+# Regenera todos os diplomas de dados/legislacao a partir dos compilados enviados.
+# Os caminhos U=... apontam para os arquivos recebidos nesta sessão; ajuste ao reaproveitar.
+gera(){ python3 -I ferramentas/legislacao_planalto.py "$@" >/dev/null; }
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/a21330a2-leidedrogas.md L11343 "Lei de Drogas" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm dados/legislacao/lei-11343.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/51d51bd0-DEL2848compilado.md CP "Código Penal" https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm dados/legislacao/codigo-penal.json 2026-10-08
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/5778abcb-cf.md CF "Constituição Federal" https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm dados/legislacao/constituicao.json 2026-10-09 --fim "^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$"
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/5778abcb-cf.md ADCT "ADCT" https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm dados/legislacao/adct.json 2026-10-09 --inicio "^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$"
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/7eced8db-cpc.md CPC "Código de Processo Civil" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm dados/legislacao/cpc.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/f93ba0a9-cc.md CC "Código Civil" https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm dados/legislacao/codigo-civil.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/9fa6347b-cpp.md CPP "Código de Processo Penal" https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm dados/legislacao/cpp.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/c4e8cf82-cdc.md CDC "Código de Defesa do Consumidor" https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm dados/legislacao/cdc.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/ae9ccb43-ctn.md CTN "Código Tributário Nacional" https://www.planalto.gov.br/ccivil_03/leis/l5172compilado.htm dados/legislacao/ctn.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/6357e200-lep.md LEP "Lei de Execução Penal" https://www.planalto.gov.br/ccivil_03/leis/l7210compilado.htm dados/legislacao/lep.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/89918428-eca.md ECA "Estatuto da Criança e do Adolescente" https://www.planalto.gov.br/ccivil_03/leis/l8069compilado.htm dados/legislacao/eca.json 2026-10-09

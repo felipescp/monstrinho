@@ -36,7 +36,7 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o)', t, re.I):
+        if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t)
@@ -54,6 +54,10 @@ def separa_anotacoes(l):
     texto = re.sub(r'([:;,])\s*\.$', r'\1', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto)
     texto = re.sub(r'\.\.$', '.', texto)
+    # Restos do texto riscado: "devedor,," / "condenatória ()".
+    texto = re.sub(r'\(\s*\)', '', texto)
+    texto = re.sub(r',\s*,', ',', texto)
+    texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
     return texto, (alt[2] if alt else None), rev
 
 def junta_alt(a, b):
@@ -93,6 +97,10 @@ def linhas_md(caminho):
         # "~~" solto (sem fechamento) é artefato da conversão, não risco:
         # nesses casos a linha traz o texto vigente ("Redação dada pela…").
         l = re.sub(r'~~.*?~~', '', l).replace('~~', '')
+        # Risco com til simples (~redação antiga~), usado em alguns compilados.
+        l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
+        # Títulos em Markdown ("#### CAPÍTULO II", "##### DA PREVENÇÃO"): não são dispositivo.
+        if re.match(r'^\s*#{1,6}\s', l): continue
         yield l
 
 def converter(md, inicio=None, fim=None):
@@ -174,6 +182,9 @@ def converter(md, inicio=None, fim=None):
         texto, alt, rev = separa_anotacoes(l)
         # Cabeçalho em maiúsculas ("DO FUNDO DE INVESTIMENTO") não é continuação.
         if texto and texto.upper() == texto and re.search(r'[A-ZÁ-Ú]{3}', texto): continue
+        # Rubrica/título sem negrito ("Fundos de Participação dos Estados"):
+        # linha curta sem pontuação final também não é continuação.
+        if texto and len(texto) < 150 and not re.search(r'[.;:!?)”"»]$', texto): continue
         if texto and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|PARTE|LIVRO)\b', texto, re.I) and len(texto) > 3:
             alvo = inc if inc is not None else seg
             alvo['texto'] = (alvo['texto'] + ' ' + texto).strip()
