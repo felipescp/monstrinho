@@ -55,7 +55,7 @@ def separa_anotacoes(l):
     texto = re.sub(r'\s+([.;,:])', r'\1', texto)
     texto = re.sub(r'\.\.$', '.', texto)
     # Restos do texto riscado: "devedor,," / "condenatória ()".
-    texto = re.sub(r'^0(?= [a-záéíóúâêôãõç])', 'O', texto)  # "0 termo" (zero no lugar de O, Lei 6.830)
+    texto = re.sub(r'^0(?= [A-Za-zÁ-Úá-ú])', 'O', texto)  # "0 termo" (zero no lugar de O, Lei 6.830)
     texto = re.sub(r'\(\s*\)', '', texto)
     texto = re.sub(r',\s*,', ',', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
