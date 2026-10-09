@@ -760,6 +760,11 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 #glos-tooltip-flutuante .jur-ref-dica { margin-top: 6px; font-size: 10px; color: #cbd5e1; font-style: italic; }
 .jur-ref { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: pointer; color: inherit; }
 .jur-ref:hover { color: var(--app-primary); }
+.jur-ref-lei { text-decoration-color: #0d9488; }
+#glos-tooltip-flutuante .lei-disp { margin-top: 4px; }
+#glos-tooltip-flutuante .lei-disp b { color: #99f6e4; font-weight: 800; }
+#glos-tooltip-flutuante .lei-pena { margin-top: 4px; color: #fde68a; }
+#glos-tooltip-flutuante .lei-aviso { margin-top: 6px; padding: 4px 6px; border-radius: 4px; background: rgba(245,158,11,0.18); color: #fcd34d; font-size: 11px; }
 #glos-tooltip-flutuante.abaixo::after { bottom: 100%; border-bottom-color: #1e293b; }
 
 /* Motivo do erro — mesmo padrão .rg/.ro/.sel do seletor de tipo de bateria
@@ -22772,7 +22777,8 @@ document.addEventListener('mouseover', function(e) {
     var alvo = e.target.closest && e.target.closest('.glos-termo-sim');
     if (alvo) _glosMostrarTooltip(alvo);
     var ref = e.target.closest && e.target.closest('.jur-ref');
-    if (ref && window.JURISPRUDENCIA_RUNTIME) _glosMostrarTooltip(ref, window.JURISPRUDENCIA_RUNTIME._htmlTooltipRef(ref.getAttribute('data-jur-ref')));
+    if (ref && ref.hasAttribute('data-lei') && window.LEGISLACAO) window.LEGISLACAO.mostrarBalao(ref);
+    else if (ref && window.JURISPRUDENCIA_RUNTIME) _glosMostrarTooltip(ref, window.JURISPRUDENCIA_RUNTIME._htmlTooltipRef(ref.getAttribute('data-jur-ref')));
 });
 document.addEventListener('mouseout', function(e) {
     var alvo = e.target.closest && e.target.closest('.glos-termo-sim, .jur-ref');
@@ -35533,6 +35539,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         let self = this;
         // Só destaca o que tem ficha no acervo além da própria.
         let refs = this._refsDoTexto(texto).filter(function(r) { return self._candidatosRef(r.chave).some(function(c) { return c.id !== item.id; }); });
+        // Artigos de lei (base interna dados/legislacao/ — ver window.LEGISLACAO).
+        if (window.LEGISLACAO) {
+            let anoJulgado = String(item.dataJulgado || '').slice(0, 4);
+            window.LEGISLACAO.refsDoTexto(texto).forEach(function(r) {
+                if (refs.some(function(x) { return x.ini < r.fim && r.ini < x.fim; })) return;
+                r.lei = true; r.ano = anoJulgado; refs.push(r);
+            });
+        }
         let grifos = faixas.filter(function(f) { return self._CORES_GRIFO.indexOf(f.cor) !== -1 && f.fim > f.ini; });
         let pontos = [0, texto.length];
         refs.concat(grifos).forEach(function(x) { pontos.push(Math.max(0, Math.min(x.ini, texto.length)), Math.max(0, Math.min(x.fim, texto.length))); });
@@ -35543,7 +35557,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (b <= a) continue;
             let pedaco = this._escapar(texto.slice(a, b));
             let r = refs.find(function(x) { return x.ini <= a && x.fim >= b; });
-            if (r) pedaco = '<span class="jur-ref" data-jur-ref="' + this._escapar(r.chave) + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute(\'data-jur-ref\'))">' + pedaco + '</span>';
+            if (r && r.lei) pedaco = '<span class="jur-ref jur-ref-lei" data-lei="' + this._escapar(r.chave) + '" data-ano="' + this._escapar(r.ano || '') + '" onclick="event.stopPropagation(); window.LEGISLACAO.abrirNoPlanalto(this.getAttribute(\'data-lei\'))">' + pedaco + '</span>';
+            else if (r) pedaco = '<span class="jur-ref" data-jur-ref="' + this._escapar(r.chave) + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute(\'data-jur-ref\'))">' + pedaco + '</span>';
             let g = grifos.find(function(f) { return f.ini <= a && f.fim >= b; });
             if (g) pedaco = '<mark class="jur-grifo jur-grifo-' + g.cor + '">' + pedaco + '</mark>';
             html += pedaco;
@@ -36779,6 +36794,133 @@ window.__bootOficialPromise__ = (async function(){
 
 </script>
 
+<script>
+// ── LEGISLAÇÃO: base interna (sem seção própria) ──
+// dados/legislacao/<diploma>.json, gerado por ferramentas/legislacao_planalto.py
+// a partir do texto COMPILADO do Planalto. Cada arquivo só é baixado na
+// primeira consulta (hover num "art. X do CP" das Conexões) e fica em
+// memória; não vai para o armazenamento pessoal nem para a nuvem.
+// Para incluir um diploma: gerar o .json e acrescentar uma linha em DIPLOMAS.
+window.LEGISLACAO = (function() {
+    let DIPLOMAS = {
+        CP: { nome: 'CP', arquivo: 'dados/legislacao/codigo-penal.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm',
+              re: /\bCP\b(?!\s*M)|C[óo]digo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*2\.?848/g }
+    };
+    // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
+    let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
+    // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?(?:-[A-Z])?)(?:[ºo°])?((?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
+    let cache = {}, carregando = {};
+
+    function mencoes(seg) {
+        let out = [], m;
+        Object.keys(DIPLOMAS).forEach(function(id) {
+            let re = new RegExp(DIPLOMAS[id].re.source, 'g');
+            while ((m = re.exec(seg))) out.push({ ini: m.index, fim: m.index + m[0].length, id: id });
+        });
+        let re = new RegExp(RE_OUTROS.source, 'g');
+        while ((m = re.exec(seg))) {
+            let a = m.index, b = a + m[0].length;
+            if (!out.some(function(x) { return x.ini < b && a < x.fim; })) out.push({ ini: a, fim: b, id: null });
+        }
+        return out.sort(function(x, y) { return x.ini - y.ini; });
+    }
+    function detalhes(t) {
+        let d = {}, m;
+        if ((m = t.match(/§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?/))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
+        else if (/par[áa]grafo\s+[úu]nico/i.test(t)) d.par = 'pu';
+        let incs = [], ri = /(?:,|\be\b)\s*([IVXL]+)\b/g;
+        while ((m = ri.exec(t))) incs.push(m[1]);
+        if (incs.length) d.inc = incs.join(',');
+        if ((m = t.match(/al[íi]nea\s*["“]?([a-z])\b|["“]([a-z])["”]/))) d.ali = m[1] || m[2];
+        return d;
+    }
+    // → [{ini, fim, chave: "CP|155|4|I|a"}] só para diplomas com base interna.
+    function refsDoTexto(texto) {
+        texto = String(texto || '');
+        let out = [], base = 0;
+        texto.split(';').forEach(function(seg) {
+            let ms = mencoes(seg), re = new RegExp(RE_LISTA.source, 'g'), m;
+            while ((m = re.exec(seg))) {
+                let fimLista = m.index + m[0].length;
+                // Diploma: a menção logo depois da lista ("art. 155 do CP");
+                // senão, a mais próxima antes ("CP, art. 155").
+                let depois = ms.filter(function(x) { return x.ini >= fimLista; })[0];
+                let antes = ms.filter(function(x) { return x.fim <= m.index; }).pop();
+                let alvo = depois && seg.slice(fimLista, depois.ini).length < 25 ? depois : (antes || depois);
+                if (!alvo || !alvo.id) continue;
+                let lista = m[1], iniLista = m.index + m[0].indexOf(lista), reI = new RegExp(RE_ITEM.source, 'g'), it, primeiro = true;
+                while ((it = reI.exec(lista))) {
+                    if (!it[0].trim()) { reI.lastIndex++; continue; }
+                    let d = detalhes(it[2] || '');
+                    let chave = [alvo.id, it[1].replace(/\./g, ''), d.par || '', d.inc || '', d.ali || ''].join('|');
+                    out.push({ ini: base + (primeiro ? m.index : iniLista + it.index), fim: base + iniLista + it.index + it[0].length, chave: chave });
+                    primeiro = false;
+                }
+            }
+            base += seg.length + 1;
+        });
+        return out;
+    }
+    function carregar(id) {
+        if (cache[id]) return Promise.resolve(cache[id]);
+        if (!carregando[id]) carregando[id] = fetch(DIPLOMAS[id].arquivo).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(j) { cache[id] = j; return j; }).catch(function(e) { delete carregando[id]; throw e; });
+        return carregando[id];
+    }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function rotulo(p) {
+        return 'art. ' + p[1] + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
+    }
+    function htmlBalao(chave, ano, j) {
+        let p = chave.split('|'), d = DIPLOMAS[p[0]];
+        let a = j.artigos[p[1]];
+        let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
+        if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
+        let html = '', alts = [];
+        let txt = function(o) { return o.revogado ? '<i>(revogado)</i>' : esc(o.texto || ''); };
+        let usa = function(o) { if (o && o.alt) alts.push(o.alt); };
+        let alvo = a;
+        html += '<div class="lei-disp"><b>Caput:</b> ' + txt(a) + '</div>';
+        usa(a);
+        if (p[2]) {
+            let par = a.par && a.par[p[2]];
+            if (!par) html += '<div class="lei-disp">' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2]) + ' não localizado.</div>';
+            else { html += '<div class="lei-disp"><b>' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2] + 'º') + (par.rubrica ? ' (' + esc(par.rubrica) + ')' : '') + ':</b> ' + txt(par) + '</div>'; usa(par); alvo = par; }
+        }
+        if (p[3]) p[3].split(',').forEach(function(ri) {
+            let inc = alvo.inc && alvo.inc[ri];
+            if (!inc) { html += '<div class="lei-disp">Inciso ' + esc(ri) + ' não localizado.</div>'; return; }
+            html += '<div class="lei-disp"><b>' + esc(ri) + ' –</b> ' + txt(inc) + '</div>'; usa(inc);
+            if (p[4] && inc.ali && inc.ali[p[4]]) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + esc(inc.ali[p[4]]) + '</div>';
+        });
+        if (alvo.pena) html += '<div class="lei-pena">Pena – ' + esc(alvo.pena) + '</div>';
+        else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
+        // Redação posterior ao julgado → aviso (pegadinha clássica).
+        let maisRecente = alts.sort(function(x, y) { return +y.slice(-4) - +x.slice(-4); })[0];
+        if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += '<div class="lei-aviso">⚠️ Redação alterada pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado o texto anterior.</div>';
+        else if (maisRecente) html += '<div class="jur-ref-dica">Última alteração no trecho: ' + esc(maisRecente) + '</div>';
+        let dt = String(j.dataTexto || '').split('-').reverse().join('/');
+        return cab + html + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir no Planalto</div>';
+    }
+    function mostrarBalao(el) {
+        let chave = el.getAttribute('data-lei'), ano = el.getAttribute('data-ano'), id = chave.split('|')[0];
+        if (cache[id]) { _glosMostrarTooltip(el, htmlBalao(chave, ano, cache[id])); return; }
+        _glosMostrarTooltip(el, '<div class="jur-ref-cab">' + esc(DIPLOMAS[id].nome + ' · ' + rotulo(chave.split('|'))) + '</div><div>Carregando o texto da lei…</div>');
+        carregar(id).then(function(j) {
+            // Só redesenha se o mouse ainda estiver sobre o mesmo trecho.
+            if (el.matches(':hover')) _glosMostrarTooltip(el, htmlBalao(chave, ano, j));
+        }).catch(function() { if (el.matches(':hover')) _glosMostrarTooltip(el, '<div>Não foi possível carregar o texto da lei.</div>'); });
+    }
+    function abrirNoPlanalto(chave) {
+        let p = chave.split('|'), d = DIPLOMAS[p[0]];
+        if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
+        window.open(d.planalto + '#art' + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
+    }
+    return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, carregar: carregar, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
+})();
+</script>
 <script>
 // ── MODAIS DE SEÇÃO PERSISTEM AO F5 ──
 // Ao sair da página (F5, fechar a aba), grava em sessionStorage qual modal
