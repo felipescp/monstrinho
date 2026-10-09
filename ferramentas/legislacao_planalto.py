@@ -50,6 +50,10 @@ def separa_anotacoes(l):
     texto = RE_PAR.sub(troca, l)
     texto = re.sub(r'\bVig[êe]ncia\b\s*$', '', texto)
     texto = re.sub(r'\s+', ' ', texto).replace('**', '').strip()
+    # Pontuação que sobra ao tirar a anotação: "preventiva: ." → "preventiva:".
+    texto = re.sub(r'([:;,])\s*\.$', r'\1', texto)
+    texto = re.sub(r'\s+([.;,:])', r'\1', texto)
+    texto = re.sub(r'\.\.$', '.', texto)
     return texto, (alt[2] if alt else None), rev
 
 def junta_alt(a, b):
@@ -107,10 +111,12 @@ def converter(md, inicio=None, fim=None):
             continue
         if fim and re.search(fim, l, re.I): break
         # Faixa revogada em bloco: "Art. 1.620. a 1.629. (Revogados pela Lei…)".
-        m = re.match(r'^Arts?\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*a\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(.*)$', l)
+        # Também "Art. 556. a Art. 560 (Revogado…)" e "Art. 561. e Art. 562. (…)".
+        m = re.match(r'^Arts?\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(a|e)\s*(?:Art\.?\s*)?(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(.*)$', l)
         if m:
-            texto, alt, rev = separa_anotacoes(m.group(3))
-            for n in range(int(m.group(1).replace('.', '')), int(m.group(2).replace('.', '')) + 1):
+            texto, alt, rev = separa_anotacoes(m.group(4))
+            ini, fim_ = int(m.group(1).replace('.', '')), int(m.group(3).replace('.', ''))
+            for n in (range(ini, fim_ + 1) if m.group(2) == 'a' else (ini, fim_)):
                 artigos[str(n)] = novo_disp(texto, alt, rev)
             art, seg, inc, rubrica = None, None, None, None
             continue

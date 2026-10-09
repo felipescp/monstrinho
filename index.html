@@ -36813,6 +36813,8 @@ window.LEGISLACAO = (function() {
         // "CC 185.123" é Conflito de Competência (classe processual), não o Código; CC/1916 fica sem link.
         CC: { nome: 'CC', arquivo: 'dados/legislacao/codigo-civil.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm',
               re: /\bCC\b(?!\s*n?[º°o.]*\s*\d)(?!\s*(?:\/|de)\s*(?:19)?16\b)(?:\s*\/\s*(?:20)?02\b)?|C[óo]digo\s+Civil(?!\s+(?:de\s+)?(?:19)?16\b)(?:\s+de\s+2002)?|Lei\s*n?[º°o.]*\s*10\.?406/g },
+        CPP: { nome: 'CPP', arquivo: 'dados/legislacao/cpp.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm',
+              re: /\bCPP\b|C[óo]digo\s+de\s+Processo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*3\.?689/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36820,8 +36822,8 @@ window.LEGISLACAO = (function() {
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
     let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
     // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
-    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
-    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?(?:-[A-Z])?)(?:[ºo°])?((?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
     let cache = {}, carregando = {};
 
     function mencoes(seg) {
@@ -36864,8 +36866,8 @@ window.LEGISLACAO = (function() {
                 let lista = m[1], iniLista = m.index + m[0].indexOf(lista), reI = new RegExp(RE_ITEM.source, 'g'), it, primeiro = true;
                 while ((it = reI.exec(lista))) {
                     if (!it[0].trim()) { reI.lastIndex++; continue; }
-                    let d = detalhes(it[2] || '');
-                    let chave = [alvo.id, it[1].replace(/\./g, ''), d.par || '', d.inc || '', d.ali || ''].join('|');
+                    let d = detalhes(it[3] || '');
+                    let chave = [alvo.id, it[1].replace(/\./g, '') + (it[2] || ''), d.par || '', d.inc || '', d.ali || ''].join('|');
                     out.push({ ini: base + (primeiro ? m.index : iniLista + it.index), fim: base + iniLista + it.index + it[0].length, chave: chave });
                     primeiro = false;
                 }
@@ -36882,7 +36884,7 @@ window.LEGISLACAO = (function() {
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function rotulo(p) {
-        return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2') + (/^\d$/.test(p[1]) ? 'º' : '') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
+        return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2').replace(/^(\d)(?=$|-)/, '$1º') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
     }
     function htmlBalao(chave, ano, j) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
@@ -36910,7 +36912,7 @@ window.LEGISLACAO = (function() {
         else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
         // Redação posterior ao julgado → aviso (pegadinha clássica).
         let maisRecente = alts.sort(function(x, y) { return +y.slice(-4) - +x.slice(-4); })[0];
-        if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += '<div class="lei-aviso">⚠️ Redação alterada pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado o texto anterior.</div>';
+        if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += '<div class="lei-aviso">⚠️ Texto incluído ou alterado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado outra redação, ou o dispositivo ainda não existia.</div>';
         else if (maisRecente) html += '<div class="jur-ref-dica">Última alteração no trecho: ' + esc(maisRecente) + '</div>';
         let dt = String(j.dataTexto || '').split('-').reverse().join('/');
         return cab + html + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir no Planalto</div>';
