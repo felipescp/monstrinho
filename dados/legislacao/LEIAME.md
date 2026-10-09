@@ -20,6 +20,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Planos de Saúde (Lei 9.656/1998) | `lei-9656.json` | 09/10/2026 |
 | Crimes Ambientais (Lei 9.605/1998) | `lei-9605.json` | 09/10/2026 |
 | Execução Fiscal (Lei 6.830/1980) | `lei-6830.json` | 09/10/2026 |
+| Improbidade Administrativa (Lei 8.429/1992) | `lei-8429.json` | 09/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 

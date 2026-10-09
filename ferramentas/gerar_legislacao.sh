@@ -17,3 +17,4 @@ gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/3271a4ad-acp.md 
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/26337231-planosdesaude.md L9656 "Lei dos Planos de Saúde" https://www.planalto.gov.br/ccivil_03/leis/l9656compilado.htm dados/legislacao/lei-9656.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/b9efd4d2-crimesambientais.md L9605 "Lei de Crimes Ambientais" https://www.planalto.gov.br/ccivil_03/leis/l9605.htm dados/legislacao/lei-9605.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/2780c72e-execucaofiscal.md LEF "Lei de Execução Fiscal" https://www.planalto.gov.br/ccivil_03/leis/l6830.htm dados/legislacao/lei-6830.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/1b7ea2e8-improbidade.md L8429 "Lei de Improbidade Administrativa" https://www.planalto.gov.br/ccivil_03/leis/l8429compilada.htm dados/legislacao/lei-8429.json 2026-10-09
