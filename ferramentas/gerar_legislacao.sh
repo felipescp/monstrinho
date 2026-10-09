@@ -12,3 +12,4 @@ gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/c4e8cf82-cdc.md 
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/ae9ccb43-ctn.md CTN "Código Tributário Nacional" https://www.planalto.gov.br/ccivil_03/leis/l5172compilado.htm dados/legislacao/ctn.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/6357e200-lep.md LEP "Lei de Execução Penal" https://www.planalto.gov.br/ccivil_03/leis/l7210compilado.htm dados/legislacao/lep.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/89918428-eca.md ECA "Estatuto da Criança e do Adolescente" https://www.planalto.gov.br/ccivil_03/leis/l8069compilado.htm dados/legislacao/eca.json 2026-10-09
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/d9b96fa8-falencia.md L11101 "Lei de Recuperação e Falência" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101.htm dados/legislacao/lei-11101.json 2026-10-09
