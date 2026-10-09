@@ -4,7 +4,7 @@ artigos citados nas Conexões, Penas etc.). Sem seção própria: o arquivo só
 é baixado quando algum artigo daquele diploma é consultado.
 
 Uso:
-  python3 ferramentas/legislacao_planalto.py <compilado.md> <ID> "<Nome>" <url-fonte> <saida.json> [AAAA-MM-DD] [--inicio REGEX] [--fim REGEX]
+  python3 ferramentas/legislacao_planalto.py <compilado.md|.htm> <ID> "<Nome>" <url-fonte> <saida.json> [AAAA-MM-DD] [--inicio REGEX] [--fim REGEX]
   ex.: ... DEL2848compilado.md CP "Código Penal" \
        https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm \
        dados/legislacao/codigo-penal.json 2026-10-08
@@ -64,10 +64,37 @@ def novo_disp(texto, alt, rev):
     if rev: d['revogado'] = True
     return d
 
+def linhas_html(caminho):
+    """Página do Planalto salva em .htm/.html (Ctrl+S) → linhas no mesmo
+    formato do Markdown. O texto riscado (<strike>, redação antiga) sai."""
+    import html as H
+    bruto = open(caminho, 'rb').read()
+    try: t = bruto.decode('utf-8')
+    except UnicodeDecodeError: t = bruto.decode('cp1252', errors='replace')
+    t = re.sub(r'(?is)<(script|style|head)\b.*?</\1>', '', t)
+    t = re.sub(r'(?is)<(strike|s|del)\b[^>]*>.*?</\1>', '', t)
+    t = re.sub(r'(?is)</?(b|strong)\b[^>]*>', '**', t)
+    t = re.sub(r'(?is)<sup>\s*[oº°]\s*</sup>', 'º', t)
+    t = re.sub(r'(?is)<br\s*/?>|</p>|</div>|</h\d>|</li>|</tr>', '\n', t)
+    t = re.sub(r'(?s)<[^>]+>', '', t)
+    t = H.unescape(t).replace('\r', '')
+    for l in t.split('\n'):
+        l = re.sub(r'\s+', ' ', l).strip()
+        l = re.sub(r'\*\*\s*\*\*', '', l)
+        if l: yield l + '\n'
+
+def linhas_md(caminho):
+    for l in open(caminho, encoding='utf8'):
+        # Texto riscado do compilado (~~redação antiga~~) sai.
+        l = re.sub(r'~~.*?~~', '', l)
+        if l.strip().startswith('~~'): continue
+        yield l
+
 def converter(md, inicio=None, fim=None):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
     ativo = inicio is None
-    for raw in open(md, encoding='utf8'):
+    fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
+    for raw in fonte:
         bruto = raw.strip()
         if not bruto: continue
         l = limpa(raw)
