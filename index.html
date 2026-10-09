@@ -36807,6 +36807,9 @@ window.LEGISLACAO = (function() {
               re: /\bCP\b(?!\s*M)|C[óo]digo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*2\.?848/g },
         CF: { nome: 'CF', arquivo: 'dados/legislacao/constituicao.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm',
               re: /\b(?:CF|CRFB)(?:\/(?:19)?88)?\b|Constitui[çc][ãa]o(?:\s+Federal|\s+da\s+Rep[úu]blica(?:\s+Federativa\s+do\s+Brasil)?)?(?!\s+(?:Estadual|Estaduais|do\s+Estado|dos\s+Estados))/g },
+        // CPC/73 (e o de 1939) não: fica como "outro diploma", sem link.
+        CPC: { nome: 'CPC', arquivo: 'dados/legislacao/cpc.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm',
+              re: /\bCPC\b(?!\s*(?:\/|de)\s*(?:19)?(?:73|39)\b)(?:\s*\/\s*(?:20)?15\b)?|C[óo]digo\s+de\s+Processo\s+Civil(?!\s+(?:de\s+)?(?:19)?(?:73|39)\b)(?:\s+de\s+2015)?|Lei\s*n?[º°o.]*\s*13\.?105/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36876,7 +36879,7 @@ window.LEGISLACAO = (function() {
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function rotulo(p) {
-        return 'art. ' + p[1] + (/^\d$/.test(p[1]) ? 'º' : '') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
+        return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2') + (/^\d$/.test(p[1]) ? 'º' : '') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
     }
     function htmlBalao(chave, ano, j) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];

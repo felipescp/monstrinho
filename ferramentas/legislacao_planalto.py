@@ -19,6 +19,8 @@ Formato de saída:
 import json, re, sys, datetime
 
 def limpa(l):
+    # Links "Visualizar…" antes do artigo (STF na CF, Corpus927 no CPC etc.).
+    l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
