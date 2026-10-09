@@ -5,6 +5,10 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Diploma | Arquivo | Texto conforme o Planalto em |
 |---|---|---|
 | Código Penal | `codigo-penal.json` | 08/10/2026 |
+| Constituição Federal | `constituicao.json` | 09/10/2026 |
+| ADCT | `adct.json` | 09/10/2026 |
+
+**CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
 ## Incluir ou atualizar um diploma
 

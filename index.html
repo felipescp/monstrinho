@@ -36804,7 +36804,12 @@ window.__bootOficialPromise__ = (async function(){
 window.LEGISLACAO = (function() {
     let DIPLOMAS = {
         CP: { nome: 'CP', arquivo: 'dados/legislacao/codigo-penal.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm',
-              re: /\bCP\b(?!\s*M)|C[óo]digo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*2\.?848/g }
+              re: /\bCP\b(?!\s*M)|C[óo]digo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*2\.?848/g },
+        CF: { nome: 'CF', arquivo: 'dados/legislacao/constituicao.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm',
+              re: /\b(?:CF|CRFB)(?:\/(?:19)?88)?\b|Constitui[çc][ãa]o(?:\s+Federal|\s+da\s+Rep[úu]blica(?:\s+Federativa\s+do\s+Brasil)?)?(?!\s+(?:Estadual|Estaduais|do\s+Estado|dos\s+Estados))/g },
+        // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
+        ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
+              re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
     };
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
     let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
@@ -36871,7 +36876,7 @@ window.LEGISLACAO = (function() {
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function rotulo(p) {
-        return 'art. ' + p[1] + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
+        return 'art. ' + p[1] + (/^\d$/.test(p[1]) ? 'º' : '') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2] + (/^\d+$/.test(p[2]) && +p[2] < 10 ? 'º' : '')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
     }
     function htmlBalao(chave, ano, j) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
@@ -36916,7 +36921,7 @@ window.LEGISLACAO = (function() {
     function abrirNoPlanalto(chave) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
         if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
-        window.open(d.planalto + '#art' + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
+        window.open(d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
     }
     return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, carregar: carregar, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
 })();

@@ -4,7 +4,7 @@ artigos citados nas Conexões, Penas etc.). Sem seção própria: o arquivo só
 é baixado quando algum artigo daquele diploma é consultado.
 
 Uso:
-  python3 ferramentas/legislacao_planalto.py <compilado.md> <ID> "<Nome>" <url-fonte> <saida.json> [AAAA-MM-DD]
+  python3 ferramentas/legislacao_planalto.py <compilado.md> <ID> "<Nome>" <url-fonte> <saida.json> [AAAA-MM-DD] [--inicio REGEX] [--fim REGEX]
   ex.: ... DEL2848compilado.md CP "Código Penal" \
        https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm \
        dados/legislacao/codigo-penal.json 2026-10-08
@@ -22,6 +22,8 @@ def limpa(l):
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
+    l = l.replace('Visualizar dispositivos do STF', '')  # link do STF antes de cada artigo da CF
+    l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
     l = l.replace('\\-', '-').replace(' ', ' ')
     return l.replace('**', '').strip().lstrip('>').strip()
 
@@ -34,10 +36,11 @@ def separa_anotacoes(l):
         t = m.group(1)
         if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
-            lm = re.search(r'(Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t)
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
-                tipo = 'Lei Complementar' if 'omplementar' in lm.group(1) else ('MP' if 'edida' in lm.group(1) else 'Lei')
+                g = lm.group(1).lower()
+                tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
                 cand = (int(anos[-1]), int(lm.group(2).replace('.', '').rstrip('.') or 0), '%s %s/%s' % (tipo, lm.group(2).rstrip('.'), anos[-1]))
                 if alt is None or cand > alt: alt = cand
             return ''
@@ -59,13 +62,20 @@ def novo_disp(texto, alt, rev):
     if rev: d['revogado'] = True
     return d
 
-def converter(md):
+def converter(md, inicio=None, fim=None):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
+    ativo = inicio is None
     for raw in open(md, encoding='utf8'):
         bruto = raw.strip()
         if not bruto: continue
         l = limpa(raw)
         if not l: continue
+        # --inicio/--fim: recorta um trecho do compilado (ex.: CF sem o ADCT,
+        # e o ADCT à parte, porque ele recomeça a numeração no art. 1º).
+        if not ativo:
+            if re.search(inicio, l, re.I): ativo = True
+            continue
+        if fim and re.search(fim, l, re.I): break
         m = re.match(r'^Art\.\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
         if m:
             num = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
@@ -124,9 +134,14 @@ def converter(md):
     return artigos
 
 if __name__ == '__main__':
-    md, ident, nome, fonte, saida = sys.argv[1:6]
-    data = sys.argv[6] if len(sys.argv) > 6 else datetime.date.today().isoformat()
-    arts = converter(md)
+    args, opts = [], {}
+    it = iter(sys.argv[1:])
+    for a in it:
+        if a in ('--inicio', '--fim'): opts[a[2:]] = next(it)
+        else: args.append(a)
+    md, ident, nome, fonte, saida = args[:5]
+    data = args[5] if len(args) > 5 else datetime.date.today().isoformat()
+    arts = converter(md, opts.get('inicio'), opts.get('fim'))
     out = {'id': ident, 'nome': nome, 'fonte': fonte, 'dataTexto': data, 'artigos': arts}
     json.dump(out, open(saida, 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
     print('%d artigos → %s' % (len(arts), saida))
