@@ -36,7 +36,7 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa)', t, re.I):
+        if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t)
@@ -140,7 +140,7 @@ def converter(md, inicio=None, fim=None):
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
         if re.match(r'^(Rio de Janeiro|Bras[íi]lia),\s*\d', l): art = None; continue
-        m = re.match(r'^§\s*(\d+)\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
+        m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
         pu = re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
         if m or pu:
             chave = 'pu' if pu else m.group(1) + ('-' + m.group(2) if m.group(2) else '')
@@ -150,6 +150,8 @@ def converter(md, inicio=None, fim=None):
             art.setdefault('par', {})[chave] = p
             seg, inc, rubrica = p, None, None
             continue
+        # "l -", "ll -" (L minúsculo no lugar de I, erro do compilado da Lei 7.347).
+        l = re.sub(r'^(l{1,3})(?=\s*[-–—])', lambda mm: 'I' * len(mm.group(1)), l)
         m = re.match(r'^([IVXL]+)\s*[-–—]\s*(.*)$', l)
         if m:
             texto, alt, rev = separa_anotacoes(m.group(2))
