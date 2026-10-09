@@ -36633,5 +36633,59 @@ window.__bootOficialPromise__ = (async function(){
 
 </script>
 
+<script>
+// ── MODAIS DE SEÇÃO PERSISTEM AO F5 ──
+// Ao sair da página (F5, fechar a aba), grava em sessionStorage qual modal
+// de seção estava aberto (e se estava minimizado); no carregamento seguinte,
+// reabre o mesmo modal. sessionStorage: vale só para esta aba e não entra
+// na sincronização com a nuvem. Prazos/Penas guardam também o diploma, o
+// título e a aba (Tabela/Treinar) selecionados.
+(function() {
+    let CHAVE = 'monstrinho_modal_aberto';
+    let MODAIS = [
+        { nome: 'jurisprudencia', id: 'jurisprudencia-modal', abrir: 'abrirJurisprudenciaModal', alternar: 'alternarMaximizarJurisprudenciaModal' },
+        { nome: 'esquemas', id: 'esquemas-modal', abrir: 'abrirEsquemasModal', alternar: 'alternarMaximizarEsquemasModal' },
+        { nome: 'flashcards', id: 'fcnb-modal', abrir: 'abrirFlashcardsNbModal', alternar: 'alternarMaximizarFlashcardsNbModal' },
+        { nome: 'prazos', id: 'prazos-modal', abrir: 'abrirPrazosModal', alternar: 'alternarMaximizarPrazosModal', runtime: 'PRAZOS_RUNTIME' },
+        { nome: 'penas', id: 'penas-modal', abrir: 'abrirPenasModal', alternar: 'alternarMaximizarPenasModal', runtime: 'PENAS_RUNTIME' },
+        { nome: 'glossario', id: 'section-glossario', abrir: 'abrirGlossarioModal', alternar: 'alternarMaximizarGlossarioModal', secao: true }
+    ];
+    function aberto(m) {
+        let el = document.getElementById(m.id);
+        if (!el) return false;
+        return m.secao ? el.style.display === 'flex' : el.classList.contains('active');
+    }
+    function maximizado(m) {
+        let el = document.getElementById(m.id);
+        return el.classList.contains(m.secao ? 'secao-maximizada' : 'modal-maximizado');
+    }
+    window.addEventListener('pagehide', function() {
+        try {
+            let m = MODAIS.find(aberto);
+            if (!m) { sessionStorage.removeItem(CHAVE); return; }
+            let est = { nome: m.nome, max: maximizado(m) };
+            let R = m.runtime && window[m.runtime];
+            if (R) est.nav = { materia: R._materia, divisao: R._divisao, aba: R._aba };
+            sessionStorage.setItem(CHAVE, JSON.stringify(est));
+        } catch (e) {}
+    });
+    window.addEventListener('load', function() {
+        let est = null;
+        try { est = JSON.parse(sessionStorage.getItem(CHAVE) || 'null'); } catch (e) {}
+        if (!est) return;
+        let m = MODAIS.find(function(x) { return x.nome === est.nome; });
+        // Só com login já feito (sem o alerta de exigirLoginParaSecao no boot).
+        if (!m || !(window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken())) return;
+        // Depois do boot (que decide a tela de fundo: Vitrine, Cronograma…).
+        setTimeout(function() {
+            if (typeof window[m.abrir] !== 'function' || MODAIS.some(aberto)) return;
+            let R = m.runtime && window[m.runtime];
+            if (R && est.nav) { R._materia = est.nav.materia || null; R._divisao = est.nav.divisao == null ? null : est.nav.divisao; R._aba = est.nav.aba || 'tabela'; }
+            window[m.abrir]();
+            if (est.max === false && typeof window[m.alternar] === 'function') window[m.alternar]();
+        }, 400);
+    });
+})();
+</script>
 </body>
 </html>
