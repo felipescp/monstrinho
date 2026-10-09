@@ -86,8 +86,9 @@ def linhas_html(caminho):
 def linhas_md(caminho):
     for l in open(caminho, encoding='utf8'):
         # Texto riscado do compilado (~~redação antiga~~) sai.
-        l = re.sub(r'~~.*?~~', '', l)
-        if l.strip().startswith('~~'): continue
+        # "~~" solto (sem fechamento) é artefato da conversão, não risco:
+        # nesses casos a linha traz o texto vigente ("Redação dada pela…").
+        l = re.sub(r'~~.*?~~', '', l).replace('~~', '')
         yield l
 
 def converter(md, inicio=None, fim=None):
@@ -165,6 +166,8 @@ def converter(md, inicio=None, fim=None):
             continue
         # Linha solta (continuação) → acrescenta ao dispositivo corrente.
         texto, alt, rev = separa_anotacoes(l)
+        # Cabeçalho em maiúsculas ("DO FUNDO DE INVESTIMENTO") não é continuação.
+        if texto and texto.upper() == texto and re.search(r'[A-ZÁ-Ú]{3}', texto): continue
         if texto and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|PARTE|LIVRO)\b', texto, re.I) and len(texto) > 3:
             alvo = inc if inc is not None else seg
             alvo['texto'] = (alvo['texto'] + ' ' + texto).strip()
