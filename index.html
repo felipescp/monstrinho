@@ -35449,7 +35449,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // índice dos "processo" de todas as fichas. Só destaca o que existe no
     // acervo e não é a própria ficha. O destaque é um <span> por trecho:
     // o textContent não muda, então os offsets dos grifos continuam valendo.
-    _RE_REF_PROCESSO: /\b((?:(?:AgRg|AgInt|EDcl|ED|EREsp|EAREsp)\s+(?:n[oa]s?\s+)?)?(ADI|ADC|ADO|ADPF|RE|ARE|REsp|AREsp|EREsp|HC|RHC|MS|RMS|MI|Rcl|RCL|CC|Pet|Inq|AP|APn|IAC|IRDR|RCD|AI|ACO|SL|STP|SS|Recurso\s+Especial|Recurso\s+Extraordin[áa]rio))(?:\s*n[º°o.]*)?\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:\s*[\/-]\s*[A-Z]{2}\b)?/g,
+    _RE_REF_PROCESSO: /\b((?:(?:AgRg|AgInt|EDcl|ED|EREsp|EAREsp)\s+(?:n[oa]s?\s+)?)*(ADI|ADC|ADO|ADPF|RE|ARE|REsp|AREsp|EREsp|EAREsp|HC|RHC|MS|RMS|MI|Rcl|RCL|CC|Pet|Inq|AP|APn|IAC|IRDR|RCD|AI|ACO|AO|SLS|SL|STP|SS|RO|AR|IF|PUIL|Ext|SEC|HDE|CR|PSV|Ag|Recurso\s+Especial|Recurso\s+Extraordin[áa]rio))(?:\s*n[º°o.]*)?\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:\s*[\/-]\s*[A-Z]{2}\b)?/g,
     _chaveRef: function(classe, numero) {
         let c = String(classe).replace(/\s+/g, ' ').trim();
         if (/^recurso especial$/i.test(c)) c = 'REsp';
@@ -35459,6 +35459,50 @@ window.JURISPRUDENCIA_RUNTIME = {
     _chavesDoTexto: function(texto) {
         let out = [], re = new RegExp(this._RE_REF_PROCESSO.source, 'g'), m;
         while ((m = re.exec(String(texto || '')))) out.push({ ini: m.index, fim: m.index + m[0].length, chave: this._chaveRef(m[2], m[3]) });
+        return out;
+    },
+    // Enunciados: "Súmula 435/STJ", "Súmula 343 do STF", "Súmulas 150, 224 e
+    // 254/STJ", "Súmula Vinculante 43", "SV 14", "Tema 499/STF", "Tema 979
+    // de Repercussão Geral" (→ STF), "Tema 1051 do STJ". Chaves: "SV N",
+    // "SUM <TRIB> N", "TEMA <TRIB> N"; sem tribunal na citação → "?" (o
+    // balão mostra os candidatos de cada tribunal, identificados).
+    _RE_REF_ENUNCIADO: /\b(S[úu]mulas?\s+Vinculantes?|SVs?|S[úu]mulas?|Temas?)(?:\s+n[º°o.]*)?\s+(\d{1,4}(?:\.\d{3})?(?:\s*(?:,|\be\b)\s*\d{1,4}(?:\.\d{3})?)*)(?:\s*(?:[\/–-]\s*|(?:d[oa]|no|na|de)\s+(?:[oa]\s+)?)(STF|STJ|TSE|TST|Repercuss[ãa]o\s+Geral|RG|Recursos?\s+Repetitivos?|Repetitivos?)\b)?/g,
+    _chavesEnunciados: function(texto) {
+        let out = [], re = new RegExp(this._RE_REF_ENUNCIADO.source, 'g'), m;
+        texto = String(texto || '');
+        while ((m = re.exec(texto))) {
+            let tipo = /vinculante|^SV/i.test(m[1]) ? 'SV' : (/^S/.test(m[1]) ? 'SUM' : 'TEMA');
+            let trib = m[3] || '';
+            if (/repercuss|^RG$/i.test(trib)) trib = 'STF';
+            else if (/repetitiv/i.test(trib)) trib = 'STJ';
+            trib = trib.toUpperCase() || '?';
+            // Posição de cada número dentro do trecho (lista "150, 224 e 254").
+            let base = m.index + m[0].indexOf(m[2], m[1].length);
+            let reN = /\d{1,4}(?:\.\d{3})?/g, n, nums = [];
+            while ((n = reN.exec(m[2]))) nums.push({ ini: base + n.index, fim: base + n.index + n[0].length, num: n[0].replace(/\./g, '') });
+            nums.forEach(function(x, i) {
+                let ini = i === 0 ? m.index : x.ini, fim = i === nums.length - 1 ? m.index + m[0].length : x.fim;
+                out.push({ ini: ini, fim: fim, chave: tipo === 'SV' ? 'SV ' + x.num : tipo + ' ' + trib + ' ' + x.num });
+            });
+        }
+        return out;
+    },
+    _refsDoTexto: function(texto) { return this._chavesDoTexto(texto).concat(this._chavesEnunciados(texto)).sort(function(a, b) { return a.ini - b.ini; }); },
+    // Chaves pelas quais uma ficha pode ser citada: processo(s), súmula/SV, tema.
+    _chavesDaFicha: function(f) {
+        let out = this._chavesDoTexto(f.processo).map(function(r) { return r.chave; });
+        let proc = String(f.processo || ''), trib = String(f.tribunal || '').toUpperCase(), m;
+        if ((m = proc.match(/^\s*SV\s*(\d+)/i)) || (/vinculante/i.test(f.sistematica || '') && (m = proc.match(/(\d+)/)))) out.push('SV ' + m[1]);
+        else if ((m = proc.match(/S[úu]mula\s+(\d+)\s*(?:[\/-]\s*(STF|STJ|TSE|TST))?/i))) out.push('SUM ' + (m[2] ? m[2].toUpperCase() : trib) + ' ' + m[1]);
+        if (f.tema && trib) (String(f.tema).match(/\d{1,4}(?:\.\d{3})?/g) || []).forEach(function(n) { out.push('TEMA ' + trib + ' ' + n.replace(/\./g, '')); });
+        return out;
+    },
+    // Fichas candidatas de uma chave; "?" (tribunal não citado) junta as de todos.
+    _candidatosRef: function(chave) {
+        let idx = this._indiceRefs(), p = String(chave).split(' ');
+        if (p[1] !== '?') return idx[chave] || [];
+        let out = [];
+        ['STF', 'STJ', 'TSE', 'TST'].forEach(function(t) { out = out.concat(idx[p[0] + ' ' + t + ' ' + p[2]] || []); });
         return out;
     },
     // Índice chave → [{chave da L2, id}], refeito quando o acervo muda.
@@ -35472,10 +35516,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             (self.fichas[ch] || []).forEach(function(f) {
                 if (!f || self.ocultos[f.id]) return;
                 let vistas = {};
-                self._chavesDoTexto(f.processo).forEach(function(r) {
-                    if (vistas[r.chave]) return;
-                    vistas[r.chave] = true;
-                    (mapa[r.chave] = mapa[r.chave] || []).push({ chave: ch, id: f.id });
+                self._chavesDaFicha(f).forEach(function(k) {
+                    if (vistas[k]) return;
+                    vistas[k] = true;
+                    (mapa[k] = mapa[k] || []).push({ chave: ch, id: f.id });
                 });
             });
         });
@@ -35486,10 +35530,9 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Monta o HTML do campo com grifos (<mark>) e julgados citados (<span
     // class="jur-ref">), cortando o texto em todos os pontos de fronteira.
     _htmlComRefs: function(item, texto, faixas) {
-        let self = this, idx = this._indiceRefs();
-        let proprias = {};
-        this._chavesDoTexto(item.processo).forEach(function(r) { proprias[r.chave] = true; });
-        let refs = this._chavesDoTexto(texto).filter(function(r) { return idx[r.chave] && !proprias[r.chave]; });
+        let self = this;
+        // Só destaca o que tem ficha no acervo além da própria.
+        let refs = this._refsDoTexto(texto).filter(function(r) { return self._candidatosRef(r.chave).some(function(c) { return c.id !== item.id; }); });
         let grifos = faixas.filter(function(f) { return self._CORES_GRIFO.indexOf(f.cor) !== -1 && f.fim > f.ini; });
         let pontos = [0, texto.length];
         refs.concat(grifos).forEach(function(x) { pontos.push(Math.max(0, Math.min(x.ini, texto.length)), Math.max(0, Math.min(x.fim, texto.length))); });
@@ -35508,21 +35551,24 @@ window.JURISPRUDENCIA_RUNTIME = {
         return html;
     },
     _htmlTooltipRef: function(chave) {
-        let self = this, lista = (this._indiceRefs()[chave] || []).map(function(r) { return self._fichaPorRef(r); }).filter(Boolean);
+        let self = this, lista = this._candidatosRef(chave).map(function(r) { return self._fichaPorRef(r); }).filter(Boolean);
         if (!lista.length) return '';
+        let semTribunal = String(chave).split(' ')[1] === '?';
         let corta = function(t, n) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, '') + '…' : t; };
         let mostrar = lista.slice(0, 2);
-        return mostrar.map(function(f) {
+        return (semTribunal ? '<div class="jur-ref-dica" style="margin:0 0 6px 0;">⚠️ A conexão não indica o tribunal — ' + (lista.length > 1 ? 'candidatos do acervo:' : 'confira se é este:') + '</div>' : '') + mostrar.map(function(f) {
             let cab = [f.tribunal, f.processo, f.dataJulgado ? self._formatarDataBR(f.dataJulgado) : '', f.tema ? 'Tema ' + f.tema : '', f.sistematica].filter(Boolean).join(' · ');
             let corpo = f.tese ? '<span class="jur-ref-rot">Tese</span>' + self._escapar(corta(f.tese, mostrar.length > 1 ? 380 : 700))
                 : (f.resumo ? '<span class="jur-ref-rot">Resumo</span>' + self._escapar(corta(f.resumo, 380)) : self._escapar(f.titulo || ''));
             return '<div class="jur-ref-cab">' + self._escapar(cab) + '</div><div>' + corpo + '</div>';
         }).join('<div class="jur-ref-sep"></div>') +
-        (lista.length > 2 ? '<div class="jur-ref-dica">+ ' + (lista.length - 2) + ' ficha(s) do mesmo processo</div>' : '') +
+        (lista.length > 2 ? '<div class="jur-ref-dica">+ ' + (lista.length - 2) + ' ficha(s) com a mesma referência</div>' : '') +
         '<div class="jur-ref-dica">Clique para abrir a ficha</div>';
     },
     abrirRef: function(chave) {
-        let r = (this._indiceRefs()[chave] || [])[0];
+        let atual = this._verAtual && this._verAtual.id;
+        let cands = this._candidatosRef(chave);
+        let r = cands.find(function(c) { return c.id !== atual; }) || cands[0];
         if (!r) return;
         if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
         // Já numa ficha "Ver": troca de ficha sem fechar o popup.
