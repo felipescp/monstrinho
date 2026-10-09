@@ -78,7 +78,15 @@ def converter(md, inicio=None, fim=None):
             if re.search(inicio, l, re.I): ativo = True
             continue
         if fim and re.search(fim, l, re.I): break
-        m = re.match(r'^Art\.\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
+        # Faixa revogada em bloco: "Art. 1.620. a 1.629. (Revogados pela Lei…)".
+        m = re.match(r'^Arts?\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*a\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(.*)$', l)
+        if m:
+            texto, alt, rev = separa_anotacoes(m.group(3))
+            for n in range(int(m.group(1).replace('.', '')), int(m.group(2).replace('.', '')) + 1):
+                artigos[str(n)] = novo_disp(texto, alt, rev)
+            art, seg, inc, rubrica = None, None, None, None
+            continue
+        m = re.match(r'^Art\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
         if m:
             num = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
             texto, alt, rev = separa_anotacoes(m.group(3))
