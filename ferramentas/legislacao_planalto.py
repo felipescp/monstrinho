@@ -102,6 +102,8 @@ def linhas_md(caminho):
         # Ordinal sobrescrito exportado como "~º~" (ex.: "§ 4~º~"): não é risco.
         l = re.sub(r'(?<=\d)\s*~\s*[oº°]\s*~(?!~)', 'º', l)
         l = re.sub(r'(?<!~)~\s*[oº°]\s*~(?!~)', 'º', l)
+        # Travessão do inciso exportado como "~–~" ("III ~–~ as parcelas…").
+        l = re.sub(r'(?<!~)~\s*([–—-])\s*~(?!~)', r'\1', l)
         # Risco com til simples (~redação antiga~), usado em alguns compilados.
         riscada = re.search(r'(?<!~)~[^~\n]+~(?!~)', l)
         l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
@@ -173,6 +175,13 @@ def converter(md, inicio=None, fim=None):
         if m:
             texto, alt, rev = separa_anotacoes(m.group(2))
             inc = novo_disp(texto, alt, rev)
+            # Inciso que continua a lista do caput depois de §§ intercalados
+            # (Lei 4.717, art. 7º: I, §§ 1º e 2º, II…VI): vai para o artigo.
+            ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
+            if (seg is not art and not seg.get('inc') and m.group(1) in ROM[1:]
+                    and ROM[ROM.index(m.group(1)) - 1] in art.get('inc', {})
+                    and m.group(1) not in art.get('inc', {})):
+                seg = art
             seg.setdefault('inc', {})[m.group(1)] = inc
             rubrica = None
             continue
