@@ -33,6 +33,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei das Sociedades por Ações (Lei 6.404/1976) | `lei-6404.json` | 11/10/2026 |
 | Lei do Bem de Família (Lei 8.009/1990) | `lei-8009.json` | 11/10/2026 |
 | Lei 9.494/1997 (tutela antecipada contra a Fazenda; art. 1º-F) | `lei-9494.json` | 11/10/2026 |
+| Lei dos Juizados Especiais Cíveis e Criminais (Lei 9.099/1995) | `lei-9099.json` | 11/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
