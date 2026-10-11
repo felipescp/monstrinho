@@ -1,10 +1,14 @@
 # Instrução adicional ao Cowork: elaboração de fichas de Jurisprudência
 
-**O que esta instrução cobre:** os campos `processo`, `tema`, `sistematica` e `conexoes`, dos quais dependem os links do app entre fichas.
+**O que esta instrução cobre:** os campos `processo`, `tema`, `sistematica` e `conexoes`, dos quais dependem os links do app entre fichas e os balões de lei seca.
 
 **O que ela não muda:** as regras de conteúdo que você já segue (tese, resumo, título, classificação por matéria e divisão).
 
-**Por que importa:** o app lê o campo **Conexões** e transforma cada julgado, Tema ou Súmula citado num link para a ficha correspondente do acervo. O balão mostra a tese, e o clique abre a ficha. Para isso funcionar sem apontar a ficha errada, toda ficha nova deve seguir a convenção abaixo.
+**Por que importa:** o app lê o campo **Conexões** e faz duas coisas:
+- transforma cada julgado, Tema ou Súmula citado num link para a ficha correspondente do acervo (o balão mostra a tese, e o clique abre a ficha);
+- transforma cada dispositivo de lei citado ("art. 155, § 4º, I, do CP") num balão com o texto da lei seca (base interna em `dados/legislacao/`, com 37 diplomas), avisando quando o texto mudou depois do julgado ou foi declarado inconstitucional.
+
+Para isso funcionar sem apontar a ficha ou o dispositivo errado, toda ficha nova deve seguir a convenção abaixo.
 
 ---
 
@@ -34,7 +38,7 @@
 
 ## 2. Campo `conexoes`: convenção obrigatória
 
-**Separe cada citação com `;`.** Dispositivos de lei podem aparecer misturados, como já acontece: o app só liga julgados, Temas e Súmulas.
+**Separe cada citação com `;`.** Julgados, enunciados e dispositivos de lei podem aparecer misturados no mesmo campo. Cada trecho entre `;` é lido sozinho: o tribunal de um Tema e o diploma de um artigo precisam estar **no mesmo trecho** da citação.
 
 | O que citar | Como escrever | Nunca escrever |
 |---|---|---|
@@ -44,12 +48,31 @@
 | Várias súmulas do mesmo tribunal | `Súmulas 43 e 54/STJ` (tribunal só no fim) | `Súmulas 43/STJ e 54` |
 | Súmula Vinculante | `Súmula Vinculante 43` ou `SV 43` | "SV 43/STF" (não precisa de tribunal) |
 | Paradigma de um Tema | `Tema 499/STF (RE 612.043)`: o app liga os dois | — |
+| Remissão "ver também" | `(ver também: STF, Plenário, RE 636.553-RS, Tema 445/STF, Info 967)` | `…, Tema 445, …` (sem tribunal no Tema) |
 
 **Regras de conteúdo da conexão:**
 1. **Tribunal sempre explícito** em Tema e Súmula. Os números de Tema e de Súmula se repetem entre STF e STJ, e uma citação sem tribunal deixa o app sem saber qual ficha mostrar.
+   - O app ainda deduz o tribunal em três situações: Tema entre parênteses logo depois do paradigma (`RE 570.392 (Tema 29)` → STF; `REsp … (Tema 1.051)` → STJ); trecho que começa pelo tribunal (`STF Tema 1.082`, `(ver também: STF, Plenário, …, Tema 445)`); e `Tema 29, repercussão geral`. Isso é rede de segurança, não convenção: escreva sempre `/STF` ou `/STJ`.
 2. **Tribunal conferido na fonte**, nunca deduzido pelo número nem pela memória. Na dúvida, prefira citar o processo-paradigma, cujo número é único.
 3. **Não cite a própria ficha** nas suas conexões.
 4. **Uma referência por número.** Não junte "Temas 1 e 2" de tribunais diferentes na mesma expressão.
+
+### 2.1. Dispositivos de lei nas Conexões
+
+O app liga o artigo ao diploma citado **no mesmo trecho** (entre `;`): primeiro o que vem logo depois da lista de artigos (`art. 155 do CP`), senão o mais próximo antes (`CP, art. 155`).
+
+| O que citar | Como escrever | Evitar |
+|---|---|---|
+| Artigo | `art. 155 do CP` · `CP, art. 155` · `art. 54 da Lei 9.784/1999` | artigo solto sem diploma no trecho (`art. 14, § 3º`) |
+| Parágrafo, inciso, alínea | `art. 155, § 4º, I, do CP` · `art. 206, § 3º, V, do CC` · `art. 52, IX, alínea "a", da Lei 9.099/1995` | inciso antes do parágrafo (`art. 24, XIII, § 1º`): para inciso do caput e parágrafo do mesmo artigo, cite em trechos separados |
+| Vários parágrafos | `art. 85, §§ 2º, 3º e 8º, do CPC` (a lista de §§ termina no primeiro "e") | `arts. 1º, §§ 1º e 2º, 9º, 10 e 11` funciona, mas prefira `art. 1º, §§ 1º e 2º; arts. 9º, 10 e 11` |
+| Artigos de diplomas diferentes | um trecho por diploma: `CF, art. 231; ADCT, art. 67` | `art. 231 e art. 67 do ADCT, CF/88` (o app atribui os dois ao ADCT) |
+| Item de lista anexa | `item 17.08 da Lista Anexa à LC 116/2003` · `subitens 4.22 e 4.23 da lista anexa à LC 116/2003` | — |
+| Redação antiga | `art. 40, § 4º, II, da CF (redação anterior à EC 103/2019)` | citar a redação antiga sem avisar: o balão mostra o texto atual |
+
+**Nomes reconhecidos** (sigla, nome ou número): CF, ADCT, CP, CPP, CPC (o de 2015; `CPC/73` fica sem balão), CC (o de 2002), CDC, CTN, CTB, ECA, LEP, LINDB, Código Eleitoral, Código Florestal (o de 2012; `antigo Código Florestal` ou `Lei 4.771` ficam sem balão), Estatuto do Desarmamento, Estatuto da OAB/EAOAB, LC 116 e as Leis 4.717, 6.404, 6.830 (LEF), 6.938 (PNMA), 7.347 (LACP), 8.009, 8.112, 8.213, 8.429 (LIA), 9.099, 9.494, 9.504, 9.605, 9.656, 9.784, 11.101, 11.343, 12.016, 12.850 e o Decreto 20.910. Outros diplomas podem ser citados normalmente, mas ainda não têm balão: escreva sempre o número (`Lei 14.133/2021, art. 75`), nunca só o apelido.
+
+**Não use** `CE` para Código Eleitoral (confunde com a UF do Ceará) nem `LRF` sem o número (serve à Responsabilidade Fiscal e à de Recuperação e Falência).
 
 ---
 
@@ -63,7 +86,8 @@
    - `sem_tribunal` não aumentou;
    - `tribunal_possivelmente_trocado` não aumentou, ou cada caso novo está justificado como lacuna de acervo;
    - `rg_repetitivo_sem_tema`, `tema_em_tribunal_incompativel` e `sumula_ou_sv_com_mais_de_uma_ficha` continuam em 0;
-   - `processo_nao_reconhecido` não aumentou.
+   - `processo_nao_reconhecido` não aumentou;
+   - `lei_dispositivo_nao_localizado` e `lei_artigo_sem_diploma` não aumentaram (listas `I` e `J` do JSON).
 4. **Informe no fim da resposta:**
    - o resumo do diagnóstico antes e depois do lote;
    - a lista de pendências de acervo;

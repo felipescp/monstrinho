@@ -35473,7 +35473,17 @@ window.JURISPRUDENCIA_RUNTIME = {
     // de Repercussão Geral" (→ STF), "Tema 1051 do STJ". Chaves: "SV N",
     // "SUM <TRIB> N", "TEMA <TRIB> N"; sem tribunal na citação → "?" (o
     // balão mostra os candidatos de cada tribunal, identificados).
-    _RE_REF_ENUNCIADO: /\b(S[úu]mulas?\s+Vinculantes?|SVs?|S[úu]mulas?|Temas?)(?:\s+n[º°o.]*)?\s+(\d{1,4}(?:\.\d{3})?(?:\s*(?:,|\be\b)\s*\d{1,4}(?:\.\d{3})?)*)(?:\s*(?:[\/–-]\s*|(?:d[oa]|no|na|de)\s+(?:[oa]\s+)?)(STF|STJ|TSE|TST|Repercuss[ãa]o\s+Geral|RG|Recursos?\s+Repetitivos?|Repetitivos?)\b)?/g,
+    _RE_REF_ENUNCIADO: /\b(S[úu]mulas?\s+Vinculantes?|SVs?|S[úu]mulas?|Temas?)(?:\s+n[º°o.]*)?\s+(\d{1,4}(?:\.\d{3})?(?:\s*(?:,|\be\b)\s*\d{1,4}(?:\.\d{3})?)*)(?:\s*(?:[\/–-]\s*|(?:d[oa]|no|na|de)\s+(?:[oa]\s+)?|,\s*(?=[Rr]epercuss|[Rr]ecursos?\s+[Rr]epetitiv|[Rr]epetitiv))(STF|STJ|TSE|TST|[Rr]epercuss[ãa]o\s+[Gg]eral|RG|[Rr]ecursos?\s+[Rr]epetitivos?|[Rr]epetitivos?)\b)?/g,
+    // Tribunal de Tema/Súmula citado sem tribunal, deduzido do contexto imediato:
+    // "RE 570.392 (Tema 29)" → STF (RE/ARE/AI) ou STJ (REsp/AREsp); trecho que
+    // começa pelo tribunal, "(ver também: STF, Plenário, RE 636.553-RS, Tema 445)".
+    _tribunalDoContexto: function(texto, ini) {
+        let antes = texto.slice(0, ini), m;
+        if ((m = antes.match(/\b(RE|ARE|AI|REsp|AREsp)\s*n?[º°o.]*\s*\d[\d.]*(?:\s*[\/-]\s*[A-Z]{2})?\s*\(\s*$/))) return /^(RE|ARE|AI)$/.test(m[1]) ? 'STF' : 'STJ';
+        let seg = antes.slice(antes.lastIndexOf(';') + 1);
+        if ((m = seg.match(/^\s*\(?\s*(?:ver\s+tamb[ée]m:\s*)?(STF|STJ|TSE)\b/))) return m[1];
+        return '';
+    },
     _chavesEnunciados: function(texto) {
         let out = [], re = new RegExp(this._RE_REF_ENUNCIADO.source, 'g'), m;
         texto = String(texto || '');
@@ -35482,6 +35492,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             let trib = m[3] || '';
             if (/repercuss|^RG$/i.test(trib)) trib = 'STF';
             else if (/repetitiv/i.test(trib)) trib = 'STJ';
+            if (!trib && tipo !== 'SV') trib = this._tribunalDoContexto(texto, m.index);
             trib = trib.toUpperCase() || '?';
             // Posição de cada número dentro do trecho (lista "150, 224 e 254").
             let base = m.index + m[0].indexOf(m[2], m[1].length);
@@ -36886,8 +36897,8 @@ window.LEGISLACAO = (function() {
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
     let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
     // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
-    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
-    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
     let cache = {}, carregando = {};
 
     function mencoes(seg) {
@@ -37021,6 +37032,13 @@ window.LEGISLACAO = (function() {
             }
             if (!par) html += '<div class="lei-disp">' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2]) + ' não localizado.</div>';
             else { html += '<div class="lei-disp"><b>' + esc(p[2] === 'pu' ? 'Parágrafo único' : '§ ' + p[2].replace(/^(\d)(?=$|-)/, '$1º')) + (par.rubrica ? ' (' + esc(par.rubrica) + ')' : '') + ':</b> ' + txt(par) + '</div>'; usa(par); alvo = par; }
+        }
+        // Inciso citado direto no artigo que, no texto, está no parágrafo único
+        // ("art. 2º, X, da Lei 9.784"): procura lá e avisa.
+        if (p[3] && !p[2] && !(a.inc && a.inc[p[3].split(',')[0]]) && a.par && a.par.pu && a.par.pu.inc && a.par.pu.inc[p[3].split(',')[0]]) {
+            html += '<div class="lei-aviso">ℹ️ O inciso citado está no parágrafo único do artigo.</div>';
+            html += '<div class="lei-disp"><b>Parágrafo único:</b> ' + txt(a.par.pu) + '</div>';
+            alvo = a.par.pu;
         }
         if (p[3]) p[3].split(',').forEach(function(ri) {
             let inc = alvo.inc && alvo.inc[ri];

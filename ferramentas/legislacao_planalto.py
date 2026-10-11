@@ -185,6 +185,12 @@ def linhas_md(caminho):
         # Vários artigos revogados na mesma linha ("Art. 232. (Revogado…) Art. 233. (Revogado…)").
         # Só quebra depois de uma anotação de revogação/veto: texto citado entre
         # aspas (ex.: ECA art. 263, "1) Art. 121…") continua inteiro.
+        # Dispositivo grudado no anterior por uma sequência de espaços (Código
+        # Eleitoral, art. 112: "…da idade.        Parágrafo único. Na definição…").
+        l = re.sub(r'(?<=[.;:])[ \u00a0]{4,}(?=(?:Par[áa]grafo\s+[úu]nico|§\s*\d|Art\.\s*\d)[^\n]{20})', '\n', l)
+        if '\n' in l.rstrip('\n'):
+            for pedaco in l.rstrip('\n').split('\n'): yield pedaco + '\n'
+            continue
         partes, ini = [], 0
         for mm in re.finditer(r'(?<=[)\]])[\s\u00a0]+(?=Art\.\s*\d)', l):
             if re.search(r'Revogad|VETAD', l[ini:mm.start()], re.I):
@@ -261,8 +267,12 @@ def converter(md, inicio=None, fim=None):
             seg, inc, rubrica = p, None, None
             continue
         # "l -", "ll -" (L minúsculo no lugar de I, erro do compilado da Lei 7.347).
-        l = re.sub(r'^(l{1,3})(?=\s*[-–—])', lambda mm: 'I' * len(mm.group(1)), l)
-        m = re.match(r'^([IVXL]+)\s*[-–—]\s*(.*)$', l)
+        # Também "Il -" (CPP, art. 78) e outras misturas de I e l.
+        l = re.sub(r'^([IVX]*l[IVXl]*)(?=\s*[-–—])', lambda mm: mm.group(1).replace('l', 'I'), l)
+        # "III - texto", "VIII-A - texto" e, sem travessão (falha do compilado da CF,
+        # art. 93), "IX todos os julgamentos…": numeral seguido de minúscula.
+        m = re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s*[-–—]\s*(.*)$', l) or \
+            re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s+(?=[a-zà-ú])(.*)$', l)
         if m:
             texto, alt, rev = separa_anotacoes(m.group(2))
             inc = novo_disp(texto, alt, rev)
