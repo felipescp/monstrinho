@@ -36848,6 +36848,8 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*8\.?213|Lei\s+de\s+Benef[íi]cios(?:\s+da\s+Previd[êe]ncia(?:\s+Social)?)?|Lei\s+dos\s+Planos\s+de\s+Benef[íi]cios(?:\s+da\s+Previd[êe]ncia(?:\s+Social)?)?|LBPS/g },
         L9784: { nome: 'Lei 9.784', arquivo: 'dados/legislacao/lei-9784.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9784.htm',
               re: /Lei\s*n?[º°o.]*\s*9\.?784|Lei\s+(?:Geral\s+)?d[oe]\s+Processo\s+Administrativo(?:\s+Federal)?|\bLPA\b/g },
+        L9504: { nome: 'Lei 9.504', arquivo: 'dados/legislacao/lei-9504.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9504.htm',
+              re: /Lei\s*n?[º°o.]*\s*9\.?504|Lei\s+(?:Geral\s+)?das\s+Elei[çc][õo]es/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36924,12 +36926,14 @@ window.LEGISLACAO = (function() {
         let a = j.artigos[p[1]];
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
-        let html = '', alts = [];
+        let html = '', alts = [], altCaput = a && a.alt;
         let txt = function(o) { return o.revogado ? '<i>(revogado)</i>' : esc(o.texto || ''); };
         let usa = function(o) { if (o && o.alt) alts.push(o.alt); };
         let alvo = a;
         html += '<div class="lei-disp"><b>Caput:</b> ' + txt(a) + '</div>';
-        usa(a);
+        // Citado só o artigo: o caput é o trecho. Citado § ou inciso: o aviso vale
+        // para o trecho citado; o caput alterado depois ganha nota própria.
+        if (!p[2] && !p[3]) usa(a);
         if (p[2]) {
             let par = a.par && a.par[p[2]];
             // Parágrafo único que virou §§ (ex.: CTN 174, LC 236/2026): mostra o § 1º e avisa.
@@ -36952,6 +36956,7 @@ window.LEGISLACAO = (function() {
         let maisRecente = alts.sort(function(x, y) { return +y.slice(-4) - +x.slice(-4); })[0];
         if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += '<div class="lei-aviso">⚠️ Texto incluído ou alterado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado outra redação, ou o dispositivo ainda não existia.</div>';
         else if (maisRecente) html += '<div class="jur-ref-dica">Última alteração no trecho: ' + esc(maisRecente) + '</div>';
+        if ((p[2] || p[3]) && altCaput && ano && +altCaput.slice(-4) > +ano) html += '<div class="jur-ref-dica">O caput foi alterado depois do julgado, pela ' + esc(altCaput) + '.</div>';
         let dt = String(j.dataTexto || '').split('-').reverse().join('/');
         return cab + html + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir no Planalto</div>';
     }
