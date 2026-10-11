@@ -27,6 +27,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Benefícios da Previdência Social (Lei 8.213/1991) | `lei-8213.json` | 09/10/2026 |
 | Lei do Processo Administrativo Federal (Lei 9.784/1999) | `lei-9784.json` | 11/10/2026 |
 | Lei das Eleições (Lei 9.504/1997) | `lei-9504.json` | 11/10/2026 |
+| Lei do Mandado de Segurança (Lei 12.016/2009) | `lei-12016.json` | 11/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
