@@ -93,11 +93,34 @@ def linhas_html(caminho):
         l = re.sub(r'\*\*\s*\*\*', '', l)
         if l: yield l + '\n'
 
+CITACAO = '\u2063'  # marca linha de texto citado (não é dispositivo do diploma)
+
 def linhas_md(caminho):
+    em_citacao = anuncia = False
     for l in open(caminho, encoding='utf8'):
+        # Bloco ">" do Markdown: às vezes é só formatação de dispositivo real
+        # ("> Art. 234-A." no CP); às vezes é texto citado por artigo que altera
+        # outra lei ("> > “Art. 16. A sentença…”"). Citado = bloco que abre com
+        # aspas; vale até o bloco ">" acabar (cada linha citada pode fechar as
+        # próprias aspas e a seguinte vir sem elas: CDC art. 113, ECA art. 263).
+        citado = False
+        if re.match(r'^\s*>', l):
+            conteudo = re.sub(r'^\s*(?:>\s*)+', '', l).strip()
+            if not em_citacao and (re.match(r'^\[?\s*[“"«]', conteudo) or anuncia): em_citacao = True
+            citado = em_citacao and bool(conteudo)
+            l = re.sub(r'^\s*(?:>\s*)+', '', l)
+        elif l.strip():
+            em_citacao = False
+            # Linha que anuncia redação de outra lei ("…passa a vigorar com as
+            # seguintes alterações:"): o bloco ">" seguinte é texto citado (ECA, art. 263).
+            anuncia = bool(re.search(r'(passa[m]? a vigorar|seguintes? reda[çc]|acrescid[oa]s?|altera[çc][õo]es|seguintes? modifica)[^:]*:\s*(?:\[.*)?$', l, re.I))
+        if citado:
+            yield CITACAO + l if l.endswith('\n') else CITACAO + l + '\n'
+            continue
         # Texto riscado do compilado (~~redação antiga~~) sai.
         # "~~" solto (sem fechamento) é artefato da conversão, não risco:
         # nesses casos a linha traz o texto vigente ("Redação dada pela…").
+        til_solto = '~~' in re.sub(r'~~.*?~~', '', l)
         l = re.sub(r'~~.*?~~', '', l).replace('~~', '')
         # Ordinal sobrescrito exportado como "~º~" (ex.: "§ 4~º~"): não é risco.
         l = re.sub(r'(?<=\d)\s*~\s*[oº°]\s*~(?!~)', 'º', l)
@@ -106,6 +129,17 @@ def linhas_md(caminho):
         l = re.sub(r'(?<!~)~\s*([–—-])\s*~(?!~)', r'\1', l)
         # Risco com til simples (~redação antiga~), usado em alguns compilados.
         riscada = re.search(r'(?<!~)~[^~\n]+~(?!~)', l)
+        # Dispositivo riscado com a anotação de revogação fora do risco
+        # ("~I - texto antigo~ (Revogado pela LC 150…)"): fica o rótulo, revogado.
+        if riscada:
+            # § só sem "~~" solto: na Lei 9.605, art. 67, "~~~Parágrafo único…~
+            # (Revogado…)" vem antes da pena nova, e o rótulo antigo a roubaria.
+            rot = re.match(r'~\s*([IVXL]+\s*[-–—]+)', riscada.group(0)) or \
+                (None if til_solto else re.match(r'~\s*(§\s*\d+\s*[ºo°]?(?:-[A-Z])?\.?|Par[áa]grafo\s+[úu]nico\.?)', riscada.group(0)))
+            resto = l[riscada.end():]
+            if rot and re.search(r'Revogad', resto, re.I) and not re.search(r'Revogad', riscada.group(0), re.I):
+                l = l[:riscada.start()] + rot.group(1) + ' ' + resto
+                riscada = None
         l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
         # Dispositivo de MP com vigência encerrada (anotação riscada): sai inteiro.
         if riscada and re.search(r'Vig[êe]ncia\s+encerrada', l, re.I): continue
@@ -129,8 +163,15 @@ def converter(md, inicio=None, fim=None):
     for raw in fonte:
         bruto = raw.strip()
         if not bruto: continue
-        l = limpa(raw)
+        citado = raw.startswith(CITACAO)
+        l = limpa(raw.replace(CITACAO, ''))
         if not l: continue
+        # Texto citado (redação dada a outra lei): continuação, nunca dispositivo.
+        if citado:
+            if art is not None and ativo:
+                alvo = inc if inc is not None else seg
+                alvo['texto'] = (alvo['texto'] + ' ' + l).strip()
+            continue
         # --inicio/--fim: recorta um trecho do compilado (ex.: CF sem o ADCT,
         # e o ADCT à parte, porque ele recomeça a numeração no art. 1º).
         if not ativo:
@@ -158,7 +199,7 @@ def converter(md, inicio=None, fim=None):
             continue
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
-        if re.match(r'^(Rio de Janeiro|Bras[íi]lia),\s*\d', l): art = None; continue
+        if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional),\s*(?:em\s+)?\d', l): art = None; continue
         m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
         pu = re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
         if m or pu:

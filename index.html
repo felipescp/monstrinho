@@ -36859,6 +36859,10 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*4\.?717|Lei\s+da\s+A[çc][ãa]o\s+Popular|\bLAP\b/g },
         L6404: { nome: 'Lei 6.404', arquivo: 'dados/legislacao/lei-6404.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l6404consol.htm',
               re: /Lei\s*n?[º°o.]*\s*6\.?404|Lei\s+das\s+(?:S\.?\s?A\.?|Sociedades\s+An[ôo]nimas|Sociedades\s+por\s+A[çc][õo]es)|\bLSA\b/g },
+        L8009: { nome: 'Lei 8.009', arquivo: 'dados/legislacao/lei-8009.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8009.htm',
+              re: /Lei\s*n?[º°o.]*\s*8\.?009|Lei\s+do\s+Bem\s+de\s+Fam[íi]lia/g },
+        L9494: { nome: 'Lei 9.494', arquivo: 'dados/legislacao/lei-9494.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9494.htm',
+              re: /Lei\s*n?[º°o.]*\s*9\.?494/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36941,7 +36945,8 @@ window.LEGISLACAO = (function() {
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
         let html = '', alts = [], altCaput = a && a.alt;
         let txt = function(o) { return o.revogado ? '<i>(revogado)</i>' : esc(o.texto || ''); };
-        let usa = function(o) { if (o && o.alt) alts.push(o.alt); };
+        let revPor = {};
+        let usa = function(o) { if (o && o.alt) { alts.push(o.alt); if (o.revogado) revPor[o.alt] = true; } };
         let alvo = a;
         html += '<div class="lei-disp"><b>Caput:</b> ' + txt(a) + '</div>';
         // Citado só o artigo: o caput é o trecho. Citado § ou inciso: o aviso vale
@@ -36976,8 +36981,10 @@ window.LEGISLACAO = (function() {
         else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
         // Redação posterior ao julgado → aviso (pegadinha clássica).
         let maisRecente = alts.sort(function(x, y) { return +y.slice(-4) - +x.slice(-4); })[0];
-        if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += '<div class="lei-aviso">⚠️ Texto incluído ou alterado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado outra redação, ou o dispositivo ainda não existia.</div>';
-        else if (maisRecente) html += '<div class="jur-ref-dica">Última alteração no trecho: ' + esc(maisRecente) + '</div>';
+        if (maisRecente && ano && +maisRecente.slice(-4) > +ano) html += revPor[maisRecente]
+            ? '<div class="lei-aviso">⚠️ Revogado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado aplicou o texto então vigente.</div>'
+            : '<div class="lei-aviso">⚠️ Texto incluído ou alterado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado outra redação, ou o dispositivo ainda não existia.</div>';
+        else if (maisRecente) html += '<div class="jur-ref-dica">' + (revPor[maisRecente] ? 'Revogado pela ' : 'Última alteração no trecho: ') + esc(maisRecente) + '</div>';
         if ((p[2] || p[3]) && altCaput && ano && +altCaput.slice(-4) > +ano) html += '<div class="jur-ref-dica">O caput foi alterado depois do julgado, pela ' + esc(altCaput) + '.</div>';
         let dt = String(j.dataTexto || '').split('-').reverse().join('/');
         return cab + html + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir no Planalto</div>';
