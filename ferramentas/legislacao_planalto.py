@@ -98,8 +98,14 @@ def linhas_md(caminho):
         # "~~" solto (sem fechamento) é artefato da conversão, não risco:
         # nesses casos a linha traz o texto vigente ("Redação dada pela…").
         l = re.sub(r'~~.*?~~', '', l).replace('~~', '')
+        # Ordinal sobrescrito exportado como "~º~" (ex.: "§ 4~º~"): não é risco.
+        l = re.sub(r'(?<=\d)\s*~\s*[oº°]\s*~(?!~)', 'º', l)
+        l = re.sub(r'(?<!~)~\s*[oº°]\s*~(?!~)', 'º', l)
         # Risco com til simples (~redação antiga~), usado em alguns compilados.
+        riscada = re.search(r'(?<!~)~[^~\n]+~(?!~)', l)
         l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
+        # Dispositivo de MP com vigência encerrada (anotação riscada): sai inteiro.
+        if riscada and re.search(r'Vig[êe]ncia\s+encerrada', l, re.I): continue
         # Títulos em Markdown ("#### CAPÍTULO II", "##### DA PREVENÇÃO"): não são dispositivo.
         if re.match(r'^\s*#{1,6}\s', l): continue
         # Vários artigos revogados na mesma linha ("Art. 232. (Revogado…) Art. 233. (Revogado…)").
