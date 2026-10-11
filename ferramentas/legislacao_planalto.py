@@ -81,6 +81,8 @@ def separa_anotacoes(l):
     texto = re.sub(r',\s*,', ',', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
     if re.fullmatch(r'[.;,:\s–-]*', texto): texto = ''  # sobra de "§ 2º . (Revogado…)"
+    # Texto que é só "Revogado." / "(Revogado)." (sem a lei revogadora entre parênteses).
+    if re.fullmatch(r'\(?\s*Revogad[oa]s?\s*\.?\s*\)?\s*[.;]?', texto, re.I): texto, rev = '', True
     return texto, (alt[2] if alt else None), rev
 
 def junta_alt(a, b):
