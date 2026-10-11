@@ -59,6 +59,7 @@ def separa_anotacoes(l):
     texto = re.sub(r'\(\s*\)', '', texto)
     texto = re.sub(r',\s*,', ',', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
+    if re.fullmatch(r'[.;,:\s–-]*', texto): texto = ''  # sobra de "§ 2º . (Revogado…)"
     return texto, (alt[2] if alt else None), rev
 
 def junta_alt(a, b):

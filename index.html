@@ -36852,6 +36852,8 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*9\.?504|Lei\s+(?:Geral\s+)?das\s+Elei[çc][õo]es/g },
         L12016: { nome: 'Lei 12.016', arquivo: 'dados/legislacao/lei-12016.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l12016.htm',
               re: /Lei\s*n?[º°o.]*\s*12\.?016|Lei\s+do\s+Mandado\s+de\s+Seguran[çc]a|\bLMS\b/g },
+        LINDB: { nome: 'LINDB', arquivo: 'dados/legislacao/lindb.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del4657compilado.htm',
+              re: /\bLINDB\b|\bLICC\b|Decreto-Lei\s*n?[º°o.]*\s*4\.?657|Lei\s+de\s+Introdu[çc][ãa]o\s+(?:[àa]s\s+Normas\s+do\s+Direito\s+Brasileiro|ao\s+C[óo]digo\s+Civil)/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36950,7 +36952,7 @@ window.LEGISLACAO = (function() {
             let inc = alvo.inc && alvo.inc[ri];
             if (!inc) { html += '<div class="lei-disp">Inciso ' + esc(ri) + ' não localizado.</div>'; return; }
             html += '<div class="lei-disp"><b>' + esc(ri) + ' –</b> ' + txt(inc) + '</div>'; usa(inc);
-            if (p[4] && inc.ali && inc.ali[p[4]]) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + esc(inc.ali[p[4]]) + '</div>';
+            if (p[4] && inc.ali && p[4] in inc.ali) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + (inc.ali[p[4]] ? esc(inc.ali[p[4]]) : '<i>(revogada)</i>') + '</div>';
         });
         if (alvo.pena) html += '<div class="lei-pena">Pena – ' + esc(alvo.pena) + '</div>';
         else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
