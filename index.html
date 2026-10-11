@@ -36869,6 +36869,8 @@ window.LEGISLACAO = (function() {
               re: /C[óo]digo\s+Eleitoral|Lei\s*n?[º°o.]*\s*4\.?737/g },
         L12651: { nome: 'Código Florestal', arquivo: 'dados/legislacao/lei-12651.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12651.htm',
               re: /Lei\s*n?[º°o.]*\s*12\.?651|(?<!antigo\s)(?<!revogado\s)(?:Novo\s+)?C[óo]digo\s+Florestal(?!\s*(?:de\s*1965|\/65|revogado|anterior|\(\s*Lei\s*n?[º°o.]*\s*4\.?771))/g },
+        L10826: { nome: 'Estatuto do Desarmamento', arquivo: 'dados/legislacao/lei-10826.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10.826compilado.htm',
+              re: /Lei\s*n?[º°o.]*\s*10\.?826|Estatuto\s+do\s+Desarmamento/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36950,9 +36952,17 @@ window.LEGISLACAO = (function() {
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
         let html = '', alts = [], altCaput = a && a.alt;
-        let txt = function(o) { return o.revogado ? '<i>(revogado)</i>' : esc(o.texto || ''); };
+        let txt = function(o) {
+            if (o.revogado) return '<i>(revogado)</i>';
+            if (!o.texto && (o.stf || []).some(function(x) { return x.tipo === 'inconst'; })) return '<i>(declarado inconstitucional)</i>';
+            return esc(o.texto || '');
+        };
         let revPor = {};
-        let usa = function(o) { if (o && o.alt) { alts.push(o.alt); if (o.revogado) revPor[o.alt] = true; } };
+        let stf = [];
+        let usa = function(o) {
+            if (o && o.alt) { alts.push(o.alt); if (o.revogado) revPor[o.alt] = true; }
+            (o && o.stf || []).forEach(function(x) { if (!stf.some(function(y) { return y.tipo === x.tipo && y.ref === x.ref; })) stf.push(x); });
+        };
         let alvo = a;
         html += '<div class="lei-disp"><b>Caput:</b> ' + txt(a) + '</div>';
         // Citado só o artigo: o caput é o trecho. Citado § ou inciso: o aviso vale
@@ -36992,6 +37002,12 @@ window.LEGISLACAO = (function() {
             : '<div class="lei-aviso">⚠️ Texto incluído ou alterado pela ' + esc(maisRecente) + ', depois do julgado (' + esc(ano) + '). O julgado pode ter aplicado outra redação, ou o dispositivo ainda não existia.</div>';
         else if (maisRecente) html += '<div class="jur-ref-dica">' + (revPor[maisRecente] ? 'Revogado pela ' : 'Última alteração no trecho: ') + esc(maisRecente) + '</div>';
         if ((p[2] || p[3]) && altCaput && ano && +altCaput.slice(-4) > +ano) html += '<div class="jur-ref-dica">O caput foi alterado depois do julgado, pela ' + esc(altCaput) + '.</div>';
+        // Controle de constitucionalidade anotado no compilado ("Declarado inconstitucional
+        // pela ADIN 5538", "Vide ADIN 3.112-1"): o texto do Planalto continua igual.
+        let refs = function(tipo) { return stf.filter(function(x) { return x.tipo === tipo; }).map(function(x) { return x.ref; }); };
+        if (refs('inconst').length) html += '<div class="lei-aviso">⚖️ Declarado inconstitucional pelo STF (' + esc(refs('inconst').join(', ')) + ').</div>';
+        if (refs('inconst_parcial').length) html += '<div class="lei-aviso">⚖️ Há expressões declaradas inconstitucionais pelo STF (' + esc(refs('inconst_parcial').join(', ')) + ').</div>';
+        if (refs('vide').length) html += '<div class="jur-ref-dica">⚖️ Vide ' + esc(refs('vide').join(', ')) + ' (STF): confira se o dispositivo foi afetado.</div>';
         let dt = String(j.dataTexto || '').split('-').reverse().join('/');
         return cab + html + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir no Planalto</div>';
     }

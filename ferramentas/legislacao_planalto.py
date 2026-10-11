@@ -30,14 +30,34 @@ def limpa(l):
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
+# Notas de controle de constitucionalidade da última linha lida ("Vide ADIN 3.112-1",
+# "Declarado inconstitucional pela ADIN 5538"): separa_anotacoes preenche, novo_disp consome.
+_STF = []
+
+def nota_stf(t):
+    """Anotação → {'tipo': 'inconst'|'inconst_parcial'|'vide', 'ref': 'ADI 3.112'} ou None."""
+    m = re.search(r'\b(ADIN|ADI|ADC|ADO|ADPF|ADCN)\s*(?:n[º°o.]*\s*)?(\d[\d.]*)', t, re.I)
+    if not m: return None
+    cls = {'ADIN': 'ADI', 'ADCN': 'ADC'}.get(m.group(1).upper(), m.group(1).upper())
+    num = int(m.group(2).replace('.', '').rstrip('.') or 0)
+    if not num: return None
+    ref = '%s %s' % (cls, format(num, ',').replace(',', '.'))
+    if re.search(r'Express[õo]es?\s+declarad', t, re.I): tipo = 'inconst_parcial'
+    elif re.search(r'Declarad[oa]s?\s+inconstitucional', t, re.I): tipo = 'inconst'
+    else: tipo = 'vide'
+    return {'tipo': tipo, 'ref': ref}
+
 def separa_anotacoes(l):
     """Tira do texto as anotações do Planalto e devolve (texto, alt, revogado)."""
     alt, rev = None, False
+    del _STF[:]
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
+        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express[õo]es?\s+declarad|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
+            ns = nota_stf(t)
+            if ns and ns not in _STF: _STF.append(ns)
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t)
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
@@ -72,6 +92,9 @@ def novo_disp(texto, alt, rev):
     d = {'texto': texto}
     if alt: d['alt'] = alt
     if rev: d['revogado'] = True
+    if _STF:
+        d['stf'] = list(_STF)
+        del _STF[:]
     return d
 
 def linhas_html(caminho):
