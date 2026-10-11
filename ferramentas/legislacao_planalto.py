@@ -33,6 +33,7 @@ RE_PAR = re.compile(r'\(([^()]*)\)')
 # Notas de controle de constitucionalidade da última linha lida ("Vide ADIN 3.112-1",
 # "Declarado inconstitucional pela ADIN 5538"): separa_anotacoes preenche, novo_disp consome.
 _STF = []
+ANEXO = {}  # itens da lista anexa ao diploma, se houver (LC 116)
 
 def nota_stf(t):
     """Anotação → {'tipo': 'inconst'|'inconst_parcial'|'vide', 'ref': 'ADI 3.112'} ou None."""
@@ -192,6 +193,8 @@ def linhas_md(caminho):
 
 def converter(md, inicio=None, fim=None):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
+    em_anexo = False
+    ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
     for raw in fonte:
@@ -230,6 +233,17 @@ def converter(md, inicio=None, fim=None):
             if rubrica: art['rubrica'] = rubrica
             artigos[num] = art
             seg, inc, rubrica = art, None, None
+            continue
+        # Lista anexa (LC 116: "Lista de serviços anexa à Lei Complementar…"):
+        # itens "1 – Serviços de informática", "1.05 – Licenciamento…" vão para ANEXO.
+        if re.match(r'^(Lista|Rela[çc][ãa]o)\b.{0,40}\banexa\b', l, re.I):
+            em_anexo, art = True, None
+            continue
+        if em_anexo:
+            m = re.match(r'^(\d{1,2}(?:\.\d{2})?)\s*[-–—]\s*(.*)$', l)
+            if m:
+                texto, alt, rev = separa_anotacoes(m.group(2))
+                ANEXO[m.group(1)] = novo_disp(texto, alt, rev)
             continue
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
@@ -303,5 +317,6 @@ if __name__ == '__main__':
     data = args[5] if len(args) > 5 else datetime.date.today().isoformat()
     arts = converter(md, opts.get('inicio'), opts.get('fim'))
     out = {'id': ident, 'nome': nome, 'fonte': fonte, 'dataTexto': data, 'artigos': arts}
+    if ANEXO: out['anexo'] = dict(ANEXO)
     json.dump(out, open(saida, 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
     print('%d artigos → %s' % (len(arts), saida))

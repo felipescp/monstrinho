@@ -36871,6 +36871,8 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*12\.?651|(?<!antigo\s)(?<!revogado\s)(?:Novo\s+)?C[óo]digo\s+Florestal(?!\s*(?:de\s*1965|\/65|revogado|anterior|\(\s*Lei\s*n?[º°o.]*\s*4\.?771))/g },
         L10826: { nome: 'Estatuto do Desarmamento', arquivo: 'dados/legislacao/lei-10826.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10.826compilado.htm',
               re: /Lei\s*n?[º°o.]*\s*10\.?826|Estatuto\s+do\s+Desarmamento/g },
+        LC116: { nome: 'LC 116', arquivo: 'dados/legislacao/lc-116.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp116.htm', anexo: true,
+              re: /(?:\bLC|Lei\s+Complementar)\s*n?[º°o.]*\s*116\b/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36932,8 +36934,25 @@ window.LEGISLACAO = (function() {
                     primeiro = false;
                 }
             }
+            // "item 15.09 da lista anexa", "subitens 4.22 e 4.23" (LC 116): só para diploma com anexo.
+            let reL = /\b(?:[Ss]ub)?[Ii]te(?:m|ns)\s+(\d{1,2}(?:\.\d{2})?)((?:\s*(?:,|\be\b)\s*\d{1,2}(?:\.\d{2})?)*)/g;
+            while ((m = reL.exec(seg))) {
+                let fimL = m.index + m[0].length;
+                let depois = ms.filter(function(x) { return x.ini >= fimL; })[0];
+                let antes = ms.filter(function(x) { return x.fim <= m.index; }).pop();
+                let alvo = depois && seg.slice(fimL, depois.ini).length < 40 ? depois : (antes || depois);
+                if (!alvo || !alvo.id || !DIPLOMAS[alvo.id].anexo) continue;
+                let nums = (m[1] + m[2]).match(/\d{1,2}(?:\.\d{2})?/g), reN = /\d{1,2}(?:\.\d{2})?/g, it, primeiro = true;
+                let corpo = m[0].slice(m[0].indexOf(m[1]));
+                let iniCorpo = m.index + m[0].indexOf(m[1]);
+                while ((it = reN.exec(corpo))) {
+                    out.push({ ini: base + (primeiro ? m.index : iniCorpo + it.index), fim: base + iniCorpo + it.index + it[0].length, chave: [alvo.id, 'anexo:' + it[0], '', '', ''].join('|') });
+                    primeiro = false;
+                }
+            }
             base += seg.length + 1;
         });
+        out.sort(function(x, y) { return x.ini - y.ini; });
         return out;
     }
     function carregar(id) {
@@ -36944,10 +36963,22 @@ window.LEGISLACAO = (function() {
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function rotulo(p) {
+        if (p[1].indexOf('anexo:') === 0) return 'Lista anexa, item ' + p[1].slice(6);
         return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2').replace(/^(\d)(?=$|-)/, '$1º') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : (p[2].indexOf(',') >= 0 ? ', §§ ' : ', § ') + p[2].split(',').map(function(x) { return x.replace(/^(\d)(?=$|-)/, '$1º'); }).join(' e ')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
     }
     function htmlBalao(chave, ano, j) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
+        if (p[1].indexOf('anexo:') === 0) {
+            let num = p[1].slice(6), item = (j.anexo || {})[num], grupo = num.indexOf('.') > 0 ? (j.anexo || {})[num.split('.')[0]] : null;
+            let h = '<div class="jur-ref-cab">' + esc(d.nome + ' · Lista anexa, item ' + num) + '</div>';
+            if (!item) return h + '<div>Item não localizado na lista anexa.</div>';
+            if (grupo) h += '<div class="lei-disp"><b>' + esc(num.split('.')[0]) + ' –</b> ' + esc(grupo.texto) + '</div>';
+            h += '<div class="lei-disp' + (grupo ? ' lei-ali' : '') + '"><b>' + esc(num) + ' –</b> ' + (item.revogado ? '<i>(revogado)</i>' : esc(item.texto)) + '</div>';
+            if (item.alt && ano && +item.alt.slice(-4) > +ano) h += '<div class="lei-aviso">⚠️ ' + (item.revogado ? 'Revogado' : 'Texto incluído ou alterado') + ' pela ' + esc(item.alt) + ', depois do julgado (' + esc(ano) + ').</div>';
+            else if (item.alt) h += '<div class="jur-ref-dica">' + (item.revogado ? 'Revogado' : 'Última alteração') + ': ' + esc(item.alt) + '</div>';
+            let dtA = String(j.dataTexto || '').split('-').reverse().join('/');
+            return h + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dtA ? ' em ' + esc(dtA) : '') + ' · clique para abrir no Planalto</div>';
+        }
         let a = j.artigos[p[1]];
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
@@ -37023,7 +37054,7 @@ window.LEGISLACAO = (function() {
     function abrirNoPlanalto(chave) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
         if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
-        window.open(d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
+        window.open(p[1].indexOf('anexo:') === 0 ? d.planalto : d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
     }
     return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, carregar: carregar, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
 })();

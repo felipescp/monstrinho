@@ -37,6 +37,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Código Eleitoral (Lei 4.737/1965) | `codigo-eleitoral.json` | 11/10/2026 |
 | Código Florestal (Lei 12.651/2012) | `lei-12651.json` | 11/10/2026 |
 | Estatuto do Desarmamento (Lei 10.826/2003) | `lei-10826.json` | 11/10/2026 |
+| Lei Complementar 116/2003 (ISS), com a lista de serviços anexa | `lc-116.json` | 11/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
@@ -54,3 +55,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 ## Notas de controle de constitucionalidade (`stf`)
 
 Quando o compilado do Planalto anota "Declarado inconstitucional pela ADI…", "Expressões declaradas inconstitucionais…" ou "Vide ADI/ADC/ADPF…", o dispositivo ganha `stf: [{tipo, ref}]`, com `tipo` = `inconst`, `inconst_parcial` ou `vide`. O texto do Planalto não muda; o balão mostra o aviso ("⚖️ Declarado inconstitucional pelo STF (ADI 5.538)") ou a remissão ("⚖️ Vide ADI 3.112").
+
+## Lista anexa (`anexo`)
+
+Quando o compilado traz uma lista anexa ("Lista de serviços anexa à Lei Complementar…"), os itens vão para `anexo: {"1": {...}, "1.05": {...}}`. No app, "item 15.09 da lista anexa à LC 116" e "subitens 4.22 e 4.23" abrem o balão do item, com o grupo (ex.: "15 – Serviços relacionados ao setor bancário").
