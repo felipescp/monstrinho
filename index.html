@@ -36875,6 +36875,8 @@ window.LEGISLACAO = (function() {
               re: /(?:\bLC|Lei\s+Complementar)\s*n?[º°o.]*\s*116\b/g },
         D20910: { nome: 'Decreto 20.910/1932', arquivo: 'dados/legislacao/decreto-20910.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d20910.htm',
               re: /Dec(?:reto|\.)?\s*n?[º°o.]*\s*20\.?910/g },
+        L12850: { nome: 'Lei 12.850', arquivo: 'dados/legislacao/lei-12850.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12850.htm',
+              re: /Lei\s*n?[º°o.]*\s*12\.?850|Lei\s+(?:de|das|da)\s+Organiza[çc](?:[ãa]o|[õo]es)\s+Criminosas?|Lei\s+do\s+Crime\s+Organizado/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37026,6 +37028,10 @@ window.LEGISLACAO = (function() {
             // Inciso citado sem alínea, mas que se desdobra nelas ("considerando-se haver:"): lista todas.
             else if (!p[4] && inc.ali) Object.keys(inc.ali).forEach(function(k) { html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + (inc.ali[k] ? esc(inc.ali[k]) : '<i>(revogada)</i>') + '</div>'; });
         });
+        // Trecho citado sem inciso que termina em ":" e se desdobra em poucos incisos
+        // ("§ 16. Nenhuma das seguintes medidas…:"): lista os incisos.
+        if (!p[3] && (!p[2] || p[2].indexOf(',') < 0) && alvo.inc && /:\s*$/.test(alvo.texto || '') && Object.keys(alvo.inc).length <= 8)
+            Object.keys(alvo.inc).forEach(function(k) { html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ' –</b> ' + txt(alvo.inc[k]) + '</div>'; });
         if (alvo.pena) html += '<div class="lei-pena">Pena – ' + esc(alvo.pena) + '</div>';
         else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
         // Redação posterior ao julgado → aviso (pegadinha clássica).
