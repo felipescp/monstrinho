@@ -25,6 +25,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Código de Trânsito Brasileiro (Lei 9.503/1997) | `ctb.json` | 09/10/2026 |
 | Estatuto da Advocacia e da OAB (Lei 8.906/1994) | `lei-8906.json` | 09/10/2026 (incompleto: faltam os arts. 68 a 87, ausentes do compilado enviado) |
 | Lei de Benefícios da Previdência Social (Lei 8.213/1991) | `lei-8213.json` | 09/10/2026 |
+| Lei do Processo Administrativo Federal (Lei 9.784/1999) | `lei-9784.json` | 11/10/2026 |
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
