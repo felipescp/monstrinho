@@ -120,6 +120,17 @@ def linhas_md(caminho):
         # Texto riscado do compilado (~~redação antiga~~) sai.
         # "~~" solto (sem fechamento) é artefato da conversão, não risco:
         # nesses casos a linha traz o texto vigente ("Redação dada pela…").
+        # Til único na linha é artefato de risco que atravessa linhas (Código
+        # Eleitoral: "~        Art. 152. …", dispositivo vigente), não risco.
+        if l.count('~') == 1: l = l.replace('~', '')
+        # Rubrica e artigo na mesma linha ("**Falsa atribuição de privilégio**  Art 188. (Revogado…)",
+        # CP): separa, senão a linha inteira vira rubrica e o artigo some.
+        mm = re.match(r'^(\s*\*\*[^*\n]+\*\*)\s+(Art\.?\s*\d.*)$', l)
+        if mm:
+            yield mm.group(1) + '\n'
+            l = mm.group(2) + '\n'
+        # Erros de digitação do Planalto no rótulo: "At. 248.", "Ar. 337." (Código Eleitoral).
+        l = re.sub(r'^(\s*)A(?:t|r)\.\s*(?=\d)', r'\1Art. ', l)
         til_solto = '~~' in re.sub(r'~~.*?~~', '', l)
         l = re.sub(r'~~.*?~~', '', l).replace('~~', '')
         # Ordinal sobrescrito exportado como "~º~" (ex.: "§ 4~º~"): não é risco.

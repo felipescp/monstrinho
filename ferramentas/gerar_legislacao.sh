@@ -31,3 +31,4 @@ gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/d8fb74e4-LeidasS
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/df385685-Impenhorabilidade.md L8009 "Lei do Bem de Família" https://www.planalto.gov.br/ccivil_03/leis/l8009.htm dados/legislacao/lei-8009.json 2026-10-11
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/8178019e-L9494.md L9494 "Lei 9.494/1997 (tutela contra a Fazenda Pública)" https://www.planalto.gov.br/ccivil_03/leis/l9494.htm dados/legislacao/lei-9494.json 2026-10-11
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/d1c6998a-L9099.md L9099 "Lei dos Juizados Especiais" https://www.planalto.gov.br/ccivil_03/leis/l9099.htm dados/legislacao/lei-9099.json 2026-10-11
+gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/8e4a0b56-C_digo_Eleitoral.md CE "Código Eleitoral" https://www.planalto.gov.br/ccivil_03/leis/l4737compilado.htm dados/legislacao/codigo-eleitoral.json 2026-10-11
