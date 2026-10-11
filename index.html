@@ -762,6 +762,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .jur-ref:hover { color: var(--app-primary); }
 .jur-ref-lei { text-decoration-color: #0d9488; }
 #glos-tooltip-flutuante .lei-disp { margin-top: 4px; }
+#glos-tooltip-flutuante .lei-ali { margin-left: 12px; margin-top: 2px; }
 #glos-tooltip-flutuante .lei-disp b { color: #99f6e4; font-weight: 800; }
 #glos-tooltip-flutuante .lei-pena { margin-top: 4px; color: #fde68a; }
 #glos-tooltip-flutuante .lei-aviso { margin-top: 6px; padding: 4px 6px; border-radius: 4px; background: rgba(245,158,11,0.18); color: #fcd34d; font-size: 11px; }
@@ -36856,6 +36857,8 @@ window.LEGISLACAO = (function() {
               re: /\bLINDB\b|\bLICC\b|Decreto-Lei\s*n?[º°o.]*\s*4\.?657|Lei\s+de\s+Introdu[çc][ãa]o\s+(?:[àa]s\s+Normas\s+do\s+Direito\s+Brasileiro|ao\s+C[óo]digo\s+Civil)/g },
         L4717: { nome: 'Lei 4.717', arquivo: 'dados/legislacao/lei-4717.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l4717.htm',
               re: /Lei\s*n?[º°o.]*\s*4\.?717|Lei\s+da\s+A[çc][ãa]o\s+Popular|\bLAP\b/g },
+        L6404: { nome: 'Lei 6.404', arquivo: 'dados/legislacao/lei-6404.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l6404consol.htm',
+              re: /Lei\s*n?[º°o.]*\s*6\.?404|Lei\s+das\s+(?:S\.?\s?A\.?|Sociedades\s+An[ôo]nimas|Sociedades\s+por\s+A[çc][õo]es)|\bLSA\b/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -36863,8 +36866,8 @@ window.LEGISLACAO = (function() {
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
     let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
     // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
-    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
-    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*(?:,|\be\b)\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
     let cache = {}, carregando = {};
 
     function mencoes(seg) {
@@ -36882,7 +36885,11 @@ window.LEGISLACAO = (function() {
     }
     function detalhes(t) {
         let d = {}, m;
-        if ((m = t.match(/§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?/))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
+        if ((m = t.match(/§§((?:\s*(?:,|\be\b)?\s*\d+\s*[ºo°]?(?:-[A-Z])?)+)/))) {
+            // "§§ 3º e 4º" → par "3,4"
+            d.par = (m[1].match(/\d+\s*[ºo°]?(?:-[A-Z])?/g) || []).map(function(x) { return x.replace(/[\sºo°]/g, ''); }).join(',');
+            t = t.replace(m[0], '');
+        } else if ((m = t.match(/§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?/))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
         else if (/par[áa]grafo\s+[úu]nico/i.test(t)) d.par = 'pu';
         let incs = [], ri = /(?:,|\be\b)\s*([IVXL]+)\b/g;
         while ((m = ri.exec(t))) incs.push(m[1]);
@@ -36925,7 +36932,7 @@ window.LEGISLACAO = (function() {
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function rotulo(p) {
-        return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2').replace(/^(\d)(?=$|-)/, '$1º') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : ', § ' + p[2].replace(/^(\d)(?=$|-)/, '$1º')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
+        return 'art. ' + p[1].replace(/^(\d+)(\d{3})(?=$|-)/, '$1.$2').replace(/^(\d)(?=$|-)/, '$1º') + (p[2] ? (p[2] === 'pu' ? ', parágrafo único' : (p[2].indexOf(',') >= 0 ? ', §§ ' : ', § ') + p[2].split(',').map(function(x) { return x.replace(/^(\d)(?=$|-)/, '$1º'); }).join(' e ')) : '') + (p[3] ? ', ' + p[3].split(',').join(' e ') : '') + (p[4] ? ', "' + p[4] + '"' : '');
     }
     function htmlBalao(chave, ano, j) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
@@ -36940,7 +36947,14 @@ window.LEGISLACAO = (function() {
         // Citado só o artigo: o caput é o trecho. Citado § ou inciso: o aviso vale
         // para o trecho citado; o caput alterado depois ganha nota própria.
         if (!p[2] && !p[3]) usa(a);
-        if (p[2]) {
+        if (p[2] && p[2].indexOf(',') >= 0) {
+            // "§§ 3º e 4º": mostra cada parágrafo citado.
+            p[2].split(',').forEach(function(k) {
+                let par = a.par && a.par[k], rot = '§ ' + k.replace(/^(\d)(?=$|-)/, '$1º');
+                if (!par) { html += '<div class="lei-disp">' + esc(rot) + ' não localizado.</div>'; return; }
+                html += '<div class="lei-disp"><b>' + esc(rot) + ':</b> ' + txt(par) + '</div>'; usa(par);
+            });
+        } else if (p[2]) {
             let par = a.par && a.par[p[2]];
             // Parágrafo único que virou §§ (ex.: CTN 174, LC 236/2026): mostra o § 1º e avisa.
             if (!par && p[2] === 'pu' && a.par && a.par['1']) {
@@ -36955,6 +36969,8 @@ window.LEGISLACAO = (function() {
             if (!inc) { html += '<div class="lei-disp">Inciso ' + esc(ri) + ' não localizado.</div>'; return; }
             html += '<div class="lei-disp"><b>' + esc(ri) + ' –</b> ' + txt(inc) + '</div>'; usa(inc);
             if (p[4] && inc.ali && p[4] in inc.ali) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + (inc.ali[p[4]] ? esc(inc.ali[p[4]]) : '<i>(revogada)</i>') + '</div>';
+            // Inciso citado sem alínea, mas que se desdobra nelas ("considerando-se haver:"): lista todas.
+            else if (!p[4] && inc.ali) Object.keys(inc.ali).forEach(function(k) { html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + (inc.ali[k] ? esc(inc.ali[k]) : '<i>(revogada)</i>') + '</div>'; });
         });
         if (alvo.pena) html += '<div class="lei-pena">Pena – ' + esc(alvo.pena) + '</div>';
         else if (!p[2] && a.pena) html += '<div class="lei-pena">Pena – ' + esc(a.pena) + '</div>';
