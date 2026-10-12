@@ -35512,7 +35512,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         let proc = String(f.processo || ''), trib = String(f.tribunal || '').toUpperCase(), m;
         if ((m = proc.match(/^\s*SV\s*(\d+)/i)) || (/vinculante/i.test(f.sistematica || '') && (m = proc.match(/(\d+)/)))) out.push('SV ' + m[1]);
         else if ((m = proc.match(/S[úu]mula\s+(\d+)\s*(?:[\/-]\s*(STF|STJ|TSE|TST))?/i))) out.push('SUM ' + (m[2] ? m[2].toUpperCase() : trib) + ' ' + m[1]);
-        if (f.tema && trib) (String(f.tema).match(/\d{1,4}(?:\.\d{3})?/g) || []).forEach(function(n) { out.push('TEMA ' + trib + ' ' + n.replace(/\./g, '')); });
+        // IAC tem numeração própria: chave "IAC N" (a mesma que _chavesDoTexto dá a "IAC 17"),
+        // não "TEMA STJ N", que colidiria com o repetitivo de mesmo número.
+        let iac = /^iac$/i.test(String(f.sistematica || '').trim());
+        if (f.tema && (trib || iac)) (String(f.tema).match(/\d{1,4}(?:\.\d{3})?/g) || []).forEach(function(n) { out.push(iac ? 'IAC ' + n.replace(/\./g, '') : 'TEMA ' + trib + ' ' + n.replace(/\./g, '')); });
         return out;
     },
     // Fichas candidatas de uma chave; "?" (tribunal não citado) junta as de todos.
