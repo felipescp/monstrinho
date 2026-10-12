@@ -50,8 +50,11 @@ def chaves_ficha(f):
     else:
         m = re.search(r'S[úu]mula\s+(\d+)\s*(?:[\/-]\s*(STF|STJ|TSE|TST))?', proc, re.I)
         if m: out.append('SUM %s %s' % ((m.group(2) or trib).upper(), m.group(1)))
-    if f.get('tema') and trib:
-        for n in re.findall(r'\d{1,4}(?:\.\d{3})?', str(f['tema'])): out.append('TEMA %s %s' % (trib, n.replace('.', '')))
+    # IAC: chave "IAC N", como no app (não "TEMA STJ N", que colide com o repetitivo).
+    iac = (f.get('sistematica') or '').strip().lower() == 'iac'
+    if f.get('tema') and (trib or iac):
+        for n in re.findall(r'\d{1,4}(?:\.\d{3})?', str(f['tema'])):
+            out.append('IAC %s' % n.replace('.', '') if iac else 'TEMA %s %s' % (trib, n.replace('.', '')))
     return out
 
 fichas = []
