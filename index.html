@@ -31989,7 +31989,7 @@ window.carregarEsquemasOficiais = async function() {
             <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMENTÁRIO: ..." — aceita também o rótulo antigo "COMO PODE SER COBRADO EM PROVA:", útil pra súmulas curtas com boa explicação doutrinária —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "Informativo: NNN" — opcional; "Informativo: EE NN" para Edição Extraordinária —, "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMENTÁRIO: ..." — aceita também o rótulo antigo "COMO PODE SER COBRADO EM PROVA:", útil pra súmulas curtas com boa explicação doutrinária —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
         <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="jur-import-preview"></div>
         <div class="mfoot">
@@ -32344,6 +32344,9 @@ function jurNormalizarTexto(texto) {
 const JUR_RE_TRIBUNAL = /^Tribunal:\s*(.+?)\s*\|\s*Órgão:\s*(.+)$/i;
 const JUR_RE_PROCESSO = /^Processo:\s*(.+?)\s*\|\s*Relator:\s*(.+?)\s*\|\s*Data:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_SISTEMATICA = /^Sistemática:\s*([\s\S]+)$/i;
+// "Informativo: 819" / "Informativo: EE 24" — opcional; o valor pode vir vazio
+// ("Informativo:" sozinho), e aí o campo fica vazio sem descartar a ficha.
+const JUR_RE_INFORMATIVO = /^Informativo:\s*([\s\S]*)$/i;
 // "Sistemática: Recurso Repetitivo — Tema 1132" (ou Repercussão Geral/IAC)
 // embutia o Tema dentro do próprio valor — isso duplicava a categoria no
 // filtro "Sistemática" da grade (uma entrada por Tema, em vez de uma só
@@ -32379,7 +32382,10 @@ const JUR_RE_RESUMO = /^RESUMO DO CASO:\s*([\s\S]+)$/i;
 // formatados nesse padrão. Ambos alimentam ficha.comentario.
 const JUR_RE_COMENTARIO = /^(?:COMENT[ÁA]RIO|COMO PODE SER COBRADO EM PROVA):?\s*([\s\S]*)$/i;
 const JUR_RE_CONEXOES = /^CONEX[ÕO]ES:\s*([\s\S]+)$/i;
-const JUR_RE_LINK = /^LINK:\s*([\s\S]+)$/i;
+// "LINK:" pode vir vazio (o prompt de geração manda deixar assim quando não há
+// página): sem o "*", a linha vazia era desconhecida, encerrava a ficha e a
+// "DATA DA CONSULTA:" seguinte virava fragmento órfão, descartado.
+const JUR_RE_LINK = /^LINK:\s*([\s\S]*)$/i;
 const JUR_RE_DATACONSULTA = /^DATA DA CONSULTA:\s*(\d{2})\/(\d{2})\/(\d{4})/i;
 const JUR_RE_GRUPO = /^GRUPO\s+[\d\-–a-zA-Z]+\s*$/i; // heading "GRUPO 1-6" — achatado/ignorado, nunca vira fronteira
 // #{0,6} (não "###" fixo) — mesmo motivo de ESQ_RE_L2_GLOBAL/GLOS_RE_L2_GLOBAL:
@@ -32410,6 +32416,7 @@ function jurClassificarLinha(l) {
     if (JUR_RE_TRIBUNAL.test(l)) return 'tribunal';
     if (JUR_RE_PROCESSO.test(l)) return 'processo';
     if (JUR_RE_SISTEMATICA.test(l)) return 'sistematica';
+    if (JUR_RE_INFORMATIVO.test(l)) return 'informativo';
     if (JUR_RE_TESE.test(l)) return 'tese';
     if (JUR_RE_RESUMO.test(l)) return 'resumo';
     if (JUR_RE_COMENTARIO.test(l)) return 'comentario';
@@ -32420,7 +32427,19 @@ function jurClassificarLinha(l) {
 }
 
 function jurCriarFichaVazia() {
-    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', tese: '', resumo: '', comentario: '', conexoes: '', link: '', dataConsulta: '' };
+    return { titulo: '', tribunal: '', orgao: '', processo: '', relator: '', dataJulgado: '', sistematica: '', tema: '', informativo: '', tese: '', resumo: '', comentario: '', conexoes: '', link: '', dataConsulta: '' };
+}
+
+// Valor do campo informativo no formato do acervo (ver _valorInformativo):
+// "819", "Info 819", "nº 819" → "819"; Edição Extraordinária ("EE 24",
+// "Edição Extraordinária 24", "Ed. Extraordinária 24", "24 - Edição
+// Extraordinária", "Info 24 – Edição Extraordinária") → "EE 24"; sem número → "".
+function jurNormalizarInformativo(valor) {
+    let v = String(valor || '').trim();
+    let m = /\d[\d.]*/.exec(v);
+    if (!m) return '';
+    let n = m[0].replace(/\./g, '').replace(/^0+(?=\d)/, '');
+    return (/^EE\b/i.test(v) || /extraordin/i.test(v)) ? 'EE ' + n : n;
 }
 
 function jurAplicarCampoNaLinha(ficha, tipo, linha) {
@@ -32445,6 +32464,9 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
             ficha.sistematica = bruto;
         }
         jurNormalizarSistematicaFicha(ficha);
+    } else if (tipo === 'informativo') {
+        m = JUR_RE_INFORMATIVO.exec(linha);
+        ficha.informativo = jurNormalizarInformativo(m[1]);
     } else if (tipo === 'tese') {
         m = JUR_RE_TESE.exec(linha);
         ficha.tese = m[1].trim();
@@ -32462,7 +32484,7 @@ function jurAplicarCampoNaLinha(ficha, tipo, linha) {
         ficha.conexoes = m[1].trim();
     } else if (tipo === 'link') {
         m = JUR_RE_LINK.exec(linha);
-        ficha.link = m[1].trim();
+        ficha.link = (m[1] || '').trim();
     } else if (tipo === 'dataconsulta') {
         m = JUR_RE_DATACONSULTA.exec(linha);
         ficha.dataConsulta = m[3] + '-' + m[2] + '-' + m[1]; // ISO AAAA-MM-DD
