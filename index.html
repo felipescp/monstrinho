@@ -14504,6 +14504,13 @@ window.carregarPrazosOficiais = async function() {
     #penas-modal .pen-selo-oficial { font-size:9px; font-weight:800; color:#b91c1c; margin-left:4px; }
     /* Painel "Treinar" */
     #penas-modal .pen-treino-painel { max-width:620px; margin:10px auto; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+    #penas-modal .pen-prio-sel { margin-left:4px; padding:2px 4px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #penas-modal .pen-prio-sel.pen-prio-dificil { border-color:#dc2626; color:#b91c1c; background:#fef2f2; }
+    #penas-modal .pen-prio-sel.pen-prio-medio { border-color:#ca8a04; color:#854d0e; background:#fefce8; }
+    #penas-modal .pen-prio-sel.pen-prio-facil { border-color:#16a34a; color:#166534; background:#f0fdf4; }
+    #penas-modal .pen-prio-sel.pen-prio-sistema { border-style:dashed; }
+    #penas-modal .pen-btn-sistema { padding:5px 10px; border-radius:7px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #penas-modal .pen-btn-sistema:hover { border-color:var(--app-primary); }
     #penas-modal .pen-treino-layout { display:flex; gap:16px; align-items:flex-start; justify-content:center; padding:0 10px; }
     #penas-modal .pen-treino-layout .pen-treino-painel { flex:1 1 auto; margin:10px 0; min-width:0; }
     #penas-modal .pen-treino-sel { flex:0 0 300px; margin-top:10px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:12px; position:sticky; top:10px; max-height:calc(100vh - 230px); display:flex; flex-direction:column; gap:8px; }
@@ -14582,7 +14589,7 @@ window.carregarPrazosOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="pen-criar-cab"><span>+ Criar Penas</span><button class="pen-criar-fechar" onclick="window.PENAS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>ALTERAÇÃO =</code> <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
+        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>ALTERAÇÃO =</code> <code>PRIORIDADE =</code> (Crítico, Importante ou Regular; opcional) <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
         <textarea id="pen-criar-texto" placeholder="Cole as penas aqui..." oninput="window.PENAS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PENAS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="pen-criar-status" id="pen-criar-status">Aguardando...</div>
         <div id="pen-criar-erro" class="fc-form-erro" style="display:none;"></div>
@@ -14664,7 +14671,7 @@ window.carregarPrazosOficiais = async function() {
 function parsearPenasTexto(txt) {
     let linhas = String(txt || '').replace(/\r/g, '').split('\n');
     let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo|Nota)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
-    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA|ALTERA[ÇC][ÃA]O)(?:\*\*)?\s*[=:]\s*(.*)$/i;
+    let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA|ALTERA[ÇC][ÃA]O|PRIORIDADE|IMPORT[ÂA]NCIA)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
     let RE_CITE = /\s*\[cite:\s*[\d,\s]+\]/gi;
     // Inclui o "chrome" do ChatGPT/Gemini/Claude entre lotes ("Você disse:",
@@ -14685,13 +14692,22 @@ function parsearPenasTexto(txt) {
         if (/^ACAO/.test(c)) return 'acao';
         if (c === 'NOTA') return 'nota';
         if (/^ALTERA/.test(c)) return 'alteracao';
+        if (/^PRIORIDADE|^IMPORTANCIA/.test(c)) return 'prioridade';
         return 'obs';
     }
     function vazio(v) { v = String(v || '').trim(); return !v || v === '—' || v === '-' || v === '–' || /^(n[ãa]o h[áa]|nenhuma?|inexistente|n\/a)\.?$/i.test(v); }
     function limpar(v) { v = String(v || '').replace(RE_CITE, '').replace(/\s+/g, ' ').trim(); return vazio(v) ? '' : v; }
+    // "PRIORIDADE = Crítico | Importante | Regular" → classificacaoOficial (mesmos valores da Jurisprudência).
+    function prioridade(v) {
+        v = limpar(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (/^critic/.test(v)) return 'crítico';
+        if (/^importante/.test(v)) return 'importante';
+        if (/^regular/.test(v)) return 'regular';
+        return '';
+    }
     function fechar() {
         if (atual) {
-            let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao) };
+            let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao), classificacaoOficial: prioridade(atual.prioridade) };
             Object.keys(LISTAS).forEach(function(k) { it[k] = atual[k].map(limpar).filter(Boolean); });
             let nota = limpar(atual.nota);
             // "Nota NN." (ART + NOTA, sem CRIME) = nota do capítulo.
@@ -14701,7 +14717,7 @@ function parsearPenasTexto(txt) {
         }
         atual = null; campo = null;
     }
-    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', nota: '', alteracao: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
+    function novo() { fechar(); atual = { t: '', crime: '', art: '', pena: '', acao: '', obs: '', nota: '', alteracao: '', prioridade: '', qualificadas: [], aumentos: [], diminuicoes: [] }; }
     for (let i = 0; i < linhas.length; i++) {
         let l = linhas[i].trim();
         if (!l) continue;
@@ -14898,6 +14914,7 @@ window.PENAS_RUNTIME = {
                     '<button class="pen-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
                 '</div>' +
                 (this._aba === 'tabela' ? '<input type="text" class="pen-busca" placeholder="🔎 Buscar..." value="' + this._esc(this._busca) + '" oninput="window.PENAS_RUNTIME.filtrarBusca(this.value)">' : '') +
+                '<button class="pen-btn-sistema" onclick="window.PENAS_RUNTIME.aplicarPrioridadeSistema()" title="Adota a prioridade sugerida pelo sistema (Crítico, Importante, Regular) nos crimes em que você ainda não escolheu a sua. A que você escolher na tabela sempre prevalece.">🏷️ Aplicar prioridade do sistema</button>' +
                 '<span class="pen-info" id="pen-info"></span>' +
             '</div>' +
             '<div class="pen-scroll" id="pen-scroll"></div>';
@@ -15002,13 +15019,61 @@ window.PENAS_RUNTIME = {
                     ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
                     : self._htmlValor(it, c.k)) + '</td>';
             }).join('') +
-            '<td><span class="pen-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) +
+            '<td><span class="pen-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) + self._htmlPrioridade(it) +
                 (it.origem_oficial ? '' : '<button class="pen-btn-icone" onclick="window.PENAS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir">🗑️</button>') +
             '</span></td></tr>';
         });
         scroll.innerHTML = '<div class="pen-dica">Clique no título de uma coluna para esconder/mostrar (cortina) · clique numa célula oculta para revelá-la · passe o mouse nos indicadores para ver a regra.</div>' +
             '<table class="pen-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
     },
+    // ── 🏷️ PRIORIDADE (Crítico / Importante / Regular) ──
+    // Separada da autoavaliação do treino (ultimaClassificacao: Errei/Hesitei/
+    // Acertei), que muda a cada rodada. estado[id].importancia ('dificil' =
+    // Crítico, 'medio' = Importante, 'facil' = Regular) + importanciaOrigem:
+    // 'manual' (escolhida na tabela; prevalece sempre) ou 'sistema' (adotada
+    // de item.classificacaoOficial pelo botão "Aplicar prioridade do sistema").
+    // Mesma regra de window.ClassificacaoCards.aplicarSugestaoSistema.
+    MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': 'dificil', 'importante': 'medio', 'regular': 'facil' },
+    NIVEIS_PRIORIDADE: [['dificil', '🔴 Crítico'], ['medio', '🟡 Importante'], ['facil', '🟢 Regular']],
+    _prioridade: function(id) { return (this.estado[id] || {}).importancia || ''; },
+    definirPrioridade: function(id, nivel) {
+        let atual = this.estado[id] || {}, novo = Object.assign({}, atual);
+        if (nivel) { novo.importancia = nivel; novo.importanciaOrigem = 'manual'; }
+        else { delete novo.importancia; delete novo.importanciaOrigem; } // volta a aceitar a do sistema
+        novo.atualizadoEm = Date.now();
+        this.estado[id] = novo;
+        this.salvar();
+        if (this._aba === 'tabela' && document.getElementById('pen-scroll')) this._renderTabela();
+        else if (this._aba === 'treino') this._renderPainelTreino();
+    },
+    aplicarPrioridadeSistema: function() {
+        let self = this, n = 0, comOficial = 0;
+        this._todosItens().forEach(function(p) {
+            let nivel = self.MAPA_CLASSIFICACAO_OFICIAL[p.item.classificacaoOficial];
+            if (!nivel) return;
+            comOficial++;
+            let e = self.estado[p.item.id] || {};
+            if (e.importancia && e.importanciaOrigem !== 'sistema') return; // a do usuário prevalece
+            if (e.importancia === nivel) return;
+            self.estado[p.item.id] = Object.assign({}, e, { importancia: nivel, importanciaOrigem: 'sistema', atualizadoEm: Date.now() });
+            n++;
+        });
+        this.salvar();
+        this._renderCorpo();
+        alert(!comOficial ? 'Ainda não há prioridade do sistema nos crimes cadastrados.'
+            : n > 0 ? n + ' crime(s) receberam a prioridade do sistema. As prioridades que você escolheu foram mantidas.'
+            : 'Nada a aplicar: os crimes com prioridade do sistema já têm a sua.');
+    },
+    _htmlPrioridade: function(it) {
+        let e = this.estado[it.id] || {}, atual = e.importancia || '';
+        let sug = it.classificacaoOficial ? 'Prioridade do sistema: ' + it.classificacaoOficial : 'Sem prioridade do sistema';
+        let origem = atual ? (e.importanciaOrigem === 'sistema' ? 'adotada do sistema' : 'escolhida por você') : 'sem prioridade';
+        return '<select class="pen-prio-sel' + (atual ? ' pen-prio-' + atual : '') + (e.importanciaOrigem === 'sistema' ? ' pen-prio-sistema' : '') + '" title="Prioridade (' + origem + '). ' + this._esc(sug) + '." onchange="window.PENAS_RUNTIME.definirPrioridade(\'' + this._escJs(it.id) + '\', this.value)">' +
+            '<option value=""' + (atual ? '' : ' selected') + '>Prioridade —</option>' +
+            this.NIVEIS_PRIORIDADE.map(function(n) { return '<option value="' + n[0] + '"' + (atual === n[0] ? ' selected' : '') + '>' + n[1] + '</option>'; }).join('') +
+        '</select>';
+    },
+
     classificar: function(id, nivel, doTreino) {
         id = this._idReal(id);
         let atual = this.estado[id] || {};
@@ -15057,8 +15122,8 @@ window.PENAS_RUNTIME = {
     },
     configTreino: function(campo, valor) { this._treinoCfg[campo] = valor; this._renderPainelTreino(); },
 
-    // ── Importância (mesmo campo ultimaClassificacao: 🔴 Crítico = Errei,
-    // 🟡 Importante = Hesitei, 🟢 Regular = Acertei). Nenhuma marcada = todas.
+    // ── Importância = prioridade do crime (estado[id].importancia: a sua ou a
+    // adotada do sistema). Nenhuma marcada = todas.
     IMPORTANCIAS_TREINO: [
         { k: 'dificil', rotulo: '🔴 Crítico' },
         { k: 'medio', rotulo: '🟡 Importante' },
@@ -15068,7 +15133,7 @@ window.PENAS_RUNTIME = {
         let imp = this._treinoCfg.importancia || {};
         let marcadas = Object.keys(imp).filter(function(k) { return imp[k]; });
         if (!marcadas.length) return true;
-        return !!imp[(this.estado[id] || {}).ultimaClassificacao];
+        return !!imp[this._prioridade(id)];
     },
     alternarImportanciaTreino: function(k) {
         let imp = this._treinoCfg.importancia || (this._treinoCfg.importancia = {});
@@ -15194,10 +15259,10 @@ window.PENAS_RUNTIME = {
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Importância</span><div class="pen-pills"><span class="pen-apenas">Apenas:</span>' +
                 this.IMPORTANCIAS_TREINO.map(function(m) {
-                    let n = selecionados.filter(function(p) { return (self.estado[p.item.id] || {}).ultimaClassificacao === m.k; }).length;
+                    let n = selecionados.filter(function(p) { return self._prioridade(p.item.id) === m.k; }).length;
                     return '<label class="pen-check-pill' + (imp[m.k] ? ' ativa' : '') + '"><input type="checkbox"' + (imp[m.k] ? ' checked' : '') + ' onchange="window.PENAS_RUNTIME.alternarImportanciaTreino(\'' + m.k + '\')">' + m.rotulo + ' (' + n + ')</label>';
                 }).join('') + '</div>' +
-                '<div class="pen-treino-sub">Nenhuma marcada: todas as importâncias. A importância é a sua última avaliação do crime (🔴 Crítico = Errei · 🟡 Importante = Hesitei · 🟢 Regular = Acertei).</div></div>' +
+                '<div class="pen-treino-sub">Nenhuma marcada: todas as importâncias. A importância é a prioridade do crime: a que você escolheu na tabela ou a do sistema, se você a adotou (<a href="#" onclick="window.PENAS_RUNTIME.aplicarPrioridadeSistema(); return false;">🏷️ Aplicar prioridade do sistema</a>). A sua sempre prevalece.</div></div>' +
             (cfg.modo === 'revelar' && cfg.alvo === 'base' ? '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
                 pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + penas das qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + frações de aumento/diminuição + ação') + '</div></div>' : '') +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quantidade</span><div class="pen-pills">' + pill('quantidade', 10, '10') + pill('quantidade', 20, '20') + pill('quantidade', 0, 'Todos') + '</div></div>' +
@@ -15397,7 +15462,7 @@ window.PENAS_RUNTIME = {
             if (ex) self.itens[ex.chave] = self.itens[ex.chave].filter(function(x) { return x.id !== it._id; });
             delete self.excluidos[it._id];
             let ch = self._clsTexto(it.art).dip;
-            self._mesclarItens(ch, [{ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, alteracao: it.alteracao, criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
+            self._mesclarItens(ch, [{ id: it._id, crime: it.crime, art: it.art, pena: it.pena, qualificadas: it.qualificadas, aumentos: it.aumentos, diminuicoes: it.diminuicoes, acao: it.acao, obs: it.obs, alteracao: it.alteracao, classificacaoOficial: it.classificacaoOficial || (ex ? ex.item.classificacaoOficial || '' : ''), criadoEm: ex ? (ex.item.criadoEm || agora) : agora, _ordem: ex ? ex.item._ordem : ordem + i }]);
             if (!primeiro) primeiro = ch;
             total++;
         });
@@ -16632,7 +16697,7 @@ Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'pen', _comNotas: true,
     _artDe: function(item) { return item.art || ''; },
     _textoBusca: function(i) { return [i.crime, i.art, i.pena, i.acao, i.obs].concat(i.qualificadas || [], i.aumentos || [], i.diminuicoes || []).join(' '); },
-    _itemExportado: function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '', alteracao: i.alteracao || '' }; }
+    _itemExportado: function(i) { return { id: i.id, crime: i.crime, art: i.art || '', pena: i.pena, qualificadas: i.qualificadas || [], aumentos: i.aumentos || [], diminuicoes: i.diminuicoes || [], acao: i.acao || '', obs: i.obs || '', alteracao: i.alteracao || '', classificacaoOficial: i.classificacaoOficial || '' }; }
 });
 [window.PRAZOS_RUNTIME, window.PENAS_RUNTIME].forEach(function(R) { if (R._bootstrapped) R._reorganizar(); });
 </script>
