@@ -14669,7 +14669,8 @@ window.carregarPrazosOficiais = async function() {
 // Mesmo princípio de parsearPrazosTexto. QUALIFICADA / AUMENTO /
 // DIMINUIÇÃO podem se repetir (cada linha = uma hipótese) e viram listas.
 function parsearPenasTexto(txt) {
-    let linhas = String(txt || '').replace(/\r/g, '').split('\n');
+    // O Gem às vezes emenda "PRIORIDADE = —" no fim da linha anterior ("ALTERAÇÃO = — PRIORIDADE = —").
+    let linhas = String(txt || '').replace(/\r/g, '').replace(/[ \t]+(?=(?:\*\*)?(?:PRIORIDADE|IMPORT[ÂA]NCIA)(?:\*\*)?\s*=)/g, '\n').split('\n');
     let RE_ITEM = /^(?:\*\*|#+\s*)?(?:Pena|Crime|Tipo|Nota)\s*(\d+)\s*[.:)\-–—]*\s*(?:\*\*)?\s*$/i;
     let RE_CAMPO = /^(?:\*\*)?(T|CRIME|ART(?:IGO)?|PENA|QUALIFICAD[AO]S?|QUALIFICADORAS?|AUMENTOS?|MAJORANTES?|DIMINUI[ÇC][ÃA]O|DIMINUI[ÇC][ÕO]ES|MINORANTES?|PRIVIL[ÉE]GIO|A[ÇC][ÃA]O(?:\s+PENAL)?|OBS|NOTA|ALTERA[ÇC][ÃA]O|PRIORIDADE|IMPORT[ÂA]NCIA)(?:\*\*)?\s*[=:]\s*(.*)$/i;
     let RE_BLOCO = /^(?:#+\s*)?BLOCO\s*:\s*(.+)/i;
