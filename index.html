@@ -14668,6 +14668,31 @@ window.carregarPrazosOficiais = async function() {
 // ── PARSER DE "+ CRIAR PENAS" (saída do Gem "Extrator de Penas") ──
 // Mesmo princípio de parsearPrazosTexto. QUALIFICADA / AUMENTO /
 // DIMINUIÇÃO podem se repetir (cada linha = uma hipótese) e viram listas.
+// Separa hipóteses emendadas por ";" numa linha só ("2/3 ao dobro — … (§ 1º, I); 2/3 ao dobro — … (§ 1º, II)"):
+// cada uma vira uma linha, para que a cortina cubra a fração/pena de todas. Só corta em ";" fora de
+// parênteses e quando o trecho seguinte também tem a forma "fração ou hipótese — resto".
+function dividirHipotesesPena(lista) {
+    let saida = [];
+    (lista || []).forEach(function(l) {
+        l = String(l || '');
+        if (l.indexOf(';') === -1 || l.indexOf(' — ') === -1) { saida.push(l); return; }
+        let ini = 0, nivel = 0;
+        for (let i = 0; i < l.length; i++) {
+            let c = l[i];
+            if (c === '(' || c === '[') nivel++;
+            else if ((c === ')' || c === ']') && nivel > 0) nivel--;
+            else if (c === ';' && nivel === 0) {
+                let resto = l.slice(i + 1).trim();
+                let cab = resto.split(' — ')[0];
+                if (resto.indexOf(' — ') > 0 && cab.length <= 80 && cab.indexOf(';') === -1 && l.slice(ini, i).indexOf(' — ') > 0) {
+                    saida.push(l.slice(ini, i).trim()); ini = i + 1;
+                }
+            }
+        }
+        saida.push(l.slice(ini).trim());
+    });
+    return saida.filter(Boolean);
+}
 function parsearPenasTexto(txt) {
     // O Gem às vezes emenda "PRIORIDADE = —" no fim da linha anterior ("ALTERAÇÃO = — PRIORIDADE = —").
     let linhas = String(txt || '').replace(/\r/g, '').replace(/[ \t]+(?=(?:\*\*)?(?:PRIORIDADE|IMPORT[ÂA]NCIA)(?:\*\*)?\s*=)/g, '\n').split('\n');
@@ -14709,7 +14734,7 @@ function parsearPenasTexto(txt) {
     function fechar() {
         if (atual) {
             let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao), classificacaoOficial: prioridade(atual.prioridade) };
-            Object.keys(LISTAS).forEach(function(k) { it[k] = atual[k].map(limpar).filter(Boolean); });
+            Object.keys(LISTAS).forEach(function(k) { it[k] = dividirHipotesesPena(atual[k].map(limpar).filter(Boolean)); });
             let nota = limpar(atual.nota);
             // "Nota NN." (ART + NOTA, sem CRIME) = nota do capítulo.
             if (nota && !it.crime) notas.push({ art: it.art, nota: nota });
@@ -14815,6 +14840,8 @@ window.PENAS_RUNTIME = {
         this.estado = (bruto && dict(bruto.estado)) ? bruto.estado : {};
         this.excluidos = (bruto && dict(bruto.excluidos)) ? bruto.excluidos : {};
         this.comentarios = (bruto && dict(bruto.comentarios)) ? bruto.comentarios : {};
+        // Itens pessoais importados antes da divisão por ";" também passam a ter uma hipótese por linha.
+        Object.keys(this.itens).forEach(function(ch) { if (Array.isArray(this.itens[ch])) this.itens[ch].forEach(this._dividirListas, this); }, this);
         Object.keys(oficiais).forEach(function(ch) { this._mesclarItens(ch, oficiais[ch]); }, this);
         // Chaves antigas "Matéria > Divisão" → id do diploma. (A hidratação do
         // IndexedDB pode chamar carregar() antes do ESTRUTURA_MIXIN existir;
@@ -14847,9 +14874,14 @@ window.PENAS_RUNTIME = {
         if (!Array.isArray(this.itens[chave])) this.itens[chave] = [];
         let arr = this.itens[chave];
         novos.forEach(function(n) {
+            this._dividirListas(n);
             let idx = arr.findIndex(function(i) { return i.id === n.id; });
             if (idx === -1) arr.push(n); else arr[idx] = n;
-        });
+        }, this);
+    },
+    _dividirListas: function(i) {
+        if (!i || typeof i !== 'object') return;
+        ['qualificadas', 'aumentos', 'diminuicoes'].forEach(function(k) { if (Array.isArray(i[k])) i[k] = dividirHipotesesPena(i[k]); });
     },
     _acharItem: function(id) {
         let chaves = Object.keys(this.itens);
