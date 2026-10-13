@@ -27812,6 +27812,8 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-aba-revisao-sidebar { width:300px; flex-shrink:0; overflow-y:auto; padding:10px; background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #esquemas-modal .fc-materia-acordeon { display:flex; flex-direction:column; }
     #esquemas-modal .fc-materia-linha { display:flex; align-items:stretch; gap:3px; }
+    #esquemas-modal .fc-materia-export-btn { flex-shrink:0; width:22px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); cursor:pointer; font-size:11px; padding:0; display:flex; align-items:center; justify-content:center; }
+    #esquemas-modal .fc-materia-export-btn:hover { border-color:var(--primary); }
     #esquemas-modal .fc-materia-linha .fc-pill { flex:1; min-width:0; }
     #esquemas-modal .fc-acordeon-toggle { flex-shrink:0; width:20px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); cursor:pointer; color:var(--text-muted); font-size:9px; display:flex; align-items:center; justify-content:center; transition:transform 0.15s, color 0.15s, border-color 0.15s; }
     #esquemas-modal .fc-acordeon-toggle:hover { border-color:var(--app-primary); color:var(--app-primary); }
@@ -29723,6 +29725,8 @@ window.ESQUEMAS_RUNTIME = {
                 let html = '<div class="fc-materia-acordeon">' +
                     '<div class="fc-materia-linha">' +
                         '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarAba(\'' + aba + '\', \'' + matEsc + '\')">' + mat + ' (' + contagens[mat] + ')</button>' +
+                        '<button class="fc-materia-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarDisciplinaAba(\'' + aba + '\', \'' + matEsc + '\', \'md\')" title="Exportar MD: ' + mat.replace(/"/g, '&quot;') + '">📤</button>' +
+                        '<button class="fc-materia-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarDisciplinaAba(\'' + aba + '\', \'' + matEsc + '\', \'html\')" title="Exportar HTML estilizado: ' + mat.replace(/"/g, '&quot;') + '">🎨</button>' +
                         '<button class="fc-acordeon-toggle' + (aberta ? ' aberta' : '') + '" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.toggleMateriaExpandidaAba(\'' + aba + '\', \'' + matEsc + '\')" title="' + (aberta ? 'Recolher' : 'Ver divisões') + '">▸</button>' +
                     '</div>';
                 if (aberta) {
@@ -31293,6 +31297,31 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(this._gerarHtmlEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
+    // 📤/🎨 ao lado de cada disciplina, dentro das abas Crítico/Importante/
+    // Regular: exporta o que a aba mostraria com aquela disciplina
+    // selecionada (respeita Visualizados), sem mudar a seleção atual da aba.
+    exportarDisciplinaAba: function(aba, materia, formato) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let pool = this.listarEsquemasPorClassificacao(materia, aba);
+        if (s.visualizadoFiltro === true) pool = pool.filter(function(e) { return !!self.visualizados[e.id]; });
+        else if (s.visualizadoFiltro === false) pool = pool.filter(function(e) { return !self.visualizados[e.id]; });
+        let porChave = {};
+        pool.forEach(function(item) {
+            let chave = self._localizarChavePorId(item.id) || '(Sem localização)';
+            if (!porChave[chave]) porChave[chave] = [];
+            porChave[chave].push(item);
+        });
+        if (Object.keys(porChave).length === 0) { alert('Nenhum esquema dessa disciplina nessa aba pra exportar.'); return; }
+        let ROTULOS_ABA = { '3': '🔴 Crítico', '2': '🟡 Importante', '1': '🟢 Regular' };
+        let SLUGS_ABA = { '3': 'critico', '2': 'importante', '1': 'regular' };
+        let titulo = (ROTULOS_ABA[aba] || aba) + ' — ' + materia;
+        let nome = 'esquemas-' + (SLUGS_ABA[aba] || aba) + '-' + this._slugTexto(materia);
+        if (formato === 'html') downloadArquivo(this._gerarHtmlEsquemas(porChave, titulo), nome + '.html', 'text/html');
+        else downloadArquivo(this._gerarMarkdownEsquemas(porChave, titulo), nome + '.md', 'text/markdown');
+    },
+
     // Slug de nome de arquivo — mesmo algoritmo de JURISPRUDENCIA_RUNTIME._slugTexto.
     _slugTexto: function(texto) {
         return (texto || '').toLowerCase()
@@ -31647,6 +31676,8 @@ window.carregarEsquemasOficiais = async function() {
        fechado ao reabrir o Leitor). */
     #jurisprudencia-modal .fc-materia-acordeon { display:flex; flex-direction:column; }
     #jurisprudencia-modal .fc-materia-linha { display:flex; align-items:stretch; gap:3px; }
+    #jurisprudencia-modal .fc-materia-export-btn { flex-shrink:0; width:22px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); cursor:pointer; font-size:11px; padding:0; display:flex; align-items:center; justify-content:center; }
+    #jurisprudencia-modal .fc-materia-export-btn:hover { border-color:var(--primary); }
     #jurisprudencia-modal .fc-materia-linha .fc-pill { flex:1; min-width:0; }
     #jurisprudencia-modal .fc-acordeon-toggle { flex-shrink:0; width:20px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); cursor:pointer; color:var(--text-muted); font-size:9px; display:flex; align-items:center; justify-content:center; transition:transform 0.15s, color 0.15s, border-color 0.15s; }
     #jurisprudencia-modal .fc-acordeon-toggle:hover { border-color:var(--app-primary); color:var(--app-primary); }
@@ -34945,6 +34976,27 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
     },
 
+    // 📤/🎨 ao lado de cada disciplina, dentro das abas Crítico/Importante/
+    // Regular: exporta o que a aba mostraria com aquela disciplina
+    // selecionada (respeita "Exibir" por sistemática e Visualizados), sem
+    // mudar a seleção atual da aba.
+    exportarDisciplinaAba: function(aba, materia, formato) {
+        let s = this._estadosAba[aba];
+        if (!s) return;
+        let self = this;
+        let anterior = s.materiaFiltro;
+        let pool;
+        try { s.materiaFiltro = materia; pool = this._baseAbaComSistematica(aba); } finally { s.materiaFiltro = anterior; }
+        if (s.visualizadoFiltro === true) pool = pool.filter(function(f) { return !!self.visualizados[f.id]; });
+        else if (s.visualizadoFiltro === false) pool = pool.filter(function(f) { return !self.visualizados[f.id]; });
+        let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
+        let SLUGS_ABA = { dificil: 'critico', medio: 'importante', facil: 'regular' };
+        let titulo = (ROTULOS_ABA[aba] || aba) + ' — ' + materia;
+        let conteudo = formato === 'html' ? this._gerarHtmlFichas(pool, titulo) : this._gerarMarkdownFichas(pool, titulo);
+        if (!conteudo) { alert('Nenhuma ficha dessa disciplina nessa aba pra exportar.'); return; }
+        downloadArquivo(conteudo, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + '-' + this._slugTexto(materia) + '.' + (formato === 'html' ? 'html' : 'md'), formato === 'html' ? 'text/html' : 'text/markdown');
+    },
+
     // "📤/🎨 Exportar Selecionados" (modo Selecionar da grade) — reusa os
     // geradores de fichas. Os geradores descartam fichas ocultas; como aqui a
     // seleção é explícita, o filtro é suspenso só durante a geração.
@@ -36441,6 +36493,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let html = '<div class="fc-materia-acordeon">' +
                     '<div class="fc-materia-linha">' +
                         '<button class="fc-pill' + (s.materiaFiltro === mat ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarAba(\'' + aba + '\', \'' + matEsc + '\')">' + mat + ' (' + contagens[mat] + ')</button>' +
+                        '<button class="fc-materia-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaAba(\'' + aba + '\', \'' + matEsc + '\', \'md\')" title="Exportar MD: ' + mat.replace(/"/g, '&quot;') + '">📤</button>' +
+                        '<button class="fc-materia-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaAba(\'' + aba + '\', \'' + matEsc + '\', \'html\')" title="Exportar HTML estilizado: ' + mat.replace(/"/g, '&quot;') + '">🎨</button>' +
                         '<button class="fc-acordeon-toggle' + (aberta ? ' aberta' : '') + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleMateriaExpandidaAba(\'' + aba + '\', \'' + matEsc + '\')" title="' + (aberta ? 'Recolher' : 'Ver divisões') + '">▸</button>' +
                     '</div>';
                 if (aberta) {
