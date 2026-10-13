@@ -14480,6 +14480,9 @@ window.carregarPrazosOficiais = async function() {
     #penas-modal .pen-col-pena { font-weight:800; min-width:130px; }
     #penas-modal .pen-col-crime { min-width:200px; }
     #penas-modal .pen-lista { margin:0; padding-left:14px; }
+    .pen-hip { display:block; padding-left:12px; text-indent:-12px; margin-top:2px; }
+    .pen-hip::before { content:'• '; color:var(--text-muted); }
+    .pen-hip > * { text-indent:0; }
     #penas-modal .pen-lista li { margin-bottom:3px; }
     #penas-modal .pen-art { display:block; font-size:10.5px; font-weight:700; color:var(--app-primary); margin-top:2px; }
     #penas-modal .pen-obs { display:block; font-size:10.5px; color:var(--text-muted); margin-top:3px; font-style:italic; }
@@ -15000,7 +15003,12 @@ window.PENAS_RUNTIME = {
             let resp = (oculto && oculto(i))
                 ? '<span class="pen-resp-oculta" onclick="event.stopPropagation(); ' + revelarJs(i) + '" title="Clique para revelar">' + (k === 'qualificadas' ? 'pena' : 'fração') + '</span>'
                 : '<strong class="pen-resp">' + self._esc(pt.resp) + '</strong>';
-            return self._esc(pt.antes) + resp + self._esc(pt.depois) + self._htmlNovo(pt.lei, 'Hipótese incluída ou alterada');
+            // Hipóteses separadas por ";" (mesma fração/pena) → uma por linha.
+            let antes = pt.antes, depois = pt.depois, sep = /^\s*—\s*/;
+            let htmlAntes = self._htmlHipoteses(antes.replace(/\s*—\s*$/, ''));
+            htmlAntes = htmlAntes ? htmlAntes + (/—\s*$/.test(antes) ? ' — ' : '') : '';
+            let htmlDepois = sep.test(depois) ? ' — ' + self._htmlHipoteses(depois.replace(sep, '')) : self._htmlHipoteses(depois);
+            return htmlAntes + resp + htmlDepois + self._htmlNovo(pt.lei, 'Hipótese incluída ou alterada');
         });
         if (linhas.length === 1) return linhas[0];
         return '<ul class="pen-lista">' + linhas.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
@@ -16516,16 +16524,33 @@ window.ESTRUTURA_MIXIN = {
         return '<span class="memo-novo" title="' + this._esc((oQue || 'Criado ou alterado') + ' pela ' + String(lei).replace(/^\s*(?:pela|por)\s+/i, '')) + '">Novo</span>';
     },
     _RE_LEI_LINHA: /\s*\[((?:Lei|LC|Lei Complementar|Decreto|EC|Emenda)[^\]]*)\]\s*$/i,
-    _htmlLinhaNovo: function(linha) {
-        let m = String(linha || '').match(this._RE_LEI_LINHA);
-        if (!m) return this._esc(linha);
-        return this._esc(String(linha).slice(0, m.index)) + this._htmlNovo(m[1], 'Hipótese incluída ou alterada');
+    _htmlLinhaNovo: function(linha) { return this._htmlHipoteses(linha); },
+    // Texto de uma linha da lista → HTML; cada hipótese separada por ";" (fora de parênteses)
+    // vai para uma linha própria, com o selo "Novo" da sua [Lei x/aaaa].
+    _htmlHipoteses: function(texto) {
+        let self = this, t = String(texto || ''), partes = [], ini = 0, nivel = 0;
+        for (let i = 0; i < t.length; i++) {
+            let c = t[i];
+            if (c === '(' || c === '[') nivel++;
+            else if ((c === ')' || c === ']') && nivel > 0) nivel--;
+            else if (c === ';' && nivel === 0) { partes.push(t.slice(ini, i)); ini = i + 1; }
+        }
+        partes.push(t.slice(ini));
+        let html = partes.map(function(p) {
+            p = p.trim();
+            let m = p.match(self._RE_LEI_LINHA);
+            return m ? self._esc(p.slice(0, m.index)) + self._htmlNovo(m[1], 'Hipótese incluída ou alterada') : self._esc(p);
+        }).filter(Boolean);
+        if (html.length <= 1) return html.length ? (/^\s/.test(t) ? ' ' : '') + html[0] : '';
+        return html.map(function(h) { return '<span class="pen-hip">' + h + '</span>'; }).join('');
     },
     _temNovo: function(item) {
         let self = this;
         if (this._leiRecente(item.alteracao)) return true;
         return ['qualificadas', 'aumentos', 'diminuicoes'].some(function(k) {
-            return (item[k] || []).some(function(l) { let m = String(l).match(self._RE_LEI_LINHA); return m && self._leiRecente(m[1]); });
+            return (item[k] || []).some(function(l) {
+                return String(l).split(';').some(function(p) { let m = p.match(self._RE_LEI_LINHA); return m && self._leiRecente(m[1]); });
+            });
         });
     },
     _origemItem: function(item) { let c = this._cls(item); return [c.dipNome, c.nivel, c.grupo].filter(Boolean).join(' › '); },
