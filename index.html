@@ -14504,6 +14504,31 @@ window.carregarPrazosOficiais = async function() {
     #penas-modal .pen-selo-oficial { font-size:9px; font-weight:800; color:#b91c1c; margin-left:4px; }
     /* Painel "Treinar" */
     #penas-modal .pen-treino-painel { max-width:620px; margin:10px auto; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:14px; }
+    #penas-modal .pen-treino-layout { display:flex; gap:16px; align-items:flex-start; justify-content:center; padding:0 10px; }
+    #penas-modal .pen-treino-layout .pen-treino-painel { flex:1 1 auto; margin:10px 0; min-width:0; }
+    #penas-modal .pen-treino-sel { flex:0 0 300px; margin-top:10px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:12px; position:sticky; top:10px; max-height:calc(100vh - 230px); display:flex; flex-direction:column; gap:8px; }
+    #penas-modal .pen-sel-topo { display:flex; flex-direction:column; gap:6px; }
+    #penas-modal .pen-sel-acoes { display:flex; gap:6px; }
+    #penas-modal .pen-sel-acoes button { flex:1; padding:5px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
+    #penas-modal .pen-sel-acoes button:hover { border-color:var(--app-primary); }
+    #penas-modal .pen-sel-lista { overflow-y:auto; flex:1 1 auto; font-size:11.5px; }
+    #penas-modal .pen-sel-linha { display:flex; align-items:flex-start; gap:6px; padding:3px 2px; border-radius:5px; }
+    #penas-modal .pen-sel-linha:hover { background:var(--bg-main, #f8fafc); }
+    #penas-modal .pen-sel-linha input { margin-top:2px; flex-shrink:0; cursor:pointer; }
+    #penas-modal .pen-sel-linha label { flex:1; cursor:pointer; line-height:1.35; }
+    #penas-modal .pen-sel-titulo > label { font-weight:800; color:var(--text-main); }
+    #penas-modal .pen-sel-cap { padding-left:16px; }
+    #penas-modal .pen-sel-cap > label { font-weight:700; color:var(--text-main); }
+    #penas-modal .pen-sel-crime { padding-left:32px; color:var(--text-main); }
+    #penas-modal .pen-sel-crime.direto { padding-left:16px; }
+    #penas-modal .pen-sel-crime .pen-sel-art { color:var(--text-muted); font-size:10.5px; margin-left:3px; }
+    #penas-modal .pen-sel-n { font-size:10px; color:var(--text-muted); font-weight:700; white-space:nowrap; margin-top:1px; }
+    #penas-modal .pen-sel-toggle { border:none; background:none; cursor:pointer; color:var(--text-muted); font-size:10px; padding:2px 3px; transition:transform 0.15s; flex-shrink:0; }
+    #penas-modal .pen-sel-toggle.aberto { transform:rotate(90deg); }
+    #penas-modal .pen-check-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #penas-modal .pen-check-pill.ativa { border-color:var(--app-primary); background:rgba(37,99,235,0.08); }
+    #penas-modal .pen-apenas { font-size:11px; font-weight:700; color:var(--text-muted); align-self:center; }
+    @media (max-width: 1000px) { #penas-modal .pen-treino-layout { flex-direction:column; align-items:stretch; } #penas-modal .pen-treino-sel { position:static; flex-basis:auto; max-height:320px; } }
     #penas-modal .pen-treino-titulo { font-size:15px; font-weight:800; color:var(--text-main); }
     #penas-modal .pen-treino-sub { font-size:11.5px; color:var(--text-muted); line-height:1.5; }
     #penas-modal .pen-opcao { display:flex; flex-direction:column; gap:6px; }
@@ -14750,9 +14775,14 @@ window.PENAS_RUNTIME = {
     _busca: '',
     _cortina: { pena: true, qualificadas: true, aumentos: true, diminuicoes: true }, // nas listas, só a pena/fração de cada linha fica coberta
     _revelados: {},
-    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif', alvo: 'base' },
+    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'pena_qualif', alvo: 'base', importancia: {} },
     _treino: null,
     _criacao: null,
+    // Seleção do Treinar (lista lateral): ids DESMARCADOS — crime novo ou de
+    // outro recorte entra marcado. _treinoAbertos: títulos/capítulos expandidos.
+    // Só em memória (não persiste), como o resto de _treinoCfg.
+    _treinoExcluidos: {},
+    _treinoAbertos: {},
 
     // ── PERSISTÊNCIA (mesmo padrão de PRAZOS_RUNTIME) ──
     carregar: function() {
@@ -15026,12 +15056,122 @@ window.PENAS_RUNTIME = {
         return e.ultimaClassificacao === f;
     },
     configTreino: function(campo, valor) { this._treinoCfg[campo] = valor; this._renderPainelTreino(); },
+
+    // ── Importância (mesmo campo ultimaClassificacao: 🔴 Crítico = Errei,
+    // 🟡 Importante = Hesitei, 🟢 Regular = Acertei). Nenhuma marcada = todas.
+    IMPORTANCIAS_TREINO: [
+        { k: 'dificil', rotulo: '🔴 Crítico' },
+        { k: 'medio', rotulo: '🟡 Importante' },
+        { k: 'facil', rotulo: '🟢 Regular' }
+    ],
+    _passaImportancia: function(id) {
+        let imp = this._treinoCfg.importancia || {};
+        let marcadas = Object.keys(imp).filter(function(k) { return imp[k]; });
+        if (!marcadas.length) return true;
+        return !!imp[(this.estado[id] || {}).ultimaClassificacao];
+    },
+    alternarImportanciaTreino: function(k) {
+        let imp = this._treinoCfg.importancia || (this._treinoCfg.importancia = {});
+        imp[k] = !imp[k];
+        this._renderPainelTreino();
+    },
+    // Itens que entram no treino: recorte − desmarcados na lista lateral − fora da importância.
+    _baseTreino: function() {
+        let self = this;
+        return this._itensDoRecorte().filter(function(p) { return !self._treinoExcluidos[p.item.id] && self._passaImportancia(p.item.id); });
+    },
+
+    // ── Lista lateral: Título › Capítulo › Crime, com caixas de seleção ──
+    _arvoreTreino: function(recorte) {
+        let self = this, titulos = [], porT = {};
+        recorte.forEach(function(p) {
+            let c = self._cls(p.item);
+            let kt = c.nivelIdx >= 0 ? 't' + c.nivelIdx : 'tx';
+            let t = porT[kt];
+            if (!t) {
+                t = porT[kt] = { chave: (self._materia || '') + '|' + kt, nome: c.nivelIdx >= 0 ? c.nivel : (c.temMapa ? 'Sem artigo / fora do mapa' : 'Crimes'), caps: [], porC: {}, ids: [] };
+                titulos.push(t);
+            }
+            let kc = c.grupo ? 'c' + c.grupoIdx : '';
+            let cap = t.porC[kc];
+            if (!cap) { cap = t.porC[kc] = { chave: t.chave + '|' + kc, nome: c.grupo || '', itens: [], ids: [] }; t.caps.push(cap); }
+            cap.itens.push(p.item); cap.ids.push(p.item.id); t.ids.push(p.item.id);
+        });
+        return titulos;
+    },
+    _marcarIds: function(ids, marcar) {
+        let self = this;
+        ids.forEach(function(id) { if (marcar) delete self._treinoExcluidos[id]; else self._treinoExcluidos[id] = true; });
+    },
+    // Clique na caixa de um título/capítulo (por índice da árvore desenhada):
+    // se tudo estava marcado, desmarca tudo; senão, marca tudo.
+    selTreino: function(ti, ci) {
+        let arv = this._arvoreAtual || [], t = arv[ti];
+        if (!t) return;
+        let ids = (ci === undefined || ci === null) ? t.ids : (t.caps[ci] || { ids: [] }).ids;
+        let self = this, todos = ids.every(function(id) { return !self._treinoExcluidos[id]; });
+        this._marcarIds(ids, !todos);
+        this._renderPainelTreino();
+    },
+    selTreinoCrime: function(id) {
+        if (this._treinoExcluidos[id]) delete this._treinoExcluidos[id]; else this._treinoExcluidos[id] = true;
+        this._renderPainelTreino();
+    },
+    selTreinoTodos: function(marcar) {
+        this._marcarIds(this._itensDoRecorte().map(function(p) { return p.item.id; }), marcar);
+        this._renderPainelTreino();
+    },
+    abrirSelTreino: function(chave) {
+        this._treinoAbertos[chave] = !this._treinoAbertos[chave];
+        this._renderPainelTreino();
+    },
+    _htmlSeletorTreino: function(recorte) {
+        let self = this, arv = this._arvoreTreino(recorte), ex = this._treinoExcluidos;
+        this._arvoreAtual = arv;
+        // Recorte de um título só: já abre esse título.
+        if (arv.length === 1 && this._treinoAbertos[arv[0].chave] === undefined) this._treinoAbertos[arv[0].chave] = true;
+        let nSel = function(ids) { return ids.filter(function(id) { return !ex[id]; }).length; };
+        let caixa = function(ids, onclick, idHtml) {
+            let n = nSel(ids);
+            return '<input type="checkbox" id="' + idHtml + '"' + (n === ids.length ? ' checked' : '') + (n > 0 && n < ids.length ? ' data-ind="1"' : '') + ' onclick="' + onclick + '">';
+        };
+        let toggle = function(chave) {
+            return '<button class="pen-sel-toggle' + (self._treinoAbertos[chave] ? ' aberto' : '') + '" onclick="window.PENAS_RUNTIME.abrirSelTreino(\'' + self._escJs(chave) + '\')" title="' + (self._treinoAbertos[chave] ? 'Recolher' : 'Expandir') + '">▸</button>';
+        };
+        let crime = function(it, direto) {
+            let idHtml = 'pen-sel-i-' + it.id;
+            return '<div class="pen-sel-linha pen-sel-crime' + (direto ? ' direto' : '') + '"><input type="checkbox" id="' + idHtml + '"' + (ex[it.id] ? '' : ' checked') + ' onclick="window.PENAS_RUNTIME.selTreinoCrime(\'' + self._escJs(it.id) + '\')">' +
+                '<label for="' + idHtml + '">' + self._esc(it.crime) + (it.art ? '<span class="pen-sel-art">' + self._esc(it.art) + '</span>' : '') + '</label></div>';
+        };
+        let total = recorte.length, sel = nSel(recorte.map(function(p) { return p.item.id; }));
+        let corpo = arv.map(function(t, ti) {
+            let h = '<div class="pen-sel-linha pen-sel-titulo">' + caixa(t.ids, 'window.PENAS_RUNTIME.selTreino(' + ti + ')', 'pen-sel-t-' + ti) +
+                '<label for="pen-sel-t-' + ti + '">' + self._esc(t.nome) + '</label><span class="pen-sel-n">' + nSel(t.ids) + '/' + t.ids.length + '</span>' + toggle(t.chave) + '</div>';
+            if (!self._treinoAbertos[t.chave]) return h;
+            return h + t.caps.map(function(cap, ci) {
+                if (!cap.nome) return cap.itens.map(function(it) { return crime(it, true); }).join('');
+                let hc = '<div class="pen-sel-linha pen-sel-cap">' + caixa(cap.ids, 'window.PENAS_RUNTIME.selTreino(' + ti + ', ' + ci + ')', 'pen-sel-c-' + ti + '-' + ci) +
+                    '<label for="pen-sel-c-' + ti + '-' + ci + '">' + self._esc(cap.nome) + '</label><span class="pen-sel-n">' + nSel(cap.ids) + '/' + cap.ids.length + '</span>' + toggle(cap.chave) + '</div>';
+                return hc + (self._treinoAbertos[cap.chave] ? cap.itens.map(function(it) { return crime(it, false); }).join('') : '');
+            }).join('');
+        }).join('');
+        return '<aside class="pen-treino-sel">' +
+            '<div class="pen-sel-topo"><span class="pen-opcao-rotulo">Títulos, capítulos e crimes</span>' +
+                '<div class="pen-treino-sub"><strong>' + sel + '</strong> de ' + total + ' crimes selecionados</div>' +
+                '<div class="pen-sel-acoes"><button onclick="window.PENAS_RUNTIME.selTreinoTodos(true)">☑ Marcar todos</button><button onclick="window.PENAS_RUNTIME.selTreinoTodos(false)">☐ Desmarcar todos</button></div></div>' +
+            '<div class="pen-sel-lista" id="pen-sel-lista">' + (corpo || '<div class="pen-treino-sub">Nenhum crime no recorte.</div>') + '</div>' +
+        '</aside>';
+    },
+
     _renderPainelTreino: function() {
         let scroll = document.getElementById('pen-scroll');
         if (!scroll) return;
-        let self = this, cfg = this._treinoCfg, base = this._itensDoRecorte();
+        let listaAntes = document.getElementById('pen-sel-lista'), rolagem = listaAntes ? listaAntes.scrollTop : 0;
+        let self = this, cfg = this._treinoCfg, recorte = this._itensDoRecorte(), base = this._baseTreino();
         let info = document.getElementById('pen-info');
-        if (info) info.textContent = base.length + ' no recorte';
+        if (info) info.textContent = recorte.length + ' no recorte';
+        let selecionados = recorte.filter(function(p) { return !self._treinoExcluidos[p.item.id]; });
+        let imp = cfg.importancia || {};
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="pen-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
@@ -15052,16 +15192,26 @@ window.PENAS_RUNTIME = {
             '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._rotuloRecorte()) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
+            '<div class="pen-opcao"><span class="pen-opcao-rotulo">Importância</span><div class="pen-pills"><span class="pen-apenas">Apenas:</span>' +
+                this.IMPORTANCIAS_TREINO.map(function(m) {
+                    let n = selecionados.filter(function(p) { return (self.estado[p.item.id] || {}).ultimaClassificacao === m.k; }).length;
+                    return '<label class="pen-check-pill' + (imp[m.k] ? ' ativa' : '') + '"><input type="checkbox"' + (imp[m.k] ? ' checked' : '') + ' onchange="window.PENAS_RUNTIME.alternarImportanciaTreino(\'' + m.k + '\')">' + m.rotulo + ' (' + n + ')</label>';
+                }).join('') + '</div>' +
+                '<div class="pen-treino-sub">Nenhuma marcada: todas as importâncias. A importância é a sua última avaliação do crime (🔴 Crítico = Errei · 🟡 Importante = Hesitei · 🟢 Regular = Acertei).</div></div>' +
             (cfg.modo === 'revelar' && cfg.alvo === 'base' ? '<div class="pen-opcao"><span class="pen-opcao-rotulo">O que esconder</span><div class="pen-pills">' +
                 pill('esconder', 'pena', 'Só a pena-base') + pill('esconder', 'pena_qualif', 'Pena + penas das qualificadoras') + pill('esconder', 'tudo', 'Pena + qualificadoras + frações de aumento/diminuição + ação') + '</div></div>' : '') +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quantidade</span><div class="pen-pills">' + pill('quantidade', 10, '10') + pill('quantidade', 20, '20') + pill('quantidade', 0, 'Todos') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Ordem</span><div class="pen-pills">' + pill('embaralhar', true, '🔀 Embaralhada') + pill('embaralhar', false, 'Na ordem da tabela') + '</div></div>' +
             '<button class="pen-comecar" onclick="window.PENAS_RUNTIME.iniciarTreino()"' + (disp ? '' : ' disabled') + '>▶ Começar (' + (cfg.quantidade && cfg.quantidade < disp ? cfg.quantidade : disp) + ')</button>' +
         '</div>';
+        scroll.innerHTML = '<div class="pen-treino-layout">' + this._htmlSeletorTreino(recorte) + scroll.innerHTML + '</div>';
+        scroll.querySelectorAll('.pen-treino-sel input[data-ind]').forEach(function(el) { el.indeterminate = true; });
+        let listaDepois = document.getElementById('pen-sel-lista');
+        if (listaDepois) listaDepois.scrollTop = rolagem;
     },
     iniciarTreino: function() {
         let self = this, cfg = this._treinoCfg;
-        let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        let lista = this._baseTreino().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
         lista = self._filtrarParaModo(self._unidades(lista, cfg.alvo), cfg.modo);
         if (!lista.length) return;
         if (cfg.embaralhar) for (let i = lista.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let t = lista[i]; lista[i] = lista[j]; lista[j] = t; }
