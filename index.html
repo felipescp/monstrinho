@@ -14787,7 +14787,12 @@ function parsearPenasTexto(txt) {
 // "reclusão, de 1 (um) a 4 (quatro) anos, e multa" →
 // {especie:'reclusão', minMeses:12, maxMeses:48, multa:true}
 function interpretarPenaTexto(texto) {
+    // Código Eleitoral: pena só com máximo ("reclusão, até 5 anos") e remissão ao art. 284, que fixa o
+    // mínimo em 15 dias (detenção) ou 1 ano (reclusão).
+    let art284 = /art\.?\s*284\b/i.test(String(texto || ''));
     let t = String(texto || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ');
+    // "multa de 30 a 60 dias-multa" não é faixa de prisão.
+    t = t.replace(/(?:de\s+)?\d[\d.]*\s*a\s*\d[\d.]*\s*dias-multa/g, 'dias-multa');
     // Números por extenso (o CP escreve "de um a seis meses").
     let EXT = { 'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'tres': 3, 'três': 3, 'quatro': 4, 'cinco': 5, 'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, 'onze': 11, 'doze': 12, 'treze': 13, 'quatorze': 14, 'catorze': 14, 'quinze': 15, 'dezesseis': 16, 'dezessete': 17, 'dezoito': 18, 'dezenove': 19, 'vinte': 20, 'trinta': 30 };
     t = t.replace(/\b(um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta)\b(?=\s*(?:a\b|até\b|dias?\b|m[eê]s|anos?\b))/g, function(w) { return String(EXT[w]); });
@@ -14807,6 +14812,9 @@ function interpretarPenaTexto(texto) {
     if (m) {
         r.minMeses = mesesDe(m[1], m[2] || m[4]);
         r.maxMeses = mesesDe(m[3], m[4]);
+    } else if (art284 && esp && (m = t.match(new RegExp('at[eé]\\s*(\\d+)\\s*' + UN)))) {
+        r.minMeses = esp === 'reclusão' ? 12 : 0.5;
+        r.maxMeses = mesesDe(m[1], m[2]);
     }
     return r;
 }
