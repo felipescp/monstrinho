@@ -14589,7 +14589,7 @@ window.carregarPrazosOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="pen-criar-cab"><span>+ Criar Penas</span><button class="pen-criar-fechar" onclick="window.PENAS_RUNTIME.fecharModalCriar()" title="Fechar">✕</button></div>
-        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>ALTERAÇÃO =</code> <code>PRIORIDADE =</code> (Crítico, Importante ou Regular; opcional) <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (uma linha por hipótese). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
+        <div class="pen-criar-ajuda">Cole a saída do Gem (pode colar vários lotes de uma vez, com a conversa no meio). Cada item: <code>Pena 01.</code> <code>CRIME =</code> <code>ART =</code> <code>PENA =</code> <code>QUALIFICADA =</code> <code>AUMENTO =</code> <code>DIMINUIÇÃO =</code> <code>AÇÃO =</code> <code>ALTERAÇÃO =</code> <code>PRIORIDADE =</code> (Crítico, Importante ou Regular; opcional) <code>OBS =</code>. QUALIFICADA, AUMENTO e DIMINUIÇÃO podem se repetir (QUALIFICADA: uma linha por pena; AUMENTO e DIMINUIÇÃO: uma linha por fração, com as hipóteses da mesma fração separadas por <code>;</code>). O diploma, o título e o capítulo vêm do ART (ex.: <code>art. 155, caput, CP</code>). Nota do capítulo: <code>Nota 01.</code> <code>ART = arts. 181 a 183, CP</code> <code>NOTA =</code>. Mesmo CRIME + mesmo ART de um item que já existe não é duplicado.</div>
         <textarea id="pen-criar-texto" placeholder="Cole as penas aqui..." oninput="window.PENAS_RUNTIME._agendarPrevia()" onpaste="setTimeout(function(){ window.PENAS_RUNTIME._atualizarPrevia(); }, 50)"></textarea>
         <div class="pen-criar-status" id="pen-criar-status">Aguardando...</div>
         <div id="pen-criar-erro" class="fc-form-erro" style="display:none;"></div>
@@ -14671,7 +14671,10 @@ window.carregarPrazosOficiais = async function() {
 // Separa hipóteses emendadas por ";" numa linha só ("2/3 ao dobro — … (§ 1º, I); 2/3 ao dobro — … (§ 1º, II)"):
 // cada uma vira uma linha, para que a cortina cubra a fração/pena de todas. Só corta em ";" fora de
 // parênteses e quando o trecho seguinte também tem a forma "fração ou hipótese — resto".
-function dividirHipotesesPena(lista) {
+// Com agrupar (aumentos e diminuições), as hipóteses com a MESMA fração voltam a uma linha só,
+// com a fração escrita uma vez ("2/3 ao dobro — comando (§ 1º, I); financiamento (§ 1º, II)"):
+// a cortina cobre a fração uma vez e o resto da linha lista as hipóteses.
+function dividirHipotesesPena(lista, agrupar) {
     let saida = [];
     (lista || []).forEach(function(l) {
         l = String(l || '');
@@ -14691,7 +14694,17 @@ function dividirHipotesesPena(lista) {
         }
         saida.push(l.slice(ini).trim());
     });
-    return saida.filter(Boolean);
+    saida = saida.filter(Boolean);
+    if (!agrupar) return saida;
+    let grupos = [], porFracao = {};
+    saida.forEach(function(l) {
+        let c = l.indexOf(' — ');
+        let fr = c > 0 ? l.slice(0, c).trim() : '';
+        let k = fr.toLowerCase().replace(/\s+/g, ' ');
+        if (!fr || !porFracao[k]) { let g = { fr: fr, partes: [fr ? l.slice(c + 3).trim() : l] }; grupos.push(g); if (fr) porFracao[k] = g; }
+        else porFracao[k].partes.push(l.slice(c + 3).trim());
+    });
+    return grupos.map(function(g) { return g.fr ? g.fr + ' — ' + g.partes.join('; ') : g.partes[0]; });
 }
 function parsearPenasTexto(txt) {
     // O Gem às vezes emenda "PRIORIDADE = —" no fim da linha anterior ("ALTERAÇÃO = — PRIORIDADE = —").
@@ -14734,7 +14747,7 @@ function parsearPenasTexto(txt) {
     function fechar() {
         if (atual) {
             let it = { t: limpar(atual.t), crime: limpar(atual.crime), art: limpar(atual.art), pena: limpar(atual.pena), acao: limpar(atual.acao), obs: limpar(atual.obs), alteracao: limpar(atual.alteracao), classificacaoOficial: prioridade(atual.prioridade) };
-            Object.keys(LISTAS).forEach(function(k) { it[k] = dividirHipotesesPena(atual[k].map(limpar).filter(Boolean)); });
+            Object.keys(LISTAS).forEach(function(k) { it[k] = dividirHipotesesPena(atual[k].map(limpar).filter(Boolean), k !== 'qualificadas'); });
             let nota = limpar(atual.nota);
             // "Nota NN." (ART + NOTA, sem CRIME) = nota do capítulo.
             if (nota && !it.crime) notas.push({ art: it.art, nota: nota });
@@ -14881,7 +14894,7 @@ window.PENAS_RUNTIME = {
     },
     _dividirListas: function(i) {
         if (!i || typeof i !== 'object') return;
-        ['qualificadas', 'aumentos', 'diminuicoes'].forEach(function(k) { if (Array.isArray(i[k])) i[k] = dividirHipotesesPena(i[k]); });
+        ['qualificadas', 'aumentos', 'diminuicoes'].forEach(function(k) { if (Array.isArray(i[k])) i[k] = dividirHipotesesPena(i[k], k !== 'qualificadas'); });
     },
     _acharItem: function(id) {
         let chaves = Object.keys(this.itens);
