@@ -15657,6 +15657,8 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-tile.esmaecido { opacity:0.18; }
     #leiseca-modal .ls-tile.manual::after { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:currentColor; }
     #leiseca-modal .ls-tile.lido { box-shadow:inset 0 -3px 0 rgba(0,0,0,0.35); }
+    #leiseca-modal .ls-tile.novo::before { content:'N'; position:absolute; top:-5px; left:-4px; background:#dc2626; color:#fff; font-size:8px; font-weight:900; line-height:1; padding:2px 3px; border-radius:3px; }
+    #leiseca-modal .ls-tiles { padding-top:4px; }
     .ls-n0 { background:#e5e7eb; color:#6b7280 !important; }
     .ls-n1 { background:#bbf7d0; }
     .ls-n2 { background:#fde68a; }
@@ -15798,6 +15800,19 @@ window.LEISECA_RUNTIME = {
         return inc ? this._nivelDe(inc.porArt[art] || 0, inc.limArt) : 0;
     },
     _chaveEstado: function(art) { return this._diploma + '|' + art; },
+    // Selo "Novo" (mesma regra de Penas/Prazos, ESTRUTURA_MIXIN): alteração
+    // com lei dos últimos 2 anos; expira sozinho.
+    _anoLei: function(t) { return window.ESTRUTURA_MIXIN._anoLei.call(this, t); },
+    _leiRecente: function(t) { return window.ESTRUTURA_MIXIN._leiRecente.call(this, t); },
+    _htmlNovo: function(lei, oQue) { return window.ESTRUTURA_MIXIN._htmlNovo.call(this, lei, oQue); },
+    _artNovo: function(art) {
+        let self = this, j = this._textos[this._diploma], a = j && j.artigos[art];
+        if (!a) return false;
+        let nos = [a];
+        Object.keys(a.inc || {}).forEach(function(k) { nos.push(a.inc[k]); });
+        Object.keys(a.par || {}).forEach(function(p) { let n = a.par[p]; nos.push(n); Object.keys(n.inc || {}).forEach(function(k) { nos.push(n.inc[k]); }); });
+        return nos.some(function(n) { return n && n.alt && self._leiRecente(n.alt); });
+    },
     _nivelArt: function(art) {
         let m = this.estado.prio[this._chaveEstado(art)];
         if (m) return { critico: 3, importante: 2, regular: 1 }[m] || 0;
@@ -15894,7 +15909,7 @@ window.LEISECA_RUNTIME = {
                 total++;
                 let passa = self._passaFiltro(a); if (passa) visiveis++;
                 let n = self._nivelArt(a), q = inc ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
-                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + '" data-art="' + self._esc(a) + '" title="Art. ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="Art. ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
             }).join('') + '</div>';
         }).join('');
         let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
@@ -15991,7 +16006,7 @@ window.LEISECA_RUNTIME = {
             let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
             return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + '"><span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
-                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' : '') + '</div>';
+                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>';
         };
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + ' –', no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
@@ -16009,6 +16024,7 @@ window.LEISECA_RUNTIME = {
         let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
         return '<div class="ls-art-cab"><span class="ls-art-tit">Art. ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
             (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
+            (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
             '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
             (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no Planalto">Planalto ↗</a>' : '') + '</span></div>' + html;
