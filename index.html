@@ -15662,6 +15662,8 @@ window.carregarPenasOficiais = async function() {
     .ls-n2 { background:#fde68a; }
     .ls-n3 { background:#f87171; color:#fff !important; }
     #leiseca-modal .ls-texto { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:14px; overflow-y:auto; font-size:13px; line-height:1.55; color:var(--text-main); }
+    #leiseca-modal .ls-art + .ls-art { margin-top:18px; padding-top:14px; border-top:1px solid var(--border-color); }
+    #leiseca-modal .ls-art.sel .ls-art-tit { color:var(--app-primary); }
     #leiseca-modal .ls-art-cab { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; }
     #leiseca-modal .ls-art-tit { font-family:var(--font-display); font-size:16px; font-weight:800; }
     #leiseca-modal .ls-art-rub { font-size:12px; font-weight:700; color:var(--text-muted); }
@@ -15900,7 +15902,39 @@ window.LEISECA_RUNTIME = {
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
             '<span class="ls-info">' + visiveis + ' de ' + total + ' artigos' + (inc ? '' : ' · sem mapa de incidência') + '</span></div>' +
-            '<div class="ls-corpo"><div class="ls-mapa">' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlArtigo() + '</div></div>';
+            '<div class="ls-corpo"><div class="ls-mapa">' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
+        this._rolarParaArt();
+    },
+    // Título ou capítulo escolhido (ou "Todos" em diploma curto): o painel
+    // mostra todos os artigos do recorte que passam no filtro, em sequência;
+    // o clique no quadrado rola até o artigo. Sem isso, um artigo por vez.
+    LIMITE_TODOS: 120,
+    _artigosDoPainel: function() {
+        let self = this, grupos = this._grupos(), arts;
+        if (this._divisao !== null && grupos[this._divisao]) arts = grupos[this._divisao].arts;
+        else {
+            arts = [].concat.apply([], grupos.map(function(g) { return g.arts; }));
+            if (arts.length > this.LIMITE_TODOS) return null;
+        }
+        return arts.filter(function(a) { return self._passaFiltro(a); });
+    },
+    _htmlPainel: function() {
+        let self = this, lista = this._artigosDoPainel();
+        if (!lista) return this._art ? this._htmlBlocoArt(this._art) + this._htmlFonte() : '<div class="fc-vazio-col">Clique num artigo para ler o texto, ou escolha um título ou capítulo na segunda coluna para ler todos os artigos dele. A cor mostra a incidência em provas; o número ao lado de cada dispositivo, quantas vezes foi cobrado.</div>';
+        if (!lista.length) return '<div class="fc-vazio-col">Nenhum artigo deste recorte passa no filtro.</div>';
+        return lista.map(function(a) { return self._htmlBlocoArt(a); }).join('') + this._htmlFonte();
+    },
+    _htmlBlocoArt: function(a) {
+        return '<div class="ls-art' + (a === this._art ? ' sel' : '') + '" id="ls-art-' + this._esc(a) + '">' + this._htmlArtigo(a) + '</div>';
+    },
+    _htmlFonte: function() {
+        let j = this._textos[this._diploma], inc = this._incidencias[this._diploma];
+        return '<div class="ls-fonte">Texto compilado do Planalto' + (j.dataTexto ? ' em ' + j.dataTexto.split('-').reverse().join('/') : '') + '.' + (inc && inc.fonte ? ' Incidência: ' + this._esc(inc.fonte) + '.' : '') + '</div>';
+    },
+    _rolarParaArt: function() {
+        if (!this._art) return;
+        let el = document.getElementById('ls-art-' + this._art), t = document.getElementById('ls-texto');
+        if (el && t && t.children.length > 2) t.scrollTop = el.offsetTop - t.offsetTop - 6;
     },
     buscar: function(v) {
         this._busca = v;
@@ -15915,26 +15949,42 @@ window.LEISECA_RUNTIME = {
     alternarFiltro: function(k) { this._filtro[k] = !this._filtro[k]; this._renderPrincipal(); },
     abrirArtigo: function(a) {
         this._art = a;
-        document.querySelectorAll('#leiseca-modal .ls-tile.sel').forEach(function(b) { b.classList.remove('sel'); });
+        document.querySelectorAll('#leiseca-modal .ls-tile.sel, #leiseca-modal .ls-art.sel').forEach(function(b) { b.classList.remove('sel'); });
         let b = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
         if (b) b.classList.add('sel');
-        let t = document.getElementById('ls-texto');
-        if (t) { t.innerHTML = this._htmlArtigo(); t.scrollTop = 0; }
+        let t = document.getElementById('ls-texto'), bloco = document.getElementById('ls-art-' + a);
+        if (!t) return;
+        if (bloco && t.children.length > 2) { bloco.classList.add('sel'); this._rolarParaArt(); return; }
+        // Fora da lista (filtrado ou "Todos" em diploma longo): mostra só ele.
+        t.innerHTML = this._htmlBlocoArt(a) + this._htmlFonte(); t.scrollTop = 0;
     },
-    definirPrioridade: function(v) {
-        let ch = this._chaveEstado(this._art);
+    // Atualiza só o quadrado e o bloco do artigo (sem perder a rolagem).
+    _atualizarArt: function(a) {
+        let ch = this._chaveEstado(a), b = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
+        if (b) {
+            b.className = b.className.replace(/\bls-n\d\b/, 'ls-n' + this._nivelArt(a));
+            b.classList.toggle('manual', !!this.estado.prio[ch]);
+            b.classList.toggle('lido', !!this.estado.lidos[ch]);
+        }
+        let bloco = document.getElementById('ls-art-' + a);
+        if (bloco) bloco.innerHTML = this._htmlArtigo(a);
+    },
+    definirPrioridade: function(v, a) {
+        a = a || this._art;
+        let ch = this._chaveEstado(a);
         if (v) this.estado.prio[ch] = v; else delete this.estado.prio[ch];
-        this._salvar(); this._renderPrincipal();
+        this._salvar(); this._atualizarArt(a);
     },
-    alternarLido: function() {
-        let ch = this._chaveEstado(this._art);
+    alternarLido: function(a) {
+        a = a || this._art;
+        let ch = this._chaveEstado(a);
         if (this.estado.lidos[ch]) delete this.estado.lidos[ch]; else this.estado.lidos[ch] = new Date().toISOString();
-        this._salvar(); this._renderPrincipal();
+        this._salvar(); this._atualizarArt(a);
     },
 
-    _htmlArtigo: function() {
-        let self = this, j = this._textos[this._diploma], a = this._art;
-        if (!a || !j || !j.artigos[a]) return '<div class="fc-vazio-col">Clique num artigo para ler o texto. A cor mostra a incidência em provas; o número ao lado de cada dispositivo, quantas vezes foi cobrado.</div>';
+    _htmlArtigo: function(a) {
+        let self = this, j = this._textos[this._diploma];
+        if (!a || !j || !j.artigos[a]) return '';
         let inc = this._incidencias[this._diploma], art = j.artigos[a];
         let linha = function(rot, no, chave, cls) {
             let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = inc ? self._nivelDe(n, inc.limDisp) : 0;
@@ -15959,10 +16009,9 @@ window.LEISECA_RUNTIME = {
         let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
         return '<div class="ls-art-cab"><span class="ls-art-tit">Art. ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
             (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
-            '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value)">' + opcoes + '</select>' +
-            '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido()">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
-            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no Planalto">Planalto ↗</a>' : '') + '</span></div>' + html +
-            '<div class="ls-fonte">Texto compilado do Planalto' + (j.dataTexto ? ' em ' + j.dataTexto.split('-').reverse().join('/') : '') + '.' + (inc && inc.fonte ? ' Incidência: ' + self._esc(inc.fonte) + '.' : '') + '</div>';
+            '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
+            '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
+            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no Planalto">Planalto ↗</a>' : '') + '</span></div>' + html;
     }
 };
 window.abrirLeiSecaModal = function() {
