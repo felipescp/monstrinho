@@ -57,7 +57,7 @@ def main():
         t = linhas[j]
         # Nome em caixa alta quebrado em várias linhas ("DA REPRESSÃO … / E AO TRÁFICO …").
         while (j + 1 < len(linhas) and t.isupper() and linhas[j + 1].isupper()
-               and not re.match(r'(TÍTULO|CAPÍTULO|SEÇÃO|Art\.)', linhas[j + 1])):
+               and not re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.)', linhas[j + 1])):
             j += 1
             t += ' ' + linhas[j]
         return t[:1].upper() + t[1:].lower()
@@ -66,21 +66,28 @@ def main():
     fora = collections.Counter()
     estrutura, vistos = [], set()
     titulo = capitulo = None
-    parte = ''
+    parte = livro = ''
     art = par = inc = None
     for i, t in enumerate(linhas):
         # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
-        m = re.match(r'PARTE\s+(GERAL|ESPECIAL)\b', t)
-        if m and not RE_ART.match(t):
+        m = re.match(r'PARTE(GERAL|ESPECIAL)$', re.sub(r'\s+', '', t))  # "P A R T E  E S P E C I A L"
+        if m:
             parte = 'PG · ' if m.group(1) == 'GERAL' else 'PE · '
+            livro = ''
             titulo = capitulo = None
             continue
-        m = re.match(r'TÍTULO\s+([IVXL]+(?:-[A-Z])?)$', t)
+        # Livros (CC, CPC): o número dos títulos recomeça em cada livro.
+        m = re.match(r'LIVRO\s+([IVXL]+|COMPLEMENTAR)$', t)
         if m:
-            titulo = parte + 'Título ' + m.group(1) + ' — ' + nome_seguinte(i)
+            livro = 'Livro ' + (m.group(1) if m.group(1) != 'COMPLEMENTAR' else 'Complementar') + ' · '
+            titulo = capitulo = None
+            continue
+        m = re.match(r'T[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)$', t)
+        if m:
+            titulo = parte + livro + 'Título ' + m.group(1) + ' — ' + nome_seguinte(i)
             capitulo = None
             continue
-        m = re.match(r'CAPÍTULO\s+([IVXL]+(?:-[A-Z])?)\b', t)
+        m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)\b', t)
         if m:
             capitulo = 'Cap. ' + m.group(1) + ' — ' + nome_seguinte(i)
             continue
@@ -122,6 +129,14 @@ def main():
             cont[chave] += n
         else:
             fora[chave] += n
+
+    # Só a Parte Especial marcada (CC): o que vem antes dela é a Parte Geral.
+    if any((g['titulo'] or '').startswith('PE · ') for g in estrutura):
+        for g in estrutura:
+            if (g['titulo'] or '').startswith('PE · '):
+                break
+            if g['titulo'] and not g['titulo'].startswith('PG · '):
+                g['titulo'] = 'PG · ' + g['titulo']
 
     # Artigos da base que o material não trouxe (ex.: revogados): entram logo
     # depois do artigo anterior da base, no mesmo grupo dele.
