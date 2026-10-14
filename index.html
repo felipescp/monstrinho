@@ -1551,6 +1551,7 @@ try {
         <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
         <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos — memorização">⏱️ PRAZOS</div>
         <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
+        <div class="nav-item hd-item" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
         <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
@@ -15608,6 +15609,385 @@ window.carregarPenasOficiais = async function() {
     } catch (e) { console.warn('[PENAS OFICIAIS] Falha ao carregar manifesto:', e); }
     const caminhos = texto.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && l.charAt(0) !== '#'; });
     for (const c of caminhos) await window.importarPenasOficiais(c);
+};
+</script>
+
+<!-- 📜 LEI SECA: texto dos diplomas de dados/legislacao/ agrupados por
+     disciplina (dados/leiseca/manifesto.json), com mapa de calor de
+     incidência em provas (dados/leiseca/incidencia/*.json, gerado por
+     ferramentas/incidencia_questoes.py). A cor do artigo é a do sistema;
+     a prioridade escolhida pelo usuário prevalece (como em Penas). -->
+<div id="leiseca-modal" class="analytics-modal">
+<style>
+    #leiseca-modal.modal-maximizado .analytics-modal-content { width:100vw; height:100vh; border-radius:0; }
+    #leiseca-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
+    #leiseca-modal .analytics-modal-content { padding:0; }
+    #leiseca-modal .ls-cab-acoes { display:flex; align-items:center; gap:10px; margin-left:auto; }
+    #leiseca-modal .fc-grid { display:grid; grid-template-columns: 0.6fr 0.55fr 2.4fr; flex:1; overflow:hidden; }
+    #leiseca-modal .fc-col { overflow-y:auto; padding:10px; }
+    #leiseca-modal #ls-col-diplomas { background:var(--bg-soft); border-right:1px solid var(--border-color); }
+    #leiseca-modal #ls-col-divisoes { border-right:1px solid var(--border-color); }
+    #leiseca-modal #ls-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
+    #leiseca-modal .ls-disciplina { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:12px 4px 4px; }
+    #leiseca-modal .ls-disciplina:first-child { padding-top:2px; }
+    #leiseca-modal .fc-materia-item { padding:7px 4px 7px 10px; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    #leiseca-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
+    #leiseca-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
+    #leiseca-modal .fc-materia-nome { font-size:10.5px; font-weight:700; color:var(--text-main); line-height:1.3; }
+    #leiseca-modal .fc-materia-count, #leiseca-modal .fc-divisao-count { font-size:9px; font-weight:800; color:var(--text-muted); background:#e2e8f0; padding:1px 6px; border-radius:99px; flex-shrink:0; }
+    #leiseca-modal .fc-divisao-item { padding:8px 10px; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; border-bottom:1px dashed #f1f5f9; font-size:11px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    #leiseca-modal .fc-divisao-item:hover { color:var(--app-primary); background:var(--bg-soft); }
+    #leiseca-modal .fc-divisao-item.ativa { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #leiseca-modal .ls-div-cap { display:block; font-weight:600; color:var(--text-muted); font-size:10.5px; }
+    #leiseca-modal .fc-vazio-col { padding:20px; text-align:center; color:var(--text-muted); font-size:11px; font-style:italic; line-height:1.6; }
+    #leiseca-modal .ls-toolbar { flex-shrink:0; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px; border-bottom:1px solid var(--border-color); background:var(--bg-soft); font-size:11px; }
+    #leiseca-modal .ls-busca { padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:11px; background:var(--bg-white); color:var(--text-main); width:200px; }
+    #leiseca-modal .ls-filtro { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-filtro label { display:flex; align-items:center; gap:3px; cursor:pointer; color:var(--text-main); font-weight:600; }
+    #leiseca-modal .ls-info { font-size:10px; font-weight:700; color:var(--text-muted); margin-left:auto; }
+    #leiseca-modal .ls-corpo { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:12px; padding:10px; overflow:hidden; }
+    #leiseca-modal .ls-mapa { overflow-y:auto; padding-right:4px; }
+    #leiseca-modal .ls-grupo-rot { font-size:10.5px; font-weight:800; color:var(--text-muted); margin:12px 0 5px; line-height:1.35; }
+    #leiseca-modal .ls-grupo-tit { font-size:11.5px; font-weight:800; color:var(--text-main); margin:16px 0 2px; padding-bottom:3px; border-bottom:1px solid var(--border-color); line-height:1.35; }
+    #leiseca-modal .ls-grupo-tit:first-child { margin-top:0; }
+    #leiseca-modal .ls-grupo-tit + .ls-tiles { margin-top:6px; }
+    #leiseca-modal .ls-tiles { display:flex; flex-wrap:wrap; gap:4px; }
+    #leiseca-modal .ls-tile { min-width:44px; height:30px; padding:0 6px; border:0; border-radius:5px; font-size:11.5px; font-weight:700; cursor:pointer; color:#1f2937; position:relative; }
+    #leiseca-modal .ls-tile.sel { outline:2px solid var(--text-main); outline-offset:1px; }
+    #leiseca-modal .ls-tile.esmaecido { opacity:0.18; }
+    #leiseca-modal .ls-tile.manual::after { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:currentColor; }
+    #leiseca-modal .ls-tile.lido { box-shadow:inset 0 -3px 0 rgba(0,0,0,0.35); }
+    .ls-n0 { background:#e5e7eb; color:#6b7280 !important; }
+    .ls-n1 { background:#bbf7d0; }
+    .ls-n2 { background:#fde68a; }
+    .ls-n3 { background:#f87171; color:#fff !important; }
+    #leiseca-modal .ls-texto { background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; padding:14px; overflow-y:auto; font-size:13px; line-height:1.55; color:var(--text-main); }
+    #leiseca-modal .ls-art-cab { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; }
+    #leiseca-modal .ls-art-tit { font-family:var(--font-display); font-size:16px; font-weight:800; }
+    #leiseca-modal .ls-art-rub { font-size:12px; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-art-acoes { display:flex; align-items:center; gap:6px; margin-left:auto; font-size:11px; }
+    #leiseca-modal .ls-art-acoes select { padding:4px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; }
+    #leiseca-modal .ls-art-acoes select.sistema { border-style:dashed; }
+    #leiseca-modal .ls-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #leiseca-modal .ls-btn.ativo { background:#dcfce7; border-color:#16a34a; color:#166534; }
+    #leiseca-modal .ls-d { padding:6px 8px; border-left:4px solid transparent; border-radius:3px; margin:2px 0; }
+    #leiseca-modal .ls-d.ls-n0 { background:none; border-left-color:transparent; color:var(--text-main) !important; }
+    #leiseca-modal .ls-d.ls-n1 { background:color-mix(in srgb, #bbf7d0 35%, transparent); border-left-color:#22c55e; }
+    #leiseca-modal .ls-d.ls-n2 { background:color-mix(in srgb, #fde68a 45%, transparent); border-left-color:#eab308; }
+    #leiseca-modal .ls-d.ls-n3 { background:color-mix(in srgb, #f87171 22%, transparent); border-left-color:#dc2626; color:var(--text-main) !important; }
+    #leiseca-modal .ls-d.ls-ali { margin-left:18px; }
+    #leiseca-modal .ls-d.ls-inc-par { margin-left:10px; }
+    #leiseca-modal .ls-rot { font-weight:800; }
+    #leiseca-modal .ls-qt { font-size:10px; font-weight:800; background:#e5e7eb; color:#374151; border-radius:99px; padding:0 7px; margin-left:4px; white-space:nowrap; }
+    #leiseca-modal .ls-rev { color:var(--text-muted); font-style:italic; }
+    #leiseca-modal .ls-alt { font-size:10px; color:var(--text-muted); margin-left:4px; }
+    #leiseca-modal .ls-fonte { margin-top:12px; font-size:10px; color:var(--text-muted); line-height:1.5; }
+    #leiseca-modal .ls-legenda { display:flex; gap:10px; flex-wrap:wrap; font-size:10px; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-legenda i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:3px; }
+    @media (max-width: 900px) {
+        #leiseca-modal .fc-grid { grid-template-columns:1fr; overflow-y:auto; }
+        #leiseca-modal .fc-col { max-height:none; }
+        #leiseca-modal .ls-corpo { grid-template-columns:1fr; overflow:visible; }
+    }
+</style>
+    <div class="analytics-modal-content">
+        <div class="analytics-modal-header">
+            <div class="analytics-modal-title">📜 Lei Seca</div>
+            <div class="ls-cab-acoes">
+                <span class="ls-legenda"><span><i class="ls-n0"></i>Não cobrado</span><span><i class="ls-n1"></i>Regular</span><span><i class="ls-n2"></i>Importante</span><span><i class="ls-n3"></i>Crítico</span></span>
+                <button class="analytics-close-btn" id="ls-modal-btn-maximizar" onclick="window.alternarMaximizarLeiSecaModal()" title="Minimizar">🗗</button>
+                <button class="analytics-close-btn" onclick="window.fecharLeiSecaModal()">&#x2715;</button>
+            </div>
+        </div>
+        <div class="fc-grid">
+            <div class="fc-col" id="ls-col-diplomas"></div>
+            <div class="fc-col" id="ls-col-divisoes"></div>
+            <div class="fc-col" id="ls-col-principal"></div>
+        </div>
+    </div>
+</div>
+<script>
+window.LEISECA_RUNTIME = {
+    CHAVE: 'tjpe_v1__leiseca_runtime', // sincroniza com o Gist (prefixo tjpe_v1__)
+    NIVEIS: [['critico', '🔴 Crítico'], ['importante', '🟡 Importante'], ['regular', '🟢 Regular']],
+    manifesto: null,
+    _textos: {},       // id → JSON do diploma (window.LEGISLACAO.carregar)
+    _incidencias: {},  // id → {estrutura, dispositivos, fonte, ...} já com os limiares
+    _diploma: null,
+    _divisao: null,    // índice do grupo (null = todos)
+    _art: null,
+    _busca: '',
+    _filtro: { critico: true, importante: true, regular: true, nenhum: true },
+    estado: { prio: {}, lidos: {} },
+
+    _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
+    _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
+    _carregarEstado: function() {
+        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {} }; } catch (e) {}
+    },
+    _salvar: function() { try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); } catch (e) { console.warn('[LEI SECA] Falha ao salvar:', e); } },
+
+    init: async function() {
+        this._carregarEstado();
+        let col = document.getElementById('ls-col-diplomas');
+        if (!this.manifesto) {
+            if (col) col.innerHTML = '<div class="fc-vazio-col">Carregando…</div>';
+            try {
+                let r = await fetch('dados/leiseca/manifesto.json?v=' + Date.now());
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                this.manifesto = await r.json();
+            } catch (e) {
+                if (col) col.innerHTML = '<div class="fc-vazio-col">Não foi possível carregar dados/leiseca/manifesto.json.</div>';
+                return;
+            }
+        }
+        if (!this._diploma) {
+            let todos = this._diplomas(), comMapa = todos.find(function(d) { return d.incidencia; });
+            this._diploma = (comMapa || todos[0]).id;
+        }
+        await this.selecionarDiploma(this._diploma, true);
+    },
+    _diplomas: function() {
+        let out = [];
+        ((this.manifesto || {}).disciplinas || []).forEach(function(g) { (g.diplomas || []).forEach(function(d) { out.push(Object.assign({ disciplina: g.nome }, d)); }); });
+        return out.filter(function(d) { return window.LEGISLACAO && window.LEGISLACAO.DIPLOMAS[d.id]; });
+    },
+    _infoDiploma: function(id) { return this._diplomas().find(function(d) { return d.id === id; }) || null; },
+
+    selecionarDiploma: async function(id, manterArt) {
+        this._diploma = id; this._divisao = null;
+        if (!manterArt) this._art = null;
+        this._renderDiplomas();
+        let principal = document.getElementById('ls-col-principal');
+        if (principal) principal.innerHTML = '<div class="fc-vazio-col">Carregando o texto…</div>';
+        let info = this._infoDiploma(id);
+        try {
+            if (!this._textos[id]) this._textos[id] = await window.LEGISLACAO.carregar(id);
+            if (info && info.incidencia && !this._incidencias[id]) {
+                let r = await fetch(info.incidencia + '?v=' + Date.now());
+                if (r.ok) this._incidencias[id] = this._prepararIncidencia(await r.json());
+            }
+        } catch (e) {
+            if (principal) principal.innerHTML = '<div class="fc-vazio-col">Não foi possível carregar o diploma.</div>';
+            return;
+        }
+        if (this._diploma !== id) return;
+        if (this._art && !this._textos[id].artigos[this._art]) this._art = null;
+        this.render();
+    },
+
+    // Limiares relativos ao diploma: Crítico = quartil superior das contagens
+    // (>0); Importante = da mediana ao quartil; Regular = abaixo da mediana.
+    _limiares: function(valores) {
+        let v = valores.filter(function(x) { return x > 0; }).sort(function(a, b) { return b - a; });
+        if (!v.length) return { critico: Infinity, importante: Infinity };
+        return { critico: v[Math.floor(v.length * 0.25)], importante: v[Math.floor(v.length * 0.5)] };
+    },
+    _prepararIncidencia: function(inc) {
+        let porArt = {};
+        Object.keys(inc.dispositivos || {}).forEach(function(k) { let a = k.split(/[§.]/)[0]; porArt[a] = (porArt[a] || 0) + inc.dispositivos[k]; });
+        let vd = Object.keys(inc.dispositivos || {}).map(function(k) { return inc.dispositivos[k]; });
+        let va = Object.keys(porArt).map(function(k) { return porArt[k]; });
+        return Object.assign({}, inc, { porArt: porArt, limDisp: this._limiares(vd), limArt: this._limiares(va) });
+    },
+    _nivelDe: function(n, lim) { if (!n) return 0; return n >= lim.critico ? 3 : n >= lim.importante ? 2 : 1; },
+    _nivelSistemaArt: function(art) {
+        let inc = this._incidencias[this._diploma];
+        return inc ? this._nivelDe(inc.porArt[art] || 0, inc.limArt) : 0;
+    },
+    _chaveEstado: function(art) { return this._diploma + '|' + art; },
+    _nivelArt: function(art) {
+        let m = this.estado.prio[this._chaveEstado(art)];
+        if (m) return { critico: 3, importante: 2, regular: 1 }[m] || 0;
+        return this._nivelSistemaArt(art);
+    },
+
+    // Grupos da coluna 2: estrutura do arquivo de incidência; sem ela, faixas de 100 artigos.
+    _grupos: function() {
+        let j = this._textos[this._diploma], inc = this._incidencias[this._diploma];
+        if (!j) return [];
+        let arts = Object.keys(j.artigos);
+        if (inc && inc.estrutura && inc.estrutura.length) {
+            let vistos = {}, grupos = inc.estrutura.map(function(g) {
+                let a = g.arts.filter(function(x) { return j.artigos[x] && !vistos[x] && (vistos[x] = true); });
+                return { titulo: g.titulo, capitulo: g.capitulo, arts: a };
+            }).filter(function(g) { return g.arts.length; });
+            let resto = arts.filter(function(a) { return !vistos[a]; });
+            if (resto.length) grupos.push({ titulo: 'Outros dispositivos', capitulo: null, arts: resto });
+            return grupos;
+        }
+        let out = [];
+        for (let i = 0; i < arts.length; i += 100) {
+            let fatia = arts.slice(i, i + 100);
+            out.push({ titulo: 'Arts. ' + fatia[0] + ' a ' + fatia[fatia.length - 1], capitulo: null, arts: fatia });
+        }
+        return out;
+    },
+
+    render: function() {
+        this._renderDiplomas();
+        this._renderDivisoes();
+        this._renderPrincipal();
+    },
+    _renderDiplomas: function() {
+        let col = document.getElementById('ls-col-diplomas');
+        if (!col || !this.manifesto) return;
+        let self = this, disponiveis = {};
+        this._diplomas().forEach(function(d) { disponiveis[d.id] = true; });
+        col.innerHTML = (this.manifesto.disciplinas || []).map(function(g) {
+            let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
+            if (!itens.length) return '';
+            return '<div class="ls-disciplina">' + self._esc(g.nome) + '</div>' + itens.map(function(d) {
+                let inc = self._incidencias[d.id], total = inc ? Object.keys(inc.porArt).reduce(function(s, k) { return s + inc.porArt[k]; }, 0) : 0;
+                return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
+                    '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
+                    (d.incidencia ? '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>' : '') + '</div>';
+            }).join('');
+        }).join('');
+    },
+    _renderDivisoes: function() {
+        let col = document.getElementById('ls-col-divisoes');
+        if (!col) return;
+        let self = this, inc = this._incidencias[this._diploma], grupos = this._grupos();
+        let soma = function(arts) { return inc ? arts.reduce(function(s, a) { return s + (inc.porArt[a] || 0); }, 0) : arts.length; };
+        // rotulo: HTML já escapado. O título só aparece no primeiro capítulo dele.
+        let item = function(rotulo, valor, n) {
+            return '<div class="fc-divisao-item' + (self._divisao === valor ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDivisao(' + valor + ')"><span>' + rotulo + '</span><span class="fc-divisao-count" title="' + (inc ? 'cobranças em provas' : 'artigos') + '">' + n + '</span></div>';
+        };
+        let todos = [].concat.apply([], grupos.map(function(g) { return g.arts; }));
+        let html = item('Todos', null, soma(todos)), ultimoTit;
+        grupos.forEach(function(g, i) {
+            let rot;
+            if (g.capitulo) rot = (g.titulo && g.titulo !== ultimoTit ? '<span class="ls-div-cap">' + self._esc(g.titulo) + '</span>' : '') + self._esc(g.capitulo);
+            else rot = self._esc(g.titulo || 'Sem título');
+            ultimoTit = g.titulo;
+            html += item(rot, i, soma(g.arts));
+        });
+        col.innerHTML = html;
+    },
+    selecionarDivisao: function(i) { this._divisao = (i === null || i === undefined) ? null : i; this._renderDivisoes(); this._renderPrincipal(); },
+
+    _passaFiltro: function(art) {
+        let n = this._nivelArt(art), k = ['nenhum', 'regular', 'importante', 'critico'][n];
+        if (!this._filtro[k]) return false;
+        let b = this._busca.trim().toLowerCase();
+        if (!b) return true;
+        if (/^\d+(-[a-z])?$/i.test(b)) return art.toLowerCase() === b || art.toLowerCase().indexOf(b + '-') === 0;
+        let j = this._textos[this._diploma];
+        return JSON.stringify(j.artigos[art]).toLowerCase().indexOf(b) >= 0;
+    },
+    _renderPrincipal: function() {
+        let col = document.getElementById('ls-col-principal');
+        if (!col) return;
+        let self = this, j = this._textos[this._diploma], inc = this._incidencias[this._diploma];
+        if (!j) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma.</div>'; return; }
+        let grupos = this._grupos(), visiveis = 0, total = 0;
+        if (this._divisao !== null && grupos[this._divisao]) grupos = [grupos[this._divisao]];
+        let ultimoTit;
+        let mapa = grupos.map(function(g) {
+            // Título uma vez; capítulos abaixo dele.
+            let cab = (g.titulo && g.titulo !== ultimoTit ? '<div class="ls-grupo-tit">' + self._esc(g.titulo) + '</div>' : '') + (g.capitulo ? '<div class="ls-grupo-rot">' + self._esc(g.capitulo) + '</div>' : '');
+            ultimoTit = g.titulo;
+            return cab + '<div class="ls-tiles">' + g.arts.map(function(a) {
+                total++;
+                let passa = self._passaFiltro(a); if (passa) visiveis++;
+                let n = self._nivelArt(a), q = inc ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + '" data-art="' + self._esc(a) + '" title="Art. ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
+            }).join('') + '</div>';
+        }).join('');
+        let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
+        col.innerHTML = '<div class="ls-toolbar">' +
+            '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
+            '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
+            '<span class="ls-info">' + visiveis + ' de ' + total + ' artigos' + (inc ? '' : ' · sem mapa de incidência') + '</span></div>' +
+            '<div class="ls-corpo"><div class="ls-mapa">' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlArtigo() + '</div></div>';
+    },
+    buscar: function(v) {
+        this._busca = v;
+        clearTimeout(this._tBusca);
+        let self = this;
+        this._tBusca = setTimeout(function() {
+            self._renderPrincipal();
+            let el = document.getElementById('ls-busca');
+            if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+        }, 200);
+    },
+    alternarFiltro: function(k) { this._filtro[k] = !this._filtro[k]; this._renderPrincipal(); },
+    abrirArtigo: function(a) {
+        this._art = a;
+        document.querySelectorAll('#leiseca-modal .ls-tile.sel').forEach(function(b) { b.classList.remove('sel'); });
+        let b = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
+        if (b) b.classList.add('sel');
+        let t = document.getElementById('ls-texto');
+        if (t) { t.innerHTML = this._htmlArtigo(); t.scrollTop = 0; }
+    },
+    definirPrioridade: function(v) {
+        let ch = this._chaveEstado(this._art);
+        if (v) this.estado.prio[ch] = v; else delete this.estado.prio[ch];
+        this._salvar(); this._renderPrincipal();
+    },
+    alternarLido: function() {
+        let ch = this._chaveEstado(this._art);
+        if (this.estado.lidos[ch]) delete this.estado.lidos[ch]; else this.estado.lidos[ch] = new Date().toISOString();
+        this._salvar(); this._renderPrincipal();
+    },
+
+    _htmlArtigo: function() {
+        let self = this, j = this._textos[this._diploma], a = this._art;
+        if (!a || !j || !j.artigos[a]) return '<div class="fc-vazio-col">Clique num artigo para ler o texto. A cor mostra a incidência em provas; o número ao lado de cada dispositivo, quantas vezes foi cobrado.</div>';
+        let inc = this._incidencias[this._diploma], art = j.artigos[a];
+        let linha = function(rot, no, chave, cls) {
+            let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = inc ? self._nivelDe(n, inc.limDisp) : 0;
+            let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
+            return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + '"><span class="ls-rot">' + rot + '</span> ' + txt +
+                (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
+                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' : '') + '</div>';
+        };
+        let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
+        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + ' –', no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
+        let html = linha('Art. ' + self._esc(a) + '.', art, a) + incisos(art, a);
+        if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
+        Object.keys(art.par || {}).forEach(function(p) {
+            let no = art.par[p], rot = p === 'pu' ? 'Parágrafo único.' : '§ ' + p + (/^\d$/.test(p) ? 'º' : '') + '.';
+            html += linha(rot, no, a + '§' + p) + incisos(no, a + '§' + p, 'ls-inc-par');
+            if (no.pena) html += '<div class="ls-d ls-n0 ls-inc-par"><span class="ls-rot">Pena –</span> ' + self._esc(no.pena) + '</div>';
+        });
+        let ch = this._chaveEstado(a), manual = this.estado.prio[ch], sist = ['', 'regular', 'importante', 'critico'][this._nivelSistemaArt(a)];
+        let q = inc ? (inc.porArt[a] || 0) : null;
+        let opcoes = '<option value="">' + (sist ? 'Sistema: ' + { critico: 'Crítico', importante: 'Importante', regular: 'Regular' }[sist] : 'Sem prioridade') + '</option>' +
+            this.NIVEIS.map(function(nv) { return '<option value="' + nv[0] + '"' + (manual === nv[0] ? ' selected' : '') + '>' + nv[1] + '</option>'; }).join('');
+        let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
+        return '<div class="ls-art-cab"><span class="ls-art-tit">Art. ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
+            (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
+            '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value)">' + opcoes + '</select>' +
+            '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido()">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
+            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no Planalto">Planalto ↗</a>' : '') + '</span></div>' + html +
+            '<div class="ls-fonte">Texto compilado do Planalto' + (j.dataTexto ? ' em ' + j.dataTexto.split('-').reverse().join('/') : '') + '.' + (inc && inc.fonte ? ' Incidência: ' + self._esc(inc.fonte) + '.' : '') + '</div>';
+    }
+};
+window.abrirLeiSecaModal = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    const modal = document.getElementById('leiseca-modal');
+    if (!modal) return;
+    modal.classList.add('modal-maximizado');
+    const btn = document.getElementById('ls-modal-btn-maximizar');
+    if (btn) { btn.textContent = '🗗'; btn.title = 'Minimizar'; }
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    window.LEISECA_RUNTIME.init();
+};
+window.alternarMaximizarLeiSecaModal = function() {
+    const modal = document.getElementById('leiseca-modal');
+    if (!modal) return;
+    const max = modal.classList.toggle('modal-maximizado');
+    const btn = document.getElementById('ls-modal-btn-maximizar');
+    if (btn) { btn.textContent = max ? '🗗' : '⛶'; btn.title = max ? 'Minimizar' : 'Maximizar'; }
+};
+window.fecharLeiSecaModal = function() {
+    const modal = document.getElementById('leiseca-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
 };
 </script>
 
