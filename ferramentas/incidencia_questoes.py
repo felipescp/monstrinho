@@ -13,6 +13,7 @@ Uso:
         dados/leiseca/incidencia/lei-11343.json --fonte "Material de questões (Eduardo B. S. Teixeira), até 01/07/2026"
 
 Chaves dos dispositivos: "33" (caput), "33§4", "33§pu", "28.II", "33§1.I".
+Dispositivo renumerado depois do material: --alias "57§pu=57§1".
 Alíneas contam no inciso (ou parágrafo) a que pertencem. Dispositivo que não
 existe na base de lei seca é listado no fim e fica fora do arquivo.
 """
@@ -39,8 +40,11 @@ def main():
     ap.add_argument('base')
     ap.add_argument('saida')
     ap.add_argument('--fonte', default='')
+    ap.add_argument('--alias', action='append', default=[],
+                    help='dispositivo renumerado depois do material: "57§pu=57§1"')
     a = ap.parse_args()
 
+    alias = dict(x.split('=', 1) for x in a.alias)
     base = json.load(open(a.base, encoding='utf-8'))
     B = base['artigos']
     # Questões e comentários vêm em tabelas (Markdown "|" ou HTML "<table>",
@@ -127,6 +131,9 @@ def main():
             continue
         n = sum(1 + g.count('/') for g in tags)
         chave = art + ('§' + par if par else '') + ('.' + inc if inc else '')
+        chave = alias.get(chave, chave)
+        if chave != art + ('§' + par if par else '') + ('.' + inc if inc else ''):
+            art, par, inc = (re.match(r'([^§.]+)(?:§([^.]+))?(?:\.(.+))?$', chave).groups())
         no = B.get(art)
         ok = bool(no)
         if ok and par:
