@@ -55,18 +55,21 @@ def main():
         if j >= len(linhas):
             return ''
         t = linhas[j]
+        if re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.)', t):
+            return ''
         # Nome em caixa alta quebrado em várias linhas ("DA REPRESSÃO … / E AO TRÁFICO …").
         while (j + 1 < len(linhas) and t.isupper() and linhas[j + 1].isupper()
                and not re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.)', linhas[j + 1])):
             j += 1
             t += ' ' + linhas[j]
+        t = t.strip(' "“”\'.:')
         return t[:1].upper() + t[1:].lower()
 
     cont = collections.Counter()
     fora = collections.Counter()
     estrutura, vistos = [], set()
     titulo = capitulo = None
-    parte = livro = ''
+    parte = livro = livro_nome = ''
     art = par = inc = None
     for i, t in enumerate(linhas):
         # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
@@ -79,12 +82,18 @@ def main():
         # Livros (CC, CPC): o número dos títulos recomeça em cada livro.
         m = re.match(r'LIVRO\s+([IVXL]+|COMPLEMENTAR)$', t)
         if m:
-            livro = 'Livro ' + (m.group(1) if m.group(1) != 'COMPLEMENTAR' else 'Complementar') + ' · '
-            titulo = capitulo = None
+            livro = 'Livro ' + (m.group(1) if m.group(1) != 'COMPLEMENTAR' else 'Complementar')
+            livro_nome = nome_seguinte(i)
+            # Livro sem títulos (ex.: CPP, Livro VI): o próprio livro é o grupo.
+            titulo = parte + livro + ' — ' + livro_nome
+            livro += ' · '
+            capitulo = None
             continue
-        m = re.match(r'T[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)$', t)
+        m = re.match(r'T[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?|[ÚU]NICO)$', t)
         if m:
-            titulo = parte + livro + 'Título ' + m.group(1) + ' — ' + nome_seguinte(i)
+            num = 'único' if m.group(1) in ('ÚNICO', 'UNICO') else m.group(1)
+            nome = nome_seguinte(i) or (livro_nome if num == 'único' else '')
+            titulo = parte + livro + 'Título ' + num + (' — ' + nome if nome else '')
             capitulo = None
             continue
         m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)\b', t)
