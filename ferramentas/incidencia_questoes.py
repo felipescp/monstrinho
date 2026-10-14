@@ -27,6 +27,9 @@ RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]
 
 
 def limpar(t):
+    # Markdown do Word: **negrito**, [texto](link), [texto]{.mark}/{.underline} (pandoc).
+    t = re.sub(r'\]\{[^}]*\}', '', t)
+    t = re.sub(r'^(?:>\s*)+', '', t.strip())  # citação (blockquote)
     return re.sub(r'[*\\_]|\[|\]\([^)]*\)', '', t).strip()
 
 
@@ -40,8 +43,10 @@ def main():
 
     base = json.load(open(a.base, encoding='utf-8'))
     B = base['artigos']
+    # Questões e comentários vêm em tabelas (Markdown "|" ou HTML "<table>",
+    # "<p>"): ficam de fora; só o texto da lei, com as marcas de prova, conta.
     linhas = [limpar(l) for l in open(a.material, encoding='utf-8')
-              if l.strip() and not l.strip().startswith('|')]
+              if l.strip() and not l.strip().startswith(('|', '<'))]
 
     def nome_seguinte(i):
         j = i + 1
@@ -61,11 +66,18 @@ def main():
     fora = collections.Counter()
     estrutura, vistos = [], set()
     titulo = capitulo = None
+    parte = ''
     art = par = inc = None
     for i, t in enumerate(linhas):
+        # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
+        m = re.match(r'PARTE\s+(GERAL|ESPECIAL)\b', t)
+        if m and not RE_ART.match(t):
+            parte = 'PG · ' if m.group(1) == 'GERAL' else 'PE · '
+            titulo = capitulo = None
+            continue
         m = re.match(r'TÍTULO\s+([IVXL]+(?:-[A-Z])?)$', t)
         if m:
-            titulo = 'Título ' + m.group(1) + ' — ' + nome_seguinte(i)
+            titulo = parte + 'Título ' + m.group(1) + ' — ' + nome_seguinte(i)
             capitulo = None
             continue
         m = re.match(r'CAPÍTULO\s+([IVXL]+(?:-[A-Z])?)\b', t)
@@ -82,9 +94,9 @@ def main():
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
                 estrutura[-1]['arts'].append(art)
         elif art:
-            m = re.match(r'§\s*(\d+)', t) or re.match(r'(Parágrafo único)', t, re.I)
+            m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo único)', t, re.I)
             if m:
-                par = 'pu' if m.group(1).lower().startswith('par') else m.group(1)
+                par = 'pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else '')
                 inc = None
             else:
                 m = re.match(r'([IVXLC]+)\s*[-–—]', t)
@@ -111,10 +123,22 @@ def main():
         else:
             fora[chave] += n
 
-    # Artigos da base que o material não trouxe: entram no fim, sem estrutura.
-    resto = [k for k in B if k not in vistos]
-    if resto:
-        estrutura.append({'titulo': None, 'capitulo': None, 'arts': resto})
+    # Artigos da base que o material não trouxe (ex.: revogados): entram logo
+    # depois do artigo anterior da base, no mesmo grupo dele.
+    anterior = None
+    for k in B:
+        if k in vistos:
+            anterior = k
+            continue
+        g = next((g for g in estrutura if anterior in g['arts']), None)
+        if g:
+            g['arts'].insert(g['arts'].index(anterior) + 1, k)
+        elif estrutura:
+            estrutura[0]['arts'].insert(0, k)
+        else:
+            estrutura.append({'titulo': None, 'capitulo': None, 'arts': [k]})
+        vistos.add(k)
+        anterior = k
 
     saida = {
         'id': base.get('id'),
