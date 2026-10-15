@@ -32343,6 +32343,8 @@ window.carregarEsquemasOficiais = async function() {
     .jur-selo-marco { display:inline-block; font-size:9.5px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:99px; padding:1px 8px; margin-left:4px; }
     .jur-idh-lista { margin:0; padding-left:18px; }
     .jur-idh-lista li { margin-bottom:4px; }
+    .jur-card-caso-idh { font-size:17px; font-weight:800; color:#1e1b4b; line-height:1.25; margin:2px 0 2px; }
+    .jur-card-sintese-idh { font-size:13px; font-weight:600; color:#374151; line-height:1.35; margin:4px 0 6px; }
     .jur-idh-caso-link { color:#4f46e5; text-decoration:none; } .jur-idh-caso-link:hover { text-decoration:underline; }
     .jur-idh-obs { font-weight:700; color:var(--text-muted); }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
@@ -33461,8 +33463,14 @@ window.JURISPRUDENCIA_RUNTIME = {
         { valor: 'Recurso Repetitivo', rotulo: '📌 Repetitivos' },
         { valor: 'Repercussão Geral', rotulo: '📌 Repercussão Geral' },
         { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' },
-        { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH' }
+        { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH', internacional: true },
+        { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas', internacional: true }
     ],
+    // Corte IDH (casos e opiniões consultivas): card próprio e eixos País/Tema.
+    _ehCorteIDH: function(item) {
+        let s = typeof item === 'string' ? item : (item && item.sistematica);
+        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)';
+    },
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
     // 'dificil'|'medio'|'facil' (revisão, mesmo padrão de Flashcards/Praticar
@@ -33793,7 +33801,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // estado pessoal de revisão.
         let htmlPills = '<div class="jur-sistematica-pills">' +
             '<div class="jur-sistematica-titulo-lateral">Precedentes</div>' +
-            this._SISTEMATICAS_DESTAQUE.map(function(p) {
+            this._SISTEMATICAS_DESTAQUE.filter(function(p) { return !p.internacional; }).map(function(p) {
                 // Total cruzando TODAS as disciplinas (mesma contagem que
                 // abrirBaralhoSistematica usa, exclui ocultas) — pedido
                 // explícito do usuário, mesmo padrão de contagem já usado ao
@@ -33805,6 +33813,11 @@ window.JURISPRUDENCIA_RUNTIME = {
                 let nInf = self._todasFichasComInformativo().length;
                 return '<button class="jur-sistematica-pill' + (self._modoSistematica === self._MODO_INFORMATIVO ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoInformativo()">📰 Informativos' + (nInf > 0 ? ' <span class="jur-sistematica-pill-count">(' + nInf + ')</span>' : '') + '</button>';
             })() +
+            // Informativos encerram a jurisdição nacional; depois, Corte IDH.
+            this._SISTEMATICAS_DESTAQUE.filter(function(p) { return p.internacional; }).map(function(p) {
+                let n = self._todasFichasPorSistematica(p.valor).length;
+                return '<button class="jur-sistematica-pill' + (self._modoSistematica === p.valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSistematica(\'' + p.valor.replace(/'/g, "\\'") + '\')">' + p.rotulo + (n > 0 ? ' <span class="jur-sistematica-pill-count">(' + n + ')</span>' : '') + '</button>';
+            }).join('') +
         '</div>';
 
         colMaterias.innerHTML = htmlPills + TAXONOMIA_DADOS.taxonomia_concursos.map(function(mat) {
@@ -34722,7 +34735,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             : '';
 
         let teseTrunc = (item.tese || '').length > 130 ? item.tese.slice(0, 130) + '…' : (item.tese || '');
-        let metaPartes = [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado), self._rotuloInformativo(item)].filter(function(x) { return !!x; });
+        let idh = self._ehCorteIDH(item);
+        // Corte IDH: o nome do caso é o destaque; a síntese vem abaixo.
+        let metaPartes = (idh ? [self._formatarDataBR(item.dataJulgado), item.sistematicaDetalhe] : [self._processoComTema(item), item.relator, self._formatarDataBR(item.dataJulgado), self._rotuloInformativo(item)]).filter(function(x) { return !!x; });
         let metaLinha = metaPartes.join(' · ');
 
         // Em modo seleção, clicar em QUALQUER ponto do card marca/desmarca
@@ -34763,7 +34778,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<span class="jur-card-tags-esq">' +
                     checkboxHtml +
                     etiquetaHtml +
-                    '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + (item.estado ? ' · ' + self._escapar(item.estado) : '') + '</span>' +
+                    (idh ? '' : '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>') +
                     (item.marco ? '<span class="jur-selo-marco" title="Marco do caso">⭐ ' + self._escapar(item.marco) + '</span>' : '') +
                     seloOficial +
                     seloOculto +
@@ -34771,10 +34786,14 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '</span>' +
                 '<span class="jur-card-tags-dir">' + btnOcultarHtml + btnExcluirHtml + '</span>' +
             '</div>' +
-            '<div class="jur-card-titulo">' + self._escapar(self._tituloComTema(item)) + '</div>' +
-            '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
-            (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '') +
-            '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>' +
+            (idh
+                ? '<div class="jur-card-caso-idh">' + self._escapar(item.processo || '') + '</div>' +
+                  '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
+                  '<div class="jur-card-sintese-idh">' + self._escapar(item.titulo || '') + '</div>'
+                : '<div class="jur-card-titulo">' + self._escapar(self._tituloComTema(item)) + '</div>' +
+                  '<div class="jur-card-meta">' + self._escapar(metaLinha) + '</div>' +
+                  (item.sistematica ? '<span class="jur-card-sistematica">' + self._escapar(item.sistematica) + '</span>' : '')) +
+            (idh ? '' : '<div class="jur-card-tese">' + self._escapar(teseTrunc) + '</div>') +
             (item.dataConsulta ? '<div class="jur-card-data-consulta">Consultado em ' + self._formatarDataBR(item.dataConsulta) + '</div>' : '') +
             '<div class="esq-card-classificacao">' + btnVisualizado + classificarHtml + '</div>' +
         '</div>';
@@ -34867,7 +34886,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         // "tribunal" só é respeitado dentro do atalho Súmulas (mesmo que
         // tenha ficado marcado de uma navegação anterior — o pill nem
         // aparece fora dali, ver htmlAgruparPills abaixo).
-        let ORDEM_EIXOS = ['ano', 'disciplina', 'importancia', 'tribunal'];
+        let modoIDH = self._ehCorteIDH(self._modoSistematica);
+        // Corte IDH: País e Tema no lugar de Disciplina (todas são da mesma).
+        let ORDEM_EIXOS = modoIDH ? ['ano', 'pais', 'tema', 'importancia'] : ['ano', 'disciplina', 'importancia', 'tribunal'];
         let ROTULOS_IMPORTANCIA = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
         let RANK_IMPORTANCIA = { dificil: 0, medio: 1, facil: 2, _sem: 3 };
         let modoInf = self._modoSistematica === self._MODO_INFORMATIVO;
@@ -34876,6 +34897,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (eixo === 'ano') return (par.item.dataJulgado || '').slice(0, 4) || 'Sem data';
             if (eixo === 'disciplina') return par.chave.split(' > ')[0];
             if (eixo === 'tribunal') return par.item.tribunal || 'Sem tribunal';
+            if (eixo === 'pais') return par.item.estado || 'Sem país';
+            // Tema: o caso entra em cada um dos seus temas (lista).
+            if (eixo === 'tema') return (par.item.temasIDH && par.item.temasIDH.length) ? par.item.temasIDH : ['Sem tema'];
             let r = self.revisaoJurisprudencia[par.item.id];
             return (r && RANK_IMPORTANCIA.hasOwnProperty(r.ultimaClassificacao)) ? r.ultimaClassificacao : '_sem';
         }
@@ -34902,16 +34926,24 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let mapaGrupos = {};
         lista.forEach(function(par) {
-            let valores = eixosAtivos.map(function(eixo) { return valorDoEixo(eixo, par); });
-            let chave = valores.join('');
-            if (!mapaGrupos[chave]) {
-                mapaGrupos[chave] = {
-                    valores: valores,
-                    titulo: eixosAtivos.map(function(eixo, i) { return rotuloDoEixo(eixo, valores[i]); }).join(' · '),
-                    itens: [],
-                };
-            }
-            mapaGrupos[chave].itens.push(par);
+            // Eixo com vários valores (Tema): uma combinação por valor.
+            let combos = [[]];
+            eixosAtivos.forEach(function(eixo) {
+                let v = valorDoEixo(eixo, par), vs = Array.isArray(v) ? v : [v], novos = [];
+                combos.forEach(function(c) { vs.forEach(function(x) { novos.push(c.concat([x])); }); });
+                combos = novos;
+            });
+            combos.forEach(function(valores) {
+                let chave = valores.join('');
+                if (!mapaGrupos[chave]) {
+                    mapaGrupos[chave] = {
+                        valores: valores,
+                        titulo: eixosAtivos.map(function(eixo, i) { return rotuloDoEixo(eixo, valores[i]); }).join(' · '),
+                        itens: [],
+                    };
+                }
+                mapaGrupos[chave].itens.push(par);
+            });
         });
         let grupos = Object.keys(mapaGrupos).map(function(k) { return mapaGrupos[k]; });
         grupos.sort(function(a, b) {
@@ -34957,7 +34989,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '</details>';
         }).join('');
 
-        let corpoHtml = htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">Nenhuma ficha com esse filtro.</div>';
+        let corpoHtml = htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva cadastrada ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
 
         let rotuloAtalho = modoInf
             ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
@@ -35015,7 +35047,9 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '</div>' +
                 '<div class="jur-agrupar-pills">Agrupar por: ' +
                     (modoInf ? '<button class="fc-pill ativa" disabled title="No atalho Informativos o agrupamento externo é sempre o informativo">Informativo</button>' : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>') +
-                    '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('disciplina') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>' +
+                    (self._ehCorteIDH(self._modoSistematica)
+                        ? ['pais', 'tema'].map(function(e) { return '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf(e) !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'' + e + '\')">' + (e === 'pais' ? 'País' : 'Tema') + '</button>'; }).join('')
+                        : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('disciplina') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>') +
                     '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('importancia') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
                     // Pedido explícito do usuário: eixo "Tribunal" só aparece
                     // dentro do atalho Súmulas (é o único onde múltiplos
@@ -35101,10 +35135,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!item) return;
         this._esconderPopupGrifo();
         this._guardarRascunhoPainelComentario();
-        document.getElementById('jur-ver-titulo').textContent = this._tituloComTema(item) || 'Ficha';
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
+        let idh = this._ehCorteIDH(item);
+        // Corte IDH: o nome do caso é o título; a síntese vem logo abaixo.
+        document.getElementById('jur-ver-titulo').textContent = (idh ? item.processo : this._tituloComTema(item)) || 'Ficha';
+        let metaPartes = (idh ? [this._formatarDataBR(item.dataJulgado), item.sistematicaDetalhe] : [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe]).filter(function(x) { return !!x; });
         if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
-        document.getElementById('jur-ver-meta').textContent = metaPartes.join(' · ');
+        document.getElementById('jur-ver-meta').innerHTML = this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '');
         this._renderBlocoSuperado(item);
         document.getElementById('jur-ver-tese').innerHTML = this._htmlCampoGrifavel(item, 'tese', item.tese || '—');
         document.getElementById('jur-ver-resumo').innerHTML = this._htmlCampoGrifavel(item, 'resumo', item.resumo || '—');
@@ -36585,7 +36621,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         let bloco = function(rot, corpo) { return corpo ? '<div class="' + clsLabel + '">' + rot + '</div><div class="' + clsTexto + '">' + corpo + '</div>' : ''; };
         let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
         let partes = [];
-        if (item.estado) partes.push('<b>Estado:</b> ' + self._escapar(item.estado));
+        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)';
+        if (item.estado) partes.push('<b>' + (oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
         h += bloco('Caso', partes.join(' · '));
@@ -36631,10 +36668,11 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
     _htmlCartaoFichaEstudo: function(item, opts) {
         opts = opts || {};
-        let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
+        let idh = this._ehCorteIDH(item);
+        let metaPartes = (idh ? [this._formatarDataBR(item.dataJulgado), item.sistematicaDetalhe] : [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe]).filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
-            '<div class="jur-estudo-titulo">' + this._escapar(this._tituloComTema(item)) + '</div>' +
-            '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + '</div>' +
+            '<div class="jur-estudo-titulo">' + this._escapar(idh ? item.processo : this._tituloComTema(item)) + '</div>' +
+            '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '') + '</div>' +
             '<div class="jur-estudo-label">Tese Fixada / Decisão</div>' +
             this._htmlCampoGrifavel(item, 'tese', item.tese || '—') +
             '<div class="jur-estudo-label">Resumo do Caso</div>' +
