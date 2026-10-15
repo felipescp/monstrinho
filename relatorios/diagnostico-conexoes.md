@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4126 |
+| fichas | 4131 |
 | citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 28 |
+| processo nao reconhecido | 33 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5772 |
-| lei citacoes ligadas | 5168 |
+| lei citacoes de artigo | 5780 |
+| lei citacoes ligadas | 5175 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 582 |
+| lei citacoes de diplomas fora da base | 583 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -120,6 +120,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Honorato e outros vs. Brasil" (jur_idh_honorato)
 - Corte IDH · "Caso Leite de Souza e outros vs. Brasil" (jur_idh_leite_de_souza_acari)
 - Corte IDH · "Caso Comunidades Quilombolas de Alcântara vs. Brasil" (jur_idh_quilombolas_alcantara)
+- Corte IDH · "Caso Da Silva e outros vs. Brasil" (jur_idh_da_silva)
+- Corte IDH · "Caso Dos Santos Nascimento e Ferreira Gomes vs. Brasil" (jur_idh_dos_santos_nascimento)
+- Corte IDH · "Caso Muniz da Silva e outros vs. Brasil" (jur_idh_muniz_da_silva)
+- Corte IDH · "Caso Cley Mendes e outros vs. Brasil" (jur_idh_cley_mendes)
+- Corte IDH · "Caso Hernández Norambuena vs. Brasil" (jur_idh_hernandez_norambuena)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
@@ -164,9 +169,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
 | Lei 8.666 | 11 |
+| Convenção | 10 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
-| Convenção | 9 |
 | Lei 9.514 | 9 |
 | Decreto-Lei 911 | 9 |
 | Lei 11.340 | 9 |
