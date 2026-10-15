@@ -49,8 +49,12 @@ def main():
     B = base['artigos']
     # Questões e comentários vêm em tabelas (Markdown "|" ou HTML "<table>",
     # "<p>"): ficam de fora; só o texto da lei, com as marcas de prova, conta.
-    linhas = [limpar(l) for l in open(a.material, encoding='utf-8')
+    brutas = [l for l in open(a.material, encoding='utf-8')
               if l.strip() and not l.strip().startswith(('|', '<'))]
+    linhas = [limpar(l) for l in brutas]
+    # Cabeçalho de artigo do material vem em negrito ("**Art. 1º", "**[Art. 121]");
+    # artigo citado no meio dos comentários, em texto simples.
+    negrito = [re.sub(r'^(?:\s|>)+', '', l).startswith(('**', '[Art', '*[')) for l in brutas]
 
     def nome_seguinte(i):
         j = i + 1
@@ -69,6 +73,13 @@ def main():
         t = t.strip(' "“”\'.:')
         return t[:1].upper() + t[1:].lower()
 
+    POS = {k: i for i, k in enumerate(B)}
+    com_negrito = set()
+    for t, n in zip(linhas, negrito):
+        m = RE_ART.match(t)
+        if m and n:
+            com_negrito.add(m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else ''))
+    JANELA = 25  # artigos adiante aceitos como próximo cabeçalho (revogados/omitidos no meio)
     cont = collections.Counter()
     fora = collections.Counter()
     estrutura, vistos = [], set()
@@ -106,8 +117,21 @@ def main():
             continue
         m = RE_ART.match(t)
         if m:
-            art = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
-            par = inc = None
+            novo = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
+            # Artigo citado dentro de comentário ("Art. 355. O juiz julgará…" de
+            # novo, ou outro mais à frente): não muda o artigo corrente. Artigo que
+            # tem cabeçalho em negrito no material só vale nele; os demais (vetado,
+            # não cobrado) valem em texto simples. Em todo caso, só o que ainda não
+            # apareceu e está adiante na base.
+            if novo == art:
+                par = inc = None  # o mesmo artigo de novo (caput repetido): as marcas contam nele
+            elif novo in com_negrito and not negrito[i]:
+                continue
+            elif novo in B and art in POS and (novo in vistos or not 0 < POS[novo] - POS[art] <= JANELA):
+                continue
+            else:
+                art = novo
+                par = inc = None
             if art in B and art not in vistos:
                 vistos.add(art)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
@@ -141,6 +165,9 @@ def main():
             ok = bool(no)
         if ok and inc:
             ok = inc in (no.get('inc') or {})
+            # Inciso do caput lido depois de um "§" citado no comentário.
+            if not ok and par and inc in (B[art].get('inc') or {}):
+                chave, ok = art + '.' + inc, True
         if ok:
             cont[chave] += n
         else:
