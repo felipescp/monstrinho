@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4111 |
+| fichas | 4116 |
 | citacoes nas conexoes | 6558 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 13 |
+| processo nao reconhecido | 18 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5739 |
-| lei citacoes ligadas | 5144 |
+| lei citacoes de artigo | 5746 |
+| lei citacoes ligadas | 5149 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 573 |
+| lei citacoes de diplomas fora da base | 575 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -105,6 +105,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Garibaldi vs. Brasil" (jur_idh_garibaldi)
 - Corte IDH · "Caso Gomes Lund e outros ("Guerrilha do Araguaia") vs. Brasil" (jur_idh_gomes_lund)
 - Corte IDH · "Caso Trabalhadores da Fazenda Brasil Verde vs. Brasil" (jur_idh_fazenda_brasil_verde)
+- Corte IDH · "Caso Velásquez Rodríguez vs. Honduras" (jur_idh_velasquez_rodriguez)
+- Corte IDH · "Caso Villagrán Morales e outros ("Niños de la Calle") vs. Guatemala" (jur_idh_villagran_morales)
+- Corte IDH · "Caso Cantoral Benavides vs. Peru" (jur_idh_cantoral_benavides)
+- Corte IDH · "Caso Barrios Altos vs. Peru" (jur_idh_barrios_altos)
+- Corte IDH · "Caso Ivcher Bronstein vs. Peru" (jur_idh_ivcher_bronstein)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)

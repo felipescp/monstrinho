@@ -32343,6 +32343,7 @@ window.carregarEsquemasOficiais = async function() {
     .jur-selo-marco { display:inline-block; font-size:9.5px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:99px; padding:1px 8px; margin-left:4px; }
     .jur-idh-lista { margin:0; padding-left:18px; }
     .jur-idh-lista li { margin-bottom:4px; }
+    .jur-idh-caso-link { color:#4f46e5; text-decoration:none; } .jur-idh-caso-link:hover { text-decoration:underline; }
     .jur-idh-obs { font-weight:700; color:var(--text-muted); }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
@@ -36597,11 +36598,26 @@ window.JURISPRUDENCIA_RUNTIME = {
         h += bloco('Conceitos', lista(item.conceitos, function(c) { return '<b>' + self._escapar(c.termo) + '</b>' + (c.explicacao ? ': ' + self._escapar(c.explicacao) : ''); }));
         h += bloco('Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
         h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
-            return '<b>' + self._escapar(c.caso) + (c.ano ? ' (' + self._escapar(c.ano) + ')' : '') + '</b>' +
+            // Caso que também tem card na base: o nome abre o card dele.
+            let alvo = self._acharCasoIDH(c.caso), nome = self._escapar(c.caso) + (c.ano ? ' (' + self._escapar(c.ano) + ')' : '');
+            if (alvo) nome = '<a href="#" class="jur-idh-caso-link" title="Abrir o card deste caso" onclick="event.preventDefault(); event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + alvo.chave.replace(/'/g, "\\'") + '\', \'' + alvo.id + '\')">' + nome + ' ↗</a>';
+            return '<b>' + nome + '</b>' +
                 (c.semelhanca ? '<div><span class="jur-idh-obs">Semelhança:</span> ' + self._escapar(c.semelhanca) + '</div>' : '') +
                 (c.diferenca ? '<div><span class="jur-idh-obs">Diferença:</span> ' + self._escapar(c.diferenca) + '</div>' : '');
         }));
         return h;
+    },
+    // Card da Corte IDH pelo nome do caso ("Caso Gomes Lund e outros vs.
+    // Brasil" acha "Caso Gomes Lund e outros (\"Guerrilha do Araguaia\") vs. Brasil").
+    _acharCasoIDH: function(nome) {
+        let norm = function(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim(); };
+        let alvo = norm(nome);
+        if (!alvo) return null;
+        for (let chave in this.fichas) {
+            let f = (this.fichas[chave] || []).find(function(x) { return x.sistematica === 'Caso Contencioso (Corte IDH)' && norm(x.processo) === alvo; });
+            if (f) return { chave: chave, id: f.id };
+        }
+        return null;
     },
     // Texto com as citações de lei clicáveis (mesmo balão das Conexões).
     _htmlComLeis: function(txt) {
