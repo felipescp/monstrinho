@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4121 |
+| fichas | 4126 |
 | citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 23 |
+| processo nao reconhecido | 28 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5762 |
-| lei citacoes ligadas | 5160 |
+| lei citacoes de artigo | 5772 |
+| lei citacoes ligadas | 5168 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 580 |
+| lei citacoes de diplomas fora da base | 582 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -115,6 +115,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Herzog e outros vs. Brasil" (jur_idh_herzog)
 - Corte IDH · "Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil" (jur_idh_fabrica_de_fogos)
 - Corte IDH · "Caso Barbosa de Souza e outros vs. Brasil" (jur_idh_barbosa_de_souza)
+- Corte IDH · "Caso Sales Pimenta vs. Brasil" (jur_idh_sales_pimenta)
+- Corte IDH · "Caso Tavares Pereira e outros vs. Brasil" (jur_idh_tavares_pereira)
+- Corte IDH · "Caso Honorato e outros vs. Brasil" (jur_idh_honorato)
+- Corte IDH · "Caso Leite de Souza e outros vs. Brasil" (jur_idh_leite_de_souza_acari)
+- Corte IDH · "Caso Comunidades Quilombolas de Alcântara vs. Brasil" (jur_idh_quilombolas_alcantara)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
@@ -161,13 +166,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 8.666 | 11 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
+| Convenção | 9 |
 | Lei 9.514 | 9 |
 | Decreto-Lei 911 | 9 |
 | Lei 11.340 | 9 |
 | Lei 9.279 | 9 |
 | Decreto-Lei 3.365 | 8 |
 | Lei 8.987 | 8 |
-| Convenção | 8 |
 | Lei 12.594 | 8 |
 | Regimento | 8 |
 | Lei 8.072 | 8 |
@@ -181,6 +186,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 9.613 | 6 |
+| CPM | 5 |
 | Lei 12.846 | 5 |
 | Lei 8.629 | 5 |
-| Lei 10.522 | 5 |
