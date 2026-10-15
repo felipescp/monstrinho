@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4116 |
-| citacoes nas conexoes | 6558 |
+| fichas | 4121 |
+| citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 377 |
-| citacoes fora do acervo | 417 |
+| citacoes fora do acervo | 418 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 18 |
+| processo nao reconhecido | 23 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5746 |
-| lei citacoes ligadas | 5149 |
+| lei citacoes de artigo | 5762 |
+| lei citacoes ligadas | 5160 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 575 |
+| lei citacoes de diplomas fora da base | 580 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -39,6 +39,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SLS 2240 | 2 |
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
+| ADPF 153 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -65,7 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RMS 66316 | 1 |
 | RMS 70802 | 1 |
 | SUM STF 672 | 1 |
-| RE 1326541 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
@@ -110,6 +110,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Cantoral Benavides vs. Peru" (jur_idh_cantoral_benavides)
 - Corte IDH · "Caso Barrios Altos vs. Peru" (jur_idh_barrios_altos)
 - Corte IDH · "Caso Ivcher Bronstein vs. Peru" (jur_idh_ivcher_bronstein)
+- Corte IDH · "Caso Favela Nova Brasília vs. Brasil" (jur_idh_favela_nova_brasilia)
+- Corte IDH · "Caso do Povo Indígena Xucuru e seus membros vs. Brasil" (jur_idh_xucuru)
+- Corte IDH · "Caso Herzog e outros vs. Brasil" (jur_idh_herzog)
+- Corte IDH · "Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil" (jur_idh_fabrica_de_fogos)
+- Corte IDH · "Caso Barbosa de Souza e outros vs. Brasil" (jur_idh_barbosa_de_souza)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
@@ -162,6 +167,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 9.279 | 9 |
 | Decreto-Lei 3.365 | 8 |
 | Lei 8.987 | 8 |
+| Convenção | 8 |
 | Lei 12.594 | 8 |
 | Regimento | 8 |
 | Lei 8.072 | 8 |
@@ -178,4 +184,3 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 12.846 | 5 |
 | Lei 8.629 | 5 |
 | Lei 10.522 | 5 |
-| Decreto 6.514 | 5 |
