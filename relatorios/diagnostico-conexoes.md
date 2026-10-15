@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4131 |
+| fichas | 4135 |
 | citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 33 |
+| processo nao reconhecido | 37 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5780 |
-| lei citacoes ligadas | 5175 |
+| lei citacoes de artigo | 5789 |
+| lei citacoes ligadas | 5182 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 583 |
+| lei citacoes de diplomas fora da base | 585 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -125,6 +125,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Muniz da Silva e outros vs. Brasil" (jur_idh_muniz_da_silva)
 - Corte IDH · "Caso Cley Mendes e outros vs. Brasil" (jur_idh_cley_mendes)
 - Corte IDH · "Caso Hernández Norambuena vs. Brasil" (jur_idh_hernandez_norambuena)
+- Corte IDH · "Caso Leite, Peres Crispim e outros vs. Brasil" (jur_idh_leite_peres_crispim)
+- Corte IDH · "Caso "A Última Tentação de Cristo" (Olmedo Bustos e outros) vs. Chile" (jur_idh_ultima_tentacao)
+- Corte IDH · "Caso Myrna Mack Chang vs. Guatemala" (jur_idh_myrna_mack_chang)
+- Corte IDH · "Caso Lori Berenson Mejía vs. Peru" (jur_idh_berenson_mejia)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
@@ -168,8 +172,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | CLT | 14 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
+| Convenção | 12 |
 | Lei 8.666 | 11 |
-| Convenção | 10 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
 | Lei 9.514 | 9 |
