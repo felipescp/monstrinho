@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4055 |
-| citacoes nas conexoes | 6465 |
-| citacoes ligadas | 5966 |
+| fichas | 4106 |
+| citacoes nas conexoes | 6557 |
+| citacoes ligadas | 6141 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 449 |
-| citacoes fora do acervo | 499 |
+| referencias fora do acervo | 376 |
+| citacoes fora do acervo | 416 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 7 |
+| processo nao reconhecido | 8 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5721 |
-| lei citacoes ligadas | 5117 |
+| lei citacoes de artigo | 5725 |
+| lei citacoes ligadas | 5130 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 582 |
+| lei citacoes de diplomas fora da base | 573 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -28,44 +28,44 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 |---|---|
 | ARESP 2642744 | 5 |
 | HC 118533 | 4 |
-| HC 185913 | 4 |
-| MI 670 | 3 |
 | SUM TST 331 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
 | RESP 1464226 | 3 |
 | HC 686312 | 3 |
-| HC 143641 | 3 |
+| HC 169788 | 3 |
 | HC 598051 | 3 |
 | SUM TST 363 | 2 |
-| MI 708 | 2 |
 | SLS 2240 | 2 |
+| RMS 31661 | 2 |
 | RESP 2103140 | 2 |
 | RMS 39173 | 2 |
-| ERESP 1341138 | 2 |
-| RE 1068600 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
 | ADI 6893 | 2 |
 | ADI 7715 | 2 |
-| RE 601392 | 2 |
-| TEMA STJ 10 | 2 |
+| RESP 1448969 | 2 |
 | RESP 2067587 | 2 |
 | RESP 1898812 | 2 |
 | RESP 2046026 | 2 |
 | ADI 5069 | 2 |
 | RESP 1894736 | 2 |
 | RESP 1977124 | 2 |
-| HC 169788 | 2 |
 | HC 117638 | 2 |
 | RESP 1881751 | 2 |
 | CC 208449 | 2 |
-| ARE 1225185 | 2 |
-| RESP 2214879 | 1 |
 | RESP 2124412 | 1 |
 | RMS 69065 | 1 |
 | RCL 88319 | 1 |
 | SS 3902 | 1 |
+| RE 592317 | 1 |
+| ADI 7492 | 1 |
+| ADI 7483 | 1 |
+| ADI 7490 | 1 |
+| RMS 66316 | 1 |
+| RMS 70802 | 1 |
+| SUM STF 672 | 1 |
+| RE 1326541 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
@@ -80,11 +80,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 958.252-MG (julgado com a ADPF 324-DF) (jur_1790222417795_4ptj3a): "Súmula 331/TST" → no acervo só existe em STF
 - RE 1.016.605-MG (jur_1790219685664_ouhefr): "Tema 1.198/STF" → no acervo só existe em STJ
 - REsp 1.321.263-PR (jur_1789067528407_rpxj44): "Súmula 251/STF" → no acervo só existe em STJ
-- REsps 1.995.437-CE e 2.004.478-SP (jur_1790100408147_ziv1j8): "Súmula 241/TST" → no acervo só existe em STJ
+- REsp 1.995.437-CE e REsp 2.004.478-SP (jur_1790100408147_ziv1j8): "Súmula 241/TST" → no acervo só existe em STJ
 - REsp 1.361.800-SP (jur_1790100760825_qhwsjj): "Súmula 428/STJ" → no acervo só existe em STF
 - RE 678.162-AL (jur_1789603469051_2e4juo): "Súmula 10/STJ" → no acervo só existe em TSE
 - RE 586.068 ED-PR (jur_1790221647084_z1niq5): "Tema 1.170/STJ" → no acervo só existe em STF
-- REsps 1.883.715-SP, 1.883.722-SP e 1.880.529-SP (jur_1790100517558_qyidmo): "Súmula 490/STF" → no acervo só existe em STJ
+- REsp 1.883.715-SP, REsp 1.883.722-SP e REsp 1.880.529-SP (jur_1790100517558_qyidmo): "Súmula 490/STF" → no acervo só existe em STJ
 - REsp 2.232.036-DF (jur_1790221818145_lfotte): "Tema 1.141/STF" → no acervo só existe em STJ
 
 ## A — Citações sem tribunal (amostra)
@@ -98,27 +98,28 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 ## F — Processo em formato não reconhecido (amostra)
 
+- Corte IDH · "Caso Ximenes Lopes vs. Brasil" (jur_idh_ximenes_lopes)
+- Corte IDH · "Caso Loayza Tamayo vs. Peru" (jur_idh_loayza_tamayo)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
 - STJ · "RvCr 5.233-DF" (jur_1786377815002_kgmz8z)
 - STJ · "QC 6-DF" (jur_1786069261020_mvct0e)
 - STJ · "QC 13-DF" (jur_1791071827082_1clysw)
-- STJ · "AgRg nos ET 49-DF" (jur_1790221818145_zh9k29)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
 - ADPF 862-RJ (jur_1788747185710_ld527r): "Art. 79, §1º" → Lei 8.906: art. 79 não existe no texto
-- REsps 1.854.662-CE, 1.881.324-PE, 1.881.283-RN e 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
+- REsp 1.854.662-CE, REsp 1.881.324-PE, REsp 1.881.283-RN e REsp 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 40, § 7º, I" → CF: inciso I não existe no trecho citado
 - ARE 1.215.727-SP (jur_1790222446982_c6cexa): "art. 40, § 4º, II" → CF: inciso II não existe no trecho citado
 - RMS 75.248-RS (jur_1790221818145_frhqt4): "arts. 34 e 70" → Lei 8.906: art. 70 não existe no texto
 
 ## J — Lei seca: artigo citado sem diploma no mesmo trecho (amostra)
 
-- REsps 2.145.185-RJ e 2.145.550-RJ (jur_1791073903438_g5eazj): "art. 14, § 3º" — trecho: "MP 2.215-10/2001, art. 14, § 3º"
-- REsps 2.124.412-RJ, 2.132.208-RJ, 2.085.764-PE, 2.040.852-PE, 2.009.309-RN e 1.966.548-PE (jur_1791073903438_wi6bgw): "art. 34" — trecho: "MP 2.215-10/2001, art. 34"
-- REsps 2.129.995-AL, 2.129.996-AL e 2.129.997-AL (jur_1791073903438_6kvnkq): "art. 7º" — trecho: "EC 41/2003, art. 7º"
+- REsp 2.145.185-RJ e REsp 2.145.550-RJ (jur_1791073903438_g5eazj): "art. 14, § 3º" — trecho: "MP 2.215-10/2001, art. 14, § 3º"
+- REsp 2.124.412-RJ, REsp 2.132.208-RJ, REsp 2.085.764-PE, REsp 2.040.852-PE, REsp 2.009.309-RN e REsp 1.966.548-PE (jur_1791073903438_wi6bgw): "art. 34" — trecho: "MP 2.215-10/2001, art. 34"
+- REsp 2.129.995-AL, REsp 2.129.996-AL e REsp 2.129.997-AL (jur_1791073903438_6kvnkq): "art. 7º" — trecho: "EC 41/2003, art. 7º"
 - ADI 7.699-AC (jur_1788747185710_cjfvlk): "Art. 4º" — trecho: "Art. 4º, EC 104/2019"
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 7º" — trecho: "EC 41/2003 art. 7º"
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 3º" — trecho: "EC 47/2005 art. 3º"
@@ -143,7 +144,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
 | Lei 8.666 | 11 |
-| Convenção | 11 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
 | Lei 9.514 | 9 |
@@ -168,3 +168,4 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 12.846 | 5 |
 | Lei 8.629 | 5 |
 | Lei 10.522 | 5 |
+| Decreto 6.514 | 5 |

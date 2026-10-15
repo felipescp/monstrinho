@@ -16009,8 +16009,9 @@ window.LEISECA_RUNTIME = {
                 (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>';
         };
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
-        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + ' –', no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
-        let html = linha('Art. ' + self._esc(a) + '.', art, a) + incisos(art, a);
+        let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
+        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
+        let html = (art.texto || !itens ? linha('Art. ' + self._esc(a) + '.', art, a) : '') + alineas(art) + incisos(art, a);
         if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
         Object.keys(art.par || {}).forEach(function(p) {
             let no = art.par[p], rot = p === 'pu' ? 'Parágrafo único.' : '§ ' + p + (/^\d$/.test(p) ? 'º' : '') + '.';
@@ -32339,6 +32340,10 @@ window.carregarEsquemasOficiais = async function() {
        tratamento do card), cor de alerta (âmbar) distinta do vermelho já
        usado por "(Oficial)". */
     #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
+    .jur-selo-marco { display:inline-block; font-size:9.5px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:99px; padding:1px 8px; margin-left:4px; }
+    .jur-idh-lista { margin:0; padding-left:18px; }
+    .jur-idh-lista li { margin-bottom:4px; }
+    .jur-idh-obs { font-weight:700; color:var(--text-muted); }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + Crítico/Importante/Regular
@@ -32554,6 +32559,7 @@ window.carregarEsquemasOficiais = async function() {
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Repercussão Geral')">📌 Repercussão Geral</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Recurso Repetitivo')">📌 Repetitivos</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Controle Concentrado')">📌 Controle Concentrado</button>
+                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Caso Contencioso (Corte IDH)')">🌎 Casos da Corte IDH</button>
                     </div>
                 </details>
             </div>
@@ -32853,6 +32859,7 @@ window.carregarEsquemasOficiais = async function() {
         <div class="jur-ver-texto" id="jur-ver-tese"></div>
         <div class="jur-ver-label">Resumo do Caso</div>
         <div class="jur-ver-texto" id="jur-ver-resumo"></div>
+        <div id="jur-ver-idh"></div>
         <div class="jur-ver-label" id="jur-ver-comentario-label" style="display:none;">Comentário</div>
         <div class="jur-ver-texto" id="jur-ver-comentario" style="display:none;"></div>
         <div class="jur-ver-label">Conexões</div>
@@ -33452,7 +33459,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         { valor: 'Súmula', rotulo: '📌 Súmulas' },
         { valor: 'Recurso Repetitivo', rotulo: '📌 Repetitivos' },
         { valor: 'Repercussão Geral', rotulo: '📌 Repercussão Geral' },
-        { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' }
+        { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' },
+        { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH' }
     ],
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -34754,7 +34762,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<span class="jur-card-tags-esq">' +
                     checkboxHtml +
                     etiquetaHtml +
-                    '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>' +
+                    '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + (item.estado ? ' · ' + self._escapar(item.estado) : '') + '</span>' +
+                    (item.marco ? '<span class="jur-selo-marco" title="Marco do caso">⭐ ' + self._escapar(item.marco) + '</span>' : '') +
                     seloOficial +
                     seloOculto +
                     seloSuperado +
@@ -35098,6 +35107,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderBlocoSuperado(item);
         document.getElementById('jur-ver-tese').innerHTML = this._htmlCampoGrifavel(item, 'tese', item.tese || '—');
         document.getElementById('jur-ver-resumo').innerHTML = this._htmlCampoGrifavel(item, 'resumo', item.resumo || '—');
+        document.getElementById('jur-ver-idh').innerHTML = this._htmlCorteIDH(item, 'jur-ver-label', 'jur-ver-texto');
         // Comentário é opcional (nem toda ficha tem — sobretudo fichas
         // antigas, importadas antes deste campo existir) — mesmo padrão do
         // bloco de Link logo abaixo: rótulo e texto só aparecem quando há
@@ -36566,6 +36576,43 @@ window.JURISPRUDENCIA_RUNTIME = {
         pop.style.top = top + 'px';
     },
 
+    // ── CASOS DA CORTE IDH: blocos próprios (Estado, vítima, sentenças,
+    // artigos da CADH, conceitos, reparações, casos relacionados). Só
+    // aparecem quando o campo existe — demais fichas não mudam.
+    _htmlCorteIDH: function(item, clsLabel, clsTexto) {
+        let self = this, h = '';
+        let bloco = function(rot, corpo) { return corpo ? '<div class="' + clsLabel + '">' + rot + '</div><div class="' + clsTexto + '">' + corpo + '</div>' : ''; };
+        let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
+        let partes = [];
+        if (item.estado) partes.push('<b>Estado:</b> ' + self._escapar(item.estado));
+        if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
+        if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
+        h += bloco('Caso', partes.join(' · '));
+        if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
+        h += bloco('Sentenças', lista(item.sentencas, function(s) { return self._escapar(s.tipo) + (s.data ? ' — ' + self._formatarDataBR(s.data) : '') + (s.obs ? ' <span class="jur-idh-obs">(' + self._escapar(s.obs) + ')</span>' : ''); }));
+        if (item.artigosCADH && item.artigosCADH.length) {
+            let txt = 'CADH, ' + (item.artigosCADH.length > 1 ? 'arts. ' : 'art. ') + item.artigosCADH.join(', ');
+            h += bloco('Artigos da CADH', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(txt) : self._escapar(txt));
+        }
+        h += bloco('Conceitos', lista(item.conceitos, function(c) { return '<b>' + self._escapar(c.termo) + '</b>' + (c.explicacao ? ': ' + self._escapar(c.explicacao) : ''); }));
+        h += bloco('Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
+        h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
+            return '<b>' + self._escapar(c.caso) + (c.ano ? ' (' + self._escapar(c.ano) + ')' : '') + '</b>' +
+                (c.semelhanca ? '<div><span class="jur-idh-obs">Semelhança:</span> ' + self._escapar(c.semelhanca) + '</div>' : '') +
+                (c.diferenca ? '<div><span class="jur-idh-obs">Diferença:</span> ' + self._escapar(c.diferenca) + '</div>' : '');
+        }));
+        return h;
+    },
+    // Texto com as citações de lei clicáveis (mesmo balão das Conexões).
+    _htmlComLeis: function(txt) {
+        let refs = window.LEGISLACAO.refsDoTexto(txt), out = '', pos = 0, self = this;
+        refs.forEach(function(r) {
+            if (r.ini < pos) return;
+            out += self._escapar(txt.slice(pos, r.ini)) + '<span class="jur-ref jur-ref-lei" data-lei="' + self._escapar(r.chave) + '" data-ano="" onclick="event.stopPropagation(); window.LEGISLACAO.abrirNoPlanalto(this.getAttribute(\'data-lei\'))">' + self._escapar(txt.slice(r.ini, r.fim)) + '</span>';
+            pos = r.fim;
+        });
+        return out + this._escapar(txt.slice(pos));
+    },
     _htmlCartaoFichaEstudo: function(item, opts) {
         opts = opts || {};
         let metaPartes = [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe].filter(function(x) { return !!x; });
@@ -36576,6 +36623,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             this._htmlCampoGrifavel(item, 'tese', item.tese || '—') +
             '<div class="jur-estudo-label">Resumo do Caso</div>' +
             this._htmlCampoGrifavel(item, 'resumo', item.resumo || '—') +
+            this._htmlCorteIDH(item, 'jur-estudo-label', 'jur-estudo-texto') +
             (item.comentario ? '<div class="jur-estudo-label">Comentário</div>' + this._htmlCampoGrifavel(item, 'comentario', item.comentario) : '') +
             (item.conexoes ? '<div class="jur-estudo-label">Conexões</div>' + this._htmlCampoGrifavel(item, 'conexoes', item.conexoes) : '') +
             (item.link ? '<div class="jur-estudo-label">Link</div><div class="jur-estudo-texto"><a href="' + this._escapar(item.link) + '" target="_blank" rel="noopener noreferrer" style="color:var(--app-primary); word-break:break-all;">' + this._escapar(item.link) + '</a></div>' : '') +
@@ -37708,6 +37756,9 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*12\.?850|Lei\s+(?:de|das|da)\s+Organiza[çc](?:[ãa]o|[õo]es)\s+Criminosas?|Lei\s+do\s+Crime\s+Organizado/g },
         L6938: { nome: 'Lei 6.938 (PNMA)', arquivo: 'dados/legislacao/lei-6938.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l6938.htm',
               re: /Lei\s*n?[º°o.]*\s*6\.?938|(?:Lei\s+da\s+)?Pol[íi]tica\s+Nacional\s+do\s+Meio\s+Ambiente|\bPNMA\b/g },
+        // Convenção Americana (Decreto 678/1992): itens numerados ("art. 8.4"), sem §/inciso.
+        CADH: { nome: 'CADH', arquivo: 'dados/legislacao/cadh.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm', itens: true,
+              re: /\bCADH\b|Conven[çc][ãa]o\s+Americana(?:\s+(?:sobre|de)\s+Direitos\s+Humanos)?|Pacto\s+de\s+S[ãa]o\s+Jos[ée](?:\s+da\s+Costa\s+Rica)?|Decreto\s*n?[º°o.]*\s*678(?:\/1992|,\s+de\s+1992)?(?![\d.])/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37752,6 +37803,20 @@ window.LEGISLACAO = (function() {
         let out = [], base = 0;
         texto.split(';').forEach(function(seg) {
             let ms = mencoes(seg), re = new RegExp(RE_LISTA.source, 'g'), m;
+            // Trecho só da CADH ("CADH, arts. 4.1, 5.1 e 8.4"): itens "art.item", lista própria.
+            let msIds = ms.map(function(x) { return x.id; }).filter(Boolean);
+            if (msIds.length && msIds.every(function(id) { return DIPLOMAS[id].itens; })) {
+                let id = msIds[0], reA = /\b[Aa]rt(?:igo)?s?\.?\s*((?:\d{1,2}(?:\.\d{1,2})?(?:\s*,\s*["“]?[a-h]["”]?(?![\w]))?(?:\s*(?:,|\be\b)\s*(?=\d))?)+)/g, mA;
+                while ((mA = reA.exec(seg))) {
+                    let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = /(\d{1,2})(?:\.(\d{1,2}))?(?:\s*,\s*["“]?([a-h])["”]?(?![\w]))?/g, n, primeiro = true;
+                    while ((n = reN.exec(corpo))) {
+                        out.push({ ini: base + (primeiro ? mA.index : iniC + n.index), fim: base + iniC + n.index + n[0].length, chave: [id, n[1], '', n[2] || '', n[3] || ''].join('|') });
+                        primeiro = false;
+                    }
+                }
+                base += seg.length + 1;
+                return;
+            }
             while ((m = re.exec(seg))) {
                 let fimLista = m.index + m[0].length;
                 // Diploma: a menção logo depois da lista ("art. 155 do CP");
@@ -37763,9 +37828,14 @@ window.LEGISLACAO = (function() {
                 let lista = m[1], iniLista = m.index + m[0].indexOf(lista), reI = new RegExp(RE_ITEM.source, 'g'), it, primeiro = true;
                 while ((it = reI.exec(lista))) {
                     if (!it[0].trim()) { reI.lastIndex++; continue; }
-                    let d = detalhes(it[3] || '');
+                    let d = detalhes(it[3] || ''), fimIt = iniLista + it.index + it[0].length;
+                    // CADH: "art. 8.4", "art. 8.2, h" → item 4 (inc) e alínea.
+                    if (DIPLOMAS[alvo.id].itens) {
+                        let mi = seg.slice(fimIt).match(/^\.(\d{1,2})(?:\s*,\s*(?:al[íi]nea\s*)?["“]?([a-h])["”]?\b)?/);
+                        if (mi) { d = { inc: mi[1], ali: mi[2] || '' }; fimIt += mi[0].length; }
+                    }
                     let chave = [alvo.id, it[1].replace(/\./g, '') + (it[2] || ''), d.par || '', d.inc || '', d.ali || ''].join('|');
-                    out.push({ ini: base + (primeiro ? m.index : iniLista + it.index), fim: base + iniLista + it.index + it[0].length, chave: chave });
+                    out.push({ ini: base + (primeiro ? m.index : iniLista + it.index), fim: base + fimIt, chave: chave });
                     primeiro = false;
                 }
             }
@@ -37815,6 +37885,19 @@ window.LEGISLACAO = (function() {
             return h + '<div class="jur-ref-dica">Texto compilado do Planalto' + (dtA ? ' em ' + esc(dtA) : '') + ' · clique para abrir no Planalto</div>';
         }
         let a = j.artigos[p[1]];
+        if (d.itens) {
+            // CADH: itens numerados (1., 2.) com alíneas; citado só o artigo, mostra todos.
+            let h = '<div class="jur-ref-cab">' + esc(d.nome + ' · art. ' + p[1] + (p[3] ? '.' + p[3] : '') + (p[4] ? ', "' + p[4] + '"' : '')) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
+            if (!a) return h + '<div>Artigo não localizado no texto.</div>';
+            let alis = function(o, so) { return Object.keys(o.ali || {}).filter(function(k) { return !so || k === so; }).map(function(k) { return '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + esc(o.ali[k]) + '</div>'; }).join(''); };
+            if (a.texto) h += '<div class="lei-disp">' + esc(a.texto) + '</div>' + alis(a);
+            let itens = a.inc || {}, ks = p[3] ? [p[3]] : Object.keys(itens);
+            ks.forEach(function(k) {
+                if (!itens[k]) { h += '<div class="lei-disp">Item ' + esc(k) + ' não localizado.</div>'; return; }
+                h += '<div class="lei-disp"><b>' + esc(k) + '.</b> ' + esc(itens[k].texto) + '</div>' + alis(itens[k], p[4]);
+            });
+            return h + '<div class="jur-ref-dica">Promulgada pelo Decreto 678/1992 · clique para abrir no Planalto</div>';
+        }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
         let html = '', alts = [], altCaput = a && a.alt;
@@ -37891,7 +37974,8 @@ window.LEGISLACAO = (function() {
     function mostrarBalao(el) {
         let chave = el.getAttribute('data-lei'), ano = el.getAttribute('data-ano'), id = chave.split('|')[0];
         if (cache[id]) { _glosMostrarTooltip(el, htmlBalao(chave, ano, cache[id])); return; }
-        _glosMostrarTooltip(el, '<div class="jur-ref-cab">' + esc(DIPLOMAS[id].nome + ' · ' + rotulo(chave.split('|'))) + '</div><div>Carregando o texto da lei…</div>');
+        let pc = chave.split('|'), rot = DIPLOMAS[id].itens ? 'art. ' + pc[1] + (pc[3] ? '.' + pc[3] : '') : rotulo(pc);
+        _glosMostrarTooltip(el, '<div class="jur-ref-cab">' + esc(DIPLOMAS[id].nome + ' · ' + rot) + '</div><div>Carregando o texto da lei…</div>');
         carregar(id).then(function(j) {
             // Só redesenha se o mouse ainda estiver sobre o mesmo trecho.
             if (el.matches(':hover')) _glosMostrarTooltip(el, htmlBalao(chave, ano, j));
@@ -37900,7 +37984,7 @@ window.LEGISLACAO = (function() {
     function abrirNoPlanalto(chave) {
         let p = chave.split('|'), d = DIPLOMAS[p[0]];
         if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
-        window.open(p[1].indexOf('anexo:') === 0 ? d.planalto : d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
+        window.open(p[1].indexOf('anexo:') === 0 || d.itens ? d.planalto : d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
     }
     return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, carregar: carregar, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
 })();
