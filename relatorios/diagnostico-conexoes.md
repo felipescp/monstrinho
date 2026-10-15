@@ -4,20 +4,20 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4106 |
-| citacoes nas conexoes | 6557 |
+| fichas | 4111 |
+| citacoes nas conexoes | 6558 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 376 |
-| citacoes fora do acervo | 416 |
+| referencias fora do acervo | 377 |
+| citacoes fora do acervo | 417 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 8 |
+| processo nao reconhecido | 13 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5725 |
-| lei citacoes ligadas | 5130 |
+| lei citacoes de artigo | 5739 |
+| lei citacoes ligadas | 5144 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 573 |
@@ -100,6 +100,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 - Corte IDH · "Caso Ximenes Lopes vs. Brasil" (jur_idh_ximenes_lopes)
 - Corte IDH · "Caso Loayza Tamayo vs. Peru" (jur_idh_loayza_tamayo)
+- Corte IDH · "Caso Nogueira de Carvalho e outro vs. Brasil" (jur_idh_nogueira_de_carvalho)
+- Corte IDH · "Caso Escher e outros vs. Brasil" (jur_idh_escher)
+- Corte IDH · "Caso Garibaldi vs. Brasil" (jur_idh_garibaldi)
+- Corte IDH · "Caso Gomes Lund e outros ("Guerrilha do Araguaia") vs. Brasil" (jur_idh_gomes_lund)
+- Corte IDH · "Caso Trabalhadores da Fazenda Brasil Verde vs. Brasil" (jur_idh_fazenda_brasil_verde)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
