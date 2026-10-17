@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4144 |
-| citacoes nas conexoes | 6564 |
+| fichas | 4145 |
+| citacoes nas conexoes | 6565 |
 | citacoes ligadas | 6145 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 378 |
-| citacoes fora do acervo | 419 |
+| citacoes fora do acervo | 420 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 46 |
+| processo nao reconhecido | 47 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5819 |
-| lei citacoes ligadas | 5209 |
+| lei citacoes de artigo | 5821 |
+| lei citacoes ligadas | 5210 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 588 |
+| lei citacoes de diplomas fora da base | 589 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -29,6 +29,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ARESP 2642744 | 5 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
+| ADPF 153 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
 | RESP 1464226 | 3 |
@@ -39,7 +40,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SLS 2240 | 2 |
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
-| ADPF 153 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -194,10 +194,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 8.137 | 7 |
 | CPM | 6 |
 | LC 101 | 6 |
+| Estatuto | 6 |
 | Lei 8.245 | 6 |
 | Lei 13.146 | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 9.613 | 6 |
 | Lei 12.846 | 5 |
-| Lei 8.629 | 5 |
