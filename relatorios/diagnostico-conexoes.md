@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4163 |
+| fichas | 4164 |
 | citacoes nas conexoes | 6577 |
 | citacoes ligadas | 6151 |
 | sem tribunal | 0 |
@@ -13,13 +13,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 65 |
+| processo nao reconhecido | 66 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5875 |
-| lei citacoes ligadas | 5250 |
+| lei citacoes de artigo | 5877 |
+| lei citacoes ligadas | 5251 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 17 |
+| lei artigo sem diploma | 18 |
 | lei citacoes de diplomas fora da base | 603 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -157,6 +157,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 3º" — trecho: "EC 47/2005 art. 3º"
 - RE 609.381-GO (jur_1790221383512_ti5szd): "art. 9º" — trecho: "EC 41/2003 art. 9º"
 - ARE 848.993-MG (jur_1790221440885_rcskxx): "art. 11" — trecho: "EC nº 20/1998 art. 11"
+- Caso do Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
