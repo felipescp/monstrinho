@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4142 |
-| citacoes nas conexoes | 6561 |
-| citacoes ligadas | 6143 |
+| fichas | 4143 |
+| citacoes nas conexoes | 6562 |
+| citacoes ligadas | 6144 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 377 |
 | citacoes fora do acervo | 418 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 44 |
+| processo nao reconhecido | 45 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5813 |
-| lei citacoes ligadas | 5204 |
+| lei citacoes de artigo | 5817 |
+| lei citacoes ligadas | 5207 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 587 |
+| lei citacoes de diplomas fora da base | 588 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -136,8 +136,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Tibi vs. Equador" (jur_idh_tibi)
 - Corte IDH · "Caso da Comunidade Moiwana vs. Suriname" (jur_idh_moiwana)
 - Corte IDH · "Caso Fermín Ramírez vs. Guatemala" (jur_idh_fermin_ramirez)
+- Corte IDH · "Caso Palamara Iribarne vs. Chile" (jur_idh_palamara_iribarne)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
-- TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
@@ -192,12 +192,12 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 9.430 | 7 |
 | Lei 8.212 | 7 |
 | Lei 8.137 | 7 |
+| CPM | 6 |
 | LC 101 | 6 |
 | Lei 8.245 | 6 |
 | Lei 13.146 | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 9.613 | 6 |
-| CPM | 5 |
 | Lei 12.846 | 5 |
 | Lei 8.629 | 5 |
