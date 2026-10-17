@@ -4,32 +4,32 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4159 |
-| citacoes nas conexoes | 6571 |
+| fichas | 4160 |
+| citacoes nas conexoes | 6572 |
 | citacoes ligadas | 6149 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 379 |
-| citacoes fora do acervo | 422 |
+| citacoes fora do acervo | 423 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 61 |
+| processo nao reconhecido | 62 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5863 |
-| lei citacoes ligadas | 5240 |
+| lei citacoes de artigo | 5865 |
+| lei citacoes ligadas | 5241 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 601 |
+| lei citacoes de diplomas fora da base | 602 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
 | Referência | Vezes |
 |---|---|
 | ARESP 2642744 | 5 |
+| ADPF 153 | 4 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
-| ADPF 153 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
 | RESP 1464226 | 3 |
@@ -172,7 +172,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| Convenção | 23 |
+| Convenção | 24 |
 | CLT | 14 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
