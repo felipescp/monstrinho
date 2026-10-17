@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4141 |
+| fichas | 4142 |
 | citacoes nas conexoes | 6561 |
 | citacoes ligadas | 6143 |
 | sem tribunal | 0 |
@@ -13,11 +13,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 43 |
+| processo nao reconhecido | 44 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5809 |
-| lei citacoes ligadas | 5200 |
+| lei citacoes de artigo | 5813 |
+| lei citacoes ligadas | 5204 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 587 |
@@ -135,9 +135,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Herrera Ulloa vs. Costa Rica" (jur_idh_herrera_ulloa)
 - Corte IDH · "Caso Tibi vs. Equador" (jur_idh_tibi)
 - Corte IDH · "Caso da Comunidade Moiwana vs. Suriname" (jur_idh_moiwana)
+- Corte IDH · "Caso Fermín Ramírez vs. Guatemala" (jur_idh_fermin_ramirez)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
-- TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
