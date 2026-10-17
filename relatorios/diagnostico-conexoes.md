@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4139 |
-| citacoes nas conexoes | 6560 |
-| citacoes ligadas | 6142 |
+| fichas | 4140 |
+| citacoes nas conexoes | 6561 |
+| citacoes ligadas | 6143 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 377 |
 | citacoes fora do acervo | 418 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 41 |
+| processo nao reconhecido | 42 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5803 |
-| lei citacoes ligadas | 5196 |
+| lei citacoes de artigo | 5807 |
+| lei citacoes ligadas | 5198 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 585 |
+| lei citacoes de diplomas fora da base | 587 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -133,11 +133,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Hilaire, Constantine e Benjamin e outros vs. Trinidad e Tobago" (jur_idh_hilaire_constantine_benjamin)
 - Corte IDH · "Caso Ricardo Canese vs. Paraguai" (jur_idh_ricardo_canese)
 - Corte IDH · "Caso Herrera Ulloa vs. Costa Rica" (jur_idh_herrera_ulloa)
+- Corte IDH · "Caso Tibi vs. Equador" (jur_idh_tibi)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
 - STJ · "RvCr 5.233-DF" (jur_1786377815002_kgmz8z)
-- STJ · "QC 6-DF" (jur_1786069261020_mvct0e)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
@@ -173,9 +173,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 |---|---|
 | CPC | 32 |
 | CLT | 14 |
+| Convenção | 14 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
-| Convenção | 12 |
 | Lei 8.666 | 11 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
