@@ -5,7 +5,7 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
 ## O que o usuário envia
 
 - **Texto compilado do Planalto** salvo em Markdown (.md), um diploma por arquivo. É obrigatório.
-- **Material de questões** em Markdown, opcional: lei com marcas de prova no fim de cada dispositivo, como "(MPSP-2008/2010) (TJRS-2022)". Serve para gerar o mapa de incidência.
+- **Material de questões** em Markdown, opcional: lei com marcas de prova no fim de cada dispositivo, como "(MPSP-2008/2010) (TJRS-2022)". Serve para gerar o mapa de incidência. Pode vir de material pronto (Eduardo B. S. Teixeira) ou do Gem com `prompts-gem/marcador-incidencia.txt`, que marca a lei a partir de questões. Nesse caso, use `--fonte "Questões marcadas pelo Gem (<banco>), até DD/MM/AAAA"`.
 
 ## Passos para cada diploma novo
 
