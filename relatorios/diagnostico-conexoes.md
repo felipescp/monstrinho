@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4161 |
-| citacoes nas conexoes | 6574 |
-| citacoes ligadas | 6150 |
+| fichas | 4162 |
+| citacoes nas conexoes | 6577 |
+| citacoes ligadas | 6151 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 380 |
-| citacoes fora do acervo | 424 |
+| referencias fora do acervo | 381 |
+| citacoes fora do acervo | 426 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 63 |
+| processo nao reconhecido | 64 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5868 |
-| lei citacoes ligadas | 5244 |
+| lei citacoes de artigo | 5871 |
+| lei citacoes ligadas | 5246 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
-| lei citacoes de diplomas fora da base | 602 |
+| lei citacoes de diplomas fora da base | 603 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -41,6 +41,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
 | ARE 1054490 | 2 |
+| ADPF 442 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -65,7 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ADI 7483 | 1 |
 | ADI 7490 | 1 |
 | RMS 66316 | 1 |
-| RMS 70802 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
