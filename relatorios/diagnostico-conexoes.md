@@ -4,20 +4,20 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4138 |
-| citacoes nas conexoes | 6559 |
-| citacoes ligadas | 6141 |
+| fichas | 4139 |
+| citacoes nas conexoes | 6560 |
+| citacoes ligadas | 6142 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 377 |
 | citacoes fora do acervo | 418 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 40 |
+| processo nao reconhecido | 41 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5798 |
-| lei citacoes ligadas | 5191 |
+| lei citacoes de artigo | 5803 |
+| lei citacoes ligadas | 5196 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 585 |
@@ -132,12 +132,12 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Comunidade Mayagna (Sumo) Awas Tingni vs. Nicarágua" (jur_idh_awas_tingni)
 - Corte IDH · "Caso Hilaire, Constantine e Benjamin e outros vs. Trinidad e Tobago" (jur_idh_hilaire_constantine_benjamin)
 - Corte IDH · "Caso Ricardo Canese vs. Paraguai" (jur_idh_ricardo_canese)
+- Corte IDH · "Caso Herrera Ulloa vs. Costa Rica" (jur_idh_herrera_ulloa)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
 - STJ · "RvCr 5.233-DF" (jur_1786377815002_kgmz8z)
 - STJ · "QC 6-DF" (jur_1786069261020_mvct0e)
-- STJ · "QC 13-DF" (jur_1791071827082_1clysw)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
