@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4137 |
+| fichas | 4138 |
 | citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,11 +13,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 39 |
+| processo nao reconhecido | 40 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5793 |
-| lei citacoes ligadas | 5186 |
+| lei citacoes de artigo | 5798 |
+| lei citacoes ligadas | 5191 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 585 |
@@ -131,6 +131,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Lori Berenson Mejía vs. Peru" (jur_idh_berenson_mejia)
 - Corte IDH · "Caso Comunidade Mayagna (Sumo) Awas Tingni vs. Nicarágua" (jur_idh_awas_tingni)
 - Corte IDH · "Caso Hilaire, Constantine e Benjamin e outros vs. Trinidad e Tobago" (jur_idh_hilaire_constantine_benjamin)
+- Corte IDH · "Caso Ricardo Canese vs. Paraguai" (jur_idh_ricardo_canese)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
