@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 66 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5877 |
+| lei citacoes de artigo | 5878 |
 | lei citacoes ligadas | 5251 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 18 |
-| lei citacoes de diplomas fora da base | 603 |
+| lei citacoes de diplomas fora da base | 604 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
