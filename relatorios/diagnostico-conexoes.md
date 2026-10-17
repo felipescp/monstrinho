@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4135 |
+| fichas | 4136 |
 | citacoes nas conexoes | 6559 |
 | citacoes ligadas | 6141 |
 | sem tribunal | 0 |
@@ -13,11 +13,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 37 |
+| processo nao reconhecido | 38 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5789 |
-| lei citacoes ligadas | 5182 |
+| lei citacoes de artigo | 5791 |
+| lei citacoes ligadas | 5184 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 585 |
@@ -129,6 +129,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso "A Última Tentação de Cristo" (Olmedo Bustos e outros) vs. Chile" (jur_idh_ultima_tentacao)
 - Corte IDH · "Caso Myrna Mack Chang vs. Guatemala" (jur_idh_myrna_mack_chang)
 - Corte IDH · "Caso Lori Berenson Mejía vs. Peru" (jur_idh_berenson_mejia)
+- Corte IDH · "Caso Comunidade Mayagna (Sumo) Awas Tingni vs. Nicarágua" (jur_idh_awas_tingni)
 - TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
 - TSE · "REspEl 82-85.2016.6.13.0000" (jur_1789071159407_3hurb7)
 - TSE · "AgR-REspEl 0600001-38.2021.6.00.0000" (jur_1789071159407_44xrcr)
