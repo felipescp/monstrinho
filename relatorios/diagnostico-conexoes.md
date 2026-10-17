@@ -4,20 +4,20 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4143 |
-| citacoes nas conexoes | 6562 |
-| citacoes ligadas | 6144 |
+| fichas | 4144 |
+| citacoes nas conexoes | 6564 |
+| citacoes ligadas | 6145 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 377 |
-| citacoes fora do acervo | 418 |
+| referencias fora do acervo | 378 |
+| citacoes fora do acervo | 419 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 45 |
+| processo nao reconhecido | 46 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5817 |
-| lei citacoes ligadas | 5207 |
+| lei citacoes de artigo | 5819 |
+| lei citacoes ligadas | 5209 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 588 |
@@ -137,7 +137,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso da Comunidade Moiwana vs. Suriname" (jur_idh_moiwana)
 - Corte IDH · "Caso Fermín Ramírez vs. Guatemala" (jur_idh_fermin_ramirez)
 - Corte IDH · "Caso Palamara Iribarne vs. Chile" (jur_idh_palamara_iribarne)
-- TSE · "REspe 0600467-44.2020.6.26.0000" (jur_1789071159407_3rde6y)
+- Corte IDH · "Caso Yatama vs. Nicarágua" (jur_idh_yatama)
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
