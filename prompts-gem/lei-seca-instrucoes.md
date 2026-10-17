@@ -4,8 +4,14 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
 
 ## O que o usuário envia
 
-- **Texto compilado do Planalto** salvo em Markdown (.md), um diploma por arquivo. É obrigatório.
-- **Material de questões** em Markdown, opcional: lei com marcas de prova no fim de cada dispositivo, como "(MPSP-2008/2010) (TJRS-2022)". Serve para gerar o mapa de incidência. Pode vir de material pronto (Eduardo B. S. Teixeira) ou do Gem com `prompts-gem/marcador-incidencia.txt`, que marca a lei a partir de questões. Nesse caso, use `--fonte "Questões marcadas pelo Gem (<banco>), até DD/MM/AAAA"`.
+**Texto compilado do Planalto** salvo em Markdown (.md), um diploma por arquivo.
+
+Esta janela trata só da **lei seca pura**, ou seja, o texto em `dados/legislacao`. Ela serve para:
+- as remissões, como o balão de "art. 155 do CP" nas Conexões, Penas e Prazos;
+- a leitura no menu Lei Seca;
+- ser pré-requisito do mapa de incidência.
+
+O mapa de incidência (arquivo público com o mapa de calor) é feito em outra janela, com `prompts-gem/lei-seca-incidencia-instrucoes.md`.
 
 ## Passos para cada diploma novo
 
@@ -39,23 +45,12 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
 
 5. **Atualizar a tabela de `dados/legislacao/LEIAME.md`** com o diploma, o arquivo e a data.
 
-6. **Mapa de incidência (só se houver material de questões)**
-
-   ```
-   python3 -I ferramentas/incidencia_questoes.py <material.md> dados/legislacao/<arquivo>.json dados/leiseca/incidencia/<arquivo>.json --fonte "Material de questões (<autor>), até DD/MM/AAAA"
-   ```
-
-   - Ponha `"incidencia": "dados/leiseca/incidencia/<arquivo>.json"` no diploma do manifesto.
-   - Os dispositivos listados no fim como inexistentes geralmente foram renumerados. Use `--alias "57§pu=57§1"`.
-   - Se o extrator mudar, regenere os mapas já existentes (CP, CC, CPP, CPC, CDC e Lei de Drogas) e confirme que nada mudou.
-   - **Nunca copie** comentários nem questões do material, só a contagem.
-
-7. **Diagnóstico das conexões**
+6. **Diagnóstico das conexões**
    - Rode `python3 relatorios/diagnostico_conexoes.py`.
    - A lista **K** (diplomas citados que não estão na base) deve diminuir.
    - A lista **I** (dispositivo citado que não existe) não pode ganhar falsos positivos do diploma novo.
 
-8. **Teste no navegador**
+7. **Teste no navegador**
    - Rode `python3 -m http.server 8812`, só se `curl localhost:8812` falhar.
    - Faça um script Playwright no scratchpad, rodando com `NODE_PATH=$(npm root -g)`.
    - Confira:
@@ -64,7 +59,7 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
      - o balão de um artigo citado nas Conexões da Jurisprudência funciona;
      - não há erros no console.
 
-9. **Commit e push**
+8. **Commit e push**
 
    ```bash
    git add -A dados ferramentas relatorios index.html
@@ -75,11 +70,10 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
    git checkout $B
    ```
 
-10. **Responder em português**, informando:
+9. **Responder em português**, informando:
     - número de artigos;
     - o que precisou de ajuste no extrator;
-    - quantas citações da jurisprudência passaram a ser reconhecidas, comparando a lista K antes e depois;
-    - se houve incidência, quantos dispositivos e quantas cobranças.
+    - quantas citações da jurisprudência passaram a ser reconhecidas, comparando a lista K antes e depois.
 
 ## Para atualizar um diploma que já existe
 
@@ -87,7 +81,7 @@ Rode o passo 1 sobre o mesmo arquivo, com a data nova, e atualize a data no `LEI
 
 ## Situação
 
-Diplomas já na base estão no `LEIAME.md`. Já têm incidência: CP, CC, CPP, CPC, CDC e Lei de Drogas.
+Os diplomas já na base estão no `LEIAME.md`.
 
 Mais citados na jurisprudência e ainda fora da base, pela lista K de `relatorios/diagnostico-conexoes.md`:
 - CLT;
