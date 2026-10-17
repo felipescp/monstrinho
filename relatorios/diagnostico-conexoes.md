@@ -4,20 +4,20 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4148 |
-| citacoes nas conexoes | 6565 |
-| citacoes ligadas | 6145 |
+| fichas | 4149 |
+| citacoes nas conexoes | 6567 |
+| citacoes ligadas | 6146 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 378 |
-| citacoes fora do acervo | 420 |
+| citacoes fora do acervo | 421 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 50 |
+| processo nao reconhecido | 51 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5830 |
-| lei citacoes ligadas | 5217 |
+| lei citacoes de artigo | 5832 |
+| lei citacoes ligadas | 5219 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 17 |
 | lei citacoes de diplomas fora da base | 591 |
@@ -40,6 +40,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SLS 2240 | 2 |
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
+| ARE 1054490 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -65,7 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ADI 7490 | 1 |
 | RMS 66316 | 1 |
 | RMS 70802 | 1 |
-| SUM STF 672 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
