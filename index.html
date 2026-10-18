@@ -32351,6 +32351,8 @@ window.carregarEsquemasOficiais = async function() {
     .jur-idh-dica-vai { color:#991b1b; background:#fee2e2; border:1px solid #fca5a5; }
     .jur-idh-dica-atencao { color:#92400e; background:#fef3c7; border:1px solid #fcd34d; }
     .jur-idh-dica-confunda { color:#1e40af; background:#dbeafe; border:1px solid #93c5fd; }
+    .jur-idh-dica-retina { color:#6b21a8; background:#f3e8ff; border:1px solid #d8b4fe; }
+    .jur-idh-dica-green { color:#166534; background:#dcfce7; border:1px solid #86efac; }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + Crítico/Importante/Regular
@@ -36631,8 +36633,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
         h += bloco('Caso', partes.join(' · '));
         if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
-        // Dicas de prova: "Vai cair", "Atenção" e "Não confunda", cada uma com selo próprio.
-        let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda' };
+        // Dicas de prova: "Vai cair", "Atenção", "Não confunda", "Cola na retina" e "Green tips", cada uma com selo próprio.
+        let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda', 'Cola na retina': 'retina', 'Green tips': 'green' };
         h += bloco('Dicas de prova', lista(item.dicas, function(d) { return '<span class="jur-idh-dica jur-idh-dica-' + (clsDica[d.tipo] || 'atencao') + '">' + self._escapar(d.tipo) + '</span> ' + (d.titulo ? '<b>' + self._escapar(d.titulo) + ':</b> ' : '') + self._escapar(d.texto); }));
         if (item.artigosCADH && item.artigosCADH.length) {
             let txt = 'CADH, ' + (item.artigosCADH.length > 1 ? 'arts. ' : 'art. ') + item.artigosCADH.join(', ');
