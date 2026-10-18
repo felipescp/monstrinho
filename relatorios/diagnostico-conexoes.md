@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4183 |
+| fichas | 4184 |
 | citacoes nas conexoes | 6588 |
 | citacoes ligadas | 6158 |
 | sem tribunal | 0 |
@@ -13,13 +13,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 85 |
+| processo nao reconhecido | 86 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5957 |
-| lei citacoes ligadas | 5306 |
+| lei citacoes de artigo | 5960 |
+| lei citacoes ligadas | 5308 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 32 |
+| lei artigo sem diploma | 33 |
 | lei citacoes de diplomas fora da base | 614 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -172,8 +172,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "arts. 10 e 17" — trecho: "Protocolo de San Salvador, arts. 10 e 17"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
+- Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
-- REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
