@@ -37828,6 +37828,9 @@ window.LEGISLACAO = (function() {
         // Convenção de Belém do Pará (Decreto 1.973/1996): alíneas no próprio artigo ("art. 7.b").
         D1973: { nome: 'Convenção de Belém do Pará', arquivo: 'dados/legislacao/decreto-1973.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/1996/d1973.htm', itens: true, promulgacao: 'Decreto 1.973/1996',
               re: /Conven[çc][ãa]o\s+(?:de\s+)?Bel[ée]m\s+do\s+Par[áa]|Conven[çc][ãa]o\s+Interamericana\s+para\s+Prevenir,\s+Punir\s+e\s+Erradicar\s+a\s+Viol[êe]ncia\s+[Cc]ontra\s+a\s+Mulher|Decreto\s*n?[º°o.]*\s*1\.?973(?![\d.])/g },
+        // Convenção Interamericana sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016): artigos em romanos ("art. I.a").
+        D8766: { nome: 'Convenção sobre Desaparecimento Forçado', arquivo: 'dados/legislacao/decreto-8766.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/decreto/d8766.htm', itens: true, romanos: true, promulgacao: 'Decreto 8.766/2016',
+              re: /Conven[çc][ãa]o\s+Interamericana\s+sobre\s+(?:o\s+)?Desaparecimento\s+For[çc]ado\s+de\s+Pessoas|\bCIDFP\b|Decreto\s*n?[º°o.]*\s*8\.?766(?![\d.])/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37873,13 +37876,14 @@ window.LEGISLACAO = (function() {
         texto.split(';').forEach(function(seg) {
             let ms = mencoes(seg), re = new RegExp(RE_LISTA.source, 'g'), m;
             // Trecho só de convenção (CADH, Tortura, Belém do Pará): "art.item" e alíneas
-            // ("arts. 4.1, 7.1 a 7.6 e 8.2, h", "art. 7.b, f e g", "arts. 1º, 2º e 7º"), lista própria.
+            // ("arts. 4.1, 7.1 a 7.6 e 8.2, h", "art. 7.b, f e g", "arts. 1º, 2º e 7º", "arts. I.a, I.b e III"), lista própria.
             let msIds = ms.map(function(x) { return x.id; }).filter(Boolean);
             if (msIds.length && msIds.every(function(id) { return DIPLOMAS[id].itens; })) {
-                let ALI = '["“]?[a-j]["”]?(?![\\w])', UN = '\\d{1,2}[ºo°]?(?:\\.\\d{1,2})?(?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?';
-                let id = msIds[0], reA = new RegExp('\\b[Aa]rt(?:igo)?s?\\.?\\s*((?:' + UN + '(?:\\s*(?:,|\\be\\b|\\ba\\b)\\s*(?=\\d))?)+)', 'g'), mA;
+                // Artigos em romanos só onde o diploma os usa (Desaparecimento Forçado): "CADH, art. 25, I" não vira art. I.
+                let ALI = '["“]?[a-j]["”]?(?![\\w])', ROM = DIPLOMAS[msIds[0]].romanos ? '[IVXL]{1,6}(?![\\w])' : '(?!)', UN = '(?:\\d{1,2}[ºo°]?|' + ROM + ')(?:\\.\\d{1,2})?(?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?';
+                let id = msIds[0], reA = new RegExp('\\b[Aa]rt(?:igo)?s?\\.?\\s*((?:' + UN + '(?:\\s*(?:,|\\be\\b|\\ba\\b)\\s*(?=\\d|' + ROM + '))?)+)', 'g'), mA;
                 while ((mA = reA.exec(seg))) {
-                    let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = new RegExp('(\\d{1,2})[ºo°]?(?:\\.(\\d{1,2}))?((?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?)', 'g'), n, primeiro = true;
+                    let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = new RegExp('(\\d{1,2}|' + ROM + ')[ºo°]?(?:\\.(\\d{1,2}))?((?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?)', 'g'), n, primeiro = true;
                     while ((n = reN.exec(corpo))) {
                         let iniN = iniC + n.index, base0 = n[0].length - n[3].length, reL = /(?:\.|,|\be\b)\s*["“]?([a-j])(?![\w])["”]?/g, l, achou = false;
                         // Cada alínea da lista ("7.b, f e g") vira um trecho; a primeira leva o número do artigo.
