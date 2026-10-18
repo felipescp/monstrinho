@@ -4,22 +4,22 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4196 |
-| citacoes nas conexoes | 6624 |
+| fichas | 4197 |
+| citacoes nas conexoes | 6626 |
 | citacoes ligadas | 6175 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 391 |
-| citacoes fora do acervo | 449 |
+| referencias fora do acervo | 393 |
+| citacoes fora do acervo | 451 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 98 |
+| processo nao reconhecido | 99 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6042 |
-| lei citacoes ligadas | 5359 |
+| lei citacoes de artigo | 6048 |
+| lei citacoes ligadas | 5364 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 44 |
+| lei artigo sem diploma | 45 |
 | lei citacoes de diplomas fora da base | 633 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
