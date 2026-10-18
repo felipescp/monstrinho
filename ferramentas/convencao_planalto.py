@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Convenção Americana sobre Direitos Humanos (anexo do Decreto 678/1992) → JSON da lei seca.
+"""Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
+Tortura, Decreto 98.386/1989) → JSON da lei seca.
 
-A CADH não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
+A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
 Guardamos os itens em "inc" (chave "1", "2"…) e as alíneas em "ali" do item; o
 diploma leva "numeracao": "itens" para o app rotular "1." e "a)" em vez de
 "§"/"inciso". Alíneas sem item (ex.: art. 33) ficam em "ali" do próprio artigo.
+Parágrafos sem número (Convenção contra a Tortura, arts. 2, 6, 13) ficam no
+"texto" separados por quebra de linha; o parágrafo que vem depois das alíneas
+(art. 12) vai para "fecho".
 
-Uso: python3 ferramentas/cadh_planalto.py D678.md dados/legislacao/cadh.json
+Uso (CADH, padrão): python3 ferramentas/convencao_planalto.py D678.md dados/legislacao/cadh.json
+Outra convenção:    python3 ferramentas/convencao_planalto.py <compilado.md> <saida.json> <ID> "<Nome>" <url> AAAA-MM-DD "<TÍTULO DA CONVENÇÃO>"
 """
 import json
 import re
@@ -20,10 +25,14 @@ def limpar(t):
     return re.sub(r'\s+', ' ', t).strip()
 
 
-def main(src, dst):
+CADH = ('CADH', 'Convenção Americana sobre Direitos Humanos (Pacto de São José da Costa Rica)',
+        'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm', '2026-10-15', 'CONVENÇÃO AMERICANA SOBRE DIREITOS HUMANOS')
+
+
+def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], titulo=CADH[4]):
     linhas = [limpar(l) for l in open(src, encoding='utf-8')]
     linhas = [l for l in linhas if l]
-    ini = next(i for i, l in enumerate(linhas) if l.upper() == 'CONVENÇÃO AMERICANA SOBRE DIREITOS HUMANOS')
+    ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
     fim = next((i for i, l in enumerate(linhas) if l.startswith('Declarações e reservas')), len(linhas))
     artigos, art, item = {}, None, None
     i = ini
@@ -62,14 +71,16 @@ def main(src, dst):
             continue
         if item is not None:
             item['texto'] += ' ' + t
+        elif art.get('ali'):
+            art['fecho'] = (art.get('fecho', '') + '\n' + t).strip()
         else:
-            art['texto'] = (art['texto'] + ' ' + t).strip()
+            art['texto'] = (art['texto'] + '\n' + t).strip()
         i += 1
     saida = {
-        'id': 'CADH',
-        'nome': 'Convenção Americana sobre Direitos Humanos (Pacto de São José da Costa Rica)',
-        'fonte': 'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm',
-        'dataTexto': '2026-10-15',
+        'id': ident,
+        'nome': nome,
+        'fonte': fonte,
+        'dataTexto': data,
         'numeracao': 'itens',
         'artigos': artigos,
     }
@@ -80,4 +91,4 @@ def main(src, dst):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:8])

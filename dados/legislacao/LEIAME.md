@@ -41,6 +41,9 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
+| Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
+
+**Convenções (CADH, Convenção contra a Tortura)** não seguem o padrão caput/§/inciso ("ARTIGO 1", itens "1.", alíneas "a)", parágrafos sem número). Elas são geradas por `ferramentas/convencao_planalto.py`, não pelo `legislacao_planalto.py`, e levam `itens: true` em `DIPLOMAS`.
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
