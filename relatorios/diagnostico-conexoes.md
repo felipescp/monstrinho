@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4178 |
+| fichas | 4179 |
 | citacoes nas conexoes | 6583 |
 | citacoes ligadas | 6155 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 80 |
+| processo nao reconhecido | 81 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5932 |
-| lei citacoes ligadas | 5292 |
+| lei citacoes de artigo | 5938 |
+| lei citacoes ligadas | 5296 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 25 |
-| lei citacoes de diplomas fora da base | 610 |
+| lei artigo sem diploma | 26 |
+| lei citacoes de diplomas fora da base | 611 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -165,6 +165,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Gonzales Lluy e outros vs. Equador (jur_idh_gonzales_lluy): "arts. 10, 13 e 19" — trecho: "Protocolo de San Salvador, arts. 10, 13 e 19.6"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "arts. 3º e 4º" — trecho: "Carta Democrática Interamericana (2001), arts. 3º e 4º"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "art. 36" — trecho: "LOMAN, art. 36"
+- Caso Chinchilla Sandoval e outros vs. Guatemala (jur_idh_chinchilla_sandoval): "art. 10" — trecho: "Protocolo de San Salvador, art. 10"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
@@ -173,7 +174,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 791.961 ED (jur_1790222446982_6f7qsw): "art. 25" — trecho: "EC 103/2019 art. 25"
 - REsp 2.205.708-PR (jur_1791073076179_c70tju): "art. 10, § 2º" — trecho: "MP 2.200-2/2001, art. 10, § 2º"
 - REsp 2.059.876-PE (jur_1791073076179_19xwjm): "art. 320-B, § 4º" — trecho: "Provimento CNJ 149/2023, art. 320-B, § 4º (Provimento 188/2024)"
-- ARE 1.557.312-SP (jur_1790157349013_c93zji): "art. 3º" — trecho: "EC nº 113/2021 art. 3º"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
