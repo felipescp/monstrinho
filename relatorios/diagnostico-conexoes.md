@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4186 |
-| citacoes nas conexoes | 6593 |
+| fichas | 4187 |
+| citacoes nas conexoes | 6594 |
 | citacoes ligadas | 6159 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 384 |
-| citacoes fora do acervo | 434 |
+| referencias fora do acervo | 385 |
+| citacoes fora do acervo | 435 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 88 |
+| processo nao reconhecido | 89 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5969 |
-| lei citacoes ligadas | 5313 |
+| lei citacoes de artigo | 5973 |
+| lei citacoes ligadas | 5314 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 34 |
-| lei citacoes de diplomas fora da base | 617 |
+| lei artigo sem diploma | 36 |
+| lei citacoes de diplomas fora da base | 618 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -180,7 +180,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| Convenção | 29 |
+| Convenção | 30 |
 | CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
