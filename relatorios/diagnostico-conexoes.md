@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4180 |
+| fichas | 4181 |
 | citacoes nas conexoes | 6587 |
 | citacoes ligadas | 6157 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 82 |
+| processo nao reconhecido | 83 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5940 |
-| lei citacoes ligadas | 5297 |
+| lei citacoes de artigo | 5947 |
+| lei citacoes ligadas | 5301 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 26 |
-| lei citacoes de diplomas fora da base | 612 |
+| lei artigo sem diploma | 28 |
+| lei citacoes de diplomas fora da base | 613 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -166,14 +166,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "arts. 3º e 4º" — trecho: "Carta Democrática Interamericana (2001), arts. 3º e 4º"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "art. 36" — trecho: "LOMAN, art. 36"
 - Caso Chinchilla Sandoval e outros vs. Guatemala (jur_idh_chinchilla_sandoval): "art. 10" — trecho: "Protocolo de San Salvador, art. 10"
+- Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 45" — trecho: "Carta da OEA, arts. 45.b e c, 46 e 34.g"
+- Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 6º, 7º" — trecho: "Protocolo de San Salvador, arts. 6º, 7º.d e 8º"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
 - RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
 - ADI 6.828-AL (jur_1788480450899_7xr0dc): "art. 16" — trecho: "EC 132/2023, art. 16 (regra de transição da Reforma Tributária)"
 - RE 791.961 ED (jur_1790222446982_6f7qsw): "art. 25" — trecho: "EC 103/2019 art. 25"
-- REsp 2.205.708-PR (jur_1791073076179_c70tju): "art. 10, § 2º" — trecho: "MP 2.200-2/2001, art. 10, § 2º"
-- REsp 2.059.876-PE (jur_1791073076179_19xwjm): "art. 320-B, § 4º" — trecho: "Provimento CNJ 149/2023, art. 320-B, § 4º (Provimento 188/2024)"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
@@ -181,7 +181,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 |---|---|
 | CPC | 32 |
 | Convenção | 27 |
-| CLT | 14 |
+| CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
 | Lei 8.666 | 11 |
