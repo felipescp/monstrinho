@@ -761,7 +761,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .jur-ref { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: pointer; color: inherit; }
 .jur-ref:hover { color: var(--app-primary); }
 .jur-ref-lei { text-decoration-color: #0d9488; }
-#glos-tooltip-flutuante .lei-disp { margin-top: 4px; }
+#glos-tooltip-flutuante .lei-disp { margin-top: 4px; white-space: pre-line; }
 #glos-tooltip-flutuante .lei-ali { margin-left: 12px; margin-top: 2px; }
 #glos-tooltip-flutuante .lei-disp b { color: #99f6e4; font-weight: 800; }
 #glos-tooltip-flutuante .lei-pena { margin-top: 4px; color: #fde68a; }
@@ -15674,7 +15674,7 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-art-acoes select.sistema { border-style:dashed; }
     #leiseca-modal .ls-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #leiseca-modal .ls-btn.ativo { background:#dcfce7; border-color:#16a34a; color:#166534; }
-    #leiseca-modal .ls-d { padding:6px 8px; border-left:4px solid transparent; border-radius:3px; margin:2px 0; }
+    #leiseca-modal .ls-d { white-space:pre-line; padding:6px 8px; border-left:4px solid transparent; border-radius:3px; margin:2px 0; }
     #leiseca-modal .ls-d.ls-n0 { background:none; border-left-color:transparent; color:var(--text-main) !important; }
     #leiseca-modal .ls-d.ls-n1 { background:color-mix(in srgb, #bbf7d0 35%, transparent); border-left-color:#22c55e; }
     #leiseca-modal .ls-d.ls-n2 { background:color-mix(in srgb, #fde68a 45%, transparent); border-left-color:#eab308; }
@@ -16011,7 +16011,8 @@ window.LEISECA_RUNTIME = {
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
         let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
-        let html = (art.texto || !itens ? linha('Art. ' + self._esc(a) + '.', art, a) : '') + alineas(art) + incisos(art, a);
+        let html = (art.texto || !itens ? linha('Art. ' + self._esc(a) + '.', art, a) : '') + alineas(art) +
+            (art.fecho ? '<div class="ls-d ls-n0">' + self._esc(art.fecho) + '</div>' : '') + incisos(art, a);
         if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
         Object.keys(art.par || {}).forEach(function(p) {
             let no = art.par[p], rot = p === 'pu' ? 'Parágrafo único.' : '§ ' + p + (/^\d$/.test(p) ? 'º' : '') + '.';
@@ -37819,8 +37820,11 @@ window.LEGISLACAO = (function() {
         L6938: { nome: 'Lei 6.938 (PNMA)', arquivo: 'dados/legislacao/lei-6938.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l6938.htm',
               re: /Lei\s*n?[º°o.]*\s*6\.?938|(?:Lei\s+da\s+)?Pol[íi]tica\s+Nacional\s+do\s+Meio\s+Ambiente|\bPNMA\b/g },
         // Convenção Americana (Decreto 678/1992): itens numerados ("art. 8.4"), sem §/inciso.
-        CADH: { nome: 'CADH', arquivo: 'dados/legislacao/cadh.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm', itens: true,
+        CADH: { nome: 'CADH', arquivo: 'dados/legislacao/cadh.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm', itens: true, promulgacao: 'Decreto 678/1992',
               re: /\bCADH\b|Conven[çc][ãa]o\s+Americana(?:\s+(?:sobre|de)\s+Direitos\s+Humanos)?|Pacto\s+de\s+S[ãa]o\s+Jos[ée](?:\s+da\s+Costa\s+Rica)?|Decreto\s*n?[º°o.]*\s*678(?:\/1992|,\s+de\s+1992)?(?![\d.])/g },
+        // Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989): artigos com parágrafos sem número.
+        D98386: { nome: 'Convenção Interamericana contra a Tortura', arquivo: 'dados/legislacao/decreto-98386.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/1980-1989/d98386.htm', itens: true, promulgacao: 'Decreto 98.386/1989',
+              re: /Conven[çc][ãa]o\s+Interamericana\s+para\s+Prevenir\s+e\s+Punir\s+a\s+Tortura|Decreto\s*n?[º°o.]*\s*98\.?386/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37953,12 +37957,13 @@ window.LEGISLACAO = (function() {
             if (!a) return h + '<div>Artigo não localizado no texto.</div>';
             let alis = function(o, so) { return Object.keys(o.ali || {}).filter(function(k) { return !so || k === so; }).map(function(k) { return '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + esc(o.ali[k]) + '</div>'; }).join(''); };
             if (a.texto) h += '<div class="lei-disp">' + esc(a.texto) + '</div>' + alis(a);
+            if (a.fecho) h += '<div class="lei-disp">' + esc(a.fecho) + '</div>';
             let itens = a.inc || {}, ks = p[3] ? [p[3]] : Object.keys(itens);
             ks.forEach(function(k) {
                 if (!itens[k]) { h += '<div class="lei-disp">Item ' + esc(k) + ' não localizado.</div>'; return; }
                 h += '<div class="lei-disp"><b>' + esc(k) + '.</b> ' + esc(itens[k].texto) + '</div>' + alis(itens[k], p[4]);
             });
-            return h + '<div class="jur-ref-dica">Promulgada pelo Decreto 678/1992 · clique para abrir no Planalto</div>';
+            return h + '<div class="jur-ref-dica">Promulgada pelo ' + esc(d.promulgacao) + ' · clique para abrir no Planalto</div>';
         }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
