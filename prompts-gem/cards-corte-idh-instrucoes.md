@@ -65,5 +65,5 @@ git checkout $B
 ## Situação
 
 - Base com 88 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
-- Ainda **não refeitos** com o prompt novo (fichas antigas): Loayza Tamayo (todos os demais já refeitos com a ficha nova; Atala Riffo só tem a sentença de interpretação).
+- Todos os cards já revisados com a ficha nova. Pendências: Atala Riffo e Loayza Tamayo só têm ficha de uma das sentenças (interpretação; mérito de 1997) — faltam a de mérito de Atala (Série C 239) e a de reparações de Loayza (Série C 42, projeto de vida).
 - Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados): Albán Cornejo, Azul Rojas Marín, Baldeón García, Castillo Petruzzi, Cinco Aposentados, García Asto e Ramírez Rojas, Godínez Cruz, Huilca Tecse, I.V. vs. Bolívia, Instituto de Reeducação do Menor, La Cantuta, Massacres de Ituango, Meninas Yean e Bosico, Nadege Dorzema, Petro Urrego, Povo Saramaka ("Caso do Povo Saramaka vs. Suriname"), Raxcacó Reyes, Tristán Donoso, Tribunal Constitucional vs. Peru ("Caso do Tribunal Constitucional vs. Peru").
