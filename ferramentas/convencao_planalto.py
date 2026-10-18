@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002; Estatuto de Roma, Decreto 4.388/2002; PIDCP, Decreto 592/1992) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002; Estatuto de Roma, Decreto 4.388/2002; PIDCP, Decreto 592/1992; Pessoas com Deficiência e Protocolo Facultativo, Decreto 6.949/2009) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -73,12 +73,17 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             if prox and not re.match(r'(\d+\.|[a-z]\)|ARTIGO|CAP[ÍI]TULO|PARTE|Se[çc][ãa]o)', prox, re.I) and len(prox) < 90 and not prox.endswith(('.', ':', ';')):
                 art['rubrica'] = prox
                 i += 1
+                # Rubrica que termina em vírgula continua na linha seguinte ("…penas cruéis," /
+                # "desumanos ou degradantes", Pessoas com Deficiência, art. 15).
+                if prox.endswith(',') and i + 1 < fim and len(linhas[i + 1]) < 90 and re.match(r'[a-zà-ú]', linhas[i + 1]):
+                    art['rubrica'] += ' ' + linhas[i + 1]
+                    i += 1
             i += 1
             continue
         if art is None or re.match(r'(PARTE\s+[IVX]+|CAP[ÍI]TULO\s+[IVX]+|Se[çc][ãa]o\s+\d)', t, re.I):
             i += 1
             continue
-        m = re.match(r'(\d+)\.\s+(.*)$', t)
+        m = re.match(r'(\d+)\.\s+(.*)$', t) or re.match(r'(\d+)\.([A-ZÁ-Ú“"].*)$', t)  # também "1.Os Estados…" (Pessoas com Deficiência)
         # Item sem ponto ("1 Os Estados…", Direitos da Criança, art. 15): só se for o próximo número.
         if not m:
             m = re.match(r'(\d+)\s+([A-ZÁ-Ú].*)$', t)
