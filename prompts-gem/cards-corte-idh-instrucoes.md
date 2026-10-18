@@ -6,7 +6,7 @@ Leia este arquivo inteiro antes de processar qualquer ficha.
 
 1. O usuário envia uma ficha (.txt) gerada pelo Gem com `prompts-gem/extrator-corte-idh.txt`.
 2. Verifique se o caso já tem card (busque pelo nome/id). Se tiver, **revise o mesmo card mantendo o `id`** (preserva as marcações pessoais do usuário). Se não, crie.
-3. Só o **essencial para concurso**: tese, artigos violados/não violados, conceitos cobráveis, reparações estruturais ou incomuns. Estilo enxuto.
+3. Só o **essencial para concurso**: tese, dicas de prova, artigos violados, conceitos cobráveis, reparações estruturais ou incomuns. Estilo enxuto.
 4. **Relacione com outros casos da base** (`casosRelacionados`), inclusive a relação inversa no card do outro caso, quando pertinente.
 5. A ficha manda (fidelidade ao dispositivo). Se ela divergir do que você sabe, confira e **avise o usuário**. Pode acrescentar de memória o que for clássico de prova (ex.: Série C, nome doutrinário da tese), avisando.
 6. Commit e push no branch de trabalho **e** em `main` (ver abaixo).
@@ -24,7 +24,7 @@ Leia este arquivo inteiro antes de processar qualquer ficha.
   - `estado` (na OC: o solicitante), `vitima`, `marco`, `tematica`
   - `sistematicaDetalhe`: "Série C, nº N"; `dataJulgado`: "AAAA-MM-DD" (ou só "AAAA" se desconhecida)
   - `temasIDH`: lista, usando **só** o vocabulário abaixo (criar tema novo só se nenhum servir)
-  - `sentencas`: [{tipo, data, obs}] — obs com violados, NÃO violados e votação
+  - `dicas`: [{tipo, titulo, texto}] — `tipo` é "Vai cair", "Atenção" ou "Não confunda" (das marcações #VAICAIR, #ATENÇÃO e #NÃOCONFUNDA da ficha); `titulo` curto; `texto` em 1–2 frases. Inclua votação apertada e artigos NÃO violados relevantes como dica. Sem `sentencas` (campo abolido)
   - `artigosCADH`: lista de strings ("8.1", "25.1", "1.1", "2")
   - `tese`, `resumo` (fatos curtos)
   - `conceitos`: [{termo, explicacao}] (4–6)
@@ -65,5 +65,5 @@ git checkout $B
 ## Situação
 
 - Base com 93 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
-- Todos os cards já revisados com a ficha nova.
+- Todos os cards já revisados com a ficha nova. Sem `dicas` (não havia ficha com marcações nesta sessão): Velásquez Rodríguez, Cantoral Benavides, Barrios Altos, Ivcher Bronstein, Última Tentação, Myrna Mack, Berenson, Awas Tingni, Hilaire, Ricardo Canese, Herrera Ulloa, Tibi, Moiwana, Fermín Ramírez, Palamara, Yatama, Almonacid, Claude Reyes, Goiburú, Castro Castro, Castañeda Gutman, Heliodoro Portugal, Yvon Neptune, Acevedo Buendía, Barreto Leiva, Campo Algodonero, Las Dos Erres, Radilla Pacheco, Cabrera García e Montiel, Gelman, López Mendoza, Artavia Murillo, Furlan, Santo Domingo.
 - Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados; use exatamente este nome no `processo`): Albán Cornejo e outros vs. Equador; Huilca Tecse vs. Peru; Massacres de Ituango vs. Colômbia; Raxcacó Reyes vs. Guatemala; Tristán Donoso vs. Panamá; Azul Rojas Marín e outra vs. Peru; Baldeón García vs. Peru; Cinco Aposentados vs. Peru; García Asto e Ramírez Rojas vs. Peru; Godínez Cruz vs. Honduras; La Cantuta vs. Peru; Meninas Yean e Bosico vs. República Dominicana; Nadege Dorzema e outros vs. República Dominicana; Petro Urrego vs. Colômbia.
