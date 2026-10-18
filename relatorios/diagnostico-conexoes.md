@@ -5,8 +5,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4192 |
-| citacoes nas conexoes | 6614 |
-| citacoes ligadas | 6170 |
+| citacoes nas conexoes | 6615 |
+| citacoes ligadas | 6171 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 389 |
 | citacoes fora do acervo | 444 |
@@ -16,10 +16,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 94 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6008 |
+| lei citacoes de artigo | 6009 |
 | lei citacoes ligadas | 5336 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 40 |
+| lei artigo sem diploma | 41 |
 | lei citacoes de diplomas fora da base | 627 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -158,6 +158,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 609.381-GO (jur_1790221383512_ti5szd): "art. 9º" — trecho: "EC 41/2003 art. 9º"
 - ARE 848.993-MG (jur_1790221440885_rcskxx): "art. 11" — trecho: "EC nº 20/1998 art. 11"
 - Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil (jur_idh_fabrica_de_fogos): "arts. 6º e 7º" — trecho: "Protocolo de San Salvador, arts. 6º e 7º"
+- Caso Comunidades Quilombolas de Alcântara vs. Brasil (jur_idh_quilombolas_alcantara): "art. 13" — trecho: "Protocolo de San Salvador, art. 13"
 - Caso do Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - Caso Mohamed vs. Argentina (jur_idh_mohamed): "art. 14" — trecho: "PIDCP, art. 14.5"
 - Caso do Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
@@ -173,7 +174,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "arts. 10 e 17" — trecho: "Protocolo de San Salvador, arts. 10 e 17"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
-- Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
