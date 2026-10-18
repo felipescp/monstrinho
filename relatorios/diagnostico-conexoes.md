@@ -5,11 +5,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4192 |
-| citacoes nas conexoes | 6609 |
+| citacoes nas conexoes | 6610 |
 | citacoes ligadas | 6166 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 389 |
-| citacoes fora do acervo | 443 |
+| citacoes fora do acervo | 444 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
@@ -30,6 +30,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ADPF 153 | 5 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
+| ADPF 320 | 3 |
 | ADPF 442 | 3 |
 | ADO 26 | 3 |
 | MI 4733 | 3 |
@@ -44,7 +45,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SLS 2240 | 2 |
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
-| ADPF 320 | 2 |
 | ARE 1054490 | 2 |
 | AP 470 | 2 |
 | RMS 39173 | 2 |
