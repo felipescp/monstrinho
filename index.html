@@ -32347,6 +32347,10 @@ window.carregarEsquemasOficiais = async function() {
     .jur-card-sintese-idh { font-size:13px; font-weight:600; color:#374151; line-height:1.35; margin:4px 0 6px; }
     .jur-idh-caso-link { color:#4f46e5; text-decoration:none; } .jur-idh-caso-link:hover { text-decoration:underline; }
     .jur-idh-obs { font-weight:700; color:var(--text-muted); }
+    .jur-idh-dica { display:inline-block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.3px; border-radius:3px; padding:1px 5px; margin-right:2px; vertical-align:1px; }
+    .jur-idh-dica-vai { color:#991b1b; background:#fee2e2; border:1px solid #fca5a5; }
+    .jur-idh-dica-atencao { color:#92400e; background:#fef3c7; border:1px solid #fcd34d; }
+    .jur-idh-dica-confunda { color:#1e40af; background:#dbeafe; border:1px solid #93c5fd; }
     #jurisprudencia-modal .jur-card-superado { border-left-color:#f59e0b; background:#fffbeb; }
 
     /* Abas do topo: "Navegar" (grade L1/L2 acima) + Crítico/Importante/Regular
@@ -36613,7 +36617,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         pop.style.top = top + 'px';
     },
 
-    // ── CASOS DA CORTE IDH: blocos próprios (Estado, vítima, sentenças,
+    // ── CASOS DA CORTE IDH: blocos próprios (Estado, vítima, dicas de prova,
     // artigos da CADH, conceitos, reparações, casos relacionados). Só
     // aparecem quando o campo existe — demais fichas não mudam.
     _htmlCorteIDH: function(item, clsLabel, clsTexto) {
@@ -36627,7 +36631,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
         h += bloco('Caso', partes.join(' · '));
         if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
-        h += bloco('Sentenças', lista(item.sentencas, function(s) { return self._escapar(s.tipo) + (s.data ? ' — ' + self._formatarDataBR(s.data) : '') + (s.obs ? ' <span class="jur-idh-obs">(' + self._escapar(s.obs) + ')</span>' : ''); }));
+        // Dicas de prova: "Vai cair", "Atenção" e "Não confunda", cada uma com selo próprio.
+        let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda' };
+        h += bloco('Dicas de prova', lista(item.dicas, function(d) { return '<span class="jur-idh-dica jur-idh-dica-' + (clsDica[d.tipo] || 'atencao') + '">' + self._escapar(d.tipo) + '</span> ' + (d.titulo ? '<b>' + self._escapar(d.titulo) + ':</b> ' : '') + self._escapar(d.texto); }));
         if (item.artigosCADH && item.artigosCADH.length) {
             let txt = 'CADH, ' + (item.artigosCADH.length > 1 ? 'arts. ' : 'art. ') + item.artigosCADH.join(', ');
             h += bloco('Artigos da CADH', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(txt) : self._escapar(txt));
