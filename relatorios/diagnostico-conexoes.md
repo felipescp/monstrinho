@@ -4,20 +4,20 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4187 |
-| citacoes nas conexoes | 6594 |
-| citacoes ligadas | 6159 |
+| fichas | 4188 |
+| citacoes nas conexoes | 6596 |
+| citacoes ligadas | 6160 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 385 |
-| citacoes fora do acervo | 435 |
+| referencias fora do acervo | 384 |
+| citacoes fora do acervo | 436 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 89 |
+| processo nao reconhecido | 90 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5973 |
-| lei citacoes ligadas | 5314 |
+| lei citacoes de artigo | 5977 |
+| lei citacoes ligadas | 5318 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 36 |
 | lei citacoes de diplomas fora da base | 618 |
@@ -31,6 +31,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
 | ADPF 442 | 3 |
+| ADO 26 | 3 |
+| MI 4733 | 3 |
 | RESP 1977124 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
@@ -44,8 +46,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RESP 2103140 | 2 |
 | ARE 1054490 | 2 |
 | AP 470 | 2 |
-| ADO 26 | 2 |
-| MI 4733 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
