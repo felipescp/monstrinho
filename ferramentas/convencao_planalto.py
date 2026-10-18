@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002; Estatuto de Roma, Decreto 4.388/2002) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002; Estatuto de Roma, Decreto 4.388/2002; PIDCP, Decreto 592/1992) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -50,7 +50,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
     ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
     # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
     # Navegação da página da CIDH ("[ ÍNDICE | ANTERIOR | PRÓXIMO ]") também encerra.
-    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em (?:f[ée] do que|testemunho do que)', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
+    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em (?:f[ée] do qu[eê]|testemunho do que)', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
     artigos, art, item, ultima = {}, None, None, None
     i = ini
     while i < fim:
@@ -109,7 +109,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             continue
         # Subitens em romanos dentro da alínea ("I) ser considerada inocente…", Direitos da Criança,
         # art. 40.2.b; "ii) Tortura…", Estatuto de Roma, art. 8.2.a): ficam no texto da alínea, um por linha.
-        m = re.match(r'([IVX]+|[ivx]+)\)\s+(.*)$', t)
+        m = re.match(r'\(?([IVX]+|[ivx]+)\)\s+(.*)$', t)  # também "(i)" (PIDCP, art. 41.1.h)
         if m and ultima:
             ultima[0]['ali'][ultima[1]] += '\n' + t
             i += 1
