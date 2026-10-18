@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -20,7 +20,8 @@ import sys
 
 
 def limpar(t):
-    t = re.sub(r'^\s*#+\s*', '', t)  # cabeçalho Markdown ("## Artigo 4", "# Direito à saúde")
+    t = re.sub(r'^\s*(?:>\s*)*#*\s*', '', t)  # citação e cabeçalho Markdown ("> > Artigo 15", "## Artigo 4")
+    t = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', t)  # "Artigo 1<sup>o</sup>" (CEDAW)
     t = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', t).replace('\u2011', '-')  # link; hífen inseparável ("comprometem‑se")
     t = re.sub(r'\\([.*_\-])', r'\1', t)
     t = re.sub(r'\*\*|__', '', t).replace('\u00ad', '')  # hífen invisível ("desa­parecimento")
@@ -42,12 +43,13 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
     ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
     # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
     # Navegação da página da CIDH ("[ ÍNDICE | ANTERIOR | PRÓXIMO ]") também encerra.
-    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em f[ée] do que', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
+    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em (?:f[ée] do que|testemunho do que)', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
     artigos, art, item, ultima = {}, None, None, None
     i = ini
     while i < fim:
         t = linhas[i]
-        m = re.match(r'ARTIGO\s+(\d+|[IVXL]+)$', t, re.I)  # "ARTIGO 1" (CADH), "Artigo 1" (Belém do Pará), "Artigo IV" (Desaparecimento Forçado)
+        # "ARTIGO 1" (CADH), "Artigo 1" (Belém do Pará), "Artigo IV" (Desaparecimento Forçado), "Artigo 1º" e "rtigo 29" (CEDAW).
+        m = re.match(r'A?RTIGO\s+(\d+|[IVXL]+)º?$', t, re.I)
         if m:
             art = {'texto': ''}
             artigos[m.group(1)] = art
@@ -97,7 +99,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             continue
         # Linha de título (nome de capítulo/seção) logo antes de um ARTIGO: ignora.
         titulo = len(t) < 90 and not t.endswith(('.', ':', ';', ','))
-        if titulo and i + 1 < fim and (re.match(r'ARTIGO\s+(\d+|[IVXL]+)$', linhas[i + 1], re.I) or re.match(r'(CAP[ÍI]TULO|Se[çc][ãa]o|PARTE)', linhas[i - 1], re.I)):
+        if titulo and i + 1 < fim and (re.match(r'A?RTIGO\s+(\d+|[IVXL]+)º?$', linhas[i + 1], re.I) or re.match(r'(CAP[ÍI]TULO|Se[çc][ãa]o|PARTE)', linhas[i - 1], re.I)):
             i += 1
             continue
         if item is not None:

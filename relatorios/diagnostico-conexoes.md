@@ -16,10 +16,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 99 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6089 |
-| lei citacoes ligadas | 5445 |
+| lei citacoes de artigo | 6090 |
+| lei citacoes ligadas | 5450 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 37 |
+| lei artigo sem diploma | 33 |
 | lei citacoes de diplomas fora da base | 602 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -169,11 +169,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
-- Caso Manuela e outros vs. El Salvador (jur_idh_manuela): "art. 12" — trecho: "CEDAW, art. 12"
-- Caso Brítez Arce e outros vs. Argentina (jur_idh_britez_arce): "art. 12" — trecho: "CEDAW, art. 12.2"
 - Caso Tzompaxtle Tecpile e outros vs. México (jur_idh_tzompaxtle_tecpile): "art. 9" — trecho: "PIDCP, art. 9.3"
-- Caso Rodríguez Pacheco e outra vs. Venezuela (jur_idh_rodriguez_pacheco): "art. 12" — trecho: "CEDAW, art. 12"
-- Caso I.V. vs. Bolívia (jur_idh_iv): "arts. 12 e 16" — trecho: "CEDAW, arts. 12 e 16.1.e"
+- Caso Povo Saramaka vs. Suriname (jur_idh_saramaka): "art. 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), art. 32"
+- Caso Povo Saramaka vs. Suriname (jur_idh_saramaka): "art. 27" — trecho: "Pacto Internacional de Direitos Civis e Políticos, art. 27"
+- Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
+- REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
