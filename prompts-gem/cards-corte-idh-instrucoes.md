@@ -19,7 +19,7 @@ Leia este arquivo inteiro antes de processar qualquer ficha.
 - Campos fixos (copie de um card existente): `tribunal`, `orgao`, `relator`, `sistematica` ("Caso Contencioso (Corte IDH)" ou "Opinião Consultiva (Corte IDH)"), `tema` (vazio), `dataConsulta`, `materiaL1`, `divisaoL2`.
 - Campos do caso:
   - `id`: `jur_idh_<nome>`; `criadoEm`; `comentario: ""`
-  - `processo`: "Caso X vs. País" — é o destaque do card
+  - `processo`: "Caso X vs. País" — é o destaque do card. Padrão: em português, sem artigo após "Caso" ("Caso Povo Saramaka", não "Caso do Povo Saramaka"); "e outros/outras/outro/outra" e demais partes do nome oficial em minúsculas; apelido entre parênteses e aspas ("Guerrilha do Araguaia"), traduzido quando houver tradução usual (exceção: "Campo Algodonero")
   - `titulo`: síntese da tese em uma frase
   - `estado` (na OC: o solicitante), `vitima`, `marco`, `tematica`
   - `sistematicaDetalhe`: "Série C, nº N"; `dataJulgado`: "AAAA-MM-DD" (ou só "AAAA" se desconhecida)
