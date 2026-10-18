@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4172 |
+| fichas | 4173 |
 | citacoes nas conexoes | 6581 |
 | citacoes ligadas | 6154 |
 | sem tribunal | 0 |
@@ -13,13 +13,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 74 |
+| processo nao reconhecido | 75 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5910 |
-| lei citacoes ligadas | 5275 |
+| lei citacoes de artigo | 5912 |
+| lei citacoes ligadas | 5276 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 20 |
+| lei artigo sem diploma | 21 |
 | lei citacoes de diplomas fora da base | 610 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -160,6 +160,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso do Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - Caso Mohamed vs. Argentina (jur_idh_mohamed): "art. 14" — trecho: "PIDCP, art. 14.5"
 - Caso do Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
+- Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
