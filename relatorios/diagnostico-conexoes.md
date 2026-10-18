@@ -16,10 +16,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 99 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6081 |
-| lei citacoes ligadas | 5425 |
+| lei citacoes de artigo | 6086 |
+| lei citacoes ligadas | 5438 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 45 |
+| lei artigo sem diploma | 37 |
 | lei citacoes de diplomas fora da base | 606 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -157,23 +157,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 3º" — trecho: "EC 47/2005 art. 3º"
 - RE 609.381-GO (jur_1790221383512_ti5szd): "art. 9º" — trecho: "EC 41/2003 art. 9º"
 - ARE 848.993-MG (jur_1790221440885_rcskxx): "art. 11" — trecho: "EC nº 20/1998 art. 11"
-- Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil (jur_idh_fabrica_de_fogos): "arts. 6º e 7º" — trecho: "Protocolo de San Salvador, arts. 6º e 7º"
-- Caso Comunidades Quilombolas de Alcântara vs. Brasil (jur_idh_quilombolas_alcantara): "art. 13" — trecho: "Protocolo de San Salvador, art. 13"
 - Caso Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - Caso Mohamed vs. Argentina (jur_idh_mohamed): "art. 14" — trecho: "PIDCP, art. 14.5"
 - Caso Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
 - Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
 - Caso Liakat Ali Alibux vs. Suriname (jur_idh_liakat_ali_alibux): "art. 14" — trecho: "PIDCP, art. 14.5"
-- Caso Gonzales Lluy e outros vs. Equador (jur_idh_gonzales_lluy): "arts. 10, 13 e 19" — trecho: "Protocolo de San Salvador, arts. 10, 13 e 19.6"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "arts. 3º e 4º" — trecho: "Carta Democrática Interamericana (2001), arts. 3º e 4º"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "art. 36" — trecho: "LOMAN, art. 36"
-- Caso Chinchilla Sandoval e outros vs. Guatemala (jur_idh_chinchilla_sandoval): "art. 10" — trecho: "Protocolo de San Salvador, art. 10"
 - Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 45" — trecho: "Carta da OEA, arts. 45.b e c, 46 e 34.g"
-- Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 6º, 7º" — trecho: "Protocolo de San Salvador, arts. 6º, 7º.d e 8º"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 34" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
-- Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "arts. 10 e 17" — trecho: "Protocolo de San Salvador, arts. 10 e 17"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
+- Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
+- Caso Manuela e outros vs. El Salvador (jur_idh_manuela): "art. 12" — trecho: "CEDAW, art. 12"
+- Caso Brítez Arce e outros vs. Argentina (jur_idh_britez_arce): "art. 12" — trecho: "CEDAW, art. 12.2"
+- Caso Tzompaxtle Tecpile e outros vs. México (jur_idh_tzompaxtle_tecpile): "art. 9" — trecho: "PIDCP, art. 9.3"
+- Caso Rodríguez Pacheco e outra vs. Venezuela (jur_idh_rodriguez_pacheco): "art. 12" — trecho: "CEDAW, art. 12"
+- Caso I.V. vs. Bolívia (jur_idh_iv): "arts. 12 e 16" — trecho: "CEDAW, arts. 12 e 16.1.e"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
