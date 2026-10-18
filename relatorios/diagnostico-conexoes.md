@@ -5,19 +5,19 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4192 |
-| citacoes nas conexoes | 6616 |
-| citacoes ligadas | 6172 |
+| citacoes nas conexoes | 6618 |
+| citacoes ligadas | 6173 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 389 |
-| citacoes fora do acervo | 444 |
+| citacoes fora do acervo | 445 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
 | processo nao reconhecido | 94 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6011 |
-| lei citacoes ligadas | 5338 |
+| lei citacoes de artigo | 6012 |
+| lei citacoes ligadas | 5339 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 41 |
 | lei citacoes de diplomas fora da base | 627 |
@@ -28,11 +28,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 |---|---|
 | ARESP 2642744 | 5 |
 | ADPF 153 | 5 |
+| ADO 26 | 4 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
 | ADPF 320 | 3 |
 | ADPF 442 | 3 |
-| ADO 26 | 3 |
 | MI 4733 | 3 |
 | RESP 1977124 | 3 |
 | ADO 88 | 3 |
