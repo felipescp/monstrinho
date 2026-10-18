@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -33,18 +33,19 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
     linhas = [limpar(l) for l in open(src, encoding='utf-8')]
     linhas = [l for l in linhas if l]
     ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
-    fim = next((i for i, l in enumerate(linhas) if l.startswith('Declarações e reservas')), len(linhas))
+    # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
+    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em f[ée] do que', l, re.I))), len(linhas))
     artigos, art, item = {}, None, None
     i = ini
     while i < fim:
         t = linhas[i]
-        m = re.match(r'ARTIGO\s+(\d+)$', t)
+        m = re.match(r'ARTIGO\s+(\d+)$', t, re.I)  # "ARTIGO 1" (CADH) ou "Artigo 1" (Belém do Pará)
         if m:
             art = {'texto': ''}
             artigos[m.group(1)] = art
             item = None
             prox = linhas[i + 1] if i + 1 < fim else ''
-            if prox and not re.match(r'(\d+\.|[a-z]\)|ARTIGO|CAP[ÍI]TULO|PARTE|Se[çc][ãa]o)', prox) and len(prox) < 90 and not prox.endswith(('.', ':', ';')):
+            if prox and not re.match(r'(\d+\.|[a-z]\)|ARTIGO|CAP[ÍI]TULO|PARTE|Se[çc][ãa]o)', prox, re.I) and len(prox) < 90 and not prox.endswith(('.', ':', ';')):
                 art['rubrica'] = prox
                 i += 1
             i += 1
@@ -66,7 +67,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             continue
         # Linha de título (nome de capítulo/seção) logo antes de um ARTIGO: ignora.
         titulo = len(t) < 90 and not t.endswith(('.', ':', ';', ','))
-        if titulo and i + 1 < fim and (re.match(r'ARTIGO\s+\d+$', linhas[i + 1]) or re.match(r'(CAP[ÍI]TULO|Se[çc][ãa]o|PARTE)', linhas[i - 1], re.I)):
+        if titulo and i + 1 < fim and (re.match(r'ARTIGO\s+\d+$', linhas[i + 1], re.I) or re.match(r'(CAP[ÍI]TULO|Se[çc][ãa]o|PARTE)', linhas[i - 1], re.I)):
             i += 1
             continue
         if item is not None:

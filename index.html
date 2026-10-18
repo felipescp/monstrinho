@@ -37825,6 +37825,9 @@ window.LEGISLACAO = (function() {
         // Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989): artigos com parágrafos sem número.
         D98386: { nome: 'Convenção Interamericana contra a Tortura', arquivo: 'dados/legislacao/decreto-98386.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/1980-1989/d98386.htm', itens: true, promulgacao: 'Decreto 98.386/1989',
               re: /Conven[çc][ãa]o\s+Interamericana\s+para\s+Prevenir\s+e\s+Punir\s+a\s+Tortura|Decreto\s*n?[º°o.]*\s*98\.?386/g },
+        // Convenção de Belém do Pará (Decreto 1.973/1996): alíneas no próprio artigo ("art. 7.b").
+        D1973: { nome: 'Convenção de Belém do Pará', arquivo: 'dados/legislacao/decreto-1973.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/1996/d1973.htm', itens: true, promulgacao: 'Decreto 1.973/1996',
+              re: /Conven[çc][ãa]o\s+(?:de\s+)?Bel[ée]m\s+do\s+Par[áa]|Conven[çc][ãa]o\s+Interamericana\s+para\s+Prevenir,\s+Punir\s+e\s+Erradicar\s+a\s+Viol[êe]ncia\s+[Cc]ontra\s+a\s+Mulher|Decreto\s*n?[º°o.]*\s*1\.?973(?![\d.])/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37869,14 +37872,23 @@ window.LEGISLACAO = (function() {
         let out = [], base = 0;
         texto.split(';').forEach(function(seg) {
             let ms = mencoes(seg), re = new RegExp(RE_LISTA.source, 'g'), m;
-            // Trecho só da CADH ("CADH, arts. 4.1, 5.1 e 8.4"): itens "art.item", lista própria.
+            // Trecho só de convenção (CADH, Tortura, Belém do Pará): "art.item" e alíneas
+            // ("arts. 4.1, 7.1 a 7.6 e 8.2, h", "art. 7.b, f e g", "arts. 1º, 2º e 7º"), lista própria.
             let msIds = ms.map(function(x) { return x.id; }).filter(Boolean);
             if (msIds.length && msIds.every(function(id) { return DIPLOMAS[id].itens; })) {
-                let id = msIds[0], reA = /\b[Aa]rt(?:igo)?s?\.?\s*((?:\d{1,2}(?:\.\d{1,2})?(?:\s*,\s*["“]?[a-h]["”]?(?![\w]))?(?:\s*(?:,|\be\b)\s*(?=\d))?)+)/g, mA;
+                let ALI = '["“]?[a-j]["”]?(?![\\w])', UN = '\\d{1,2}[ºo°]?(?:\\.\\d{1,2})?(?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?';
+                let id = msIds[0], reA = new RegExp('\\b[Aa]rt(?:igo)?s?\\.?\\s*((?:' + UN + '(?:\\s*(?:,|\\be\\b|\\ba\\b)\\s*(?=\\d))?)+)', 'g'), mA;
                 while ((mA = reA.exec(seg))) {
-                    let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = /(\d{1,2})(?:\.(\d{1,2}))?(?:\s*,\s*["“]?([a-h])["”]?(?![\w]))?/g, n, primeiro = true;
+                    let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = new RegExp('(\\d{1,2})[ºo°]?(?:\\.(\\d{1,2}))?((?:(?:\\.|\\s*,\\s*)' + ALI + '(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?)', 'g'), n, primeiro = true;
                     while ((n = reN.exec(corpo))) {
-                        out.push({ ini: base + (primeiro ? mA.index : iniC + n.index), fim: base + iniC + n.index + n[0].length, chave: [id, n[1], '', n[2] || '', n[3] || ''].join('|') });
+                        let iniN = iniC + n.index, base0 = n[0].length - n[3].length, reL = /(?:\.|,|\be\b)\s*["“]?([a-j])(?![\w])["”]?/g, l, achou = false;
+                        // Cada alínea da lista ("7.b, f e g") vira um trecho; a primeira leva o número do artigo.
+                        while ((l = reL.exec(n[3]))) {
+                            let posL = iniN + base0 + l.index + l[0].lastIndexOf(l[1]);
+                            out.push({ ini: base + (primeiro ? mA.index : achou ? posL : iniN), fim: base + iniN + base0 + l.index + l[0].length, chave: [id, n[1], '', n[2] || '', l[1]].join('|') });
+                            primeiro = false; achou = true;
+                        }
+                        if (!achou) out.push({ ini: base + (primeiro ? mA.index : iniN), fim: base + iniN + n[0].length, chave: [id, n[1], '', n[2] || '', ''].join('|') });
                         primeiro = false;
                     }
                 }
@@ -37897,8 +37909,8 @@ window.LEGISLACAO = (function() {
                     let d = detalhes(it[3] || ''), fimIt = iniLista + it.index + it[0].length;
                     // CADH: "art. 8.4", "art. 8.2, h" → item 4 (inc) e alínea.
                     if (DIPLOMAS[alvo.id].itens) {
-                        let mi = seg.slice(fimIt).match(/^\.(\d{1,2})(?:\s*,\s*(?:al[íi]nea\s*)?["“]?([a-h])["”]?\b)?/);
-                        if (mi) { d = { inc: mi[1], ali: mi[2] || '' }; fimIt += mi[0].length; }
+                        let mi = seg.slice(fimIt).match(/^\.(?:(\d{1,2})(?:\s*,\s*(?:al[íi]nea\s*)?["“]?([a-j])["”]?\b)?|([a-j])(?![\w]))/);
+                        if (mi) { d = { inc: mi[1] || '', ali: mi[2] || mi[3] || '' }; fimIt += mi[0].length; }
                     }
                     let chave = [alvo.id, it[1].replace(/\./g, '') + (it[2] || ''), d.par || '', d.inc || '', d.ali || ''].join('|');
                     out.push({ ini: base + (primeiro ? m.index : iniLista + it.index), fim: base + fimIt, chave: chave });
@@ -37956,7 +37968,7 @@ window.LEGISLACAO = (function() {
             let h = '<div class="jur-ref-cab">' + esc(d.nome + ' · art. ' + p[1] + (p[3] ? '.' + p[3] : '') + (p[4] ? ', "' + p[4] + '"' : '')) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
             if (!a) return h + '<div>Artigo não localizado no texto.</div>';
             let alis = function(o, so) { return Object.keys(o.ali || {}).filter(function(k) { return !so || k === so; }).map(function(k) { return '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + esc(o.ali[k]) + '</div>'; }).join(''); };
-            if (a.texto) h += '<div class="lei-disp">' + esc(a.texto) + '</div>' + alis(a);
+            if (a.texto) h += '<div class="lei-disp">' + esc(a.texto) + '</div>' + alis(a, p[3] ? '' : p[4]);
             if (a.fecho) h += '<div class="lei-disp">' + esc(a.fecho) + '</div>';
             let itens = a.inc || {}, ks = p[3] ? [p[3]] : Object.keys(itens);
             ks.forEach(function(k) {
@@ -38041,7 +38053,7 @@ window.LEGISLACAO = (function() {
     function mostrarBalao(el) {
         let chave = el.getAttribute('data-lei'), ano = el.getAttribute('data-ano'), id = chave.split('|')[0];
         if (cache[id]) { _glosMostrarTooltip(el, htmlBalao(chave, ano, cache[id])); return; }
-        let pc = chave.split('|'), rot = DIPLOMAS[id].itens ? 'art. ' + pc[1] + (pc[3] ? '.' + pc[3] : '') : rotulo(pc);
+        let pc = chave.split('|'), rot = DIPLOMAS[id].itens ? 'art. ' + pc[1] + (pc[3] ? '.' + pc[3] : '') + (pc[4] ? ', "' + pc[4] + '"' : '') : rotulo(pc);
         _glosMostrarTooltip(el, '<div class="jur-ref-cab">' + esc(DIPLOMAS[id].nome + ' · ' + rot) + '</div><div>Carregando o texto da lei…</div>');
         carregar(id).then(function(j) {
             // Só redesenha se o mouse ainda estiver sobre o mesmo trecho.

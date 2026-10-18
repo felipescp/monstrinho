@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 99 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6076 |
-| lei citacoes ligadas | 5407 |
+| lei citacoes de artigo | 6081 |
+| lei citacoes ligadas | 5425 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 45 |
-| lei citacoes de diplomas fora da base | 619 |
+| lei citacoes de diplomas fora da base | 606 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -180,7 +180,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| Convenção | 22 |
 | CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
@@ -188,6 +187,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Estatuto | 10 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
+| Convenção | 9 |
 | Lei 9.514 | 9 |
 | Decreto-Lei 911 | 9 |
 | Lei 11.340 | 9 |
