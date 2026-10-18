@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -43,7 +43,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
     # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
     # Navegação da página da CIDH ("[ ÍNDICE | ANTERIOR | PRÓXIMO ]") também encerra.
     fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em f[ée] do que', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
-    artigos, art, item = {}, None, None
+    artigos, art, item, ultima = {}, None, None, None
     i = ini
     while i < fim:
         t = linhas[i]
@@ -51,7 +51,7 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         if m:
             art = {'texto': ''}
             artigos[m.group(1)] = art
-            item = None
+            item = ultima = None
             # Rubrica em negrito que ocupa mais de uma linha (San Salvador, arts. 21 e 22).
             j = i + 1
             while j < fim and negrito[j] and len(linhas[j]) < 90 and not re.match(r'(ARTIGO\s|\d+\.\s|[a-z][.)]\s)', linhas[j], re.I):
@@ -70,8 +70,12 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             i += 1
             continue
         m = re.match(r'(\d+)\.\s+(.*)$', t)
+        # Item sem ponto ("1 Os Estados…", Direitos da Criança, art. 15): só se for o próximo número.
+        if not m:
+            m = re.match(r'(\d+)\s+([A-ZÁ-Ú].*)$', t)
+            if m and int(m.group(1)) != len(art.get('inc', {})) + 1: m = None
         if m:
-            item = {'texto': m.group(2)}
+            item, ultima = {'texto': m.group(2)}, None
             art.setdefault('inc', {})[m.group(1)] = item
             i += 1
             continue
@@ -81,6 +85,14 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         if m:
             alvo = item if item is not None else art
             alvo.setdefault('ali', {})[m.group(1)] = m.group(2)
+            ultima = (alvo, m.group(1))
+            i += 1
+            continue
+        # Subitens em romanos dentro da alínea ("I) ser considerada inocente…", Direitos da Criança,
+        # art. 40.2.b): ficam no texto da alínea, um por linha.
+        m = re.match(r'([IVX]+)\)\s+(.*)$', t)
+        if m and ultima:
+            ultima[0]['ali'][ultima[1]] += '\n' + t
             i += 1
             continue
         # Linha de título (nome de capítulo/seção) logo antes de um ARTIGO: ignora.

@@ -45,8 +45,9 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
 | Convenção Interamericana sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016) | `decreto-8766.json` | 18/10/2026 |
 | Protocolo de San Salvador (Decreto 3.321/1999) | `decreto-3321.json` | 18/10/2026 (texto da página da CIDH, cidh.oas.org, não do Planalto) |
+| Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | `decreto-99710.json` | 18/10/2026 |
 
-**Convenções (CADH, Convenção contra a Tortura, Convenção de Belém do Pará, Convenção sobre Desaparecimento Forçado, Protocolo de San Salvador)** não seguem o padrão caput/§/inciso ("ARTIGO 1", itens "1.", alíneas "a)", parágrafos sem número). São citadas como "art. 8.2, h", "art. 7.b, f e g", "arts. 7.1 a 7.6" ou, com artigos em romanos (Desaparecimento Forçado), "arts. I.a e III"; a chave do artigo fica em romanos ("IV"). Elas são geradas por `ferramentas/convencao_planalto.py`, não pelo `legislacao_planalto.py`, e levam `itens: true` em `DIPLOMAS`.
+**Convenções (CADH, Convenção contra a Tortura, Convenção de Belém do Pará, Convenção sobre Desaparecimento Forçado, Protocolo de San Salvador, Convenção sobre os Direitos da Criança)** não seguem o padrão caput/§/inciso ("ARTIGO 1", itens "1.", alíneas "a)", parágrafos sem número). São citadas como "art. 8.2, h", "art. 7.b, f e g", "arts. 7.1 a 7.6" ou, com artigos em romanos (Desaparecimento Forçado), "arts. I.a e III"; a chave do artigo fica em romanos ("IV"). Elas são geradas por `ferramentas/convencao_planalto.py`, não pelo `legislacao_planalto.py`, e levam `itens: true` em `DIPLOMAS`.
 
 **CF e ADCT** vêm do mesmo compilado. Eles ficam em arquivos separados porque o ADCT recomeça a numeração no art. 1º. Para recortar cada parte, use `--fim` (CF) e `--inicio` (ADCT) com `'^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$'`.
 
