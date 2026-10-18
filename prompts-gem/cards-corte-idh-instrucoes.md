@@ -65,5 +65,5 @@ git checkout $B
 ## Situação
 
 - Base com 93 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
-- Todos os cards já revisados com a ficha nova. Sem `dicas` (não havia ficha com marcações nesta sessão): Heliodoro Portugal, Yvon Neptune, Acevedo Buendía, Barreto Leiva, Campo Algodonero, Las Dos Erres, Radilla Pacheco, Cabrera García e Montiel, Gelman, López Mendoza, Artavia Murillo, Furlan, Santo Domingo.
+- Todos os cards já revisados com a ficha nova. Sem `dicas` (não havia ficha com marcações nesta sessão): Yvon Neptune, Acevedo Buendía, Barreto Leiva, Campo Algodonero, Las Dos Erres, Radilla Pacheco, Cabrera García e Montiel, Gelman, López Mendoza, Artavia Murillo, Furlan, Santo Domingo.
 - Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados; use exatamente este nome no `processo`): Albán Cornejo e outros vs. Equador; Huilca Tecse vs. Peru; Massacres de Ituango vs. Colômbia; Raxcacó Reyes vs. Guatemala; Tristán Donoso vs. Panamá; Azul Rojas Marín e outra vs. Peru; Baldeón García vs. Peru; Cinco Aposentados vs. Peru; García Asto e Ramírez Rojas vs. Peru; Godínez Cruz vs. Honduras; La Cantuta vs. Peru; Meninas Yean e Bosico vs. República Dominicana; Nadege Dorzema e outros vs. República Dominicana; Petro Urrego vs. Colômbia.
