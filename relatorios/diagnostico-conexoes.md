@@ -17,8 +17,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
 | lei citacoes de artigo | 6048 |
-| lei citacoes ligadas | 5364 |
-| lei dispositivo nao localizado | 6 |
+| lei citacoes ligadas | 5365 |
+| lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 45 |
 | lei citacoes de diplomas fora da base | 633 |
 
@@ -106,12 +106,12 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Gomes Lund e outros ("Guerrilha do Araguaia") vs. Brasil" (jur_idh_gomes_lund)
 - Corte IDH · "Caso Trabalhadores da Fazenda Brasil Verde vs. Brasil" (jur_idh_fazenda_brasil_verde)
 - Corte IDH · "Caso Velásquez Rodríguez vs. Honduras" (jur_idh_velasquez_rodriguez)
-- Corte IDH · "Caso Villagrán Morales e outros ("Niños de la Calle") vs. Guatemala" (jur_idh_villagran_morales)
+- Corte IDH · "Caso Villagrán Morales e outros ("Meninos de Rua") vs. Guatemala" (jur_idh_villagran_morales)
 - Corte IDH · "Caso Cantoral Benavides vs. Peru" (jur_idh_cantoral_benavides)
 - Corte IDH · "Caso Barrios Altos vs. Peru" (jur_idh_barrios_altos)
 - Corte IDH · "Caso Ivcher Bronstein vs. Peru" (jur_idh_ivcher_bronstein)
 - Corte IDH · "Caso Favela Nova Brasília vs. Brasil" (jur_idh_favela_nova_brasilia)
-- Corte IDH · "Caso do Povo Indígena Xucuru e seus membros vs. Brasil" (jur_idh_xucuru)
+- Corte IDH · "Caso Povo Indígena Xucuru e seus membros vs. Brasil" (jur_idh_xucuru)
 - Corte IDH · "Caso Herzog e outros vs. Brasil" (jur_idh_herzog)
 - Corte IDH · "Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil" (jur_idh_fabrica_de_fogos)
 - Corte IDH · "Caso Barbosa de Souza e outros vs. Brasil" (jur_idh_barbosa_de_souza)
@@ -134,7 +134,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Corte IDH · "Caso Ricardo Canese vs. Paraguai" (jur_idh_ricardo_canese)
 - Corte IDH · "Caso Herrera Ulloa vs. Costa Rica" (jur_idh_herrera_ulloa)
 - Corte IDH · "Caso Tibi vs. Equador" (jur_idh_tibi)
-- Corte IDH · "Caso da Comunidade Moiwana vs. Suriname" (jur_idh_moiwana)
+- Corte IDH · "Caso Comunidade Moiwana vs. Suriname" (jur_idh_moiwana)
 - Corte IDH · "Caso Fermín Ramírez vs. Guatemala" (jur_idh_fermin_ramirez)
 - Corte IDH · "Caso Palamara Iribarne vs. Chile" (jur_idh_palamara_iribarne)
 - Corte IDH · "Caso Yatama vs. Nicarágua" (jur_idh_yatama)
@@ -144,7 +144,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - ADPF 862-RJ (jur_1788747185710_ld527r): "Art. 79, §1º" → Lei 8.906: art. 79 não existe no texto
 - REsp 1.854.662-CE, REsp 1.881.324-PE, REsp 1.881.283-RN e REsp 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 40, § 7º, I" → CF: inciso I não existe no trecho citado
-- Caso do Povo Saramaka vs. Suriname (jur_idh_saramaka): "arts. 231 e 68" → ADCT: art. 231 não existe no texto
 - ARE 1.215.727-SP (jur_1790222446982_c6cexa): "art. 40, § 4º, II" → CF: inciso II não existe no trecho citado
 - RMS 75.248-RS (jur_1790221818145_frhqt4): "arts. 34 e 70" → Lei 8.906: art. 70 não existe no texto
 
@@ -160,9 +159,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - ARE 848.993-MG (jur_1790221440885_rcskxx): "art. 11" — trecho: "EC nº 20/1998 art. 11"
 - Caso Empregados da Fábrica de Fogos de Santo Antônio de Jesus e seus familiares vs. Brasil (jur_idh_fabrica_de_fogos): "arts. 6º e 7º" — trecho: "Protocolo de San Salvador, arts. 6º e 7º"
 - Caso Comunidades Quilombolas de Alcântara vs. Brasil (jur_idh_quilombolas_alcantara): "art. 13" — trecho: "Protocolo de San Salvador, art. 13"
-- Caso do Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
+- Caso Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - Caso Mohamed vs. Argentina (jur_idh_mohamed): "art. 14" — trecho: "PIDCP, art. 14.5"
-- Caso do Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
+- Caso Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
 - Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
 - Caso Liakat Ali Alibux vs. Suriname (jur_idh_liakat_ali_alibux): "art. 14" — trecho: "PIDCP, art. 14.5"
 - Caso Gonzales Lluy e outros vs. Equador (jur_idh_gonzales_lluy): "arts. 10, 13 e 19" — trecho: "Protocolo de San Salvador, arts. 10, 13 e 19.6"
