@@ -4,22 +4,22 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4173 |
-| citacoes nas conexoes | 6581 |
+| fichas | 4174 |
+| citacoes nas conexoes | 6582 |
 | citacoes ligadas | 6154 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 382 |
-| citacoes fora do acervo | 427 |
+| citacoes fora do acervo | 428 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 75 |
+| processo nao reconhecido | 76 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5912 |
-| lei citacoes ligadas | 5276 |
+| lei citacoes de artigo | 5916 |
+| lei citacoes ligadas | 5279 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 21 |
+| lei artigo sem diploma | 22 |
 | lei citacoes de diplomas fora da base | 610 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -41,6 +41,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
 | ARE 1054490 | 2 |
+| AP 470 | 2 |
 | ADPF 442 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
@@ -65,7 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ADI 7492 | 1 |
 | ADI 7483 | 1 |
 | ADI 7490 | 1 |
-| RMS 66316 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
@@ -161,6 +161,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Mohamed vs. Argentina (jur_idh_mohamed): "art. 14" — trecho: "PIDCP, art. 14.5"
 - Caso do Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
 - Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
+- Caso Liakat Ali Alibux vs. Suriname (jur_idh_liakat_ali_alibux): "art. 14" — trecho: "PIDCP, art. 14.5"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
