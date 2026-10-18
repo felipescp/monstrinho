@@ -24,7 +24,7 @@ Leia este arquivo inteiro antes de processar qualquer ficha.
   - `estado` (na OC: o solicitante), `vitima`, `marco`, `tematica`
   - `sistematicaDetalhe`: "Série C, nº N"; `dataJulgado`: "AAAA-MM-DD" (ou só "AAAA" se desconhecida)
   - `temasIDH`: lista, usando **só** o vocabulário abaixo (criar tema novo só se nenhum servir)
-  - `dicas`: [{tipo, titulo, texto}] — `tipo` é "Vai cair", "Atenção", "Não confunda", "Cola na retina" ou "Green tips" (das marcações #VAICAIR, #ATENÇÃO, #NÃOCONFUNDA, #COLANARETINA e #GREENTIPS da ficha); `titulo` curto; `texto` em 1–2 frases. Inclua votação apertada e artigos NÃO violados relevantes como dica. Sem `sentencas` (campo abolido)
+  - `dicas`: [{tipo, titulo, texto}] — `tipo` é "Vai cair", "Atenção", "Não confunda", "Cola na retina" ou "Green tips" (das marcações #VAICAIR, #ATENÇÃO, #NÃOCONFUNDA, #COLANARETINA e #GREENTIPS da ficha); `titulo` curto; `texto` em 1–2 frases. Alvo de 5 a 8 dicas: unificar dicas afins e cortar o puramente processual (placar comum, custas, publicação, "sentença é reparação", quarta instância/esgotamento/reconhecimento parcial genéricos); placar só quando cobrável, embutido na dica temática. Inclua votação apertada e artigos NÃO violados relevantes como dica. Sem `sentencas` (campo abolido)
   - `artigosCADH`: lista de strings ("8.1", "25.1", "1.1", "2")
   - `tese`, `resumo` (fatos curtos)
   - `conceitos`: [{termo, explicacao}] (4–6)
