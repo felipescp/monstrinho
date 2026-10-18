@@ -15836,7 +15836,7 @@ window.LEISECA_RUNTIME = {
         let out = [];
         for (let i = 0; i < arts.length; i += 100) {
             let fatia = arts.slice(i, i + 100);
-            out.push({ titulo: 'Arts. ' + fatia[0] + ' a ' + fatia[fatia.length - 1], capitulo: null, arts: fatia });
+            out.push({ titulo: this._rotulo(true) + ' ' + fatia[0] + ' a ' + fatia[fatia.length - 1], capitulo: null, arts: fatia });
         }
         return out;
     },
@@ -15909,7 +15909,7 @@ window.LEISECA_RUNTIME = {
                 total++;
                 let passa = self._passaFiltro(a); if (passa) visiveis++;
                 let n = self._nivelArt(a), q = inc ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
-                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="Art. ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
             }).join('') + '</div>';
         }).join('');
         let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
@@ -15997,6 +15997,11 @@ window.LEISECA_RUNTIME = {
         this._salvar(); this._atualizarArt(a);
     },
 
+    // "Art." / "Arts."; "Regra" / "Regras" nas Regras de Mandela (DIPLOMAS[id].rotulo).
+    _rotulo: function(plural) {
+        let r = (window.LEGISLACAO.DIPLOMAS[this._diploma] || {}).rotulo;
+        return r ? r + (plural ? 's' : '') : (plural ? 'Arts.' : 'Art.');
+    },
     _htmlArtigo: function(a) {
         let self = this, j = this._textos[this._diploma];
         if (!a || !j || !j.artigos[a]) return '';
@@ -16011,7 +16016,7 @@ window.LEISECA_RUNTIME = {
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
         let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
-        let html = (art.texto || !itens ? linha('Art. ' + self._esc(a) + '.', art, a) : '') + alineas(art) +
+        let html = (art.texto || !itens ? linha(self._rotulo() + ' ' + self._esc(a) + '.', art, a) : '') + alineas(art) +
             (art.fecho ? '<div class="ls-d ls-n0">' + self._esc(art.fecho) + '</div>' : '') + incisos(art, a);
         if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
         Object.keys(art.par || {}).forEach(function(p) {
@@ -16024,12 +16029,12 @@ window.LEISECA_RUNTIME = {
         let opcoes = '<option value="">' + (sist ? 'Sistema: ' + { critico: 'Crítico', importante: 'Importante', regular: 'Regular' }[sist] : 'Sem prioridade') + '</option>' +
             this.NIVEIS.map(function(nv) { return '<option value="' + nv[0] + '"' + (manual === nv[0] ? ' selected' : '') + '>' + nv[1] + '</option>'; }).join('');
         let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
-        return '<div class="ls-art-cab"><span class="ls-art-tit">Art. ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
+        return '<div class="ls-art-cab"><span class="ls-art-tit">' + self._rotulo() + ' ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
             (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
             '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
-            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no Planalto">Planalto ↗</a>' : '') + '</span></div>' + html;
+            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no ' + self._esc(d.fonteNome || 'Planalto') + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
     }
 };
 window.abrirLeiSecaModal = function() {
@@ -37852,6 +37857,10 @@ window.LEGISLACAO = (function() {
               re: /Protocolo\s+Facultativo\s+(?:[àa]\s+)?(?:CDPD|Conven[çc][ãa]o\s+(?:Internacional\s+)?sobre\s+os\s+Direitos\s+das\s+Pessoas\s+com\s+Defici[êe]ncia)/g },
         D6949: { nome: 'CDPD', arquivo: 'dados/legislacao/decreto-6949.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/decreto/d6949.htm', itens: true, promulgacao: 'Decreto 6.949/2009',
               re: /(?<!Facultativo\s)(?<!Facultativo\s[àa]\s)(?:\bCDPD\b|Conven[çc][ãa]o\s+(?:Internacional\s+)?(?:da\s+ONU\s+)?sobre\s+os\s+Direitos\s+das?\s+Pessoas?\s+com\s+Defici[êe]ncias?)|Decreto\s*n?[º°o.]*\s*6\.?949(?![\d.])/g },
+        // Regras de Mandela (edição do CNJ, 2016): não promulgadas por decreto; citadas por "regra" ("regras 43 a 45").
+        MANDELA: { nome: 'Regras de Mandela', arquivo: 'dados/legislacao/regras-mandela.json', planalto: 'https://www.cnj.jus.br/', itens: true, rotulo: 'Regra', fonteNome: 'CNJ',
+              rodape: 'Edição do CNJ (2016), Série Tratados Internacionais de Direitos Humanos',
+              re: /Regras\s+de\s+(?:Nelson\s+)?Mandela|Regras\s+M[íi]nimas\s+(?:das\s+Na[çc][õo]es\s+Unidas|da\s+ONU)\s+para\s+o\s+Tratamento\s+(?:de\s+Presos|d[eo]s?\s+Reclusos)/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -37903,7 +37912,7 @@ window.LEGISLACAO = (function() {
                 // Artigos em romanos só onde o diploma os usa (Desaparecimento Forçado): "CADH, art. 25, I" não vira art. I.
                 // Alínea depois de ponto vai até "z" ("7.1.k", Estatuto de Roma); depois de vírgula, só "a" a "j" ("art. 5, o Estado" não é alínea).
                 let ALI = '["“]?[a-j]["”]?(?![\\w])', ALIP = '\\.["“]?[a-z]["”]?(?![\\w])', ROM = DIPLOMAS[msIds[0]].romanos ? '[IVXL]{1,6}(?![\\w])' : '(?!)', UN = '(?:\\d{1,2}[ºo°]?|' + ROM + ')(?:\\.\\d{1,2})?(?:(?:' + ALIP + '|\\s*,\\s*' + ALI + ')(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?';
-                let id = msIds[0], reA = new RegExp('\\b[Aa]rt(?:igo)?s?\\.?\\s*((?:' + UN + '(?:\\s*(?:,|\\be\\b|\\ba\\b)\\s*(?=\\d|' + ROM + '))?)+)', 'g'), mA;
+                let id = msIds[0], reA = new RegExp('\\b(?:[Aa]rt(?:igo)?s?\\.?' + (DIPLOMAS[msIds[0]].rotulo ? '|[Rr]egras?' : '') + ')\\s*((?:' + UN + '(?:\\s*(?:,|\\be\\b|\\ba\\b)\\s*(?=\\d|' + ROM + '))?)+)', 'g'), mA;
                 while ((mA = reA.exec(seg))) {
                     let corpo = mA[1], iniC = mA.index + mA[0].indexOf(corpo), reN = new RegExp('(\\d{1,2}|' + ROM + ')[ºo°]?(?:\\.(\\d{1,2}))?((?:(?:' + ALIP + '|\\s*,\\s*' + ALI + ')(?:\\s*(?:,|\\be\\b)\\s*' + ALI + ')*)?)', 'g'), n, primeiro = true;
                     while ((n = reN.exec(corpo))) {
@@ -37991,7 +38000,7 @@ window.LEGISLACAO = (function() {
         let a = j.artigos[p[1]];
         if (d.itens) {
             // CADH: itens numerados (1., 2.) com alíneas; citado só o artigo, mostra todos.
-            let h = '<div class="jur-ref-cab">' + esc(d.nome + ' · art. ' + p[1] + (p[3] ? '.' + p[3] : '') + (p[4] ? ', "' + p[4] + '"' : '')) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
+            let h = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + (d.rotulo || 'art.').toLowerCase() + ' ' + p[1] + (p[3] ? '.' + p[3] : '') + (p[4] ? ', "' + p[4] + '"' : '')) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
             if (!a) return h + '<div>Artigo não localizado no texto.</div>';
             let alis = function(o, so) { return Object.keys(o.ali || {}).filter(function(k) { return !so || k === so; }).map(function(k) { return '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + esc(o.ali[k]) + '</div>'; }).join(''); };
             if (a.texto) h += '<div class="lei-disp">' + esc(a.texto) + '</div>' + alis(a, p[3] ? '' : p[4]);
@@ -38001,7 +38010,7 @@ window.LEGISLACAO = (function() {
                 if (!itens[k]) { h += '<div class="lei-disp">Item ' + esc(k) + ' não localizado.</div>'; return; }
                 h += '<div class="lei-disp"><b>' + esc(k) + '.</b> ' + esc(itens[k].texto) + '</div>' + alis(itens[k], p[4]);
             });
-            return h + '<div class="jur-ref-dica">Promulgada pelo ' + esc(d.promulgacao) + ' · clique para abrir no Planalto</div>';
+            return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir no ' + esc(d.fonteNome || 'Planalto') + '</div>';
         }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
@@ -38079,7 +38088,7 @@ window.LEGISLACAO = (function() {
     function mostrarBalao(el) {
         let chave = el.getAttribute('data-lei'), ano = el.getAttribute('data-ano'), id = chave.split('|')[0];
         if (cache[id]) { _glosMostrarTooltip(el, htmlBalao(chave, ano, cache[id])); return; }
-        let pc = chave.split('|'), rot = DIPLOMAS[id].itens ? 'art. ' + pc[1] + (pc[3] ? '.' + pc[3] : '') + (pc[4] ? ', "' + pc[4] + '"' : '') : rotulo(pc);
+        let pc = chave.split('|'), rot = DIPLOMAS[id].itens ? (DIPLOMAS[id].rotulo || 'art.').toLowerCase() + ' ' + pc[1] + (pc[3] ? '.' + pc[3] : '') + (pc[4] ? ', "' + pc[4] + '"' : '') : rotulo(pc);
         _glosMostrarTooltip(el, '<div class="jur-ref-cab">' + esc(DIPLOMAS[id].nome + ' · ' + rot) + '</div><div>Carregando o texto da lei…</div>');
         carregar(id).then(function(j) {
             // Só redesenha se o mouse ainda estiver sobre o mesmo trecho.
