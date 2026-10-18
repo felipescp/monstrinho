@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -20,6 +20,8 @@ import sys
 
 
 def limpar(t):
+    t = re.sub(r'^\s*#+\s*', '', t)  # cabeçalho Markdown ("## Artigo 4", "# Direito à saúde")
+    t = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', t).replace('\u2011', '-')  # link; hífen inseparável ("comprometem‑se")
     t = re.sub(r'\\([.*_\-])', r'\1', t)
     t = re.sub(r'\*\*|__', '', t).replace('\u00ad', '')  # hífen invisível ("desa­parecimento")
     return re.sub(r'\s+', ' ', t).strip()
@@ -30,11 +32,17 @@ CADH = ('CADH', 'Convenção Americana sobre Direitos Humanos (Pacto de São Jos
 
 
 def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], titulo=CADH[4]):
-    linhas = [limpar(l) for l in open(src, encoding='utf-8')]
-    linhas = [l for l in linhas if l and l != '*']  # "\*" solto no fim do compilado
+    brutas = []
+    for l in open(src, encoding='utf-8'):
+        # Página salva como uma célula de tabela, com <br> entre as linhas (Protocolo de San Salvador, site da CIDH).
+        brutas += l.strip().strip('|').split('<br>') if '<br>' in l else [l]
+    brutas = [b for b in brutas if limpar(b) and limpar(b) != '*']  # "\*" solto no fim do compilado
+    linhas = [limpar(b) for b in brutas]
+    negrito = [bool(re.match(r'\s*(\*\*|#)', b)) for b in brutas]
     ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
     # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
-    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em f[ée] do que', l, re.I))), len(linhas))
+    # Navegação da página da CIDH ("[ ÍNDICE | ANTERIOR | PRÓXIMO ]") também encerra.
+    fim = next((i for i, l in enumerate(linhas) if i > ini and (l.startswith('Declarações e reservas') or re.match(r'Em f[ée] do que', l, re.I) or ('ÍNDICE' in l and 'ANTERIOR' in l))), len(linhas))
     artigos, art, item = {}, None, None
     i = ini
     while i < fim:
@@ -44,6 +52,14 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             art = {'texto': ''}
             artigos[m.group(1)] = art
             item = None
+            # Rubrica em negrito que ocupa mais de uma linha (San Salvador, arts. 21 e 22).
+            j = i + 1
+            while j < fim and negrito[j] and len(linhas[j]) < 90 and not re.match(r'(ARTIGO\s|\d+\.\s|[a-z][.)]\s)', linhas[j], re.I):
+                j += 1
+            if j > i + 2:
+                art['rubrica'] = ' '.join(linhas[i + 1:j])
+                i = j
+                continue
             prox = linhas[i + 1] if i + 1 < fim else ''
             if prox and not re.match(r'(\d+\.|[a-z]\)|ARTIGO|CAP[ÍI]TULO|PARTE|Se[çc][ãa]o)', prox, re.I) and len(prox) < 90 and not prox.endswith(('.', ':', ';')):
                 art['rubrica'] = prox
@@ -60,7 +76,8 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             i += 1
             continue
         # "a) texto" ou "- a. texto" (Desaparecimento Forçado).
-        m = re.match(r'(?:-\s*)?([a-z])\)\s+(.*)$', t) or re.match(r'-\s*([a-z])\.\s+(.*)$', t)
+        # "a. Texto" (San Salvador): só com maiúscula depois, para não pegar continuação.
+        m = re.match(r'(?:-\s*)?([a-z])\)\s+(.*)$', t) or re.match(r'-\s*([a-z])\.\s+(.*)$', t) or re.match(r'([a-z])\.\s+([A-ZÁ-Ú].*)$', t)
         if m:
             alvo = item if item is not None else art
             alvo.setdefault('ali', {})[m.group(1)] = m.group(2)
