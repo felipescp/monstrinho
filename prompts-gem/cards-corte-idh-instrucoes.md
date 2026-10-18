@@ -64,6 +64,6 @@ git checkout $B
 
 ## Situação
 
-- Base com 60 casos contenciosos; nenhuma Opinião Consultiva ainda.
-- Ainda **não refeitos** com o prompt novo (fichas antigas): Loayza Tamayo; Ximenes Lopes, Nogueira de Carvalho, Escher, Garibaldi, Gomes Lund, Fazenda Brasil Verde; e os casos contra o Brasil de Favela Nova Brasília a Leite e Crispim.
-- Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados): Albán Cornejo, Castillo Petruzzi, Baldeón García, Tristán Donoso, Huilca Tecse, Massacres de Ituango, Godínez Cruz, Instituto de Reeducação do Menor, García Asto, La Cantuta, Tribunal Constitucional, Meninas Yean e Bosico, Saramaka, Lagos del Campo, Cinco Aposentados, Raxcacó Reyes, Petro Urrego, I.V. vs. Bolívia.
+- Base com 88 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
+- Ainda **não refeitos** com o prompt novo (fichas antigas): Loayza Tamayo; Nogueira de Carvalho, Escher, Garibaldi, Gomes Lund, Fazenda Brasil Verde; e os casos contra o Brasil de Favela Nova Brasília a Leite e Crispim.
+- Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados): Albán Cornejo, Azul Rojas Marín, Baldeón García, Castillo Petruzzi, Cinco Aposentados, García Asto e Ramírez Rojas, Godínez Cruz, Huilca Tecse, I.V. vs. Bolívia, Instituto de Reeducação do Menor, La Cantuta, Massacres de Ituango, Meninas Yean e Bosico, Nadege Dorzema, Petro Urrego, Povo Saramaka ("Caso do Povo Saramaka vs. Suriname"), Raxcacó Reyes, Tristán Donoso, Tribunal Constitucional vs. Peru ("Caso do Tribunal Constitucional vs. Peru").
