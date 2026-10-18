@@ -65,5 +65,5 @@ git checkout $B
 ## Situação
 
 - Base com 88 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
-- Ainda **não refeitos** com o prompt novo (fichas antigas): Loayza Tamayo; Escher, Garibaldi, Gomes Lund, Fazenda Brasil Verde; e os casos contra o Brasil de Favela Nova Brasília a Leite e Crispim.
+- Ainda **não refeitos** com o prompt novo (fichas antigas): Loayza Tamayo; Garibaldi, Gomes Lund, Fazenda Brasil Verde; e os casos contra o Brasil de Favela Nova Brasília a Leite e Crispim.
 - Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados): Albán Cornejo, Azul Rojas Marín, Baldeón García, Castillo Petruzzi, Cinco Aposentados, García Asto e Ramírez Rojas, Godínez Cruz, Huilca Tecse, I.V. vs. Bolívia, Instituto de Reeducação do Menor, La Cantuta, Massacres de Ituango, Meninas Yean e Bosico, Nadege Dorzema, Petro Urrego, Povo Saramaka ("Caso do Povo Saramaka vs. Suriname"), Raxcacó Reyes, Tristán Donoso, Tribunal Constitucional vs. Peru ("Caso do Tribunal Constitucional vs. Peru").
