@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4195 |
+| fichas | 4196 |
 | citacoes nas conexoes | 6624 |
 | citacoes ligadas | 6175 |
 | sem tribunal | 0 |
@@ -13,11 +13,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 97 |
+| processo nao reconhecido | 98 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6037 |
-| lei citacoes ligadas | 5354 |
+| lei citacoes de artigo | 6042 |
+| lei citacoes ligadas | 5359 |
 | lei dispositivo nao localizado | 6 |
 | lei artigo sem diploma | 44 |
 | lei citacoes de diplomas fora da base | 633 |
