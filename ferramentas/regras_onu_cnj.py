@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regras da ONU na edição do CNJ (Série Tratados Internacionais de Direitos Humanos, 2016),
-PDF convertido em Markdown → JSON da lei seca: Regras de Mandela e Regras de Bangkok.
+PDF convertido em Markdown → JSON da lei seca: Regras de Mandela e Regras de Bangkok; também a
+Declaração das Nações Unidas sobre os Direitos dos Povos Indígenas (edição da UNIC Rio, 2009).
 
 As Regras não foram promulgadas por decreto: não há compilado do Planalto. O PDF do CNJ
 chega com linhas quebradas no meio da frase, cabeçalho e número de página repetidos
@@ -12,7 +13,11 @@ Nas Regras de Bangkok, o CNJ intercala o texto das antigas Regras Mínimas que c
 complementa ("[Complementa a regra 7 das Regras mínimas…]", "## 7.", "1) …"): esse bloco
 vai até a próxima Regra e sai.
 
-Uso: python3 ferramentas/regras_onu_cnj.py mandela|bangkok <arquivo.md> <saida.json> AAAA-MM-DD
+Na Declaração (UNIC Rio), a palavra hifenizada no fim da linha é rejuntada ("liber-" / "dades"),
+e o rodapé de cada página (número, título corrido, nota "- Resolução 217 A (III).", marca
+"declaracaoPovosInd grafk:Layout…") sai; a chamada de nota no meio do texto ("## 4") também.
+
+Uso: python3 ferramentas/regras_onu_cnj.py mandela|bangkok|declaracao <arquivo.md> <saida.json> AAAA-MM-DD
 """
 import os
 import re
@@ -22,18 +27,62 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import convencao_planalto  # noqa: E402
 
+CNJ = 'https://www.cnj.jus.br/'
 DIPLOMAS = {
-    'mandela': ('MANDELA', 'Regras Mínimas das Nações Unidas para o Tratamento de Presos (Regras de Mandela)'),
-    'bangkok': ('BANGKOK', 'Regras das Nações Unidas para o Tratamento de Mulheres Presas e Medidas Não Privativas de Liberdade para Mulheres Infratoras (Regras de Bangkok)'),
+    'mandela': ('MANDELA', 'Regras Mínimas das Nações Unidas para o Tratamento de Presos (Regras de Mandela)', CNJ),
+    'bangkok': ('BANGKOK', 'Regras das Nações Unidas para o Tratamento de Mulheres Presas e Medidas Não Privativas de Liberdade para Mulheres Infratoras (Regras de Bangkok)', CNJ),
+    'declaracao': ('DNUDPI', 'Declaração das Nações Unidas sobre os Direitos dos Povos Indígenas', 'http://www.un.org/esa/socdev/unpfii/en/declaration.html'),
 }
-RE_REGRA = re.compile(r'^(?:##\s*)?Regra\s+(\d+)\s*$')
+RE_REGRA = re.compile(r'^(?:##\s*)?(?:Regra|Artigo)\s+(\d+)\s*$')
 
 
-def normalizar(src):
+def vocabulario():
+    import glob
+    import json
+    voc = set()
+    def walk(o):
+        if isinstance(o, dict): [walk(v) for v in o.values()]
+        elif isinstance(o, list): [walk(v) for v in o]
+        elif isinstance(o, str): voc.update(w.lower() for w in re.findall(r'[A-Za-zÀ-ÿ]+', o))
+    for f in glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'dados', 'legislacao', '*.json')):
+        walk(json.load(open(f, encoding='utf-8')))
+    return voc
+
+
+def pagina_e_hifen(brutas):
+    """Declaração (UNIC Rio): tira o rodapé de cada página e rejunta a palavra hifenizada no fim da linha."""
+    limpas, i = [], 0
+    while i < len(brutas):
+        t = re.sub(r'^##\s*', '', brutas[i].strip())
+        if re.fullmatch(r'\d+', t):
+            # Número de página: o rodapé vai até a marca de diagramação, logo abaixo.
+            j = next((k for k in range(i + 1, min(i + 6, len(brutas))) if 'grafk:Layout' in brutas[k]), None)
+            i = (j if j is not None else i) + 1
+            continue
+        if 'grafk:Layout' not in brutas[i]:
+            limpas.append(brutas[i])
+        i += 1
+    voc, out = vocabulario(), []
+    for l in limpas:
+        if not l.strip() and out and re.search(r'[A-Za-zÀ-ÿ]-$', out[-1].rstrip()):
+            continue  # linha em branco entre "reconhe-" e "cimento" (quebra de página)
+        if out and re.search(r'[A-Za-zÀ-ÿ]-$', out[-1].rstrip()) and re.match(r'\s*[a-zà-ú]', l):
+            ant = out[-1].rstrip()
+            a, b = re.search(r'([A-Za-zÀ-ÿ]+)-$', ant).group(1), re.match(r'\s*([a-zà-ú]+)', l).group(1)
+            # "liber-" + "dades" → "liberdades"; "bem-" + "estar" fica "bem-estar".
+            out[-1] = ant[:-1] + l.strip() if (a + b).lower() in voc else ant + l.strip()
+        else:
+            out.append(l)
+    return out
+
+
+def normalizar(src, qual='mandela'):
     brutas = [l.rstrip('\n') for l in open(src, encoding='utf-8')]
+    if qual == 'declaracao':
+        brutas = pagina_e_hifen(brutas)
     ini = next(i for i, l in enumerate(brutas) if RE_REGRA.match(l.strip()))
     # Fim: a parte em inglês ("## United Nations", Mandela) ou o fecho da resolução ("45ª Sessão Plenária", Bangkok).
-    fim = next((i for i, l in enumerate(brutas) if i > ini and re.match(r'^(?:##\s*)?(United Nations|E/CN\.15|\d+ª Sess[ãa]o Plen[áa]ria)', l.strip())), len(brutas))
+    fim = next((i for i, l in enumerate(brutas) if i > ini and re.match(r'^(?:##\s*)?(United Nations|E/CN\.15|\d+ª Sess[ãa]o Plen[áa]ria|Perguntas e respostas)', l.strip())), len(brutas))
     linhas, citado = [], False
     for l in brutas[ini:fim]:
         t = re.sub(r'\s+', ' ', l.replace(' ', ' ')).strip()
@@ -64,7 +113,7 @@ def normalizar(src):
         if re.match(r'^\d{1,3}\s+[A-ZÁ-Ú]', t):
             nota = True
             continue
-        novo = re.match(r'^-\s*(.*)$', t) or re.match(r'^\(([a-z])\)\s*(.*)$', t)
+        novo = re.match(r'^-\s*(.*)$', t) or re.match(r'^\(([a-z])\)\s*(.*)$', t) or (qual == 'declaracao' and re.match(r'^[a-z]\)\s', t))
         if nota and not novo:
             continue
         nota = False
@@ -81,7 +130,7 @@ def normalizar(src):
             item += 1
             out.append('%d. %s' % (item, m.group(1)))
             continue
-        m = re.match(r'^\(([a-z])\)\s*(.*)$', t)
+        m = re.match(r'^\(([a-z])\)\s*(.*)$', t) or (qual == 'declaracao' and re.match(r'^([a-z])\)\s+(.*)$', t))
         if m:
             out.append('%s) %s' % (m.group(1), m.group(2)))
             continue
@@ -95,10 +144,10 @@ def normalizar(src):
 
 def main(qual, src, dst, data):
     with tempfile.NamedTemporaryFile('w', suffix='.md', delete=False, encoding='utf-8') as f:
-        f.write(normalizar(src))
+        f.write(normalizar(src, qual))
     try:
-        ident, nome = DIPLOMAS[qual]
-        convencao_planalto.main(f.name, dst, ident, nome, 'https://www.cnj.jus.br/', data, 'REGRAS DA ONU')
+        ident, nome, fonte = DIPLOMAS[qual]
+        convencao_planalto.main(f.name, dst, ident, nome, fonte, data, 'REGRAS DA ONU')
     finally:
         os.unlink(f.name)
 

@@ -56,5 +56,6 @@ python3 -I ferramentas/convencao_planalto.py /root/.claude/uploads/ef447e4b-ca92
 # Regras de Mandela e de Bangkok: PDF do CNJ (2016) convertido em Markdown; pré-processado por regras_onu_cnj.py.
 python3 -I ferramentas/regras_onu_cnj.py mandela /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/fea7f8ec-mandela.md dados/legislacao/regras-mandela.json 2026-10-18 >/dev/null
 python3 -I ferramentas/regras_onu_cnj.py bangkok /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/37929980-bangkok.md dados/legislacao/regras-bangkok.json 2026-10-18 >/dev/null
+python3 -I ferramentas/regras_onu_cnj.py declaracao /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/34fb7df8-declaracao.md dados/legislacao/declaracao-povos-indigenas.json 2026-10-18 >/dev/null
 # Convenção 169 da OIT: texto reconstruído e revisado (ver comentário no topo de ferramentas/textos/convencao-169-oit.md).
 python3 -I ferramentas/convencao_planalto.py ferramentas/textos/convencao-169-oit.md dados/legislacao/convencao-169-oit.json OIT169 "Convenção nº 169 da OIT sobre Povos Indígenas e Tribais" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/decreto/d10088.htm 2026-10-18 "CONVENÇÃO 169 DA OIT" >/dev/null
