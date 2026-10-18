@@ -5,8 +5,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4192 |
-| citacoes nas conexoes | 6613 |
-| citacoes ligadas | 6169 |
+| citacoes nas conexoes | 6614 |
+| citacoes ligadas | 6170 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 389 |
 | citacoes fora do acervo | 444 |
@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 94 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6004 |
-| lei citacoes ligadas | 5334 |
+| lei citacoes de artigo | 6007 |
+| lei citacoes ligadas | 5335 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 40 |
-| lei citacoes de diplomas fora da base | 625 |
+| lei citacoes de diplomas fora da base | 627 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -192,12 +192,12 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Decreto-Lei 911 | 9 |
 | Lei 11.340 | 9 |
 | Lei 9.279 | 9 |
+| CPM | 8 |
 | Decreto-Lei 3.365 | 8 |
 | Lei 8.987 | 8 |
 | Lei 12.594 | 8 |
 | Regimento | 8 |
 | Lei 8.072 | 8 |
-| CPM | 7 |
 | Lei 9.096 | 7 |
 | Lei 9.430 | 7 |
 | Lei 8.212 | 7 |
