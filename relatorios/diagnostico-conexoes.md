@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4185 |
-| citacoes nas conexoes | 6589 |
-| citacoes ligadas | 6158 |
+| fichas | 4186 |
+| citacoes nas conexoes | 6593 |
+| citacoes ligadas | 6159 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 384 |
-| citacoes fora do acervo | 431 |
+| citacoes fora do acervo | 434 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 87 |
+| processo nao reconhecido | 88 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5967 |
-| lei citacoes ligadas | 5312 |
+| lei citacoes de artigo | 5969 |
+| lei citacoes ligadas | 5313 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 34 |
-| lei citacoes de diplomas fora da base | 616 |
+| lei citacoes de diplomas fora da base | 617 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -31,6 +31,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
 | ADPF 442 | 3 |
+| RESP 1977124 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
 | RESP 1464226 | 3 |
@@ -43,6 +44,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RESP 2103140 | 2 |
 | ARE 1054490 | 2 |
 | AP 470 | 2 |
+| ADO 26 | 2 |
+| MI 4733 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -54,7 +57,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RESP 2046026 | 2 |
 | ADI 5069 | 2 |
 | RESP 1894736 | 2 |
-| RESP 1977124 | 2 |
 | HC 117638 | 2 |
 | RESP 1881751 | 2 |
 | CC 208449 | 2 |
@@ -64,8 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SS 3902 | 1 |
 | RE 592317 | 1 |
 | ADI 7492 | 1 |
-| ADI 7483 | 1 |
-| ADI 7490 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
@@ -180,7 +180,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| Convenção | 28 |
+| Convenção | 29 |
 | CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
