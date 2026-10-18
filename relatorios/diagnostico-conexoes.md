@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4184 |
-| citacoes nas conexoes | 6588 |
+| fichas | 4185 |
+| citacoes nas conexoes | 6589 |
 | citacoes ligadas | 6158 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 384 |
-| citacoes fora do acervo | 430 |
+| citacoes fora do acervo | 431 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 86 |
+| processo nao reconhecido | 87 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5960 |
-| lei citacoes ligadas | 5308 |
+| lei citacoes de artigo | 5967 |
+| lei citacoes ligadas | 5312 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 33 |
-| lei citacoes de diplomas fora da base | 614 |
+| lei artigo sem diploma | 34 |
+| lei citacoes de diplomas fora da base | 616 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -30,6 +30,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | ADPF 153 | 4 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
+| ADPF 442 | 3 |
 | ADO 88 | 3 |
 | ADI 7888 | 3 |
 | RESP 1464226 | 3 |
@@ -42,7 +43,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RESP 2103140 | 2 |
 | ARE 1054490 | 2 |
 | AP 470 | 2 |
-| ADPF 442 | 2 |
 | RMS 39173 | 2 |
 | ADI 4992 | 2 |
 | ADI 2917 | 2 |
@@ -173,14 +173,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "arts. 10 e 17" — trecho: "Protocolo de San Salvador, arts. 10 e 17"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
-- REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
+- Caso Manuela e outros vs. El Salvador (jur_idh_manuela): "art. 12" — trecho: "CEDAW, art. 12"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| Convenção | 27 |
+| Convenção | 28 |
 | CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
