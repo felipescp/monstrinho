@@ -16,10 +16,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 99 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6094 |
-| lei citacoes ligadas | 5464 |
+| lei citacoes de artigo | 6095 |
+| lei citacoes ligadas | 5467 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 29 |
+| lei artigo sem diploma | 27 |
 | lei citacoes de diplomas fora da base | 596 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -158,7 +158,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - RE 609.381-GO (jur_1790221383512_ti5szd): "art. 9º" — trecho: "EC 41/2003 art. 9º"
 - ARE 848.993-MG (jur_1790221440885_rcskxx): "art. 11" — trecho: "EC nº 20/1998 art. 11"
 - Caso Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
-- Caso Povo Indígena Kichwa de Sarayaku vs. Equador (jur_idh_sarayaku): "arts. 19 e 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), arts. 19 e 32"
 - Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "arts. 3º e 4º" — trecho: "Carta Democrática Interamericana (2001), arts. 3º e 4º"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "art. 36" — trecho: "LOMAN, art. 36"
@@ -167,13 +166,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
-- Caso Povo Saramaka vs. Suriname (jur_idh_saramaka): "art. 32" — trecho: "Declaração da ONU sobre os Direitos dos Povos Indígenas (2007), art. 32"
 - Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
 - RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
 - ADI 6.828-AL (jur_1788480450899_7xr0dc): "art. 16" — trecho: "EC 132/2023, art. 16 (regra de transição da Reforma Tributária)"
+- RE 791.961 ED (jur_1790222446982_6f7qsw): "art. 25" — trecho: "EC 103/2019 art. 25"
+- REsp 2.205.708-PR (jur_1791073076179_c70tju): "art. 10, § 2º" — trecho: "MP 2.200-2/2001, art. 10, § 2º"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 

@@ -16034,7 +16034,7 @@ window.LEISECA_RUNTIME = {
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
             '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
-            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto no ' + self._esc(d.fonteNome || 'Planalto') + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
+            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto ' + self._esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
     }
 };
 window.abrirLeiSecaModal = function() {
@@ -37867,6 +37867,10 @@ window.LEGISLACAO = (function() {
         // Convenção 169 da OIT (Decreto 5.051/2004; hoje Anexo LXXII do Decreto 10.088/2019). Sem "Decreto 10.088" sozinho: ele consolida várias convenções da OIT.
         OIT169: { nome: 'Convenção 169 da OIT', arquivo: 'dados/legislacao/convencao-169-oit.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/decreto/d10088.htm', itens: true, promulgacao: 'Decreto 5.051/2004 (Anexo LXXII do Decreto 10.088/2019)',
               re: /Conven[çc][ãa]o\s+(?:n[º°o.]*\s*)?169\s+da\s+OIT|Conven[çc][ãa]o\s+(?:da\s+)?OIT\s+(?:n[º°o.]*\s*)?169|Conven[çc][ãa]o\s+(?:n[º°o.]*\s*169\s+)?sobre\s+Povos\s+Ind[íi]genas\s+e\s+Tribais|Decreto\s*n?[º°o.]*\s*5\.?051(?![\d.])/g },
+        // Declaração da ONU sobre os Direitos dos Povos Indígenas (Resolução 61/295, 2007; edição da UNIC Rio, 2009). Não pega a Declaração Americana.
+        DNUDPI: { nome: 'Declaração da ONU sobre os Direitos dos Povos Indígenas', arquivo: 'dados/legislacao/declaracao-povos-indigenas.json', planalto: 'http://www.un.org/esa/socdev/unpfii/en/declaration.html', itens: true, fonteNome: 'ONU', fonteNo: 'na ONU',
+              rodape: 'Aprovada pela Assembleia Geral da ONU em 13/9/2007 (Resolução 61/295); tradução da UNIC Rio (2009)',
+              re: /Declara[çc][ãa]o\s+(?:da\s+ONU\s+|das\s+Na[çc][õo]es\s+Unidas\s+)?sobre\s+os\s+Direitos\s+dos\s+Povos\s+Ind[íi]genas(?:\s*\(2007\))?|\bUNDRIP\b/g },
         // ADCT recomeça a numeração (art. 1º…): arquivo próprio; âncora do Planalto "#adctart107a".
         ADCT: { nome: 'ADCT', arquivo: 'dados/legislacao/adct.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm', ancora: 'adctart',
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
@@ -38016,7 +38020,7 @@ window.LEGISLACAO = (function() {
                 if (!itens[k]) { h += '<div class="lei-disp">Item ' + esc(k) + ' não localizado.</div>'; return; }
                 h += '<div class="lei-disp"><b>' + esc(k) + '.</b> ' + esc(itens[k].texto) + '</div>' + alis(itens[k], p[4]);
             });
-            return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir no ' + esc(d.fonteNome || 'Planalto') + '</div>';
+            return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir ' + esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '</div>';
         }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
