@@ -5,8 +5,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4192 |
-| citacoes nas conexoes | 6610 |
-| citacoes ligadas | 6166 |
+| citacoes nas conexoes | 6613 |
+| citacoes ligadas | 6169 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 389 |
 | citacoes fora do acervo | 444 |
