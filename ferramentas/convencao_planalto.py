@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Convenção promulgada por decreto (CADH, Decreto 678/1992; Convenção contra a
-Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002) → JSON da lei seca.
+Tortura, Decreto 98.386/1989; Convenção de Belém do Pará, Decreto 1.973/1996; Desaparecimento Forçado, Decreto 8.766/2016; Protocolo de San Salvador, Decreto 3.321/1999; Direitos da Criança, Decreto 99.710/1990; CEDAW, Decreto 4.377/2002; Estatuto de Roma, Decreto 4.388/2002) → JSON da lei seca.
 
 A convenção não segue o padrão de lei brasileira (caput, §, inciso): cada "ARTIGO N"
 tem rubrica e itens numerados ("1.", "2."), que podem ter alíneas ("a)").
@@ -24,8 +24,15 @@ def limpar(t):
     t = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', t)  # "Artigo 1<sup>o</sup>" (CEDAW)
     t = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', t).replace('\u2011', '-')  # link; hífen inseparável ("comprometem‑se")
     t = re.sub(r'\\([.*_\-])', r'\1', t)
+    t = re.sub(r'(?<![\w/])_([^_]+)_(?!\w)', r'\1', t)  # itálico ("_apartheid_", Estatuto de Roma)
     t = re.sub(r'\*\*|__', '', t).replace('\u00ad', '')  # hífen invisível ("desa­parecimento")
     return re.sub(r'\s+', ' ', t).strip()
+
+
+def junta(a, t):
+    # Parágrafo novo só depois de pontuação final; frase partida no meio continua na mesma linha (Estatuto de Roma, art. 45).
+    if not a: return t
+    return a + ('\n' if re.search(r'[.:;!?"”)]$', a) else ' ') + t
 
 
 CADH = ('CADH', 'Convenção Americana sobre Direitos Humanos (Pacto de São José da Costa Rica)',
@@ -79,11 +86,21 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         if m:
             item, ultima = {'texto': m.group(2)}, None
             art.setdefault('inc', {})[m.group(1)] = item
+            # Item e alínea na mesma linha ("2. a) A Presidência…", Estatuto de Roma, art. 36).
+            mm = re.match(r'([a-z])\)\s+(.*)$', item['texto'])
+            if mm:
+                item['texto'] = ''
+                item['ali'] = {mm.group(1): mm.group(2)}
+                ultima = (item, mm.group(1))
             i += 1
             continue
         # "a) texto" ou "- a. texto" (Desaparecimento Forçado).
         # "a. Texto" (San Salvador): só com maiúscula depois, para não pegar continuação.
-        m = re.match(r'(?:-\s*)?([a-z])\)\s+(.*)$', t) or re.match(r'-\s*([a-z])\.\s+(.*)$', t) or re.match(r'([a-z])\.\s+([A-ZÁ-Ú].*)$', t)
+        # "i)", "v)", "x)" só são alínea logo depois da letra anterior; senão, subitem em romanos
+        # (Estatuto de Roma, art. 8.2.a: "i) Homicídio doloso"), tratado abaixo.
+        m = re.match(r'(?:-\s*)?([a-z])\)\s+(.*)$', t)
+        if m and m.group(1) in 'ivx' and ultima and ord(m.group(1)) != ord(ultima[1]) + 1: m = None
+        m = m or re.match(r'-\s*([a-z])\.\s+(.*)$', t) or re.match(r'([a-z])\.\s+([A-ZÁ-Ú].*)$', t)
         if m:
             alvo = item if item is not None else art
             alvo.setdefault('ali', {})[m.group(1)] = m.group(2)
@@ -91,8 +108,8 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
             i += 1
             continue
         # Subitens em romanos dentro da alínea ("I) ser considerada inocente…", Direitos da Criança,
-        # art. 40.2.b): ficam no texto da alínea, um por linha.
-        m = re.match(r'([IVX]+)\)\s+(.*)$', t)
+        # art. 40.2.b; "ii) Tortura…", Estatuto de Roma, art. 8.2.a): ficam no texto da alínea, um por linha.
+        m = re.match(r'([IVX]+|[ivx]+)\)\s+(.*)$', t)
         if m and ultima:
             ultima[0]['ali'][ultima[1]] += '\n' + t
             i += 1
@@ -102,12 +119,16 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         if titulo and i + 1 < fim and (re.match(r'A?RTIGO\s+(\d+|[IVXL]+)º?$', linhas[i + 1], re.I) or re.match(r'(CAP[ÍI]TULO|Se[çc][ãa]o|PARTE)', linhas[i - 1], re.I)):
             i += 1
             continue
-        if item is not None:
-            item['texto'] += ' ' + t
+        # Parágrafo depois dos subitens em romanos fecha a alínea ("As propostas de candidatura…",
+        # Estatuto de Roma, art. 36.4.a).
+        if ultima and '\n' in ultima[0]['ali'][ultima[1]]:
+            ultima[0]['ali'][ultima[1]] += '\n' + t
+        elif item is not None:
+            item['texto'] = junta(item['texto'], t)  # "A lista A…", "A lista B…" (Estatuto de Roma, art. 36.5)
         elif art.get('ali'):
-            art['fecho'] = (art.get('fecho', '') + '\n' + t).strip()
+            art['fecho'] = junta(art.get('fecho', ''), t)
         else:
-            art['texto'] = (art['texto'] + '\n' + t).strip()
+            art['texto'] = junta(art['texto'], t)
         i += 1
     saida = {
         'id': ident,
