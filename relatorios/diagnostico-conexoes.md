@@ -4,30 +4,30 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4191 |
-| citacoes nas conexoes | 6601 |
+| fichas | 4192 |
+| citacoes nas conexoes | 6603 |
 | citacoes ligadas | 6164 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 385 |
-| citacoes fora do acervo | 437 |
+| referencias fora do acervo | 386 |
+| citacoes fora do acervo | 439 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 93 |
+| processo nao reconhecido | 94 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 5994 |
-| lei citacoes ligadas | 5328 |
+| lei citacoes de artigo | 5997 |
+| lei citacoes ligadas | 5330 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 39 |
-| lei citacoes de diplomas fora da base | 622 |
+| lei citacoes de diplomas fora da base | 623 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
 | Referência | Vezes |
 |---|---|
 | ARESP 2642744 | 5 |
-| ADPF 153 | 4 |
+| ADPF 153 | 5 |
 | HC 118533 | 4 |
 | SUM TST 331 | 3 |
 | ADPF 442 | 3 |
@@ -185,9 +185,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
 | Lei 8.666 | 11 |
+| Estatuto | 10 |
 | Lei 12.965 | 10 |
 | Resolução | 9 |
-| Estatuto | 9 |
 | Lei 9.514 | 9 |
 | Decreto-Lei 911 | 9 |
 | Lei 11.340 | 9 |
