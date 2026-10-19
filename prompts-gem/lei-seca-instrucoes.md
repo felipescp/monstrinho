@@ -8,7 +8,7 @@ Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incl
 
 Esta janela trata só da **lei seca pura**, ou seja, o texto em `dados/legislacao`. Ela serve para:
 - as remissões, como o balão de "art. 155 do CP" nas Conexões, Penas e Prazos;
-- a leitura no menu Lei Seca;
+- a leitura no menu Lei Seca, depois que o diploma ganhar mapa de incidência (sem mapa, ele não aparece no menu);
 - ser pré-requisito do mapa de incidência.
 
 O mapa de incidência (arquivo público com o mapa de calor) é feito em outra janela, com `prompts-gem/lei-seca-incidencia-instrucoes.md`.
@@ -41,6 +41,7 @@ O mapa de incidência (arquivo público com o mapa de calor) é feito em outra j
 
 4. **Incluir no menu Lei Seca (`dados/leiseca/manifesto.json`)**
    - Na disciplina certa, com `{ "id": "<ID>", "nome": "Nome curto (Lei n.º)" }`.
+   - Ele só aparece no menu quando o mapa de incidência for ligado (`"incidencia"`); até lá a entrada fica guardada.
    - Se a disciplina ainda não existir, crie-a. Siga os nomes do edital e da taxonomia (`taxonomia.js`).
 
 5. **Atualizar a tabela de `dados/legislacao/LEIAME.md`** com o diploma, o arquivo e a data.
@@ -54,7 +55,7 @@ O mapa de incidência (arquivo público com o mapa de calor) é feito em outra j
    - Rode `python3 -m http.server 8812`, só se `curl localhost:8812` falhar.
    - Faça um script Playwright no scratchpad, rodando com `NODE_PATH=$(npm root -g)`.
    - Confira:
-     - o diploma aparece no menu Lei Seca e abre;
+     - o diploma carrega e abre (sem mapa ele não aparece no menu: abra com `LEISECA_RUNTIME.selecionarDiploma('<ID>')`);
      - títulos, capítulos e artigos estão certos;
      - o balão de um artigo citado nas Conexões da Jurisprudência funciona;
      - não há erros no console.

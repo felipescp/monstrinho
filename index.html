@@ -15746,15 +15746,18 @@ window.LEISECA_RUNTIME = {
             }
         }
         if (!this._diploma) {
-            let todos = this._diplomas(), comMapa = todos.find(function(d) { return d.incidencia; });
-            this._diploma = (comMapa || todos[0]).id;
+            let todos = this._diplomas();
+            if (!todos.length) { if (col) col.innerHTML = '<div class="fc-vazio-col">Nenhum diploma com mapa de incidência.</div>'; return; }
+            this._diploma = todos[0].id;
         }
         await this.selecionarDiploma(this._diploma, true);
     },
+    // Só diplomas com mapa de incidência: os demais de window.LEGISLACAO servem
+    // apenas para as referências dos cards.
     _diplomas: function() {
         let out = [];
         ((this.manifesto || {}).disciplinas || []).forEach(function(g) { (g.diplomas || []).forEach(function(d) { out.push(Object.assign({ disciplina: g.nome }, d)); }); });
-        return out.filter(function(d) { return window.LEGISLACAO && window.LEGISLACAO.DIPLOMAS[d.id]; });
+        return out.filter(function(d) { return d.incidencia && window.LEGISLACAO && window.LEGISLACAO.DIPLOMAS[d.id]; });
     },
     _infoDiploma: function(id) { return this._diplomas().find(function(d) { return d.id === id; }) || null; },
 
