@@ -19,7 +19,8 @@ Dispositivo renumerado depois do material: --alias "57§pu=57§1".
 Material com mais de um diploma (CF e ADCT): --ate / --desde com a linha que os
 separa ("ATO DAS DISPOSIÇÕES CONSTITUCIONAIS TRANSITÓRIAS").
 Capítulo cujo cabeçalho falta no material: --capitulo "10=Cap. IV — Nome" (vale
-a partir do artigo indicado, até o próximo capítulo do material).
+a partir do artigo indicado, até o próximo capítulo do material); título, com
+--titulo "209=Disposições finais e transitórias" (zera o capítulo).
 Alíneas contam no inciso (ou parágrafo) a que pertencem. Dispositivo que não
 existe na base de lei seca é listado no fim e fica fora do arquivo.
 """
@@ -67,10 +68,13 @@ def main():
     ap.add_argument('--ate', help='linha do material (exata, sem formatação) onde o diploma termina')
     ap.add_argument('--capitulo', action='append', default=[],
                     help='capítulo que falta no material, a partir de um artigo: "10=Cap. IV — Nome"')
+    ap.add_argument('--titulo', action='append', default=[],
+                    help='título que falta no material, a partir de um artigo: "209=Disposições finais"')
     a = ap.parse_args()
 
     alias = dict(x.split('=', 1) for x in a.alias)
     cap_extra = dict(x.split('=', 1) for x in a.capitulo)
+    tit_extra = dict(x.split('=', 1) for x in a.titulo)
     base = json.load(open(a.base, encoding='utf-8'))
     B = base['artigos']
     # Questões e comentários vêm em tabelas (Markdown "|" ou HTML "<table>",
@@ -159,6 +163,8 @@ def main():
             if m and (negrito[i] or m.group(1) == seguinte) and m.group(1) in B and m.group(1) not in vistos:
                 art, par, inc = m.group(1), None, None
                 vistos.add(art)
+                if art in tit_extra:
+                    titulo, capitulo = tit_extra[art], None
                 capitulo = cap_extra.get(art, capitulo)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
@@ -179,9 +185,10 @@ def main():
             titulo = capitulo = None
             continue
         # Livros (CC, CPC): o número dos títulos recomeça em cada livro.
-        m = re.match(r'LIVRO\s+([IVXL]+|COMPLEMENTAR)$', t)
+        m = re.match(r'LIVRO\s+([IVXL]+|COMPLEMENTAR|PRIMEIRO|SEGUNDO|TERCEIRO|QUARTO|QUINTO|SEXTO)$', t)
         if m:
-            livro = 'Livro ' + (m.group(1) if m.group(1) != 'COMPLEMENTAR' else 'Complementar')
+            ordinal = {'PRIMEIRO': 'I', 'SEGUNDO': 'II', 'TERCEIRO': 'III', 'QUARTO': 'IV', 'QUINTO': 'V', 'SEXTO': 'VI'}  # CTN
+            livro = 'Livro ' + ('Complementar' if m.group(1) == 'COMPLEMENTAR' else ordinal.get(m.group(1), m.group(1)))
             livro_nome = nome_seguinte(i)
             # Livro sem títulos (ex.: CPP, Livro VI): o próprio livro é o grupo.
             titulo = parte + livro + ' — ' + livro_nome
@@ -227,6 +234,8 @@ def main():
                 par = inc = None
             if art in B and art not in vistos:
                 vistos.add(art)
+                if art in tit_extra:
+                    titulo, capitulo = tit_extra[art], None
                 capitulo = cap_extra.get(art, capitulo)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
