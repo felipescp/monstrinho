@@ -13,6 +13,8 @@ Uso:
         dados/leiseca/incidencia/lei-11343.json --fonte "Material de questões (Eduardo B. S. Teixeira), até 01/07/2026"
 
 Chaves dos dispositivos: "33" (caput), "33§4", "33§pu", "28.II", "33§1.I".
+Tratados com itens numerados (base com "numeracao": "itens", ex.: CADH): o
+cabeçalho é "Artigo 4." e a chave do item é "4.1"; a estrutura é Parte > Capítulo.
 Dispositivo renumerado depois do material: --alias "57§pu=57§1".
 Alíneas contam no inciso (ou parágrafo) a que pertencem. Dispositivo que não
 existe na base de lei seca é listado no fim e fica fora do arquivo.
@@ -23,6 +25,7 @@ import json
 import re
 import sys
 
+RE_ARTIGO = re.compile(r'Artigo\s+(\d+)\s*(?:\.|$)')
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]))?')
 
@@ -32,6 +35,19 @@ def limpar(t):
     t = re.sub(r'\]\{[^}]*\}', '', t)
     t = re.sub(r'^(?:>\s*)+', '', t.strip())  # citação (blockquote)
     return re.sub(r'[*\\_]|\[|\]\([^)]*\)', '', t).strip()
+
+
+def romano(r):
+    v = {'I': 1, 'V': 5, 'X': 10, 'L': 50}
+    return sum(-v[c] if v[c] < v.get(r[i + 1:i + 2], 0) else v[c] for i, c in enumerate(r))
+
+
+def arabico_romano(n):
+    s = ''
+    for v, c in ((50, 'L'), (40, 'XL'), (10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')):
+        while n >= v:
+            s, n = s + c, n - v
+    return s
 
 
 def main():
@@ -51,6 +67,8 @@ def main():
     # "<p>"): ficam de fora; só o texto da lei, com as marcas de prova, conta.
     brutas = [l for l in open(a.material, encoding='utf-8')
               if l.strip() and not l.strip().startswith(('|', '<'))]
+    itens = base.get('numeracao') == 'itens'
+    num_cap = 0
     linhas = [limpar(l) for l in brutas]
     # Cabeçalho de artigo do material vem em negrito ("**Art. 1º", "**[Art. 121]");
     # artigo citado no meio dos comentários, em texto simples.
@@ -87,6 +105,35 @@ def main():
     parte = livro = livro_nome = ''
     art = par = inc = None
     for i, t in enumerate(linhas):
+        if itens:
+            # Tratado: "PARTE I" e capítulos de numeração contínua (o material
+            # da CADH traz "CAPÍTULO IV" no lugar do IX: segue a sequência).
+            m = re.match(r'PARTE\s+([IVX]+)$', t)
+            if m:
+                titulo = 'Parte ' + m.group(1) + ' — ' + nome_seguinte(i)
+                capitulo = None
+                continue
+            m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+)$', t)
+            if m:
+                n = romano(m.group(1))
+                num_cap = n if n > num_cap else num_cap + 1
+                capitulo = 'Cap. ' + arabico_romano(num_cap) + ' — ' + nome_seguinte(i)
+                continue
+            m = RE_ARTIGO.match(t)
+            if m and negrito[i] and m.group(1) in B and m.group(1) not in vistos:
+                art, par, inc = m.group(1), None, None
+                vistos.add(art)
+                if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
+                    estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
+                estrutura[-1]['arts'].append(art)
+                continue
+            if not art or re.match(r'SE[ÇC][ÃA]O\b', t, re.I):
+                continue
+            # Item "1." do artigo; alínea "a." ou "a)" conta no item (ou no caput);
+            # parágrafo sem número continua o item (ou o caput) corrente.
+            m = re.match(r'(\d+)\s*\.(?!\d)', t)
+            if m and m.group(1) in (B[art].get('inc') or {}):
+                inc = m.group(1)
         # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
         m = re.match(r'PARTE(GERAL|ESPECIAL)$', re.sub(r'\s+', '', t))  # "P A R T E  E S P E C I A L"
         if m:
@@ -115,8 +162,10 @@ def main():
         if m:
             capitulo = 'Cap. ' + m.group(1) + ' — ' + nome_seguinte(i)
             continue
-        m = RE_ART.match(t)
-        if m:
+        m = None if itens else RE_ART.match(t)
+        if itens:
+            pass
+        elif m:
             novo = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
             # Artigo citado dentro de comentário ("Art. 355. O juiz julgará…" de
             # novo, ou outro mais à frente): não muda o artigo corrente. Artigo que
@@ -153,7 +202,8 @@ def main():
         tags = TAG.findall(t)
         if not tags:
             continue
-        n = sum(1 + g.count('/') for g in tags)
+        # Cada ano é uma cobrança; a barra de "Cartórios/TJPI-2013" ou "ENAM/2º-2024" não.
+        n = sum(1 + len(re.findall(r'/(?:19|20)\d{2}', g)) for g in tags)
         chave = art + ('§' + par if par else '') + ('.' + inc if inc else '')
         chave = alias.get(chave, chave)
         if chave != art + ('§' + par if par else '') + ('.' + inc if inc else ''):
