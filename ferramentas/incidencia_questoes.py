@@ -18,6 +18,8 @@ cabeçalho é "Artigo 4." e a chave do item é "4.1"; a estrutura é Parte > Cap
 Dispositivo renumerado depois do material: --alias "57§pu=57§1".
 Material com mais de um diploma (CF e ADCT): --ate / --desde com a linha que os
 separa ("ATO DAS DISPOSIÇÕES CONSTITUCIONAIS TRANSITÓRIAS").
+Capítulo cujo cabeçalho falta no material: --capitulo "10=Cap. IV — Nome" (vale
+a partir do artigo indicado, até o próximo capítulo do material).
 Alíneas contam no inciso (ou parágrafo) a que pertencem. Dispositivo que não
 existe na base de lei seca é listado no fim e fica fora do arquivo.
 """
@@ -62,9 +64,12 @@ def main():
                     help='dispositivo renumerado depois do material: "57§pu=57§1"')
     ap.add_argument('--desde', help='linha do material (exata, sem formatação) onde o diploma começa')
     ap.add_argument('--ate', help='linha do material (exata, sem formatação) onde o diploma termina')
+    ap.add_argument('--capitulo', action='append', default=[],
+                    help='capítulo que falta no material, a partir de um artigo: "10=Cap. IV — Nome"')
     a = ap.parse_args()
 
     alias = dict(x.split('=', 1) for x in a.alias)
+    cap_extra = dict(x.split('=', 1) for x in a.capitulo)
     base = json.load(open(a.base, encoding='utf-8'))
     B = base['artigos']
     # Questões e comentários vêm em tabelas (Markdown "|" ou HTML "<table>",
@@ -141,9 +146,9 @@ def main():
                 num_parte += 1
                 titulo = 'Parte ' + arabico_romano(num_parte) + ' — ' + t[:1] + t[1:].lower()
                 continue
-            m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+)$', t)
+            m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+|\d+)$', t, re.I)  # "Capitulo 1" (Belém do Pará)
             if m:
-                n = romano(m.group(1))
+                n = int(m.group(1)) if m.group(1).isdigit() else romano(m.group(1).upper())
                 num_cap = n if n > num_cap else num_cap + 1
                 capitulo = 'Cap. ' + arabico_romano(num_cap) + ' — ' + nome_seguinte(i)
                 continue
@@ -153,6 +158,7 @@ def main():
             if m and (negrito[i] or m.group(1) == seguinte) and m.group(1) in B and m.group(1) not in vistos:
                 art, par, inc = m.group(1), None, None
                 vistos.add(art)
+                capitulo = cap_extra.get(art, capitulo)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
                 estrutura[-1]['arts'].append(art)
@@ -219,6 +225,7 @@ def main():
                 par = inc = None
             if art in B and art not in vistos:
                 vistos.add(art)
+                capitulo = cap_extra.get(art, capitulo)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
                 estrutura[-1]['arts'].append(art)
