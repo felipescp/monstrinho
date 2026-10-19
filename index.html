@@ -29686,14 +29686,21 @@ window.ESQUEMAS_RUNTIME = {
                 return et && et.cor === self._filtroCor;
             });
         }
-        // Ordem alfabética pelo título (pedido explícito do usuário; antes
-        // era por classificação). Números em ordem natural ("OC-9" antes de
-        // "OC-10"), sem diferenciar acento/maiúscula. .slice() pra não mutar
-        // o array já guardado.
+        // Classificação primeiro (🔴 Crítico, 🟡 Importante, 🟢 Regular e,
+        // por último, não classificado); dentro de cada nível, ordem
+        // alfabética do título — pedido explícito do usuário. Números em
+        // ordem natural ("OC-9" antes de "OC-10"), sem diferenciar
+        // acento/maiúscula. .slice() pra não mutar o array já guardado.
         lista = lista.slice().sort(function(a, b) {
-            return String(a.item.titulo || '').localeCompare(String(b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
+            return (self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id)) ||
+                String(a.item.titulo || '').localeCompare(String(b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
         });
         return lista;
+    },
+
+    _estrelasAtuais: function(id) {
+        let r = this.revisaoEsquemas[id];
+        return r ? (parseInt(r.ultimaClassificacao, 10) || 0) : 0;
     },
 
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
@@ -34944,6 +34951,11 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (modoInf) {
             eixosAtivos = ['informativo'].concat(eixosAtivos.filter(function(e) { return e === 'disciplina' || e === 'importancia'; }));
         }
+        // Opiniões Consultivas: lista única, sem agrupamento, em ordem
+        // alfabética/numérica do processo ("OC-9" antes de "OC-10") —
+        // pedido explícito do usuário.
+        let modoOC = self._modoSistematica === 'Opinião Consultiva (Corte IDH)';
+        if (modoOC) eixosAtivos = [];
 
         let mapaGrupos = {};
         lista.forEach(function(par) {
@@ -34975,7 +34987,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             return 0;
         });
         grupos.forEach(function(g) {
-            g.itens = g.itens.slice().sort(function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
+            g.itens = g.itens.slice().sort(modoOC
+                ? function(a, b) { return String(a.item.processo || a.item.titulo || '').localeCompare(String(b.item.processo || b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }); }
+                : function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         });
 
         // Guardado pra exportarMarkdownGrupoSistematica/exportarHtmlGrupoSistematica
@@ -35010,7 +35024,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             '</details>';
         }).join('');
 
-        let corpoHtml = htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva cadastrada ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
+        if (modoOC && grupos.length) htmlGrupos = '<div class="jur-cards-grid">' + grupos[0].itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('') + '</div>';
+        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva cadastrada ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
 
         let rotuloAtalho = modoInf
             ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
@@ -35031,7 +35046,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // Importância de uma vez, sem clicar grupo por grupo. Só aparece
         // havendo pelo menos 1 grupo (nada a expandir/recolher em "Nenhuma
         // ficha com esse filtro").
-        let htmlExibirTodas = grupos.length > 0
+        let htmlExibirTodas = (grupos.length > 0 && !modoOC)
             ? '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleTodosGruposSistematica()">' + (self._todosGruposSistematicaAbertos ? '📂 Recolher Todas' : '📁 Exibir Todas') + '</button>'
             : '';
         // Seletor de Tribunal — SÓ no atalho "Súmulas" (não em "Súmulas
@@ -35066,7 +35081,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                         '<button class="jur-grupo-acao-btn" title="Exportar avançado: escolher anos e disciplinas (.html estilizado)" onclick="window.JURISPRUDENCIA_RUNTIME.abrirExportarAvancado(\'html\');">🎨</button>' +
                     '</span>' +
                 '</div>' +
-                '<div class="jur-agrupar-pills">Agrupar por: ' +
+                (modoOC ? '' : '<div class="jur-agrupar-pills">Agrupar por: ' +
                     (modoInf ? '<button class="fc-pill ativa" disabled title="No atalho Informativos o agrupamento externo é sempre o informativo">Informativo</button>' : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>') +
                     (self._ehCorteIDH(self._modoSistematica)
                         ? ['pais', 'tema'].map(function(e) { return '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf(e) !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'' + e + '\')">' + (e === 'pais' ? 'País' : 'Tema') + '</button>'; }).join('')
@@ -35076,7 +35091,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     // dentro do atalho Súmulas (é o único onde múltiplos
                     // tribunais — STF/STJ/TSE — convivem de fato).
                     (self._modoSistematica === 'Súmula' ? '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('tribunal') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'tribunal\')">Tribunal</button>' : '') +
-                '</div>' +
+                '</div>') +
             '</div>' +
             htmlFerramentas +
         '</div>';
