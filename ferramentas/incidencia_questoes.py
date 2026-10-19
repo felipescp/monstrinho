@@ -38,7 +38,8 @@ def limpar(t):
     # Markdown do Word: **negrito**, [texto](link), [texto]{.mark}/{.underline} (pandoc).
     t = re.sub(r'\]\{[^}]*\}', '', t)
     t = re.sub(r'^(?:>\s*|&nbsp;\s*)+', '', t.strip())  # citação (blockquote), espaço do Joplin
-    return re.sub(r'[*\\_]|\[|\]\([^)]*\)', '', t).strip()
+    # ~~tachado~~: dispositivo com eficácia suspensa pelo STF (Improbidade), ainda cobrado.
+    return re.sub(r'[*\\_]|~~|\[|\]\([^)]*\)', '', t).strip()
 
 
 def romano(r):
