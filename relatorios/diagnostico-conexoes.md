@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4200 |
-| citacoes nas conexoes | 6632 |
-| citacoes ligadas | 6180 |
+| fichas | 4246 |
+| citacoes nas conexoes | 6684 |
+| citacoes ligadas | 6230 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 394 |
-| citacoes fora do acervo | 452 |
+| referencias fora do acervo | 396 |
+| citacoes fora do acervo | 454 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
 | processo nao reconhecido | 102 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6109 |
-| lei citacoes ligadas | 5477 |
+| lei citacoes de artigo | 6172 |
+| lei citacoes ligadas | 5529 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 29 |
-| lei citacoes de diplomas fora da base | 598 |
+| lei citacoes de diplomas fora da base | 609 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -183,8 +183,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | CLT | 15 |
 | Lei 6.766 | 14 |
 | Lei 14.133 | 12 |
+| Lei 12.965 | 12 |
 | Lei 8.666 | 11 |
-| Lei 12.965 | 10 |
 | Resolução | 9 |
 | Lei 9.514 | 9 |
 | Decreto-Lei 911 | 9 |
@@ -193,16 +193,16 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | CPM | 8 |
 | Decreto-Lei 3.365 | 8 |
 | Lei 8.987 | 8 |
-| Lei 12.594 | 8 |
 | Regimento | 8 |
 | Lei 8.072 | 8 |
+| Lei 8.245 | 7 |
 | Lei 9.096 | 7 |
 | Lei 9.430 | 7 |
 | Lei 8.212 | 7 |
 | Lei 8.137 | 7 |
 | LC 101 | 6 |
+| Lei 9.296 | 6 |
 | Estatuto | 6 |
-| Lei 8.245 | 6 |
 | Lei 13.146 | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
