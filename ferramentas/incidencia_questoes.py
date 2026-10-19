@@ -27,7 +27,7 @@ import json
 import re
 import sys
 
-RE_ARTIGO = re.compile(r'Artigo\s+(\d+)\s*(?:\.|$)')
+RE_ARTIGO = re.compile(r'Artigo\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]))?')
 
@@ -77,7 +77,7 @@ def main():
         fim = idx.index(a.ate, ini + 1) if a.ate else len(brutas)
         brutas = brutas[ini:fim]
     itens = base.get('numeracao') == 'itens'
-    num_cap = 0
+    num_cap = num_parte = 0
     linhas = [limpar(l) for l in brutas]
     # Cabeçalho de artigo do material vem em negrito ("**Art. 1º", "**[Art. 121]");
     # artigo citado no meio dos comentários, em texto simples.
@@ -123,12 +123,23 @@ def main():
     art = par = inc = None
     for i, t in enumerate(linhas):
         if itens:
-            # Tratado: "PARTE I" e capítulos de numeração contínua (o material
-            # da CADH traz "CAPÍTULO IV" no lugar do IX: segue a sequência).
-            m = re.match(r'PARTE\s+([IVX]+)$', t)
+            # Tratado: "PARTE I" (nome na linha seguinte) ou "PARTE 1 - POLÍTICA GERAL",
+            # e capítulos de numeração contínua (o material da CADH traz
+            # "CAPÍTULO IV" no lugar do IX: segue a sequência).
+            m = re.match(r'PARTE\s+([IVX]+|\d+)(?:\s*[-–—]\s*(.+))?$', t)
             if m:
-                titulo = 'Parte ' + m.group(1) + ' — ' + nome_seguinte(i)
+                num_parte = int(m.group(1)) if m.group(1).isdigit() else romano(m.group(1))
+                nome = m.group(2) or nome_seguinte(i)
+                titulo = 'Parte ' + arabico_romano(num_parte) + ' — ' + nome[:1].upper() + nome[1:].lower()
                 capitulo = None
+                continue
+            # Parte sem o rótulo, só o nome em caixa alta antes do artigo (Convenção
+            # 169 da OIT: "INDÚSTRIAS RURAIS" é a Parte IV), em tratado sem capítulos.
+            if (num_parte and not num_cap and t.isupper() and not re.search(r'\d', t)
+                    and i + 1 < len(linhas) and RE_ARTIGO.match(linhas[i + 1])
+                    and not re.match(r'PARTE\b', linhas[i - 1])):
+                num_parte += 1
+                titulo = 'Parte ' + arabico_romano(num_parte) + ' — ' + t[:1] + t[1:].lower()
                 continue
             m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+)$', t)
             if m:
@@ -136,8 +147,10 @@ def main():
                 num_cap = n if n > num_cap else num_cap + 1
                 capitulo = 'Cap. ' + arabico_romano(num_cap) + ' — ' + nome_seguinte(i)
                 continue
+            # Cabeçalho em negrito; sem negrito, só se for o artigo seguinte da base.
             m = RE_ARTIGO.match(t)
-            if m and negrito[i] and m.group(1) in B and m.group(1) not in vistos:
+            seguinte = list(B)[POS[art] + 1] if art in POS and POS[art] + 1 < len(B) else None
+            if m and (negrito[i] or m.group(1) == seguinte) and m.group(1) in B and m.group(1) not in vistos:
                 art, par, inc = m.group(1), None, None
                 vistos.add(art)
                 if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
