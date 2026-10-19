@@ -29686,14 +29686,21 @@ window.ESQUEMAS_RUNTIME = {
                 return et && et.cor === self._filtroCor;
             });
         }
-        // Ordem alfabética pelo título (pedido explícito do usuário; antes
-        // era por classificação). Números em ordem natural ("OC-9" antes de
-        // "OC-10"), sem diferenciar acento/maiúscula. .slice() pra não mutar
-        // o array já guardado.
+        // Classificação primeiro (🔴 Crítico, 🟡 Importante, 🟢 Regular e,
+        // por último, não classificado); dentro de cada nível, ordem
+        // alfabética do título — pedido explícito do usuário. Números em
+        // ordem natural ("OC-9" antes de "OC-10"), sem diferenciar
+        // acento/maiúscula. .slice() pra não mutar o array já guardado.
         lista = lista.slice().sort(function(a, b) {
-            return String(a.item.titulo || '').localeCompare(String(b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
+            return (self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id)) ||
+                String(a.item.titulo || '').localeCompare(String(b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
         });
         return lista;
+    },
+
+    _estrelasAtuais: function(id) {
+        let r = this.revisaoEsquemas[id];
+        return r ? (parseInt(r.ultimaClassificacao, 10) || 0) : 0;
     },
 
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
