@@ -16,6 +16,8 @@ Chaves dos dispositivos: "33" (caput), "33§4", "33§pu", "28.II", "33§1.I".
 Tratados com itens numerados (base com "numeracao": "itens", ex.: CADH): o
 cabeçalho é "Artigo 4." e a chave do item é "4.1"; a estrutura é Parte > Capítulo.
 Dispositivo renumerado depois do material: --alias "57§pu=57§1".
+Material com mais de um diploma (CF e ADCT): --ate / --desde com a linha que os
+separa ("ATO DAS DISPOSIÇÕES CONSTITUCIONAIS TRANSITÓRIAS").
 Alíneas contam no inciso (ou parágrafo) a que pertencem. Dispositivo que não
 existe na base de lei seca é listado no fim e fica fora do arquivo.
 """
@@ -33,7 +35,7 @@ RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]
 def limpar(t):
     # Markdown do Word: **negrito**, [texto](link), [texto]{.mark}/{.underline} (pandoc).
     t = re.sub(r'\]\{[^}]*\}', '', t)
-    t = re.sub(r'^(?:>\s*)+', '', t.strip())  # citação (blockquote)
+    t = re.sub(r'^(?:>\s*|&nbsp;\s*)+', '', t.strip())  # citação (blockquote), espaço do Joplin
     return re.sub(r'[*\\_]|\[|\]\([^)]*\)', '', t).strip()
 
 
@@ -58,6 +60,8 @@ def main():
     ap.add_argument('--fonte', default='')
     ap.add_argument('--alias', action='append', default=[],
                     help='dispositivo renumerado depois do material: "57§pu=57§1"')
+    ap.add_argument('--desde', help='linha do material (exata, sem formatação) onde o diploma começa')
+    ap.add_argument('--ate', help='linha do material (exata, sem formatação) onde o diploma termina')
     a = ap.parse_args()
 
     alias = dict(x.split('=', 1) for x in a.alias)
@@ -67,12 +71,17 @@ def main():
     # "<p>"): ficam de fora; só o texto da lei, com as marcas de prova, conta.
     brutas = [l for l in open(a.material, encoding='utf-8')
               if l.strip() and not l.strip().startswith(('|', '<'))]
+    if a.desde or a.ate:
+        idx = [limpar(l) for l in brutas]
+        ini = idx.index(a.desde) if a.desde else 0
+        fim = idx.index(a.ate, ini + 1) if a.ate else len(brutas)
+        brutas = brutas[ini:fim]
     itens = base.get('numeracao') == 'itens'
     num_cap = 0
     linhas = [limpar(l) for l in brutas]
     # Cabeçalho de artigo do material vem em negrito ("**Art. 1º", "**[Art. 121]");
     # artigo citado no meio dos comentários, em texto simples.
-    negrito = [re.sub(r'^(?:\s|>)+', '', l).startswith(('**', '[Art', '*[')) for l in brutas]
+    negrito = [re.sub(r'^(?:\s|>|&nbsp;)+', '', l).startswith(('**', '[Art', '*[')) for l in brutas]
 
     def nome_seguinte(i):
         j = i + 1
@@ -92,6 +101,14 @@ def main():
         return t[:1].upper() + t[1:].lower()
 
     POS = {k: i for i, k in enumerate(B)}
+
+    def ordem(a):
+        # Sequência (par, inc) do artigo na base: caput, incisos, §§ e seus incisos.
+        no = B.get(a) or {}
+        o = [(None, None)] + [(None, k) for k in (no.get('inc') or {})]
+        for p, q in (no.get('par') or {}).items():
+            o += [(p, None)] + [(p, k) for k in (q.get('inc') or {})]
+        return o
     com_negrito = set()
     for t, n in zip(linhas, negrito):
         m = RE_ART.match(t)
@@ -178,6 +195,12 @@ def main():
                 continue
             elif novo in B and art in POS and (novo in vistos or not 0 < POS[novo] - POS[art] <= JANELA):
                 continue
+            # Artigo de outra lei citado no comentário: "Art. 22 da Lei 13.869/19",
+            # ou ausente da base e fora da sequência ("Art. 150 - Entrar…" do CP no art. 5º da CF).
+            elif re.match(r'\s*(?:º|°|o\b)?\s*,?\s*d[aeo]s?\s', t[m.end():]):
+                continue
+            elif novo not in B and art and not 0 <= int(m.group(1).replace('.', '')) - int(re.match(r'\d+', art).group()) <= JANELA:
+                continue
             else:
                 art = novo
                 par = inc = None
@@ -189,14 +212,24 @@ def main():
         elif art:
             m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo único)', t, re.I)
             if m:
-                par = 'pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else '')
-                inc = None
+                novo = ('pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else ''), None)
             else:
                 m = re.match(r'([IVXLC]+)\s*[-–—]', t)
                 if m:
-                    inc = m.group(1)
+                    novo = (par, m.group(1))
                 elif not re.match(r'[a-z]\)', t):
                     continue
+                else:
+                    novo = (par, inc)
+            # Trecho de lei citado no comentário, sem negrito e sem marca de prova
+            # ("§ 3º A abertura de crédito…" no meio do art. 62, § 1º): só muda a
+            # posição se for o dispositivo seguinte da base.
+            if '**' not in brutas[i] and not TAG.search(t) and (par, inc) in ordem(art):
+                o = ordem(art)
+                k = o.index((par, inc))
+                if not (novo in o[k + 1:k + 4] or (novo[0] and (None, novo[1]) in o[k + 1:k + 4])):
+                    continue
+            par, inc = novo
         if not art:
             continue
         tags = TAG.findall(t)
@@ -215,9 +248,10 @@ def main():
             ok = bool(no)
         if ok and inc:
             ok = inc in (no.get('inc') or {})
-            # Inciso do caput lido depois de um "§" citado no comentário.
-            if not ok and par and inc in (B[art].get('inc') or {}):
-                chave, ok = art + '.' + inc, True
+        # Inciso do caput lido depois de um "§" citado no comentário (mesmo um
+        # "§" que o artigo não tem, como o "§ 5º" da Lei de Migração no art. 5º).
+        if not ok and par and inc and B.get(art) and inc in (B[art].get('inc') or {}):
+            chave, ok = art + '.' + inc, True
         if ok:
             cont[chave] += n
         else:
