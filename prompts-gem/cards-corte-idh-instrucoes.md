@@ -73,5 +73,5 @@ git checkout $B
 - Ficha: `prompts-gem/extrator-opinioes-consultivas.txt` (GPT). Card no mesmo JSON dos casos, com `sistematica: "Opinião Consultiva (Corte IDH)"`, `processo: "Opinião Consultiva OC-n/aa"`, `estado` = solicitante (o app mostra "Solicitante"), `sistematicaDetalhe: "Série A, nº n"`, `vitima` e `reparacoes` vazios, `artigosCADH` = dispositivos interpretados.
 - `tese` = respostas da Corte, com requisitos e votação; `resumo` = perguntas e desfecho; 5–8 `dicas` com as mesmas marcações dos casos; `casosRelacionados` com casos contenciosos afins (e a relação inversa no card do caso).
 - Conferir a ficha contra o texto: o .md costuma perder a numeração dos parágrafos (o GPT tende a inventar números), omitir pontos do parecer e ignorar direito brasileiro citado em nota.
-- Cadastradas: OC-24/17.
+- Cadastradas: OC-18/03 (ficha feita pelo Claude) e OC-24/17.
 

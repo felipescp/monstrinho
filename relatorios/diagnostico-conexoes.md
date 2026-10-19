@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4198 |
+| fichas | 4199 |
 | citacoes nas conexoes | 6630 |
 | citacoes ligadas | 6178 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 100 |
+| processo nao reconhecido | 101 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6096 |
-| lei citacoes ligadas | 5468 |
+| lei citacoes de artigo | 6104 |
+| lei citacoes ligadas | 5472 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 27 |
-| lei citacoes de diplomas fora da base | 596 |
+| lei artigo sem diploma | 29 |
+| lei citacoes de diplomas fora da base | 598 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -167,13 +167,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 - Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
+- Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 3" — trecho: "Carta da OEA, arts. 3.l e 17"
+- Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 1, 2 e 7" — trecho: "Declaração Universal, arts. 1, 2 e 7"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
 - RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
 - ADI 6.828-AL (jur_1788480450899_7xr0dc): "art. 16" — trecho: "EC 132/2023, art. 16 (regra de transição da Reforma Tributária)"
-- RE 791.961 ED (jur_1790222446982_6f7qsw): "art. 25" — trecho: "EC 103/2019 art. 25"
-- REsp 2.205.708-PR (jur_1791073076179_c70tju): "art. 10, § 2º" — trecho: "MP 2.200-2/2001, art. 10, § 2º"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
