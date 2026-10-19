@@ -5,11 +5,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4198 |
-| citacoes nas conexoes | 6629 |
+| citacoes nas conexoes | 6630 |
 | citacoes ligadas | 6178 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 393 |
-| citacoes fora do acervo | 451 |
+| referencias fora do acervo | 394 |
+| citacoes fora do acervo | 452 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
