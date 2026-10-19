@@ -29686,20 +29686,14 @@ window.ESQUEMAS_RUNTIME = {
                 return et && et.cor === self._filtroCor;
             });
         }
-        // Ordem decrescente por classificação (🔴 Crítico primeiro,
-        // depois 🟡 Importante, 🟢 Regular, e por último não classificado) —
-        // pedido explícito: o usuário indica a
-        // importância e a grade reflete isso na ordem, sem precisar abrir
-        // uma aba separada. .slice() pra não mutar o array já guardado.
+        // Ordem alfabética pelo título (pedido explícito do usuário; antes
+        // era por classificação). Números em ordem natural ("OC-9" antes de
+        // "OC-10"), sem diferenciar acento/maiúscula. .slice() pra não mutar
+        // o array já guardado.
         lista = lista.slice().sort(function(a, b) {
-            return self._estrelasAtuais(b.item.id) - self._estrelasAtuais(a.item.id);
+            return String(a.item.titulo || '').localeCompare(String(b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
         });
         return lista;
-    },
-
-    _estrelasAtuais: function(id) {
-        let r = this.revisaoEsquemas[id];
-        return r ? (parseInt(r.ultimaClassificacao, 10) || 0) : 0;
     },
 
     toggleMostrarOcultos: function() { this._mostrarOcultos = !this._mostrarOcultos; this._renderGradeCards(); },
