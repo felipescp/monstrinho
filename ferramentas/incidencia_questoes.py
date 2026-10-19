@@ -27,7 +27,7 @@ import json
 import re
 import sys
 
-RE_ARTIGO = re.compile(r'Artigo\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
+RE_ARTIGO = re.compile(r'(?:Artigo|ARTIGO)\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]))?')
 
@@ -90,11 +90,11 @@ def main():
         if j >= len(linhas):
             return ''
         t = linhas[j]
-        if re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.)', t):
+        if re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.|Artigo\s|ARTIGO\s)', t):
             return ''
         # Nome em caixa alta quebrado em várias linhas ("DA REPRESSÃO … / E AO TRÁFICO …").
         while (j + 1 < len(linhas) and t.isupper() and linhas[j + 1].isupper()
-               and not re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.)', linhas[j + 1])):
+               and not re.match(r'(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|LIVRO|Art\.|Artigo\s|ARTIGO\s)', linhas[j + 1])):
             j += 1
             t += ' ' + linhas[j]
         t = t.strip(' "“”\'.:')
