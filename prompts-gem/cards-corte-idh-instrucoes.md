@@ -67,3 +67,11 @@ git checkout $B
 - Base com 93 casos contenciosos; nenhuma Opinião Consultiva ainda (Atala Riffo tem só a sentença de interpretação na ficha; mérito entrou de memória).
 - Todos os cards já revisados com a ficha nova e com as dicas da "Seção 6" nova (consolidadas em 5–8 dicas, com #COLANARETINA e #GREENTIPS, artigos não violados e reparação). Padrão intermediário (seção 6 nova, mas sem #COLANARETINA/#GREENTIPS na origem): Velásquez Rodríguez, Cantoral Benavides, Ivcher Bronstein, Loayza Tamayo, Villagrán Morales, Barrios Altos, Awas Tingni, Última Tentação, Hilaire, Myrna Mack.
 - Casos citados em `casosRelacionados` que ainda não têm card (viram link quando criados; use exatamente este nome no `processo`): Albán Cornejo e outros vs. Equador; Huilca Tecse vs. Peru; Massacres de Ituango vs. Colômbia; Raxcacó Reyes vs. Guatemala; Tristán Donoso vs. Panamá; Azul Rojas Marín e outra vs. Peru; Baldeón García vs. Peru; Cinco Aposentados vs. Peru; García Asto e Ramírez Rojas vs. Peru; Godínez Cruz vs. Honduras; La Cantuta vs. Peru; Meninas Yean e Bosico vs. República Dominicana; Nadege Dorzema e outros vs. República Dominicana; Petro Urrego vs. Colômbia.
+
+## Opiniões Consultivas
+
+- Ficha: `prompts-gem/extrator-opinioes-consultivas.txt` (GPT). Card no mesmo JSON dos casos, com `sistematica: "Opinião Consultiva (Corte IDH)"`, `processo: "Opinião Consultiva OC-n/aa"`, `estado` = solicitante (o app mostra "Solicitante"), `sistematicaDetalhe: "Série A, nº n"`, `vitima` e `reparacoes` vazios, `artigosCADH` = dispositivos interpretados.
+- `tese` = respostas da Corte, com requisitos e votação; `resumo` = perguntas e desfecho; 5–8 `dicas` com as mesmas marcações dos casos; `casosRelacionados` com casos contenciosos afins (e a relação inversa no card do caso).
+- Conferir a ficha contra o texto: o .md costuma perder a numeração dos parágrafos (o GPT tende a inventar números), omitir pontos do parecer e ignorar direito brasileiro citado em nota.
+- Cadastradas: OC-24/17.
+

@@ -36637,7 +36637,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (item.estado) partes.push('<b>' + (oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
-        h += bloco('Caso', partes.join(' · '));
+        h += bloco(oc ? 'Consulta' : 'Caso', partes.join(' · '));
         if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
         // Dicas de prova: "Vai cair", "Atenção", "Não confunda", "Cola na retina" e "Green tips", cada uma com selo próprio.
         let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda', 'Cola na retina': 'retina', 'Green tips': 'green' };
@@ -36658,14 +36658,16 @@ window.JURISPRUDENCIA_RUNTIME = {
         }));
         return h;
     },
-    // Card da Corte IDH pelo nome do caso ("Caso Gomes Lund e outros vs.
-    // Brasil" acha "Caso Gomes Lund e outros (\"Guerrilha do Araguaia\") vs. Brasil").
+    // Card da Corte IDH (caso ou opinião consultiva) pelo nome ("Caso Gomes
+    // Lund e outros vs. Brasil" acha "Caso Gomes Lund e outros (\"Guerrilha do
+    // Araguaia\") vs. Brasil").
     _acharCasoIDH: function(nome) {
+        let self = this;
         let norm = function(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim(); };
         let alvo = norm(nome);
         if (!alvo) return null;
         for (let chave in this.fichas) {
-            let f = (this.fichas[chave] || []).find(function(x) { return x.sistematica === 'Caso Contencioso (Corte IDH)' && norm(x.processo) === alvo; });
+            let f = (this.fichas[chave] || []).find(function(x) { return self._ehCorteIDH(x) && norm(x.processo) === alvo; });
             if (f) return { chave: chave, id: f.id };
         }
         return null;
