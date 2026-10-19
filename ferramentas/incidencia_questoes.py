@@ -195,7 +195,8 @@ def main():
             titulo = parte + livro + 'Título ' + num + (' — ' + nome if nome else '')
             capitulo = None
             continue
-        m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)\b', t)
+        # "CAPÍTULO II" ou, sozinho na linha, "Capítulo II" (Juizados Especiais).
+        m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)\b', t) or re.fullmatch(r'Cap[íi]tulo\s+([IVXL]+(?:-[A-Z])?)', t)
         if m:
             capitulo = 'Cap. ' + m.group(1) + ' — ' + nome_seguinte(i)
             continue
