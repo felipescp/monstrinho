@@ -44,7 +44,7 @@ Um **material de questões** em Markdown, exportado do Word. Exemplo: Eduardo B.
    - Os artigos sem marca (revogados, não cobrados) aparecem no lugar certo.
    - Compare uma amostra de 5 a 10 dispositivos com o material.
 
-4. **Se mexer no extrator**, regenere os mapas já existentes e confirme com `git diff --stat dados/leiseca` que eles **não mudaram**, a não ser uma correção intencional que você explique. Os mapas existentes são CP, CC, CPP, CPC, CDC, Lei de Drogas, CADH, CF, ADCT, LEP e Lei 12.850. Os comandos usados estão no histórico: `git log -- dados/leiseca/incidencia`.
+4. **Se mexer no extrator**, regenere os mapas já existentes e confirme com `git diff --stat dados/leiseca` que eles **não mudaram**, a não ser uma correção intencional que você explique. Os mapas existentes são CP, CC, CPP, CPC, CDC, Lei de Drogas, CADH, CF, ADCT, LEP, Lei 12.850 e Estatuto do Desarmamento. Os comandos usados estão no histórico: `git log -- dados/leiseca/incidencia`.
 
 5. **Ligar no manifesto**: no diploma em `dados/leiseca/manifesto.json`, acrescente `"incidencia": "dados/leiseca/incidencia/<arquivo>.json"`. É isso que faz o diploma aparecer no menu Lei Seca: os diplomas sem mapa ficam ocultos.
 
@@ -77,6 +77,6 @@ Um **material de questões** em Markdown, exportado do Word. Exemplo: Eduardo B.
 
 ## Situação
 
-- Com mapa: CP, CC, CPP, CPC, CDC, Lei de Drogas, CADH, CF, ADCT, LEP e Lei 12.850.
+- Com mapa: CP, CC, CPP, CPC, CDC, Lei de Drogas, CADH, CF, ADCT, LEP, Lei 12.850 e Estatuto do Desarmamento.
 - Os demais diplomas de `dados/leiseca/manifesto.json` ainda não têm mapa e só precisam do material. Até lá, não aparecem no menu.
 - Material com mais de um diploma (CF + ADCT): `--ate` / `--desde` com a linha que os separa.
