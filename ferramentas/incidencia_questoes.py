@@ -32,7 +32,14 @@ import sys
 
 RE_ARTIGO = re.compile(r'(?:Artigo|ARTIGO)\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
-RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?\s*(?:-\s*([A-Z]))?')
+# Letra do artigo ("Art. 4º-A", "Art. 18-A."), não a palavra que abre o texto
+# ("Art. 4º - A EXECUÇÃO FISCAL…", Lei 6.830): hífen colado ou letra seguida de "." ou "º".
+RE_ART = re.compile(r'Art\.\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?(?:(?<=[\dº°o])-\s*([A-Z])|\s*-\s*([A-Z])(?=[.º°]))?')
+
+
+def chave_art(m):
+    letra = m.group(2) or m.group(3)
+    return m.group(1).replace('.', '') + ('-' + letra if letra else '')
 
 
 def limpar(t):
@@ -123,7 +130,7 @@ def main():
     for t, n in zip(linhas, negrito):
         m = RE_ART.match(t)
         if m and n:
-            com_negrito.add(m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else ''))
+            com_negrito.add(chave_art(m))
     JANELA = 25  # artigos adiante aceitos como próximo cabeçalho (revogados/omitidos no meio)
     cont = collections.Counter()
     fora = collections.Counter()
@@ -211,7 +218,7 @@ def main():
         if itens:
             pass
         elif m:
-            novo = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
+            novo = chave_art(m)
             # Artigo citado dentro de comentário ("Art. 355. O juiz julgará…" de
             # novo, ou outro mais à frente): não muda o artigo corrente. Artigo que
             # tem cabeçalho em negrito no material só vale nele; os demais (vetado,
