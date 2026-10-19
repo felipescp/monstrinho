@@ -28716,6 +28716,7 @@ window.triggerFileUpload = function(callback) {
                     <div class="esq-leitor-opcoes">
                         <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com os esquemas da disciplina selecionada na barra lateral">Disciplina</button>
                         <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com os esquemas da divisão/tópico (L2) selecionada na barra lateral">Tópico</button>
+                        <button onclick="window.ESQUEMAS_RUNTIME.abrirBaralhoSelecionados()" title="Leitor navegável só com os esquemas marcados no modo seleção">Selecionados</button>
                     </div>
                 </details>
             </div>
@@ -30667,6 +30668,19 @@ window.ESQUEMAS_RUNTIME = {
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, itens);
     },
 
+    // Leitor só com os esquemas marcados no modo seleção (☑️), de qualquer
+    // tópico — pedido explícito do usuário. A seleção continua ativa.
+    abrirBaralhoSelecionados: function() {
+        this._garantirCarregado();
+        let sel = this._selecionados || {};
+        if (!Object.keys(sel).length) { alert('Selecione um ou mais esquemas (botão de seleção da barra de ferramentas) antes de abrir o leitor dos selecionados.'); return; }
+        let self = this, itens = [];
+        Object.keys(this.esquemas).forEach(function(chave) {
+            (self.esquemas[chave] || []).forEach(function(e) { if (sel[e.id]) itens.push(e); });
+        });
+        this._abrirBaralho('selecionados', 'Selecionados (' + itens.length + ')', itens);
+    },
+
     // Entrada direta pro baralho de uma L2 vinda de FORA da seção (painel
     // "Conteúdo Relacionado" do Cronograma) — seleciona a matéria/divisão
     // (mesmo estado que a navegação normal da barra lateral usaria) e
@@ -32564,6 +32578,7 @@ window.carregarEsquemasOficiais = async function() {
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">Disciplina</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">Divisão/Tópico</button>
                         <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoInformativo()" title="Leitor navegável só com as fichas do informativo selecionado (atalho 📰 Informativos ou filtro Informativo da barra de ferramentas)">Informativo</button>
+                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSelecionados()" title="Leitor navegável só com as fichas marcadas no modo seleção">Selecionados</button>
                     </div>
                 </details>
                 <details class="jur-leitor-mais-menu leitor-dropdown" name="jur-leitor-grupo">
@@ -36743,6 +36758,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!alvo) { alert('Selecione um informativo antes de abrir o leitor do informativo (atalho 📰 Informativos ou filtro Informativo).'); return; }
         let fichas = this._todasFichasComInformativo().filter(function(f) { return self._chaveInformativo(f) === alvo; });
         this._abrirBaralho('informativo', this._rotuloChaveInformativo(alvo), fichas);
+    },
+
+    // Leitor só com as fichas marcadas no modo seleção (☑️), de qualquer
+    // disciplina — pedido explícito do usuário. A seleção continua ativa.
+    abrirBaralhoSelecionados: function() {
+        this._garantirCarregado();
+        let sel = this._selecionados || {};
+        if (!Object.keys(sel).length) { alert('Selecione uma ou mais fichas (botão de seleção da barra de ferramentas) antes de abrir o leitor dos selecionados.'); return; }
+        let self = this, fichas = [];
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            (self.fichas[chave] || []).forEach(function(f) { if (sel[f.id]) fichas.push(f); });
+        });
+        this._abrirBaralho('selecionados', 'Selecionados (' + fichas.length + ')', fichas);
     },
 
     // Entrada direta pro baralho de uma L2 vinda de FORA da seção (painel
