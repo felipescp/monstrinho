@@ -185,7 +185,7 @@ def main():
             if m and m.group(1) in (B[art].get('inc') or {}):
                 inc = m.group(1)
         # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
-        m = re.match(r'PARTE(GERAL|ESPECIAL)$', re.sub(r'\s+', '', t))  # "P A R T E  E S P E C I A L"
+        m = re.match(r'PARTE(GERAL|ESPECIAL)$', re.sub(r'\s+', '', t).upper())  # "P A R T E  E S P E C I A L", "Parte Especial"
         if m:
             parte = 'PG · ' if m.group(1) == 'GERAL' else 'PE · '
             livro = ''
@@ -202,9 +202,10 @@ def main():
             livro += ' · '
             capitulo = None
             continue
-        m = re.match(r'T[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?|[ÚU]NICO)$', t)
+        # "TÍTULO I" ou, sozinho na linha, "Título I" (ECA).
+        m = re.match(r'T[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?|[ÚU]NICO)$', t) or re.fullmatch(r'T[íi]tulo\s+([IVXL]+(?:-[A-Z])?|[ÚUúu]nico)', t)
         if m:
-            num = 'único' if m.group(1) in ('ÚNICO', 'UNICO') else m.group(1)
+            num = 'único' if m.group(1).upper() in ('ÚNICO', 'UNICO') else m.group(1)
             nome = nome_seguinte(i) or (livro_nome if num == 'único' else '')
             titulo = parte + livro + 'Título ' + num + (' — ' + nome if nome else '')
             capitulo = None
@@ -248,14 +249,14 @@ def main():
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
                 estrutura[-1]['arts'].append(art)
         elif art:
-            m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo único)', t, re.I)
+            m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo\s+único)', t, re.I)
             if m:
                 novo = ('pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else ''), None)
             else:
                 m = re.match(r'([IVXLC]+)\s*[-–—]', t)
                 if m:
                     novo = (par, m.group(1))
-                elif not re.match(r'[a-z]\)', t):
+                elif not re.match(r'[a-z]\)|\d+\)', t):  # alínea, ou subitem "1)" de alínea (ECA, art. 83)
                     continue
                 else:
                     novo = (par, inc)
