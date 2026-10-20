@@ -134,6 +134,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 |---|---|---|
 | Estatuto da Criança e do Adolescente | `eca.json` | 09/10/2026 |
 | Sistema Nacional de Atendimento Socioeducativo – Sinase (Lei 12.594/2012) | `lei-12594.json` | 19/10/2026 |
+| Lei da Alienação Parental (Lei 12.318/2010) | `lei-12318.json` | 20/10/2026 (o compilado não risca as redações antigas; o parágrafo único do art. 6º, renumerado § 1º, é descartado pelo extrator) |
 
 ### Direito Previdenciário
 
