@@ -165,6 +165,9 @@ def linhas_md(caminho):
         # Til único na linha é artefato de risco que atravessa linhas (Código
         # Eleitoral: "~        Art. 152. …", dispositivo vigente), não risco.
         if l.count('~') == 1: l = l.replace('~', '')
+        # Risco interrompido só em volta de um link ("~Art. 53. O art. 1º da~ [Lei nº 7.347…](…)~, passa…~",
+        # Lei 10.257): o link também está riscado. Link de anotação ("[(Revogado…)]") não.
+        l = re.sub(r'(?<=[^\s~])~\s*(\[(?!\()[^\]]*\]\([^)]*\))\s*~(?=[^\s~])', r' \1 ', l)
         # Rubrica e artigo na mesma linha ("**Falsa atribuição de privilégio**  Art 188. (Revogado…)",
         # CP): separa, senão a linha inteira vira rubrica e o artigo some.
         mm = re.match(r'^(\s*\*\*[^*\n]+\*\*)\s+(Art\.?\s*\d.*)$', l)
