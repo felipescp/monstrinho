@@ -72,3 +72,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/669434b2-Lei_n__
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3381756b-L7716compilado.md L7716 "Lei dos Crimes Raciais" https://www.planalto.gov.br/ccivil_03/leis/l7716compilado.htm dados/legislacao/lei-7716.json 2026-10-20
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/8fd6d8de-L9455.md L9455 "Lei de Tortura" https://www.planalto.gov.br/ccivil_03/leis/l9455.htm dados/legislacao/lei-9455.json 2026-10-20
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a59ee152-L12830.md L12830 "Lei da Investigação Criminal pelo Delegado de Polícia" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12830.htm dados/legislacao/lei-12830.json 2026-10-20
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/f841374d-L7960.md L7960 "Lei da Prisão Temporária" https://www.planalto.gov.br/ccivil_03/leis/l7960.htm dados/legislacao/lei-7960.json 2026-10-20
