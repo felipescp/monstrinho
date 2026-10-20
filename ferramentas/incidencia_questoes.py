@@ -255,7 +255,7 @@ def main():
             if m:
                 novo = ('pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else ''), None)
             else:
-                m = re.match(r'([IVXLC]+)\s*[-–—]', t)
+                m = re.match(r'([IVXLC]+(?:-[A-Z](?=\s*[-–—]))?)\s*[-–—]', t)  # "VII-B - …" (Lei 8.072)
                 if m:
                     novo = (par, m.group(1))
                 elif not re.match(r'[a-z]\)|\d+\)|\d+\s*[-–]\s', t):  # alínea, ou subitem "1)"/"1 -" de alínea (ECA, art. 83; Lei 6.404, art. 287)
