@@ -31,7 +31,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei 4.657/1942) | `lindb.json` | 11/10/2026 |
 | Lei da Ação Popular (Lei 4.717/1965) | `lei-4717.json` | 11/10/2026 |
 | Lei das Sociedades por Ações (Lei 6.404/1976) | `lei-6404.json` | 11/10/2026 |
-| Lei do Bem de Família (Lei 8.009/1990) | `lei-8009.json` | 11/10/2026 |
+| Lei do Bem de Família (Lei 8.009/1990) | `lei-8009.json` | 20/10/2026 |
 | Lei 9.494/1997 (tutela antecipada contra a Fazenda; art. 1º-F) | `lei-9494.json` | 11/10/2026 |
 | Lei dos Juizados Especiais Cíveis e Criminais (Lei 9.099/1995) | `lei-9099.json` | 11/10/2026 |
 | Código Eleitoral (Lei 4.737/1965) | `codigo-eleitoral.json` | 11/10/2026 |
@@ -55,6 +55,16 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Investigação Criminal pelo Delegado de Polícia (Lei 12.830/2013) | `lei-12830.json` | 20/10/2026 |
 | Lei da Prisão Temporária (Lei 7.960/1989) | `lei-7960.json` | 20/10/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
+| Lei de Alimentos (Lei 5.478/1968) | `lei-5478.json` | 20/10/2026 |
+| Alienação fiduciária – busca e apreensão (Decreto-Lei 911/1969) | `decreto-lei-911.json` | 20/10/2026 |
+| Lei da Alienação Parental (Lei 12.318/2010) | `lei-12318.json` | 20/10/2026 (o compilado não risca as redações antigas; o parágrafo único do art. 6º, renumerado § 1º, é descartado pelo extrator) |
+| Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
+| Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
+| Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
+| Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
+| Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
+| Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
+| Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
 | Convenção Interamericana sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016) | `decreto-8766.json` | 18/10/2026 |
@@ -69,6 +79,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Convenção nº 169 da OIT sobre Povos Indígenas e Tribais (Decreto 5.051/2004; Anexo LXXII do Decreto 10.088/2019) | `convencao-169-oit.json` | 18/10/2026 (texto **reconstruído** de cópia com OCR defeituoso e revisado à mão, `ferramentas/textos/convencao-169-oit.md`; conferir com o Planalto quando possível) |
 | Declaração das Nações Unidas sobre os Direitos dos Povos Indígenas (Resolução 61/295, 2007) | `declaracao-povos-indigenas.json` | 18/10/2026 (tradução da UNIC Rio, 2009; não há decreto nem compilado do Planalto) |
 | Regras de Bangkok – Regras das Nações Unidas para o Tratamento de Mulheres Presas e Medidas Não Privativas de Liberdade para Mulheres Infratoras | `regras-bangkok.json` | 18/10/2026 (edição do CNJ, 2016; sem o texto das antigas Regras Mínimas que o CNJ intercala) |
+| Declaração Universal dos Direitos Humanos (Resolução 217 A III, 1948) | `declaracao-universal-direitos-humanos.json` | 20/10/2026 (tradução do UNICEF Brasil; não há decreto nem compilado do Planalto) |
 
 **Convenções (CADH, Convenção contra a Tortura, Convenção de Belém do Pará, Convenção sobre Desaparecimento Forçado, Protocolo de San Salvador, Convenção sobre os Direitos da Criança, CEDAW, Estatuto de Roma, PIDCP, Pessoas com Deficiência e seu Protocolo Facultativo)** não seguem o padrão caput/§/inciso ("ARTIGO 1", itens "1.", alíneas "a)", parágrafos sem número). São citadas como "art. 8.2, h", "art. 7.b, f e g", "arts. 7.1 a 7.6" ou, com artigos em romanos (Desaparecimento Forçado), "arts. I.a e III"; a chave do artigo fica em romanos ("IV"). Subitens em romanos dentro da alínea ("i) Homicídio doloso", Estatuto de Roma, art. 8.2.a) ficam no texto da alínea, um por linha. Elas são geradas por `ferramentas/convencao_planalto.py`, não pelo `legislacao_planalto.py`, e levam `itens: true` em `DIPLOMAS`.
 
