@@ -307,7 +307,9 @@ def converter(md, inicio=None, fim=None):
             # Pena nova com "(Redação dada…)" substitui a anterior que o compilado não riscou
             # (Lei 11.340, art. 24-A: "detenção, de 3 meses…" e depois "reclusão, de 2 a 5 anos…").
             if seg.get('pena') and re.search(r'Reda[çc][ãa]o\s+dada', m.group(1), re.I): seg['pena'] = ''
-            seg['pena'] = (seg.get('pena', '') + ' / ' if seg.get('pena') else '') + texto
+            # Pena repetida igual (CP, art. 121, § 2º: o compilado repete a linha depois dos incisos).
+            if texto not in seg.get('pena', '').split(' / '):
+                seg['pena'] = (seg.get('pena', '') + ' / ' if seg.get('pena') else '') + texto
             seg['alt'] = junta_alt(seg.get('alt'), alt)
             if not seg['alt']: del seg['alt']
             continue
