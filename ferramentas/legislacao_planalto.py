@@ -80,6 +80,7 @@ def separa_anotacoes(l):
     texto = re.sub(r'([:;,])\s*\.$', r'\1', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto)
     texto = re.sub(r'\.\.$', '.', texto)
+    texto = re.sub(r"([.;:])\s*'$", r'\1', texto)  # apóstrofo solto antes da anotação (Lei 9.455, art. 1º, § 4º, II)
     # Restos do texto riscado: "devedor,," / "condenatória ()".
     texto = re.sub(r'^0(?= [A-Za-zÁ-Úá-ú])', 'O', texto)  # "0 termo" (zero no lugar de O, Lei 6.830)
     texto = re.sub(r'\(\s*\)', '', texto)
