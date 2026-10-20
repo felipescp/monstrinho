@@ -262,7 +262,7 @@ def main():
                     # Artigo de outra lei transcrito entre aspas pelo artigo corrente (DL 911,
                     # art. 1º: "Art. 66 …"; Lei 13.146, art. 119: "Art. 12-B …"): conta no caput.
                     novo = (None, None)
-                elif not re.match(r'[a-z]\)|\d+\)|\d+\s*[-–]\s', t):  # alínea, ou subitem "1)"/"1 -" de alínea (ECA, art. 83; Lei 6.404, art. 287)
+                elif not re.match(r'[a-z]\)|\d+\)|\d+\.\s|\d+\s*[-–]\s', t):  # alínea, ou subitem "1)"/"1."/"1 -" de alínea (ECA, art. 83; Lei 6.404, art. 287; Lei 8.245, art. 1º)
                     continue
                 else:
                     novo = (par, inc)
