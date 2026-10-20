@@ -74,6 +74,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | CEDAW – Convenção sobre a Eliminação de Todas as Formas de Discriminação contra a Mulher (Decreto 4.377/2002) | `decreto-4377.json` | 18/10/2026 (o compilado não traz o título "Artigo 22"; inserido antes da extração, ver `gerar_legislacao.sh`) |
 | Estatuto de Roma do Tribunal Penal Internacional (Decreto 4.388/2002) | `decreto-4388.json` | 18/10/2026 |
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | `decreto-592.json` | 18/10/2026 |
+| Pacto Internacional sobre Direitos Econômicos, Sociais e Culturais (Decreto 591/1992) | `decreto-591.json` | 20/10/2026 (o compilado numera os dois últimos itens do art. 13 como "1." e "2."; renumerados 3 e 4 antes da extração, ver `gerar_legislacao.sh`) |
 | Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | `decreto-6949.json` | 18/10/2026 |
 | Protocolo Facultativo à Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | `decreto-6949-protocolo.json` | 18/10/2026 (mesmo compilado; numeração própria, recortado a partir do título do Protocolo) |
 | Regras de Mandela – Regras Mínimas das Nações Unidas para o Tratamento de Presos | `regras-mandela.json` | 18/10/2026 (edição do CNJ, 2016, Série Tratados Internacionais de Direitos Humanos; não há decreto nem compilado do Planalto) |

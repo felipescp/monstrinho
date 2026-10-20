@@ -17,9 +17,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
 | lei citacoes de artigo | 6224 |
-| lei citacoes ligadas | 5651 |
+| lei citacoes ligadas | 5657 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 38 |
+| lei artigo sem diploma | 32 |
 | lei citacoes de diplomas fora da base | 530 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -164,16 +164,16 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 45" — trecho: "Carta da OEA, arts. 45.b e c, 46 e 34.g"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 34" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
-- Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 12" — trecho: "PIDESC, art. 12, e Comentário Geral 14 do Comitê DESC"
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 - Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
 - Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 3" — trecho: "Carta da OEA, arts. 3.l e 17"
 - Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 1, 2 e 7" — trecho: "Declaração Universal, arts. 1, 2 e 7"
-- Comentário Geral nº 14/CDESC (onu_cg_desc_14): "arts. 2" — trecho: "PIDESC, arts. 2.1, 2.2, 3, 4, 5.1, 12, 22 e 23"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 25" — trecho: "Declaração Universal, art. 25.1"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
-- Comentário Geral nº 4/CDPD (onu_cg_cdpd_4): "art. 13" — trecho: "PIDESC, art. 13"
-- Comentário Geral nº 4/CDESC (onu_cg_desc_4): "arts. 2" — trecho: "PIDESC, arts. 2.1, 2.2, 11.1, 22 e 23"
+- Comentário Geral nº 4/CDESC (onu_cg_desc_4): "art. 25" — trecho: "Declaração Universal, art. 25.1"
+- Comentário Geral nº 12/CDESC (onu_cg_desc_12): "art. 56" — trecho: "Carta da ONU, art. 56"
+- REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
+- REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
