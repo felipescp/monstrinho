@@ -15751,6 +15751,30 @@ window.LEISECA_RUNTIME = {
             this._diploma = todos[0].id;
         }
         await this.selecionarDiploma(this._diploma, true);
+        this._preCarregarIncidencias();
+    },
+    // Mapa de incidência de um diploma (uma busca só, mesmo com chamadas
+    // simultâneas da seleção e do pré-carregamento).
+    _incPromessas: {},
+    _carregarIncidencia: function(id) {
+        let self = this, info = this._infoDiploma(id);
+        if (this._incidencias[id] || !info || !info.incidencia) return Promise.resolve();
+        if (!this._incPromessas[id]) {
+            this._incPromessas[id] = fetch(info.incidencia + '?v=' + Date.now())
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(j) { if (j) self._incidencias[id] = self._prepararIncidencia(j); })
+                .catch(function() {})
+                .then(function() { delete self._incPromessas[id]; });
+        }
+        return this._incPromessas[id];
+    },
+    // Total de cobranças sempre visível na lista de diplomas (pedido explícito
+    // do usuário): baixa os mapas de todos em segundo plano e redesenha a
+    // coluna quando terminam.
+    _preCarregarIncidencias: function() {
+        let self = this;
+        Promise.all(this._diplomas().map(function(d) { return self._carregarIncidencia(d.id); }))
+            .then(function() { self._renderDiplomas(); });
     },
     // Só diplomas com mapa de incidência: os demais de window.LEGISLACAO servem
     // apenas para as referências dos cards.
@@ -15770,10 +15794,7 @@ window.LEISECA_RUNTIME = {
         let info = this._infoDiploma(id);
         try {
             if (!this._textos[id]) this._textos[id] = await window.LEGISLACAO.carregar(id);
-            if (info && info.incidencia && !this._incidencias[id]) {
-                let r = await fetch(info.incidencia + '?v=' + Date.now());
-                if (r.ok) this._incidencias[id] = this._prepararIncidencia(await r.json());
-            }
+            if (info && info.incidencia) await this._carregarIncidencia(id);
         } catch (e) {
             if (principal) principal.innerHTML = '<div class="fc-vazio-col">Não foi possível carregar o diploma.</div>';
             return;
@@ -33495,12 +33516,18 @@ window.JURISPRUDENCIA_RUNTIME = {
         { valor: 'Repercussão Geral', rotulo: '📌 Repercussão Geral' },
         { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' },
         { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH', internacional: true },
-        { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas', internacional: true }
+        { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas e Comentários Gerais', internacional: true }
     ],
-    // Corte IDH (casos e opiniões consultivas): card próprio e eixos País/Tema.
+    // Corte IDH (casos e opiniões consultivas) e Comentários Gerais dos
+    // comitês da ONU: card próprio e eixos País/Tema.
     _ehCorteIDH: function(item) {
         let s = typeof item === 'string' ? item : (item && item.sistematica);
-        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)';
+        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)' || s === 'Comentário Geral (ONU)';
+    },
+    // O atalho "Opiniões Consultivas e Comentários Gerais" reúne as duas
+    // sistemáticas; os demais atalhos casam só com o próprio valor.
+    _bateSistematica: function(sist, valor) {
+        return sist === valor || (valor === 'Opinião Consultiva (Corte IDH)' && sist === 'Comentário Geral (ONU)');
     },
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -34061,7 +34088,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             let alvo = this._modoSistematica;
             let resultado = [];
             Object.keys(this.fichas).sort().forEach(function(chave) {
-                (self.fichas[chave] || []).forEach(function(m) { if (m.sistematica === alvo) resultado.push({ item: m, chave: chave }); });
+                (self.fichas[chave] || []).forEach(function(m) { if (self._bateSistematica(m.sistematica, alvo)) resultado.push({ item: m, chave: chave }); });
             });
             return resultado;
         }
@@ -34990,8 +35017,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             return 0;
         });
         grupos.forEach(function(g) {
+            // Opiniões Consultivas antes dos Comentários Gerais.
             g.itens = g.itens.slice().sort(modoOC
-                ? function(a, b) { return String(a.item.processo || a.item.titulo || '').localeCompare(String(b.item.processo || b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }); }
+                ? function(a, b) { let ka = a.item.sistematica === 'Comentário Geral (ONU)' ? 1 : 0, kb = b.item.sistematica === 'Comentário Geral (ONU)' ? 1 : 0; return (ka - kb) || String(a.item.processo || a.item.titulo || '').localeCompare(String(b.item.processo || b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }); }
                 : function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         });
 
@@ -35028,7 +35056,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         }).join('');
 
         if (modoOC && grupos.length) htmlGrupos = '<div class="jur-cards-grid">' + grupos[0].itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('') + '</div>';
-        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva cadastrada ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
+        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva ou Comentário Geral cadastrado ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
 
         let rotuloAtalho = modoInf
             ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
@@ -36660,11 +36688,11 @@ window.JURISPRUDENCIA_RUNTIME = {
         let bloco = function(rot, corpo) { return corpo ? '<div class="' + clsLabel + '">' + rot + '</div><div class="' + clsTexto + '">' + corpo + '</div>' : ''; };
         let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
         let partes = [];
-        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)';
-        if (item.estado) partes.push('<b>' + (oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
+        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)', cg = item.sistematica === 'Comentário Geral (ONU)';
+        if (item.estado) partes.push('<b>' + (cg ? 'Órgão' : oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
-        h += bloco(oc ? 'Consulta' : 'Caso', partes.join(' · '));
+        h += bloco(cg ? 'Comentário' : oc ? 'Consulta' : 'Caso', partes.join(' · '));
         if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
         // Dicas de prova: "Vai cair", "Atenção", "Não confunda", "Cola na retina" e "Green tips", cada uma com selo próprio.
         let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda', 'Cola na retina': 'retina', 'Green tips': 'green' };
@@ -36673,6 +36701,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             let txt = 'CADH, ' + (item.artigosCADH.length > 1 ? 'arts. ' : 'art. ') + item.artigosCADH.join(', ');
             h += bloco('Artigos da CADH', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(txt) : self._escapar(txt));
         }
+        // Comentários Gerais interpretam outros tratados (PIDESC, PIDCP etc.).
+        if (item.dispositivos) h += bloco('Dispositivos interpretados', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(item.dispositivos) : self._escapar(item.dispositivos));
         h += bloco('Conceitos', lista(item.conceitos, function(c) { return '<b>' + self._escapar(c.termo) + '</b>' + (c.explicacao ? ': ' + self._escapar(c.explicacao) : ''); }));
         h += bloco('Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
         h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
@@ -36807,7 +36837,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let self = this;
         let resultado = [];
         Object.keys(this.fichas).sort().forEach(function(chave) {
-            (self.fichas[chave] || []).forEach(function(f) { if (f.sistematica === valor && !self.ocultos[f.id]) resultado.push(f); });
+            (self.fichas[chave] || []).forEach(function(f) { if (self._bateSistematica(f.sistematica, valor) && !self.ocultos[f.id]) resultado.push(f); });
         });
         return resultado;
     },
@@ -37874,6 +37904,22 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*9\.?296(?![\d.])|Lei\s+(?:de|da)\s+Intercepta[çc][ãa]o(?:\s+Telef[ôo]nica)?/g },
         L11340: { nome: 'Lei 11.340 (Maria da Penha)', arquivo: 'dados/legislacao/lei-11340.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11340.htm',
               re: /Lei\s*n?[º°o.]*\s*11\.?340(?![\d.])|Lei\s+Maria\s+da\s+Penha/g },
+        L8245: { nome: 'Lei 8.245 (Inquilinato)', arquivo: 'dados/legislacao/lei-8245.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8245compilado.htm',
+              re: /Lei\s*n?[º°o.]*\s*8\.?245(?![\d.])|Lei\s+d[oe]\s+Inquilinato|Lei\s+de\s+Loca[çc][õo]es/g },
+        L8560: { nome: 'Lei 8.560 (Investigação de Paternidade)', arquivo: 'dados/legislacao/lei-8560.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8560.htm',
+              re: /Lei\s*n?[º°o.]*\s*8\.?560(?![\d.])|Lei\s+(?:de|da)\s+Investiga[çc][ãa]o\s+de\s+Paternidade/g },
+        L10741: { nome: 'Lei 10.741 (Estatuto da Pessoa Idosa)', arquivo: 'dados/legislacao/lei-10741.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/2003/l10.741compilado.htm',
+              re: /Lei\s*n?[º°o.]*\s*10\.?741(?![\d.])|Estatuto\s+d[oa]\s+(?:Pessoa\s+)?Idos[oa]/g },
+        L13146: { nome: 'Lei 13.146 (Estatuto da Pessoa com Deficiência)', arquivo: 'dados/legislacao/lei-13146.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13146.htm',
+              re: /Lei\s*n?[º°o.]*\s*13\.?146(?![\d.])|Estatuto\s+da\s+Pessoa\s+com\s+Defici[êe]ncia|Lei\s+Brasileira\s+de\s+Inclus[ãa]o(?:\s+da\s+Pessoa\s+com\s+Defici[êe]ncia)?|\bLBI\b/g },
+        L11804: { nome: 'Lei 11.804 (Alimentos Gravídicos)', arquivo: 'dados/legislacao/lei-11804.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2008/lei/l11804.htm',
+              re: /Lei\s*n?[º°o.]*\s*11\.?804(?![\d.])|Lei\s+(?:de|dos)\s+Alimentos\s+Grav[íi]dicos/g },
+        L12318: { nome: 'Lei 12.318 (Alienação Parental)', arquivo: 'dados/legislacao/lei-12318.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/lei/l12318.htm',
+              re: /Lei\s*n?[º°o.]*\s*12\.?318(?![\d.])|Lei\s+(?:de|da)\s+Aliena[çc][ãa]o\s+Parental/g },
+        DL911: { nome: 'Decreto-Lei 911/1969 (Alienação Fiduciária)', arquivo: 'dados/legislacao/decreto-lei-911.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del0911.htm',
+              re: /(?:Decreto-Lei|Dec\.-?Lei|\bDL)\s*n?[º°o.]*\s*911(?![\d.])/g },
+        L5478: { nome: 'Lei 5.478 (Ação de Alimentos)', arquivo: 'dados/legislacao/lei-5478.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l5478.htm',
+              re: /Lei\s*n?[º°o.]*\s*5\.?478(?![\d.])|Lei\s+(?:de|da)\s+(?:A[çc][ãa]o\s+de\s+)?Alimentos(?!\s+Grav)/g },
         L7960: { nome: 'Lei 7.960 (Prisão Temporária)', arquivo: 'dados/legislacao/lei-7960.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7960.htm',
               re: /Lei\s*n?[º°o.]*\s*7\.?960(?![\d.])|Lei\s+(?:de|da)\s+Pris[ãa]o\s+Tempor[áa]ria/g },
         L12830: { nome: 'Lei 12.830 (Investigação pelo Delegado de Polícia)', arquivo: 'dados/legislacao/lei-12830.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12830.htm',

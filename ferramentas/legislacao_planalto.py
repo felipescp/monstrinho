@@ -25,8 +25,10 @@ def limpa(l):
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
     l = l.replace('Visualizar dispositivos do STF', '')  # link do STF antes de cada artigo da CF
+    l = re.sub(r'\s*_\\-_\s*', '-', l)  # hífen em itálico com espaços: "Conceder _\-_ se _\-_ á" (Lei 8.245)
+    l = re.sub(r'(?<!\w)_(\w+)-_\s+', r'\1-', l)  # "_apart-_ hotéis" (Lei 8.245, art. 1º)
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
-    l = l.replace('\\-', '-').replace(' ', ' ')
+    l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
@@ -59,7 +61,7 @@ def separa_anotacoes(l):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
-            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?([\d.]+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             # Data com barra e ano de dois dígitos ("de 15/05/97", Lei 7.716, arts. 1º e 20).
@@ -67,7 +69,7 @@ def separa_anotacoes(l):
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
                 tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
-                num = int(lm.group(2).replace('.', '') or 0)
+                num = int(re.sub(r'[.,]', '', lm.group(2)))  # "Lei nº 12,010" (vírgula, Lei 8.560, art. 2º, § 5º)
                 # Número com ponto de milhar mesmo quando o compilado não põe ("Lei nº 10467", CP, art. 337-B).
                 cand = (int(anos[-1]), num, '%s %s/%s' % (tipo, format(num, ',').replace(',', '.'), anos[-1]))
                 if alt is None or cand > alt: alt = cand
@@ -277,6 +279,11 @@ def converter(md, inicio=None, fim=None):
             texto, alt, rev = separa_anotacoes(pu.group(1) if pu else m.group(3))
             p = novo_disp(texto, alt, rev)
             if rubrica: p['rubrica'] = rubrica
+            # Parágrafo único renumerado como § 1º sem a redação antiga riscada no compilado
+            # (Lei 12.318, art. 6º): o "Parágrafo único" de mesmo texto é a versão anterior.
+            velho = art.get('par', {}).get('pu')
+            if chave == '1' and velho and not velho.get('revogado') and velho.get('texto') == texto:
+                del art['par']['pu']
             art.setdefault('par', {})[chave] = p
             seg, inc, rubrica = p, None, None
             continue
@@ -348,6 +355,12 @@ def converter(md, inicio=None, fim=None):
         if texto and len(texto) < 150 and not re.search(r'[.;:!?)”"»]$', texto): continue
         if texto and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|PARTE|LIVRO)\b', texto, re.I) and len(texto) > 3:
             alvo = inc if inc is not None else seg
+            # Subitem numerado da alínea ("a) as locações: 1. de imóveis…; 2. de vagas…", Lei 8.245,
+            # art. 1º, parágrafo único): fica na alínea, um por linha.
+            if alvo.get('ali') and re.match(r'^\d{1,2}[.)]\s', texto):
+                letra = max(alvo['ali'])
+                alvo['ali'][letra] += '\n' + texto
+                continue
             alvo['texto'] = (alvo['texto'] + ' ' + texto).strip()
     return artigos
 
