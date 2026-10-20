@@ -21,6 +21,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 | Declaração das Nações Unidas sobre os Direitos dos Povos Indígenas (Resolução 61/295, 2007) | `declaracao-povos-indigenas.json` | 18/10/2026 (tradução da UNIC Rio, 2009; não há decreto nem compilado do Planalto) |
 | Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | `decreto-6949.json` | 18/10/2026 |
 | Protocolo Facultativo à Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | `decreto-6949-protocolo.json` | 18/10/2026 (mesmo compilado; numeração própria, recortado a partir do título do Protocolo) |
+| Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
 | Regras de Mandela – Regras Mínimas das Nações Unidas para o Tratamento de Presos | `regras-mandela.json` | 18/10/2026 (edição do CNJ, 2016, Série Tratados Internacionais de Direitos Humanos; não há decreto nem compilado do Planalto) |
 | Regras de Bangkok – Regras das Nações Unidas para o Tratamento de Mulheres Presas e Medidas Não Privativas de Liberdade para Mulheres Infratoras | `regras-bangkok.json` | 18/10/2026 (edição do CNJ, 2016; sem o texto das antigas Regras Mínimas que o CNJ intercala) |
 
