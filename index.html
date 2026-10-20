@@ -15751,6 +15751,30 @@ window.LEISECA_RUNTIME = {
             this._diploma = todos[0].id;
         }
         await this.selecionarDiploma(this._diploma, true);
+        this._preCarregarIncidencias();
+    },
+    // Mapa de incidência de um diploma (uma busca só, mesmo com chamadas
+    // simultâneas da seleção e do pré-carregamento).
+    _incPromessas: {},
+    _carregarIncidencia: function(id) {
+        let self = this, info = this._infoDiploma(id);
+        if (this._incidencias[id] || !info || !info.incidencia) return Promise.resolve();
+        if (!this._incPromessas[id]) {
+            this._incPromessas[id] = fetch(info.incidencia + '?v=' + Date.now())
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(j) { if (j) self._incidencias[id] = self._prepararIncidencia(j); })
+                .catch(function() {})
+                .then(function() { delete self._incPromessas[id]; });
+        }
+        return this._incPromessas[id];
+    },
+    // Total de cobranças sempre visível na lista de diplomas (pedido explícito
+    // do usuário): baixa os mapas de todos em segundo plano e redesenha a
+    // coluna quando terminam.
+    _preCarregarIncidencias: function() {
+        let self = this;
+        Promise.all(this._diplomas().map(function(d) { return self._carregarIncidencia(d.id); }))
+            .then(function() { self._renderDiplomas(); });
     },
     // Só diplomas com mapa de incidência: os demais de window.LEGISLACAO servem
     // apenas para as referências dos cards.
@@ -15770,10 +15794,7 @@ window.LEISECA_RUNTIME = {
         let info = this._infoDiploma(id);
         try {
             if (!this._textos[id]) this._textos[id] = await window.LEGISLACAO.carregar(id);
-            if (info && info.incidencia && !this._incidencias[id]) {
-                let r = await fetch(info.incidencia + '?v=' + Date.now());
-                if (r.ok) this._incidencias[id] = this._prepararIncidencia(await r.json());
-            }
+            if (info && info.incidencia) await this._carregarIncidencia(id);
         } catch (e) {
             if (principal) principal.innerHTML = '<div class="fc-vazio-col">Não foi possível carregar o diploma.</div>';
             return;
