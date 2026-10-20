@@ -4,22 +4,22 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4248 |
-| citacoes nas conexoes | 6686 |
-| citacoes ligadas | 6231 |
+| fichas | 4249 |
+| citacoes nas conexoes | 6687 |
+| citacoes ligadas | 6232 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 397 |
 | citacoes fora do acervo | 455 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 104 |
+| processo nao reconhecido | 105 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6210 |
-| lei citacoes ligadas | 5639 |
+| lei citacoes de artigo | 6214 |
+| lei citacoes ligadas | 5641 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 33 |
+| lei artigo sem diploma | 35 |
 | lei citacoes de diplomas fora da base | 533 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -173,7 +173,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 25" — trecho: "Declaração Universal, art. 25.1"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
 - Comentário Geral nº 4/CDPD (onu_cg_cdpd_4): "art. 13" — trecho: "PIDESC, art. 13"
-- REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
+- Comentário Geral nº 4/CDESC (onu_cg_desc_4): "arts. 2" — trecho: "PIDESC, arts. 2.1, 2.2, 11.1, 22 e 23"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
