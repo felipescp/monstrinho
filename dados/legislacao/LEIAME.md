@@ -47,6 +47,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Crimes contra o Sistema Financeiro Nacional (Lei 7.492/1986) | `lei-7492.json` | 20/10/2026 |
 | Crimes contra a Ordem Econômica – combustíveis e usurpação de bens da União (Lei 8.176/1991) | `lei-8176.json` | 20/10/2026 |
 | Lei dos Crimes Hediondos (Lei 8.072/1990) | `lei-8072.json` | 20/10/2026 |
+| Lei de Interceptação Telefônica (Lei 9.296/1996) | `lei-9296.json` | 20/10/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
