@@ -63,6 +63,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
 | Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
+| Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
