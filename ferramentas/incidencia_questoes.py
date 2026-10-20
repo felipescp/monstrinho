@@ -250,6 +250,7 @@ def main():
                     estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
                 estrutura[-1]['arts'].append(art)
         elif art:
+            t = re.sub(r'^§\s*l(?=\s*[º°])', '§ 1', t)  # "§ lº" (letra l no lugar do 1, Lei 6.404)
             m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo\s+único)', t, re.I)
             if m:
                 novo = ('pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else ''), None)
@@ -257,7 +258,7 @@ def main():
                 m = re.match(r'([IVXLC]+)\s*[-–—]', t)
                 if m:
                     novo = (par, m.group(1))
-                elif not re.match(r'[a-z]\)|\d+\)', t):  # alínea, ou subitem "1)" de alínea (ECA, art. 83)
+                elif not re.match(r'[a-z]\)|\d+\)|\d+\s*[-–]\s', t):  # alínea, ou subitem "1)"/"1 -" de alínea (ECA, art. 83; Lei 6.404, art. 287)
                     continue
                 else:
                     novo = (par, inc)
