@@ -45,6 +45,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Crimes contra a Economia Popular (Lei 1.521/1951) | `lei-1521.json` | 20/10/2026 |
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |
 | Crimes contra o Sistema Financeiro Nacional (Lei 7.492/1986) | `lei-7492.json` | 20/10/2026 |
+| Crimes contra a Ordem Econômica – combustíveis e usurpação de bens da União (Lei 8.176/1991) | `lei-8176.json` | 20/10/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
