@@ -50,6 +50,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Interceptação Telefônica (Lei 9.296/1996) | `lei-9296.json` | 20/10/2026 |
 | Lei de Lavagem de Dinheiro (Lei 9.613/1998) | `lei-9613.json` | 20/10/2026 |
 | Lei Maria da Penha (Lei 11.340/2006) | `lei-11340.json` | 20/10/2026 |
+| Lei dos Crimes Raciais (Lei 7.716/1989) | `lei-7716.json` | 20/10/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |

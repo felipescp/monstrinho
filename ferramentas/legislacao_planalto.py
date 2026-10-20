@@ -62,6 +62,8 @@ def separa_anotacoes(l):
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?([\d.]+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
+            # Data com barra e ano de dois dígitos ("de 15/05/97", Lei 7.716, arts. 1º e 20).
+            if not anos: anos = [('19' if int(x) >= 30 else '20') + x for x in re.findall(r'(?<![\d/])\d{1,2}/\d{1,2}/(\d{2})(?![\d/])', t)]
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
                 tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
