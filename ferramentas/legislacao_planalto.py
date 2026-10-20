@@ -31,6 +31,7 @@ def limpa(l):
     l = re.sub(r'(?<!\w)_(\w+)-_\s+', r'\1-', l)  # "_apart-_ hotéis" (Lei 8.245, art. 1º)
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
     l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
+    l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
