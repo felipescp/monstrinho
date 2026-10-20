@@ -277,6 +277,11 @@ def converter(md, inicio=None, fim=None):
             texto, alt, rev = separa_anotacoes(pu.group(1) if pu else m.group(3))
             p = novo_disp(texto, alt, rev)
             if rubrica: p['rubrica'] = rubrica
+            # Parágrafo único renumerado como § 1º sem a redação antiga riscada no compilado
+            # (Lei 12.318, art. 6º): o "Parágrafo único" de mesmo texto é a versão anterior.
+            velho = art.get('par', {}).get('pu')
+            if chave == '1' and velho and not velho.get('revogado') and velho.get('texto') == texto:
+                del art['par']['pu']
             art.setdefault('par', {})[chave] = p
             seg, inc, rubrica = p, None, None
             continue

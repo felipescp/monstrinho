@@ -17,10 +17,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
 | lei citacoes de artigo | 6183 |
-| lei citacoes ligadas | 5595 |
+| lei citacoes ligadas | 5596 |
 | lei dispositivo nao localizado | 5 |
 | lei artigo sem diploma | 29 |
-| lei citacoes de diplomas fora da base | 554 |
+| lei citacoes de diplomas fora da base | 553 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
