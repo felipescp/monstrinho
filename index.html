@@ -37868,6 +37868,8 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*6\.?938|(?:Lei\s+da\s+)?Pol[íi]tica\s+Nacional\s+do\s+Meio\s+Ambiente|\bPNMA\b/g },
         L12594: { nome: 'Lei 12.594 (Sinase)', arquivo: 'dados/legislacao/lei-12594.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12594.htm',
               re: /Lei\s*n?[º°o.]*\s*12\.?594(?![\d.])|Lei\s+do\s+S(?:INASE|inase)\b/g },
+        L8072: { nome: 'Lei 8.072 (Crimes Hediondos)', arquivo: 'dados/legislacao/lei-8072.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8072compilada.htm',
+              re: /Lei\s*n?[º°o.]*\s*8\.?072(?![\d.])|Lei\s+(?:dos|de)\s+Crimes\s+Hediondos/g },
         L7492: { nome: 'Lei 7.492 (Sistema Financeiro)', arquivo: 'dados/legislacao/lei-7492.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7492.htm',
               re: /Lei\s*n?[º°o.]*\s*7\.?492(?![\d.])|Lei\s+do\s+Colarinho\s+Branco|Lei\s+(?:dos|de)\s+Crimes\s+contra\s+o\s+Sistema\s+Financeiro(?:\s+Nacional)?/g },
         L8176: { nome: 'Lei 8.176 (Ordem Econômica)', arquivo: 'dados/legislacao/lei-8176.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8176.htm',
@@ -37934,8 +37936,8 @@ window.LEGISLACAO = (function() {
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
     let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
     // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
-    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)*)/g;
-    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+\b)*)/g;
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)/g;
     let cache = {}, carregando = {};
 
     function mencoes(seg) {
@@ -37959,7 +37961,7 @@ window.LEGISLACAO = (function() {
             t = t.replace(m[0], '');
         } else if ((m = t.match(/§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?/))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
         else if (/par[áa]grafo\s+[úu]nico/i.test(t)) d.par = 'pu';
-        let incs = [], ri = /(?:,|\be\b)\s*([IVXL]+)\b/g;
+        let incs = [], ri = /(?:,|\be\b)\s*([IVXL]+(?:-[A-Z])?)\b/g; // também "I-A" (Lei 8.072, art. 1º)
         while ((m = ri.exec(t))) incs.push(m[1]);
         if (incs.length) d.inc = incs.join(',');
         if ((m = t.match(/al[íi]nea\s*["“]?([a-z])\b|["“]([a-z])["”]/))) d.ali = m[1] || m[2];
