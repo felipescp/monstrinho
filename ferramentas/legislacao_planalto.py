@@ -172,7 +172,7 @@ def linhas_md(caminho):
             # § só sem "~~" solto: na Lei 9.605, art. 67, "~~~Parágrafo único…~
             # (Revogado…)" vem antes da pena nova, e o rótulo antigo a roubaria.
             rot = re.match(r'~\s*([IVXL]+\s*[-–—]+)', riscada.group(0)) or \
-                (None if til_solto else re.match(r'~\s*(§\s*\d+\s*[ºo°]?(?:-[A-Z])?\.?|Par[áa]grafo\s+[úu]nico\.?)', riscada.group(0)))
+                (None if til_solto else re.match(r'~\s*(§\s*\d+\s*[ºo°]?(?:-[A-Z])?\.?|Par[áa]grafo[\s-]+[úu]nico\.?)', riscada.group(0)))
             resto = l[riscada.end():]
             if rot and re.search(r'Revogad', resto, re.I) and not re.search(r'Revogad', riscada.group(0), re.I):
                 l = l[:riscada.start()] + rot.group(1) + ' ' + resto
@@ -187,7 +187,7 @@ def linhas_md(caminho):
         # aspas (ex.: ECA art. 263, "1) Art. 121…") continua inteiro.
         # Dispositivo grudado no anterior por uma sequência de espaços (Código
         # Eleitoral, art. 112: "…da idade.        Parágrafo único. Na definição…").
-        l = re.sub(r'(?<=[.;:])[ \u00a0]{4,}(?=(?:Par[áa]grafo\s+[úu]nico|§\s*\d|Art\.\s*\d)[^\n]{20})', '\n', l)
+        l = re.sub(r'(?<=[.;:])[ \u00a0]{4,}(?=(?:Par[áa]grafo[\s-]+[úu]nico|§\s*(?:\d|l\s*[ºo°])|Art\.\s*\d)[^\n]{20})', '\n', l)
         if '\n' in l.rstrip('\n'):
             for pedaco in l.rstrip('\n').split('\n'): yield pedaco + '\n'
             continue
@@ -256,8 +256,11 @@ def converter(md, inicio=None, fim=None):
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
         if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional),\s*(?:em\s+)?\d', l): art = None; continue
+        # "§ lº" (L minúsculo no lugar de 1: Lei 6.404, art. 251; Lei 9.504, art. 15).
+        l = re.sub(r'^§\s*l(?=\s*[ºo°])', '§ 1', l)
         m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
-        pu = re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
+        # "Parágrafo-único" com hífen (Lei 11.101, art. 60).
+        pu = re.match(r'^Par[áa]grafo[\s-]+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
         if m or pu:
             chave = 'pu' if pu else m.group(1) + ('-' + m.group(2) if m.group(2) else '')
             texto, alt, rev = separa_anotacoes(pu.group(1) if pu else m.group(3))
