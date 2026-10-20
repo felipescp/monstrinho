@@ -21,6 +21,8 @@ import json, re, sys, datetime
 def limpa(l):
     # Links "Visualizar…" antes do artigo (STF na CF, Corpus927 no CPC etc.).
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
+    # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
+    l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
