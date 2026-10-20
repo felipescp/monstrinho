@@ -148,7 +148,8 @@ def main():
             if m:
                 num_parte = int(m.group(1)) if m.group(1).isdigit() else romano(m.group(1))
                 nome = m.group(2) or nome_seguinte(i)
-                titulo = 'Parte ' + arabico_romano(num_parte) + ' — ' + nome[:1].upper() + nome[1:].lower()
+                # Parte sem nome (PIDCP: "PARTE I" seguida do artigo): só o número.
+                titulo = 'Parte ' + arabico_romano(num_parte) + (' — ' + nome[:1].upper() + nome[1:].lower() if nome else '')
                 capitulo = None
                 continue
             # Parte sem o rótulo, só o nome em caixa alta antes do artigo (Convenção
