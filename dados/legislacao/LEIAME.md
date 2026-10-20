@@ -52,6 +52,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 | Lei 9.494/1997 (tutela antecipada contra a Fazenda; art. 1º-F) | `lei-9494.json` | 11/10/2026 |
 | Lei do Bem de Família (Lei 8.009/1990) | `lei-8009.json` | 11/10/2026 |
 | Lei de Alimentos (Lei 5.478/1968) | `lei-5478.json` | 20/10/2026 |
+| Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
 
 ### Direito Penal
 
