@@ -68,3 +68,4 @@ python3 -I ferramentas/regras_onu_cnj.py bangkok /root/.claude/uploads/ef447e4b-
 python3 -I ferramentas/regras_onu_cnj.py declaracao /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/34fb7df8-declaracao.md dados/legislacao/declaracao-povos-indigenas.json 2026-10-18 >/dev/null
 # Convenção 169 da OIT: texto reconstruído e revisado (ver comentário no topo de ferramentas/textos/convencao-169-oit.md).
 python3 -I ferramentas/convencao_planalto.py ferramentas/textos/convencao-169-oit.md dados/legislacao/convencao-169-oit.json OIT169 "Convenção nº 169 da OIT sobre Povos Indígenas e Tribais" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/decreto/d10088.htm 2026-10-18 "CONVENÇÃO 169 DA OIT" >/dev/null
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/669434b2-Lei_n__11.340.md L11340 "Lei Maria da Penha" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11340.htm dados/legislacao/lei-11340.json 2026-10-20
