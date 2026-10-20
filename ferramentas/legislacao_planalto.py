@@ -43,7 +43,7 @@ def nota_stf(t):
     num = int(m.group(2).replace('.', '').rstrip('.') or 0)
     if not num: return None
     ref = '%s %s' % (cls, format(num, ',').replace(',', '.'))
-    if re.search(r'Express[õo]es?\s+declarad', t, re.I): tipo = 'inconst_parcial'
+    if re.search(r'Express(?:ão|ões)\s+declarad', t, re.I): tipo = 'inconst_parcial'
     elif re.search(r'Declarad[oa]s?\s+inconstitucional', t, re.I): tipo = 'inconst'
     else: tipo = 'vide'
     return {'tipo': tipo, 'ref': ref}
@@ -55,7 +55,7 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express[õo]es?\s+declarad|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
+        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)

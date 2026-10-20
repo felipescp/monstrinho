@@ -76,6 +76,10 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 
 3. **Registrar o diploma.** Só se o diploma for novo: acrescente uma linha em `window.LEGISLACAO` → `DIPLOMAS` no `index.html`. A linha leva o ID, o arquivo, a URL do Planalto e a expressão que reconhece a sigla ou o nome do diploma.
 
+## Alíneas sem inciso (`ali` no artigo ou parágrafo)
+
+Até 20/10/2026, o extrator só aceitava alínea dentro de inciso; a alínea direto no artigo ou parágrafo (CP, art. 33, § 1º, "a" a "c") era emendada no texto. O extrator foi corrigido, e os JSONs já gerados foram consertados por `ferramentas/separa_alineas.py` (77 dispositivos em 14 diplomas; só o padrão "…: a) …; b) …", sem texto citado de outra lei). No balão, "art. 33, § 1º, "a"" mostra a alínea citada; sem alínea, lista todas.
+
 ## Notas de controle de constitucionalidade (`stf`)
 
 Quando o compilado do Planalto anota "Declarado inconstitucional pela ADI…", "Expressões declaradas inconstitucionais…" ou "Vide ADI/ADC/ADPF…", o dispositivo ganha `stf: [{tipo, ref}]`, com `tipo` = `inconst`, `inconst_parcial` ou `vide`. O texto do Planalto não muda; o balão mostra o aviso ("⚖️ Declarado inconstitucional pelo STF (ADI 5.538)") ou a remissão ("⚖️ Vide ADI 3.112").
