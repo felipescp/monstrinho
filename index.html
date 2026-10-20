@@ -13632,6 +13632,16 @@ window.carregarFlashcardsOficiais = async function() {
     #prazos-modal .prz-classif-btn { font-size:13px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.3; }
     #prazos-modal .prz-classif-btn.ativa { opacity:1; }
     #prazos-modal .prz-classif-btn:hover { opacity:0.8; }
+    #prazos-modal .prz-prio-sel { margin-left:4px; padding:2px 4px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #prazos-modal .prz-prio-sel.prz-prio-dificil { border-color:#dc2626; color:#b91c1c; background:#fef2f2; }
+    #prazos-modal .prz-prio-sel.prz-prio-medio { border-color:#ca8a04; color:#854d0e; background:#fefce8; }
+    #prazos-modal .prz-prio-sel.prz-prio-facil { border-color:#16a34a; color:#166534; background:#f0fdf4; }
+    #prazos-modal .prz-prio-sel.prz-prio-sistema { border-style:dashed; }
+    #prazos-modal .prz-btn-sistema { padding:5px 10px; border-radius:7px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
+    #prazos-modal .prz-btn-sistema:hover { border-color:var(--app-primary); }
+    #prazos-modal .prz-check-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #prazos-modal .prz-check-pill.ativa { border-color:var(--app-primary); background:rgba(37,99,235,0.08); }
+    #prazos-modal .prz-apenas { font-size:11px; font-weight:700; color:var(--text-muted); align-self:center; }
     #prazos-modal .prz-btn-icone { background:none; border:none; cursor:pointer; font-size:12px; opacity:0.6; padding:0 2px; }
     #prazos-modal .prz-btn-icone:hover { opacity:1; }
     #prazos-modal .prz-selo-oficial { font-size:9px; font-weight:800; color:#b91c1c; margin-left:4px; }
@@ -13866,7 +13876,7 @@ window.PRAZOS_RUNTIME = {
     _busca: '',
     _cortina: { prazo: true }, // colunas escondidas na Tabela (padrão: o número)
     _revelados: {},            // "id|coluna" revelados individualmente
-    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'prazo_inicio' },
+    _treinoCfg: { modo: 'revelar', filtro: 'todos', quantidade: 20, embaralhar: true, esconder: 'prazo_inicio', importancia: {} },
     _treino: null,
     _criacao: null,
 
@@ -13962,6 +13972,7 @@ window.PRAZOS_RUNTIME = {
                     '<button class="prz-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
                 '</div>' +
                 (this._aba === 'tabela' ? '<input type="text" class="prz-busca" id="prz-busca" placeholder="🔎 Buscar..." value="' + this._esc(this._busca) + '" oninput="window.PRAZOS_RUNTIME.filtrarBusca(this.value)">' : '') +
+                '<button class="prz-btn-sistema" onclick="window.PRAZOS_RUNTIME.aplicarPrioridadeSistema()" title="Adota a prioridade sugerida pelo sistema (Crítico, Importante, Regular) nos prazos em que você ainda não escolheu a sua. A que você escolher na tabela sempre prevalece.">🏷️ Aplicar prioridade do sistema</button>' +
                 '<span class="prz-info" id="prz-info"></span>' +
             '</div>' +
             '<div class="prz-scroll" id="prz-scroll"></div>';
@@ -14037,13 +14048,76 @@ window.PRAZOS_RUNTIME = {
                     : self._htmlValor(it, c.k);
                 return '<td class="prz-col-' + c.k + '">' + conteudo + '</td>';
             }).join('') +
-            '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) +
+            '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it.id) + self._htmlPrioridade(it) +
                 (it.origem_oficial ? '' : '<button class="prz-btn-icone" onclick="window.PRAZOS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir este prazo">🗑️</button>') +
             '</span></td></tr>';
         });
         let algumaCortina = this.COLUNAS.some(function(c) { return self._cortina[c.k]; });
         scroll.innerHTML = '<div class="prz-dica">Clique no título de uma coluna para esconder/mostrar (cortina)' + (algumaCortina ? ' · clique numa célula oculta para revelá-la' : '') + '.</div>' +
             '<table class="prz-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
+    },
+
+    // ── 🏷️ PRIORIDADE (Crítico / Importante / Regular) ──
+    // Mesmo mecanismo de PENAS_RUNTIME: separada da autoavaliação do treino
+    // (ultimaClassificacao: Errei/Hesitei/Acertei). estado[id].importancia
+    // ('dificil' = Crítico, 'medio' = Importante, 'facil' = Regular) +
+    // importanciaOrigem: 'manual' (escolhida na tabela; prevalece sempre) ou
+    // 'sistema' (adotada de item.classificacaoOficial, gravado no JSON
+    // oficial, pelo botão "Aplicar prioridade do sistema").
+    MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': 'dificil', 'importante': 'medio', 'regular': 'facil' },
+    NIVEIS_PRIORIDADE: [['dificil', '🔴 Crítico'], ['medio', '🟡 Importante'], ['facil', '🟢 Regular']],
+    _prioridade: function(id) { return (this.estado[id] || {}).importancia || ''; },
+    definirPrioridade: function(id, nivel) {
+        let atual = this.estado[id] || {}, novo = Object.assign({}, atual);
+        if (nivel) { novo.importancia = nivel; novo.importanciaOrigem = 'manual'; }
+        else { delete novo.importancia; delete novo.importanciaOrigem; } // volta a aceitar a do sistema
+        novo.atualizadoEm = Date.now();
+        this.estado[id] = novo;
+        this.salvar();
+        if (this._aba === 'tabela' && document.getElementById('prz-scroll')) this._renderTabela();
+        else if (this._aba === 'treino') this._renderPainelTreino();
+    },
+    aplicarPrioridadeSistema: function() {
+        let self = this, n = 0, comOficial = 0;
+        Object.keys(this.itens).forEach(function(ch) {
+            (self.itens[ch] || []).forEach(function(it) {
+                let nivel = self.MAPA_CLASSIFICACAO_OFICIAL[it.classificacaoOficial];
+                if (!nivel) return;
+                comOficial++;
+                let e = self.estado[it.id] || {};
+                if (e.importancia && e.importanciaOrigem !== 'sistema') return; // a do usuário prevalece
+                if (e.importancia === nivel) return;
+                self.estado[it.id] = Object.assign({}, e, { importancia: nivel, importanciaOrigem: 'sistema', atualizadoEm: Date.now() });
+                n++;
+            });
+        });
+        this.salvar();
+        this._renderCorpo();
+        alert(!comOficial ? 'Ainda não há prioridade do sistema nos prazos cadastrados.'
+            : n > 0 ? n + ' prazo(s) receberam a prioridade do sistema. As prioridades que você escolheu foram mantidas.'
+            : 'Nada a aplicar: os prazos com prioridade do sistema já têm a sua.');
+    },
+    _htmlPrioridade: function(it) {
+        let e = this.estado[it.id] || {}, atual = e.importancia || '';
+        let sug = it.classificacaoOficial ? 'Prioridade do sistema: ' + it.classificacaoOficial : 'Sem prioridade do sistema';
+        let origem = atual ? (e.importanciaOrigem === 'sistema' ? 'adotada do sistema' : 'escolhida por você') : 'sem prioridade';
+        return '<select class="prz-prio-sel' + (atual ? ' prz-prio-' + atual : '') + (e.importanciaOrigem === 'sistema' ? ' prz-prio-sistema' : '') + '" title="Prioridade (' + origem + '). ' + this._esc(sug) + '." onchange="window.PRAZOS_RUNTIME.definirPrioridade(\'' + this._escJs(it.id) + '\', this.value)">' +
+            '<option value=""' + (atual ? '' : ' selected') + '>Prioridade —</option>' +
+            this.NIVEIS_PRIORIDADE.map(function(n) { return '<option value="' + n[0] + '"' + (atual === n[0] ? ' selected' : '') + '>' + n[1] + '</option>'; }).join('') +
+        '</select>';
+    },
+    // Importância no treino = prioridade do prazo (a sua ou a adotada do
+    // sistema). Nenhuma marcada = todas.
+    _passaImportancia: function(id) {
+        let imp = this._treinoCfg.importancia || {};
+        let marcadas = Object.keys(imp).filter(function(k) { return imp[k]; });
+        if (!marcadas.length) return true;
+        return !!imp[this._prioridade(id)];
+    },
+    alternarImportanciaTreino: function(k) {
+        let imp = this._treinoCfg.importancia || (this._treinoCfg.importancia = {});
+        imp[k] = !imp[k];
+        this._renderPainelTreino();
     },
 
     _acharItem: function(id) {
@@ -14115,9 +14189,10 @@ window.PRAZOS_RUNTIME = {
         let scroll = document.getElementById('prz-scroll');
         if (!scroll) return;
         let self = this, cfg = this._treinoCfg;
-        let base = this._itensDoRecorte();
+        let recorteTodo = this._itensDoRecorte(), imp = cfg.importancia || {};
+        let base = recorteTodo.filter(function(p) { return self._passaImportancia(p.item.id); });
         let info = document.getElementById('prz-info');
-        if (info) info.textContent = base.length + ' prazo' + (base.length === 1 ? '' : 's') + ' no recorte';
+        if (info) info.textContent = recorteTodo.length + ' prazo' + (recorteTodo.length === 1 ? '' : 's') + ' no recorte';
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="prz-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
@@ -14131,6 +14206,12 @@ window.PRAZOS_RUNTIME = {
                 '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos)') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Quais prazos</span><div class="prz-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
+            '<div class="prz-opcao"><span class="prz-opcao-rotulo">Importância</span><div class="prz-pills"><span class="prz-apenas">Apenas:</span>' +
+                this.NIVEIS_PRIORIDADE.map(function(m) {
+                    let n = recorteTodo.filter(function(p) { return self._prioridade(p.item.id) === m[0]; }).length;
+                    return '<label class="prz-check-pill' + (imp[m[0]] ? ' ativa' : '') + '"><input type="checkbox"' + (imp[m[0]] ? ' checked' : '') + ' onchange="window.PRAZOS_RUNTIME.alternarImportanciaTreino(\'' + m[0] + '\')">' + m[1] + ' (' + n + ')</label>';
+                }).join('') + '</div>' +
+                '<div class="prz-treino-sub">Nenhuma marcada: todas as importâncias. A importância é a prioridade do prazo: a que você escolheu na tabela ou a do sistema, se você a adotou (<a href="#" onclick="window.PRAZOS_RUNTIME.aplicarPrioridadeSistema(); return false;">🏷️ Aplicar prioridade do sistema</a>). A sua sempre prevalece.</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">O que esconder</span><div class="prz-pills">' +
                 pill('esconder', 'prazo', 'Só o prazo') + pill('esconder', 'prazo_inicio', 'Prazo + início') + pill('esconder', 'prazo_inicio_base', 'Prazo + início + base') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Quantidade</span><div class="prz-pills">' +
@@ -14143,7 +14224,7 @@ window.PRAZOS_RUNTIME = {
 
     iniciarTreino: function() {
         let self = this, cfg = this._treinoCfg;
-        let lista = this._itensDoRecorte().filter(function(p) { return self._passaFiltroTreino(p.item.id, cfg.filtro); });
+        let lista = this._itensDoRecorte().filter(function(p) { return self._passaImportancia(p.item.id) && self._passaFiltroTreino(p.item.id, cfg.filtro); });
         lista = self._filtrarParaModo(lista, cfg.modo);
         if (!lista.length) return;
         if (cfg.embaralhar) {
@@ -17246,7 +17327,7 @@ Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'prz', _comNotas: false,
     _artDe: function(item) { return item.base || ''; },
     _textoBusca: function(i) { return [i.ato, i.prazo, i.inicio, i.base, i.obs].join(' '); },
-    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '' }; }
+    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '', classificacaoOficial: i.classificacaoOficial || '' }; }
 });
 Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'pen', _comNotas: true,
