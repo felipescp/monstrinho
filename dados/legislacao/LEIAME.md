@@ -94,6 +94,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 | Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei 4.657/1942) | `lindb.json` | 11/10/2026 |
 | Alienação fiduciária – busca e apreensão (Decreto-Lei 911/1969) | `decreto-lei-911.json` | 20/10/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
+| Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
 
 ### Direito Financeiro e Tributário
 

@@ -25,8 +25,10 @@ def limpa(l):
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
     l = l.replace('Visualizar dispositivos do STF', '')  # link do STF antes de cada artigo da CF
+    l = re.sub(r'\s*_\\-_\s*', '-', l)  # hífen em itálico com espaços: "Conceder _\-_ se _\-_ á" (Lei 8.245)
+    l = re.sub(r'(?<!\w)_(\w+)-_\s+', r'\1-', l)  # "_apart-_ hotéis" (Lei 8.245, art. 1º)
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
-    l = l.replace('\\-', '-').replace(' ', ' ')
+    l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
@@ -353,6 +355,12 @@ def converter(md, inicio=None, fim=None):
         if texto and len(texto) < 150 and not re.search(r'[.;:!?)”"»]$', texto): continue
         if texto and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|PARTE|LIVRO)\b', texto, re.I) and len(texto) > 3:
             alvo = inc if inc is not None else seg
+            # Subitem numerado da alínea ("a) as locações: 1. de imóveis…; 2. de vagas…", Lei 8.245,
+            # art. 1º, parágrafo único): fica na alínea, um por linha.
+            if alvo.get('ali') and re.match(r'^\d{1,2}[.)]\s', texto):
+                letra = max(alvo['ali'])
+                alvo['ali'][letra] += '\n' + texto
+                continue
             alvo['texto'] = (alvo['texto'] + ' ' + texto).strip()
     return artigos
 
