@@ -37868,6 +37868,9 @@ window.LEGISLACAO = (function() {
               re: /Lei\s*n?[º°o.]*\s*6\.?938|(?:Lei\s+da\s+)?Pol[íi]tica\s+Nacional\s+do\s+Meio\s+Ambiente|\bPNMA\b/g },
         L12594: { nome: 'Lei 12.594 (Sinase)', arquivo: 'dados/legislacao/lei-12594.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12594.htm',
               re: /Lei\s*n?[º°o.]*\s*12\.?594(?![\d.])|Lei\s+do\s+S(?:INASE|inase)\b/g },
+        // Crimes contra a economia popular. "Lei de Usura" é o Decreto 22.626/1933, não esta.
+        L1521: { nome: 'Lei 1.521 (Economia Popular)', arquivo: 'dados/legislacao/lei-1521.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l1521.htm',
+              re: /Lei\s*n?[º°o.]*\s*1\.?521(?![\d.])|Lei\s+(?:de|dos)\s+Crimes\s+contra\s+a\s+Economia\s+Popular/g },
         // Abuso de Autoridade: o nome usual não vale para a lei antiga ("Lei de Abuso de Autoridade (Lei 4.898/1965)").
         L13869: { nome: 'Lei 13.869 (Abuso de Autoridade)', arquivo: 'dados/legislacao/lei-13869.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/l13869.htm',
               re: /Lei\s*n?[º°o.]*\s*13\.?869(?![\d.])|(?:Nova\s+)?Lei\s+(?:de|do|dos)\s+(?:Crimes\s+de\s+)?Abuso\s+de\s+Autoridade(?!\s*\(\s*Lei\s*n?[º°o.]*\s*4\.?898)/g },
@@ -38119,6 +38122,10 @@ window.LEGISLACAO = (function() {
             if (p[4] && inc.ali && p[4] in inc.ali) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + (inc.ali[p[4]] ? esc(inc.ali[p[4]]) : '<i>(revogada)</i>') + '</div>';
             // Inciso citado sem alínea, mas que se desdobra nelas ("considerando-se haver:"): lista todas.
             else if (!p[4] && inc.ali) Object.keys(inc.ali).forEach(function(k) { html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + (inc.ali[k] ? esc(inc.ali[k]) : '<i>(revogada)</i>') + '</div>'; });
+        });
+        // Alíneas direto no artigo ou parágrafo, sem inciso ("art. 4º, "a"", Lei 1.521): a citada ou todas.
+        if (!p[3] && alvo.ali) Object.keys(alvo.ali).filter(function(k) { return !p[4] || k === p[4]; }).forEach(function(k) {
+            html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + (alvo.ali[k] ? esc(alvo.ali[k]) : '<i>(revogada)</i>') + '</div>';
         });
         // Trecho citado sem inciso que termina em ":" e se desdobra em poucos incisos
         // ("§ 16. Nenhuma das seguintes medidas…:"): lista os incisos.

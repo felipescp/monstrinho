@@ -171,8 +171,9 @@ def linhas_md(caminho):
         if riscada:
             # § só sem "~~" solto: na Lei 9.605, art. 67, "~~~Parágrafo único…~
             # (Revogado…)" vem antes da pena nova, e o rótulo antigo a roubaria.
+            # Também o artigo inteiro riscado ("~Art. 9º. Constitui contravenção…~ (Revogado…)", Lei 1.521).
             rot = re.match(r'~\s*([IVXL]+\s*[-–—]+)', riscada.group(0)) or \
-                (None if til_solto else re.match(r'~\s*(§\s*\d+\s*[ºo°]?(?:-[A-Z])?\.?|Par[áa]grafo\s+[úu]nico\.?)', riscada.group(0)))
+                (None if til_solto else re.match(r'~\s*(§\s*\d+\s*[ºo°]?(?:-[A-Z])?\.?|Par[áa]grafo\s+[úu]nico\.?|Art\.\s*\d+(?:\.\d{3})?\s*[ºo°]?(?:-[A-Z])?\.?)', riscada.group(0)))
             resto = l[riscada.end():]
             if rot and re.search(r'Revogad', resto, re.I) and not re.search(r'Revogad', riscada.group(0), re.I):
                 l = l[:riscada.start()] + rot.group(1) + ' ' + resto
@@ -272,7 +273,8 @@ def converter(md, inicio=None, fim=None):
         # "III - texto", "VIII-A - texto" e, sem travessão (falha do compilado da CF,
         # art. 93), "IX todos os julgamentos…": numeral seguido de minúscula.
         m = re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s*[-–—]\s*(.*)$', l) or \
-            re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s+(?=[a-zà-ú])(.*)$', l)
+            re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s+(?=[a-zà-ú])(.*)$', l) or \
+            re.match(r'^([IVXL]+)\)\s+(.*)$', l)  # "I) o número de testemunhas…" (Lei 1.521, art. 23)
         if m:
             texto, alt, rev = separa_anotacoes(m.group(2))
             inc = novo_disp(texto, alt, rev)
@@ -299,6 +301,13 @@ def converter(md, inicio=None, fim=None):
             inc.setdefault('ali', {})[m.group(1)] = texto
             inc['alt'] = junta_alt(inc.get('alt'), alt)
             if not inc['alt']: del inc['alt']
+            continue
+        # Alínea direto no artigo ou parágrafo, sem inciso (Lei 1.521, art. 4º: usura).
+        if m and not seg.get('ali') and m.group(1) == 'a' or m and seg.get('ali') and chr(ord(max(seg['ali'])) + 1) == m.group(1):
+            texto, alt, rev = separa_anotacoes(m.group(2))
+            seg.setdefault('ali', {})[m.group(1)] = texto
+            seg['alt'] = junta_alt(seg.get('alt'), alt)
+            if not seg['alt']: del seg['alt']
             continue
         # Rubrica (linha em negrito curta, ex.: "**Furto qualificado**").
         if bruto.startswith('**'):
