@@ -60,7 +60,7 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad)|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
+        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad)|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Rejeitad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
@@ -217,9 +217,11 @@ def converter(md, inicio=None, fim=None):
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
+    anterior = ''  # linha não vazia anterior (negrito de "Subseção" em duas linhas)
     for raw in fonte:
         bruto = raw.strip()
         if not bruto: continue
+        anterior, sub_aberta = bruto, re.match(r'^\*\*\s*Subse[çc][ãa]o\b[^*]*$', anterior, re.I)
         citado = raw.startswith(CITACAO)
         l = limpa(raw.replace(CITACAO, ''))
         if not l: continue
@@ -343,10 +345,12 @@ def converter(md, inicio=None, fim=None):
             if not seg['alt']: del seg['alt']
             continue
         # Rubrica (linha em negrito curta, ex.: "**Furto qualificado**").
-        if bruto.startswith('**'):
+        # Também o nome de uma subseção em negrito de duas linhas ("**Subseção I" /
+        # "Da Guarda de Registros de Conexão**", Lei 12.965).
+        if bruto.startswith('**') or sub_aberta and bruto.endswith('**') and bruto.count('**') == 1 and len(l) < 160:
             t, _, _ = separa_anotacoes(l)
             t = t.strip('* ').strip()
-            if t and len(t) < 160 and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|PARTE|LIVRO)\b', t, re.I): rubrica = t
+            if t and len(t) < 160 and not re.match(r'^(T[ÍI]TULO|CAP[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|PARTE|LIVRO)\b', t, re.I): rubrica = t
             else: rubrica = None
             continue
         # Linha solta (continuação) → acrescenta ao dispositivo corrente.
