@@ -236,10 +236,16 @@ def converter(md, inicio=None, fim=None):
                 artigos[str(n)] = novo_disp(texto, alt, rev)
             art, seg, inc, rubrica = None, None, None, None
             continue
-        m = re.match(r'^Art\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
+        # Também "Art. 10A." sem hífen (Lei 9.613): letra grudada no número e seguida de ponto.
+        m = re.match(r'^Art\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú])|(?<=\d)([A-Z])(?=\.))?\s*[.\-–—:]*\s*(.*)$', l)
         if m:
-            num = m.group(1).replace('.', '') + ('-' + m.group(2) if m.group(2) else '')
-            texto, alt, rev = separa_anotacoes(m.group(3))
+            suf = m.group(2) or m.group(3)
+            num = m.group(1).replace('.', '') + ('-' + suf if suf else '')
+            texto, alt, rev = separa_anotacoes(m.group(4))
+            # Artigo de MP com vigência encerrada e sem texto (Lei 9.613, art. 17-F): não entra.
+            if re.fullmatch(r'\s*Vig[êe]ncia\s+encerrada\s*', texto, re.I):
+                art, seg, inc, rubrica = None, None, None, None
+                continue
             art = novo_disp(texto, alt, rev)
             if rubrica: art['rubrica'] = rubrica
             artigos[num] = art
