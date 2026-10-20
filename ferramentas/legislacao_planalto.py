@@ -55,12 +55,13 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
+        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad)|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
-            anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t)
+            # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
+            anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
                 tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
@@ -214,7 +215,8 @@ def converter(md, inicio=None, fim=None):
         if not l: continue
         # Texto citado (redação dada a outra lei): continuação, nunca dispositivo.
         if citado:
-            if art is not None and ativo:
+            # Texto citado de artigo revogado (Lei 8.137, art. 18: o art. 163 que ele acrescentava ao CP) sai.
+            if art is not None and ativo and not art.get('revogado'):
                 alvo = inc if inc is not None else seg
                 alvo['texto'] = (alvo['texto'] + ' ' + l).strip()
             continue
