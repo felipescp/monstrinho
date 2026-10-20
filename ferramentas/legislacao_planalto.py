@@ -65,7 +65,9 @@ def separa_anotacoes(l):
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
                 tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
-                cand = (int(anos[-1]), int(lm.group(2).replace('.', '').rstrip('.') or 0), '%s %s/%s' % (tipo, lm.group(2).rstrip('.'), anos[-1]))
+                num = int(lm.group(2).replace('.', '') or 0)
+                # Número com ponto de milhar mesmo quando o compilado não põe ("Lei nº 10467", CP, art. 337-B).
+                cand = (int(anos[-1]), num, '%s %s/%s' % (tipo, format(num, ',').replace(',', '.'), anos[-1]))
                 if alt is None or cand > alt: alt = cand
             return ''
         return m.group(0)
