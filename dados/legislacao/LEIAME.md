@@ -42,6 +42,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
 | Sistema Nacional de Atendimento Socioeducativo – Sinase (Lei 12.594/2012) | `lei-12594.json` | 19/10/2026 |
+| Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
 | Convenção Interamericana sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016) | `decreto-8766.json` | 18/10/2026 |
