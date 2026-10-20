@@ -144,8 +144,13 @@ def linhas_md(caminho):
         if re.match(r'^\s*>', l):
             conteudo = re.sub(r'^\s*(?:>\s*)+', '', l).strip()
             if not em_citacao and (re.match(r'^\[?\s*[“"«]', conteudo) or anuncia): em_citacao = True
+            anuncia = False
             citado = em_citacao and bool(conteudo)
             l = re.sub(r'^\s*(?:>\s*)+', '', l)
+        elif anuncia and (re.match(r'^\s*\[?\s*[“"«]', l) or not re.search(r'[a-zà-ú]', re.sub(r'\]\([^)]*\)', '', l))):
+            # Cabeçalho citado fora do bloco ">" ("[“CAPÍTULO II-B](…)" e "DOS CRIMES EM LICITAÇÕES…",
+            # Lei 14.133, art. 178): continua anunciado, e o bloco ">" seguinte é citado.
+            citado = True
         elif l.strip():
             em_citacao = False
             # Linha que anuncia redação de outra lei ("…passa a vigorar com as
@@ -238,6 +243,17 @@ def converter(md, inicio=None, fim=None):
             if re.search(inicio, l, re.I): ativo = True
             continue
         if fim and re.search(fim, l, re.I): break
+        # Redação de MP que caducou ("[Vigência encerrada]", Lei 14.133, art. 191): o compilado repete
+        # depois o texto restabelecido. Artigo sai; parágrafo ou inciso vira nó descartável, para os
+        # filhos não grudarem no dispositivo anterior (o parágrafo único "revogado" do art. 191 ia para o 190).
+        if re.search(r'Vig[êe]ncia\s+encerrada', l, re.I):
+            if re.match(r'^Art\.?\s*\d', l):
+                art, seg, inc, rubrica = None, None, None, None
+                continue
+            if art is not None and re.match(r'^(§|Par[áa]grafo\s+[úu]nico|[IVXL]+\s*[-–—])', l):
+                if l[0] in '§P': seg, inc = {'texto': ''}, None
+                else: inc = {'texto': ''}
+                continue
         # Faixa revogada em bloco: "Art. 1.620. a 1.629. (Revogados pela Lei…)".
         # Também "Art. 556. a Art. 560 (Revogado…)" e "Art. 561. e Art. 562. (…)".
         m = re.match(r'^Arts?\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(a|e)\s*(?:Art\.?\s*)?(\d+(?:\.\d{3})?)\s*[ºo°]?\.?\s*(.*)$', l)

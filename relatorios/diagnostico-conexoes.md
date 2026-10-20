@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 107 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6230 |
-| lei citacoes ligadas | 5679 |
-| lei dispositivo nao localizado | 5 |
+| lei citacoes de artigo | 6231 |
+| lei citacoes ligadas | 5691 |
+| lei dispositivo nao localizado | 6 |
 | lei artigo sem diploma | 32 |
-| lei citacoes de diplomas fora da base | 514 |
+| lei citacoes de diplomas fora da base | 502 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -144,6 +144,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - ADPF 862-RJ (jur_1788747185710_ld527r): "Art. 79, §1º" → Lei 8.906: art. 79 não existe no texto
 - REsp 1.854.662-CE, REsp 1.881.324-PE, REsp 1.881.283-RN e REsp 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 40, § 7º, I" → CF: inciso I não existe no trecho citado
+- ADI 4.645-DF e ADI 4.655-DF (jur_1788788258352_igwd98): "arts. 46, § 1º, II, e 90" → Lei 14.133 (Licitações e Contratos): inciso II não existe no trecho citado
 - ARE 1.215.727-SP (jur_1790222446982_c6cexa): "art. 40, § 4º, II" → CF: inciso II não existe no trecho citado
 - RMS 75.248-RS (jur_1790221818145_frhqt4): "arts. 34 e 70" → Lei 8.906: art. 70 não existe no texto
 
@@ -182,7 +183,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | CPC | 32 |
 | CLT | 15 |
 | Lei 6.766 | 14 |
-| Lei 14.133 | 12 |
 | Lei 8.666 | 11 |
 | Resolução | 9 |
 | Lei 9.514 | 9 |
@@ -209,3 +209,4 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 11.419 | 5 |
 | Lei 12.153 | 5 |
 | Lei 8.036 | 4 |
+| Lei 9.394 | 4 |
