@@ -33516,12 +33516,18 @@ window.JURISPRUDENCIA_RUNTIME = {
         { valor: 'Repercussão Geral', rotulo: '📌 Repercussão Geral' },
         { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' },
         { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH', internacional: true },
-        { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas', internacional: true }
+        { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas e Comentários Gerais', internacional: true }
     ],
-    // Corte IDH (casos e opiniões consultivas): card próprio e eixos País/Tema.
+    // Corte IDH (casos e opiniões consultivas) e Comentários Gerais dos
+    // comitês da ONU: card próprio e eixos País/Tema.
     _ehCorteIDH: function(item) {
         let s = typeof item === 'string' ? item : (item && item.sistematica);
-        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)';
+        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)' || s === 'Comentário Geral (ONU)';
+    },
+    // O atalho "Opiniões Consultivas e Comentários Gerais" reúne as duas
+    // sistemáticas; os demais atalhos casam só com o próprio valor.
+    _bateSistematica: function(sist, valor) {
+        return sist === valor || (valor === 'Opinião Consultiva (Corte IDH)' && sist === 'Comentário Geral (ONU)');
     },
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -34082,7 +34088,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             let alvo = this._modoSistematica;
             let resultado = [];
             Object.keys(this.fichas).sort().forEach(function(chave) {
-                (self.fichas[chave] || []).forEach(function(m) { if (m.sistematica === alvo) resultado.push({ item: m, chave: chave }); });
+                (self.fichas[chave] || []).forEach(function(m) { if (self._bateSistematica(m.sistematica, alvo)) resultado.push({ item: m, chave: chave }); });
             });
             return resultado;
         }
@@ -35011,8 +35017,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             return 0;
         });
         grupos.forEach(function(g) {
+            // Opiniões Consultivas antes dos Comentários Gerais.
             g.itens = g.itens.slice().sort(modoOC
-                ? function(a, b) { return String(a.item.processo || a.item.titulo || '').localeCompare(String(b.item.processo || b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }); }
+                ? function(a, b) { let ka = a.item.sistematica === 'Comentário Geral (ONU)' ? 1 : 0, kb = b.item.sistematica === 'Comentário Geral (ONU)' ? 1 : 0; return (ka - kb) || String(a.item.processo || a.item.titulo || '').localeCompare(String(b.item.processo || b.item.titulo || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }); }
                 : function(a, b) { return (b.item.dataJulgado || '').localeCompare(a.item.dataJulgado || ''); });
         });
 
@@ -35049,7 +35056,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         }).join('');
 
         if (modoOC && grupos.length) htmlGrupos = '<div class="jur-cards-grid">' + grupos[0].itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('') + '</div>';
-        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva cadastrada ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
+        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva ou Comentário Geral cadastrado ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
 
         let rotuloAtalho = modoInf
             ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
@@ -36681,11 +36688,11 @@ window.JURISPRUDENCIA_RUNTIME = {
         let bloco = function(rot, corpo) { return corpo ? '<div class="' + clsLabel + '">' + rot + '</div><div class="' + clsTexto + '">' + corpo + '</div>' : ''; };
         let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
         let partes = [];
-        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)';
-        if (item.estado) partes.push('<b>' + (oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
+        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)', cg = item.sistematica === 'Comentário Geral (ONU)';
+        if (item.estado) partes.push('<b>' + (cg ? 'Órgão' : oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
-        h += bloco(oc ? 'Consulta' : 'Caso', partes.join(' · '));
+        h += bloco(cg ? 'Comentário' : oc ? 'Consulta' : 'Caso', partes.join(' · '));
         if (item.tematica) h += bloco('Temática', self._escapar(item.tematica));
         // Dicas de prova: "Vai cair", "Atenção", "Não confunda", "Cola na retina" e "Green tips", cada uma com selo próprio.
         let clsDica = { 'Vai cair': 'vai', 'Atenção': 'atencao', 'Não confunda': 'confunda', 'Cola na retina': 'retina', 'Green tips': 'green' };
@@ -36694,6 +36701,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             let txt = 'CADH, ' + (item.artigosCADH.length > 1 ? 'arts. ' : 'art. ') + item.artigosCADH.join(', ');
             h += bloco('Artigos da CADH', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(txt) : self._escapar(txt));
         }
+        // Comentários Gerais interpretam outros tratados (PIDESC, PIDCP etc.).
+        if (item.dispositivos) h += bloco('Dispositivos interpretados', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(item.dispositivos) : self._escapar(item.dispositivos));
         h += bloco('Conceitos', lista(item.conceitos, function(c) { return '<b>' + self._escapar(c.termo) + '</b>' + (c.explicacao ? ': ' + self._escapar(c.explicacao) : ''); }));
         h += bloco('Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
         h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
@@ -36828,7 +36837,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let self = this;
         let resultado = [];
         Object.keys(this.fichas).sort().forEach(function(chave) {
-            (self.fichas[chave] || []).forEach(function(f) { if (f.sistematica === valor && !self.ocultos[f.id]) resultado.push(f); });
+            (self.fichas[chave] || []).forEach(function(f) { if (self._bateSistematica(f.sistematica, valor) && !self.ocultos[f.id]) resultado.push(f); });
         });
         return resultado;
     },
