@@ -145,7 +145,7 @@ def detalhes(t):
         m = re.search(r'§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?', t)
         if m: d['par'] = m.group(1) + ('-' + m.group(2) if m.group(2) else '')
         elif re.search(r'par[áa]grafo\s+[úu]nico', t, re.I): d['par'] = 'pu'
-    incs = re.findall(r'(?:,|\be\b)\s*([IVXL]+)\b', t, re.ASCII)
+    incs = re.findall(r'(?:,|\be\b)\s*([IVXL]+(?:-[A-Z])?)\b', t, re.ASCII)
     if incs: d['inc'] = ','.join(incs)
     m = re.search(r'al[íi]nea\s*["“]?([a-z])\b|["“]([a-z])["”]', t)
     if m: d['ali'] = m.group(1) or m.group(2)

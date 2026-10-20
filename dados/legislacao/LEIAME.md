@@ -46,6 +46,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |
 | Crimes contra o Sistema Financeiro Nacional (Lei 7.492/1986) | `lei-7492.json` | 20/10/2026 |
 | Crimes contra a Ordem Econômica – combustíveis e usurpação de bens da União (Lei 8.176/1991) | `lei-8176.json` | 20/10/2026 |
+| Lei dos Crimes Hediondos (Lei 8.072/1990) | `lei-8072.json` | 20/10/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
@@ -82,6 +83,10 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 ## Alíneas sem inciso (`ali` no artigo ou parágrafo)
 
 Até 20/10/2026, o extrator só aceitava alínea dentro de inciso; a alínea direto no artigo ou parágrafo (CP, art. 33, § 1º, "a" a "c") era emendada no texto. O extrator foi corrigido, e os JSONs já gerados foram consertados por `ferramentas/separa_alineas.py` (77 dispositivos em 14 diplomas; só o padrão "…: a) …; b) …", sem texto citado de outra lei). No balão, "art. 33, § 1º, "a"" mostra a alínea citada; sem alínea, lista todas.
+
+## Incisos com sufixo escritos "V - A"
+
+O compilado da CF escreve alguns incisos com sufixo como "V - A as causas…". Até 20/10/2026 o extrator lia isso como um novo inciso "V" de texto "A as causas…", que apagava o V verdadeiro: aconteceu na CF, art. 92 (I-A, CNJ, apagava o I) e art. 109 (V-A, IDC, apagava o V). O extrator foi corrigido (vira "V-A" quando o "V" já existe) e os dois incisos foram restaurados no `constituicao.json` com o texto constitucional. As Conexões também passaram a reconhecer inciso com sufixo ("art. 1º, I-A", "art. 93, VIII-A"); antes ficava só "I" ou "VIII".
 
 ## Notas de controle de constitucionalidade (`stf`)
 

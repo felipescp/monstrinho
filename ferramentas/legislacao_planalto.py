@@ -59,7 +59,7 @@ def separa_anotacoes(l):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
-            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*n\S*\s*([\d.]+)', t, re.I)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?([\d.]+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
@@ -278,16 +278,21 @@ def converter(md, inicio=None, fim=None):
             re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s+(?=[a-zà-ú])(.*)$', l) or \
             re.match(r'^([IVXL]+)\)\s+(.*)$', l)  # "I) o número de testemunhas…" (Lei 1.521, art. 23)
         if m:
-            texto, alt, rev = separa_anotacoes(m.group(2))
+            chave, resto = m.group(1), m.group(2)
+            # "V - A as causas…" é o inciso V-A, não um novo V (CF, arts. 92 e 109: o V-A apagava o V).
+            sx = re.match(r'^([A-Z])\s+(?=[a-zà-ú])(.*)$', resto)
+            if sx and '-' not in chave and chave in seg.get('inc', {}):
+                chave, resto = chave + '-' + sx.group(1), sx.group(2)
+            texto, alt, rev = separa_anotacoes(resto)
             inc = novo_disp(texto, alt, rev)
             # Inciso que continua a lista do caput depois de §§ intercalados
             # (Lei 4.717, art. 7º: I, §§ 1º e 2º, II…VI): vai para o artigo.
             ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
-            if (seg is not art and not seg.get('inc') and m.group(1) in ROM[1:]
-                    and ROM[ROM.index(m.group(1)) - 1] in art.get('inc', {})
-                    and m.group(1) not in art.get('inc', {})):
+            if (seg is not art and not seg.get('inc') and chave in ROM[1:]
+                    and ROM[ROM.index(chave) - 1] in art.get('inc', {})
+                    and chave not in art.get('inc', {})):
                 seg = art
-            seg.setdefault('inc', {})[m.group(1)] = inc
+            seg.setdefault('inc', {})[chave] = inc
             rubrica = None
             continue
         m = re.match(r'^Penas?\s*[-–—:]\s*(.*)$', l, re.I)
