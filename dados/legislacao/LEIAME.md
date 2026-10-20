@@ -8,6 +8,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 
 | Diploma | Arquivo | Texto conforme o Planalto em |
 |---|---|---|
+| Declaração Universal dos Direitos Humanos (Resolução 217 A III, 1948) | `declaracao-universal-direitos-humanos.json` | 20/10/2026 (tradução do UNICEF Brasil; não há decreto nem compilado do Planalto) |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Protocolo de San Salvador (Decreto 3.321/1999) | `decreto-3321.json` | 18/10/2026 (texto da página da CIDH, cidh.oas.org, não do Planalto) |
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | `decreto-592.json` | 18/10/2026 |
