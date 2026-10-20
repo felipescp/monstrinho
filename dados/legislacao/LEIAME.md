@@ -66,6 +66,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
 | Lei Geral de Proteção de Dados Pessoais – LGPD (Lei 13.709/2018) | `lei-13709.json` | 20/10/2026 |
 | Lei Orgânica da Assistência Social – LOAS (Lei 8.742/1993) | `lei-8742.json` | 20/10/2026 (o art. 20, § 13, vem sem texto no compilado, só com "Vide Medida Provisória nº 871, de 2019") |
+| Marco Civil da Internet (Lei 12.965/2014) | `lei-12965.json` | 20/10/2026 (o texto da MP 1.068/2021, rejeitada, vem riscado no compilado e fica de fora) |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
