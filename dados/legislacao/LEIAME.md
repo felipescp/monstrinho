@@ -89,6 +89,7 @@ Os diplomas estão agrupados pelas disciplinas da Lei Seca, na ordem de `dados/l
 |---|---|---|
 | Código Civil | `codigo-civil.json` | 09/10/2026 |
 | Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei 4.657/1942) | `lindb.json` | 11/10/2026 |
+| Alienação fiduciária – busca e apreensão (Decreto-Lei 911/1969) | `decreto-lei-911.json` | 20/10/2026 |
 
 ### Direito Financeiro e Tributário
 
