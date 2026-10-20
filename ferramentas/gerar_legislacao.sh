@@ -2,7 +2,7 @@
 # Os caminhos U=... apontam para os arquivos recebidos nesta sessão; ajuste ao reaproveitar.
 gera(){ python3 -I ferramentas/legislacao_planalto.py "$@" >/dev/null; }
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/a21330a2-leidedrogas.md L11343 "Lei de Drogas" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm dados/legislacao/lei-11343.json 2026-10-09
-gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/51d51bd0-DEL2848compilado.md CP "Código Penal" https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm dados/legislacao/codigo-penal.json 2026-10-08
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/0d1983a4-DEL2848compilado.md CP "Código Penal" https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm dados/legislacao/codigo-penal.json 2026-10-08
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/5778abcb-cf.md CF "Constituição Federal" https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm dados/legislacao/constituicao.json 2026-10-09 --fim "^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$"
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/5778abcb-cf.md ADCT "ADCT" https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm dados/legislacao/adct.json 2026-10-09 --inicio "^ATO DAS DISPOSI[ÇC][ÕO]ES CONSTITUCIONAIS TRANSIT[ÓO]RIAS$"
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/7eced8db-cpc.md CPC "Código de Processo Civil" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm dados/legislacao/cpc.json 2026-10-09
