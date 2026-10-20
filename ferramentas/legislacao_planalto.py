@@ -59,7 +59,7 @@ def separa_anotacoes(l):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
-            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?([\d.]+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             # Data com barra e ano de dois dígitos ("de 15/05/97", Lei 7.716, arts. 1º e 20).
@@ -67,7 +67,7 @@ def separa_anotacoes(l):
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
                 tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
-                num = int(lm.group(2).replace('.', '') or 0)
+                num = int(re.sub(r'[.,]', '', lm.group(2)))  # "Lei nº 12,010" (vírgula, Lei 8.560, art. 2º, § 5º)
                 # Número com ponto de milhar mesmo quando o compilado não põe ("Lei nº 10467", CP, art. 337-B).
                 cand = (int(anos[-1]), num, '%s %s/%s' % (tipo, format(num, ',').replace(',', '.'), anos[-1]))
                 if alt is None or cand > alt: alt = cand
