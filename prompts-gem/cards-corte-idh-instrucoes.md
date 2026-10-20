@@ -75,5 +75,5 @@ git checkout $B
 - Conferir a ficha contra o texto: o .md costuma perder a numeração dos parágrafos (o GPT tende a inventar números), omitir pontos do parecer e ignorar direito brasileiro citado em nota.
 - Cadastradas: OC-18/03 e OC-29/22 (fichas feitas pelo Claude) e OC-24/17.
 - Comentários Gerais dos comitês da ONU entram no mesmo atalho ("🌎 Opiniões Consultivas e Comentários Gerais"), depois das OCs. Ficha: `prompts-gem/extrator-comentarios-gerais.txt`. Card no mesmo JSON, com `sistematica: "Comentário Geral (ONU)"`, `tribunal` = comitê (ex.: "Comitê DESC (ONU)"), `estado` = nome do comitê (o app mostra "Órgão"), `processo: "Comentário Geral nº n/SIGLA"` (ex.: "Comentário Geral nº 14/CDESC", "Comentário Geral nº 4/CDPD"), `sistematicaDetalhe` = documento da ONU, `artigosCADH: []` e `dispositivos` (texto livre, ex.: "PIDESC, art. 12") no lugar dos artigos da CADH.
-- Cadastrados: Comentários Gerais nº 4/CDESC (moradia), nº 14/CDESC (saúde) e nº 4/CDPD (educação inclusiva).
+- Cadastrados: Comentários Gerais nº 4/CDESC (moradia), nº 7/CDESC (despejos forçados), nº 14/CDESC (saúde) e nº 4/CDPD (educação inclusiva).
 
