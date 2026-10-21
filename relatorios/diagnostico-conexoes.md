@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4257 |
-| citacoes nas conexoes | 6702 |
+| fichas | 4258 |
+| citacoes nas conexoes | 6704 |
 | citacoes ligadas | 6244 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 400 |
-| citacoes fora do acervo | 458 |
+| referencias fora do acervo | 401 |
+| citacoes fora do acervo | 460 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 113 |
+| processo nao reconhecido | 114 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6278 |
-| lei citacoes ligadas | 5745 |
+| lei citacoes de artigo | 6283 |
+| lei citacoes ligadas | 5748 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 36 |
-| lei citacoes de diplomas fora da base | 491 |
+| lei artigo sem diploma | 37 |
+| lei citacoes de diplomas fora da base | 492 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -45,6 +45,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | SLS 2240 | 2 |
 | RMS 31661 | 2 |
 | RESP 2103140 | 2 |
+| RE 459510 | 2 |
 | ARE 1054490 | 2 |
 | AP 470 | 2 |
 | RMS 39173 | 2 |
@@ -65,7 +66,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RMS 69065 | 1 |
 | RCL 88319 | 1 |
 | SS 3902 | 1 |
-| RE 592317 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
