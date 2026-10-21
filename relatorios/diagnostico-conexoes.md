@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4263 |
+| fichas | 4264 |
 | citacoes nas conexoes | 6709 |
 | citacoes ligadas | 6248 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 119 |
+| processo nao reconhecido | 120 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6308 |
-| lei citacoes ligadas | 5771 |
+| lei citacoes de artigo | 6312 |
+| lei citacoes ligadas | 5773 |
 | lei dispositivo nao localizado | 6 |
 | lei artigo sem diploma | 37 |
-| lei citacoes de diplomas fora da base | 494 |
+| lei citacoes de diplomas fora da base | 496 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -201,6 +201,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 8.629 | 5 |
 | Lei 10.522 | 5 |
 | Decreto 6.514 | 5 |
+| CPP | 5 |
 | Lei 9.307 | 5 |
 | LC 80 | 5 |
 | LC 87 | 5 |
@@ -209,4 +210,3 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 12.153 | 5 |
 | Lei 8.036 | 4 |
 | Lei 9.394 | 4 |
-| LC 123 | 4 |
