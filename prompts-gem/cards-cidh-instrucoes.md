@@ -102,4 +102,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 - Cadastrado: Instituto Penal Plácido de Sá Carvalho vs. Brasil (Medida Provisória da Corte IDH, Resolução de 22/11/2018). A MC 208/16 da CIDH aparece só no desdobramento.
 - Cadastrado: Complexo Penitenciário de Curado vs. Brasil (Recife) (Medida Provisória da Corte IDH, Resolução de 28/11/2018).
 - Cadastrado: Povos Indígenas Yanomami, Ye'kwana e Munduruku vs. Brasil (Medida Provisória da Corte IDH, Resolução de 12/12/2023; adotada em 01/07/2022).
+- Cadastrado: Pessoas privadas de liberdade na Penitenciária Evaristo de Moraes vs. Brasil (Medida Provisória da Corte IDH, Resolução de adoção de 21/03/2023).
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).
