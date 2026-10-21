@@ -752,6 +752,7 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
     border: 5px solid transparent;
 }
 #glos-tooltip-flutuante.acima::after { top: 100%; border-top-color: #1e293b; }
+#glos-tooltip-flutuante.centro::after { display: none; } /* centralizado na janela: sem setinha */
 /* Balão do julgado citado nas Conexões (Jurisprudência). */
 #glos-tooltip-flutuante.jur-ref-balao { max-width: min(480px, 92vw); font-size: 12px; padding: 10px 12px; }
 #glos-tooltip-flutuante .jur-ref-cab { font-weight: 800; color: #fde68a; font-size: 11px; margin-bottom: 4px; }
@@ -23586,7 +23587,11 @@ function _glosMostrarTooltip(trigger, conteudoHtml) {
     if (conteudoHtml) { el.innerHTML = conteudoHtml; el.classList.add('jur-ref-balao'); }
     else { el.textContent = significado; el.classList.remove('jur-ref-balao'); }
     el.style.display = 'block';
-    el.classList.remove('acima', 'abaixo');
+    el.style.maxWidth = '';
+    // Mede a partir do canto (0,0): com position:fixed a largura disponível
+    // depende do "left" — o da exibição anterior encolheria a medida.
+    el.style.left = '0px'; el.style.top = '0px';
+    el.classList.remove('acima', 'abaixo', 'centro');
 
     var margem = 8;
     var rect = trigger.getBoundingClientRect();
@@ -23594,15 +23599,35 @@ function _glosMostrarTooltip(trigger, conteudoHtml) {
     // rodou, força layout) — não um placeholder ou o texto do hover anterior.
     var largura = el.offsetWidth;
     var altura = el.offsetHeight;
+    var cabeAcima = function() { return rect.top - altura - margem >= margem; };
+    var cabeAbaixo = function() { return rect.bottom + margem + altura <= window.innerHeight - margem; };
+
+    // Balão alto demais (ex.: artigo longo da lei) que não cabe nem acima nem
+    // abaixo do termo: estica para os lados (pedido explícito do usuário) até
+    // caber; se ainda assim não couber junto ao termo, fica centralizado na
+    // janela, 100% visível.
+    if (!cabeAcima() && !cabeAbaixo()) {
+        var maxLarg = window.innerWidth - 2 * margem, wJanela = null;
+        for (var w = Math.max(largura, 480) + 160; ; w += 160) {
+            el.style.maxWidth = Math.min(w, maxLarg) + 'px';
+            largura = el.offsetWidth; altura = el.offsetHeight;
+            if (cabeAcima() || cabeAbaixo()) { wJanela = null; break; }
+            if (wJanela === null && altura <= window.innerHeight - 2 * margem) wJanela = Math.min(w, maxLarg);
+            if (w >= maxLarg) break;
+        }
+        // Não coube junto ao termo: a menor largura que cabe na janela.
+        if (wJanela !== null) { el.style.maxWidth = wJanela + 'px'; largura = el.offsetWidth; altura = el.offsetHeight; }
+    }
 
     // Vertical: prefere ACIMA do termo (era o único comportamento antes);
     // só desce quando não sobra margem no topo DA JANELA — é o que evita
     // nascer atrás de uma barra sticky ou sumir pra fora da tela.
-    var top = rect.top - altura - margem;
-    var posicao = 'acima';
-    if (top < margem) {
-        top = rect.bottom + margem;
-        posicao = 'abaixo';
+    var top, posicao;
+    if (cabeAcima()) { top = rect.top - altura - margem; posicao = 'acima'; }
+    else if (cabeAbaixo()) { top = rect.bottom + margem; posicao = 'abaixo'; }
+    else {
+        top = Math.max(margem, (window.innerHeight - altura) / 2);
+        posicao = 'centro';
     }
     el.classList.add(posicao);
 
@@ -23610,7 +23635,7 @@ function _glosMostrarTooltip(trigger, conteudoHtml) {
     // bordas laterais da janela — era isso que cortava o balão perto do
     // canto. A setinha (--glos-seta-left) continua apontando pro CENTRO
     // DO TERMO de verdade, mesmo com a caixa deslocada pra caber.
-    var centroTermo = rect.left + rect.width / 2;
+    var centroTermo = posicao === 'centro' ? window.innerWidth / 2 : rect.left + rect.width / 2;
     var left = centroTermo - largura / 2;
     var maxLeft = window.innerWidth - largura - margem;
     if (left < margem) left = margem;
