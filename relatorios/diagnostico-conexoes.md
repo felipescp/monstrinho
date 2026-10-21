@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4259 |
-| citacoes nas conexoes | 6704 |
-| citacoes ligadas | 6244 |
+| fichas | 4260 |
+| citacoes nas conexoes | 6705 |
+| citacoes ligadas | 6245 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 401 |
 | citacoes fora do acervo | 460 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 115 |
+| processo nao reconhecido | 116 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6285 |
-| lei citacoes ligadas | 5750 |
+| lei citacoes de artigo | 6294 |
+| lei citacoes ligadas | 5757 |
 | lei dispositivo nao localizado | 6 |
 | lei artigo sem diploma | 37 |
-| lei citacoes de diplomas fora da base | 492 |
+| lei citacoes de diplomas fora da base | 494 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -190,11 +190,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | CPM | 8 |
 | Decreto-Lei 3.365 | 8 |
 | Regimento | 8 |
+| Convenção | 7 |
 | Lei 9.096 | 7 |
 | Lei 9.430 | 7 |
 | Lei 8.212 | 7 |
 | LC 101 | 6 |
-| Convenção | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 12.846 | 5 |
