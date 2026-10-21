@@ -5,21 +5,21 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Indicador | Qtde |
 |---|---|
 | fichas | 4252 |
-| citacoes nas conexoes | 6688 |
+| citacoes nas conexoes | 6690 |
 | citacoes ligadas | 6233 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 397 |
-| citacoes fora do acervo | 455 |
+| referencias fora do acervo | 399 |
+| citacoes fora do acervo | 457 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
 | processo nao reconhecido | 108 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6237 |
-| lei citacoes ligadas | 5712 |
+| lei citacoes de artigo | 6242 |
+| lei citacoes ligadas | 5716 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 29 |
+| lei artigo sem diploma | 30 |
 | lei citacoes de diplomas fora da base | 490 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -170,11 +170,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 3" — trecho: "Carta da OEA, arts. 3.l e 17"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
 - Comentário Geral nº 12/CDESC (onu_cg_desc_12): "art. 56" — trecho: "Carta da ONU, art. 56"
+- Caso Maria da Penha Maia Fernandes vs. Brasil (cidh_maria_da_penha): "art. 42" — trecho: "Regulamento da CIDH, art. 42 (presunção de veracidade)"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
 - REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
 - RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
-- ADI 6.828-AL (jur_1788480450899_7xr0dc): "art. 16" — trecho: "EC 132/2023, art. 16 (regra de transição da Reforma Tributária)"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
