@@ -33602,14 +33602,19 @@ window.JURISPRUDENCIA_RUNTIME = {
         { valor: 'Repercussão Geral', rotulo: '📌 Repercussão Geral' },
         { valor: 'Controle Concentrado', rotulo: '📌 Controle Concentrado' },
         { valor: 'Caso Contencioso (Corte IDH)', rotulo: '🌎 Casos da Corte IDH', internacional: true },
+        { valor: 'Caso da CIDH', rotulo: '🌎 Casos da CIDH', internacional: true },
         { valor: 'Opinião Consultiva (Corte IDH)', rotulo: '🌎 Opiniões Consultivas e Comentários Gerais', internacional: true }
     ],
     // Corte IDH (casos e opiniões consultivas) e Comentários Gerais dos
     // comitês da ONU: card próprio e eixos País/Tema.
     _ehCorteIDH: function(item) {
         let s = typeof item === 'string' ? item : (item && item.sistematica);
-        return s === 'Caso Contencioso (Corte IDH)' || s === 'Opinião Consultiva (Corte IDH)' || s === 'Comentário Geral (ONU)';
+        return s === 'Caso Contencioso (Corte IDH)' || s === 'Caso da CIDH' || s === 'Opinião Consultiva (Corte IDH)' || s === 'Comentário Geral (ONU)';
     },
+    // Casos da CIDH: o tipo de decisão (campo tipoCIDH) é o eixo principal.
+    // Medidas provisórias são da Corte IDH, mas ficam aqui por serem
+    // urgentes/cautelares, como as medidas cautelares da Comissão.
+    TIPOS_CIDH: ['Relatório de Mérito', 'Solução Amistosa', 'Admissibilidade', 'Medida Cautelar', 'Medida Provisória (Corte IDH)'],
     // O atalho "Opiniões Consultivas e Comentários Gerais" reúne as duas
     // sistemáticas; os demais atalhos casam só com o próprio valor.
     _bateSistematica: function(sist, valor) {
@@ -35032,7 +35037,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         // aparece fora dali, ver htmlAgruparPills abaixo).
         let modoIDH = self._ehCorteIDH(self._modoSistematica);
         // Corte IDH: País e Tema no lugar de Disciplina (todas são da mesma).
-        let ORDEM_EIXOS = modoIDH ? ['ano', 'pais', 'tema', 'importancia'] : ['ano', 'disciplina', 'importancia', 'tribunal'];
+        let modoCIDH = self._modoSistematica === 'Caso da CIDH';
+        let ORDEM_EIXOS = modoCIDH ? ['tipo', 'ano', 'pais', 'tema', 'importancia'] : modoIDH ? ['ano', 'pais', 'tema', 'importancia'] : ['ano', 'disciplina', 'importancia', 'tribunal'];
         let ROTULOS_IMPORTANCIA = { dificil: '🔴 Crítico', medio: '🟡 Importante', facil: '🟢 Regular', _sem: 'Sem Classificação' };
         let RANK_IMPORTANCIA = { dificil: 0, medio: 1, facil: 2, _sem: 3 };
         let modoInf = self._modoSistematica === self._MODO_INFORMATIVO;
@@ -35042,6 +35048,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (eixo === 'disciplina') return par.chave.split(' > ')[0];
             if (eixo === 'tribunal') return par.item.tribunal || 'Sem tribunal';
             if (eixo === 'pais') return par.item.estado || 'Sem país';
+            if (eixo === 'tipo') return par.item.tipoCIDH || 'Sem tipo';
             // Tema: o caso entra em cada um dos seus temas (lista).
             if (eixo === 'tema') return (par.item.temasIDH && par.item.temasIDH.length) ? par.item.temasIDH : ['Sem tema'];
             let r = self.revisaoJurisprudencia[par.item.id];
@@ -35055,13 +35062,14 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (eixo === 'informativo') return self._compararChavesInformativo(va, vb);
             if (eixo === 'ano') return vb.localeCompare(va); // mais recente primeiro
             if (eixo === 'importancia') return RANK_IMPORTANCIA[va] - RANK_IMPORTANCIA[vb];
+            if (eixo === 'tipo') { let ia = self.TIPOS_CIDH.indexOf(va), ib = self.TIPOS_CIDH.indexOf(vb); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || va.localeCompare(vb, 'pt-BR'); }
             return va.localeCompare(vb, 'pt-BR'); // disciplina/tribunal: alfabética
         }
 
         let eixosAtivos = ORDEM_EIXOS.filter(function(e) {
             return self._agruparSistematicaPor.indexOf(e) !== -1 && (e !== 'tribunal' || self._modoSistematica === 'Súmula');
         });
-        if (eixosAtivos.length === 0) eixosAtivos = ['ano'];
+        if (eixosAtivos.length === 0) eixosAtivos = [modoCIDH ? 'tipo' : 'ano'];
         // No atalho "📰 Informativos" o eixo externo é sempre o próprio
         // informativo; Disciplina e Importância continuam opcionais por dentro.
         if (modoInf) {
@@ -35142,7 +35150,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         }).join('');
 
         if (modoOC && grupos.length) htmlGrupos = '<div class="jur-cards-grid">' + grupos[0].itens.map(function(par) { return self._htmlCardGrade(par.item, par.chave); }).join('') + '</div>';
-        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva ou Comentário Geral cadastrado ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
+        let corpoHtml = (modoOC && htmlGrupos) ? htmlGrupos : htmlGrupos ? '<div class="jur-grupos-acordeon">' + htmlGrupos + '</div>' : '<div class="fc-vazio-col">' + (self._modoSistematica === 'Opinião Consultiva (Corte IDH)' && !lista.length ? 'Nenhuma Opinião Consultiva ou Comentário Geral cadastrado ainda.' : self._modoSistematica === 'Caso da CIDH' && !lista.length ? 'Nenhum caso da CIDH cadastrado ainda.' : 'Nenhuma ficha com esse filtro.') + '</div>';
 
         let rotuloAtalho = modoInf
             ? { rotulo: '📰 ' + (self._infSelecionado ? self._rotuloChaveInformativo(self._infSelecionado) : 'Informativos') }
@@ -35201,7 +35209,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 (modoOC ? '' : '<div class="jur-agrupar-pills">Agrupar por: ' +
                     (modoInf ? '<button class="fc-pill ativa" disabled title="No atalho Informativos o agrupamento externo é sempre o informativo">Informativo</button>' : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('ano') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'ano\')">Ano</button>') +
                     (self._ehCorteIDH(self._modoSistematica)
-                        ? ['pais', 'tema'].map(function(e) { return '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf(e) !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'' + e + '\')">' + (e === 'pais' ? 'País' : 'Tema') + '</button>'; }).join('')
+                        ? (self._modoSistematica === 'Caso da CIDH' ? ['tipo', 'pais', 'tema'] : ['pais', 'tema']).map(function(e) { return '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf(e) !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'' + e + '\')">' + ({ pais: 'País', tema: 'Tema', tipo: 'Tipo' })[e] + '</button>'; }).join('')
                         : '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('disciplina') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'disciplina\')">Disciplina</button>') +
                     '<button class="fc-pill' + (self._agruparSistematicaPor.indexOf('importancia') !== -1 ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.agruparSistematicaPor(\'importancia\')">Importância</button>' +
                     // Pedido explícito do usuário: eixo "Tribunal" só aparece
@@ -36774,7 +36782,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         let bloco = function(rot, corpo) { return corpo ? '<div class="' + clsLabel + '">' + rot + '</div><div class="' + clsTexto + '">' + corpo + '</div>' : ''; };
         let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
         let partes = [];
-        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)', cg = item.sistematica === 'Comentário Geral (ONU)';
+        let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)', cg = item.sistematica === 'Comentário Geral (ONU)', cidh = item.sistematica === 'Caso da CIDH';
+        if (item.tipoCIDH) partes.push('<b>Tipo:</b> ' + self._escapar(item.tipoCIDH));
         if (item.estado) partes.push('<b>' + (cg ? 'Órgão' : oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
@@ -36790,7 +36799,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         // Comentários Gerais interpretam outros tratados (PIDESC, PIDCP etc.).
         if (item.dispositivos) h += bloco('Dispositivos interpretados', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(item.dispositivos) : self._escapar(item.dispositivos));
         h += bloco('Conceitos', lista(item.conceitos, function(c) { return '<b>' + self._escapar(c.termo) + '</b>' + (c.explicacao ? ': ' + self._escapar(c.explicacao) : ''); }));
-        h += bloco('Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
+        h += bloco(cidh ? 'Recomendações e medidas' : 'Reparações', lista(item.reparacoes, function(r) { return self._escapar(r); }));
+        // Casos da CIDH: o que aconteceu depois (lei aprovada, envio à Corte IDH, cumprimento).
+        if (item.desdobramento) h += bloco('Desdobramento', window.LEGISLACAO && window.LEGISLACAO.refsDoTexto ? this._htmlComLeis(item.desdobramento) : self._escapar(item.desdobramento));
         h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
             // Caso que também tem card na base: o nome abre o card dele.
             let alvo = self._acharCasoIDH(c.caso), nome = self._escapar(c.caso) + (c.ano ? ' (' + self._escapar(c.ano) + ')' : '');

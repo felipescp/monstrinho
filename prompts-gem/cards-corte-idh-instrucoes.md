@@ -77,3 +77,16 @@ git checkout $B
 - Comentários Gerais dos comitês da ONU entram no mesmo atalho ("🌎 Opiniões Consultivas e Comentários Gerais"), depois das OCs. Ficha: `prompts-gem/extrator-comentarios-gerais.txt`. Card no mesmo JSON, com `sistematica: "Comentário Geral (ONU)"`, `tribunal` = comitê (ex.: "Comitê DESC (ONU)"), `estado` = nome do comitê (o app mostra "Órgão"), `processo: "Comentário Geral nº n/SIGLA"` (ex.: "Comentário Geral nº 14/CDESC", "Comentário Geral nº 4/CDPD"), `sistematicaDetalhe` = documento da ONU, `artigosCADH: []` e `dispositivos` (texto livre, ex.: "PIDESC, art. 12") no lugar dos artigos da CADH.
 - Cadastrados: Comentários Gerais nº 4/CDESC (moradia), nº 7/CDESC (despejos forçados), nº 12/CDESC (alimentação), nº 14/CDESC (saúde) e nº 4/CDPD (educação inclusiva).
 
+
+## Casos da CIDH (seção 🌎 Casos da CIDH)
+
+Relatórios de mérito (ex.: Maria da Penha), soluções amistosas, admissibilidades relevantes, medidas cautelares da CIDH e medidas provisórias da Corte IDH. Mesmo arquivo e mesmo card dos casos da Corte IDH, mais sintético (modelo: `cidh_maria_da_penha`):
+
+- `sistematica`: "Caso da CIDH"; `tribunal`: "CIDH" (medida provisória: "Corte IDH"); `id`: `cidh_<nome>`.
+- `tipoCIDH`: "Relatório de Mérito", "Solução Amistosa", "Admissibilidade", "Medida Cautelar" ou "Medida Provisória (Corte IDH)" — é o eixo "Tipo" do agrupamento.
+- `sistematicaDetalhe`: "Caso 12.051 · Relatório nº 54/01", "MC 382/10", "Petição 1.234-05 · Relatório nº 10/07" etc.
+- `artigosCADH` e `dispositivos` (Declaração Americana, Belém do Pará etc.), `tese`, `resumo` curto.
+- `dicas`: 3 a 5. `conceitos`: 1 a 3.
+- `reparacoes`: aparece como "Recomendações e medidas" (recomendações do relatório ou medidas determinadas na cautelar).
+- `desdobramento`: o que aconteceu depois (lei aprovada, envio à Corte IDH, cumprimento, levantamento da medida).
+- `casosRelacionados` com casos da Corte IDH afins, e a relação inversa no card deles.
