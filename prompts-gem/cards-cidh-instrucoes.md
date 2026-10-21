@@ -112,4 +112,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 - Cadastrado: Caso Jailton Neri da Fonseca vs. Brasil (Relatório de Mérito nº 33/04).
 - Cadastrado: Familiares de Layrton Fernandes da Cruz vs. Brasil (Operação Escudo) (MC 934/24, Resolução 83/2024).
 - Cadastrado: Povos Indígenas Pataxó e Pataxó Hã-Hã-Hãe vs. Brasil (sul da Bahia) (MC 61/23: outorga pela Resolução 25/2023, ampliação pela Resolução 38/2024; um card só, datado pela ampliação).
+- Cadastrado: Povo Indígena Tapeba de Caucaia vs. Brasil (Ceará) (MC 50/24, Resolução 28/2024).
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).
