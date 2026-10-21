@@ -110,4 +110,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 - Cadastrado: Caso Carandiru vs. Brasil (Relatório de Mérito nº 34/00).
 - Cadastrado: Caso José Dutra da Costa vs. Brasil (Solução Amistosa, Relatório nº 114/23).
 - Cadastrado: Caso Jailton Neri da Fonseca vs. Brasil (Relatório de Mérito nº 33/04).
+- Cadastrado: Familiares de Layrton Fernandes da Cruz vs. Brasil (Operação Escudo) (MC 934/24, Resolução 83/2024).
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).
