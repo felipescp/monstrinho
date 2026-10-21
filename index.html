@@ -13755,9 +13755,9 @@ window.carregarFlashcardsOficiais = async function() {
         <div class="prt-palco" id="prt-palco"></div>
         <div class="prt-nav" id="prt-nav">
             <button class="prt-seta" id="prt-ant" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.navegarTreino(-1)" title="Anterior (←)">←</button>
-            <button class="prt-btn dificil" id="prt-b-dificil" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('dificil')" title="Errei (1)">🔴 Errei</button>
-            <button class="prt-btn medio" id="prt-b-medio" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('medio')" title="Hesitei (2)">🟡 Hesitei</button>
-            <button class="prt-btn facil" id="prt-b-facil" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('facil')" title="Acertei (3)">🟢 Acertei</button>
+            <button class="prt-btn dificil" id="prt-b-dificil" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('dificil')" title="Errei (1)">❌ Errei</button>
+            <button class="prt-btn medio" id="prt-b-medio" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('medio')" title="Hesitei (2)">❓ Hesitei</button>
+            <button class="prt-btn facil" id="prt-b-facil" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.avaliarTreino('facil')" title="Acertei (3)">✅ Acertei</button>
             <button class="prt-seta" id="prt-prox" onmousedown="event.preventDefault()" onclick="window.PRAZOS_RUNTIME.navegarTreino(1)" title="Próximo (→)">→</button>
         </div>
         <div class="prt-dica">Espaço revela tudo · 1 / 2 / 3 avaliam e avançam · ← → navegam · Esc fecha</div>
@@ -14124,7 +14124,7 @@ window.PRAZOS_RUNTIME = {
         return null;
     },
 
-    // 🔴🟡🟢 — mesmas chaves de Flashcards/Jurisprudência (dificil/medio/facil),
+    // ❌❓✅ — mesmas chaves de Flashcards/Jurisprudência (dificil/medio/facil),
     // aqui com o sentido de autoavaliação: Errei / Hesitei / Acertei.
     classificar: function(id, nivel, manterMarcado) {
         let atual = this.estado[id] || {};
@@ -14157,9 +14157,9 @@ window.PRAZOS_RUNTIME = {
     FILTROS_TREINO: [
         { k: 'todos', rotulo: 'Todos' },
         { k: 'nao_avaliados', rotulo: 'Ainda não avaliados' },
-        { k: 'dificil', rotulo: '🔴 Errei' },
-        { k: 'medio', rotulo: '🟡 Hesitei' },
-        { k: 'facil', rotulo: '🟢 Acertei' },
+        { k: 'dificil', rotulo: '❌ Errei' },
+        { k: 'medio', rotulo: '❓ Hesitei' },
+        { k: 'facil', rotulo: '✅ Acertei' },
         { k: 'favoritos', rotulo: '⭐ Favoritos' },
         { k: 'com_erros', rotulo: '⚠️ Já errados' },
         { k: 'novos', rotulo: '🆕 Novos (últimos 2 anos)' }
@@ -14195,7 +14195,7 @@ window.PRAZOS_RUNTIME = {
         let recorte = this._rotuloRecorte();
         scroll.innerHTML = '<div class="prz-treino-painel">' +
             '<div class="prz-treino-titulo">🎯 Treinar</div>' +
-            '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. A avaliação de cada prazo fica salva e vira filtro (🔴, ⚠️ já errados) para treinar só o que você erra.</div>' +
+            '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. A avaliação de cada prazo fica salva e vira filtro (❌, ⚠️ já errados) para treinar só o que você erra.</div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Modo</span><div class="prz-pills">' +
                 this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
                 '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos)') + '</div></div>' +
@@ -14250,15 +14250,15 @@ window.PRAZOS_RUNTIME = {
         document.getElementById('prt-barra-cheia').style.width = (total ? (nAval / total) * 100 : 0) + '%';
         let cont = { dificil: 0, medio: 0, facil: 0 };
         Object.keys(tr.avaliacoes).forEach(function(k) { cont[tr.avaliacoes[k]]++; });
-        document.getElementById('prt-placar').textContent = '🔴 ' + cont.dificil + ' · 🟡 ' + cont.medio + ' · 🟢 ' + cont.facil;
+        document.getElementById('prt-placar').textContent = '❌ ' + cont.dificil + ' · ❓ ' + cont.medio + ' · ✅ ' + cont.facil;
         let nav = document.getElementById('prt-nav');
 
         if (tr.fim) {
             document.getElementById('prt-pos').textContent = total + ' / ' + total;
             nav.style.visibility = 'hidden';
             palco.innerHTML = '<div class="prt-fim"><div class="prt-ato">Treino concluído 🎉</div>' +
-                '<div class="prt-fim-numeros"><span>🔴 ' + cont.dificil + '</span><span>🟡 ' + cont.medio + '</span><span>🟢 ' + cont.facil + '</span></div>' +
-                '<div class="prt-nav">' + (cont.dificil + cont.medio ? '<button class="prt-btn dificil" onclick="window.PRAZOS_RUNTIME.retreinarErros()">↺ Treinar de novo os 🔴 e 🟡 (' + (cont.dificil + cont.medio) + ')</button>' : '') +
+                '<div class="prt-fim-numeros"><span>❌ ' + cont.dificil + '</span><span>❓ ' + cont.medio + '</span><span>✅ ' + cont.facil + '</span></div>' +
+                '<div class="prt-nav">' + (cont.dificil + cont.medio ? '<button class="prt-btn dificil" onclick="window.PRAZOS_RUNTIME.retreinarErros()">↺ Treinar de novo os ❌ e ❓ (' + (cont.dificil + cont.medio) + ')</button>' : '') +
                 '<button class="prt-btn" onclick="window.PRAZOS_RUNTIME.fecharTreino()">Fechar</button></div></div>';
             return;
         }
@@ -14727,9 +14727,9 @@ window.carregarPrazosOficiais = async function() {
         <div class="pnt-palco" id="pnt-palco"></div>
         <div class="pnt-nav" id="pnt-nav">
             <button class="pnt-seta" id="pnt-ant" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.navegarTreino(-1)" title="Anterior (←)">←</button>
-            <button class="pnt-btn dificil" id="pnt-b-dificil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('dificil')" title="Errei (1)">🔴 Errei</button>
-            <button class="pnt-btn medio" id="pnt-b-medio" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('medio')" title="Hesitei (2)">🟡 Hesitei</button>
-            <button class="pnt-btn facil" id="pnt-b-facil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('facil')" title="Acertei (3)">🟢 Acertei</button>
+            <button class="pnt-btn dificil" id="pnt-b-dificil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('dificil')" title="Errei (1)">❌ Errei</button>
+            <button class="pnt-btn medio" id="pnt-b-medio" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('medio')" title="Hesitei (2)">❓ Hesitei</button>
+            <button class="pnt-btn facil" id="pnt-b-facil" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.avaliarTreino('facil')" title="Acertei (3)">✅ Acertei</button>
             <button class="pnt-seta" id="pnt-prox" onmousedown="event.preventDefault()" onclick="window.PENAS_RUNTIME.navegarTreino(1)" title="Próximo (→)">→</button>
         </div>
         <div class="pnt-dica">Espaço revela tudo · 1 / 2 / 3 avaliam e avançam · ← → navegam · Esc fecha</div>
@@ -15239,9 +15239,9 @@ window.PENAS_RUNTIME = {
     FILTROS_TREINO: [
         { k: 'todos', rotulo: 'Todos' },
         { k: 'nao_avaliados', rotulo: 'Ainda não avaliados' },
-        { k: 'dificil', rotulo: '🔴 Errei' },
-        { k: 'medio', rotulo: '🟡 Hesitei' },
-        { k: 'facil', rotulo: '🟢 Acertei' },
+        { k: 'dificil', rotulo: '❌ Errei' },
+        { k: 'medio', rotulo: '❓ Hesitei' },
+        { k: 'facil', rotulo: '✅ Acertei' },
         { k: 'favoritos', rotulo: '⭐ Favoritos' },
         { k: 'com_erros', rotulo: '⚠️ Já errados' },
         { k: 'novos', rotulo: '🆕 Novos (últimos 2 anos)' }
@@ -15389,7 +15389,7 @@ window.PENAS_RUNTIME = {
                 pill('alvo', 'aumentos', 'Causas de aumento', nAlvo('aumentos')) + pill('alvo', 'diminuicoes', 'Causas de diminuição', nAlvo('diminuicoes')) +
                 pill('alvo', 'todos', 'Tudo', nAlvo('todos')) + '</div>' +
                 '<div class="pen-treino-sub">Fora da pena-base, cada qualificadora e cada causa de aumento ou diminuição vira uma pergunta própria: aparece a hipótese e você responde a pena ou a fração.</div></div>' +
-            '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._rotuloRecorte()) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
+            '<div class="pen-treino-sub">Recorte: <strong>' + this._esc(this._rotuloRecorte()) + '</strong>. Aparece o crime com a pena escondida: tente lembrar espécie, mínimo e máximo, revele e avalie (❌ Errei · ❓ Hesitei · ✅ Acertei). Ao revelar a pena, aparecem também os indicadores calculados (menor potencial ofensivo, sursis processual, ANPP e prescrição).</div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Quais crimes</span><div class="pen-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="pen-opcao"><span class="pen-opcao-rotulo">Importância</span><div class="pen-pills"><span class="pen-apenas">Apenas:</span>' +
@@ -15437,14 +15437,14 @@ window.PENAS_RUNTIME = {
         document.getElementById('pnt-barra-cheia').style.width = (total ? (nAval / total) * 100 : 0) + '%';
         let cont = { dificil: 0, medio: 0, facil: 0 };
         Object.keys(tr.avaliacoes).forEach(function(k) { cont[tr.avaliacoes[k]]++; });
-        document.getElementById('pnt-placar').textContent = '🔴 ' + cont.dificil + ' · 🟡 ' + cont.medio + ' · 🟢 ' + cont.facil;
+        document.getElementById('pnt-placar').textContent = '❌ ' + cont.dificil + ' · ❓ ' + cont.medio + ' · ✅ ' + cont.facil;
         let nav = document.getElementById('pnt-nav');
         if (tr.fim) {
             document.getElementById('pnt-pos').textContent = total + ' / ' + total;
             nav.style.visibility = 'hidden';
             palco.innerHTML = '<div class="pnt-fim"><div class="pnt-ato">Treino concluído 🎉</div>' +
-                '<div class="pnt-fim-numeros"><span>🔴 ' + cont.dificil + '</span><span>🟡 ' + cont.medio + '</span><span>🟢 ' + cont.facil + '</span></div>' +
-                '<div class="pnt-nav">' + (cont.dificil + cont.medio ? '<button class="pnt-btn dificil" onclick="window.PENAS_RUNTIME.retreinarErros()">↺ Treinar de novo os 🔴 e 🟡 (' + (cont.dificil + cont.medio) + ')</button>' : '') +
+                '<div class="pnt-fim-numeros"><span>❌ ' + cont.dificil + '</span><span>❓ ' + cont.medio + '</span><span>✅ ' + cont.facil + '</span></div>' +
+                '<div class="pnt-nav">' + (cont.dificil + cont.medio ? '<button class="pnt-btn dificil" onclick="window.PENAS_RUNTIME.retreinarErros()">↺ Treinar de novo os ❌ e ❓ (' + (cont.dificil + cont.medio) + ')</button>' : '') +
                 '<button class="pnt-btn" onclick="window.PENAS_RUNTIME.fecharTreino()">Fechar</button></div></div>';
             return;
         }
@@ -16348,7 +16348,7 @@ window.MEMORIZACAO_MIXIN = {
                 (res && !res.ok ? '<span class="memo-certo">✓ ' + self._esc(res.certo) + '</span>' : '') + '</div>';
         }).join('') + '</div>';
         if (fb) {
-            html += '<div class="memo-feedback ' + fb.nivel + '">' + (fb.nivel === 'facil' ? '✅ <strong>Correto!</strong>' : (fb.nivel === 'medio' ? '🟡 <strong>Quase.</strong> Confira o campo em vermelho.' : '❌ <strong>Errado.</strong>')) +
+            html += '<div class="memo-feedback ' + fb.nivel + '">' + (fb.nivel === 'facil' ? '✅ <strong>Correto!</strong>' : (fb.nivel === 'medio' ? '❓ <strong>Quase.</strong> Confira o campo em vermelho.' : '❌ <strong>Errado.</strong>')) +
                 ' Resposta: <strong>' + this._esc(spec.respostaTexto) + '</strong></div>' +
                 '<div class="memo-acoes-jogo"><button class="memo-btn-jogo" id="memo-btn-proximo" onclick="window.' + R + '.proximoJogo()">Próximo ›</button><span style="font-size:11px; color:var(--text-muted);">Enter</span></div>';
         } else {
@@ -16538,10 +16538,10 @@ window.MEMORIZACAO_MIXIN = {
     };
     M._dicaModo = function(modo, oQue) {
         return {
-            revelar: 'Aparece o item com a resposta escondida: tente lembrar, revele e avalie (🔴 Errei · 🟡 Hesitei · 🟢 Acertei).',
-            lacuna: 'Você preenche ' + oQue + ' e o app confere campo a campo. Número errado = 🔴; só um detalhe errado = 🟡. Os campos errados ficam registrados.',
-            multipla: 'Quatro alternativas: a certa e três parecidas (de outros itens e pegadinhas de número, contagem ou espécie). Acerto = 🟢, erro = 🔴.',
-            ligar: 'Rodadas de até 5 pares: ligue cada item à sua resposta. Sem erro = 🟢, 1 erro = 🟡, 2 ou mais = 🔴.'
+            revelar: 'Aparece o item com a resposta escondida: tente lembrar, revele e avalie (❌ Errei · ❓ Hesitei · ✅ Acertei).',
+            lacuna: 'Você preenche ' + oQue + ' e o app confere campo a campo. Número errado = ❌; só um detalhe errado = ❓. Os campos errados ficam registrados.',
+            multipla: 'Quatro alternativas: a certa e três parecidas (de outros itens e pegadinhas de número, contagem ou espécie). Acerto = ✅, erro = ❌.',
+            ligar: 'Rodadas de até 5 pares: ligue cada item à sua resposta. Sem erro = ✅, 1 erro = ❓, 2 ou mais = ❌.'
         }[modo] || '';
     };
 
