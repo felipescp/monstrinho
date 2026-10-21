@@ -104,4 +104,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 - Cadastrado: Povos Indígenas Yanomami, Ye'kwana e Munduruku vs. Brasil (Medida Provisória da Corte IDH, Resolução de 12/12/2023; adotada em 01/07/2022).
 - Cadastrado: Pessoas privadas de liberdade na Penitenciária Evaristo de Moraes vs. Brasil (Medida Provisória da Corte IDH, Resolução de adoção de 21/03/2023).
 - Cadastrado: Caso José Pereira vs. Brasil (Solução Amistosa, Relatório nº 95/03).
+- Cadastrado: Caso dos Meninos Emasculados do Maranhão vs. Brasil (Solução Amistosa, Relatório nº 43/06; cumprimento total em 2008).
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).
