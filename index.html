@@ -32471,6 +32471,13 @@ window.carregarEsquemasOficiais = async function() {
        tratamento do card), cor de alerta (âmbar) distinta do vermelho já
        usado por "(Oficial)". */
     #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
+    /* Casos da CIDH: selo com o tipo de decisão (campo tipoCIDH), uma cor por tipo. */
+    .jur-selo-tipo-cidh { display:inline-block; font-size:9.5px; font-weight:800; border-radius:99px; padding:1px 8px; margin-left:4px; white-space:nowrap; border:1px solid; }
+    .jur-selo-tipo-cidh.merito { color:#1e3a8a; background:#dbeafe; border-color:#93c5fd; }
+    .jur-selo-tipo-cidh.amistosa { color:#065f46; background:#d1fae5; border-color:#6ee7b7; }
+    .jur-selo-tipo-cidh.admissibilidade { color:#374151; background:#f3f4f6; border-color:#d1d5db; }
+    .jur-selo-tipo-cidh.cautelar { color:#9a3412; background:#ffedd5; border-color:#fdba74; }
+    .jur-selo-tipo-cidh.provisoria { color:#6b21a8; background:#f3e8ff; border-color:#d8b4fe; }
     .jur-selo-marco { display:inline-block; font-size:9.5px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fcd34d; border-radius:99px; padding:1px 8px; margin-left:4px; }
     .jur-idh-lista { margin:0; padding-left:18px; }
     .jur-idh-lista li { margin-bottom:4px; }
@@ -33615,6 +33622,11 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Medidas provisórias são da Corte IDH, mas ficam aqui por serem
     // urgentes/cautelares, como as medidas cautelares da Comissão.
     TIPOS_CIDH: ['Relatório de Mérito', 'Solução Amistosa', 'Admissibilidade', 'Medida Cautelar', 'Medida Provisória (Corte IDH)'],
+    _CLS_TIPO_CIDH: { 'Relatório de Mérito': 'merito', 'Solução Amistosa': 'amistosa', 'Admissibilidade': 'admissibilidade', 'Medida Cautelar': 'cautelar', 'Medida Provisória (Corte IDH)': 'provisoria' },
+    _seloTipoCIDH: function(item) {
+        if (!item || !item.tipoCIDH) return '';
+        return '<span class="jur-selo-tipo-cidh ' + (this._CLS_TIPO_CIDH[item.tipoCIDH] || 'admissibilidade') + '" title="Tipo de decisão">' + this._escapar(item.tipoCIDH) + '</span>';
+    },
     // O atalho "Opiniões Consultivas e Comentários Gerais" reúne as duas
     // sistemáticas; os demais atalhos casam só com o próprio valor.
     _bateSistematica: function(sist, valor) {
@@ -34928,6 +34940,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     checkboxHtml +
                     etiquetaHtml +
                     (idh ? '' : '<span class="jur-tag-tribunal">' + self._escapar(item.tribunal) + (item.orgao ? ' · ' + self._escapar(item.orgao) : '') + '</span>') +
+                    self._seloTipoCIDH(item) +
                     (item.marco ? '<span class="jur-selo-marco" title="Marco do caso">⭐ ' + self._escapar(item.marco) + '</span>' : '') +
                     seloOficial +
                     seloOculto +
@@ -35301,7 +35314,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         document.getElementById('jur-ver-titulo').textContent = (idh ? item.processo : this._tituloComTema(item)) || 'Ficha';
         let metaPartes = (idh ? [this._formatarDataBR(item.dataJulgado), item.sistematicaDetalhe] : [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe]).filter(function(x) { return !!x; });
         if (item.dataConsulta) metaPartes.push('Consultado em ' + this._formatarDataBR(item.dataConsulta));
-        document.getElementById('jur-ver-meta').innerHTML = this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '');
+        document.getElementById('jur-ver-meta').innerHTML = (idh ? this._seloTipoCIDH(item) + ' ' : '') + this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '');
         this._renderBlocoSuperado(item);
         document.getElementById('jur-ver-tese').innerHTML = this._htmlCampoGrifavel(item, 'tese', item.tese || '—');
         document.getElementById('jur-ver-resumo').innerHTML = this._htmlCampoGrifavel(item, 'resumo', item.resumo || '—');
@@ -36783,7 +36796,6 @@ window.JURISPRUDENCIA_RUNTIME = {
         let lista = function(arr, fn) { return arr && arr.length ? '<ul class="jur-idh-lista">' + arr.map(function(x) { return '<li>' + fn(x) + '</li>'; }).join('') + '</ul>' : ''; };
         let partes = [];
         let oc = item.sistematica === 'Opinião Consultiva (Corte IDH)', cg = item.sistematica === 'Comentário Geral (ONU)', cidh = item.sistematica === 'Caso da CIDH';
-        if (item.tipoCIDH) partes.push('<b>Tipo:</b> ' + self._escapar(item.tipoCIDH));
         if (item.estado) partes.push('<b>' + (cg ? 'Órgão' : oc ? 'Solicitante' : 'Estado') + ':</b> ' + self._escapar(item.estado));
         if (item.vitima) partes.push('<b>Vítima:</b> ' + self._escapar(item.vitima));
         if (item.marco) partes.push('<span class="jur-selo-marco">⭐ ' + self._escapar(item.marco) + '</span>');
@@ -36842,7 +36854,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let metaPartes = (idh ? [this._formatarDataBR(item.dataJulgado), item.sistematicaDetalhe] : [item.tribunal, item.orgao, this._processoComTema(item), item.relator, this._formatarDataBR(item.dataJulgado), this._rotuloInformativo(item), item.sistematica, item.sistematicaDetalhe]).filter(function(x) { return !!x; });
         return '<div class="jur-estudo-card">' +
             '<div class="jur-estudo-titulo">' + this._escapar(idh ? item.processo : this._tituloComTema(item)) + '</div>' +
-            '<div class="jur-estudo-meta">' + this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '') + '</div>' +
+            '<div class="jur-estudo-meta">' + (idh ? this._seloTipoCIDH(item) + ' ' : '') + this._escapar(metaPartes.join(' · ')) + (idh && item.titulo ? '<div class="jur-card-sintese-idh">' + this._escapar(item.titulo) + '</div>' : '') + '</div>' +
             '<div class="jur-estudo-label">Tese Fixada / Decisão</div>' +
             this._htmlCampoGrifavel(item, 'tese', item.tese || '—') +
             '<div class="jur-estudo-label">Resumo do Caso</div>' +

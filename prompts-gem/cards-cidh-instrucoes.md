@@ -48,7 +48,7 @@ O **documento original** em Markdown (.md), convertido do PDF ou da página da C
 - Campos fixos: `orgao: ""`, `relator: ""`, `tema: ""`, `materiaL1` e `divisaoL2` como nos demais, `sistematica: "Caso da CIDH"`, `tribunal: "CIDH"` (medida provisória: `"Corte IDH"`), `dataConsulta` = hoje, `comentario: ""`.
 - Campos do caso:
   - `id`: `cidh_<nome>` (ex.: `cidh_belo_monte`)
-  - `tipoCIDH`: exatamente um dos cinco valores da tabela acima (é o eixo "Tipo" do agrupamento)
+  - `tipoCIDH`: exatamente um dos cinco valores da tabela acima (é o eixo "Tipo" do agrupamento) Aparece como selo colorido no card, na ficha e no modo estudo.
   - `processo`: o destaque do card. Casos: "Caso Maria da Penha Maia Fernandes vs. Brasil". Cautelares e provisórias: "Comunidades Indígenas da Bacia do Rio Xingu vs. Brasil (Belo Monte)", "Instituto Penal Plácido de Sá Carvalho vs. Brasil" (mesmo padrão de nome dos casos: português, apelido entre parênteses)
   - `sistematicaDetalhe`: identificação oficial, ex.: "Caso 12.051 · Relatório nº 54/01", "MC 382/10 · Resolução de 01/04/2011", "Petição 1.234-05 · Relatório nº 10/07"
   - `dataJulgado`: "AAAA-MM-DD" (data do relatório ou da resolução)
