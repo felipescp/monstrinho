@@ -13629,7 +13629,11 @@ window.carregarFlashcardsOficiais = async function() {
     #prazos-modal .prz-celula-revelada { animation:przRevela 0.25s ease; }
     @keyframes przRevela { from { background:#fef08a; } to { background:transparent; } }
     #prazos-modal .prz-acoes-linha { display:flex; flex-direction:column; gap:2px; align-items:center; white-space:nowrap; }
-    #prazos-modal .prz-classif-btn.sistema { outline:1.5px dashed var(--text-muted); outline-offset:1px; border-radius:50%; }
+    #prazos-modal .prz-prio-sel { margin-top:2px; padding:1px 2px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #prazos-modal .prz-prio-sel.prz-prio-dificil { border-color:#dc2626; color:#b91c1c; background:#fef2f2; }
+    #prazos-modal .prz-prio-sel.prz-prio-medio { border-color:#ca8a04; color:#854d0e; background:#fefce8; }
+    #prazos-modal .prz-prio-sel.prz-prio-facil { border-color:#16a34a; color:#166534; background:#f0fdf4; }
+    #prazos-modal .prz-prio-sel.prz-prio-sistema { border-style:dashed; }
     #prazos-modal .prz-classif-btn { font-size:13px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.3; }
     #prazos-modal .prz-classif-btn.ativa { opacity:1; }
     #prazos-modal .prz-classif-btn:hover { opacity:0.8; }
@@ -14007,20 +14011,23 @@ window.PRAZOS_RUNTIME = {
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
     },
 
-    // Semáforo da tabela = PRIORIDADE (Crítico/Importante/Regular), vertical —
-    // pedido explícito do usuário: a prioridade do sistema acende o mesmo
-    // semáforo (contorno tracejado), sem seletor à parte. Clicar no nível
-    // aceso apaga a sua escolha (volta a aceitar a do sistema). A
-    // autoavaliação do treino (Errei/Hesitei/Acertei) segue em
-    // estado[id].ultimaClassificacao, registrada no próprio treino.
+    // Semáforo da tabela = autoavaliação da memorização (Errei/Hesitei/
+    // Acertei → estado[id].ultimaClassificacao), vertical e com sinais
+    // próprios (❌ ❓ ✅) para não confundir com a prioridade (🔴🟡🟢).
     _htmlClassif: function(it) {
-        let id = it.id, e = this.estado[id] || {}, self = this, atual = e.importancia || '';
-        let sug = it.classificacaoOficial ? ' · sistema sugere: ' + it.classificacaoOficial : '';
-        return this.NIVEIS_PRIORIDADE.map(function(n) {
-            let ativa = atual === n[0], sis = ativa && e.importanciaOrigem === 'sistema';
-            let titulo = n[1].slice(n[1].indexOf(' ') + 1) + (ativa ? (sis ? ' (adotada do sistema)' : ' (escolhida por você)') + ' · clique para limpar' : '') + sug;
-            return '<button class="prz-classif-btn' + (ativa ? ' ativa' : '') + (sis ? ' sistema' : '') + '" onclick="window.PRAZOS_RUNTIME.definirPrioridade(\'' + self._escJs(id) + '\', \'' + (ativa ? '' : n[0]) + '\')" title="' + self._esc(titulo) + '">' + n[1].split(' ')[0] + '</button>';
+        let id = it.id, e = this.estado[id] || {}, self = this;
+        return [['dificil', '❌', 'Errei'], ['medio', '❓', 'Hesitei'], ['facil', '✅', 'Acertei']].map(function(n) {
+            return '<button class="prz-classif-btn' + (e.ultimaClassificacao === n[0] ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.classificar(\'' + self._escJs(id) + '\', \'' + n[0] + '\')" title="' + n[2] + '">' + n[1] + '</button>';
         }).join('');
+    },
+    _htmlPrioridade: function(it) {
+        let e = this.estado[it.id] || {}, atual = e.importancia || '';
+        let sug = it.classificacaoOficial ? 'Prioridade do sistema: ' + it.classificacaoOficial : 'Sem prioridade do sistema';
+        let origem = atual ? (e.importanciaOrigem === 'sistema' ? 'adotada do sistema' : 'escolhida por você') : 'sem prioridade';
+        return '<select class="prz-prio-sel' + (atual ? ' prz-prio-' + atual : '') + (e.importanciaOrigem === 'sistema' ? ' prz-prio-sistema' : '') + '" title="Prioridade (' + origem + '). ' + this._esc(sug) + '." onchange="window.PRAZOS_RUNTIME.definirPrioridade(\'' + this._escJs(it.id) + '\', this.value)">' +
+            '<option value=""' + (atual ? '' : ' selected') + '>Prioridade —</option>' +
+            this.NIVEIS_PRIORIDADE.map(function(n) { return '<option value="' + n[0] + '"' + (atual === n[0] ? ' selected' : '') + '>' + n[1] + '</option>'; }).join('') +
+        '</select>';
     },
 
     _renderTabela: function() {
@@ -14052,7 +14059,7 @@ window.PRAZOS_RUNTIME = {
                     : self._htmlValor(it, c.k);
                 return '<td class="prz-col-' + c.k + '">' + conteudo + '</td>';
             }).join('') +
-            '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it) +
+            '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it) + self._htmlPrioridade(it) +
                 (it.origem_oficial ? '' : '<button class="prz-btn-icone" onclick="window.PRAZOS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir este prazo">🗑️</button>') +
             '</span></td></tr>';
         });
@@ -14576,7 +14583,11 @@ window.carregarPrazosOficiais = async function() {
     #penas-modal .pen-celula-revelada { animation:penRevela 0.25s ease; }
     @keyframes penRevela { from { background:#fef08a; } to { background:transparent; } }
     #penas-modal .pen-acoes-linha { display:flex; flex-direction:column; gap:2px; align-items:center; white-space:nowrap; }
-    #penas-modal .pen-classif-btn.sistema { outline:1.5px dashed var(--text-muted); outline-offset:1px; border-radius:50%; }
+    #penas-modal .pen-prio-sel { margin-top:2px; padding:1px 2px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10.5px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #penas-modal .pen-prio-sel.pen-prio-dificil { border-color:#dc2626; color:#b91c1c; background:#fef2f2; }
+    #penas-modal .pen-prio-sel.pen-prio-medio { border-color:#ca8a04; color:#854d0e; background:#fefce8; }
+    #penas-modal .pen-prio-sel.pen-prio-facil { border-color:#16a34a; color:#166534; background:#f0fdf4; }
+    #penas-modal .pen-prio-sel.pen-prio-sistema { border-style:dashed; }
     #penas-modal .pen-classif-btn { font-size:13px; line-height:1; border:none; background:none; cursor:pointer; padding:0 1px; opacity:0.3; }
     #penas-modal .pen-classif-btn.ativa { opacity:1; }
     #penas-modal .pen-classif-btn:hover { opacity:0.8; }
@@ -15125,20 +15136,23 @@ window.PENAS_RUNTIME = {
         let v = it[k];
         return v ? this._esc(v) : '<span style="color:var(--text-muted);">—</span>';
     },
-    // Semáforo da tabela = PRIORIDADE (Crítico/Importante/Regular), vertical —
-    // pedido explícito do usuário: a prioridade do sistema acende o mesmo
-    // semáforo (contorno tracejado), sem seletor à parte. Clicar no nível
-    // aceso apaga a sua escolha (volta a aceitar a do sistema). A
-    // autoavaliação do treino (Errei/Hesitei/Acertei) segue em
-    // estado[id].ultimaClassificacao, registrada no próprio treino.
+    // Semáforo da tabela = autoavaliação da memorização (Errei/Hesitei/
+    // Acertei → estado[id].ultimaClassificacao), vertical e com sinais
+    // próprios (❌ ❓ ✅) para não confundir com a prioridade (🔴🟡🟢).
     _htmlClassif: function(it) {
-        let id = it.id, e = this.estado[id] || {}, self = this, atual = e.importancia || '';
-        let sug = it.classificacaoOficial ? ' · sistema sugere: ' + it.classificacaoOficial : '';
-        return this.NIVEIS_PRIORIDADE.map(function(n) {
-            let ativa = atual === n[0], sis = ativa && e.importanciaOrigem === 'sistema';
-            let titulo = n[1].slice(n[1].indexOf(' ') + 1) + (ativa ? (sis ? ' (adotada do sistema)' : ' (escolhida por você)') + ' · clique para limpar' : '') + sug;
-            return '<button class="pen-classif-btn' + (ativa ? ' ativa' : '') + (sis ? ' sistema' : '') + '" onclick="window.PENAS_RUNTIME.definirPrioridade(\'' + self._escJs(id) + '\', \'' + (ativa ? '' : n[0]) + '\')" title="' + self._esc(titulo) + '">' + n[1].split(' ')[0] + '</button>';
+        let id = it.id, e = this.estado[id] || {}, self = this;
+        return [['dificil', '❌', 'Errei'], ['medio', '❓', 'Hesitei'], ['facil', '✅', 'Acertei']].map(function(n) {
+            return '<button class="pen-classif-btn' + (e.ultimaClassificacao === n[0] ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.classificar(\'' + self._escJs(id) + '\', \'' + n[0] + '\')" title="' + n[2] + '">' + n[1] + '</button>';
         }).join('');
+    },
+    _htmlPrioridade: function(it) {
+        let e = this.estado[it.id] || {}, atual = e.importancia || '';
+        let sug = it.classificacaoOficial ? 'Prioridade do sistema: ' + it.classificacaoOficial : 'Sem prioridade do sistema';
+        let origem = atual ? (e.importanciaOrigem === 'sistema' ? 'adotada do sistema' : 'escolhida por você') : 'sem prioridade';
+        return '<select class="pen-prio-sel' + (atual ? ' pen-prio-' + atual : '') + (e.importanciaOrigem === 'sistema' ? ' pen-prio-sistema' : '') + '" title="Prioridade (' + origem + '). ' + this._esc(sug) + '." onchange="window.PENAS_RUNTIME.definirPrioridade(\'' + this._escJs(it.id) + '\', this.value)">' +
+            '<option value=""' + (atual ? '' : ' selected') + '>Prioridade —</option>' +
+            this.NIVEIS_PRIORIDADE.map(function(n) { return '<option value="' + n[0] + '"' + (atual === n[0] ? ' selected' : '') + '>' + n[1] + '</option>'; }).join('') +
+        '</select>';
     },
     _renderTabela: function() {
         let scroll = document.getElementById('pen-scroll');
@@ -15163,7 +15177,7 @@ window.PENAS_RUNTIME = {
                     ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
                     : self._htmlValor(it, c.k)) + '</td>';
             }).join('') +
-            '<td><span class="pen-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it) +
+            '<td><span class="pen-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it) + self._htmlPrioridade(it) +
                 (it.origem_oficial ? '' : '<button class="pen-btn-icone" onclick="window.PENAS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir">🗑️</button>') +
             '</span></td></tr>';
         });
