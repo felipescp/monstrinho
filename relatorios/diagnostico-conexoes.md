@@ -4,22 +4,22 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4253 |
-| citacoes nas conexoes | 6690 |
-| citacoes ligadas | 6233 |
+| fichas | 4254 |
+| citacoes nas conexoes | 6694 |
+| citacoes ligadas | 6236 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 399 |
-| citacoes fora do acervo | 457 |
+| referencias fora do acervo | 400 |
+| citacoes fora do acervo | 458 |
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 109 |
+| processo nao reconhecido | 110 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6258 |
-| lei citacoes ligadas | 5729 |
+| lei citacoes de artigo | 6265 |
+| lei citacoes ligadas | 5734 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 32 |
+| lei artigo sem diploma | 34 |
 | lei citacoes de diplomas fora da base | 491 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -173,8 +173,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Maria da Penha Maia Fernandes vs. Brasil (cidh_maria_da_penha): "art. 42" — trecho: "Regulamento da CIDH, art. 42 (presunção de veracidade)"
 - Adolescentes privados de liberdade no CASA Cedro vs. Brasil (Fundação CASA, São Paulo) (cidh_casa_cedro): "art. 25" — trecho: "Regulamento da CIDH, art. 25"
 - Adolescentes privados de liberdade no CASA Cedro vs. Brasil (Fundação CASA, São Paulo) (cidh_casa_cedro): "art. 106" — trecho: "Carta da OEA, art. 106"
-- REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
-- REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
+- Instituto Penal Plácido de Sá Carvalho vs. Brasil (cidh_placido_de_sa_carvalho): "art. 25" — trecho: "Regulamento da CIDH, art. 25"
+- Instituto Penal Plácido de Sá Carvalho vs. Brasil (cidh_placido_de_sa_carvalho): "art. 106" — trecho: "Carta da OEA, art. 106"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
