@@ -16,10 +16,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 107 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6232 |
-| lei citacoes ligadas | 5704 |
+| lei citacoes de artigo | 6234 |
+| lei citacoes ligadas | 5709 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 32 |
+| lei artigo sem diploma | 29 |
 | lei citacoes de diplomas fora da base | 490 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
@@ -168,13 +168,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 - Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
 - Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 3" — trecho: "Carta da OEA, arts. 3.l e 17"
-- Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 1, 2 e 7" — trecho: "Declaração Universal, arts. 1, 2 e 7"
-- Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 25" — trecho: "Declaração Universal, art. 25.1"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
-- Comentário Geral nº 4/CDESC (onu_cg_desc_4): "art. 25" — trecho: "Declaração Universal, art. 25.1"
 - Comentário Geral nº 12/CDESC (onu_cg_desc_12): "art. 56" — trecho: "Carta da ONU, art. 56"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
+- REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
+- RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
+- ADI 6.828-AL (jur_1788480450899_7xr0dc): "art. 16" — trecho: "EC 132/2023, art. 16 (regra de transição da Reforma Tributária)"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
