@@ -12,6 +12,8 @@ Leia este arquivo inteiro antes de processar qualquer documento. Esta sessão cu
 | Medida Cautelar | Resolução de medida cautelar deferida pela CIDH (art. 25 do Regulamento) | Belo Monte (MC 382/10), Pedrinhas, Yanomami |
 | Medida Provisória (Corte IDH) | Resolução de medida provisória deferida pela Corte IDH (art. 63.2 CADH) | Plácido de Sá Carvalho, Complexo do Curado, UNIS |
 
+**Medida provisória se sobrepõe à cautelar.** Se a Corte IDH deferiu medida provisória num assunto que começou como cautelar da CIDH, o card é o da medida provisória (`tipoCIDH` "Medida Provisória (Corte IDH)", `tribunal` "Corte IDH", data da resolução mais relevante). A cautelar só aparece no `desdobramento`, como antecedente, e não ganha card próprio nem define tipo ou data. Se o usuário enviar só a cautelar de um assunto que você sabe ter virado medida provisória, avise e espere as resoluções da Corte.
+
 Prioridade: casos contra o **Brasil**, decisões **definitivas ou deferidas** e o que costuma cair em prova.
 
 ## O que o usuário envia
@@ -97,5 +99,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 
 - Cadastrado: Caso Maria da Penha Maia Fernandes vs. Brasil (Relatório de Mérito nº 54/01), revisado com o texto do relatório.
 - Cadastrado: Adolescentes privados de liberdade no CASA Cedro vs. Brasil (MC 302/15, Resolução 43/2016; levantada pela Resolução 51/2022).
-- Cadastrado: Instituto Penal Plácido de Sá Carvalho vs. Brasil (MC 208/16, Resolução 39/2016), por enquanto como Medida Cautelar. Quando chegarem as resoluções da Corte IDH, o mesmo card passa a "Medida Provisória (Corte IDH)", com a data da Resolução de 22/11/2018.
+- Cadastrado: Instituto Penal Plácido de Sá Carvalho vs. Brasil (Medida Provisória da Corte IDH, Resolução de 22/11/2018). A MC 208/16 da CIDH aparece só no desdobramento.
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).
