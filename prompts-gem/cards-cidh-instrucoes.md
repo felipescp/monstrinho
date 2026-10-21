@@ -96,4 +96,5 @@ A janela dos cards da Corte IDH grava no mesmo JSON. Se o push em `main` for rec
 ## Situação
 
 - Cadastrado: Caso Maria da Penha Maia Fernandes vs. Brasil (Relatório de Mérito nº 54/01), revisado com o texto do relatório.
+- Cadastrado: Adolescentes privados de liberdade no CASA Cedro vs. Brasil (MC 302/15, Resolução 43/2016).
 - Sugestões para os próximos: José Pereira (solução amistosa, 2003); medidas cautelares de Belo Monte (MC 382/10), Pedrinhas e povos Yanomami e Munduruku; medidas provisórias da Corte IDH do Instituto Penal Plácido de Sá Carvalho, do Complexo do Curado e da Unidade de Internação Socioeducativa (UNIS).

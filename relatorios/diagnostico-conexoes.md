@@ -4,7 +4,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4252 |
+| fichas | 4253 |
 | citacoes nas conexoes | 6690 |
 | citacoes ligadas | 6233 |
 | sem tribunal | 0 |
@@ -13,14 +13,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | tribunal possivelmente trocado | 17 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
-| processo nao reconhecido | 108 |
+| processo nao reconhecido | 109 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6242 |
-| lei citacoes ligadas | 5716 |
+| lei citacoes de artigo | 6258 |
+| lei citacoes ligadas | 5729 |
 | lei dispositivo nao localizado | 6 |
-| lei artigo sem diploma | 30 |
-| lei citacoes de diplomas fora da base | 490 |
+| lei artigo sem diploma | 32 |
+| lei citacoes de diplomas fora da base | 491 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -171,10 +171,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
 - Comentário Geral nº 12/CDESC (onu_cg_desc_12): "art. 56" — trecho: "Carta da ONU, art. 56"
 - Caso Maria da Penha Maia Fernandes vs. Brasil (cidh_maria_da_penha): "art. 42" — trecho: "Regulamento da CIDH, art. 42 (presunção de veracidade)"
+- Adolescentes privados de liberdade no CASA Cedro vs. Brasil (Fundação CASA, São Paulo) (cidh_casa_cedro): "art. 25" — trecho: "Regulamento da CIDH, art. 25"
+- Adolescentes privados de liberdade no CASA Cedro vs. Brasil (Fundação CASA, São Paulo) (cidh_casa_cedro): "art. 106" — trecho: "Carta da OEA, art. 106"
 - REsp 2.197.156-SP (jur_1787523175015_p8msbf): "Art. 10, §2º" — trecho: "Art. 10, §2º, MP 2.200-2/2001"
 - REsp 973.827-RS (jur_1790297437672_wglfi1): "art. 5º" — trecho: "Medida Provisória nº 2.170-36/2001 art. 5º"
-- REsp 2.227.062-RS (jur_1790985710924_qtnqmy): "art. 5º" — trecho: "MP 2.170-36/2001, art. 5º"
-- RE 1.515.163-RS (jur_1789590997253_e03kin): "art. 3º" — trecho: "art. 3º da EC nº 113/2021"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
@@ -194,13 +194,13 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 9.430 | 7 |
 | Lei 8.212 | 7 |
 | LC 101 | 6 |
+| Convenção | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 12.846 | 5 |
 | Lei 8.629 | 5 |
 | Lei 10.522 | 5 |
 | Decreto 6.514 | 5 |
-| Convenção | 5 |
 | Lei 9.307 | 5 |
 | LC 80 | 5 |
 | LC 87 | 5 |
