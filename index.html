@@ -37276,12 +37276,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         let htmlItens = deck.map(function(item, idx) {
             let etiquetaDoItem = self._etiquetaDaFicha(item);
             if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
-            if (buscaNormalizada && self._normalizarBusca(item.titulo || '').indexOf(buscaNormalizada) === -1) return '';
+            // Corte IDH, CIDH, OCs e Comentários Gerais: o nome do caso
+            // (processo) é o título na lista; a síntese (titulo) também é buscável.
+            let idh = self._ehCorteIDH(item);
+            if (buscaNormalizada && self._normalizarBusca((item.titulo || '') + ' ' + (idh ? item.processo || '' : '')).indexOf(buscaNormalizada) === -1) return '';
             let visualizado = !!self.visualizados[item.id];
             if (s.filtroVisualizado === true && !visualizado) return '';
             if (s.filtroVisualizado === false && visualizado) return '';
 
-            let titulo = item.titulo || '(sem título)';
+            let titulo = (idh && item.processo) || item.titulo || '(sem título)';
             let origem = (s.escopo !== 'divisao')
                 ? '<div class="jur-baralho-lista-item-origem">' + self._escapar([item.materiaL1, item.divisaoL2].filter(function(x) { return !!x; }).join(' — ')) + '</div>'
                 : '';
