@@ -33057,6 +33057,12 @@ window.carregarEsquemasOficiais = async function() {
         #modal-jurisprudencia-ver .jur-ver-ferramentas .jur-grifo-canetas { flex-direction:row; }
     }
     #modal-jurisprudencia-ver .jur-ver-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
+    #modal-jurisprudencia-ver .jur-ver-nav { order:99; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:14px; padding-top:8px; border-top:1px solid var(--border-color); }
+    #modal-jurisprudencia-ver .jur-ver-nav:empty { display:none; }
+    #modal-jurisprudencia-ver .jur-ver-nav button { width:36px; height:36px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:18px; line-height:1; color:var(--text-main); cursor:pointer; }
+    #modal-jurisprudencia-ver .jur-ver-nav button:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-ver .jur-ver-nav button:disabled { opacity:0.35; cursor:default; }
+    #modal-jurisprudencia-ver .jur-ver-nav-pos { font-size:12px; font-weight:700; color:var(--text-muted); min-width:56px; text-align:center; }
     #modal-jurisprudencia-ver .jur-ver-conteudo { flex:1; min-width:0; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
     #modal-jurisprudencia-ver.jur-painel-comentario-aberto .jur-ver-conteudo { flex:3 1 0; }
     #modal-jurisprudencia-ver #jur-ver-comentario-painel { display:none; }
@@ -33098,6 +33104,8 @@ window.carregarEsquemasOficiais = async function() {
             <div class="jur-grifo-canetas" id="jur-ver-grifo-canetas"></div>
             <span id="jur-ver-btn-comentario-wrap"></span>
         </div>
+        <!-- ‹ › — card anterior/seguinte da grade, fixo no rodapé do popup. -->
+        <div class="jur-ver-nav" id="jur-ver-nav"></div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div class="fc-popup-header" id="jur-ver-titulo"></div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharVer()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; flex-shrink:0;" title="Fechar">✖</button>
@@ -35388,6 +35396,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
         if (!item) return;
         this._verAtual = { chave: chave, id: id };
+        this._seqVer = this._sequenciaGradeVer();
         // Painel 💭 e canetas compartilham estado com o Leitor — o contexto
         // ativo diz em qual popup eles são desenhados (ver _ctxPainel).
         this._trocarCtxPainel('ver');
@@ -35398,7 +35407,62 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderCanetasGrifo();
         this._renderVer();
         document.getElementById('modal-jurisprudencia-ver').classList.add('open');
+        this._renderNavVer();
+        if (!this._teclasVer) {
+            let self = this;
+            this._teclasVer = function(e) {
+                if (!document.getElementById('modal-jurisprudencia-ver').classList.contains('open')) return;
+                let t = e.target, tag = t && t.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+                if (e.key === 'ArrowLeft') { e.preventDefault(); self.navegarVer(-1); }
+                else if (e.key === 'ArrowRight') { e.preventDefault(); self.navegarVer(1); }
+            };
+            document.addEventListener('keydown', this._teclasVer);
+        }
         if (this._painelComentarioAberto) this._focarEditorPainelComentario();
+    },
+
+    // ‹ › do popup "Ver ficha" (pedido explícito do usuário): percorre os
+    // cards na ordem em que aparecem na grade (inclusive grupos recolhidos).
+    // Aberto de fora da grade (link de caso relacionado, Leitor…), o card
+    // atual não está na sequência e a navegação não aparece.
+    _sequenciaGradeVer: function() {
+        let col = document.getElementById('jur-col-cards'), seq = [], vistos = {};
+        if (!col) return seq;
+        col.querySelectorAll('[onclick*="JURISPRUDENCIA_RUNTIME.abrirVer("]').forEach(function(el) {
+            let m = /abrirVer\('((?:\\'|[^'])*)',\s*'([^']*)'/.exec(el.getAttribute('onclick'));
+            if (!m || vistos[m[2]]) return;
+            vistos[m[2]] = true;
+            seq.push({ chave: m[1].replace(/\\'/g, "'"), id: m[2] });
+        });
+        return seq;
+    },
+    _posVer: function() {
+        let v = this._verAtual, seq = this._seqVer || [];
+        if (!v) return -1;
+        for (let i = 0; i < seq.length; i++) if (seq[i].id === v.id) return i;
+        return -1;
+    },
+    _renderNavVer: function() {
+        let el = document.getElementById('jur-ver-nav');
+        if (!el) return;
+        let i = this._posVer(), n = (this._seqVer || []).length;
+        if (i < 0 || n < 2) { el.innerHTML = ''; return; }
+        el.innerHTML = '<button onclick="window.JURISPRUDENCIA_RUNTIME.navegarVer(-1)" title="Card anterior (←)"' + (i === 0 ? ' disabled' : '') + '>‹</button>' +
+            '<span class="jur-ver-nav-pos">' + (i + 1) + ' / ' + n + '</span>' +
+            '<button onclick="window.JURISPRUDENCIA_RUNTIME.navegarVer(1)" title="Próximo card (→)"' + (i === n - 1 ? ' disabled' : '') + '>›</button>';
+    },
+    navegarVer: function(delta) {
+        let i = this._posVer(), seq = this._seqVer || [];
+        if (i < 0) return;
+        let alvo = seq[i + delta];
+        if (!alvo) return;
+        let painel = this._painelComentarioAberto, ordem = seq;
+        this.abrirVer(alvo.chave, alvo.id, painel);
+        this._seqVer = ordem; // mantém a sequência mesmo que a grade mude atrás do popup
+        this._renderNavVer();
+        let c = document.querySelector('#modal-jurisprudencia-ver .jur-ver-conteudo');
+        if (c) c.scrollTop = 0;
     },
 
     _itemVerAtual: function() {
