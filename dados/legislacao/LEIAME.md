@@ -76,6 +76,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei das Organizações Sociais (Lei 9.637/1998) | `lei-9637.json` | 25/10/2026 (sem os Anexos I e II, tabelas de entidades) |
 | Lei das Parcerias Público-Privadas (Lei 11.079/2004) | `lei-11079.json` | 25/10/2026 |
 | Lei das OSCIPs (Lei 9.790/1999) | `lei-9790.json` | 25/10/2026 |
+| Estatuto da Metrópole (Lei 13.089/2015) | `lei-13089.json` | 25/10/2026 (o compilado não risca várias redações antigas; fica a última de cada dispositivo) |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |

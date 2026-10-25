@@ -23,6 +23,8 @@ def limpa(l):
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
     l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
+    # Link que começa uma letra depois da palavra: "com base nos i [ncisos XX do art. 21](…)" (Lei 13.089, art. 1º).
+    l = re.sub(r'(?<![\wà-ú])([b-df-hj-np-tv-zi])\s\[(?=[a-zà-ú])', r'[\1', l)
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
@@ -319,7 +321,9 @@ def converter(md, inicio=None, fim=None):
             # Parágrafo único renumerado como § 1º sem a redação antiga riscada no compilado
             # (Lei 12.318, art. 6º): o "Parágrafo único" de mesmo texto é a versão anterior.
             velho = art.get('par', {}).get('pu')
-            if chave == '1' and velho and not velho.get('revogado') and velho.get('texto') == texto:
+            # Também quando o § 1º traz "Redação dada"/"Renumerado" e o texto mudou pouco (Lei 13.089, art. 3º).
+            if chave == '1' and velho and not velho.get('revogado') and (velho.get('texto') == texto
+                    or re.search(r'Reda[çc][ãa]o\s+dada|Renumerad', pu.group(1) if pu else m.group(3), re.I)):
                 del art['par']['pu']
             art.setdefault('par', {})[chave] = p
             seg, inc, rubrica = p, None, None
