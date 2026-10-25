@@ -13594,6 +13594,11 @@ window.carregarFlashcardsOficiais = async function() {
     #prazos-modal .fc-col { overflow-y:auto; padding:10px; }
     #prazos-modal #prz-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #prazos-modal #prz-col-divisoes { border-right:1px solid var(--border-color); }
+    #prazos-modal.sem-divisoes .fc-grid { grid-template-columns: 0.55fr 2fr; }
+    #prazos-modal.sem-divisoes #prz-col-divisoes { display:none; }
+    #prazos-modal .prz-ocultar-div { display:block; margin:0 0 6px auto; padding:2px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #prazos-modal .prz-ocultar-div:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #prazos-modal .prz-filtro-prio { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:0 2px 8px 2px; }
     #prazos-modal #prz-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
     #prazos-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #prazos-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
@@ -13968,6 +13973,7 @@ window.PRAZOS_RUNTIME = {
         if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma para ver os prazos.<br>Para cadastrar, use <strong>+ Criar Prazos</strong> e cole a saída do Gem.</div>'; return; }
         col.innerHTML =
             '<div class="prz-toolbar">' +
+                this._htmlMostrarDivisoes() +
                 '<div class="prz-abas">' +
                     '<button class="prz-aba' + (this._aba === 'tabela' ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.trocarAba(\'tabela\')">📋 Tabela</button>' +
                     '<button class="prz-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
@@ -14035,11 +14041,13 @@ window.PRAZOS_RUNTIME = {
         let scroll = document.getElementById('prz-scroll');
         if (!scroll) return;
         let self = this;
-        let lista = this._itensDoRecorte();
+        let recorte = this._itensDoRecorte();
+        let lista = recorte.filter(function(p) { return self._passaPrioTabela(p.item.id); });
         let info = document.getElementById('prz-info');
         if (info) info.textContent = lista.length + ' prazo' + (lista.length === 1 ? '' : 's');
         if (!lista.length) {
-            scroll.innerHTML = '<div class="fc-vazio-col">' + (this._busca ? 'Nenhum prazo para essa busca.' : 'Nenhum prazo aqui ainda.<br>Use <strong>+ Criar Prazos</strong> e cole a saída do Gem.') + '</div>';
+            scroll.innerHTML = (recorte.length ? this._htmlFiltroPrioTabela(recorte) + '<div class="fc-vazio-col">Nenhum prazo com essa prioridade.</div>'
+                : '<div class="fc-vazio-col">' + (this._busca ? 'Nenhum prazo para essa busca.' : 'Nenhum prazo aqui ainda.<br>Use <strong>+ Criar Prazos</strong> e cole a saída do Gem.') + '</div>');
             return;
         }
         let cab = '<tr>' + this.COLUNAS.map(function(c) {
@@ -14065,7 +14073,7 @@ window.PRAZOS_RUNTIME = {
             '</span></td></tr>';
         });
         let algumaCortina = this.COLUNAS.some(function(c) { return self._cortina[c.k]; });
-        scroll.innerHTML = '<div class="prz-dica">Clique no título de uma coluna para esconder/mostrar (cortina)' + (algumaCortina ? ' · clique numa célula oculta para revelá-la' : '') + '.</div>' +
+        scroll.innerHTML = this._htmlFiltroPrioTabela(recorte) + '<div class="prz-dica">Clique no título de uma coluna para esconder/mostrar (cortina)' + (algumaCortina ? ' · clique numa célula oculta para revelá-la' : '') + '.</div>' +
             '<table class="prz-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
     },
 
@@ -14535,6 +14543,11 @@ window.carregarPrazosOficiais = async function() {
     #penas-modal .fc-col { overflow-y:auto; padding:10px; }
     #penas-modal #pen-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #penas-modal #pen-col-divisoes { border-right:1px solid var(--border-color); }
+    #penas-modal.sem-divisoes .fc-grid { grid-template-columns: 0.55fr 2fr; }
+    #penas-modal.sem-divisoes #pen-col-divisoes { display:none; }
+    #penas-modal .pen-ocultar-div { display:block; margin:0 0 6px auto; padding:2px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; }
+    #penas-modal .pen-ocultar-div:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #penas-modal .pen-filtro-prio { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:0 2px 8px 2px; }
     #penas-modal #pen-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
     #penas-modal .fc-materia-item { padding:8px 4px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-bottom:1px solid #f1f5f9; transition:background 0.2s; }
     #penas-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
@@ -15051,6 +15064,7 @@ window.PENAS_RUNTIME = {
         if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma (ex.: Código Penal) para ver as penas.<br>Para cadastrar, use <strong>+ Criar Penas</strong> e cole a saída do Gem.</div>'; return; }
         col.innerHTML =
             '<div class="pen-toolbar">' +
+                this._htmlMostrarDivisoes() +
                 '<div class="pen-abas">' +
                     '<button class="pen-aba' + (this._aba === 'tabela' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'tabela\')">📋 Tabela</button>' +
                     '<button class="pen-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
@@ -15158,10 +15172,11 @@ window.PENAS_RUNTIME = {
     _renderTabela: function() {
         let scroll = document.getElementById('pen-scroll');
         if (!scroll) return;
-        let self = this, lista = this._itensDoRecorte();
+        let self = this, recorte = this._itensDoRecorte();
+        let lista = recorte.filter(function(p) { return self._passaPrioTabela(p.item.id); });
         let info = document.getElementById('pen-info');
         if (info) info.textContent = lista.length + (lista.length === 1 ? ' tipo penal' : ' tipos penais');
-        if (!lista.length) { scroll.innerHTML = '<div class="fc-vazio-col">' + (this._busca ? 'Nada encontrado para essa busca.' : 'Nenhuma pena aqui ainda.<br>Use <strong>+ Criar Penas</strong> e cole a saída do Gem.') + '</div>'; return; }
+        if (!lista.length) { scroll.innerHTML = recorte.length ? this._htmlFiltroPrioTabela(recorte) + '<div class="fc-vazio-col">Nenhum crime com essa prioridade.</div>' : '<div class="fc-vazio-col">' + (this._busca ? 'Nada encontrado para essa busca.' : 'Nenhuma pena aqui ainda.<br>Use <strong>+ Criar Penas</strong> e cole a saída do Gem.') + '</div>'; return; }
         let cab = '<tr>' + this.COLUNAS.map(function(c) {
             let oc = !!self._cortina[c.k];
             return '<th class="pen-th-cortina" onclick="window.PENAS_RUNTIME.alternarCortina(\'' + c.k + '\')" title="' + (oc ? 'Mostrar a coluna' : 'Esconder a coluna (cortina)') + '">' + c.rotulo + '<span class="pen-olho">' + (oc ? '🙈' : '👁') + '</span></th>';
@@ -15182,7 +15197,7 @@ window.PENAS_RUNTIME = {
                 (it.origem_oficial ? '' : '<button class="pen-btn-icone" onclick="window.PENAS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir">🗑️</button>') +
             '</span></td></tr>';
         });
-        scroll.innerHTML = '<div class="pen-dica">Clique no título de uma coluna para esconder/mostrar (cortina) · clique numa célula oculta para revelá-la · passe o mouse nos indicadores para ver a regra.</div>' +
+        scroll.innerHTML = this._htmlFiltroPrioTabela(recorte) + '<div class="pen-dica">Clique no título de uma coluna para esconder/mostrar (cortina) · clique numa célula oculta para revelá-la · passe o mouse nos indicadores para ver a regra.</div>' +
             '<table class="pen-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
     },
     // ── 🏷️ PRIORIDADE (Crítico / Importante / Regular) ──
@@ -17202,7 +17217,44 @@ window.ESTRUTURA_MIXIN = {
             d.niveis.forEach(function(n, i) { html += item(n.nome, i, cont[i] || 0); });
             if (cont[-1]) html += item('Sem artigo / fora do mapa', -1, cont[-1]);
         } else html += '<div class="fc-vazio-col">Diploma sem subdivisões no mapa: os itens aparecem juntos, em ordem de artigo.</div>';
-        col.innerHTML = html;
+        col.innerHTML = '<button class="' + this._px + '-ocultar-div" onclick="window.' + R + '.alternarDivisoes()" title="Ocultar esta coluna (mais espaço para a tabela)">‹ Ocultar</button>' + html;
+    },
+
+    // ‹ Ocultar / › a coluna das divisões (pedido explícito do usuário): a
+    // tabela ganha a largura; o botão › volta na barra da tabela.
+    _divisoesOcultas: false,
+    alternarDivisoes: function() {
+        this._divisoesOcultas = !this._divisoesOcultas;
+        let modal = document.getElementById(this._secao + '-modal');
+        if (modal) modal.classList.toggle('sem-divisoes', this._divisoesOcultas);
+        this._renderPrincipal();
+    },
+    _htmlMostrarDivisoes: function() {
+        return this._divisoesOcultas ? '<button class="' + this._px + '-btn-sistema" onclick="window.' + this._R + '.alternarDivisoes()" title="Mostrar a coluna das divisões">› Divisões</button>' : '';
+    },
+
+    // Filtro da TABELA por prioridade (Crítico/Importante/Regular), em
+    // toggles como os de Jurisprudência; nenhum marcado = todos. A
+    // prioridade é a sua ou a adotada do sistema (estado[id].importancia).
+    _filtroPrioTabela: null,
+    _passaPrioTabela: function(id) {
+        let f = this._filtroPrioTabela || {};
+        if (!Object.keys(f).some(function(k) { return f[k]; })) return true;
+        return !!f[this._prioridade(id)];
+    },
+    alternarPrioTabela: function(k) {
+        if (!this._filtroPrioTabela) this._filtroPrioTabela = {};
+        this._filtroPrioTabela[k] = !this._filtroPrioTabela[k];
+        this._renderTabela();
+    },
+    _htmlFiltroPrioTabela: function(recorte) {
+        let self = this, f = this._filtroPrioTabela || {}, px = this._px;
+        return '<div class="' + px + '-filtro-prio"><span class="' + px + '-apenas">Prioridade — apenas:</span>' +
+            this.NIVEIS_PRIORIDADE.map(function(n) {
+                let q = recorte.filter(function(p) { return self._prioridade(p.item.id) === n[0]; }).length;
+                return '<label class="' + px + '-check-pill' + (f[n[0]] ? ' ativa' : '') + '"><input type="checkbox"' + (f[n[0]] ? ' checked' : '') + ' onchange="window.' + self._R + '.alternarPrioTabela(\'' + n[0] + '\')">' + n[1] + ' (' + q + ')</label>';
+            }).join('') +
+            '<span class="' + px + '-dica" style="margin:0;">Nenhum marcado: todos. A prioridade é a sua ou a do sistema (🏷️ Aplicar prioridade do sistema).</span></div>';
     },
 
     _itensDoRecorte: function() {
