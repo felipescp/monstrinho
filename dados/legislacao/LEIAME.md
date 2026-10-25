@@ -73,6 +73,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Acesso à Informação (Lei 12.527/2011) | `lei-12527.json` | 25/10/2026 |
 | Lei dos Consórcios Públicos (Lei 11.107/2005) | `lei-11107.json` | 25/10/2026 |
 | Lei das Estatais (Lei 13.303/2016) | `lei-13303.json` | 25/10/2026 |
+| Lei das Organizações Sociais (Lei 9.637/1998) | `lei-9637.json` | 25/10/2026 (sem os Anexos I e II, tabelas de entidades) |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
