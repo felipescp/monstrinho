@@ -28701,6 +28701,9 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .fc-acordeon-toggle.aberta { transform:rotate(90deg); }
     #esquemas-modal .fc-acordeon-corpo { display:flex; flex-direction:column; gap:1px; padding:3px 0 5px 10px; }
     #esquemas-modal .fc-divisao-contagem { font-size:10px; color:var(--text-muted); padding:4px 8px; line-height:1.35; border-left:2px solid var(--border-color); }
+    #esquemas-modal .fc-divisao-contagem.clicavel { cursor:pointer; }
+    #esquemas-modal .fc-divisao-contagem.clicavel:hover { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #esquemas-modal .fc-divisao-contagem.ativa { color:var(--app-primary); font-weight:800; border-left-color:var(--app-primary); background:var(--bg-accent-soft); }
     #esquemas-modal .fc-aba-revisao-scroll { flex:1; min-height:0; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #esquemas-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
     #esquemas-modal .fc-aba-revisao-sidebar .fc-pills { flex-direction:column; flex-wrap:nowrap; justify-content:flex-start; max-width:none; gap:4px; }
@@ -30576,7 +30579,7 @@ window.ESQUEMAS_RUNTIME = {
     renderAbaRevisao: function(aba) {
         let self = this;
         let s = this._estadosAba[aba];
-        let pool = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        let pool = this._esquemasDoFiltroAba(aba);
         if (s.visualizadoFiltro === true) pool = pool.filter(function(e) { return !!self.visualizados[e.id]; });
         else if (s.visualizadoFiltro === false) pool = pool.filter(function(e) { return !self.visualizados[e.id]; });
         s.pool = pool;
@@ -30617,7 +30620,8 @@ window.ESQUEMAS_RUNTIME = {
                     let nomesDivisoes = Object.keys(divisoes).sort();
                     html += '<div class="fc-acordeon-corpo">' +
                         nomesDivisoes.map(function(div) {
-                            return '<div class="fc-divisao-contagem">' + div + ' (' + divisoes[div] + ')</div>';
+                            let ativa = s.materiaFiltro === mat && s.divisaoFiltro === div;
+                            return '<div class="fc-divisao-contagem clicavel' + (ativa ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.filtrarDivisaoAba(\'' + aba + '\', \'' + matEsc + '\', \'' + div.replace(/'/g, "\\'") + '\')" title="' + (ativa ? 'Voltar para a disciplina inteira' : 'Só esta divisão') + '">' + div + ' (' + divisoes[div] + ')</div>';
                         }).join('') +
                     '</div>';
                 }
@@ -30628,7 +30632,26 @@ window.ESQUEMAS_RUNTIME = {
     filtrarAba: function(aba, materia) {
         let s = this._estadosAba[aba];
         s.materiaFiltro = materia;
+        s.divisaoFiltro = null;
         this.renderAbaRevisao(aba);
+    },
+    // Só uma L2 da disciplina (pedido explícito do usuário); clicar de novo
+    // na mesma divisão volta para a disciplina inteira.
+    filtrarDivisaoAba: function(aba, materia, divisao) {
+        let s = this._estadosAba[aba];
+        let mesma = s.materiaFiltro === materia && s.divisaoFiltro === divisao;
+        s.materiaFiltro = materia;
+        s.divisaoFiltro = mesma ? null : divisao;
+        this.renderAbaRevisao(aba);
+    },
+    // Esquemas da aba no recorte atual: disciplina e, se escolhida, a divisão.
+    _esquemasDoFiltroAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let base = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        if (!s.materiaFiltro || !s.divisaoFiltro) return base;
+        let ids = {};
+        (this.esquemas[this._chaveL2(s.materiaFiltro, s.divisaoFiltro)] || []).forEach(function(e) { ids[e.id] = true; });
+        return base.filter(function(e) { return ids[e.id]; });
     },
 
     // Sidebar DIREITA do Leitor (pedido explícito do usuário) — mesmo padrão
@@ -30643,7 +30666,7 @@ window.ESQUEMAS_RUNTIME = {
         let s = this._estadosAba[aba];
         let pillsEl = document.getElementById('esq-pills-visualizado-' + aba);
         if (!pillsEl) return;
-        let base = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        let base = this._esquemasDoFiltroAba(aba);
         let nVisualizados = base.filter(function(e) { return !!self.visualizados[e.id]; }).length;
         let nNaoVisualizados = base.length - nVisualizados;
         pillsEl.innerHTML =
@@ -30666,7 +30689,7 @@ window.ESQUEMAS_RUNTIME = {
     aplicarVisualizadoLoteAba: function(aba, novoValor) {
         let self = this;
         let s = this._estadosAba[aba];
-        let base = this.listarEsquemasPorClassificacao(s.materiaFiltro, aba);
+        let base = this._esquemasDoFiltroAba(aba);
         base.forEach(function(e) {
             let jaVisualizado = !!self.visualizados[e.id];
             if (novoValor && !jaVisualizado) self.visualizados[e.id] = true;
@@ -32168,8 +32191,8 @@ window.ESQUEMAS_RUNTIME = {
             porChave[chave].push(item);
         });
         if (Object.keys(porChave).length === 0) { alert('Nenhum esquema nessa aba pra exportar.'); return; }
-        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
-        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro + (s.divisaoFiltro ? ' > ' + s.divisaoFiltro : '') : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro) + (s.divisaoFiltro ? '-' + this._slugTexto(s.divisaoFiltro) : '')) : '';
         downloadArquivo(this._gerarMarkdownEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
     },
 
@@ -32188,8 +32211,8 @@ window.ESQUEMAS_RUNTIME = {
             porChave[chave].push(item);
         });
         if (Object.keys(porChave).length === 0) { alert('Nenhum esquema nessa aba pra exportar.'); return; }
-        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
-        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro + (s.divisaoFiltro ? ' > ' + s.divisaoFiltro : '') : '');
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro) + (s.divisaoFiltro ? '-' + this._slugTexto(s.divisaoFiltro) : '')) : '';
         downloadArquivo(this._gerarHtmlEsquemas(porChave, titulo), 'esquemas-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
@@ -32600,6 +32623,9 @@ window.carregarEsquemasOficiais = async function() {
     #jurisprudencia-modal .fc-acordeon-toggle.aberta { transform:rotate(90deg); }
     #jurisprudencia-modal .fc-acordeon-corpo { display:flex; flex-direction:column; gap:1px; padding:3px 0 5px 10px; }
     #jurisprudencia-modal .fc-divisao-contagem { font-size:10px; color:var(--text-muted); padding:4px 8px; line-height:1.35; border-left:2px solid var(--border-color); }
+    #jurisprudencia-modal .fc-divisao-contagem.clicavel { cursor:pointer; }
+    #jurisprudencia-modal .fc-divisao-contagem.clicavel:hover { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #jurisprudencia-modal .fc-divisao-contagem.ativa { color:var(--app-primary); font-weight:800; border-left-color:var(--app-primary); background:var(--bg-accent-soft); }
     #jurisprudencia-modal .fc-aba-revisao-scroll { flex:1; min-height:0; overflow-y:auto; padding:20px; display:flex; flex-direction:column; align-items:center; gap:14px; }
     #jurisprudencia-modal .fc-pills { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; }
     /* Dentro da barra lateral (não mais um wrap horizontal), cada pill vira
@@ -35954,10 +35980,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!s) return;
         let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
         let SLUGS_ABA = { dificil: 'critico', medio: 'importante', facil: 'regular' };
-        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro + (s.divisaoFiltro ? ' > ' + s.divisaoFiltro : '') : '');
         let md = this._gerarMarkdownFichas(s.pool || [], titulo);
         if (!md) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
-        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro) + (s.divisaoFiltro ? '-' + this._slugTexto(s.divisaoFiltro) : '')) : '';
         downloadArquivo(md, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.md', 'text/markdown');
     },
 
@@ -35969,9 +35995,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._estadosAba[aba];
         if (!s) return;
         let self = this;
-        let anterior = s.materiaFiltro;
+        let anterior = s.materiaFiltro, anteriorDiv = s.divisaoFiltro;
         let pool;
-        try { s.materiaFiltro = materia; pool = this._baseAbaComSistematica(aba); } finally { s.materiaFiltro = anterior; }
+        try { s.materiaFiltro = materia; s.divisaoFiltro = null; pool = this._baseAbaComSistematica(aba); } finally { s.materiaFiltro = anterior; s.divisaoFiltro = anteriorDiv; }
         if (s.visualizadoFiltro === true) pool = pool.filter(function(f) { return !!self.visualizados[f.id]; });
         else if (s.visualizadoFiltro === false) pool = pool.filter(function(f) { return !self.visualizados[f.id]; });
         let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
@@ -36026,10 +36052,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!s) return;
         let ROTULOS_ABA = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
         let SLUGS_ABA = { dificil: 'critico', medio: 'importante', facil: 'regular' };
-        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro : '');
+        let titulo = (ROTULOS_ABA[aba] || aba) + (s.materiaFiltro ? ' — ' + s.materiaFiltro + (s.divisaoFiltro ? ' > ' + s.divisaoFiltro : '') : '');
         let htmlDoc = this._gerarHtmlFichas(s.pool || [], titulo);
         if (!htmlDoc) { alert('Nenhuma ficha nessa aba pra exportar.'); return; }
-        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro)) : '';
+        let sufixoMateria = s.materiaFiltro ? ('-' + this._slugTexto(s.materiaFiltro) + (s.divisaoFiltro ? '-' + this._slugTexto(s.divisaoFiltro) : '')) : '';
         downloadArquivo(htmlDoc, 'jurisprudencia-' + (SLUGS_ABA[aba] || aba) + sufixoMateria + '.html', 'text/html');
     },
 
@@ -37566,7 +37592,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                     let nomesDivisoes = Object.keys(divisoes).sort();
                     html += '<div class="fc-acordeon-corpo">' +
                         nomesDivisoes.map(function(div) {
-                            return '<div class="fc-divisao-contagem">' + div + ' (' + divisoes[div] + ')</div>';
+                            let ativa = s.materiaFiltro === mat && s.divisaoFiltro === div;
+                            return '<div class="fc-divisao-contagem clicavel' + (ativa ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarDivisaoAba(\'' + aba + '\', \'' + matEsc + '\', \'' + div.replace(/'/g, "\\'") + '\')" title="' + (ativa ? 'Voltar para a disciplina inteira' : 'Só esta divisão') + '">' + div + ' (' + divisoes[div] + ')</div>';
                         }).join('') +
                     '</div>';
                 }
@@ -37577,7 +37604,27 @@ window.JURISPRUDENCIA_RUNTIME = {
     filtrarAba: function(aba, materia) {
         let s = this._estadosAba[aba];
         s.materiaFiltro = materia;
+        s.divisaoFiltro = null;
         this.renderAbaRevisao(aba);
+    },
+    // Só uma L2 da disciplina (pedido explícito do usuário); clicar de novo
+    // na mesma divisão volta para a disciplina inteira.
+    filtrarDivisaoAba: function(aba, materia, divisao) {
+        let s = this._estadosAba[aba];
+        let mesma = s.materiaFiltro === materia && s.divisaoFiltro === divisao;
+        s.materiaFiltro = materia;
+        s.divisaoFiltro = mesma ? null : divisao;
+        this.renderAbaRevisao(aba);
+    },
+    // Fichas da aba no recorte atual: disciplina (materiaFiltro) e, se
+    // escolhida, a divisão (divisaoFiltro).
+    _fichasDoFiltroAba: function(aba) {
+        let s = this._estadosAba[aba];
+        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        if (!s.materiaFiltro || !s.divisaoFiltro) return base;
+        let ids = {};
+        (this.fichas[this._chaveL2(s.materiaFiltro, s.divisaoFiltro)] || []).forEach(function(f) { ids[f.id] = true; });
+        return base.filter(function(f) { return ids[f.id]; });
     },
 
     // Sidebar DIREITA do Leitor (pedido explícito do usuário): mesmo grupo
@@ -37625,7 +37672,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     _baseAbaComSistematica: function(aba) {
         let self = this;
         let s = this._estadosAba[aba];
-        let base = this.listarFichasPorClassificacao(s.materiaFiltro, aba);
+        let base = this._fichasDoFiltroAba(aba);
         let ocultas = s.sistematicasOcultas || {};
         if (Object.keys(ocultas).length === 0) return base;
         return base.filter(function(f) { return !ocultas[self._sistematicaDaFicha(f)]; });
@@ -37636,7 +37683,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._estadosAba[aba];
         let ocultas = s.sistematicasOcultas || {};
         let contagens = {};
-        this.listarFichasPorClassificacao(s.materiaFiltro, aba).forEach(function(f) {
+        this._fichasDoFiltroAba(aba).forEach(function(f) {
             let t = self._sistematicaDaFicha(f);
             contagens[t] = (contagens[t] || 0) + 1;
         });
@@ -37680,7 +37727,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let s = this._estadosAba[aba];
         s.sistematicasOcultas = {};
         if (!marcar) {
-            this.listarFichasPorClassificacao(s.materiaFiltro, aba).forEach(function(f) {
+            this._fichasDoFiltroAba(aba).forEach(function(f) {
                 s.sistematicasOcultas[self._sistematicaDaFicha(f)] = true;
             });
         }
