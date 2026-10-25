@@ -21,6 +21,8 @@ import json, re, sys, datetime
 def limpa(l):
     # Links "Visualizar…" antes do artigo (STF na CF, Corpus927 no CPC etc.).
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
+    # Anotação sem o "(" de abertura: "[Redação dada pela Lei nº 13.204, de 2015)](…)" (Lei 13.019, art. 48, III).
+    l = re.sub(r'\[((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\]', r'[(\1]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
     l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
     # Link que começa uma letra depois da palavra: "com base nos i [ncisos XX do art. 21](…)" (Lei 13.089, art. 1º).
