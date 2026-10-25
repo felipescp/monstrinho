@@ -81,6 +81,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei Anticorrupção (Lei 12.846/2013) | `lei-12846.json` | 25/10/2026 (as redações da MP 703/2015, com vigência encerrada, ficam de fora) |
 | Desapropriação por utilidade pública (Decreto-Lei 3.365/1941) | `decreto-lei-3365.json` | 25/10/2026 |
 | Desapropriação por interesse social (Lei 4.132/1962) | `lei-4132.json` | 25/10/2026 |
+| Estatuto Geral das Guardas Municipais (Lei 13.022/2014) | `lei-13022.json` | 25/10/2026 |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
