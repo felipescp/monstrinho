@@ -78,6 +78,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei das OSCIPs (Lei 9.790/1999) | `lei-9790.json` | 25/10/2026 |
 | Estatuto da Metrópole (Lei 13.089/2015) | `lei-13089.json` | 25/10/2026 (o compilado não risca várias redações antigas; fica a última de cada dispositivo) |
 | Marco Regulatório das Organizações da Sociedade Civil – MROSC (Lei 13.019/2014) | `lei-13019.json` | 25/10/2026 |
+| Lei Anticorrupção (Lei 12.846/2013) | `lei-12846.json` | 25/10/2026 (as redações da MP 703/2015, com vigência encerrada, ficam de fora) |
 | Convenção Americana sobre Direitos Humanos – Pacto de São José da Costa Rica (Decreto 678/1992) | `cadh.json` | 15/10/2026 |
 | Convenção Interamericana para Prevenir e Punir a Tortura (Decreto 98.386/1989) | `decreto-98386.json` | 18/10/2026 |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | `decreto-1973.json` | 18/10/2026 |
