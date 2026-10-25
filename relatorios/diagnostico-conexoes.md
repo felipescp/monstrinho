@@ -4,9 +4,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4267 |
-| citacoes nas conexoes | 6717 |
-| citacoes ligadas | 6255 |
+| fichas | 4277 |
+| citacoes nas conexoes | 6741 |
+| citacoes ligadas | 6279 |
 | sem tribunal | 0 |
 | referencias fora do acervo | 403 |
 | citacoes fora do acervo | 462 |
@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 123 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6328 |
-| lei citacoes ligadas | 5786 |
-| lei dispositivo nao localizado | 6 |
+| lei citacoes de artigo | 6354 |
+| lei citacoes ligadas | 5808 |
+| lei dispositivo nao localizado | 7 |
 | lei artigo sem diploma | 40 |
-| lei citacoes de diplomas fora da base | 496 |
+| lei citacoes de diplomas fora da base | 499 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -141,6 +141,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
+- ARE 652.777-SP (jur_1790158101617_fm0w65): "art. 7º, § 3º, VI" → Lei 12.527 (Acesso à Informação): inciso VI não existe no trecho citado
 - ADPF 862-RJ (jur_1788747185710_ld527r): "Art. 79, §1º" → Lei 8.906: art. 79 não existe no texto
 - REsp 1.854.662-CE, REsp 1.881.324-PE, REsp 1.881.283-RN e REsp 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 40, § 7º, I" → CF: inciso I não existe no trecho citado
@@ -181,7 +182,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Citado como | Vezes |
 |---|---|
 | CPC | 32 |
-| CLT | 15 |
+| CLT | 16 |
 | Lei 6.766 | 14 |
 | Lei 8.666 | 11 |
 | Resolução | 9 |
@@ -203,10 +204,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Decreto 6.514 | 5 |
 | CPP | 5 |
 | Lei 9.307 | 5 |
+| Lei 14.597 | 5 |
 | LC 80 | 5 |
 | LC 87 | 5 |
 | Lei 9.492 | 5 |
 | Lei 11.419 | 5 |
 | Lei 12.153 | 5 |
 | Lei 8.036 | 4 |
-| Lei 9.394 | 4 |

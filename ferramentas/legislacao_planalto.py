@@ -131,6 +131,7 @@ def linhas_html(caminho):
         if l: yield l + '\n'
 
 CITACAO = '\u2063'  # marca linha de texto citado (não é dispositivo do diploma)
+ART_RISCADO = '\u2064'  # marca artigo inteiro riscado (os filhos que seguem são da redação antiga)
 
 def linhas_md(caminho):
     em_citacao = anuncia = False
@@ -197,7 +198,13 @@ def linhas_md(caminho):
             if rot and re.search(r'Revogad', resto, re.I) and not re.search(r'Revogad', riscada.group(0), re.I):
                 l = l[:riscada.start()] + rot.group(1) + ' ' + resto
                 riscada = None
+        art_riscado = riscada and re.match(r'\s*~\s*Art\.?\s*\d', l)
         l = re.sub(r'(?<!~)~[^~\n]+~(?!~)', '', l)
+        # Artigo inteiro riscado (redação antiga): o que vier até o próximo artigo é dele, não do
+        # artigo anterior (Lei 12.527: o parágrafo único do art. 12 antigo ia para o art. 11).
+        if art_riscado and not re.search(r'\w', re.sub(r'\[[^\]]*\]\([^)]*\)|\([^)]*\)', '', l)):
+            yield ART_RISCADO + '\n'
+            continue
         # Dispositivo de MP com vigência encerrada (anotação riscada): sai inteiro.
         if riscada and re.search(r'Vig[êe]ncia\s+encerrada', l, re.I): continue
         # Títulos em Markdown ("#### CAPÍTULO II", "##### DA PREVENÇÃO"): não são dispositivo.
@@ -230,6 +237,10 @@ def converter(md, inicio=None, fim=None):
         bruto = raw.strip()
         if not bruto: continue
         anterior, sub_aberta = bruto, re.match(r'^\*\*\s*Subse[çc][ãa]o\b[^*]*$', anterior, re.I)
+        if raw.startswith(ART_RISCADO):
+            if art is not None: art, seg, inc = {'texto': ''}, None, None
+            seg = art
+            continue
         citado = raw.startswith(CITACAO)
         l = limpa(raw.replace(CITACAO, ''))
         if not l: continue
