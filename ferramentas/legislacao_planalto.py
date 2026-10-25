@@ -79,7 +79,7 @@ def separa_anotacoes(l):
             return ''
         return m.group(0)
     texto = RE_PAR.sub(troca, l)
-    texto = re.sub(r'\bVig[êe]ncia\b\s*$', '', texto)
+    texto = re.sub(r'(?:\s*\b(?:Vig[êe]ncia|Produ[çc][ãa]o\s+de\s+efeitos?)\b)+\s*$', '', texto)  # links soltos (Lei 11.079, art. 6º)
     texto = re.sub(r'\s+', ' ', texto).replace('**', '').strip()
     # Pontuação que sobra ao tirar a anotação: "preventiva: ." → "preventiva:".
     texto = re.sub(r'([:;,])\s*\.$', r'\1', texto)
@@ -215,6 +215,8 @@ def linhas_md(caminho):
         # Dispositivo grudado no anterior por uma sequência de espaços (Código
         # Eleitoral, art. 112: "…da idade.        Parágrafo único. Na definição…").
         l = re.sub(r'(?<=[.;:])[ \u00a0]{4,}(?=(?:Par[áa]grafo\s+[úu]nico|§\s*\d|Art\.\s*\d)[^\n]{20})', '\n', l)
+        # Inciso grudado no anterior depois de "; e" ("…do edital; e VII – licença ambiental…", Lei 11.079, art. 10).
+        l = re.sub(r'(;\s(?:e|ou))\s+(?=[IVXL]+\s*[–—-]\s+[a-zà-ú])', '\\1\n', l)
         if '\n' in l.rstrip('\n'):
             for pedaco in l.rstrip('\n').split('\n'): yield pedaco + '\n'
             continue
@@ -345,6 +347,11 @@ def converter(md, inicio=None, fim=None):
                     and ROM[ROM.index(chave) - 1] in art.get('inc', {})
                     and chave not in art.get('inc', {})):
                 seg = art
+            # Linha só com anotação ("III - (Vide Lei nº 13.043…) Vigência", Lei 11.079, art. 6º) não
+            # apaga o inciso de mesmo número já lido.
+            if not texto and not rev and seg.get('inc', {}).get(chave, {}).get('texto'):
+                inc = seg['inc'][chave]
+                continue
             seg.setdefault('inc', {})[chave] = inc
             rubrica = None
             continue
