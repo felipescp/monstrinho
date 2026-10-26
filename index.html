@@ -16141,7 +16141,8 @@ window.LEISECA_RUNTIME = {
         };
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
-        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]); }).join('') : ''; };
+        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]) +
+            (no.inc[k].pena ? '<div class="ls-d ls-n0' + (cls ? ' ' + cls : '') + '"><span class="ls-rot">Pena –</span> ' + self._esc(no.inc[k].pena) + '</div>' : ''); }).join('') : ''; };
         let html = (art.texto || !itens ? linha(self._rotulo() + ' ' + self._esc(a) + '.', art, a) : '') + alineas(art) +
             (art.fecho ? '<div class="ls-d ls-n0">' + self._esc(art.fecho) + '</div>' : '') + incisos(art, a);
         if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
@@ -38123,6 +38124,8 @@ window.LEGISLACAO = (function() {
     let DIPLOMAS = {
         CP: { nome: 'CP', arquivo: 'dados/legislacao/codigo-penal.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm',
               re: /\bCP\b(?!\s*M)|C[óo]digo\s+Penal(?!\s+Militar)|Decreto-Lei\s*n?[º°o.]*\s*2\.?848/g },
+        CPM: { nome: 'Código Penal Militar', arquivo: 'dados/legislacao/codigo-penal-militar.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del1001.htm',
+              re: /\bCPM\b|C[óo]digo\s+Penal\s+Militar|(?:Decreto-[Ll]ei|\bDL)\s*n?[º°o.]*\s*1\.?001(?![\d.])/g },
         CF: { nome: 'CF', arquivo: 'dados/legislacao/constituicao.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm',
               re: /\b(?:CF|CRFB)(?:\/(?:19)?88)?\b|Constitui[çc][ãa]o(?:\s+Federal|\s+da\s+Rep[úu]blica(?:\s+Federativa\s+do\s+Brasil)?)?(?!\s+(?:Estadual|Estaduais|do\s+Estado|dos\s+Estados))/g },
         // CPC/73 (e o de 1939) não: fica como "outro diploma", sem link.
@@ -38530,6 +38533,7 @@ window.LEGISLACAO = (function() {
             let inc = alvo.inc && alvo.inc[ri];
             if (!inc) { html += '<div class="lei-disp">Inciso ' + esc(ri) + ' não localizado.</div>'; return; }
             html += '<div class="lei-disp"><b>' + esc(ri) + ' –</b> ' + txt(inc) + '</div>'; usa(inc);
+            if (inc.pena) html += '<div class="lei-pena">Pena – ' + esc(inc.pena) + '</div>';  // pena própria do inciso (CPM, art. 191; CP, art. 197)
             if (p[4] && inc.ali && p[4] in inc.ali) html += '<div class="lei-disp"><b>' + esc(p[4]) + ')</b> ' + (inc.ali[p[4]] ? esc(inc.ali[p[4]]) : '<i>(revogada)</i>') + '</div>';
             // Inciso citado sem alínea, mas que se desdobra nelas ("considerando-se haver:"): lista todas.
             else if (!p[4] && inc.ali) Object.keys(inc.ali).forEach(function(k) { html += '<div class="lei-disp lei-ali"><b>' + esc(k) + ')</b> ' + (inc.ali[k] ? esc(inc.ali[k]) : '<i>(revogada)</i>') + '</div>'; });

@@ -365,14 +365,26 @@ def converter(md, inicio=None, fim=None):
         m = re.match(r'^Penas?\s*[-–—:]\s*(.*)$', l, re.I)
         if m:
             texto, alt, rev = separa_anotacoes(m.group(1))
+            # Pena própria de inciso ou alínea que a anuncia com ":" (CPM, art. 191: "I - se a deserção
+            # não chega a consumar-se: Pena - …; II - se consumada a deserção: Pena - …").
+            dono = inc if inc is not None else seg
+            if dono.get('ali') and dono['ali'][max(dono['ali'])].rstrip().endswith(':'):
+                letra = max(dono['ali'])
+                dono['ali'][letra] += '\nPena – ' + texto
+                continue
+            # Só quando o padrão começa no inciso I (ele mesmo, ou já com pena própria): a lista
+            # "I - …; II - …; III - …:" seguida de pena é do artigo (CPM, art. 142).
+            primeiro = next(iter(seg.get('inc', {}).values()), None)
+            alvo = inc if (inc is not None and not inc.get('ali') and inc.get('texto', '').rstrip().endswith(':')
+                           and (inc is primeiro or (primeiro or {}).get('pena'))) else seg
             # Pena nova com "(Redação dada…)" substitui a anterior que o compilado não riscou
             # (Lei 11.340, art. 24-A: "detenção, de 3 meses…" e depois "reclusão, de 2 a 5 anos…").
-            if seg.get('pena') and re.search(r'Reda[çc][ãa]o\s+dada', m.group(1), re.I): seg['pena'] = ''
+            if alvo.get('pena') and re.search(r'Reda[çc][ãa]o\s+dada', m.group(1), re.I): alvo['pena'] = ''
             # Pena repetida igual (CP, art. 121, § 2º: o compilado repete a linha depois dos incisos).
-            if texto not in seg.get('pena', '').split(' / '):
-                seg['pena'] = (seg.get('pena', '') + ' / ' if seg.get('pena') else '') + texto
-            seg['alt'] = junta_alt(seg.get('alt'), alt)
-            if not seg['alt']: del seg['alt']
+            if texto not in alvo.get('pena', '').split(' / '):
+                alvo['pena'] = (alvo.get('pena', '') + ' / ' if alvo.get('pena') else '') + texto
+            alvo['alt'] = junta_alt(alvo.get('alt'), alt)
+            if not alvo['alt']: del alvo['alt']
             continue
         m = re.match(r'^([a-z])\)\s*(.*)$', l)
         if m and inc is not None:
