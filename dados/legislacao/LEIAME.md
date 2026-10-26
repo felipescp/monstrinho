@@ -5,6 +5,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Diploma | Arquivo | Texto conforme o Planalto em |
 |---|---|---|
 | Código Penal | `codigo-penal.json` | 08/10/2026 |
+| Código Penal Militar (Decreto-Lei 1.001/1969) | `codigo-penal-militar.json` | 26/10/2026 |
 | Constituição Federal | `constituicao.json` | 09/10/2026 |
 | ADCT | `adct.json` | 09/10/2026 |
 | Código de Processo Civil | `cpc.json` | 09/10/2026 |
