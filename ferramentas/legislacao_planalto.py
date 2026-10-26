@@ -314,8 +314,14 @@ def converter(md, inicio=None, fim=None):
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
         if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional),\s*(?:em\s+)?\d', l): art = None; continue
+        # Parágrafo sem o "§" ("1º Se o êrro deriva de culpa…", CPM, arts. 36, 38 e 346): só o
+        # número esperado (o próximo § do artigo), para não pegar outra linha que comece por ordinal.
+        sem = re.match(r'^(\d{1,2})\s*[º°]\s+(?=[A-ZÀ-Ú])', l)
+        if sem:
+            nums = [int(k) for k in art.get('par', {}) if k.isdigit()]
+            if int(sem.group(1)) == (max(nums) + 1 if nums else 1): l = '§ ' + l
         m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
-        pu = re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
+        pu =re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
         if m or pu:
             chave = 'pu' if pu else m.group(1) + ('-' + m.group(2) if m.group(2) else '')
             texto, alt, rev = separa_anotacoes(pu.group(1) if pu else m.group(3))
