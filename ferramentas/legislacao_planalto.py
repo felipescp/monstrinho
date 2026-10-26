@@ -23,10 +23,14 @@ def limpa(l):
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
     # Anotação sem o "(" de abertura: "[Redação dada pela Lei nº 13.204, de 2015)](…)" (Lei 13.019, art. 48, III).
     l = re.sub(r'\[((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\]', r'[(\1]', l)
+    # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
+    l = re.sub(r'\[(Revogad[oa]s?\s+pel[oa]\s[^\]()]*)\]', r'[(\1)]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
     l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
     # Link que começa uma letra depois da palavra: "com base nos i [ncisos XX do art. 21](…)" (Lei 13.089, art. 1º).
     l = re.sub(r'(?<![\wà-ú])([b-df-hj-np-tv-zi])\s\[(?=[a-zà-ú])', r'[\1', l)
+    # Chamada de nota de rodapé: "é de: <sup>[6](#ne6)</sup>", "posteriores; _<sup>9</sup>_" (Lei 8.212).
+    l = re.sub(r'(?<=[\s.;:,)])\s*_?<sup>\s*(?:\[\d{1,2}\]\(#[^)]*\)|\d{1,2})\s*</sup>_?', '', l)
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
     l = re.sub(r'<sup>\s*[oº°]\s*</sup>', 'º', l)
     l = re.sub(r'<[^>]+>', '', l)
@@ -64,18 +68,18 @@ def separa_anotacoes(l):
     def troca(m):
         nonlocal alt, rev
         t = m.group(1)
-        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad)|Reda[çc][ãa]o dada|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Rejeitad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
+        if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo(?:\s+[úu]nico)?|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad|renumerad|alterad)|Reda[çc][ãa]o (?:dada|pel)|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Rejeitad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             ns = nota_stf(t)
             if ns and ns not in _STF: _STF.append(ns)
-            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lcp|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             # Data com ano de dois dígitos: "de 15/05/97" (Lei 7.716, arts. 1º e 20), "de 20.12.77" (Lei 4.132, art. 2º, VIII).
             if not anos: anos = [('19' if int(x) >= 30 else '20') + x for x in re.findall(r'(?<![\d/.])\d{1,2}([/.])\d{1,2}\1(\d{2})(?![\d/])', t) for x in [x[1]]]
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
-                tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g else ('MP' if 'edida' in g else 'Lei')))
+                tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g or g == 'lcp' else ('MP' if 'edida' in g else 'Lei')))
                 num = int(re.sub(r'[.,]', '', lm.group(2)))  # "Lei nº 12,010" (vírgula, Lei 8.560, art. 2º, § 5º)
                 # Número com ponto de milhar mesmo quando o compilado não põe ("Lei nº 10467", CP, art. 337-B).
                 cand = (int(anos[-1]), num, '%s %s/%s' % (tipo, format(num, ',').replace(',', '.'), anos[-1]))
@@ -96,9 +100,10 @@ def separa_anotacoes(l):
     texto = re.sub(r'\(\s*\)', '', texto)
     texto = re.sub(r',\s*,', ',', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
+    texto = re.sub(r'([:;,])\.+$', r'\1', texto)  # "competência;." (duas anotações com ponto, Lei 8.212, art. 30, I, b)
     if re.fullmatch(r'[.;,:\s–-]*', texto): texto = ''  # sobra de "§ 2º . (Revogado…)"
     # Texto que é só "Revogado." / "(Revogado)." (sem a lei revogadora entre parênteses).
-    if re.fullmatch(r'\(?\s*Revogad[oa]s?\s*\.?\s*\)?\s*[.;]?', texto, re.I): texto, rev = '', True
+    if re.fullmatch(r'(?:Caput\.\s*)?\(?\s*Revogad[oa]s?\s*\.?\s*\)?\s*[.;]?', texto, re.I): texto, rev = '', True
     return texto, (alt[2] if alt else None), rev
 
 def junta_alt(a, b):

@@ -26,6 +26,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Servidores Públicos Federais (Lei 8.112/1990) | `lei-8112.json` | 09/10/2026 |
 | Código de Trânsito Brasileiro (Lei 9.503/1997) | `ctb.json` | 09/10/2026 |
 | Estatuto da Advocacia e da OAB (Lei 8.906/1994) | `lei-8906.json` | 09/10/2026 (incompleto: faltam os arts. 68 a 87, ausentes do compilado enviado) |
+| Lei Orgânica da Seguridade Social (Lei 8.212/1991) | `lei-8212.json` | 26/10/2026 |
 | Lei de Benefícios da Previdência Social (Lei 8.213/1991) | `lei-8213.json` | 09/10/2026 |
 | Lei do Processo Administrativo Federal (Lei 9.784/1999) | `lei-9784.json` | 11/10/2026 |
 | Lei das Eleições (Lei 9.504/1997) | `lei-9504.json` | 11/10/2026 |
