@@ -4,23 +4,23 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Indicador | Qtde |
 |---|---|
-| fichas | 4277 |
-| citacoes nas conexoes | 6741 |
-| citacoes ligadas | 6279 |
+| fichas | 4422 |
+| citacoes nas conexoes | 6809 |
+| citacoes ligadas | 6335 |
 | sem tribunal | 0 |
-| referencias fora do acervo | 403 |
-| citacoes fora do acervo | 462 |
-| tribunal possivelmente trocado | 17 |
+| referencias fora do acervo | 411 |
+| citacoes fora do acervo | 474 |
+| tribunal possivelmente trocado | 19 |
 | rg repetitivo sem tema | 0 |
 | tema em tribunal incompativel | 0 |
 | processo nao reconhecido | 123 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6355 |
-| lei citacoes ligadas | 5835 |
+| lei citacoes de artigo | 6522 |
+| lei citacoes ligadas | 5954 |
 | lei dispositivo nao localizado | 8 |
-| lei artigo sem diploma | 40 |
-| lei citacoes de diplomas fora da base | 472 |
+| lei artigo sem diploma | 47 |
+| lei citacoes de diplomas fora da base | 513 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -28,10 +28,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 |---|---|
 | ADPF 153 | 6 |
 | ARESP 2642744 | 5 |
+| SUM TST 331 | 4 |
 | ADPF 320 | 4 |
 | ADO 26 | 4 |
 | HC 118533 | 4 |
-| SUM TST 331 | 3 |
 | ADPF 442 | 3 |
 | MI 4733 | 3 |
 | RESP 1977124 | 3 |
@@ -61,11 +61,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | RESP 1894736 | 2 |
 | HC 117638 | 2 |
 | RESP 1881751 | 2 |
+| RCL 8909 | 2 |
+| ARE 1001075 | 2 |
+| TEMA STF 928 | 2 |
 | CC 208449 | 2 |
 | RESP 2124412 | 1 |
-| RMS 69065 | 1 |
-| RCL 88319 | 1 |
-| SS 3902 | 1 |
 
 ## B — Tribunal possivelmente trocado (amostra)
 
@@ -79,12 +79,14 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - ARE 709.212-DF (jur_1790158157526_ku0yqz): "Súmula 362/TST" → no acervo só existe em STJ
 - RE 958.252-MG (julgado com a ADPF 324-DF) (jur_1790222417795_4ptj3a): "Súmula 331/TST" → no acervo só existe em STF
 - RE 1.016.605-MG (jur_1790219685664_ouhefr): "Tema 1.198/STF" → no acervo só existe em STJ
+- ADPF 323-DF (jur_1793049515596_t6gvik): "Súmula 277/TST" → no acervo só existe em STJ
 - REsp 1.321.263-PR (jur_1789067528407_rpxj44): "Súmula 251/STF" → no acervo só existe em STJ
 - REsp 1.995.437-CE e REsp 2.004.478-SP (jur_1790100408147_ziv1j8): "Súmula 241/TST" → no acervo só existe em STJ
 - REsp 1.361.800-SP (jur_1790100760825_qhwsjj): "Súmula 428/STJ" → no acervo só existe em STF
 - RE 678.162-AL (jur_1789603469051_2e4juo): "Súmula 10/STJ" → no acervo só existe em TSE
-- RE 586.068 ED-PR (jur_1790221647084_z1niq5): "Tema 1.170/STJ" → no acervo só existe em STF
 - REsp 1.883.715-SP, REsp 1.883.722-SP e REsp 1.880.529-SP (jur_1790100517558_qyidmo): "Súmula 490/STF" → no acervo só existe em STJ
+- CC 136.739-RS (jur_1793049526748_e2jmcc): "Súmula 331/TST" → no acervo só existe em STF
+- EDcl no AgInt no AREsp 1.547.767-SP (jur_1793049526748_xpr4nt): "Tema 1166/STF" → no acervo só existe em STJ
 - REsp 2.232.036-DF (jur_1790221818145_lfotte): "Tema 1.141/STF" → no acervo só existe em STJ
 
 ## A — Citações sem tribunal (amostra)
@@ -182,25 +184,25 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 | Citado como | Vezes |
 |---|---|
-| CPC | 32 |
-| CLT | 16 |
+| CPC | 35 |
+| CLT | 34 |
 | Lei 6.766 | 14 |
-| Lei 8.666 | 11 |
+| Lei 8.212 | 14 |
+| Lei 8.666 | 13 |
 | Resolução | 9 |
 | Lei 9.514 | 9 |
 | Lei 9.279 | 9 |
+| Convenção | 8 |
 | Regimento | 8 |
-| Convenção | 7 |
 | Lei 9.096 | 7 |
 | Lei 9.430 | 7 |
-| Lei 8.212 | 7 |
+| Lei 8.036 | 6 |
 | LC 101 | 6 |
 | LC 64 | 6 |
 | Lei 7.713 | 6 |
 | Lei 8.629 | 5 |
 | Lei 10.522 | 5 |
 | Decreto 6.514 | 5 |
-| CPP | 5 |
 | Lei 9.307 | 5 |
 | Lei 14.597 | 5 |
 | LC 80 | 5 |
@@ -208,7 +210,7 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 9.492 | 5 |
 | Lei 11.419 | 5 |
 | Lei 12.153 | 5 |
-| Lei 8.036 | 4 |
 | Lei 9.394 | 4 |
 | LC 123 | 4 |
 | Lei 13.445 | 4 |
+| Lei 8.625 | 4 |
