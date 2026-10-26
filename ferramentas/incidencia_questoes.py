@@ -105,6 +105,9 @@ def main():
         j = i + 1
         while j < len(linhas) and linhas[j].startswith('(') and not re.match(r'\(VETADO\)', linhas[j], re.I):
             j += 1
+        # Título com capítulo único: o nome vem depois ("TÍTULO I / CAPÍTULO ÚNICO / DA LEI…", CPPM).
+        if j + 1 < len(linhas) and re.match(r'CAP[ÍIí]TULO\s+[ÚUú]NICO$', linhas[j], re.I):
+            j += 1
         if j >= len(linhas):
             return ''
         t = linhas[j]
