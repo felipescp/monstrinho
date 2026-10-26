@@ -106,3 +106,7 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/11b01dee-L4132.m
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/cb7e68bd-L13022.md L13022 "Estatuto Geral das Guardas Municipais" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l13022.htm dados/legislacao/lei-13022.json 2026-10-25
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/c8eba4f7-DEL1001Compilado.md CPM "Código Penal Militar" https://www.planalto.gov.br/ccivil_03/decreto-lei/del1001.htm dados/legislacao/codigo-penal-militar.json 2026-10-26
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6f0cb06b-DEL1002Compilado.md CPPM "Código de Processo Penal Militar" https://www.planalto.gov.br/ccivil_03/decreto-lei/del1002.htm dados/legislacao/codigo-processo-penal-militar.json 2026-10-26
+# Lei 8.212: a chamada da nota 19 (art. 47, I, c) vem sem <sup> ("…da empresa; 19"); tirada numa cópia.
+# As notas de rodapé depois do fim do texto trazem redações antigas de MPs (arts. 17, 19, 21…): --fim.
+C=$(mktemp); sed 's/\(incorporado ao ativo permanente da empresa;\) 19$/\1/' /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/74ef5b7f-L8212_-_compilada.md > "$C"
+gera "$C" L8212 "Lei Orgânica da Seguridade Social" https://www.planalto.gov.br/ccivil_03/leis/l8212compilado.htm dados/legislacao/lei-8212.json 2026-10-26 --fim "^Este texto não substitui o publicado no DOU de 25\.7\.1991"; rm -f "$C"
