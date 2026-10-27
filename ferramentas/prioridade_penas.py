@@ -10,7 +10,8 @@ Exceção: dispositivo criado/alterado desde 2024 fica com o maior nível entre 
 da incidência e o anterior (ainda sem histórico de prova).
 Diploma sem mapa de incidência mantém a classificação que já tinha.
 
-Uso: python3 ferramentas/prioridade_penas.py [-v] [--gravar]
+Uso: python3 ferramentas/prioridade_penas.py [-v] [--gravar] [SIGLA ...]
+(com SIGLA, ex. CPM, só esses diplomas são recalculados e gravados)
 """
 import re
 ROM={'I':1,'V':5,'X':10,'L':50,'C':100}
@@ -57,11 +58,12 @@ def lim(vals):
 def nivel(n,crit,imp): return 'crítico' if n and n>=crit else 'importante' if n and n>=imp else 'regular'
 import json,sys,collections,os,glob
 INC={'CP':'codigo-penal','L13869':'lei-13869','CDC':'cdc','L8137':'lei-8137','L7716':'lei-7716','ECA':'eca','L10826':'lei-10826','L9613':'lei-9613','L1521':'lei-1521','L11343':'lei-11343','L9455':'lei-9455','L11101':'lei-11101','L9296':'lei-9296','L12850':'lei-12850',
-     'CTB':'ctb','CE':'codigo-eleitoral','LCP':'lcp','L9605':'lei-9605','L15358':'lei-15358'}
+     'CTB':'ctb','CE':'codigo-eleitoral','LCP':'lcp','L9605':'lei-9605','L15358':'lei-15358','CPM':'codigo-penal-militar'}
+SO={a for a in sys.argv[1:] if not a.startswith('-')}
 for f in sorted(glob.glob('dados/penas/*.json')):
     d=json.load(open(f,encoding='utf-8'))
     for k,v in d.items():
-        if k=='__notas__' or not isinstance(v,list): continue
+        if k=='__notas__' or not isinstance(v,list) or (SO and k not in SO): continue
         fi='dados/leiseca/incidencia/%s.json'%INC[k]
         if not os.path.exists(fi): print('SEM MAPA',k,len(v)); continue
         disp=json.load(open(fi,encoding='utf-8'))['dispositivos']; crit,imp=lim(disp.values())
