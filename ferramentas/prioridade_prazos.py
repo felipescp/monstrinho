@@ -15,7 +15,8 @@ import json,re,sys,collections
 ROMAN=r'[IVXL]+'
 MAP={'CPC':('dados/prazos/prazos-cpc.json','dados/leiseca/incidencia/cpc.json'),
      'CPP':('dados/prazos/prazos-cpp.json','dados/leiseca/incidencia/cpp.json'),
-     'L9099':('dados/prazos/prazos-juizados-especiais-lei-9-099.json','dados/leiseca/incidencia/lei-9099.json')}
+     'L9099':('dados/prazos/prazos-juizados-especiais-lei-9-099.json','dados/leiseca/incidencia/lei-9099.json'),
+     'ECA':('dados/prazos/prazos-eca.json','dados/leiseca/incidencia/eca.json')}
 def lim(vals):
     v=sorted([x for x in vals if x>0],reverse=True)
     return v[int(len(v)*0.25)], v[int(len(v)*0.5)]
