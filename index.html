@@ -14037,14 +14037,23 @@ window.PRAZOS_RUNTIME = {
         '</select>';
     },
 
+    // Contador do recorte: total de itens; o title separa prazos e quóruns
+    // (quórum = item com tipo "quórum" na base oficial).
+    _htmlContador: function(lista, sufixo) {
+        let info = document.getElementById('prz-info');
+        if (!info) return;
+        let q = lista.filter(function(p) { return p.item.tipo === 'quórum'; }).length;
+        info.textContent = lista.length + (lista.length === 1 ? ' item' : ' itens') + sufixo;
+        info.title = 'Prazos: ' + (lista.length - q) + '\nQuóruns: ' + q;
+    },
+
     _renderTabela: function() {
         let scroll = document.getElementById('prz-scroll');
         if (!scroll) return;
         let self = this;
         let recorte = this._itensDoRecorte();
         let lista = recorte.filter(function(p) { return self._passaPrioTabela(p.item.id); });
-        let info = document.getElementById('prz-info');
-        if (info) info.textContent = lista.length + ' prazo' + (lista.length === 1 ? '' : 's');
+        this._htmlContador(lista, '');
         if (!lista.length) {
             scroll.innerHTML = (recorte.length ? this._htmlFiltroPrioTabela(recorte) + '<div class="fc-vazio-col">Nenhum prazo com essa prioridade.</div>'
                 : '<div class="fc-vazio-col">' + (this._busca ? 'Nenhum prazo para essa busca.' : 'Nenhum prazo aqui ainda.<br>Use <strong>+ Criar Prazos</strong> e cole a saída do Gem.') + '</div>');
@@ -14202,8 +14211,7 @@ window.PRAZOS_RUNTIME = {
         let self = this, cfg = this._treinoCfg;
         let recorteTodo = this._itensDoRecorte(), imp = cfg.importancia || {};
         let base = recorteTodo.filter(function(p) { return self._passaImportancia(p.item.id); });
-        let info = document.getElementById('prz-info');
-        if (info) info.textContent = recorteTodo.length + ' prazo' + (recorteTodo.length === 1 ? '' : 's') + ' no recorte';
+        this._htmlContador(recorteTodo, ' no recorte');
         let pill = function(campo, valor, rotulo, n) {
             return '<button class="prz-pill' + (cfg[campo] === valor ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.configTreino(\'' + campo + '\', ' + (typeof valor === 'string' ? '\'' + valor + '\'' : valor) + ')">' + rotulo + (n !== undefined ? ' (' + n + ')' : '') + '</button>';
         };
