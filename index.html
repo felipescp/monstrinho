@@ -1551,7 +1551,7 @@ try {
         <div class="nav-item hd-item" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos — memorização">⏱️ PRAZOS</div>
+        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos e quóruns — memorização">⏱️ PRAZOS</div>
         <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
         <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
@@ -13665,7 +13665,7 @@ window.carregarFlashcardsOficiais = async function() {
 </style>
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
-            <div class="analytics-modal-title">⏱️ Prazos</div>
+            <div class="analytics-modal-title">⏱️ Prazos e Quóruns</div>
             <div class="prz-cabecalho-acoes">
                 <button class="prz-cab-btn primario" onclick="window.PRAZOS_RUNTIME.abrirModalCriar()">+ Criar Prazos</button>
                 <details class="prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
@@ -13758,7 +13758,7 @@ window.carregarFlashcardsOficiais = async function() {
 </style>
     <div class="mdl">
         <div class="prt-topo">
-            <div class="prt-titulo" id="prt-titulo">🎯 Treino de Prazos</div>
+            <div class="prt-titulo" id="prt-titulo">🎯 Treino de Prazos e Quóruns</div>
             <button class="prt-fechar" onclick="window.PRAZOS_RUNTIME.fecharTreino()" title="Fechar (Esc)">✕</button>
         </div>
         <div class="prt-progresso"><span id="prt-pos">0 / 0</span><div class="prt-barra"><div id="prt-barra-cheia" style="width:0%;"></div></div><span id="prt-placar"></span></div>
@@ -13993,7 +13993,7 @@ window.PRAZOS_RUNTIME = {
     // ── 📋 TABELA COM CORTINA ──
     COLUNAS: [
         { k: 'ato', rotulo: 'Ato' },
-        { k: 'prazo', rotulo: 'Prazo' },
+        { k: 'prazo', rotulo: 'Prazo / quórum' },
         { k: 'inicio', rotulo: 'Início' },
         { k: 'base', rotulo: 'Base legal' },
         { k: 'obs', rotulo: 'Observações' }
@@ -14214,7 +14214,7 @@ window.PRAZOS_RUNTIME = {
             '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. A avaliação de cada prazo fica salva e vira filtro (❌, ⚠️ já errados) para treinar só o que você erra.</div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Modo</span><div class="prz-pills">' +
                 this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
-                '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos)') + '</div></div>' +
+                '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos) ou o quórum') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Quais prazos</span><div class="prz-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Importância</span><div class="prz-pills"><span class="prz-apenas">Apenas:</span>' +
@@ -14244,7 +14244,7 @@ window.PRAZOS_RUNTIME = {
         if (cfg.quantidade) lista = lista.slice(0, cfg.quantidade);
         let esconder = { prazo: true, inicio: cfg.esconder !== 'prazo', base: cfg.esconder === 'prazo_inicio_base' };
         this._treino = { lista: lista, idx: 0, esconder: esconder, revelados: {}, avaliacoes: {}, fim: false, modo: cfg.modo || 'revelar' };
-        document.getElementById('prt-titulo').textContent = '🎯 Treino de Prazos — ' + this._rotuloRecorte();
+        document.getElementById('prt-titulo').textContent = '🎯 Treino de Prazos e Quóruns — ' + this._rotuloRecorte();
         document.getElementById('modal-prazos-treino').classList.add('open');
         this._atualizarDica();
         this._renderTreino();
@@ -14297,7 +14297,7 @@ window.PRAZOS_RUNTIME = {
         palco.innerHTML = '<div class="prt-carta">' +
             '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="prt-ato">' + this._esc(it.ato) + this._htmlNovo(it.alteracao) + '</div>' +
-            campo('prazo', 'Prazo', 'prazo') +
+            campo('prazo', 'Prazo / quórum', 'prazo') +
             campo('inicio', 'Início') +
             campo('base', 'Base legal') +
             (prazoRevelado && it.obs ? '<div class="prt-campo"><span class="prt-rotulo">Observações</span><span class="prt-valor prt-revelado">' + this._esc(it.obs) + '</span></div>' : '') +
@@ -17010,6 +17010,7 @@ window.ESTRUTURA_MEMO = (function() {
             { id: 'L11343', nome: 'Lei de Drogas', re: [lei('11.343'), /lei de drogas/i] },
             { id: 'L11340', nome: 'Maria da Penha', re: [lei('11.340'), /maria da penha/i] },
             { id: 'L7960', nome: 'Prisão Temporária', re: [lei('7.960'), /pris[ãa]o tempor[áa]ria/i] },
+            { id: 'L11101', nome: 'Falência e Recuperação', re: [lei('11.101')] },
             { id: 'CC', nome: 'Código Civil', re: [/\bCC\b/i, /c[óo]digo civil/i, lei('10.406')] },
             { id: 'CTN', nome: 'CTN', re: [/\bCTN\b/i, lei('5.172')] },
             { id: 'CDC', nome: 'CDC', re: [/\bCDC\b/i, lei('8.078')] },
