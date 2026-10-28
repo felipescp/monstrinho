@@ -60,7 +60,12 @@ MAP={'CPC':('dados/prazos/prazos-cpc.json','dados/leiseca/incidencia/cpc.json'),
      'L5478':('dados/prazos/prazos-lei-de-alimentos.json','dados/leiseca/incidencia/lei-5478.json'),
      'L6938':('dados/prazos/prazos-pnma.json','dados/leiseca/incidencia/lei-6938.json'),
      'L11107':('dados/prazos/prazos-consorcios-publicos.json','dados/leiseca/incidencia/lei-11107.json'),
-     'L9637':('dados/prazos/prazos-organizacoes-sociais.json','dados/leiseca/incidencia/lei-9637.json')}
+     'L9637':('dados/prazos/prazos-organizacoes-sociais.json','dados/leiseca/incidencia/lei-9637.json'),
+     'L13089':('dados/prazos/prazos-estatuto-da-metropole.json','dados/leiseca/incidencia/lei-13089.json'),
+     'L8560':('dados/prazos/prazos-investigacao-de-paternidade.json','dados/leiseca/incidencia/lei-8560.json'),
+     'L4132':('dados/prazos/prazos-desapropriacao-interesse-social.json','dados/leiseca/incidencia/lei-4132.json'),
+     'L12318':('dados/prazos/prazos-alienacao-parental.json','dados/leiseca/incidencia/lei-12318.json'),
+     'L11804':('dados/prazos/prazos-alimentos-gravidicos.json','dados/leiseca/incidencia/lei-11804.json')}
 def lim(vals):
     v=sorted([x for x in vals if x>0],reverse=True)
     return v[int(len(v)*0.25)], v[int(len(v)*0.5)]
