@@ -1582,6 +1582,7 @@ try {
 <div class="topbar-mobile-fixa">
 
     <button onclick="window.voltarParaVitrine()" class="b1" style="height:26px; font-size:9.5px; background:var(--bg-white); border:1px solid var(--border-color); color:var(--text-main); flex-shrink:0;" title="Voltar ao início">‹ Início</button>
+    <button onclick="window.MOBILE_UI.abrirSecoes()" class="b1 mob-secoes-btn" style="height:26px; font-size:9.5px; background:var(--app-primary); border:1px solid var(--app-primary); color:#fff; flex-shrink:0;" title="Abrir uma seção (Jurisprudência, Lei Seca, Esquemas…)">📚 Seções</button>
 
     <div style="width:1px; height:24px; background:var(--border-color); flex-shrink:0;"></div>
 
@@ -38859,6 +38860,176 @@ window.LEGISLACAO = (function() {
             restaurarInterno(m, est);
         }, 400); });
     });
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════════════════
+     MODO CELULAR (≤ 700px) — pedido explícito do usuário, em 3 passos:
+     1. Acesso às seções: botão "📚 Seções" na barra do celular abre a lista
+        (as mesmas entradas de #barra-nav, que fica oculta no celular).
+     2. Seções de 3 colunas (.fc-grid): uma coluna por vez, como telas —
+        tocar num item avança; "‹ Voltar" e a trilha ficam no topo.
+     3. Leitores, treinos e popups de card em tela cheia, com deslizar o
+        dedo para o anterior/próximo.
+     Só vale em tela estreita; o computador não muda.
+     ════════════════════════════════════════════════════════════════════ -->
+<style>
+.mob-secoes-btn { display:none; }
+#mob-secoes { display:none; position:fixed; inset:0; z-index:10050; background:rgba(15,23,42,0.6); backdrop-filter:blur(2px); align-items:flex-end; }
+#mob-secoes.open { display:flex; }
+#mob-secoes .mob-secoes-folha { width:100%; max-height:85dvh; overflow-y:auto; background:var(--bg-white); border-radius:16px 16px 0 0; padding:14px 14px calc(14px + env(safe-area-inset-bottom)); box-sizing:border-box; }
+#mob-secoes .mob-secoes-cab { display:flex; justify-content:space-between; align-items:center; font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--text-main); margin-bottom:10px; }
+#mob-secoes .mob-secoes-cab button { background:none; border:none; font-size:22px; color:var(--text-muted); cursor:pointer; }
+#mob-secoes .mob-secoes-grade { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+#mob-secoes .mob-secoes-grade button { padding:14px 10px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-soft); font-size:12.5px; font-weight:800; color:var(--text-main); text-align:left; cursor:pointer; line-height:1.3; }
+.mob-trilha { display:none; }
+
+@media (max-width:700px) {
+    .mob-secoes-btn { display:inline-flex; align-items:center; }
+
+    /* Seções em tela cheia; no cabeçalho só o título e o ✕ (curadoria —
+       importar, exportar, criar — fica para o computador). */
+    .analytics-modal { padding:0 !important; }
+    .analytics-modal .analytics-modal-content { width:100vw !important; height:100dvh !important; border-radius:0 !important; }
+    .analytics-modal-header { flex-wrap:wrap; gap:6px !important; padding:8px 12px !important; min-height:0 !important; }
+    .analytics-modal-header button:not(.analytics-close-btn), .analytics-modal-header details, .analytics-modal-header [id*="maximizar"] { display:none !important; }
+
+    /* 2. Colunas viram telas. */
+    .fc-grid.mob-ativo { display:flex !important; flex-direction:column; }
+    .fc-grid.mob-ativo > .fc-col { display:none !important; }
+    .fc-grid.mob-ativo > .fc-col.mob-visivel { display:block !important; flex:1; min-height:0; width:auto !important; border:none !important; overflow-y:auto; }
+    .fc-grid.mob-ativo > .fc-col.mob-visivel.mob-flex { display:flex !important; flex-direction:column; }
+    .mob-trilha { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-white); font-size:11.5px; font-weight:700; color:var(--text-muted); flex-shrink:0; min-width:0; }
+    .mob-trilha button { flex-shrink:0; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px; font-weight:800; color:var(--app-primary); cursor:pointer; }
+    .mob-trilha button:disabled { visibility:hidden; }
+    .mob-trilha span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    [class$="-ocultar-div"] { display:none !important; }
+
+    /* 3. Leitores, treinos e popups de card em tela cheia. */
+    #modal-jurisprudencia-baralho, #modal-esquemas-baralho, #modal-glossario-baralho, #modal-prazos-treino, #modal-penas-treino, #modal-jurisprudencia-ver, #modal-esquema-editor { padding:0 !important; }
+    #modal-jurisprudencia-baralho .mdl, #modal-esquemas-baralho .mdl, #modal-glossario-baralho .mdl, #modal-prazos-treino .mdl, #modal-penas-treino .mdl, #modal-jurisprudencia-ver .mdl, #modal-esquema-editor .mdl { max-width:none !important; width:100vw !important; height:100dvh !important; max-height:none !important; border-radius:0 !important; padding:12px !important; }
+    #modal-jurisprudencia-baralho, #modal-esquemas-baralho, #modal-glossario-baralho { --baralho-escala:1 !important; }
+    .jur-baralho-lista, .esq-baralho-lista, .jur-baralho-escala-controle, .esq-baralho-escala-controle, .glos-baralho-escala-controle, .jur-baralho-maximizar:not([onclick*="fecharBaralho"]), .esq-baralho-maximizar:not([onclick*="fecharBaralho"]) { display:none !important; }
+    .jur-baralho-corpo-wrap, .esq-baralho-corpo-wrap { grid-template-columns:1fr !important; }
+}
+</style>
+<div id="mob-secoes" onclick="if (event.target === this) window.MOBILE_UI.fecharSecoes()">
+    <div class="mob-secoes-folha">
+        <div class="mob-secoes-cab"><span>📚 Seções</span><button onclick="window.MOBILE_UI.fecharSecoes()" title="Fechar">✕</button></div>
+        <div class="mob-secoes-grade" id="mob-secoes-grade"></div>
+    </div>
+</div>
+<script>
+window.MOBILE_UI = (function() {
+    var mq = window.matchMedia('(max-width: 700px)');
+    function celular() { return mq.matches; }
+
+    // ── 1. Seções ──
+    function abrirSecoes() {
+        var grade = document.getElementById('mob-secoes-grade');
+        grade.innerHTML = '';
+        document.querySelectorAll('#barra-nav .nav-item.hd-item[onclick]').forEach(function(item) {
+            var b = document.createElement('button');
+            b.textContent = (item.textContent || '').trim();
+            b.onclick = function() { fecharSecoes(); item.click(); };
+            grade.appendChild(b);
+        });
+        document.getElementById('mob-secoes').classList.add('open');
+    }
+    function fecharSecoes() { document.getElementById('mob-secoes').classList.remove('open'); }
+
+    // ── 2. Colunas como telas ──
+    function colunas(g) { return Array.prototype.filter.call(g.children, function(c) { return c.classList.contains('fc-col'); }); }
+    function rotuloAtivo(col) {
+        var a = col && col.querySelector('.fc-materia-item.ativa, .fc-divisao-item.ativa, .fc-pill.ativa, .ativa');
+        if (!a) return '';
+        var nome = a.querySelector('.fc-materia-nome, span') || a;
+        return (nome.textContent || '').replace(/\s*\(?\d[\d.]*\)?\s*$/, '').trim();
+    }
+    function mostrar(g, nivel) {
+        var cols = colunas(g);
+        nivel = Math.max(0, Math.min(nivel, cols.length - 1));
+        g.dataset.mobNivel = nivel;
+        cols.forEach(function(c, i) {
+            c.classList.toggle('mob-visivel', i === nivel);
+            c.classList.toggle('mob-flex', getComputedStyle(c).flexDirection === 'column' && i === nivel);
+        });
+        var trilha = g.previousElementSibling;
+        if (trilha && trilha.classList.contains('mob-trilha')) {
+            trilha.querySelector('button').disabled = nivel === 0;
+            var partes = [];
+            for (var i = 0; i < nivel; i++) { var r = rotuloAtivo(cols[i]); if (r) partes.push(r); }
+            trilha.querySelector('span').textContent = partes.length ? partes.join(' › ') : 'Escolha um item';
+        }
+    }
+    function preparar(g) {
+        if (g.classList.contains('mob-ativo')) return;
+        if (colunas(g).length < 3) return;
+        g.classList.add('mob-ativo');
+        var trilha = document.createElement('div');
+        trilha.className = 'mob-trilha';
+        trilha.innerHTML = '<button type="button">‹ Voltar</button><span></span>';
+        trilha.querySelector('button').onclick = function() { mostrar(g, (+g.dataset.mobNivel || 0) - 1); };
+        g.parentNode.insertBefore(trilha, g);
+        mostrar(g, 0);
+    }
+    function prepararTodos() { if (celular()) document.querySelectorAll('.fc-grid').forEach(preparar); }
+    // Tocar num item de uma coluna (que não seja a última) avança: para a
+    // seguinte ou, se ela não tiver nada a escolher, direto para o conteúdo.
+    document.addEventListener('click', function(e) {
+        if (!celular()) return;
+        var col = e.target.closest && e.target.closest('.fc-grid.mob-ativo > .fc-col.mob-visivel');
+        if (!col) return;
+        var g = col.parentNode, cols = colunas(g), i = cols.indexOf(col);
+        if (i < 0 || i >= cols.length - 1) return;
+        var alvo = e.target.closest('[onclick]');
+        if (!alvo || !col.contains(alvo) || alvo.matches('input, select, textarea')) return;
+        setTimeout(function() {
+            var prox = i + 1;
+            while (prox < cols.length - 1 && !cols[prox].querySelector('[onclick]')) prox++;
+            mostrar(g, prox);
+        }, 30);
+    }, true); // captura: a seção redesenha a coluna no próprio clique
+
+    // ── 3. Deslizar o dedo: anterior / próximo ──
+    var GESTOS = {
+        'modal-jurisprudencia-baralho': ['JURISPRUDENCIA_RUNTIME', 'anteriorBaralho', 'proximoBaralho'],
+        'modal-esquemas-baralho': ['ESQUEMAS_RUNTIME', 'anteriorBaralho', 'proximoBaralho'],
+        'modal-glossario-baralho': ['GLOSSARIO_RUNTIME', 'anteriorBaralho', 'proximoBaralho'],
+        'modal-prazos-treino': ['PRAZOS_RUNTIME', 'navegarTreino', 'navegarTreino', -1, 1],
+        'modal-penas-treino': ['PENAS_RUNTIME', 'navegarTreino', 'navegarTreino', -1, 1],
+        'modal-jurisprudencia-ver': ['JURISPRUDENCIA_RUNTIME', 'navegarVer', 'navegarVer', -1, 1],
+        'modal-esquema-editor': ['ESQUEMAS_RUNTIME', 'navegarEditor', 'navegarEditor', -1, 1]
+    };
+    var toque = null;
+    function rolaNaHorizontal(el, limite) {
+        for (; el && el !== limite; el = el.parentElement) {
+            if (el.scrollWidth > el.clientWidth + 2 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) return true;
+        }
+        return false;
+    }
+    document.addEventListener('touchstart', function(e) {
+        toque = null;
+        if (!celular() || e.touches.length !== 1) return;
+        var modal = e.target.closest && e.target.closest(Object.keys(GESTOS).map(function(id) { return '#' + id; }).join(','));
+        if (!modal || !(modal.classList.contains('open') || modal.classList.contains('active'))) return;
+        if (e.target.closest('input, textarea, select, [contenteditable="true"]') || rolaNaHorizontal(e.target, modal)) return;
+        toque = { id: modal.id, x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+        if (!toque) return;
+        var t = e.changedTouches[0], dx = t.clientX - toque.x, dy = t.clientY - toque.y, g = GESTOS[toque.id];
+        var sel = window.getSelection && String(window.getSelection());
+        toque = null;
+        if (sel || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        var R = window[g[0]];
+        if (!R) return;
+        if (dx < 0) R[g[2]].apply(R, g.length > 3 ? [g[4]] : []);
+        else R[g[1]].apply(R, g.length > 3 ? [g[3]] : []);
+    }, { passive: true });
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', prepararTodos); else prepararTodos();
+    (mq.addEventListener ? mq.addEventListener('change', prepararTodos) : mq.addListener(prepararTodos));
+    return { abrirSecoes: abrirSecoes, fecharSecoes: fecharSecoes, mostrar: mostrar, prepararTodos: prepararTodos };
 })();
 </script>
 </body>
