@@ -241,6 +241,7 @@ def linhas_md(caminho):
 def converter(md, inicio=None, fim=None):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
     em_anexo = False
+    cab = None  # nome de capítulo sem negrito em montagem (Lei 9.307)
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
@@ -303,7 +304,7 @@ def converter(md, inicio=None, fim=None):
             art = novo_disp(texto, alt, rev)
             if rubrica: art['rubrica'] = rubrica
             artigos[num] = art
-            seg, inc, rubrica = art, None, None
+            seg, inc, rubrica, cab = art, None, None, None
             continue
         # Lista anexa (LC 116: "Lista de serviços anexa à Lei Complementar…"):
         # itens "1 – Serviços de informática", "1.05 – Licenciamento…" vão para ANEXO.
@@ -315,6 +316,17 @@ def converter(md, inicio=None, fim=None):
             if m:
                 texto, alt, rev = separa_anotacoes(m.group(2))
                 ANEXO[m.group(1)] = novo_disp(texto, alt, rev)
+            continue
+        # (Antes do teste de artigo aberto: o capítulo I vem antes do art. 1º.)
+        t = separa_anotacoes(l)[0] if cab is not None or re.match(r'Cap[íi]tulo\s', l) else ''
+        # Título sem negrito ("Capítulo I" / "Disposições Gerais"; "Capítulo VI" / "Do Reconhecimento…" /
+        # "Arbitrais Estrangeiras", Lei 9.307): o nome, em uma ou mais linhas, vira a rubrica do artigo seguinte.
+        if re.fullmatch(r'Cap[íi]tulo\s+[IVXLC]+(?:-[A-Z])?', t):
+            cab, rubrica = [], None
+            continue
+        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**'):
+            cab.append(t)
+            rubrica = ' '.join(cab)
             continue
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
