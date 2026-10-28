@@ -110,3 +110,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6f0cb06b-DEL1002
 # As notas de rodapé depois do fim do texto trazem redações antigas de MPs (arts. 17, 19, 21…): --fim.
 C=$(mktemp); sed 's/\(incorporado ao ativo permanente da empresa;\) 19$/\1/' /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/74ef5b7f-L8212_-_compilada.md > "$C"
 gera "$C" L8212 "Lei Orgânica da Seguridade Social" https://www.planalto.gov.br/ccivil_03/leis/l8212compilado.htm dados/legislacao/lei-8212.json 2026-10-26 --fim "^Este texto não substitui o publicado no DOU de 25\.7\.1991"; rm -f "$C"
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3e729d2c-L9307.md L9307 "Lei de Arbitragem" https://www.planalto.gov.br/ccivil_03/leis/l9307.htm dados/legislacao/lei-9307.json 2026-10-28
