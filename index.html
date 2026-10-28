@@ -31814,21 +31814,30 @@ window.ESQUEMAS_RUNTIME = {
         } else {
             let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
             if (!Array.isArray(this.esquemas[chave])) this.esquemas[chave] = [];
+            let novoId = 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             this.esquemas[chave].push({
-                id: 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                id: novoId,
                 titulo: titulo,
                 conteudoHtml: conteudoHtml,
                 criadoEm: new Date().toISOString()
                 // Deliberadamente SEM origem_oficial — criação pessoal nunca
                 // atribui esse campo (ver nota no topo do arquivo).
             });
+            // O editor continua aberto (abaixo): o esquema recém-criado passa a
+            // ser o editado, para que um novo "Salvar" não o duplique.
+            this._editandoId = novoId;
+            this._editandoChave = chave;
+            document.getElementById('esq-editor-cabecalho').textContent = 'Editar Esquema';
         }
         let salvouComSucesso = this.salvar();
-        this.fecharEditor();
         this._renderGradeCards();
         if (!salvouComSucesso) {
             alert('⚠️ O esquema NÃO foi salvo — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço, comum depois de importações grandes). Ele continua visível só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Tente liberar espaço (ex.: exportar e depois ocultar/excluir esquemas antigos, ou limpar dados de outros sites no navegador) e salvar de novo.');
+            return;
         }
+        // Salvar não fecha o editor (pedido explícito do usuário): só avisa.
+        this._snapEditor = { titulo: document.getElementById('esq-form-titulo').value, html: document.getElementById('esq-editor-corpo').innerHTML };
+        window.avisoOk('Alteração salva');
     },
 
     excluirEsquema: function(chave, id) {
@@ -39074,6 +39083,29 @@ window.MOBILE_UI = (function() {
     (mq.addEventListener ? mq.addEventListener('change', prepararTodos) : mq.addListener(prepararTodos));
     return { abrirSecoes: abrirSecoes, fecharSecoes: fecharSecoes, mostrar: mostrar, prepararTodos: prepararTodos };
 })();
+</script>
+<!-- Aviso simples com "Ok" (ex.: "Alteração salva" no editor de esquemas),
+     acima de qualquer popup aberto. Enter, Esc ou o Ok fecham. -->
+<style>
+#aviso-ok { display:none; position:fixed; inset:0; z-index:10100; background:rgba(15,23,42,0.35); align-items:center; justify-content:center; }
+#aviso-ok.open { display:flex; }
+#aviso-ok .aviso-ok-caixa { background:var(--bg-white); border-radius:12px; padding:20px 24px; min-width:240px; max-width:90vw; box-shadow:0 12px 30px rgba(0,0,0,0.25); display:flex; flex-direction:column; align-items:center; gap:14px; }
+#aviso-ok .aviso-ok-msg { font-size:14px; font-weight:700; color:var(--text-main); text-align:center; }
+#aviso-ok button { padding:8px 28px; border-radius:8px; border:1px solid var(--app-primary); background:var(--app-primary); color:#fff; font-size:13px; font-weight:800; cursor:pointer; }
+</style>
+<div id="aviso-ok" onclick="if (event.target === this) window.fecharAvisoOk()"><div class="aviso-ok-caixa"><div class="aviso-ok-msg" id="aviso-ok-msg"></div><button type="button" onclick="window.fecharAvisoOk()">Ok</button></div></div>
+<script>
+window.avisoOk = function(msg) {
+    document.getElementById('aviso-ok-msg').textContent = msg;
+    document.getElementById('aviso-ok').classList.add('open');
+    setTimeout(function() { let b = document.querySelector('#aviso-ok button'); if (b) b.focus(); }, 0);
+};
+window.fecharAvisoOk = function() { document.getElementById('aviso-ok').classList.remove('open'); };
+document.addEventListener('keydown', function(e) {
+    let el = document.getElementById('aviso-ok');
+    if (!el || !el.classList.contains('open')) return;
+    if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); window.fecharAvisoOk(); }
+}, true);
 </script>
 </body>
 </html>
