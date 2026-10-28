@@ -33,7 +33,8 @@ MAP={'CPC':('dados/prazos/prazos-cpc.json','dados/leiseca/incidencia/cpc.json'),
      'L9296':('dados/prazos/prazos-interceptacao.json','dados/leiseca/incidencia/lei-9296.json'),
      'CF':('dados/prazos/prazos-constituicao.json','dados/leiseca/incidencia/constituicao.json'),
      'L9784':('dados/prazos/prazos-processo-administrativo.json','dados/leiseca/incidencia/lei-9784.json'),
-     'L9307':('dados/prazos/prazos-arbitragem.json','dados/leiseca/incidencia/lei-9307.json')}
+     'L9307':('dados/prazos/prazos-arbitragem.json','dados/leiseca/incidencia/lei-9307.json'),
+     'CTB':('dados/prazos/prazos-codigo-de-transito.json','dados/leiseca/incidencia/ctb.json')}
 def lim(vals):
     v=sorted([x for x in vals if x>0],reverse=True)
     return v[int(len(v)*0.25)], v[int(len(v)*0.5)]
