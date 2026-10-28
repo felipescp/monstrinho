@@ -1551,7 +1551,7 @@ try {
         <div class="nav-item hd-item" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
         <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
         <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos e quóruns — memorização">⏱️ PRAZOS</div>
+        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
         <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
         <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
@@ -13993,7 +13993,7 @@ window.PRAZOS_RUNTIME = {
     // ── 📋 TABELA COM CORTINA ──
     COLUNAS: [
         { k: 'ato', rotulo: 'Ato' },
-        { k: 'prazo', rotulo: 'Prazo / quórum' },
+        { k: 'prazo', rotulo: 'Prazo / quórum / limite' },
         { k: 'inicio', rotulo: 'Início' },
         { k: 'base', rotulo: 'Base legal' },
         { k: 'obs', rotulo: 'Observações' }
@@ -14037,14 +14037,15 @@ window.PRAZOS_RUNTIME = {
         '</select>';
     },
 
-    // Contador do recorte: total de itens; o title separa prazos e quóruns
-    // (quórum = item com tipo "quórum" na base oficial).
+    // Contador do recorte: total de itens; o title separa prazos, quóruns e
+    // limites (campo tipo "quórum" ou "limite" na base oficial).
     _htmlContador: function(lista, sufixo) {
         let info = document.getElementById('prz-info');
         if (!info) return;
         let q = lista.filter(function(p) { return p.item.tipo === 'quórum'; }).length;
+        let l = lista.filter(function(p) { return p.item.tipo === 'limite'; }).length;
         info.textContent = lista.length + (lista.length === 1 ? ' item' : ' itens') + sufixo;
-        info.title = 'Prazos: ' + (lista.length - q) + '\nQuóruns: ' + q;
+        info.title = 'Prazos: ' + (lista.length - q - l) + '\nQuóruns: ' + q + '\nLimites: ' + l;
     },
 
     _renderTabela: function() {
@@ -14222,7 +14223,7 @@ window.PRAZOS_RUNTIME = {
             '<div class="prz-treino-sub">Recorte: <strong>' + this._esc(recorte) + '</strong>. A avaliação de cada prazo fica salva e vira filtro (❌, ⚠️ já errados) para treinar só o que você erra.</div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Modo</span><div class="prz-pills">' +
                 this.MODOS_TREINO.map(function(m) { return pill('modo', m.k, m.rotulo); }).join('') + '</div>' +
-                '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos) ou o quórum') + '</div></div>' +
+                '<div class="prz-treino-sub">' + this._dicaModo(cfg.modo, 'o prazo (quantidade, unidade e, quando houver, a contagem em dias úteis ou corridos), o quórum ou o limite') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Quais prazos</span><div class="prz-pills">' +
                 this.FILTROS_TREINO.map(function(f) { return pill('filtro', f.k, f.rotulo, base.filter(function(p) { return self._passaFiltroTreino(p.item.id, f.k); }).length); }).join('') + '</div></div>' +
             '<div class="prz-opcao"><span class="prz-opcao-rotulo">Importância</span><div class="prz-pills"><span class="prz-apenas">Apenas:</span>' +
@@ -14305,7 +14306,7 @@ window.PRAZOS_RUNTIME = {
         palco.innerHTML = '<div class="prt-carta">' +
             '<div class="memo-carta-topo"><div class="prt-origem">' + this._esc(this._origemItem(it)) + '</div><div class="memo-carta-botoes">' + this._htmlBotoesItem(it.id) + '</div></div>' +
             '<div class="prt-ato">' + this._esc(it.ato) + this._htmlNovo(it.alteracao) + '</div>' +
-            campo('prazo', 'Prazo / quórum', 'prazo') +
+            campo('prazo', 'Prazo / quórum / limite', 'prazo') +
             campo('inicio', 'Início') +
             campo('base', 'Base legal') +
             (prazoRevelado && it.obs ? '<div class="prt-campo"><span class="prt-rotulo">Observações</span><span class="prt-valor prt-revelado">' + this._esc(it.obs) + '</span></div>' : '') +
