@@ -9,6 +9,8 @@ Regular = abaixo da mediana ou não cobrado.
 
 Uso: python3 ferramentas/prioridade_prazos.py            (só mostra)
      python3 ferramentas/prioridade_prazos.py --gravar   (grava nos JSON)
+     ... [SIGLA ...]   só esses diplomas (ex.: CTN)
+     ... --descartar   com --gravar, remove os itens sem nenhuma cobrança no mapa
 Diploma novo: acrescente-o em MAP (prazos e mapa de incidência).
 """
 import json,re,sys,collections
@@ -36,7 +38,8 @@ MAP={'CPC':('dados/prazos/prazos-cpc.json','dados/leiseca/incidencia/cpc.json'),
      'L9307':('dados/prazos/prazos-arbitragem.json','dados/leiseca/incidencia/lei-9307.json'),
      'CTB':('dados/prazos/prazos-codigo-de-transito.json','dados/leiseca/incidencia/ctb.json'),
      'L14133':('dados/prazos/prazos-licitacoes.json','dados/leiseca/incidencia/lei-14133.json'),
-     'L13303':('dados/prazos/prazos-estatais.json','dados/leiseca/incidencia/lei-13303.json')}
+     'L13303':('dados/prazos/prazos-estatais.json','dados/leiseca/incidencia/lei-13303.json'),
+     'CTN':('dados/prazos/prazos-ctn.json','dados/leiseca/incidencia/ctn.json')}
 def lim(vals):
     v=sorted([x for x in vals if x>0],reverse=True)
     return v[int(len(v)*0.25)], v[int(len(v)*0.5)]
@@ -58,8 +61,10 @@ def contagem(disp,a,p,i):
     pre=a+('§'+p if p else '')
     if i: return disp.get(pre+'.'+i,0)
     return max([n for k,n in disp.items() if k==pre or k.startswith(pre+'.')] or [0])
+SO={a for a in sys.argv[1:] if not a.startswith('-')}
 res={}
 for dip,(fp,fi) in MAP.items():
+    if SO and dip not in SO: continue
     inc=json.load(open(fi,encoding='utf-8')); disp=inc['dispositivos']
     crit,imp=lim(disp.values())
     d=json.load(open(fp,encoding='utf-8'))
@@ -72,7 +77,12 @@ for dip,(fp,fi) in MAP.items():
     print(dip,'limiares crit>=%d imp>=%d'%(crit,imp),dict(dist))
 if '--gravar' in sys.argv:
     for dip,(d,fp,crit,imp,dist) in res.items():
-        for it in list(d.values())[0]:
+        lista=list(d.values())[0]
+        if '--descartar' in sys.argv:
+            fora=[it for it in lista if not it['_n']]
+            for it in fora: lista.remove(it)
+            if fora: print(dip,'descartados sem cobrança:',len(fora))
+        for it in lista:
             it['classificacaoOficial']=it.pop('_nivel'); it.pop('_n')
         open(fp,'w',encoding='utf-8').write(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
 else:
