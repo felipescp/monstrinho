@@ -23,12 +23,16 @@ def limpa(l):
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
     # Anotação sem o "(" de abertura: "[Redação dada pela Lei nº 13.204, de 2015)](…)" (Lei 13.019, art. 48, III).
     l = re.sub(r'\[((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\]', r'[(\1]', l)
+    # Anotação sem o ")" de fechamento: "[(Incluído pela Lei nº 14.382, de 2022](…)" (Lei 6.015, art. 46, § 6º).
+    # (Se o ")" vem logo depois do link, "[(Incluído pela Lei nº 14.026, de 2020](…))", não é o caso.)
+    l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\d{4})\](\([^()\s]*\))(?!\s*\))', r'[\1)]\2', l)
     # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
     l = re.sub(r'\[(Revogad[oa]s?\s+pel[oa]\s[^\]()]*)\]', r'[(\1)]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
     l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
     # Link que começa uma letra depois da palavra: "com base nos i [ncisos XX do art. 21](…)" (Lei 13.089, art. 1º).
     l = re.sub(r'(?<![\wà-ú])([b-df-hj-np-tv-zi])\s\[(?=[a-zà-ú])', r'[\1', l)
+    l = re.sub(r'\b(c?m)\s*<sup>\s*([23])\s*</sup>', lambda m: m.group(1) + '²³'[int(m.group(2)) - 2], l)  # "60 m <sup>2</sup>" (Lei 6.015, art. 290)
     # Chamada de nota de rodapé: "é de: <sup>[6](#ne6)</sup>", "posteriores; _<sup>9</sup>_" (Lei 8.212).
     l = re.sub(r'(?<=[\s.;:,)])\s*_?<sup>\s*(?:\[\d{1,2}\]\(#[^)]*\)|\d{1,2})\s*</sup>_?', '', l)
     l = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', l)
@@ -249,7 +253,7 @@ def converter(md, inicio=None, fim=None):
     for raw in fonte:
         bruto = raw.strip()
         if not bruto: continue
-        anterior, sub_aberta = bruto, re.match(r'^\*\*\s*Subse[çc][ãa]o\b[^*]*$', anterior, re.I)
+        anterior, sub_aberta = bruto, re.match(r'^\*\*\s*(?:Subse[çc][ãa]o|CAP[ÍI]TULO)\b[^*]*$', anterior, re.I)
         if raw.startswith(ART_RISCADO):
             if art is not None: art, seg, inc = {'texto': ''}, None, None
             seg = art
@@ -428,6 +432,17 @@ def converter(md, inicio=None, fim=None):
             continue
         # Linha solta (continuação) → acrescenta ao dispositivo corrente.
         texto, alt, rev = separa_anotacoes(l)
+        # Item numerado direto no dispositivo, sem alínea ("I - o registro:" / "1) da instituição de bem
+        # de família;" … "48) …" e "15 - da re-ratificação…", Lei 6.015, art. 167; "1°) o dia, mês…",
+        # art. 54): um por linha. Vem antes dos filtros de título, que descartariam "38) (VETADO)" e
+        # "13)" (só a anotação de revogação).
+        alvo = inc if inc is not None else seg
+        if alvo is not None and not alvo.get('ali') and re.match(r'^\d{1,2}[º°]?(?:[.)]|\s[-–])(?:\s|$)', texto) \
+                and re.search(r':$|\n\d{1,2}[º°]?(?:[.)]|\s[-–])[^\n]*$', alvo['texto']):
+            if re.search(r'Vig[êe]ncia\s+encerrada', l, re.I): continue  # item de MP que caducou (art. 167, II, 33)
+            if re.fullmatch(r'\d{1,2}[º°]?[.)]', texto): texto += ' (Revogado)' if rev else ''
+            alvo['texto'] += '\n' + texto
+            continue
         # Cabeçalho em maiúsculas ("DO FUNDO DE INVESTIMENTO") não é continuação.
         if texto and texto.upper() == texto and re.search(r'[A-ZÁ-Ú]{3}', texto): continue
         # Rubrica/título sem negrito ("Fundos de Participação dos Estados"):

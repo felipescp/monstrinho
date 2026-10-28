@@ -67,6 +67,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
 | Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
+| Lei de Registros Públicos (Lei 6.015/1973) | `lei-6015.json` | 28/10/2026 |
 | Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
 | Lei Geral de Proteção de Dados Pessoais – LGPD (Lei 13.709/2018) | `lei-13709.json` | 20/10/2026 |
 | Lei Orgânica da Assistência Social – LOAS (Lei 8.742/1993) | `lei-8742.json` | 20/10/2026 (o art. 20, § 13, vem sem texto no compilado, só com "Vide Medida Provisória nº 871, de 2019") |
