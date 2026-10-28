@@ -20,7 +20,7 @@ python3 ferramentas/prioridade_prazos.py --gravar --descartar CTN   # só os dip
 - Penas: dispositivo criado ou alterado desde 2024 (campo `alteracao`) fica com o **maior** nível entre o da incidência e o anterior (ainda sem histórico de prova).
 - Diploma sem mapa de incidência mantém a classificação que tinha.
 - Prazos (e quóruns): item sem nenhuma cobrança no mapa é **descartado** — rode sempre com `--descartar`. Diploma sem mapa fica sem `classificacaoOficial` e fora de `MAP` até o mapa chegar.
-- Quóruns ficam na mesma base de Prazos, com o campo `"tipo": "quórum"`; o contador da seção separa Prazos e Quóruns por esse campo.
+- Quóruns e limites (idades, percentuais e outros limites numéricos que não são prazo nem quórum) ficam na mesma base de Prazos, com o campo `"tipo": "quórum"` ou `"tipo": "limite"`; o contador da seção separa Prazos, Quóruns e Limites por esse campo.
 
 ## Quando rodar
 
