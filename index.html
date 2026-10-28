@@ -13579,6 +13579,7 @@ window.carregarFlashcardsOficiais = async function() {
 <style>
     #prazos-modal.modal-maximizado .analytics-modal-content { width:100vw; height:100vh; border-radius:0; }
     #prazos-modal .analytics-modal-header { height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px; }
+    #prazos-modal .prz-cab-prio { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-left:18px; }
     #prazos-modal .analytics-modal-content { padding:0; }
     #prazos-modal .prz-cabecalho-acoes { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-left:auto; }
     #prazos-modal .prz-cab-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; }
@@ -13666,6 +13667,9 @@ window.carregarFlashcardsOficiais = async function() {
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⏱️ Prazos e Quóruns</div>
+            <!-- Prioridade (pedido explícito do usuário): totais de todos os
+                 prazos; ao abrir, só Críticos e Importantes marcados. -->
+            <div class="prz-cab-prio" id="prz-cab-prio"></div>
             <div class="prz-cabecalho-acoes">
                 <button class="prz-cab-btn primario" onclick="window.PRAZOS_RUNTIME.abrirModalCriar()">+ Criar Prazos</button>
                 <details class="prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
@@ -13970,6 +13974,7 @@ window.PRAZOS_RUNTIME = {
     _renderPrincipal: function() {
         let col = document.getElementById('prz-col-principal');
         if (!col) return;
+        this._renderCabPrio();
         if (!this._materia) { col.innerHTML = '<div class="fc-vazio-col">Selecione um diploma para ver os prazos.<br>Para cadastrar, use <strong>+ Criar Prazos</strong> e cole a saída do Gem.</div>'; return; }
         col.innerHTML =
             '<div class="prz-toolbar">' +
@@ -14056,7 +14061,8 @@ window.PRAZOS_RUNTIME = {
         let lista = recorte.filter(function(p) { return self._passaPrioTabela(p.item.id); });
         this._htmlContador(lista, '');
         if (!lista.length) {
-            scroll.innerHTML = (recorte.length ? this._htmlFiltroPrioTabela(recorte) + '<div class="fc-vazio-col">Nenhum prazo com essa prioridade.</div>'
+            this._renderCabPrio();
+            scroll.innerHTML = (recorte.length ? '<div class="fc-vazio-col">Nenhum prazo com a prioridade marcada no topo.</div>'
                 : '<div class="fc-vazio-col">' + (this._busca ? 'Nenhum prazo para essa busca.' : 'Nenhum prazo aqui ainda.<br>Use <strong>+ Criar Prazos</strong> e cole a saída do Gem.') + '</div>');
             return;
         }
@@ -14083,7 +14089,8 @@ window.PRAZOS_RUNTIME = {
             '</span></td></tr>';
         });
         let algumaCortina = this.COLUNAS.some(function(c) { return self._cortina[c.k]; });
-        scroll.innerHTML = this._htmlFiltroPrioTabela(recorte) + '<div class="prz-dica">Clique no título de uma coluna para esconder/mostrar (cortina)' + (algumaCortina ? ' · clique numa célula oculta para revelá-la' : '') + '.</div>' +
+        this._renderCabPrio();
+        scroll.innerHTML = '<div class="prz-dica">Clique no título de uma coluna para esconder/mostrar (cortina)' + (algumaCortina ? ' · clique numa célula oculta para revelá-la' : '') + '.</div>' +
             '<table class="prz-tabela"><thead>' + cab + '</thead><tbody>' + linhas + '</tbody></table>';
     },
 
@@ -14466,6 +14473,7 @@ window.abrirPrazosModal = function() {
     if (btn) { btn.textContent = '🗗'; btn.title = 'Minimizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    window.PRAZOS_RUNTIME._filtroPrioPadrao();
     window.PRAZOS_RUNTIME.init();
 };
 
@@ -17278,12 +17286,19 @@ window.ESTRUTURA_MIXIN = {
 
     // Filtro da TABELA por prioridade (Crítico/Importante/Regular), em
     // toggles como os de Jurisprudência; nenhum marcado = todos. A
-    // prioridade é a sua ou a adotada do sistema (estado[id].importancia).
+    // prioridade é a sua (estado[id].importancia) ou, sem ela, a sugerida
+    // pelo sistema (item.classificacaoOficial), mesmo antes de adotá-la.
     _filtroPrioTabela: null,
+    _prioridadeEfetiva: function(id) {
+        let sua = this._prioridade(id);
+        if (sua) return sua;
+        let p = this._acharItem(id);
+        return (p && this.MAPA_CLASSIFICACAO_OFICIAL[p.item.classificacaoOficial]) || '';
+    },
     _passaPrioTabela: function(id) {
         let f = this._filtroPrioTabela || {};
         if (!Object.keys(f).some(function(k) { return f[k]; })) return true;
-        return !!f[this._prioridade(id)];
+        return !!f[this._prioridadeEfetiva(id)];
     },
     alternarPrioTabela: function(k) {
         if (!this._filtroPrioTabela) this._filtroPrioTabela = {};
@@ -17294,10 +17309,10 @@ window.ESTRUTURA_MIXIN = {
         let self = this, f = this._filtroPrioTabela || {}, px = this._px;
         return '<div class="' + px + '-filtro-prio"><span class="' + px + '-apenas">Prioridade — apenas:</span>' +
             this.NIVEIS_PRIORIDADE.map(function(n) {
-                let q = recorte.filter(function(p) { return self._prioridade(p.item.id) === n[0]; }).length;
+                let q = recorte.filter(function(p) { return self._prioridadeEfetiva(p.item.id) === n[0]; }).length;
                 return '<label class="' + px + '-check-pill' + (f[n[0]] ? ' ativa' : '') + '"><input type="checkbox"' + (f[n[0]] ? ' checked' : '') + ' onchange="window.' + self._R + '.alternarPrioTabela(\'' + n[0] + '\')">' + n[1] + ' (' + q + ')</label>';
             }).join('') +
-            '<span class="' + px + '-dica" style="margin:0;">Nenhum marcado: todos. A prioridade é a sua ou a do sistema (🏷️ Aplicar prioridade do sistema).</span></div>';
+            '<span class="' + px + '-dica" style="margin:0;">Nenhum marcado: todos. A prioridade é a sua ou, sem ela, a sugerida pelo sistema.</span></div>';
     },
 
     _itensDoRecorte: function() {
@@ -17428,7 +17443,20 @@ Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'prz', _comNotas: false,
     _artDe: function(item) { return item.base || ''; },
     _textoBusca: function(i) { return [i.ato, i.prazo, i.inicio, i.base, i.obs].join(' '); },
-    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '', classificacaoOficial: i.classificacaoOficial || '' }; }
+    _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '', classificacaoOficial: i.classificacaoOficial || '' }; },
+    // Filtro de prioridade no cabeçalho do modal, com os totais de TODOS os
+    // prazos (não só do diploma aberto). Padrão ao abrir: Críticos e
+    // Importantes (ver abrirPrazosModal).
+    _filtroPrioPadrao: function() { this._filtroPrioTabela = { dificil: true, medio: true }; },
+    _renderCabPrio: function() {
+        let el = document.getElementById('prz-cab-prio');
+        if (!el) return;
+        let self = this, f = this._filtroPrioTabela || {}, cont = { dificil: 0, medio: 0, facil: 0 };
+        this._todosItens().forEach(function(p) { let n = self._prioridadeEfetiva(p.item.id); if (cont.hasOwnProperty(n)) cont[n]++; });
+        el.innerHTML = [['dificil', '🔴 Críticos'], ['medio', '🟡 Importantes'], ['facil', '🟢 Regulares']].map(function(n) {
+            return '<label class="prz-check-pill' + (f[n[0]] ? ' ativa' : '') + '" title="Mostrar na tabela os prazos ' + n[1].slice(3).toLowerCase() + ' (prioridade sua ou, sem ela, a do sistema)"><input type="checkbox"' + (f[n[0]] ? ' checked' : '') + ' onchange="window.PRAZOS_RUNTIME.alternarPrioTabela(\'' + n[0] + '\')">' + n[1] + ' (' + cont[n[0]] + ')</label>';
+        }).join('');
+    }
 });
 Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
     _px: 'pen', _comNotas: true,
