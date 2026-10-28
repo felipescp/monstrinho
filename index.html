@@ -13667,7 +13667,7 @@ window.carregarFlashcardsOficiais = async function() {
 </style>
     <div class="analytics-modal-content">
         <div class="analytics-modal-header">
-            <div class="analytics-modal-title">⏱️ Prazos e Quóruns</div>
+            <div class="analytics-modal-title">⏱️ Prazos<span class="prz-tit-resto"> e Quóruns</span></div>
             <!-- Prioridade (pedido explícito do usuário): totais de todos os
                  prazos; ao abrir, só Críticos e Importantes marcados. -->
             <div class="prz-cab-prio" id="prz-cab-prio"></div>
@@ -17461,7 +17461,7 @@ Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
         let self = this, f = this._filtroPrioTabela || {}, cont = { dificil: 0, medio: 0, facil: 0 };
         this._todosItens().forEach(function(p) { let n = self._prioridadeEfetiva(p.item.id); if (cont.hasOwnProperty(n)) cont[n]++; });
         el.innerHTML = [['dificil', '🔴 Críticos'], ['medio', '🟡 Importantes'], ['facil', '🟢 Regulares']].map(function(n) {
-            return '<label class="prz-check-pill' + (f[n[0]] ? ' ativa' : '') + '" title="Mostrar na tabela os prazos ' + n[1].slice(3).toLowerCase() + ' (prioridade sua ou, sem ela, a do sistema)"><input type="checkbox"' + (f[n[0]] ? ' checked' : '') + ' onchange="window.PRAZOS_RUNTIME.alternarPrioTabela(\'' + n[0] + '\')">' + n[1] + ' (' + cont[n[0]] + ')</label>';
+            return '<label class="prz-check-pill' + (f[n[0]] ? ' ativa' : '') + '" title="Mostrar na tabela os prazos ' + n[1].slice(3).toLowerCase() + ' (prioridade sua ou, sem ela, a do sistema)"><input type="checkbox"' + (f[n[0]] ? ' checked' : '') + ' onchange="window.PRAZOS_RUNTIME.alternarPrioTabela(\'' + n[0] + '\')">' + n[1].slice(0, 2) + ' <span class="prz-cab-nome">' + n[1].slice(3) + ' </span>(' + cont[n[0]] + ')</label>';
         }).join('');
     }
 });
@@ -38914,6 +38914,15 @@ window.LEGISLACAO = (function() {
     /* 4. Tabelas de Penas e Prazos viram fichas empilhadas: cada linha é um
        cartão, cada célula traz o nome da coluna (data-rot); o cabeçalho
        vira uma fileira de chips da cortina (tocar esconde/mostra a coluna). */
+    /* Cabeçalho de Prazos numa linha: título curto, filtros só com a cor e
+       o número (o nome volta no computador), ✕ no canto. */
+    #prazos-modal .analytics-modal-header { flex-wrap:nowrap !important; align-items:center; }
+    #prazos-modal .analytics-modal-title { font-size:13px !important; white-space:nowrap; flex-shrink:0; }
+    #prazos-modal .prz-cab-prio { margin-left:8px !important; gap:4px !important; flex-wrap:nowrap !important; min-width:0; }
+    #prazos-modal .prz-cab-prio .prz-check-pill { padding:3px 7px !important; gap:3px !important; font-size:11px !important; white-space:nowrap; }
+    #prazos-modal .prz-cab-prio input { width:13px; height:13px; margin:0; }
+    #prazos-modal .prz-cab-nome, #prazos-modal .prz-tit-resto { display:none; }
+    #prazos-modal .prz-cabecalho-acoes { margin-left:auto !important; flex-shrink:0; }
     .prz-tabela, .pen-tabela, .prz-tabela tbody, .pen-tabela tbody { display:block; width:100%; }
     .prz-tabela thead, .pen-tabela thead { display:block; position:sticky; top:0; z-index:2; background:var(--bg-soft); padding-bottom:6px; }
     .prz-tabela thead tr, .pen-tabela thead tr { display:flex; flex-wrap:wrap; gap:4px; }
