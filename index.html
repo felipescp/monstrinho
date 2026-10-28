@@ -14083,7 +14083,7 @@ window.PRAZOS_RUNTIME = {
                 let conteudo = oculto
                     ? '<span class="prz-celula-oculta" onclick="window.PRAZOS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
                     : self._htmlValor(it, c.k);
-                return '<td class="prz-col-' + c.k + '">' + conteudo + '</td>';
+                return '<td class="prz-col-' + c.k + '" data-rot="' + c.rotulo + '">' + conteudo + '</td>';
             }).join('') +
             '<td><span class="prz-acoes-linha">' + self._htmlBotoesItem(it.id) + self._htmlClassif(it) + self._htmlPrioridade(it) +
                 (it.origem_oficial ? '' : '<button class="prz-btn-icone" onclick="window.PRAZOS_RUNTIME.excluir(\'' + self._escJs(it.id) + '\')" title="Excluir este prazo">🗑️</button>') +
@@ -15205,9 +15205,9 @@ window.PENAS_RUNTIME = {
             let it = p.item, g = self._grupoDe(p);
             if (g.chave !== grupo) { grupo = g.chave; linhas += self._htmlLinhaGrupo(g, self.COLUNAS.length + 1); }
             linhas += '<tr>' + self.COLUNAS.map(function(c) {
-                if (self._ehLista(c.k)) return '<td class="pen-col-' + c.k + '">' + self._htmlCelulaLista(it, c.k) + '</td>';
+                if (self._ehLista(c.k)) return '<td class="pen-col-' + c.k + '" data-rot="' + c.rotulo + '">' + self._htmlCelulaLista(it, c.k) + '</td>';
                 let oculto = self._cortina[c.k] && !self._revelados[it.id + '|' + c.k];
-                return '<td class="pen-col-' + c.k + '">' + (oculto
+                return '<td class="pen-col-' + c.k + '" data-rot="' + c.rotulo + '">' + (oculto
                     ? '<span class="pen-celula-oculta" onclick="window.PENAS_RUNTIME.revelarCelula(\'' + self._escJs(it.id) + '\', \'' + c.k + '\', this)" title="Clique para revelar">oculto</span>'
                     : self._htmlValor(it, c.k)) + '</td>';
             }).join('') +
@@ -38910,6 +38910,33 @@ window.LEGISLACAO = (function() {
     #modal-jurisprudencia-baralho, #modal-esquemas-baralho, #modal-glossario-baralho { --baralho-escala:1 !important; }
     .jur-baralho-lista, .esq-baralho-lista, .jur-baralho-escala-controle, .esq-baralho-escala-controle, .glos-baralho-escala-controle, .jur-baralho-maximizar:not([onclick*="fecharBaralho"]), .esq-baralho-maximizar:not([onclick*="fecharBaralho"]) { display:none !important; }
     .jur-baralho-corpo-wrap, .esq-baralho-corpo-wrap { grid-template-columns:1fr !important; }
+
+    /* 4. Tabelas de Penas e Prazos viram fichas empilhadas: cada linha é um
+       cartão, cada célula traz o nome da coluna (data-rot); o cabeçalho
+       vira uma fileira de chips da cortina (tocar esconde/mostra a coluna). */
+    .prz-tabela, .pen-tabela, .prz-tabela tbody, .pen-tabela tbody { display:block; width:100%; }
+    .prz-tabela thead, .pen-tabela thead { display:block; position:sticky; top:0; z-index:2; background:var(--bg-soft); padding-bottom:6px; }
+    .prz-tabela thead tr, .pen-tabela thead tr { display:flex; flex-wrap:wrap; gap:4px; }
+    .prz-tabela thead th, .pen-tabela thead th { position:static !important; border:1px solid var(--border-color) !important; border-radius:99px; padding:4px 9px !important; font-size:9.5px !important; background:var(--bg-white) !important; }
+    .prz-tabela thead th:empty, .pen-tabela thead th:empty { display:none; }
+    .prz-tabela tbody tr, .pen-tabela tbody tr { display:block; position:relative; margin:0 0 10px; padding:10px 12px; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-white); }
+    .prz-tabela tbody tr.prz-grupo, .pen-tabela tbody tr.pen-grupo { padding:6px 4px; border:none; background:none; margin:14px 0 6px; }
+    .prz-tabela tbody td, .pen-tabela tbody td { display:block; border:none !important; padding:3px 0 !important; width:auto !important; max-width:none !important; }
+    .prz-tabela tbody td[data-rot]::before, .pen-tabela tbody td[data-rot]::before { content:attr(data-rot); display:block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.3px; color:var(--app-primary); margin-top:4px; }
+    .prz-tabela tbody td:first-child::before, .pen-tabela tbody td:first-child::before { display:none; }
+    .prz-tabela tbody td:first-child, .pen-tabela tbody td:first-child { font-weight:700; font-size:13.5px; }
+    /* Ações (☆ 💭 ❌ ❓ ✅ e prioridade) numa linha no rodapé da ficha. */
+    .prz-tabela tbody tr:not(.prz-grupo) td:last-child:not([data-rot]), .pen-tabela tbody tr:not(.pen-grupo) td:last-child:not([data-rot]) { margin-top:8px; padding-top:8px !important; border-top:1px dashed var(--border-color) !important; }
+    .prz-tabela tbody tr.prz-grupo td, .pen-tabela tbody tr.pen-grupo td { margin:0; padding:0 !important; border:none !important; }
+    .prz-acoes-linha, .pen-acoes-linha { flex-direction:row !important; flex-wrap:wrap; gap:10px !important; align-items:center; font-size:16px; }
+    .prz-acoes-linha select, .pen-acoes-linha select { margin-left:auto !important; font-size:12px !important; padding:4px 6px !important; }
+    .prz-dica, .pen-dica { display:none !important; }
+
+    /* 5. Barra de botões e filtros das grades (Jurisprudência, Esquemas)
+       recolhida: fica a busca; "⚙ Filtros" na trilha abre o resto. */
+    .analytics-modal:not(.mob-filtros) .jur-tb-acoes-grupo, .analytics-modal:not(.mob-filtros) .jur-toolbar-linha2, .analytics-modal:not(.mob-filtros) .esq-tb-acoes-grupo { display:none !important; }
+    .mob-trilha .mob-filtros-btn { margin-left:auto; color:var(--text-main); }
+    .analytics-modal.mob-filtros .mob-trilha .mob-filtros-btn { background:var(--bg-accent-soft); border-color:var(--app-primary); color:var(--app-primary); }
 }
 </style>
 <div id="mob-secoes" onclick="if (event.target === this) window.MOBILE_UI.fecharSecoes()">
@@ -38956,6 +38983,9 @@ window.MOBILE_UI = (function() {
         var trilha = g.previousElementSibling;
         if (trilha && trilha.classList.contains('mob-trilha')) {
             trilha.querySelector('button').disabled = nivel === 0;
+            // "⚙ Filtros" só onde há barra recolhível (grade de Jurisprudência/Esquemas).
+            var temBarra = nivel === cols.length - 1 && !!g.closest('.analytics-modal') && !!cols[nivel].querySelector('.jur-tb-acoes-grupo, .jur-toolbar-linha2, .esq-tb-acoes-grupo');
+            trilha.querySelector('.mob-filtros-btn').style.display = temBarra ? '' : 'none';
             var partes = [];
             for (var i = 0; i < nivel; i++) { var r = rotuloAtivo(cols[i]); if (r) partes.push(r); }
             trilha.querySelector('span').textContent = partes.length ? partes.join(' › ') : 'Escolha um item';
@@ -38967,8 +38997,12 @@ window.MOBILE_UI = (function() {
         g.classList.add('mob-ativo');
         var trilha = document.createElement('div');
         trilha.className = 'mob-trilha';
-        trilha.innerHTML = '<button type="button">‹ Voltar</button><span></span>';
+        trilha.innerHTML = '<button type="button">‹ Voltar</button><span></span><button type="button" class="mob-filtros-btn" style="display:none">⚙ Filtros</button>';
         trilha.querySelector('button').onclick = function() { mostrar(g, (+g.dataset.mobNivel || 0) - 1); };
+        trilha.querySelector('.mob-filtros-btn').onclick = function() {
+            var m = g.closest('.analytics-modal');
+            if (m) m.classList.toggle('mob-filtros');
+        };
         g.parentNode.insertBefore(trilha, g);
         mostrar(g, 0);
     }
