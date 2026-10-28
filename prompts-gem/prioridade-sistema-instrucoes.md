@@ -9,6 +9,8 @@ python3 ferramentas/prioridade_penas.py            # só mostra o resultado (use
 python3 ferramentas/prioridade_penas.py --gravar   # grava em dados/penas/*.json
 python3 ferramentas/prioridade_prazos.py           # idem para Prazos
 python3 ferramentas/prioridade_prazos.py --gravar
+python3 ferramentas/prioridade_prazos.py --gravar --descartar   # grava e remove os itens sem cobrança
+python3 ferramentas/prioridade_prazos.py --gravar --descartar CTN   # só os diplomas indicados (vale também em Penas)
 ```
 
 ## Critério (o mesmo nos dois)
@@ -17,6 +19,8 @@ python3 ferramentas/prioridade_prazos.py --gravar
 - Nível pelos limiares da Lei Seca, relativos ao diploma: **Crítico** = quartil superior das contagens (>0); **Importante** = da mediana ao quartil; **Regular** = abaixo da mediana ou não cobrado.
 - Penas: dispositivo criado ou alterado desde 2024 (campo `alteracao`) fica com o **maior** nível entre o da incidência e o anterior (ainda sem histórico de prova).
 - Diploma sem mapa de incidência mantém a classificação que tinha.
+- Prazos (e quóruns): item sem nenhuma cobrança no mapa é **descartado** — rode sempre com `--descartar`. Diploma sem mapa fica sem `classificacaoOficial` e fora de `MAP` até o mapa chegar.
+- Quóruns ficam na mesma base de Prazos, com o campo `"tipo": "quórum"`; o contador da seção separa Prazos e Quóruns por esse campo.
 
 ## Quando rodar
 
@@ -24,4 +28,4 @@ python3 ferramentas/prioridade_prazos.py --gravar
 - Ao incluir um diploma novo em Penas ou Prazos.
   - Penas: acrescente a sigla → arquivo do mapa em `INC` (`ferramentas/prioridade_penas.py`).
   - Prazos: acrescente o diploma em `MAP` (`ferramentas/prioridade_prazos.py`).
-- Rode sem `--gravar`, confira o resumo ("mudaram X de Y"), grave, confira `git diff --stat` (só linhas `classificacaoOficial`) e faça commit e push no branch e em `main`.
+- Rode sem `--gravar`, confira o resumo ("mudaram X de Y"), grave, confira `git diff --stat` (só linhas `classificacaoOficial` e, em Prazos, itens descartados) e faça commit e push no branch e em `main`.
