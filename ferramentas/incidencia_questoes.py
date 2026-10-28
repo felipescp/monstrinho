@@ -255,8 +255,15 @@ def main():
                 estrutura[-1]['arts'].append(art)
         elif art:
             t = re.sub(r'^§\s*l(?=\s*[º°])', '§ 1', t)  # "§ lº" (letra l no lugar do 1, Lei 6.404)
-            m = (re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo\s+único)', t, re.I)
-                 or re.match(r'(\d+)\s*[º°]\s', t))  # "1º Se o êrro…" sem "§" (CPM, arts. 36 e 38)
+            m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo\s+único)', t, re.I)
+            # "1º …" sem "§": parágrafo se a base o tiver (CPM, art. 38, § 2º); senão, item
+            # do dispositivo corrente ("1º a lavrar certidão…", Lei 6.015, art. 16).
+            item = False
+            if not m and re.match(r'\d+\s*[º°]\s', t):
+                if re.match(r'\d+', t).group() in (B.get(art, {}).get('par') or {}):
+                    m = re.match(r'(\d+)', t)
+                else:
+                    item = True
             if m:
                 novo = ('pu' if m.group(1).lower().startswith('par') else m.group(1) + ('-' + m.group(2) if m.lastindex and m.lastindex > 1 and m.group(2) else ''), None)
             else:
@@ -272,7 +279,9 @@ def main():
                     # Segunda frase do caput em parágrafo à parte, logo após o cabeçalho
                     # (DL 3.365, art. 10: "Neste caso, somente decorrido um ano…"): conta no caput.
                     novo = (None, None)
-                elif not re.match(r'[a-z]\)|\d+\)|\d+\.\s|\d+\s*[-–]\s', t):  # alínea, ou subitem "1)"/"1."/"1 -" de alínea (ECA, art. 83; Lei 6.404, art. 287; Lei 8.245, art. 1º)
+                # Alínea ("a)", "a -") ou subitem ("1)", "1º)", "1.", "1 -"; ECA, art. 83; Lei 6.404,
+                # art. 287; Lei 8.245, art. 1º; Lei 6.015, arts. 52 e 176): fica no dispositivo corrente.
+                elif not (item or re.match(r'[a-z]\)|[a-z]\s*-\s|\d+\s*[º°]?\)|\d+\.\s|\d+\s*[-–]\s', t)):
                     continue
                 else:
                     novo = (par, inc)
