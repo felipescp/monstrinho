@@ -29209,6 +29209,11 @@ window.triggerFileUpload = function(callback) {
        .kebab-dropdown (também precisou de 10000, "acima de qualquer outro
        z-index do arquivo", ver comentário ali). */
     #modal-esquema-editor { z-index: 10000; }
+    #modal-esquema-editor .esq-editor-nav { display:flex; align-items:center; gap:10px; margin-right:auto; }
+    #modal-esquema-editor .esq-editor-nav button { width:34px; height:34px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:18px; line-height:1; color:var(--text-main); cursor:pointer; }
+    #modal-esquema-editor .esq-editor-nav button:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-esquema-editor .esq-editor-nav button:disabled { opacity:0.35; cursor:default; }
+    #modal-esquema-editor .esq-editor-nav-pos { font-size:12px; font-weight:700; color:var(--text-muted); min-width:56px; text-align:center; }
     #modal-esquema-editor .fc-popup-header { font-family:var(--font-display); font-size:16px; font-weight:800; color:var(--text-main); }
     #modal-esquema-editor .fc-footer-btn { padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main); }
     #modal-esquema-editor .fc-footer-btn.primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
@@ -29286,6 +29291,8 @@ window.triggerFileUpload = function(callback) {
         <div style="font-size:10px; color:var(--text-muted);">💡 Cole um trecho em Markdown (títulos com #, **negrito**, listas com -, tabelas com |) que ele já entra formatado.</div>
         <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
         <div class="mfoot">
+            <!-- ‹ › — esquema anterior/seguinte da grade, sem fechar o editor. -->
+            <div class="esq-editor-nav" id="esq-editor-nav"></div>
             <button class="fc-footer-btn" id="esq-editor-btn-clonar" onclick="window.ESQUEMAS_RUNTIME.clonarEsquema()" style="display:none;" title="Cria uma cópia pessoal editável deste esquema">📋 Clonar Ficha</button>
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
             <button class="fc-footer-btn primario" id="esq-editor-btn-salvar" onclick="window.ESQUEMAS_RUNTIME.salvarEsquema()">Salvar</button>
@@ -31365,6 +31372,8 @@ window.ESQUEMAS_RUNTIME = {
     // ── EDITOR (criar / abrir existente) ──
 
     abrirEditorNovo: function() {
+        let nav = document.getElementById('esq-editor-nav');
+        if (nav) nav.innerHTML = '';
         if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
         this._editandoId = null;
         this._editandoChave = null;
@@ -31410,6 +31419,54 @@ window.ESQUEMAS_RUNTIME = {
         this._popularDropdownsCor();
         this._resetarMaximizarEditor();
         document.getElementById('modal-esquema-editor').classList.add('open');
+        // Sequência da grade (ordem em que os cards aparecem): fixada ao abrir
+        // pela grade; mantida ao navegar com ‹ ›.
+        this._snapEditor = { titulo: document.getElementById('esq-form-titulo').value, html: document.getElementById('esq-editor-corpo').innerHTML };
+        if (!this._navegandoEditor) this._seqEditor = this._listaFiltrada().map(function(p) { return { chave: p.chave, id: p.item.id }; });
+        this._renderNavEditor();
+        if (!this._teclasEditor) {
+            let self = this;
+            this._teclasEditor = function(e) {
+                if (!document.getElementById('modal-esquema-editor').classList.contains('open')) return;
+                let t = e.target, tag = t && t.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+                if (e.key === 'ArrowLeft') { e.preventDefault(); self.navegarEditor(-1); }
+                else if (e.key === 'ArrowRight') { e.preventDefault(); self.navegarEditor(1); }
+            };
+            document.addEventListener('keydown', this._teclasEditor);
+        }
+    },
+
+    // ‹ › no rodapé do editor (pedido explícito do usuário): vai ao esquema
+    // anterior/seguinte da grade sem fechar e reabrir. Esquema pessoal com
+    // alteração não salva pede confirmação antes de sair.
+    _posEditor: function() {
+        let seq = this._seqEditor || [], id = this._editandoId;
+        for (let i = 0; i < seq.length; i++) if (seq[i].id === id) return i;
+        return -1;
+    },
+    _renderNavEditor: function() {
+        let el = document.getElementById('esq-editor-nav');
+        if (!el) return;
+        let i = this._editandoId ? this._posEditor() : -1, n = (this._seqEditor || []).length;
+        if (i < 0 || n < 2) { el.innerHTML = ''; return; }
+        el.innerHTML = '<button onclick="window.ESQUEMAS_RUNTIME.navegarEditor(-1)" title="Esquema anterior (←)"' + (i === 0 ? ' disabled' : '') + '>‹</button>' +
+            '<span class="esq-editor-nav-pos">' + (i + 1) + ' / ' + n + '</span>' +
+            '<button onclick="window.ESQUEMAS_RUNTIME.navegarEditor(1)" title="Próximo esquema (→)"' + (i === n - 1 ? ' disabled' : '') + '>›</button>';
+    },
+    _editorAlterado: function() {
+        let snap = this._snapEditor, corpo = document.getElementById('esq-editor-corpo');
+        if (!snap || !corpo || corpo.contentEditable === 'false') return false;
+        return document.getElementById('esq-form-titulo').value !== snap.titulo || corpo.innerHTML !== snap.html;
+    },
+    navegarEditor: function(delta) {
+        let i = this._posEditor(), alvo = (this._seqEditor || [])[i + delta];
+        if (i < 0 || !alvo) return;
+        if (this._editorAlterado() && !confirm('Há alterações não salvas neste esquema. Sair sem salvar?')) return;
+        this._navegandoEditor = true;
+        try { this.abrirEditorExistente(alvo.chave, alvo.id); } finally { this._navegandoEditor = false; }
+        let corpo = document.getElementById('esq-editor-corpo');
+        if (corpo) corpo.scrollTop = 0;
     },
 
     // Cria uma cópia PESSOAL (nunca origem_oficial, id novo) do esquema
