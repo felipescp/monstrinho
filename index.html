@@ -13596,6 +13596,7 @@ window.carregarFlashcardsOficiais = async function() {
     #prazos-modal .fc-col { overflow-y:auto; padding:10px; }
     #prazos-modal #prz-col-materias { background:var(--bg-soft); border-right:1px solid var(--border-color); }
     #prazos-modal #prz-col-divisoes { border-right:1px solid var(--border-color); }
+    #prazos-modal .memo-disciplina { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:12px 4px 4px; }
     #prazos-modal.sem-divisoes .fc-grid { grid-template-columns: 0.55fr 2fr; }
     #prazos-modal.sem-divisoes #prz-col-divisoes { display:none; }
     #prazos-modal .prz-ocultar-div { display:block; margin:0 0 6px auto; padding:2px 8px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); font-size:10px; font-weight:700; color:var(--text-muted); cursor:pointer; }
@@ -17244,15 +17245,47 @@ window.ESTRUTURA_MIXIN = {
         if (!col) return;
         let self = this, R = this._R, dips = this._diplomasComItens();
         if (!this._materia) { let comItens = dips.find(function(d) { return d.n; }); this._materia = (comItens || dips[0]).id; this._divisao = null; }
-        col.innerHTML = this._htmlItemFavoritos() + dips.map(function(d) {
+        let htmlDip = function(d) {
             return '<div class="fc-materia-item' + (d.id === self._materia ? ' ativa' : '') + '" onclick="window.' + R + '.selecionarMateria(\'' + self._escJs(d.id) + '\')">' +
                 '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
                 '<span style="display:flex; align-items:center; gap:4px;">' + (d.n ? '<span class="fc-materia-count">' + d.n + '</span>' : '') + '<span style="color:var(--text-muted); font-size:12px;">›</span></span></div>';
-        }).join('');
+        };
+        let grupos = this._agruparPorDisciplina ? this._gruposDisciplina(dips) : null;
+        col.innerHTML = this._htmlItemFavoritos() + (grupos
+            ? grupos.map(function(g) { return '<div class="memo-disciplina">' + self._esc(g.nome) + '</div>' + g.dips.map(htmlDip).join(''); }).join('')
+            : dips.map(htmlDip).join(''));
         this._renderDivisoes();
         this._renderPrincipal();
     },
     selecionarMateria: function(m) { this._materia = m; this._divisao = null; this._revelados = {}; this.render(); },
+
+    // Diplomas agrupados pelas disciplinas da Lei Seca (pedido explícito do
+    // usuário; dados/leiseca/manifesto.json, mesma ordem de disciplinas e de
+    // diplomas). O manifesto é baixado uma vez; até chegar, a lista sai
+    // simples e é redesenhada depois. Diploma fora do manifesto: "Outros".
+    _gruposDisciplina: function(dips) {
+        let self = this, man = window.__manifestoLeiSeca;
+        if (!man) {
+            if (!window.__manifestoLeiSecaPromessa) {
+                window.__manifestoLeiSecaPromessa = fetch('dados/leiseca/manifesto.json?v=' + Date.now())
+                    .then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+                    .then(function(j) { window.__manifestoLeiSeca = j || { disciplinas: [] }; });
+            }
+            window.__manifestoLeiSecaPromessa.then(function() { self.render(); });
+            return null;
+        }
+        let pos = {}, porId = {};
+        (man.disciplinas || []).forEach(function(g, gi) { (g.diplomas || []).forEach(function(d, di) { if (!pos[d.id]) pos[d.id] = { g: gi, d: di, nome: g.nome }; }); });
+        dips.forEach(function(d) { porId[d.id] = d; });
+        let grupos = [];
+        (man.disciplinas || []).forEach(function(g, gi) {
+            let lista = dips.filter(function(d) { return pos[d.id] && pos[d.id].g === gi; }).sort(function(a, b) { return pos[a.id].d - pos[b.id].d; });
+            if (lista.length) grupos.push({ nome: g.nome, dips: lista });
+        });
+        let outros = dips.filter(function(d) { return !pos[d.id]; });
+        if (outros.length) grupos.push({ nome: 'Outros', dips: outros });
+        return grupos;
+    },
     selecionarDivisao: function(d) { this._divisao = (d === null || d === undefined) ? null : d; this._revelados = {}; this._renderDivisoes(); this._renderPrincipal(); },
 
     _renderDivisoes: function() {
@@ -17447,7 +17480,7 @@ window.ESTRUTURA_MIXIN = {
 };
 
 Object.assign(window.PRAZOS_RUNTIME, window.ESTRUTURA_MIXIN, {
-    _px: 'prz', _comNotas: false,
+    _px: 'prz', _comNotas: false, _agruparPorDisciplina: true,
     _artDe: function(item) { return item.base || ''; },
     _textoBusca: function(i) { return [i.ato, i.prazo, i.inicio, i.base, i.obs].join(' '); },
     _itemExportado: function(i) { return { id: i.id, ato: i.ato, prazo: i.prazo, inicio: i.inicio || '', base: i.base || '', obs: i.obs || '', alteracao: i.alteracao || '', classificacaoOficial: i.classificacaoOficial || '' }; },
