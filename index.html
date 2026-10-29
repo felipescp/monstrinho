@@ -38987,7 +38987,10 @@ window.LEGISLACAO = (function() {
     .analytics-modal-header button:not(.analytics-close-btn), .analytics-modal-header details, .analytics-modal-header [id*="maximizar"] { display:none !important; }
 
     /* 2. Colunas viram telas. */
-    .fc-grid.mob-ativo { display:flex !important; flex-direction:column; }
+    /* A grade escondida pelas abas (Crítico/Importante/Regular põem
+       style="display: none") continua escondida, e a trilha junto. */
+    .fc-grid.mob-ativo:not([style*="display: none"]) { display:flex !important; flex-direction:column; }
+    .mob-trilha:has(+ .fc-grid[style*="display: none"]) { display:none !important; }
     .fc-grid.mob-ativo > .fc-col { display:none !important; }
     .fc-grid.mob-ativo > .fc-col.mob-visivel { display:block !important; flex:1; min-height:0; width:auto !important; border:none !important; overflow-y:auto; }
     .fc-grid.mob-ativo > .fc-col.mob-visivel.mob-flex { display:flex !important; flex-direction:column; }
@@ -38996,6 +38999,20 @@ window.LEGISLACAO = (function() {
     .mob-trilha button:disabled { visibility:hidden; }
     .mob-trilha span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     [class$="-ocultar-div"] { display:none !important; }
+
+    /* Abas Crítico/Importante/Regular: o card ocupa a tela; as barras
+       laterais (disciplinas, Visualizados, Exibir) ficam atrás do botão
+       "☰ Disciplinas e filtros" no topo da aba e abrem empilhadas. */
+    .fc-aba-revisao-corpo { flex-direction:column !important; }
+    .fc-aba-revisao-sidebar { display:none !important; }
+    .fc-aba-revisao.mob-filtros-aba .fc-aba-revisao-sidebar { display:block !important; width:auto !important; max-height:38dvh; border:none !important; border-bottom:1px solid var(--border-color) !important; }
+    .fc-aba-revisao.mob-filtros-aba .fc-aba-revisao-scroll, .fc-aba-revisao.mob-filtros-aba > .fc-card-revisao-acoes, .fc-aba-revisao.mob-filtros-aba > .fc-popup-nav { display:none !important; }
+    .fc-aba-revisao.mob-filtros-aba .fc-aba-revisao-sidebar { max-height:none !important; }
+    .fc-aba-revisao-scroll { padding:10px !important; }
+    .mob-aba-barra { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border-color); background:var(--bg-white); flex-shrink:0; }
+    .mob-aba-barra button { padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:12px; font-weight:800; color:var(--app-primary); cursor:pointer; white-space:nowrap; }
+    .fc-aba-revisao.mob-filtros-aba .mob-aba-barra button { background:var(--bg-accent-soft); border-color:var(--app-primary); }
+    .mob-aba-barra span { font-size:11.5px; font-weight:700; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
     /* 3. Leitores, treinos e popups de card em tela cheia. */
     #modal-jurisprudencia-baralho, #modal-esquemas-baralho, #modal-glossario-baralho, #modal-prazos-treino, #modal-penas-treino, #modal-jurisprudencia-ver, #modal-esquema-editor { padding:0 !important; }
@@ -39108,7 +39125,36 @@ window.MOBILE_UI = (function() {
         g.parentNode.insertBefore(trilha, g);
         mostrar(g, 0);
     }
-    function prepararTodos() { if (celular()) document.querySelectorAll('.fc-grid').forEach(preparar); }
+    // Abas Crítico/Importante/Regular: barra "☰ Disciplinas e filtros" com o
+    // recorte atual; tocar abre/fecha as barras laterais; escolher uma
+    // disciplina ou divisão fecha e volta ao card.
+    function rotuloAba(aba) {
+        var a = aba.querySelector('.fc-aba-revisao-sidebar .fc-divisao-contagem.ativa') || aba.querySelector('.fc-aba-revisao-sidebar .fc-pill.ativa');
+        return a ? (a.textContent || '').trim() : 'Todas';
+    }
+    function atualizarBarraAba(aba) { var sp = aba.querySelector('.mob-aba-barra span'); if (sp) sp.textContent = rotuloAba(aba); }
+    function prepararAba(aba) {
+        if (aba.querySelector(':scope > .mob-aba-barra')) return;
+        var barra = document.createElement('div');
+        barra.className = 'mob-aba-barra';
+        barra.innerHTML = '<button type="button">☰ Disciplinas e filtros</button><span></span>';
+        barra.querySelector('button').onclick = function() { aba.classList.toggle('mob-filtros-aba'); atualizarBarraAba(aba); };
+        aba.insertBefore(barra, aba.firstChild);
+        atualizarBarraAba(aba);
+        new MutationObserver(function() { atualizarBarraAba(aba); }).observe(aba.querySelector('.fc-aba-revisao-sidebar') || aba, { childList: true, subtree: true });
+    }
+    document.addEventListener('click', function(e) {
+        if (!celular()) return;
+        var esc = e.target.closest && e.target.closest('.fc-aba-revisao.mob-filtros-aba .fc-aba-revisao-sidebar:not(.fc-aba-revisao-sidebar-dir) .fc-pill, .fc-aba-revisao.mob-filtros-aba .fc-divisao-contagem');
+        if (!esc) return;
+        var aba = esc.closest('.fc-aba-revisao');
+        setTimeout(function() { aba.classList.remove('mob-filtros-aba'); atualizarBarraAba(aba); }, 30);
+    }, true);
+    function prepararTodos() {
+        if (!celular()) return;
+        document.querySelectorAll('.fc-grid').forEach(preparar);
+        document.querySelectorAll('.fc-aba-revisao').forEach(prepararAba);
+    }
     // Tocar num item de uma coluna (que não seja a última) avança: para a
     // seguinte ou, se ela não tiver nada a escolher, direto para o conteúdo.
     document.addEventListener('click', function(e) {
