@@ -752,6 +752,9 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
     border: 5px solid transparent;
 }
 #glos-tooltip-flutuante.acima::after { top: 100%; border-top-color: #1e293b; }
+/* Toque: o balão recebe toques (rodapé abre o Planalto / a ficha). */
+#glos-tooltip-flutuante.toque { pointer-events: auto; }
+#glos-tooltip-flutuante.toque .jur-ref-dica:last-child { color: #fde68a; text-decoration: underline; font-style: normal; font-weight: 700; padding-top: 4px; }
 #glos-tooltip-flutuante.centro::after { display: none; } /* centralizado na janela: sem setinha */
 /* Balão do julgado citado nas Conexões (Jurisprudência). */
 #glos-tooltip-flutuante.jur-ref-balao { max-width: min(480px, 92vw); font-size: 12px; padding: 10px 12px; }
@@ -23751,6 +23754,7 @@ function _glosMostrarTooltip(trigger, conteudoHtml) {
     else { el.textContent = significado; el.classList.remove('jur-ref-balao'); }
     el.style.display = 'block';
     el.style.maxWidth = '';
+    el.style.maxHeight = ''; el.style.overflowY = '';
     // Mede a partir do canto (0,0): com position:fixed a largura disponível
     // depende do "left" — o da exibição anterior encolheria a medida.
     el.style.left = '0px'; el.style.top = '0px';
@@ -23789,6 +23793,13 @@ function _glosMostrarTooltip(trigger, conteudoHtml) {
     if (cabeAcima()) { top = rect.top - altura - margem; posicao = 'acima'; }
     else if (cabeAbaixo()) { top = rect.bottom + margem; posicao = 'abaixo'; }
     else {
+        // Nem centralizado cabe (tela de celular): altura da janela e rolagem
+        // dentro do balão — o rodapé (abrir no Planalto) continua alcançável.
+        if (altura > window.innerHeight - 2 * margem) {
+            el.style.maxHeight = (window.innerHeight - 2 * margem) + 'px';
+            el.style.overflowY = 'auto';
+            altura = el.offsetHeight;
+        }
         top = Math.max(margem, (window.innerHeight - altura) / 2);
         posicao = 'centro';
     }
@@ -23826,12 +23837,52 @@ document.addEventListener('mouseover', function(e) {
     else if (ref && window.JURISPRUDENCIA_RUNTIME) _glosMostrarTooltip(ref, window.JURISPRUDENCIA_RUNTIME._htmlTooltipRef(ref.getAttribute('data-jur-ref')));
 });
 document.addEventListener('mouseout', function(e) {
+    // Toque: o balão só fecha ao tocar fora (ver o bloco "Tela de toque" abaixo).
+    if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
     var alvo = e.target.closest && e.target.closest('.glos-termo-sim, .jur-ref');
     if (alvo && !alvo.contains(e.relatedTarget)) _glosEsconderTooltip();
 });
 // Rolar com o balão aberto: position:fixed não acompanha o termo durante o
 // scroll (ficaria "grudado" no lugar errado) — mais simples esconder.
-document.addEventListener('scroll', _glosEsconderTooltip, true);
+document.addEventListener('scroll', function(e) {
+    // Rolar DENTRO do balão (artigo longo no celular) não o fecha.
+    if (window.__glosTooltipEl && e.target && e.target.nodeType === 1 && window.__glosTooltipEl.contains(e.target)) return;
+    _glosEsconderTooltip();
+}, true);
+
+// Tela de toque (celular/tablet), pedido explícito do usuário: tocar no
+// sublinhado pontilhado (lei ou julgado citado) só ABRE O BALÃO, como o
+// passar do mouse no computador — não vai ao Planalto nem ao card. O
+// rodapé do balão ("… abrir no Planalto" / "abrir a ficha") é que executa
+// a ação original. Tocar fora fecha o balão.
+(function() {
+    var mq = window.matchMedia('(hover: none), (pointer: coarse)');
+    var refAtual = null, permitir = false;
+    document.addEventListener('click', function(e) {
+        if (!mq.matches || permitir) return;
+        var tip = window.__glosTooltipEl;
+        var aberto = tip && tip.style.display === 'block';
+        if (aberto && tip.contains(e.target)) {
+            var dica = e.target.closest('.jur-ref-dica');
+            var rodape = tip.querySelectorAll('.jur-ref-dica');
+            if (dica && refAtual && dica === rodape[rodape.length - 1] && /abrir/i.test(dica.textContent)) {
+                e.preventDefault(); e.stopPropagation();
+                var ref = refAtual;
+                _glosEsconderTooltip();
+                permitir = true;
+                try { ref.click(); } finally { permitir = false; }
+            }
+            return;
+        }
+        var alvo = e.target.closest && e.target.closest('.jur-ref');
+        if (!alvo) { if (aberto) _glosEsconderTooltip(); refAtual = null; return; }
+        e.preventDefault(); e.stopPropagation();
+        refAtual = alvo;
+        if (alvo.hasAttribute('data-lei') && window.LEGISLACAO) window.LEGISLACAO.mostrarBalao(alvo);
+        else if (window.JURISPRUDENCIA_RUNTIME) _glosMostrarTooltip(alvo, window.JURISPRUDENCIA_RUNTIME._htmlTooltipRef(alvo.getAttribute('data-jur-ref')));
+        if (window.__glosTooltipEl) window.__glosTooltipEl.classList.add('toque');
+    }, true);
+})();
 
 function mkQ(q, modoRevisao){
   var cegas=C.cegas&&!modoRevisao;
