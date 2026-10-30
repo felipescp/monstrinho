@@ -44,6 +44,7 @@ def limpa(l):
     l = re.sub(r'\s*_\\-_\s*', '-', l)  # hífen em itálico com espaços: "Conceder _\-_ se _\-_ á" (Lei 8.245)
     l = re.sub(r'(?<!\w)_(\w+)-_\s+', r'\1-', l)  # "_apart-_ hotéis" (Lei 8.245, art. 1º)
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
+    l = re.sub(r'(?<![\w])_([^_\s][^_]*)_(?=[a-zà-ú])', r'\1', l)  # plural fora do itálico: "_software_s" (Lei 15.211)
     l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
     l = re.sub(r'\(\s*VETADO\s*\)', '(VETADO)', l)  # "[§ 2º (VETADO](…) )" (Lei 11.105, art. 12)
     l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
@@ -364,7 +365,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             continue
         if art is None: continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
-        if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional),\s*(?:em\s+)?\d', l): art = None; continue
+        if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional)\s*,\s*(?:em\s+)?\d', l): art = None; continue  # também "Brasília , 14 de…" (LGPD)
         m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
         pu = re.match(r'^Par[áa]grafo\s+[úu]nico\s*[.\-–—:]*\s*(.*)$', l, re.I)
         if m or pu:
