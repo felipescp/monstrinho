@@ -255,6 +255,7 @@ def main():
                 estrutura[-1]['arts'].append(art)
         elif art:
             t = re.sub(r'^§\s*l(?=\s*[º°])', '§ 1', t)  # "§ lº" (letra l no lugar do 1, Lei 6.404)
+            t = re.sub(r'^[IVX]*l[IVXl]*(?=\s*[-–—])', lambda m: m.group().replace('l', 'I'), t)  # "Il -", "VIl -" (Lei 6.766, LC 35)
             m = re.match(r'§\s*(\d+)\s*(?:º|°|o)?(?:-([A-Z])(?![A-Za-zÀ-ú]))?', t) or re.match(r'(Parágrafo\s+único)', t, re.I)
             # "1º …" sem "§": parágrafo se a base o tiver (CPM, art. 38, § 2º); senão, item
             # do dispositivo corrente ("1º a lavrar certidão…", Lei 6.015, art. 16).
