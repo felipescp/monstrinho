@@ -10,6 +10,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Constituição Federal | `constituicao.json` | 09/10/2026 |
 | ADCT | `adct.json` | 09/10/2026 |
 | Lei da ADI e da ADC (Lei 9.868/1999) | `lei-9868.json` | 30/10/2026 |
+| Lei da ADPF (Lei 9.882/1999) | `lei-9882.json` | 30/10/2026 |
 | Código de Processo Civil | `cpc.json` | 09/10/2026 |
 | Código Civil | `codigo-civil.json` | 09/10/2026 |
 | Código de Processo Penal | `cpp.json` | 09/10/2026 |
