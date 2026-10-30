@@ -43,6 +43,7 @@ def limpa(l):
     l = re.sub(r'(?<!\w)_(\w+)-_\s+', r'\1-', l)  # "_apart-_ hotéis" (Lei 8.245, art. 1º)
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
     l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
+    l = re.sub(r'\(\s*VETADO\s*\)', '(VETADO)', l)  # "[§ 2º (VETADO](…) )" (Lei 11.105, art. 12)
     l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
     l = re.sub(r'^(\s*Art)\s+\.(?=\s*\d)', r'\1.', l)  # "Art . 95." (Lei 13.465)
     return l.replace('**', '').strip().lstrip('>').strip()
@@ -272,6 +273,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         citado = raw.startswith(CITACAO)
         l = limpa(raw.replace(CITACAO, ''))
         if not l: continue
+        # Linha de tabela Markdown ("| 20 | Uso de Recursos Naturais | … |", Lei 11.105, art. 37): não é texto.
+        if re.match(r'\|.*\|$', l): continue
         # Texto citado (redação dada a outra lei): continuação, nunca dispositivo.
         if citado:
             # Texto citado de artigo revogado (Lei 8.137, art. 18: o art. 163 que ele acrescentava ao CP) sai.
