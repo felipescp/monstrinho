@@ -95,7 +95,7 @@ def separa_anotacoes(l):
         return m.group(0)
     texto = RE_PAR.sub(troca, l)
     texto = re.sub(r'(?:\s*\b(?:Vig[êe]ncia|Produ[çc][ãa]o\s+de\s+efeitos?)\b)+\s*$', '', texto)  # links soltos (Lei 11.079, art. 6º)
-    texto = re.sub(r'(?<=[.;:])\s+Regulamento\s*$', '', texto)  # link "Regulamento" sem parênteses (Lei 13.022, art. 5º)
+    texto = re.sub(r'(?<=[.;:])\s+Regulamento\.?\s*$', '', texto)  # link "Regulamento" sem parênteses (Lei 13.022, art. 5º; "Regulamento.", Lei 9.985, art. 57-A)
     texto = re.sub(r'\s+', ' ', texto).replace('**', '').strip()
     # Pontuação que sobra ao tirar a anotação: "preventiva: ." → "preventiva:".
     texto = re.sub(r'([:;,])\s*\.$', r'\1', texto)
