@@ -44,6 +44,7 @@ def limpa(l):
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
     l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
     l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
+    l = re.sub(r'^(\s*Art)\s+\.(?=\s*\d)', r'\1.', l)  # "Art . 95." (Lei 13.465)
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
