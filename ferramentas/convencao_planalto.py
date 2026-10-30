@@ -46,6 +46,13 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         brutas += l.strip().strip('|').split('<br>') if '<br>' in l else [l]
     brutas = [b for b in brutas if limpar(b) and limpar(b) != '*']  # "\*" solto no fim do compilado
     linhas = [limpar(b) for b in brutas]
+    # "(Vide ADI 4245) (Vide ADI 7686)" no fim da linha (Convenção da Haia, art. 13, b): sai do texto e vira
+    # nota do STF do dispositivo, no formato de legislacao_planalto ({"tipo": "vide", "ref": "ADI 4.245"}).
+    notas = []
+    for k, l in enumerate(linhas):
+        achadas = re.findall(r'\(\s*Vide\s+(ADI|ADC|ADO|ADPF)\s*n?[º°o.]*\s*([\d.]+)\s*\)', l, re.I)
+        notas.append([{'tipo': 'vide', 'ref': '%s %s' % (c.upper(), format(int(n.replace('.', '')), ',').replace(',', '.'))} for c, n in achadas])
+        if achadas: linhas[k] = re.sub(r'\s*\(\s*Vide\s+(?:ADI|ADC|ADO|ADPF)[^)]*\)', '', l, flags=re.I).strip()
     negrito = [bool(re.match(r'\s*(\*\*|#)', b)) for b in brutas]
     ini = next(i for i, l in enumerate(linhas) if l.upper() == titulo.upper())
     # Fim: declarações e reservas (CADH) ou fecho dos plenipotenciários ("Em fé do que…", Belém do Pará).
@@ -80,7 +87,8 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
                     i += 1
             i += 1
             continue
-        if art is None or re.match(r'(PARTE\s+[IVX]+|CAP[ÍI]TULO\s+[IVX]+|Se[çc][ãa]o\s+\d)', t, re.I):
+        # Também "Capítulo ll" (dois L no lugar de II) e "Capitulo 1" (Convenção da Haia, Decreto 3.413).
+        if art is None or re.match(r'(PARTE\s+[IVX]+|CAP[ÍI]TULO\s+(?:[IVXL]+|\d+)$|Se[çc][ãa]o\s+\d)', t, re.I):
             i += 1
             continue
         m = re.match(r'(\d+)\.\s+(.*)$', t) or re.match(r'(\d+)\.([A-ZÁ-Ú“"].*)$', t)  # também "1.Os Estados…" (Pessoas com Deficiência)
@@ -108,8 +116,14 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
         m = m or re.match(r'-\s*([a-z])\.\s+(.*)$', t) or re.match(r'([a-z])\.\s+([A-ZÁ-Ú].*)$', t)
         if m:
             alvo = item if item is not None else art
+            # Parágrafo entre dois grupos de alíneas ("O pedido pode ser acompanhado…:" entre d) e e),
+            # Convenção da Haia, art. 8): fica no fim da alínea anterior, para a ordem de leitura se manter.
+            if alvo is art and art.get('fecho') and art.get('ali') and ord(m.group(1)) == ord(max(art['ali'])) + 1:
+                ant = max(art['ali'])
+                art['ali'][ant] += '\n' + art.pop('fecho')
             alvo.setdefault('ali', {})[m.group(1)] = m.group(2)
             ultima = (alvo, m.group(1))
+            if notas[i]: alvo.setdefault('stf', []).extend(notas[i])
             i += 1
             continue
         # Subitens em romanos dentro da alínea ("I) ser considerada inocente…", Direitos da Criança,

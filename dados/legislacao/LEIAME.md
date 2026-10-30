@@ -116,6 +116,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Convenção Interamericana sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016) | `decreto-8766.json` | 18/10/2026 |
 | Protocolo de San Salvador (Decreto 3.321/1999) | `decreto-3321.json` | 18/10/2026 (texto da página da CIDH, cidh.oas.org, não do Planalto) |
 | Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | `decreto-99710.json` | 18/10/2026 |
+| Convenção da Haia sobre os Aspectos Civis do Sequestro Internacional de Crianças (Decreto 3.413/2000) | `decreto-3413.json` | 30/10/2026 |
 | CEDAW – Convenção sobre a Eliminação de Todas as Formas de Discriminação contra a Mulher (Decreto 4.377/2002) | `decreto-4377.json` | 18/10/2026 (o compilado não traz o título "Artigo 22"; inserido antes da extração, ver `gerar_legislacao.sh`) |
 | Estatuto de Roma do Tribunal Penal Internacional (Decreto 4.388/2002) | `decreto-4388.json` | 18/10/2026 |
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | `decreto-592.json` | 18/10/2026 |
