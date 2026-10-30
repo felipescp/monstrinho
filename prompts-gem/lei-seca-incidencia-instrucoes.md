@@ -75,9 +75,34 @@ Um **material de questões** em Markdown, exportado do Word. Exemplo: Eduardo B.
    - o que ficou de fora e por quê;
    - ajustes feitos no extrator, com a confirmação de que os outros mapas não mudaram.
 
+## Lei nova, sem questões: prioridade estimada
+
+Lei recente ainda não tem questões de concurso, e por isso não há material com marcas para contar. Nesse caso, a prioridade é **estimada** pelo tipo de dispositivo e pela chance de ele ser cobrado. Quando surgirem questões, troque a estimativa pelo mapa de incidência normal, gerado pelo material.
+
+1. **Classificar.** Crie `dados/leiseca/estimativas/<arquivo>.txt`, com uma chave por linha no padrão do mapa (`"33"`, `"33§pu"`, `"28.II"`, `"33§1.I"`), o nível (`critico`, `importante`, `regular` ou `nenhum`) e, depois de `#`, o motivo. Só liste o que for crítico ou importante, ou o que quiser zerar. O dispositivo vigente fora da lista fica `regular`, e o vetado ou revogado fica sem prioridade. Critérios, a partir do que as bancas mais cobram nos mapas com questões:
+   - **Crítico:** objeto e âmbito de aplicação; definições legais de institutos **novos** (os que a própria lei depois veda ou regula); **vedações expressas** ("é vedado", "vedada a autodeclaração", "vedada a presunção"); números, idades, prazos, percentuais e valores; quem aplica cada sanção; rol de sanções; vigência e *vacatio*; regras que fogem do padrão, como retirada de conteúdo sem ordem judicial ou exceções expressas.
+   - **Importante:** fundamentos e princípios em rol; deveres centrais dos destinatários; definições não inéditas; conceitos remetidos a outras leis; competência do órgão fiscalizador; responsabilidade solidária; gradação de sanções; representante legal no País; dispensas e modulações.
+   - **Regular:** regulamentação futura, procedimentos internos, relatórios, detalhes operacionais e alterações em outras leis.
+   - **Equilíbrio:** o nível do artigo é o maior entre os seus dispositivos. Mire em cerca de 25% a 30% de artigos críticos e outro tanto de importantes, como a régua de quartis dos mapas com questões. Se passar muito disso, o mapa deixa de separar o que importa.
+
+2. **Gerar o mapa**
+
+   ```
+   python3 -I ferramentas/prioridade_estimada.py dados/leiseca/estimativas/<arquivo>.txt dados/legislacao/<arquivo>.json dados/leiseca/incidencia/<arquivo>.json --fonte "Prioridade estimada pelo tipo de dispositivo (lei sem questões de concurso até DD/MM/AAAA)"
+   ```
+
+   - O script recusa chave que não existe na base. Ele imprime a distribuição por dispositivo e por artigo.
+   - Os grupos vêm das rubricas em CAIXA ALTA da base. Para corrigir um rótulo, use `--capitulo "ART=rótulo"`.
+   - O arquivo sai com `"estimada": true` e `"prioridade"` no lugar de `"dispositivos"`.
+
+3. **Ligar no manifesto e testar**, como nos passos 5 e 6 acima. A Lei Seca mostra 🧭 no lugar de 🔥 e "prioridade estimada (lei nova, sem questões)" no lugar das cobranças. A coluna de grupos conta os artigos críticos, e o seletor diz "Sistema (estimada)".
+
+4. **Responder** com a distribuição (artigos e dispositivos por nível), os critérios aplicados e os artigos críticos. Deixe claro que é uma estimativa, a ser substituída quando houver questões.
+
 ## Situação
 
 - Com mapa: CP, CC, CPP, CPC, CDC, Lei de Drogas, CADH, CF, ADCT, LEP, Lei 12.850, Estatuto do Desarmamento, Convenção 169 da OIT, Convenção Interamericana contra a Tortura, Convenção de Belém do Pará, LINDB, Lei de Improbidade, Lei da Ação Civil Pública, Lei do Mandado de Segurança, Lei dos Juizados Especiais, CTN, Lei de Execução Fiscal, Sinase, ECA, Código Florestal, Política Nacional do Meio Ambiente, Lei de Falências, Lei das S.A., Lei de Abuso de Autoridade, Lei de Economia Popular, Lei 8.137, Lei 7.492, Lei 8.176, Lei de Crimes Hediondos, Lei de Interceptação Telefônica, Lei de Lavagem de Dinheiro, Lei Maria da Penha, Lei 7.716, Lei de Tortura, Lei 12.830, Lei de Prisão Temporária, Lei de Alimentos, DL 911, Lei de Alienação Parental, Lei de Alimentos Gravídicos, Estatuto da Pessoa com Deficiência, Estatuto da Pessoa Idosa, Lei do Bem de Família, Lei de Investigação de Paternidade, Lei do Inquilinato, Declaração Universal dos Direitos Humanos, Lei do Mandado de Injunção, LGPD, PIDCP, PIDESC, LOAS, Marco Civil da Internet, Lei de Licitações (14.133), Estatuto da Cidade, Lei de Concessões (8.987), Código de Trânsito Brasileiro, Lei de Crimes Ambientais, Lei de Acesso à Informação, Lei dos Consórcios Públicos, Lei das Estatais, Lei das Organizações Sociais, Lei das PPPs, Lei das OSCIPs, Estatuto da Metrópole, MROSC (Lei 13.019), Lei Anticorrupção, Lei de Desapropriação (DL 3.365), Lei de Desapropriação por Interesse Social (4.132), Código Penal Militar, Código de Processo Penal Militar, Lei de Custeio da Seguridade Social (8.212), Lei de Benefícios da Previdência Social (8.213), Lei do Processo Administrativo (9.784), Lei de Arbitragem, Lei de Registros Públicos, Lei da Ação Popular, Lei dos Planos de Saúde, Código Eleitoral, Lei das Eleições, Lei dos Partidos Políticos, Estatuto da Igualdade Racial, Lei da ADI e ADC (9.868), Lei da ADPF (9.882), LOMAN (LC 35), Lei do Habeas Data (9.507), Lei da Súmula Vinculante (11.417), Lei da Representação Interventiva (12.562), Lei do Parcelamento do Solo Urbano (6.766), Lei da Regularização Fundiária (13.465), Lei do SNUC (9.985), Política Nacional de Resíduos Sólidos (12.305), Política Nacional de Recursos Hídricos (9.433), LC 140, Lei de Biossegurança (11.105), Decreto 6.514, Resolução CONAMA 1/1986, Resolução CONAMA 237/1997, Lei da Escuta Protegida (13.431), Lei Henry Borel (14.344), LDB (9.394) e Marco Legal da Primeira Infância (13.257).
+- Com prioridade estimada (lei nova, sem questões): ECA Digital (Lei 15.211).
 - Os demais diplomas de `dados/leiseca/manifesto.json` ainda não têm mapa e só precisam do material. Até lá, não aparecem no menu.
 - Material com mais de um diploma (CF + ADCT): `--ate` / `--desde` com a linha que os separa.
 - Capítulo cujo cabeçalho falta no material: `--capitulo "10=Cap. IV — Nome"` (Belém do Pará).

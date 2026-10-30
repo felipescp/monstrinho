@@ -15739,7 +15739,9 @@ window.carregarPenasOficiais = async function() {
 <!-- 📜 LEI SECA: texto dos diplomas de dados/legislacao/ agrupados por
      disciplina (dados/leiseca/manifesto.json), com mapa de calor de
      incidência em provas (dados/leiseca/incidencia/*.json, gerado por
-     ferramentas/incidencia_questoes.py). A cor do artigo é a do sistema;
+     ferramentas/incidencia_questoes.py) ou, em lei nova sem questões, com
+     prioridade estimada por tipo de dispositivo ("estimada": true, gerada por
+     ferramentas/prioridade_estimada.py). A cor do artigo é a do sistema;
      a prioridade escolhida pelo usuário prevalece (como em Penas). -->
 <div id="leiseca-modal" class="analytics-modal">
 <style>
@@ -15939,6 +15941,17 @@ window.LEISECA_RUNTIME = {
         return { critico: v[Math.floor(v.length * 0.25)], importante: v[Math.floor(v.length * 0.5)] };
     },
     _prepararIncidencia: function(inc) {
+        // Lei nova, sem questões (ferramentas/prioridade_estimada.py): o nível vem
+        // da classificação por dispositivo; o do artigo é o maior deles.
+        if (inc.estimada) {
+            let N = { critico: 3, importante: 2, regular: 1 }, nivelDisp = {}, nivelArtEst = {};
+            Object.keys(inc.prioridade || {}).forEach(function(k) {
+                let n = N[inc.prioridade[k]] || 0, a = k.split(/[§.]/)[0];
+                nivelDisp[k] = n;
+                nivelArtEst[a] = Math.max(nivelArtEst[a] || 0, n);
+            });
+            return Object.assign({}, inc, { porArt: {}, nivelDisp: nivelDisp, nivelArtEst: nivelArtEst });
+        }
         let porArt = {};
         Object.keys(inc.dispositivos || {}).forEach(function(k) { let a = k.split(/[§.]/)[0]; porArt[a] = (porArt[a] || 0) + inc.dispositivos[k]; });
         let vd = Object.keys(inc.dispositivos || {}).map(function(k) { return inc.dispositivos[k]; });
@@ -15948,6 +15961,7 @@ window.LEISECA_RUNTIME = {
     _nivelDe: function(n, lim) { if (!n) return 0; return n >= lim.critico ? 3 : n >= lim.importante ? 2 : 1; },
     _nivelSistemaArt: function(art) {
         let inc = this._incidencias[this._diploma];
+        if (inc && inc.estimada) return inc.nivelArtEst[art] || 0;
         return inc ? this._nivelDe(inc.porArt[art] || 0, inc.limArt) : 0;
     },
     _chaveEstado: function(art) { return this._diploma + '|' + art; },
@@ -16009,7 +16023,8 @@ window.LEISECA_RUNTIME = {
                 let inc = self._incidencias[d.id], total = inc ? Object.keys(inc.porArt).reduce(function(s, k) { return s + inc.porArt[k]; }, 0) : 0;
                 return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
-                    (d.incidencia ? '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>' : '') + '</div>';
+                    (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo">🧭</span>'
+                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>') : '') + '</div>';
             }).join('');
         }).join('');
     },
@@ -16017,10 +16032,12 @@ window.LEISECA_RUNTIME = {
         let col = document.getElementById('ls-col-divisoes');
         if (!col) return;
         let self = this, inc = this._incidencias[this._diploma], grupos = this._grupos();
-        let soma = function(arts) { return inc ? arts.reduce(function(s, a) { return s + (inc.porArt[a] || 0); }, 0) : arts.length; };
+        // Mapa estimado (sem questões): conta os artigos críticos do grupo.
+        let est = inc && inc.estimada;
+        let soma = function(arts) { return est ? arts.filter(function(a) { return inc.nivelArtEst[a] === 3; }).length : inc ? arts.reduce(function(s, a) { return s + (inc.porArt[a] || 0); }, 0) : arts.length; };
         // rotulo: HTML já escapado. O título só aparece no primeiro capítulo dele.
         let item = function(rotulo, valor, n) {
-            return '<div class="fc-divisao-item' + (self._divisao === valor ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDivisao(' + valor + ')"><span>' + rotulo + '</span><span class="fc-divisao-count" title="' + (inc ? 'cobranças em provas' : 'artigos') + '">' + n + '</span></div>';
+            return '<div class="fc-divisao-item' + (self._divisao === valor ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDivisao(' + valor + ')"><span>' + rotulo + '</span><span class="fc-divisao-count" title="' + (est ? 'artigos críticos (prioridade estimada)' : inc ? 'cobranças em provas' : 'artigos') + '">' + n + '</span></div>';
         };
         let todos = [].concat.apply([], grupos.map(function(g) { return g.arts; }));
         let html = item('Todos', null, soma(todos)), ultimoTit;
@@ -16059,15 +16076,15 @@ window.LEISECA_RUNTIME = {
             return cab + '<div class="ls-tiles">' + g.arts.map(function(a) {
                 total++;
                 let passa = self._passaFiltro(a); if (passa) visiveis++;
-                let n = self._nivelArt(a), q = inc ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
-                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
+                let n = self._nivelArt(a), q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (inc && inc.estimada ? ' · prioridade estimada' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
             }).join('') + '</div>';
         }).join('');
         let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
         col.innerHTML = '<div class="ls-toolbar">' +
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
-            '<span class="ls-info">' + visiveis + ' de ' + total + ' artigos' + (inc ? '' : ' · sem mapa de incidência') + '</span></div>' +
+            '<span class="ls-info">' + visiveis + ' de ' + total + ' artigos' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
             '<div class="ls-corpo"><div class="ls-mapa"><div class="ls-diploma-tit">' + this._esc((this._infoDiploma(this._diploma) || {}).nome || this._diploma) + '</div>' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
         this._rolarParaArt();
     },
@@ -16159,7 +16176,7 @@ window.LEISECA_RUNTIME = {
         if (!a || !j || !j.artigos[a]) return '';
         let inc = this._incidencias[this._diploma], art = j.artigos[a];
         let linha = function(rot, no, chave, cls) {
-            let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = inc ? self._nivelDe(n, inc.limDisp) : 0;
+            let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : self._nivelDe(n, inc.limDisp);
             let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
             return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + '"><span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
@@ -16178,12 +16195,13 @@ window.LEISECA_RUNTIME = {
             if (no.pena) html += '<div class="ls-d ls-n0 ls-inc-par"><span class="ls-rot">Pena –</span> ' + self._esc(no.pena) + '</div>';
         });
         let ch = this._chaveEstado(a), manual = this.estado.prio[ch], sist = ['', 'regular', 'importante', 'critico'][this._nivelSistemaArt(a)];
-        let q = inc ? (inc.porArt[a] || 0) : null;
-        let opcoes = '<option value="">' + (sist ? 'Sistema: ' + { critico: 'Crítico', importante: 'Importante', regular: 'Regular' }[sist] : 'Sem prioridade') + '</option>' +
+        let q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null;
+        let opcoes = '<option value="">' + (sist ? 'Sistema' + (inc && inc.estimada ? ' (estimada)' : '') + ': ' + { critico: 'Crítico', importante: 'Importante', regular: 'Regular' }[sist] : 'Sem prioridade') + '</option>' +
             this.NIVEIS.map(function(nv) { return '<option value="' + nv[0] + '"' + (manual === nv[0] ? ' selected' : '') + '>' + nv[1] + '</option>'; }).join('');
         let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
         return '<div class="ls-art-cab"><span class="ls-art-tit">' + self._rotulo() + ' ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
             (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
+            (inc && inc.estimada ? '<span class="ls-qt" title="' + self._esc(inc.fonte || '') + '">prioridade estimada</span>' : '') +
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
             '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
