@@ -82,6 +82,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Marco Civil da Internet (Lei 12.965/2014) | `lei-12965.json` | 20/10/2026 (o texto da MP 1.068/2021, rejeitada, vem riscado no compilado e fica de fora) |
 | Lei de Licitações e Contratos Administrativos (Lei 14.133/2021) | `lei-14133.json` | 20/10/2026 (os arts. 337-E a 337-P que o art. 178 acrescenta ao CP ficam como texto citado; redações da MP 1.167/2023, com vigência encerrada, ficam de fora) |
 | Estatuto da Cidade (Lei 10.257/2001) | `lei-10257.json` | 20/10/2026 |
+| Lei do Parcelamento do Solo Urbano (Lei 6.766/1979) | `lei-6766.json` | 30/10/2026 |
 | Concessões e Permissões de Serviços Públicos (Lei 8.987/1995) | `lei-8987.json` | 20/10/2026 |
 | Lei de Acesso à Informação (Lei 12.527/2011) | `lei-12527.json` | 25/10/2026 |
 | Lei dos Consórcios Públicos (Lei 11.107/2005) | `lei-11107.json` | 25/10/2026 |
