@@ -52,6 +52,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
+| Lei do SNUC (Lei 9.985/2000) | `lei-9985.json` | 30/10/2026 |
 | Sistema Nacional de Atendimento Socioeducativo – Sinase (Lei 12.594/2012) | `lei-12594.json` | 19/10/2026 |
 | Crimes contra a Economia Popular (Lei 1.521/1951) | `lei-1521.json` | 20/10/2026 |
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |
