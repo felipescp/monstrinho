@@ -7,7 +7,10 @@ perigosos), que vem na mesma página, ficou de fora.
 
 Corrigidos só erros de OCR: "e1n caráter" (art. 2º), "órgãossetoriais" (art. 4º), "Xl"/"lV" (incisos XI e IV),
 "inciso 1, artigo 48" (art. 2º, IV), "mão- de-obra" (art. 9º, II). "Artigo N" virou "Art. N". O resto como na página,
-inclusive as vírgulas no fim dos arts. 8º e 11. -->
+inclusive as vírgulas no fim dos arts. 8º e 11.
+
+Arts. 3º e 7º riscados e anotados como revogados: o art. 21 da Resolução CONAMA nº 237/1997 os revoga expressamente
+(a página do MMA não marca). -->
 
 RESOLUÇÃO CONAMA Nº 001, DE 23 DE JANEIRO DE 1986
 
@@ -59,7 +62,7 @@ XV - Projetos urbanísticos, acima de 100ha. ou em áreas consideradas de releva
 
 XVI - Qualquer atividade que utilize carvão vegetal, em quantidade superior a dez toneladas por dia.
 
-Art. 3º - Dependerá de elaboração de estudo de impacto ambiental e respectivo RIMA, a serem submetidos à aprovação do IBAMA, o licenciamento de atividades que, por lei, seja de competência federal.
+~Art. 3º - Dependerá de elaboração de estudo de impacto ambiental e respectivo RIMA, a serem submetidos à aprovação do IBAMA, o licenciamento de atividades que, por lei, seja de competência federal.~ (Revogado pela Resolução CONAMA nº 237, de 1997)
 
 Art. 4º - Os órgãos ambientais competentes e os órgãos setoriais do SISNAMA deverão compatibilizar os processos de licenciamento com as etapas de planejamento e implantação das atividades modificadoras do meio Ambiente, respeitados os critérios e diretrizes estabelecidos por esta Resolução e tendo por base a natureza o porte e as peculiaridades de cada atividade.
 
@@ -93,7 +96,7 @@ IV - Elaboração do programa de acompanhamento e monitoramento (os impactos pos
 
 Parágrafo Único - Ao determinar a execução do estudo de impacto Ambiental o órgão estadual competente; ou o IBAMA ou quando couber, o Município fornecerá as instruções adicionais que se fizerem necessárias, pelas peculiaridades do projeto e características ambientais da área.
 
-Art. 7º - O estudo de impacto ambiental será realizado por equipe multidisciplinar habilitada, não dependente direta ou indiretamente do proponente do projeto e que será responsável tecnicamente pelos resultados apresentados.
+~Art. 7º - O estudo de impacto ambiental será realizado por equipe multidisciplinar habilitada, não dependente direta ou indiretamente do proponente do projeto e que será responsável tecnicamente pelos resultados apresentados.~ (Revogado pela Resolução CONAMA nº 237, de 1997)
 
 Art. 8º - Correrão por conta do proponente do projeto todas as despesas e custos referentes á realização do estudo de impacto ambiental, tais como: coleta e aquisição dos dados e informações, trabalhos e inspeções de campo, análises de laboratório, estudos técnicos e científicos e acompanhamento e monitoramento dos impactos, elaboração do RIMA e fornecimento de pelo menos 5 (cinco) cópias,
 

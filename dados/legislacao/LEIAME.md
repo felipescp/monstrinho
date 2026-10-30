@@ -59,6 +59,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Biossegurança (Lei 11.105/2005) | `lei-11105.json` | 30/10/2026 |
 | Decreto 6.514/2008 (infrações e sanções administrativas ambientais) | `decreto-6514.json` | 30/10/2026 |
 | Resolução CONAMA 1/1986 (EIA/RIMA; texto do MMA) | `resolucao-conama-001-1986.json` | 30/10/2026 |
+| Resolução CONAMA 237/1997 (licenciamento ambiental; texto do MMA) | `resolucao-conama-237-1997.json` | 30/10/2026 |
 | Sistema Nacional de Atendimento Socioeducativo – Sinase (Lei 12.594/2012) | `lei-12594.json` | 19/10/2026 |
 | Crimes contra a Economia Popular (Lei 1.521/1951) | `lei-1521.json` | 20/10/2026 |
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |
