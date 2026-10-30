@@ -295,7 +295,10 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # Redação de MP que caducou ("[Vigência encerrada]", Lei 14.133, art. 191): o compilado repete
         # depois o texto restabelecido. Artigo sai; parágrafo ou inciso vira nó descartável, para os
         # filhos não grudarem no dispositivo anterior (o parágrafo único "revogado" do art. 191 ia para o 190).
-        if re.search(r'Vig[êe]ncia\s+encerrada', l, re.I):
+        # Mas não "(Vide Medida Provisória nº 773, de 2017) (Vigência encerrada)" (Lei 9.394, art. 69): aí quem
+        # caducou foi a MP só citada; o texto do artigo é o vigente.
+        if re.search(r'Vig[êe]ncia\s+encerrada', l, re.I) and not re.search(
+                r'\(\s*Vide\s+Medida\s+Provis[óo]ria[^()]*\)\s*\(?\s*Vig[êe]ncia\s+encerrada', l, re.I):
             if re.match(r'^Art\.?\s*\d', l):
                 art, seg, inc, rubrica = None, None, None, None
                 continue
