@@ -34,8 +34,8 @@ RE_ARTIGO = re.compile(r'(?:Artigo|ARTIGO)\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 # Letra do artigo ("Art. 4º-A", "Art. 18-A."), não a palavra que abre o texto
 # ("Art. 4º - A EXECUÇÃO FISCAL…", Lei 6.830): hífen colado ou letra seguida de "." ou "º".
-# "Art 1º" sem ponto (Lei 6.938).
-RE_ART = re.compile(r'Art\.?\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?(?:(?<=[\dº°o])-\s*([A-Z])|\s*-\s*([A-Z])(?=[.º°]))?')
+# "Art 1º" sem ponto (Lei 6.938); "Artigo 1º - …" por extenso (Resolução CONAMA 1/1986).
+RE_ART = re.compile(r'Art(?:igo(?=\s)|\.)?\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?(?:(?<=[\dº°o])-\s*([A-Z])|\s*-\s*([A-Z])(?=[.º°]))?')
 
 
 def chave_art(m):
