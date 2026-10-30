@@ -332,15 +332,15 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         t = separa_anotacoes(l)[0] if cab is not None or re.match(RE_CAB, l) else ''
         # Título sem negrito ("Capítulo I" / "Disposições Gerais"; "Capítulo VI" / "Do Reconhecimento…" /
         # "Arbitrais Estrangeiras", Lei 9.307): o nome, em uma ou mais linhas, vira a rubrica do artigo seguinte.
-        # Com --rubrica-capitulo, também "TÍTULO II" / "CAPÍTULO I" em maiúsculas (Lei 9.096), com o nome em
-        # caixa normal. Não é o padrão: em muitos compilados o nome se junta a "Seção I" ou à rubrica em negrito.
+        # Com --rubrica-capitulo, também "TÍTULO II" / "CAPÍTULO I" em maiúsculas (Leis 9.096 e 12.288). Não é o
+        # padrão: em muitos compilados (CP, CPPM) o nome se junta à rubrica em negrito do artigo.
         # Título seguinte dentro do capítulo ("Capítulo II" / "DAS PRESTAÇÕES EM GERAL" / "Seção I" / "Das
         # Espécies de Prestações", Lei 8.213, art. 18): recomeça o nome; vale o mais específico.
         if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
             continue
-        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**') and (t != t.upper() or not rubrica_capitulo):
+        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**'):
             cab.append(t)
             rubrica = ' '.join(cab)
             continue

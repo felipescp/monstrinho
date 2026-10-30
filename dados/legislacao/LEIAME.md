@@ -66,6 +66,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
 | Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
+| Estatuto da Igualdade Racial (Lei 12.288/2010) | `lei-12288.json` | 30/10/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
 | Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
 | Lei de Registros Públicos (Lei 6.015/1973) | `lei-6015.json` | 28/10/2026 |
