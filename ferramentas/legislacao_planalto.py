@@ -112,6 +112,10 @@ def separa_anotacoes(l):
     if re.fullmatch(r'(?:Caput\.\s*)?\(?\s*Revogad[oa]s?\s*\.?\s*\)?\s*[.;]?', texto, re.I): texto, rev = '', True
     return texto, (alt[2] if alt else None), rev
 
+def so_vide_mp(t):
+    """Linha cujo conteúdo é só "(Vide Medida Provisória …)" (dispositivo de MP que caducou)."""
+    return bool(re.fullmatch(r'[\s.]*(?:\(\s*Vide\s+Medida\s+Provis[óo]ria[^()]*\)[\s.]*)+', t, re.I))
+
 def junta_alt(a, b):
     if not a: return b
     if not b: return a
@@ -330,7 +334,10 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # "Arbitrais Estrangeiras", Lei 9.307): o nome, em uma ou mais linhas, vira a rubrica do artigo seguinte.
         # Com --rubrica-capitulo, também "TÍTULO II" / "CAPÍTULO I" em maiúsculas (Lei 9.096), com o nome em
         # caixa normal. Não é o padrão: em muitos compilados o nome se junta a "Seção I" ou à rubrica em negrito.
-        if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t):
+        # Título seguinte dentro do capítulo ("Capítulo II" / "DAS PRESTAÇÕES EM GERAL" / "Seção I" / "Das
+        # Espécies de Prestações", Lei 8.213, art. 18): recomeça o nome; vale o mais específico.
+        if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
+                r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
             continue
         if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**') and (t != t.upper() or not rubrica_capitulo):
@@ -345,6 +352,11 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if m or pu:
             chave = 'pu' if pu else m.group(1) + ('-' + m.group(2) if m.group(2) else '')
             texto, alt, rev = separa_anotacoes(pu.group(1) if pu else m.group(3))
+            # Dispositivo que só existiu em MP que caducou ("§ 13. (Vide Medida Provisória nº 871, de 2019)",
+            # Lei 8.742, art. 20; Lei 8.213, art. 60, §§ 12 e 13): não entra; nó descartável para os filhos.
+            if not texto and so_vide_mp(pu.group(1) if pu else m.group(3)):
+                seg, inc = {'texto': ''}, None
+                continue
             p = novo_disp(texto, alt, rev)
             if rubrica: p['rubrica'] = rubrica
             # Parágrafo único renumerado como § 1º sem a redação antiga riscada no compilado
@@ -372,6 +384,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             if sx and '-' not in chave and chave in seg.get('inc', {}):
                 chave, resto = chave + '-' + sx.group(1), sx.group(2)
             texto, alt, rev = separa_anotacoes(resto)
+            if not texto and so_vide_mp(resto):
+                inc = {'texto': ''}
+                continue
             inc = novo_disp(texto, alt, rev)
             # Inciso que continua a lista do caput depois de §§ intercalados
             # (Lei 4.717, art. 7º: I, §§ 1º e 2º, II…VI): vai para o artigo.

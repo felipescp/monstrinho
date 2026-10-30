@@ -89,6 +89,9 @@ C=$(mktemp); sed 's/^1\\\. \(Os Estados Partes do presente Pacto comprometem-se 
 python3 -I ferramentas/convencao_planalto.py "$C" dados/legislacao/decreto-591.json D591 "Pacto Internacional sobre Direitos Econômicos, Sociais e Culturais" https://www.planalto.gov.br/ccivil_03/decreto/1990-1994/d0591.htm 2026-10-20 "PACTO INTERNACIONAL SOBRE DIREITOS ECONÔMICOS, SOCIAIS E CULTURAIS" >/dev/null; rm -f "$C"
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ca1b4d8e-L8742compilado.md L8742 "Lei Orgânica da Assistência Social" https://www.planalto.gov.br/ccivil_03/leis/l8742compilado.htm dados/legislacao/lei-8742.json 2026-10-20
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/e19fe947-L12965.md L12965 "Marco Civil da Internet" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12965.htm dados/legislacao/lei-12965.json 2026-10-20
+# Marco Civil, art. 19: inconstitucionalidade parcial (STF, 26/6/2025, Temas 987 e 533), ainda sem anotação no compilado.
+python3 -I ferramentas/nota_stf_manual.py dados/legislacao/lei-12965.json 19 inconst_parcial "RE 1.037.396 – Tema 987"
+python3 -I ferramentas/nota_stf_manual.py dados/legislacao/lei-12965.json 19 inconst_parcial "RE 1.057.258 – Tema 533"
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6b161c84-L14133.md L14133 "Lei de Licitações e Contratos Administrativos" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm dados/legislacao/lei-14133.json 2026-10-20
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/315224f7-L10257.md L10257 "Estatuto da Cidade" https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10257.htm dados/legislacao/lei-10257.json 2026-10-20
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/06adcc89-L8987compilada.md L8987 "Lei de Concessões e Permissões de Serviços Públicos" https://www.planalto.gov.br/ccivil_03/leis/l8987cons.htm dados/legislacao/lei-8987.json 2026-10-20
