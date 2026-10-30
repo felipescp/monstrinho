@@ -112,3 +112,5 @@ C=$(mktemp); sed 's/\(incorporado ao ativo permanente da empresa;\) 19$/\1/' /ro
 gera "$C" L8212 "Lei Orgânica da Seguridade Social" https://www.planalto.gov.br/ccivil_03/leis/l8212compilado.htm dados/legislacao/lei-8212.json 2026-10-26 --fim "^Este texto não substitui o publicado no DOU de 25\.7\.1991"; rm -f "$C"
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3e729d2c-L9307.md L9307 "Lei de Arbitragem" https://www.planalto.gov.br/ccivil_03/leis/l9307.htm dados/legislacao/lei-9307.json 2026-10-28
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/978e825d-L6.015compilada.md L6015 "Lei de Registros Públicos" https://www.planalto.gov.br/ccivil_03/leis/l6015compilada.htm dados/legislacao/lei-6015.json 2026-10-28
+# Lei 9.096: "TÍTULO I" / "CAPÍTULO I" sem negrito e com o nome em caixa normal na linha seguinte.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/46d60982-L9096Consol.md L9096 "Lei dos Partidos Políticos" https://www.planalto.gov.br/ccivil_03/leis/l9096.htm dados/legislacao/lei-9096.json 2026-10-30 --rubrica-capitulo

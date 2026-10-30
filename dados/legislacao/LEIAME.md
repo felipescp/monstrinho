@@ -30,6 +30,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Benefícios da Previdência Social (Lei 8.213/1991) | `lei-8213.json` | 26/10/2026 |
 | Lei do Processo Administrativo Federal (Lei 9.784/1999) | `lei-9784.json` | 11/10/2026 |
 | Lei das Eleições (Lei 9.504/1997) | `lei-9504.json` | 11/10/2026 |
+| Lei dos Partidos Políticos (Lei 9.096/1995) | `lei-9096.json` | 30/10/2026 |
 | Lei do Mandado de Segurança (Lei 12.016/2009) | `lei-12016.json` | 11/10/2026 |
 | Lei de Introdução às Normas do Direito Brasileiro (Decreto-Lei 4.657/1942) | `lindb.json` | 11/10/2026 |
 | Lei da Ação Popular (Lei 4.717/1965) | `lei-4717.json` | 11/10/2026 |

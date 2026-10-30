@@ -52,18 +52,20 @@ RE_PAR = re.compile(r'\(([^()]*)\)')
 _STF = []
 ANEXO = {}  # itens da lista anexa ao diploma, se houver (LC 116)
 
-def nota_stf(t):
-    """Anotação → {'tipo': 'inconst'|'inconst_parcial'|'vide', 'ref': 'ADI 3.112'} ou None."""
-    m = re.search(r'\b(ADIN|ADI|ADC|ADO|ADPF|ADCN)\s*(?:n[º°o.]*\s*)?(\d[\d.]*)', t, re.I)
-    if not m: return None
+def notas_stf(t):
+    """Anotação → [{'tipo': 'inconst'|'inconst_parcial'|'vide', 'ref': 'ADI 3.112'}, …]. Aceita várias
+    ações na mesma anotação e o plural/hífen: "Vide Adins nºs 1.351-3 e 1.354-8", "Vide ADI-5105" (Lei 9.096)."""
+    m = re.search(r'\b(ADIN|ADI|ADC|ADO|ADPF|ADCN)s?(?![A-Za-z])[\s-]*(?:n[º°o.]*s?\s*)?(\d[\d.]*(?:-\d)?(?:\s*(?:,|\be\b)\s*\d[\d.]*(?:-\d)?)*)', t, re.I)
+    if not m: return []
     cls = {'ADIN': 'ADI', 'ADCN': 'ADC'}.get(m.group(1).upper(), m.group(1).upper())
-    num = int(m.group(2).replace('.', '').rstrip('.') or 0)
-    if not num: return None
-    ref = '%s %s' % (cls, format(num, ',').replace(',', '.'))
     if re.search(r'Express(?:ão|ões)\s+declarad', t, re.I): tipo = 'inconst_parcial'
     elif re.search(r'Declarad[oa]s?\s+inconstitucional', t, re.I): tipo = 'inconst'
     else: tipo = 'vide'
-    return {'tipo': tipo, 'ref': ref}
+    out = []
+    for n in re.findall(r'(\d[\d.]*)(?:-\d)?', m.group(2)):
+        num = int(n.replace('.', '') or 0)
+        if num: out.append({'tipo': tipo, 'ref': '%s %s' % (cls, format(num, ',').replace(',', '.'))})
+    return out
 
 def separa_anotacoes(l):
     """Tira do texto as anotações do Planalto e devolve (texto, alt, revogado)."""
@@ -74,8 +76,8 @@ def separa_anotacoes(l):
         t = m.group(1)
         if re.match(r'\s*(Declarad[oa]s?\s+inconstitucion|Express(?:ão|ões)\s+declarad|Express(?:ão|ões)\s+substitu[íi]d|(?:Par[áa]grafo(?:\s+[úu]nico)?|Inciso|Al[íi]nea|Artigo)\s+(?:inclu[íi]d|acrescentad|renumerad|alterad)|Reda[çc][ãa]o (?:dada|pel)|Inclu[íi]d[oa]|Acrescentad[oa]|Renumerad[oa]|Alterad[oa]|Revogad[oa]|Rejeitad[oa]|Vide|Vig[êe]ncia|Produ[çc][ãa]o de efeito|Promulga[çc][ãa]o|Suspens[ao]|Execu[çc][ãa]o suspensa|Regulamento|Mensagem de veto)', t, re.I):
             if re.match(r'\s*Revogad', t, re.I): rev = True
-            ns = nota_stf(t)
-            if ns and ns not in _STF: _STF.append(ns)
+            for ns in notas_stf(t):
+                if ns not in _STF: _STF.append(ns)
             lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lcp|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
@@ -242,10 +244,11 @@ def linhas_md(caminho):
         for parte in partes:
             yield parte if parte.endswith('\n') else parte + '\n'
 
-def converter(md, inicio=None, fim=None):
+def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
     em_anexo = False
     cab = None  # nome de capítulo sem negrito em montagem (Lei 9.307)
+    RE_CAB = r'(?:Cap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|SE[ÇC][ÃA]O|Se[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
@@ -322,13 +325,15 @@ def converter(md, inicio=None, fim=None):
                 ANEXO[m.group(1)] = novo_disp(texto, alt, rev)
             continue
         # (Antes do teste de artigo aberto: o capítulo I vem antes do art. 1º.)
-        t = separa_anotacoes(l)[0] if cab is not None or re.match(r'Cap[íi]tulo\s', l) else ''
+        t = separa_anotacoes(l)[0] if cab is not None or re.match(RE_CAB, l) else ''
         # Título sem negrito ("Capítulo I" / "Disposições Gerais"; "Capítulo VI" / "Do Reconhecimento…" /
         # "Arbitrais Estrangeiras", Lei 9.307): o nome, em uma ou mais linhas, vira a rubrica do artigo seguinte.
-        if re.fullmatch(r'Cap[íi]tulo\s+[IVXLC]+(?:-[A-Z])?', t):
+        # Com --rubrica-capitulo, também "TÍTULO II" / "CAPÍTULO I" em maiúsculas (Lei 9.096), com o nome em
+        # caixa normal. Não é o padrão: em muitos compilados o nome se junta a "Seção I" ou à rubrica em negrito.
+        if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t):
             cab, rubrica = [], None
             continue
-        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**'):
+        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**') and (t != t.upper() or not rubrica_capitulo):
             cab.append(t)
             rubrica = ' '.join(cab)
             continue
@@ -464,10 +469,11 @@ if __name__ == '__main__':
     it = iter(sys.argv[1:])
     for a in it:
         if a in ('--inicio', '--fim'): opts[a[2:]] = next(it)
+        elif a == '--rubrica-capitulo': opts['rubrica_capitulo'] = True
         else: args.append(a)
     md, ident, nome, fonte, saida = args[:5]
     data = args[5] if len(args) > 5 else datetime.date.today().isoformat()
-    arts = converter(md, opts.get('inicio'), opts.get('fim'))
+    arts = converter(md, opts.get('inicio'), opts.get('fim'), opts.get('rubrica_capitulo', False))
     out = {'id': ident, 'nome': nome, 'fonte': fonte, 'dataTexto': data, 'artigos': arts}
     if ANEXO: out['anexo'] = dict(ANEXO)
     json.dump(out, open(saida, 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
