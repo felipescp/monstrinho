@@ -80,6 +80,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei da Alienação Parental (Lei 12.318/2010) | `lei-12318.json` | 20/10/2026 (o compilado não risca as redações antigas; o parágrafo único do art. 6º, renumerado § 1º, é descartado pelo extrator) |
 | Lei da Escuta Protegida (Lei 13.431/2017) | `lei-13431.json` | 30/10/2026 |
 | Lei Henry Borel (Lei 14.344/2022) | `lei-14344.json` | 30/10/2026 |
+| Marco Legal da Primeira Infância (Lei 13.257/2016) | `lei-13257.json` | 30/10/2026 |
 | Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
 | Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
