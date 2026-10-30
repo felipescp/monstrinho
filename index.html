@@ -38604,6 +38604,9 @@ window.LEGISLACAO = (function() {
         // Convenção sobre os Direitos da Criança (Decreto 99.710/1990). Sem a sigla "CDC" (Código de Defesa do Consumidor).
         D99710: { nome: 'Convenção sobre os Direitos da Criança', arquivo: 'dados/legislacao/decreto-99710.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/1990-1994/d99710.htm', itens: true, promulgacao: 'Decreto 99.710/1990',
               re: /Conven[çc][ãa]o\s+(?:da\s+ONU\s+|das\s+Na[çc][õo]es\s+Unidas\s+)?sobre\s+os\s+Direitos\s+da\s+Crian[çc]a|Decreto\s*n?[º°o.]*\s*99\.?710(?![\d.])/g },
+        // Convenção da Haia de 1980 sobre os aspectos civis do sequestro internacional de crianças (Decreto 3.413/2000).
+        D3413: { nome: 'Convenção da Haia (Sequestro Internacional de Crianças)', arquivo: 'dados/legislacao/decreto-3413.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d3413.htm', itens: true, promulgacao: 'Decreto 3.413/2000',
+              re: /Conven[çc][ãa]o\s+(?:da\s+Haia\s+(?:de\s+1980\s+)?)?sobre\s+os\s+Aspectos\s+Civis\s+do\s+Seq[uü]estro\s+Internacional\s+de\s+Crian[çc]as|Conven[çc][ãa]o\s+da\s+Haia\s+de\s+1980|Decreto\s*n?[º°o.]*\s*3\.?413(?![\d.])/g },
         // CEDAW (Decreto 4.377/2002).
         D4377: { nome: 'CEDAW', arquivo: 'dados/legislacao/decreto-4377.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/2002/d4377.htm', itens: true, promulgacao: 'Decreto 4.377/2002',
               re: /\bCEDAW\b|Conven[çc][ãa]o\s+sobre\s+a\s+Elimina[çc][ãa]o\s+de\s+Todas\s+as\s+Formas\s+de\s+Discrimina[çc][ãa]o\s+contra\s+a\s+Mulher|Decreto\s*n?[º°o.]*\s*4\.?377(?![\d.])/g },
@@ -38787,6 +38790,9 @@ window.LEGISLACAO = (function() {
                 if (!itens[k]) { h += '<div class="lei-disp">Item ' + esc(k) + ' não localizado.</div>'; return; }
                 h += '<div class="lei-disp"><b>' + esc(k) + '.</b> ' + esc(itens[k].texto) + '</div>' + alis(itens[k], p[4]);
             });
+            // Nota do STF no artigo (Convenção da Haia, art. 13: "Vide ADI 4.245").
+            let vide = (a.stf || []).map(function(x) { return x.ref; });
+            if (vide.length) h += '<div class="jur-ref-dica">⚖️ Vide ' + esc(vide.join(', ')) + ' (STF): confira se o dispositivo foi afetado.</div>';
             return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir ' + esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '</div>';
         }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
