@@ -26,6 +26,8 @@ def limpa(l):
     # Anotação sem o ")" de fechamento: "[(Incluído pela Lei nº 14.382, de 2022](…)" (Lei 6.015, art. 46, § 6º).
     # (Se o ")" vem logo depois do link, "[(Incluído pela Lei nº 14.026, de 2020](…))", não é o caso.)
     l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\d{4})\](\([^()\s]*\))(?!\s*\))', r'[\1)]\2', l)
+    # Anotação com um ")" a mais: "[(Redação dada pelo Decreto nº 7.719, de 2012))](…)" (Decreto 6.514, art. 152).
+    l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\)\]', r'[\1]', l)
     # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
     l = re.sub(r'\[(Revogad[oa]s?\s+pel[oa]\s[^\]()]*)\]', r'[(\1)]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
@@ -257,7 +259,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
     em_anexo = False
     cab = None  # nome de capítulo sem negrito em montagem (Lei 9.307)
-    RE_CAB = r'(?:Cap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|SE[ÇC][ÃA]O|Se[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
+    RE_CAB = r'(?:Cap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|(?:Sub)?[Ss]e[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
