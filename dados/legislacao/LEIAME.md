@@ -52,6 +52,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei Complementar 116/2003 (ISS), com a lista de serviços anexa | `lc-116.json` | 11/10/2026 |
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
+| Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358/2026) | `lei-15358.json` | 30/10/2026 |
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
 | Lei do SNUC (Lei 9.985/2000) | `lei-9985.json` | 30/10/2026 |
 | Política Nacional de Resíduos Sólidos (Lei 12.305/2010) | `lei-12305.json` | 30/10/2026 |
