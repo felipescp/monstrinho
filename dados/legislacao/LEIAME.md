@@ -77,6 +77,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Alimentos (Lei 5.478/1968) | `lei-5478.json` | 20/10/2026 |
 | Alienação fiduciária – busca e apreensão (Decreto-Lei 911/1969) | `decreto-lei-911.json` | 20/10/2026 |
 | Lei da Alienação Parental (Lei 12.318/2010) | `lei-12318.json` | 20/10/2026 (o compilado não risca as redações antigas; o parágrafo único do art. 6º, renumerado § 1º, é descartado pelo extrator) |
+| Lei da Escuta Protegida (Lei 13.431/2017) | `lei-13431.json` | 30/10/2026 |
 | Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
 | Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |

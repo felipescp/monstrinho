@@ -137,3 +137,4 @@ gera "/root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/cb85f107-Decret
 gera ferramentas/textos/resolucao-conama-001-1986.md CONAMA1 "Resolução CONAMA nº 1/1986 (EIA/RIMA)" http://www2.mma.gov.br/port/conama/res/res86/res0186.html dados/legislacao/resolucao-conama-001-1986.json 2026-10-30
 # Resolução CONAMA 237/1997: PDF do MMA, texto passado para Markdown (ver comentário no topo do arquivo); sem o Anexo 1.
 gera ferramentas/textos/resolucao-conama-237-1997.md CONAMA237 "Resolução CONAMA nº 237/1997 (licenciamento ambiental)" http://www2.mma.gov.br/port/conama/res/res97/res23797.html dados/legislacao/resolucao-conama-237-1997.json 2026-10-30
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/946ae078-L13431.md L13431 "Lei da Escuta Protegida" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13431.htm dados/legislacao/lei-13431.json 2026-10-30 --rubrica-capitulo

@@ -48,6 +48,8 @@ def limpa(l):
     l = re.sub(r'\(\s*VETADO\s*\)', '(VETADO)', l)  # "[§ 2º (VETADO](…) )" (Lei 11.105, art. 12)
     l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
     l = re.sub(r'^(\s*Art)\s+\.(?=\s*\d)', r'\1.', l)  # "Art . 95." (Lei 13.465)
+    # Negrito colado ao parêntese: "( **bullying** )" (Lei 13.431, art. 4º, II, a).
+    l = re.sub(r'\(\s*\*\*([^*()]+)\*\*\s*\)', r'(\1)', l)
     return l.replace('**', '').strip().lstrip('>').strip()
 
 RE_PAR = re.compile(r'\(([^()]*)\)')
@@ -348,7 +350,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # "CAPÍTULO ÚNICO" sem nome próprio (LC 35, art. 89): fica o nome do título.
         if cab is not None and re.fullmatch(r'(?:Cap[íi]tulo|CAP[ÍI]TULO|(?:Sub)?Se[çc][ãa]o|(?:SUB)?SE[ÇC][ÃA]O)\s+(?:[ÚU]nic[oa]|ÚNIC[OA])', t):
             continue
-        if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
+        # (Numeral com minúsculas no meio: "CAPÍTULO Ii", "CAPÍTULO IiI", Lei 13.431.)
+        if re.fullmatch(RE_CAB + r'\s+[IVXLC](?i:[ivxlc]*)(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
             continue
