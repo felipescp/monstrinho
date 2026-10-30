@@ -17,10 +17,10 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
 | lei citacoes de artigo | 6531 |
-| lei citacoes ligadas | 5986 |
+| lei citacoes ligadas | 5993 |
 | lei dispositivo nao localizado | 8 |
 | lei artigo sem diploma | 47 |
-| lei citacoes de diplomas fora da base | 490 |
+| lei citacoes de diplomas fora da base | 483 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -193,7 +193,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 9.279 | 9 |
 | Convenção | 8 |
 | Regimento | 8 |
-| Lei 9.096 | 7 |
 | Lei 9.430 | 7 |
 | Lei 8.036 | 6 |
 | LC 101 | 6 |
@@ -214,3 +213,4 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Lei 8.625 | 4 |
 | LC 35 | 4 |
 | Lei 5.764 | 4 |
+| Lei 5.474 | 4 |
