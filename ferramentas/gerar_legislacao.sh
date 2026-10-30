@@ -121,3 +121,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/c49998d9-L12288.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/189ec0fc-L9868.md L9868 "Lei da ADI e da ADC" https://www.planalto.gov.br/ccivil_03/leis/l9868.htm dados/legislacao/lei-9868.json 2026-10-30 --rubrica-capitulo
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/b8baa555-L9882.md L9882 "Lei da ADPF" https://www.planalto.gov.br/ccivil_03/leis/l9882.htm dados/legislacao/lei-9882.json 2026-10-30
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ad1aa2e6-Lcp35_Loman.md LC35 "Lei Orgânica da Magistratura Nacional" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp35.htm dados/legislacao/lc-35.json 2026-10-30 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/736de30c-L9507.md L9507 "Lei do Habeas Data" https://www.planalto.gov.br/ccivil_03/leis/l9507.htm dados/legislacao/lei-9507.json 2026-10-30
