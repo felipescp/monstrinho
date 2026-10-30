@@ -165,7 +165,8 @@ def main():
                 continue
             m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+|\d+)$', t, re.I)  # "Capitulo 1" (Belém do Pará)
             if m:
-                n = int(m.group(1)) if m.group(1).isdigit() else romano(m.group(1).upper())
+                # "Capítulo ll": letra l no lugar do I (Convenção da Haia, Decreto 3.413).
+                n = int(m.group(1)) if m.group(1).isdigit() else romano(m.group(1).replace('l', 'I').upper())
                 num_cap = n if n > num_cap else num_cap + 1
                 capitulo = 'Cap. ' + arabico_romano(num_cap) + ' — ' + nome_seguinte(i)
                 continue
