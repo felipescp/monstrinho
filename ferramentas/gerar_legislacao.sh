@@ -118,3 +118,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/978e825d-L6.015c
 # Lei 9.096: "TÍTULO I" / "CAPÍTULO I" sem negrito e com o nome em caixa normal na linha seguinte.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/46d60982-L9096Consol.md L9096 "Lei dos Partidos Políticos" https://www.planalto.gov.br/ccivil_03/leis/l9096.htm dados/legislacao/lei-9096.json 2026-10-30 --rubrica-capitulo
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/c49998d9-L12288.md L12288 "Estatuto da Igualdade Racial" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/lei/l12288.htm dados/legislacao/lei-12288.json 2026-10-30 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/189ec0fc-L9868.md L9868 "Lei da ADI e da ADC" https://www.planalto.gov.br/ccivil_03/leis/l9868.htm dados/legislacao/lei-9868.json 2026-10-30 --rubrica-capitulo
