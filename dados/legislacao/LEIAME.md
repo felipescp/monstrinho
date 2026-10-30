@@ -54,6 +54,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
 | Lei do SNUC (Lei 9.985/2000) | `lei-9985.json` | 30/10/2026 |
 | Política Nacional de Resíduos Sólidos (Lei 12.305/2010) | `lei-12305.json` | 30/10/2026 |
+| Política Nacional de Recursos Hídricos (Lei 9.433/1997) | `lei-9433.json` | 30/10/2026 |
 | Sistema Nacional de Atendimento Socioeducativo – Sinase (Lei 12.594/2012) | `lei-12594.json` | 19/10/2026 |
 | Crimes contra a Economia Popular (Lei 1.521/1951) | `lei-1521.json` | 20/10/2026 |
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |

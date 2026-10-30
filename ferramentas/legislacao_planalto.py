@@ -379,9 +379,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # "l -", "ll -" (L minúsculo no lugar de I, erro do compilado da Lei 7.347).
         # Também "Il -" (CPP, art. 78) e outras misturas de I e l.
         l = re.sub(r'^([IVX]*l[IVXl]*)(?=\s*[-–—])', lambda mm: mm.group(1).replace('l', 'I'), l)
-        # "III - texto", "VIII-A - texto" e, sem travessão (falha do compilado da CF,
-        # art. 93), "IX todos os julgamentos…": numeral seguido de minúscula.
-        m = re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s*[-–—]\s*(.*)$', l) or \
+        # "III - texto", "VIII-A - texto", "I-A. – texto" (Lei 9.433, art. 33) e, sem travessão
+        # (falha do compilado da CF, art. 93), "IX todos os julgamentos…": numeral seguido de minúscula.
+        m = re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\.?\s*[-–—]\s*(.*)$', l) or \
             re.match(r'^([IVXL]+(?:-[A-Z](?![a-zà-ú]))?)\s+(?=[a-zà-ú])(.*)$', l) or \
             re.match(r'^([IVXL]+)\)\s+(.*)$', l)  # "I) o número de testemunhas…" (Lei 1.521, art. 23)
         if m:
