@@ -205,6 +205,9 @@ def linhas_md(caminho):
         # Travessão do inciso exportado como "~–~" ("III ~–~ as parcelas…").
         l = re.sub(r'(?<!~)~\s*([–—-])\s*~(?!~)', r'\1', l)
         # Risco com til simples (~redação antiga~), usado em alguns compilados.
+        # Risco que começa depois do rótulo ("Art. ~115 - Em caso de afastamento…~ (Revogado…)", LC 35):
+        # o rótulo vai para dentro do risco, senão o número do artigo some com ele.
+        l = re.sub(r'^(\s*)(Art\.\s*)~(?=\d)', r'\1~\2', l)
         riscada = re.search(r'(?<!~)~[^~\n]+~(?!~)', l)
         # Dispositivo riscado com a anotação de revogação fora do risco
         # ("~I - texto antigo~ (Revogado pela LC 150…)"): fica o rótulo, revogado.
@@ -336,6 +339,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # padrão: em muitos compilados (CP, CPPM) o nome se junta à rubrica em negrito do artigo.
         # Título seguinte dentro do capítulo ("Capítulo II" / "DAS PRESTAÇÕES EM GERAL" / "Seção I" / "Das
         # Espécies de Prestações", Lei 8.213, art. 18): recomeça o nome; vale o mais específico.
+        # "CAPÍTULO ÚNICO" sem nome próprio (LC 35, art. 89): fica o nome do título.
+        if cab is not None and re.fullmatch(r'(?:Cap[íi]tulo|CAP[ÍI]TULO|(?:Sub)?Se[çc][ãa]o|(?:SUB)?SE[ÇC][ÃA]O)\s+(?:[ÚU]nic[oa]|ÚNIC[OA])', t):
+            continue
         if re.fullmatch(RE_CAB + r'\s+[IVXLC]+(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None

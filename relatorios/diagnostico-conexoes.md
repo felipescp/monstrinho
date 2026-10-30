@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 123 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6537 |
-| lei citacoes ligadas | 6003 |
+| lei citacoes de artigo | 6538 |
+| lei citacoes ligadas | 6010 |
 | lei dispositivo nao localizado | 5 |
-| lei artigo sem diploma | 47 |
-| lei citacoes de diplomas fora da base | 482 |
+| lei artigo sem diploma | 45 |
+| lei citacoes de diplomas fora da base | 478 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -162,11 +162,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Caso Massacre de Santo Domingo vs. Colômbia (jur_idh_santo_domingo): "art. 3º" — trecho: "Convenções de Genebra (1949), art. 3º comum"
 - Caso Brewer Carías vs. Venezuela (jur_idh_brewer_carias): "art. 31" — trecho: "Regulamento da Comissão Interamericana, art. 31"
 - Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "arts. 3º e 4º" — trecho: "Carta Democrática Interamericana (2001), arts. 3º e 4º"
-- Caso López Lone e outros vs. Honduras (jur_idh_lopez_lone): "art. 36" — trecho: "LOMAN, art. 36"
 - Caso Lagos del Campo vs. Peru (jur_idh_lagos_del_campo): "arts. 45" — trecho: "Carta da OEA, arts. 45.b e c, 46 e 34.g"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 34" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
 - Caso Poblete Vilches e outros vs. Chile (jur_idh_poblete_vilches): "art. 45" — trecho: "Carta da OEA, art. 34.i e l e art. 45.h"
-- Caso Urrutia Laubreaux vs. Chile (jur_idh_urrutia_laubreaux): "art. 36, III" — trecho: "LOMAN, art. 36, III (vedação de juízo depreciativo, ressalvada a crítica em obras técnicas e no magistério)"
 - Caso Castillo Petruzzi e outros vs. Peru (jur_idh_castillo_petruzzi): "art. 124" — trecho: "art. 124 (competência da Justiça Militar da União)"
 - Opinião Consultiva OC-18/03 (jur_idh_oc_18_03): "arts. 3" — trecho: "Carta da OEA, arts. 3.l e 17"
 - Comentário Geral nº 14/CDESC (onu_cg_desc_14): "art. 5" — trecho: "CERD, art. 5(e)(iv)"
@@ -176,6 +174,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 - Adolescentes privados de liberdade no CASA Cedro vs. Brasil (Fundação CASA, São Paulo) (cidh_casa_cedro): "art. 106" — trecho: "Carta da OEA, art. 106"
 - Instituto Penal Plácido de Sá Carvalho vs. Brasil (cidh_placido_de_sa_carvalho): "art. 27" — trecho: "Regulamento da Corte IDH, art. 27"
 - Complexo Penitenciário de Curado vs. Brasil (Recife) (cidh_complexo_do_curado): "art. 27" — trecho: "Regulamento da Corte IDH, art. 27"
+- Povos Indígenas Yanomami, Ye'kwana e Munduruku vs. Brasil (cidh_yanomami_munduruku): "arts. 27 e 31" — trecho: "Regulamento da Corte IDH, arts. 27 e 31"
+- Pessoas privadas de liberdade na Penitenciária Evaristo de Moraes vs. Brasil (cidh_evaristo_de_moraes): "arts. 27 e 31" — trecho: "Regulamento da Corte IDH, arts. 27 e 31"
 
 ## K — Lei seca: diplomas citados que ainda não estão na base (top 30)
 
@@ -208,6 +208,6 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | LC 123 | 4 |
 | Lei 13.445 | 4 |
 | Lei 8.625 | 4 |
-| LC 35 | 4 |
 | Lei 5.764 | 4 |
 | Lei 5.474 | 4 |
+| Lei 9.249 | 4 |
