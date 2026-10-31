@@ -15771,6 +15771,7 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-filtro { display:flex; align-items:center; gap:8px; font-weight:700; color:var(--text-muted); }
     #leiseca-modal .ls-filtro label { display:flex; align-items:center; gap:3px; cursor:pointer; color:var(--text-main); font-weight:600; }
     #leiseca-modal .ls-info { font-size:10px; font-weight:700; color:var(--text-muted); margin-left:auto; }
+    #leiseca-modal .ls-mob-barra, #leiseca-modal .ls-mob-ler { display:none; } /* só no celular */
     #leiseca-modal .ls-corpo { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:12px; padding:10px; overflow:hidden; }
     #leiseca-modal .ls-mapa { overflow-y:auto; padding-right:4px; }
     #leiseca-modal .ls-grupo-rot { font-size:10.5px; font-weight:800; color:var(--text-muted); margin:12px 0 5px; line-height:1.35; }
@@ -15844,6 +15845,8 @@ window.carregarPenasOficiais = async function() {
             <div class="fc-col" id="ls-col-divisoes"></div>
             <div class="fc-col" id="ls-col-principal"></div>
         </div>
+        <!-- Celular: barra do texto aberto por cima do mapa ("‹ Mapa" volta). -->
+        <div class="ls-mob-barra"><button type="button" onclick="window.LEISECA_RUNTIME.fecharTextoMobile()">‹ Mapa</button><span id="ls-mob-tit"></span></div>
     </div>
 </div>
 <script>
@@ -16166,6 +16169,7 @@ window.LEISECA_RUNTIME = {
         let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
         col.innerHTML = '<div class="ls-toolbar">' +
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
+            (this._divisao !== null ? '<button class="ls-btn ls-mob-ler" onclick="window.LEISECA_RUNTIME.lerRecorteMobile()" title="Ler em sequência os artigos deste recorte">📖 Ler em sequência</button>' : '') +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
             '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
             '<div class="ls-corpo"><div class="ls-mapa"><div class="ls-diploma-tit">' + this._esc((this._infoDiploma(this._diploma) || {}).nome || this._diploma) + '</div>' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
@@ -16214,7 +16218,25 @@ window.LEISECA_RUNTIME = {
         }, 200);
     },
     alternarFiltro: function(k) { this._filtro[k] = !this._filtro[k]; this._renderPrincipal(); },
+    // Celular (≤ 700px): o texto abre por cima do mapa, em tela cheia, com a
+    // barra "‹ Mapa" — no fluxo normal ele ficaria abaixo do mapa inteiro.
+    _celular: function() { return window.matchMedia('(max-width: 700px)').matches; },
+    _abrirTextoMobile: function(titulo) {
+        if (!this._celular()) return;
+        let m = document.getElementById('leiseca-modal'), tit = document.getElementById('ls-mob-tit');
+        if (tit) tit.textContent = titulo;
+        if (m) m.classList.add('mob-texto');
+    },
+    fecharTextoMobile: function() { let m = document.getElementById('leiseca-modal'); if (m) m.classList.remove('mob-texto'); },
+    lerRecorteMobile: function() {
+        let g = this._divisao !== null ? (this._grupos()[this._divisao] || {}) : {};
+        this._abrirTextoMobile([g.titulo, g.capitulo].filter(Boolean).pop() || ((this._infoDiploma(this._diploma) || {}).nome || ''));
+    },
     abrirArtigo: function(a) {
+        this._abrirArtigoNoPainel(a);
+        this._abrirTextoMobile(this._rotulo() + ' ' + a + ' — ' + ((this._infoDiploma(this._diploma) || {}).nome || ''));
+    },
+    _abrirArtigoNoPainel: function(a) {
         this._art = a;
         document.querySelectorAll('#leiseca-modal .ls-tile.sel, #leiseca-modal .ls-art.sel').forEach(function(b) { b.classList.remove('sel'); });
         let b = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
@@ -39167,6 +39189,16 @@ window.LEGISLACAO = (function() {
     .mob-trilha span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     [class$="-ocultar-div"] { display:none !important; }
 
+    /* Lei Seca: texto do artigo em tela cheia por cima do mapa. */
+    #leiseca-modal .ls-texto { display:none !important; }
+    #leiseca-modal.mob-texto .ls-texto { display:block !important; position:fixed !important; left:0; right:0; top:52px; bottom:0; z-index:10021; background:var(--bg-white); overflow-y:auto !important; padding:10px 12px 28px !important; margin:0 !important; border:none !important; border-radius:0 !important; max-height:none !important; height:auto !important; }
+    #leiseca-modal.mob-texto .ls-mob-barra { display:flex; position:fixed; left:0; right:0; top:0; height:52px; z-index:10022; align-items:center; gap:10px; padding:0 12px; background:var(--bg-white); border-bottom:1px solid var(--border-color); box-sizing:border-box; }
+    #leiseca-modal .ls-mob-barra button { flex-shrink:0; padding:7px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:13px; font-weight:800; color:var(--app-primary); }
+    #leiseca-modal .ls-mob-barra span { font-size:12.5px; font-weight:800; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #leiseca-modal .ls-mob-ler { display:inline-flex !important; }
+    #leiseca-modal .ls-legenda { display:none !important; }
+    #leiseca-modal .ls-art-acoes { flex-wrap:wrap; }
+
     /* Vitrine (Baterias V/F etc.): a linha do cabeçalho (título,
        contadores, busca e botões) quebra em várias linhas em vez de
        alargar a página e espremer a lista. */
@@ -39264,7 +39296,7 @@ window.MOBILE_UI = (function() {
         var a = col && col.querySelector('.fc-materia-item.ativa, .fc-divisao-item.ativa, .fc-pill.ativa, .ativa');
         if (!a) return '';
         var nome = a.querySelector('.fc-materia-nome, span') || a;
-        return (nome.textContent || '').replace(/\s*\(?\d[\d.]*\)?\s*$/, '').trim();
+        return (nome.textContent || '').replace(/\s+\(\d[\d.]*\)\s*$/, '').trim();
     }
     function mostrar(g, nivel) {
         var cols = colunas(g);
