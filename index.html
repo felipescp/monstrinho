@@ -15785,7 +15785,14 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-tile.sel { outline:2px solid var(--text-main); outline-offset:1px; }
     #leiseca-modal .ls-tile.esmaecido { opacity:0.18; }
     #leiseca-modal .ls-tile.manual::after { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:currentColor; }
-    #leiseca-modal .ls-tile.lido { box-shadow:inset 0 -3px 0 rgba(0,0,0,0.35); }
+    #leiseca-modal .ls-tile.lido { box-shadow:inset 0 -3px 0 #16a34a; }
+    #leiseca-modal .ls-tile.parcial { box-shadow:inset 0 -3px 0 rgba(22,163,74,0.45); }
+    #leiseca-modal .ls-lido-marca { position:absolute; right:2px; bottom:1px; font-size:9px; font-weight:900; line-height:1; color:#15803d; }
+    #leiseca-modal .ls-chk { position:absolute; right:6px; top:5px; width:22px; height:22px; border-radius:50%; border:1.5px solid #cbd5e1; background:var(--bg-white); color:#cbd5e1; font-size:12px; font-weight:900; line-height:1; cursor:pointer; padding:0; }
+    #leiseca-modal .ls-chk:hover { border-color:#16a34a; color:#16a34a; }
+    #leiseca-modal .ls-chk.on { background:#16a34a; border-color:#16a34a; color:#fff; }
+    #leiseca-modal .ls-d.lido { color:var(--text-muted); }
+    #leiseca-modal .ls-leitura-selo { flex-shrink:0; margin-left:4px; font-size:9px; font-weight:800; color:#166534; background:#dcfce7; border-radius:99px; padding:1px 6px; white-space:nowrap; }
     #leiseca-modal .ls-tile.novo::before { content:'N'; position:absolute; top:-5px; left:-4px; background:#dc2626; color:#fff; font-size:8px; font-weight:900; line-height:1; padding:2px 3px; border-radius:3px; }
     #leiseca-modal .ls-tiles { padding-top:4px; }
     .ls-n0 { background:#e5e7eb; color:#6b7280 !important; }
@@ -15803,7 +15810,7 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-art-acoes select.sistema { border-style:dashed; }
     #leiseca-modal .ls-btn { background:none; border:1px solid var(--border-color); border-radius:6px; padding:4px 8px; font-size:11px; font-weight:700; color:var(--text-main); cursor:pointer; }
     #leiseca-modal .ls-btn.ativo { background:#dcfce7; border-color:#16a34a; color:#166534; }
-    #leiseca-modal .ls-d { white-space:pre-line; padding:6px 8px; border-left:4px solid transparent; border-radius:3px; margin:2px 0; }
+    #leiseca-modal .ls-d { white-space:pre-line; padding:6px 36px 6px 8px; border-left:4px solid transparent; border-radius:3px; margin:2px 0; position:relative; }
     #leiseca-modal .ls-d.ls-n0 { background:none; border-left-color:transparent; color:var(--text-main) !important; }
     #leiseca-modal .ls-d.ls-n1 { background:color-mix(in srgb, #bbf7d0 35%, transparent); border-left-color:#22c55e; }
     #leiseca-modal .ls-d.ls-n2 { background:color-mix(in srgb, #fde68a 45%, transparent); border-left-color:#eab308; }
@@ -15851,12 +15858,16 @@ window.LEISECA_RUNTIME = {
     _art: null,
     _busca: '',
     _filtro: { critico: true, importante: true, regular: true, nenhum: true },
-    estado: { prio: {}, lidos: {} },
+    // lidos: artigo COMPLETO ("DIP|33"); lidosDisp: cada dispositivo lido
+    // ("DIP|33", "DIP|33§4", "DIP|33.II", "DIP|33§1.I" — mesmas chaves do mapa
+    // de incidência). O artigo fica completo quando todos os seus
+    // dispositivos (não revogados) estão lidos.
+    estado: { prio: {}, lidos: {}, lidosDisp: {} },
 
     _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
     _carregarEstado: function() {
-        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {} }; } catch (e) {}
+        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {} }; } catch (e) {}
     },
     _salvar: function() { try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); } catch (e) { console.warn('[LEI SECA] Falha ao salvar:', e); } },
 
@@ -15959,8 +15970,8 @@ window.LEISECA_RUNTIME = {
         return Object.assign({}, inc, { porArt: porArt, limDisp: this._limiares(vd), limArt: this._limiares(va) });
     },
     _nivelDe: function(n, lim) { if (!n) return 0; return n >= lim.critico ? 3 : n >= lim.importante ? 2 : 1; },
-    _nivelSistemaArt: function(art) {
-        let inc = this._incidencias[this._diploma];
+    _nivelSistemaArt: function(art, dip) {
+        let inc = this._incidencias[dip || this._diploma];
         if (inc && inc.estimada) return inc.nivelArtEst[art] || 0;
         return inc ? this._nivelDe(inc.porArt[art] || 0, inc.limArt) : 0;
     },
@@ -15978,10 +15989,79 @@ window.LEISECA_RUNTIME = {
         Object.keys(a.par || {}).forEach(function(p) { let n = a.par[p]; nos.push(n); Object.keys(n.inc || {}).forEach(function(k) { nos.push(n.inc[k]); }); });
         return nos.some(function(n) { return n && n.alt && self._leiRecente(n.alt); });
     },
-    _nivelArt: function(art) {
-        let m = this.estado.prio[this._chaveEstado(art)];
+    _nivelArt: function(art, dip) {
+        let m = this.estado.prio[(dip || this._diploma) + '|' + art];
         if (m) return { critico: 3, importante: 2, regular: 1 }[m] || 0;
-        return this._nivelSistemaArt(art);
+        return this._nivelSistemaArt(art, dip);
+    },
+
+    // ── 📖 LEITURA POR DISPOSITIVO ──
+    // Dispositivos marcáveis do artigo (caput, incisos, parágrafos e incisos
+    // dos parágrafos; alíneas contam no inciso). Revogados ficam de fora.
+    _dispsDoArt: function(a) {
+        let j = this._textos[this._diploma], art = j && j.artigos[a], out = [];
+        if (!art) return out;
+        let itens = j.numeracao === 'itens';
+        let incisos = function(no, base) { Object.keys(no.inc || {}).forEach(function(k) { if (!no.inc[k].revogado) out.push(base + '.' + k); }); };
+        if ((art.texto || !itens) && !art.revogado) out.push(a);
+        incisos(art, a);
+        Object.keys(art.par || {}).forEach(function(p) { let no = art.par[p]; if (!no.revogado) out.push(a + '§' + p); incisos(no, a + '§' + p); });
+        return out;
+    },
+    // '' (não lido), 'parcial' ou 'lido'. Artigo marcado como lido antes da
+    // leitura por dispositivo vale como todos os dispositivos lidos.
+    _leituraArt: function(a) {
+        let self = this, dip = this._diploma, ld = this.estado.lidosDisp, disps = this._dispsDoArt(a);
+        if (!disps.length) return null;
+        let n = disps.filter(function(d) { return ld[dip + '|' + d]; }).length;
+        if (!n && this.estado.lidos[dip + '|' + a]) {
+            let agora = this.estado.lidos[dip + '|' + a];
+            disps.forEach(function(d) { ld[dip + '|' + d] = agora; });
+            self._salvar();
+            return 'lido';
+        }
+        return !n ? '' : n === disps.length ? 'lido' : 'parcial';
+    },
+    _sincArt: function(a) {
+        let dip = this._diploma, ld = this.estado.lidosDisp, disps = this._dispsDoArt(a), ch = dip + '|' + a;
+        if (disps.length && disps.every(function(d) { return ld[dip + '|' + d]; })) { if (!this.estado.lidos[ch]) this.estado.lidos[ch] = new Date().toISOString(); }
+        else delete this.estado.lidos[ch];
+    },
+    alternarLidoDisp: function(a, chave) {
+        let k = this._diploma + '|' + chave;
+        this._leituraArt(a); // migra o "lido" antigo antes de mexer
+        if (this.estado.lidosDisp[k]) delete this.estado.lidosDisp[k]; else this.estado.lidosDisp[k] = new Date().toISOString();
+        this._sincArt(a);
+        this._salvar(); this._depoisDeLer(a);
+    },
+    _depoisDeLer: function(a) { this._atualizarArt(a); this._atualizarProgresso(); this._renderDiplomas(); },
+    _htmlMarcaLeitura: function(a) {
+        let l = this._leituraArt(a);
+        return l === 'lido' ? '<span class="ls-lido-marca" title="Artigo lido">✓</span>' : l === 'parcial' ? '<span class="ls-lido-marca parcial" title="Leitura iniciada">◐</span>' : '';
+    },
+    // Progresso do recorte (diploma inteiro ou título/capítulo escolhido):
+    // artigo lido = todos os dispositivos lidos; leitura parcial = não lido.
+    _textoProgresso: function(arts, visiveis) {
+        let self = this, z = 0, x = 0;
+        arts.forEach(function(a) { let l = self._leituraArt(a); if (l === null) return; z++; if (l === 'lido') x++; });
+        return 'Progresso: ' + z + ' artigo' + (z === 1 ? '' : 's') + ' · ' + x + ' lido' + (x === 1 ? '' : 's') + ' · ' + (z - x) + ' não lido' + (z - x === 1 ? '' : 's') +
+            (visiveis != null && visiveis < arts.length ? ' · mostrando ' + visiveis : '');
+    },
+    _atualizarProgresso: function() {
+        let el = document.getElementById('ls-progresso');
+        if (el && this._artsRecorte) el.textContent = this._textoProgresso(this._artsRecorte, this._visiveisRecorte);
+    },
+    // Lista de diplomas: 👁 se a leitura começou; 👁 n% = artigos críticos e
+    // importantes (prioridade sua ou do sistema) completamente lidos.
+    _resumoLeitura: function(dip) {
+        let self = this, pre = dip + '|', e = this.estado;
+        let comecou = Object.keys(e.lidosDisp).some(function(k) { return k.indexOf(pre) === 0; }) || Object.keys(e.lidos).some(function(k) { return k.indexOf(pre) === 0; });
+        if (!comecou) return null;
+        let inc = this._incidencias[dip], arts = [];
+        ((inc && inc.estrutura) || []).forEach(function(g) { arts = arts.concat(g.arts || []); });
+        let alvo = arts.filter(function(a) { return self._nivelArt(a, dip) >= 2; });
+        let lidos = alvo.filter(function(a) { return e.lidos[pre + a]; }).length;
+        return { pct: alvo.length ? Math.round(100 * lidos / alvo.length) : 0, lidos: lidos, total: alvo.length };
     },
 
     // Grupos da coluna 2: estrutura do arquivo de incidência; sem ela, faixas de 100 artigos.
@@ -16024,7 +16104,8 @@ window.LEISECA_RUNTIME = {
                 return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
                     (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo">🧭</span>'
-                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>') : '') + '</div>';
+                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>') : '') +
+                    (function(r) { return r ? '<span class="ls-leitura-selo" title="Leitura iniciada' + (r.total ? ': ' + r.lidos + ' de ' + r.total + ' artigos críticos e importantes lidos' : '') + '">👁' + (r.pct ? ' ' + r.pct + '%' : '') + '</span>' : ''; })(self._resumoLeitura(d.id)) + '</div>';
             }).join('');
         }).join('');
     },
@@ -16077,14 +16158,16 @@ window.LEISECA_RUNTIME = {
                 total++;
                 let passa = self._passaFiltro(a); if (passa) visiveis++;
                 let n = self._nivelArt(a), q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
-                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self.estado.lidos[ch] ? ' lido' : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (inc && inc.estimada ? ' · prioridade estimada' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + (self.estado.lidos[ch] ? ' · lido' : '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + '</button>';
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self._leituraArt(a) ? ' ' + self._leituraArt(a) : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (inc && inc.estimada ? ' · prioridade estimada' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + ({ lido: ' · lido', parcial: ' · leitura iniciada' }[self._leituraArt(a)] || '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + self._htmlMarcaLeitura(a) + '</button>';
             }).join('') + '</div>';
         }).join('');
+        this._artsRecorte = [].concat.apply([], grupos.map(function(g) { return g.arts; }));
+        this._visiveisRecorte = visiveis;
         let chk = function(k, rot) { return '<label><input type="checkbox"' + (self._filtro[k] ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarFiltro(\'' + k + '\')">' + rot + '</label>'; };
         col.innerHTML = '<div class="ls-toolbar">' +
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
-            '<span class="ls-info">' + visiveis + ' de ' + total + ' artigos' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
+            '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
             '<div class="ls-corpo"><div class="ls-mapa"><div class="ls-diploma-tit">' + this._esc((this._infoDiploma(this._diploma) || {}).nome || this._diploma) + '</div>' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
         this._rolarParaArt();
     },
@@ -16148,7 +16231,10 @@ window.LEISECA_RUNTIME = {
         if (b) {
             b.className = b.className.replace(/\bls-n\d\b/, 'ls-n' + this._nivelArt(a));
             b.classList.toggle('manual', !!this.estado.prio[ch]);
-            b.classList.toggle('lido', !!this.estado.lidos[ch]);
+            let l = this._leituraArt(a);
+            b.classList.toggle('lido', l === 'lido');
+            b.classList.toggle('parcial', l === 'parcial');
+            b.innerHTML = this._esc(a) + this._htmlMarcaLeitura(a);
         }
         let bloco = document.getElementById('ls-art-' + a);
         if (bloco) bloco.innerHTML = this._htmlArtigo(a);
@@ -16159,11 +16245,13 @@ window.LEISECA_RUNTIME = {
         if (v) this.estado.prio[ch] = v; else delete this.estado.prio[ch];
         this._salvar(); this._atualizarArt(a);
     },
+    // Artigo inteiro: completo → desmarca todos os dispositivos; senão marca todos.
     alternarLido: function(a) {
         a = a || this._art;
-        let ch = this._chaveEstado(a);
-        if (this.estado.lidos[ch]) delete this.estado.lidos[ch]; else this.estado.lidos[ch] = new Date().toISOString();
-        this._salvar(); this._atualizarArt(a);
+        let dip = this._diploma, ld = this.estado.lidosDisp, completo = this._leituraArt(a) === 'lido', agora = new Date().toISOString();
+        this._dispsDoArt(a).forEach(function(d) { if (completo) delete ld[dip + '|' + d]; else ld[dip + '|' + d] = agora; });
+        this._sincArt(a);
+        this._salvar(); this._depoisDeLer(a);
     },
 
     // "Art." / "Arts."; "Regra" / "Regras" nas Regras de Mandela (DIPLOMAS[id].rotulo).
@@ -16175,10 +16263,13 @@ window.LEISECA_RUNTIME = {
         let self = this, j = this._textos[this._diploma];
         if (!a || !j || !j.artigos[a]) return '';
         let inc = this._incidencias[this._diploma], art = j.artigos[a];
+        this._leituraArt(a); // migra o "lido" antigo (artigo) para os dispositivos
         let linha = function(rot, no, chave, cls) {
             let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : self._nivelDe(n, inc.limDisp);
             let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
-            return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + '"><span class="ls-rot">' + rot + '</span> ' + txt +
+            let lido = !no.revogado && !!self.estado.lidosDisp[self._diploma + '|' + chave];
+            let marca = no.revogado ? '' : '<button class="ls-chk' + (lido ? ' on' : '') + '" title="' + (lido ? 'Lido — tocar para desmarcar' : 'Marcar este dispositivo como lido') + '" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.alternarLidoDisp(\'' + self._escJs(a) + '\', \'' + self._escJs(chave) + '\')">✓</button>';
+            return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + (lido ? ' lido' : '') + '">' + marca + '<span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
                 (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>';
         };
@@ -16204,7 +16295,7 @@ window.LEISECA_RUNTIME = {
             (inc && inc.estimada ? '<span class="ls-qt" title="' + self._esc(inc.fonte || '') + '">prioridade estimada</span>' : '') +
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
-            '<button class="ls-btn' + (this.estado.lidos[ch] ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (this.estado.lidos[ch] ? '✓ Lido' : 'Marcar como lido') + '</button>' +
+            (function(l) { return l === null ? '' : '<button class="ls-btn' + (l === 'lido' ? ' ativo' : '') + '" title="' + (l === 'lido' ? 'Desmarcar todos os dispositivos' : 'Marcar todos os dispositivos como lidos') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (l === 'lido' ? '✓ Artigo lido' : 'Marcar artigo inteiro') + '</button>'; })(this._leituraArt(a)) +
             (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto ' + self._esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
     }
 };
