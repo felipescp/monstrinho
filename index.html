@@ -15755,7 +15755,7 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal #ls-col-divisoes { border-right:1px solid var(--border-color); }
     #leiseca-modal #ls-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
     #leiseca-modal .ls-disciplina { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:12px 4px 4px; }
-    #leiseca-modal .ls-disciplina:first-child { padding-top:2px; }
+    #leiseca-modal .ls-disciplina:first-child, #leiseca-modal .ls-conj + .ls-disciplina { padding-top:2px; }
     #leiseca-modal .fc-materia-item { padding:7px 4px 7px 10px; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #leiseca-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
     #leiseca-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
@@ -15775,6 +15775,28 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal #ls-progresso { display:inline-flex; align-items:center; gap:8px; }
     #leiseca-modal .ls-prog-barra { display:inline-block; width:96px; height:9px; border-radius:99px; background:#e2e8f0; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06); flex-shrink:0; }
     #leiseca-modal .ls-prog-barra > span { display:block; height:100%; border-radius:99px; background:repeating-linear-gradient(135deg, #16a34a 0 3px, #4ade80 3px 6px); transition:width 0.25s ease; }
+    /* Conjuntos de Lei Seca (pedido explícito do usuário): seletor no topo da
+       lista de diplomas e painel para criar/editar. */
+    #leiseca-modal .ls-conj { padding:2px 2px 10px; margin-bottom:4px; border-bottom:1px solid var(--border-color); display:flex; flex-direction:column; gap:6px; }
+    #leiseca-modal .ls-conj-linha { display:flex; align-items:center; gap:4px; }
+    #leiseca-modal .ls-conj select { flex:1; min-width:0; padding:5px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:700; }
+    #leiseca-modal .ls-conj-ico { flex-shrink:0; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; width:26px; height:26px; font-size:12px; cursor:pointer; color:var(--text-main); padding:0; }
+    #leiseca-modal .ls-conj-criar { background:none; border:1px dashed var(--border-color); border-radius:6px; padding:5px 6px; font-size:10.5px; font-weight:700; color:var(--app-primary); cursor:pointer; text-align:left; }
+    #leiseca-modal .ls-conj-criar:hover { background:var(--bg-accent-soft); }
+    #leiseca-modal .ls-conj-prog { display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-conj-prog .ls-prog-barra { width:70px; }
+    #leiseca-modal .ls-conj-fundo { position:fixed; inset:0; z-index:10050; background:rgba(15,23,42,0.45); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
+    #leiseca-modal .ls-conj-caixa { background:var(--bg-white); color:var(--text-main); border-radius:12px; width:min(460px,100%); max-height:min(640px,100%); display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; }
+    #leiseca-modal .ls-conj-caixa h3 { margin:0; padding:14px 16px 8px; font-size:15px; font-family:var(--font-display); }
+    #leiseca-modal .ls-conj-nome { margin:0 16px 8px; padding:8px 10px; border-radius:6px; border:1px solid var(--border-color); font-size:13px; background:var(--bg-white); color:var(--text-main); }
+    #leiseca-modal .ls-conj-escolha { flex:1; overflow-y:auto; padding:4px 16px 8px; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color); }
+    #leiseca-modal .ls-conj-escolha label { display:flex; align-items:center; gap:7px; padding:5px 0 5px 18px; font-size:12px; cursor:pointer; }
+    #leiseca-modal .ls-conj-escolha label.ls-conj-disc { padding-left:0; margin-top:8px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); }
+    #leiseca-modal .ls-conj-erro { color:#dc2626; font-size:11px; font-weight:700; padding:6px 16px 0; min-height:14px; }
+    #leiseca-modal .ls-conj-acoes { display:flex; align-items:center; gap:8px; padding:10px 16px 14px; }
+    #leiseca-modal .ls-conj-acoes .ls-btn { padding:7px 12px; font-size:12px; }
+    #leiseca-modal .ls-conj-acoes .ls-conj-salvar { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #leiseca-modal .ls-conj-acoes .ls-conj-excluir { color:#dc2626; border-color:#fca5a5; margin-right:auto; }
     #leiseca-modal .ls-corpo { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:12px; padding:10px; overflow:hidden; }
     #leiseca-modal .ls-mapa { overflow-y:auto; padding-right:4px; }
     #leiseca-modal .ls-grupo-rot { font-size:10.5px; font-weight:800; color:var(--text-muted); margin:12px 0 5px; line-height:1.35; }
@@ -15868,12 +15890,15 @@ window.LEISECA_RUNTIME = {
     // ("DIP|33", "DIP|33§4", "DIP|33.II", "DIP|33§1.I" — mesmas chaves do mapa
     // de incidência). O artigo fica completo quando todos os seus
     // dispositivos (não revogados) estão lidos.
-    estado: { prio: {}, lidos: {}, lidosDisp: {} },
+    // conjuntos: [{id, nome, diplomas: [ids]}]; conjuntoAtivo: id ou null
+    // (todo o acervo). Só filtram a lista de diplomas da Lei Seca.
+    estado: { prio: {}, lidos: {}, lidosDisp: {}, conjuntos: [], conjuntoAtivo: null },
 
     _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
     _carregarEstado: function() {
-        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {} }; } catch (e) {}
+        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null }; } catch (e) {}
+        if (!this.estado.conjuntos) this.estado.conjuntos = [];
     },
     _salvar: function() { try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); } catch (e) { console.warn('[LEI SECA] Falha ao salvar:', e); } },
 
@@ -15891,8 +15916,8 @@ window.LEISECA_RUNTIME = {
                 return;
             }
         }
-        if (!this._diploma) {
-            let todos = this._diplomas();
+        if (!this._diploma || !this._diplomasVisiveis().some(function(d) { return d.id === this._diploma; }, this)) {
+            let todos = this._diplomasVisiveis();
             if (!todos.length) { if (col) col.innerHTML = '<div class="fc-vazio-col">Nenhum diploma com mapa de incidência.</div>'; return; }
             this._diploma = todos[0].id;
         }
@@ -15928,6 +15953,113 @@ window.LEISECA_RUNTIME = {
         let out = [];
         ((this.manifesto || {}).disciplinas || []).forEach(function(g) { (g.diplomas || []).forEach(function(d) { out.push(Object.assign({ disciplina: g.nome }, d)); }); });
         return out.filter(function(d) { return d.incidencia && window.LEGISLACAO && window.LEGISLACAO.DIPLOMAS[d.id]; });
+    },
+    // Conjuntos de Lei Seca ("DPE/SP", "MP/PE"...): recorte da lista de
+    // diplomas, escolhido no topo da coluna e salvo como padrão.
+    _conjuntoAtivo: function() {
+        let id = this.estado.conjuntoAtivo;
+        return id ? (this.estado.conjuntos.find(function(c) { return c.id === id; }) || null) : null;
+    },
+    _diplomasVisiveis: function() {
+        let c = this._conjuntoAtivo(), todos = this._diplomas();
+        if (!c) return todos;
+        let f = todos.filter(function(d) { return c.diplomas.indexOf(d.id) >= 0; });
+        return f.length ? f : todos;
+    },
+    escolherConjunto: function(id) {
+        this.estado.conjuntoAtivo = id || null;
+        this._salvar();
+        let vis = this._diplomasVisiveis();
+        if (vis.some(function(d) { return d.id === this._diploma; }, this)) this._renderDiplomas();
+        else if (vis.length) this.selecionarDiploma(vis[0].id);
+    },
+    // Artigos críticos e importantes (sua prioridade ou do sistema) de um
+    // diploma, e quantos estão completamente lidos.
+    _contagemLeitura: function(dip) {
+        let self = this, inc = this._incidencias[dip], arts = [];
+        ((inc && inc.estrutura) || []).forEach(function(g) { arts = arts.concat(g.arts || []); });
+        let alvo = arts.filter(function(a) { return self._nivelArt(a, dip) >= 2; });
+        return { total: alvo.length, lidos: alvo.filter(function(a) { return self.estado.lidos[dip + '|' + a]; }).length };
+    },
+    _htmlConjuntos: function() {
+        let self = this, c = this._conjuntoAtivo();
+        let opcoes = '<option value="">Todo acervo</option>' + this.estado.conjuntos.map(function(x) {
+            return '<option value="' + self._esc(x.id) + '"' + (c && c.id === x.id ? ' selected' : '') + '>' + self._esc(x.nome) + '</option>';
+        }).join('');
+        let lidos = 0, total = 0;
+        this._diplomasVisiveis().forEach(function(d) { let r = self._contagemLeitura(d.id); lidos += r.lidos; total += r.total; });
+        let pct = total ? Math.round(100 * lidos / total) : 0;
+        return '<div class="ls-conj">' +
+            '<div class="ls-conj-linha"><select title="Conjunto de Lei Seca exibido (fica salvo como padrão)" onchange="window.LEISECA_RUNTIME.escolherConjunto(this.value)">' + opcoes + '</select>' +
+            (c ? '<button type="button" class="ls-conj-ico" title="Editar ou excluir o conjunto" onclick="window.LEISECA_RUNTIME.abrirPainelConjunto(\'' + this._escJs(c.id) + '\')">✎</button>' : '') + '</div>' +
+            '<button type="button" class="ls-conj-criar" onclick="window.LEISECA_RUNTIME.abrirPainelConjunto()">＋ Criar conjunto de Lei Seca</button>' +
+            (total ? '<div class="ls-conj-prog" title="' + (c ? 'Conjunto ' + this._esc(c.nome) : 'Todo o acervo') + ': ' + lidos + ' de ' + total + ' artigos críticos e importantes lidos"><span class="ls-prog-barra"><span style="width:' + (lidos && pct < 2 ? 2 : pct) + '%"></span></span>👁 ' + pct + '% · ' + lidos + '/' + total + '</div>' : '') +
+            '</div>';
+    },
+    abrirPainelConjunto: function(id) {
+        let self = this, c = id ? this.estado.conjuntos.find(function(x) { return x.id === id; }) : null;
+        let marcados = c ? c.diplomas : [];
+        let lista = (this.manifesto.disciplinas || []).map(function(g, i) {
+            let itens = (g.diplomas || []).filter(function(d) { return self._infoDiploma(d.id); });
+            if (!itens.length) return '';
+            return '<label class="ls-conj-disc"><input type="checkbox" data-disc="' + i + '" onchange="window.LEISECA_RUNTIME._marcarDisciplina(this)">' + self._esc(g.nome) + '</label>' +
+                itens.map(function(d) {
+                    return '<label><input type="checkbox" data-grupo="' + i + '" value="' + self._esc(d.id) + '"' + (marcados.indexOf(d.id) >= 0 ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME._sincDisciplinas()">' + self._esc(d.nome) + '</label>';
+                }).join('');
+        }).join('');
+        this.fecharPainelConjunto();
+        let fundo = document.createElement('div');
+        fundo.className = 'ls-conj-fundo'; fundo.id = 'ls-conj-painel';
+        fundo.innerHTML = '<div class="ls-conj-caixa" role="dialog" aria-label="Conjunto de Lei Seca">' +
+            '<h3>' + (c ? 'Editar conjunto' : 'Criar conjunto de Lei Seca') + '</h3>' +
+            '<input class="ls-conj-nome" id="ls-conj-nome" maxlength="40" placeholder="Nome do conjunto (ex.: DPE/SP)" value="' + (c ? this._esc(c.nome) : '') + '">' +
+            '<div class="ls-conj-escolha">' + lista + '</div>' +
+            '<div class="ls-conj-erro" id="ls-conj-erro"></div>' +
+            '<div class="ls-conj-acoes">' +
+                (c ? '<button type="button" class="ls-btn ls-conj-excluir" onclick="window.LEISECA_RUNTIME.excluirConjunto(\'' + this._escJs(c.id) + '\', this)">Excluir</button>' : '<span style="margin-right:auto"></span>') +
+                '<button type="button" class="ls-btn" onclick="window.LEISECA_RUNTIME.fecharPainelConjunto()">Cancelar</button>' +
+                '<button type="button" class="ls-btn ls-conj-salvar" onclick="window.LEISECA_RUNTIME.salvarConjunto(' + (c ? '\'' + this._escJs(c.id) + '\'' : '') + ')">Salvar</button>' +
+            '</div></div>';
+        fundo.addEventListener('click', function(ev) { if (ev.target === fundo) self.fecharPainelConjunto(); });
+        document.getElementById('leiseca-modal').appendChild(fundo);
+        this._sincDisciplinas();
+        let nome = document.getElementById('ls-conj-nome');
+        if (nome && !c) nome.focus();
+    },
+    fecharPainelConjunto: function() {
+        let p = document.getElementById('ls-conj-painel');
+        if (p) p.remove();
+    },
+    _marcarDisciplina: function(cx) {
+        document.querySelectorAll('#ls-conj-painel input[data-grupo="' + cx.dataset.disc + '"]').forEach(function(i) { i.checked = cx.checked; });
+        this._sincDisciplinas();
+    },
+    _sincDisciplinas: function() {
+        document.querySelectorAll('#ls-conj-painel input[data-disc]').forEach(function(cx) {
+            let filhos = Array.from(document.querySelectorAll('#ls-conj-painel input[data-grupo="' + cx.dataset.disc + '"]'));
+            let n = filhos.filter(function(i) { return i.checked; }).length;
+            cx.checked = n === filhos.length; cx.indeterminate = n > 0 && n < filhos.length;
+        });
+    },
+    salvarConjunto: function(id) {
+        let nome = (document.getElementById('ls-conj-nome').value || '').trim().replace(/\s+/g, ' ');
+        let ids = Array.from(document.querySelectorAll('#ls-conj-painel input[data-grupo]:checked')).map(function(i) { return i.value; });
+        let erro = document.getElementById('ls-conj-erro');
+        if (!nome) { erro.textContent = 'Dê um nome ao conjunto.'; return; }
+        if (this.estado.conjuntos.some(function(x) { return x.id !== id && x.nome.toLowerCase() === nome.toLowerCase(); })) { erro.textContent = 'Já existe um conjunto com esse nome.'; return; }
+        if (!ids.length) { erro.textContent = 'Selecione ao menos um diploma.'; return; }
+        let c = id ? this.estado.conjuntos.find(function(x) { return x.id === id; }) : null;
+        if (c) { c.nome = nome; c.diplomas = ids; }
+        else { c = { id: 'cj_' + Date.now().toString(36), nome: nome, diplomas: ids }; this.estado.conjuntos.push(c); }
+        this.fecharPainelConjunto();
+        this.escolherConjunto(c.id);
+    },
+    // Dois toques: o primeiro pede confirmação no próprio botão.
+    excluirConjunto: function(id, botao) {
+        if (botao && !botao.dataset.confirmar) { botao.dataset.confirmar = '1'; botao.textContent = 'Confirmar exclusão'; return; }
+        this.estado.conjuntos = this.estado.conjuntos.filter(function(x) { return x.id !== id; });
+        this.fecharPainelConjunto();
+        this.escolherConjunto(this.estado.conjuntoAtivo === id ? null : this.estado.conjuntoAtivo);
     },
     _infoDiploma: function(id) { return this._diplomas().find(function(d) { return d.id === id; }) || null; },
 
@@ -16104,8 +16236,8 @@ window.LEISECA_RUNTIME = {
         let col = document.getElementById('ls-col-diplomas');
         if (!col || !this.manifesto) return;
         let self = this, disponiveis = {};
-        this._diplomas().forEach(function(d) { disponiveis[d.id] = true; });
-        col.innerHTML = (this.manifesto.disciplinas || []).map(function(g) {
+        this._diplomasVisiveis().forEach(function(d) { disponiveis[d.id] = true; });
+        col.innerHTML = this._htmlConjuntos() + (this.manifesto.disciplinas || []).map(function(g) {
             let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
             if (!itens.length) return '';
             return '<div class="ls-disciplina">' + self._esc(g.nome) + '</div>' + itens.map(function(d) {
