@@ -15772,6 +15772,9 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-filtro label { display:flex; align-items:center; gap:3px; cursor:pointer; color:var(--text-main); font-weight:600; }
     #leiseca-modal .ls-info { font-size:10px; font-weight:700; color:var(--text-muted); margin-left:auto; }
     #leiseca-modal .ls-mob-barra, #leiseca-modal .ls-mob-ler { display:none; } /* só no celular */
+    #leiseca-modal #ls-progresso { display:inline-flex; align-items:center; gap:8px; }
+    #leiseca-modal .ls-prog-barra { display:inline-block; width:96px; height:9px; border-radius:99px; background:#e2e8f0; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06); flex-shrink:0; }
+    #leiseca-modal .ls-prog-barra > span { display:block; height:100%; border-radius:99px; background:repeating-linear-gradient(135deg, #16a34a 0 3px, #4ade80 3px 6px); transition:width 0.25s ease; }
     #leiseca-modal .ls-corpo { flex:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:12px; padding:10px; overflow:hidden; }
     #leiseca-modal .ls-mapa { overflow-y:auto; padding-right:4px; }
     #leiseca-modal .ls-grupo-rot { font-size:10.5px; font-weight:800; color:var(--text-muted); margin:12px 0 5px; line-height:1.35; }
@@ -16047,12 +16050,15 @@ window.LEISECA_RUNTIME = {
     _textoProgresso: function(arts, visiveis) {
         let self = this, z = 0, x = 0;
         arts.forEach(function(a) { let l = self._leituraArt(a); if (l === null) return; z++; if (l === 'lido') x++; });
-        return 'Progresso: ' + z + ' artigo' + (z === 1 ? '' : 's') + ' · ' + x + ' lido' + (x === 1 ? '' : 's') + ' · ' + (z - x) + ' não lido' + (z - x === 1 ? '' : 's') +
+        // Barra hachurada (pedido explícito do usuário): parte lida em listras verdes.
+        let pct = z ? Math.round(100 * x / z) : 0;
+        return '<span class="ls-prog-barra" title="' + pct + '% dos artigos do recorte lidos"><span style="width:' + (x && pct < 2 ? 2 : pct) + '%"></span></span>' +
+            'Progresso: ' + z + ' artigo' + (z === 1 ? '' : 's') + ' · ' + x + ' lido' + (x === 1 ? '' : 's') + ' · ' + (z - x) + ' não lido' + (z - x === 1 ? '' : 's') +
             (visiveis != null && visiveis < arts.length ? ' · mostrando ' + visiveis : '');
     },
     _atualizarProgresso: function() {
         let el = document.getElementById('ls-progresso');
-        if (el && this._artsRecorte) el.textContent = this._textoProgresso(this._artsRecorte, this._visiveisRecorte);
+        if (el && this._artsRecorte) el.innerHTML = this._textoProgresso(this._artsRecorte, this._visiveisRecorte);
     },
     // Lista de diplomas: 👁 se a leitura começou; 👁 n% = artigos críticos e
     // importantes (prioridade sua ou do sistema) completamente lidos.
