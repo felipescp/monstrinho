@@ -1,0 +1,26 @@
+# Publica no Firebase a cada push no main: envia ao Storage só o que mudou em
+# dados/ (sem os PDFs de origem), publica o app no Hosting e aplica as regras.
+# Fica desligado até existir a variável de repositório FIREBASE_DEPLOY = sim
+# e o secret FIREBASE_SERVICE_ACCOUNT (ver LEIAME-firebase.md).
+name: Publicar no Firebase
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: firebase
+  cancel-in-progress: false
+jobs:
+  publicar:
+    if: vars.FIREBASE_DEPLOY == 'sim'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Acervo → Storage
+        run: gcloud storage rsync dados gs://monstrinho-lab.firebasestorage.app/dados --recursive --delete-unmatched-destination-objects --exclude="^materiais/pdfs/"
+      - name: App e regras → Firebase
+        run: npx --yes firebase-tools@13 deploy --only hosting,storage,firestore:rules --project monstrinho-lab --non-interactive

@@ -1,0 +1,17 @@
+rules_version = '2';
+// Acervo (dados/): só para quem entrou com Google (e-mail verificado) e tem
+// o documento acessos/{e-mail} no Firestore com "ativo": true. Esse documento
+// é criado à mão no console (laboratório) e, no futuro, pela Cloud Function
+// de pagamento. Ninguém grava pelo app: o envio é feito pelo gcloud/Action.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /dados/{caminho=**} {
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && firestore.get(/databases/(default)/documents/acessos/$(request.auth.token.email)).data.ativo == true;
+    }
+    match /{tudo=**} {
+      allow read, write: if false;
+    }
+  }
+}

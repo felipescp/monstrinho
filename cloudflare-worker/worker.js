@@ -23,10 +23,12 @@
 //                       Não é segredo, mas fica travado aqui (nunca aceita
 //                       o client_id vindo do front-end) pra este proxy só
 //                       servir esse único app, mesmo sendo público.
-//   ALLOWED_ORIGIN    — origem exata onde o Monstrinho está hospedado
-//                       (ex.: "https://felipescp.github.io"), pra nenhum
-//                       outro site conseguir usar este Worker como proxy
-//                       CORS genérico.
+//   ALLOWED_ORIGIN    — origem(ns) exata(s) onde o Monstrinho está hospedado,
+//                       separadas por vírgula (ex.: "https://felipescp.github.io,
+//                       https://monstrinho-lab.web.app"), pra nenhum outro
+//                       site conseguir usar este Worker como proxy CORS
+//                       genérico. Responde com a origem da requisição quando
+//                       ela está na lista.
 // ─────────────────────────────────────────────────────────────────────────
 
 const GITHUB_DEVICE_CODE_URL = 'https://github.com/login/device/code';
@@ -57,7 +59,10 @@ async function repassarParaGithub(urlDestino, camposCorpo, clientId) {
 
 export default {
     async fetch(request, env) {
-        let headersCors = corsHeaders(env.ALLOWED_ORIGIN);
+        let permitidas = String(env.ALLOWED_ORIGIN || '').split(',').map(function(o) { return o.trim(); }).filter(Boolean);
+        let origem = request.headers.get('Origin') || '';
+        let headersCors = corsHeaders(!permitidas.length ? '*' : permitidas.indexOf(origem) >= 0 ? origem : permitidas[0]);
+        headersCors['Vary'] = 'Origin';
 
         if (request.method === 'OPTIONS') {
             return new Response(null, { status: 204, headers: headersCors });
