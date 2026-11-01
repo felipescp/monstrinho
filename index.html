@@ -5155,6 +5155,10 @@ exportarNuvem: async function(botao, opts) {
                 return;
             }
 
+            // Migração (GitHub Pages): o SDK do Firebase carrega em paralelo
+            // ao envio, para o aviso de sucesso já poder oferecer o login.
+            if (window.MIGRACAO && window.MIGRACAO._naoLab()) window.MIGRACAO.preparar().catch(function() {});
+
             await _aplicarImportNuvemPendente();
             let payload = await window.SALINHA_BACKUP.construirPayload();
             let conteudo = JSON.stringify(payload, null, 2);
@@ -5197,7 +5201,20 @@ exportarNuvem: async function(botao, opts) {
             // concluída...") na hora — sem isto, um SEGUNDO modal genérico
             // apareceria empilhado por cima alguns segundos depois, quando
             // o envio de verdade terminasse.
+            // Migração (GitHub Pages): copia o mesmo backup para o Firestore
+            // depois do Gist. Sem login Google, o aviso oferece o botão.
+            let migracao = null;
+            if (window.MIGRACAO && window.MIGRACAO._naoLab()) {
+                if (opts.suprimirModalSucesso) window.MIGRACAO.aposSalvarGist({ silencioso: true });
+                else migracao = await window.MIGRACAO.aposSalvarGist();
+            }
+
             if (!opts.suprimirModalSucesso) {
+                let botoesSucesso = [{ label: 'Fechar', cor: 'var(--app-primary)' }];
+                if (migracao && migracao.precisaLogin) botoesSucesso = [
+                    { label: 'Agora não', outline: true },
+                    { label: 'Entrar com Google e copiar', cor: 'var(--app-primary)', cb: function() { window.MIGRACAO.entrarECopiar(); } }
+                ];
                 mostrarModal({
                     titulo: '☁️ Backup enviado com sucesso',
                     mensagemHtml: true,
@@ -5206,13 +5223,17 @@ exportarNuvem: async function(botao, opts) {
                     // nenhum ID entre dispositivos, então o campo de cópia saiu
                     // daqui junto com o fluxo antigo do ⚙️.
                     mensagem:
-                        '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>',
-                    botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
+                        '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>' +
+                        (window.MIGRACAO ? window.MIGRACAO.htmlAvisoSalvar(migracao) : ''),
+                    botoes: botoesSucesso
                 });
             }
         } catch (err) {
             console.error('[GIST SYNC] Falha ao exportar:', err);
             alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
+            // Mesmo com o Gist falhando, a cópia da migração tenta seguir
+            // (só se já houver login Google; nunca abre popup aqui).
+            if (window.MIGRACAO) window.MIGRACAO.aposSalvarGist({ silencioso: true });
         } finally {
             window.__salvamentoNuvemEmAndamento = false;
             if (botao) {
@@ -5828,6 +5849,10 @@ window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
         // Ver _enviarBackupComVersionamento (perto de _enviarArquivosComRetry).
         await this._enviarBackupComVersionamento(gistId, token, partes);
 
+        // Migração (GitHub Pages): copia também para o Firestore, só se já
+        // houver login Google (nunca abre popup).
+        if (window.MIGRACAO) window.MIGRACAO.aposSalvarGist({ silencioso: true });
+
     } catch (err) {
         console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
     } finally {
@@ -6039,6 +6064,340 @@ window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
         console.warn('[GIST SYNC] Sincronização automática silenciosa falhou:', err);
     }
 };
+
+// =========================================================================
+// MIGRAÇÃO GITHUB PAGES → LABORATÓRIO (Firebase) — ver LEIAME-firebase.md
+// =========================================================================
+// O progresso fica no navegador, separado por endereço: não passa sozinho de
+// felipescp.github.io para monstrinho-lab.web.app. Então:
+//  - no GitHub Pages (e no localhost), depois do "☁️⬆️ Salvar" no Gist, o
+//    MESMO backup (construirPayload + as chaves de MIGRACAO_CHAVES_EXTRAS, em
+//    base64 e nas mesmas partes do Gist) é copiado para o Firestore em
+//    usuarios/{uid}/migracao/meta + usuarios/{uid}/migracao_partes/v{versao}_p{n};
+//  - no laboratório, depois da liberação do portão, essa cópia é importada:
+//    sozinha se o navegador está vazio (_localVazio), ou perguntando antes
+//    de mesclar se já há dados aqui. A aplicação é a do Gist
+//    (SALINHA_BACKUP.aplicarPayloadMerge).
+// O Gist não muda: a cópia roda depois dele e nunca impede o envio.
+const MIGRACAO_PRAZO = '2026-11-11'; // AAAA-MM-DD — último dia para copiar os dados
+// Dados que o backup do Gist (SALINHA_BACKUP.STORAGE_KEYS) não leva, mas a
+// cópia da migração leva: Lei Seca (prioridades, leitura, conjuntos) e as
+// listas de exclusão de baterias e de resultados do Histórico.
+const MIGRACAO_CHAVES_EXTRAS = ['tjpe_v1__leiseca_runtime', 'tjpe_v1__cordeiro_acervo_excluidos', 'tjpe_v1__planner_historico_excluidos'];
+
+window.MIGRACAO = {
+    NOVO_ENDERECO: 'https://monstrinho-lab.web.app',
+    FORMATO: 1,
+    _CHAVE_SESSAO: 'tjpe_v1__firebase_sessao',          // já entrou com Google neste navegador → SDK carrega na abertura
+    _CHAVE_COPIA: 'tjpe_v1__migracao_copiada_em',       // data da última cópia feita daqui (faixa)
+    _CHAVE_IMPORTADA: 'tjpe_v1__migracao_importada',    // laboratório: versão do meta já importada aqui
+    _CHAVE_ADIADA: 'tjpe_v1__migracao_adiada',          // laboratório (sessionStorage): "Agora não" nesta sessão
+    _CHAVE_POS_REDIRECT: 'tjpe_v1__migracao_copiar_apos_login', // sessionStorage: copiar ao voltar do login por redirect
+    _preparo: null,
+
+    _F: function() { return window.MONSTRINHO_FIREBASE; },
+    _G: function() { return window.SALINHA_GIST_SYNC; },
+    _naoLab: function() { return !this._F().lab; },
+    _fmtData: function(d) {
+        let x = new Date(d);
+        return isNaN(x) ? '' : x.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + x.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    },
+    _esperar: function(promessa, ms) {
+        return Promise.race([promessa, new Promise(function(ok) { setTimeout(function() { ok(null); }, ms); })]);
+    },
+
+    // SDK (app + auth + firestore) e o usuário atual, depois que o Firebase
+    // restaurou a sessão salva (null se ninguém entrou).
+    preparar: function() {
+        if (!this._preparo) {
+            let self = this;
+            this._preparo = this._F().carregar(['auth', 'firestore']).then(function() {
+                return new Promise(function(ok) { let parar = firebase.auth().onAuthStateChanged(function(u) { parar(); ok(u); }); });
+            }).catch(function(e) { self._preparo = null; throw e; });
+        }
+        return this._preparo;
+    },
+    _usuario: function() { return (window.firebase && firebase.apps && firebase.apps.length && firebase.auth) ? firebase.auth().currentUser : null; },
+
+    // ── GitHub Pages: cópia para o Firestore ──
+    _payload: async function() {
+        let payload = await window.SALINHA_BACKUP.construirPayload();
+        MIGRACAO_CHAVES_EXTRAS.forEach(function(k) {
+            let v = localStorage.getItem(k);
+            if (v !== null) payload.data[k] = v;
+        });
+        return payload;
+    },
+    _comRetry: async function(fn) {
+        for (let t = 1; ; t++) {
+            try { return await fn(); }
+            catch (e) { if (t >= 3) throw e; await new Promise(function(ok) { setTimeout(ok, 800 * t); }); }
+        }
+    },
+    // Partes primeiro; o meta só aponta para a versão nova (completo: true)
+    // depois de todas gravadas. Se já havia uma cópia completa, o meta segue
+    // apontando para ela até a nova terminar — o laboratório nunca lê uma
+    // mistura. Na primeira cópia, o meta nasce com completo: false.
+    copiar: async function(u) {
+        let G = this._G(), self = this, db = firebase.firestore();
+        let payload = await this._payload();
+        let partes = G.dividirEmPartes(G._utf8ParaBase64(JSON.stringify(payload, null, 2)), G.TAMANHO_MAX_PARTE);
+        let versao = Date.now(), base = 'usuarios/' + u.uid + '/migracao';
+        let metaRef = db.doc(base + '/meta');
+        let meta = {
+            formato: this.FORMATO, origem: 'github-pages', host: location.host,
+            email: String(u.email || '').toLowerCase(), versao: versao, totalPartes: partes.length,
+            tamanho: partes.reduce(function(s, p) { return s + p.length; }, 0),
+            payloadCriadoEm: payload.created_at || null, salvoEmCliente: new Date(versao).toISOString(),
+            salvoEm: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        let anterior = await this._comRetry(function() { return metaRef.get(); });
+        if (!anterior.exists || anterior.data().completo !== true) {
+            await this._comRetry(function() { return metaRef.set(Object.assign({}, meta, { completo: false })); });
+        }
+        for (let i = 0; i < partes.length; i++) {
+            let n = i + 1;
+            await this._comRetry(function() {
+                return db.doc('usuarios/' + u.uid + '/migracao_partes/v' + versao + '_p' + n).set({ versao: versao, indice: n, total: partes.length, dados: partes[i] });
+            }).catch(function(e) { throw new Error('Falha na parte ' + n + ' de ' + partes.length + ': ' + (e.message || e)); });
+        }
+        await this._comRetry(function() { return metaRef.set(Object.assign({}, meta, { completo: true })); });
+        // Limpeza das versões antigas: best-effort.
+        try {
+            let todas = await db.collection('usuarios/' + u.uid + '/migracao_partes').get();
+            await Promise.all(todas.docs.filter(function(d) { return d.data().versao !== versao; }).map(function(d) { return d.ref.delete(); }));
+        } catch (e) { console.warn('[MIGRAÇÃO] Limpeza das partes antigas falhou (sem impacto):', e); }
+        try { localStorage.setItem(this._CHAVE_COPIA, new Date(versao).toISOString()); localStorage.setItem(this._CHAVE_SESSAO, '1'); } catch (e) {}
+        self.atualizarFaixa();
+        return true;
+    },
+
+    // Chamado por exportarNuvem / exportarNuvemSilenciosa depois do Gist.
+    // silencioso: nunca abre login; só copia se já houver sessão Google.
+    // Devolve { copiado, precisaLogin, erro } para o aviso do Salvar.
+    aposSalvarGist: async function(opts) {
+        opts = opts || {};
+        if (!this._naoLab()) return { copiado: false };
+        if (opts.silencioso && localStorage.getItem(this._CHAVE_SESSAO) !== '1') return { copiado: false };
+        try {
+            let u = await this._esperar(this.preparar(), 10000);
+            if (!u) return { copiado: false, precisaLogin: !opts.silencioso && !!this._usuarioPossivel() };
+            await this.copiar(u);
+            return { copiado: true };
+        } catch (e) {
+            console.warn('[MIGRAÇÃO] Cópia para o Firestore falhou:', e);
+            return { copiado: false, erro: e.message || String(e) };
+        }
+    },
+    // O botão de login só aparece se o SDK carregou (senão o clique não abre popup).
+    _usuarioPossivel: function() { return !!(window.firebase && firebase.auth && firebase.apps && firebase.apps.length); },
+
+    // Trecho acrescentado ao aviso "☁️ Backup enviado com sucesso".
+    htmlAvisoSalvar: function(r) {
+        if (!r) return '';
+        let estilo = 'margin-top:12px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;';
+        if (r.copiado) return '<div style="' + estilo + 'background:#dcfce7;color:#166534">✅ Seus dados foram copiados. Assim que seu acesso ao novo endereço for liberado, você poderá abri-lo em <b>' + this.NOVO_ENDERECO + '</b></div>';
+        if (r.precisaLogin) return '<div style="' + estilo + 'background:#eef2ff;color:#3730a3">📦 <b>Mudança de endereço:</b> copie seus dados para o novo Monstrinho entrando com a sua conta Google.</div>';
+        if (r.erro) return '<div style="' + estilo + 'background:#fef2f2;color:#991b1b">⚠️ O backup foi salvo, mas a cópia para o novo endereço falhou (' + r.erro.replace(/[<>&]/g, '') + '). Tente "☁️⬆️ Salvar" de novo.</div>';
+        return '';
+    },
+    // Clique em "Entrar com Google e copiar" (dentro do clique: popup liberado).
+    entrarECopiar: function() {
+        let self = this;
+        this._F().entrarGoogle(function() { try { sessionStorage.setItem(self._CHAVE_POS_REDIRECT, '1'); } catch (e) {} })
+            .then(function(cred) { if (cred && cred.user) return self._copiarComAviso(cred.user); })
+            .catch(function(e) {
+                if (e && (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request')) return;
+                alert('Não foi possível entrar com Google:\n' + (e && (e.code || e.message)));
+            });
+    },
+    _copiarComAviso: function(u) {
+        let self = this;
+        try { localStorage.setItem(this._CHAVE_SESSAO, '1'); } catch (e) {}
+        return this.copiar(u).then(function() {
+            mostrarModal({ titulo: '📦 Dados copiados', mensagem: 'Seus dados foram copiados. Assim que seu acesso ao novo endereço for liberado, você poderá abri-lo em ' + self.NOVO_ENDERECO, botoes: [{ label: 'OK', cor: 'var(--app-primary)' }] });
+        }, function(e) {
+            alert('Não foi possível copiar seus dados para o novo endereço:\n' + (e.message || e) + '\n\nO backup no Gist não foi afetado. Tente "☁️⬆️ Salvar" de novo.');
+        });
+    },
+
+    // Faixa no topo (GitHub Pages / localhost). O ✕ esconde até recarregar.
+    atualizarFaixa: function() {
+        if (!this._naoLab() || !document.body) return;
+        let faixa = document.getElementById('migracao-faixa');
+        if (faixa && faixa.dataset.fechada) return;
+        if (!faixa) {
+            if (!document.getElementById('migracao-faixa-estilo')) {
+                let estilo = document.createElement('style');
+                estilo.id = 'migracao-faixa-estilo';
+                estilo.textContent = '#migracao-faixa{display:flex;align-items:center;gap:10px;padding:6px 12px;background:#eef2ff;color:#3730a3;font-size:12.5px;font-weight:600;line-height:1.4;border-bottom:1px solid #c7d2fe;position:relative;z-index:50}' +
+                    '#migracao-faixa span{flex:1;min-width:0}#migracao-faixa a{color:inherit;font-weight:800}' +
+                    '#migracao-faixa.ok{background:#dcfce7;color:#166534;border-color:#bbf7d0}#migracao-faixa.atrasada{background:#fef3c7;color:#92400e;border-color:#fde68a}' +
+                    '#migracao-faixa button{flex-shrink:0;background:none;border:none;color:inherit;font-size:14px;cursor:pointer;padding:2px 6px;opacity:.7}' +
+                    '#migracao-faixa button:hover{opacity:1}';
+                document.head.appendChild(estilo);
+            }
+            faixa = document.createElement('div');
+            faixa.id = 'migracao-faixa';
+            faixa.setAttribute('role', 'status');
+            document.body.insertBefore(faixa, document.body.firstChild);
+        }
+        let prazo = MIGRACAO_PRAZO.split('-').reverse().join('/');
+        let hoje = new Date().toISOString().slice(0, 10);
+        let copiadaEm = localStorage.getItem(this._CHAVE_COPIA);
+        let link = '<a href="' + this.NOVO_ENDERECO + '" target="_blank" rel="noopener">monstrinho-lab.web.app</a>';
+        let texto = copiadaEm
+            ? '✅ Seus dados foram copiados em ' + this._fmtData(copiadaEm) + '. Assim que seu acesso for liberado, abra ' + link + '.'
+            : hoje > MIGRACAO_PRAZO
+                ? '⚠️ O prazo da mudança terminou em ' + prazo + '. Clique em ☁️⬆️ Salvar e entre com Google o quanto antes.'
+                : '🚚 O Monstrinho vai mudar para ' + link + '. Até ' + prazo + ', clique em ☁️⬆️ Salvar e entre com sua conta Google para levar seus dados.';
+        faixa.className = copiadaEm ? 'ok' : (hoje > MIGRACAO_PRAZO ? 'atrasada' : '');
+        faixa.innerHTML = '<span>' + texto + '</span><button type="button" aria-label="Esconder aviso" title="Esconder até recarregar a página">✕</button>';
+        faixa.querySelector('button').onclick = function() { faixa.dataset.fechada = '1'; faixa.remove(); };
+    },
+
+    // ── Laboratório: importação ──
+    _vazioProfundo: function(v) {
+        let self = this;
+        if (v === null || v === undefined || v === '' || v === false || v === 0) return true;
+        if (Array.isArray(v)) return v.every(function(x) { return self._vazioProfundo(x); });
+        if (typeof v === 'object') return Object.keys(v).every(function(k) { return self._vazioProfundo(v[k]); });
+        return false;
+    },
+    _lerBruto: function(chave) {
+        let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+        return camada ? camada.ler() : localStorage.getItem(chave);
+    },
+    _jsonOuNull: function(bruto) { try { return bruto == null ? null : JSON.parse(bruto); } catch (e) { return undefined; } },
+    _esperarHidratacao: function() {
+        let nomes = ['__acervoProvasHidratacaoPromise__', '__arquivoMortoPromise__', '__sessaoAtivaPromise__', '__cronogramaHidratacaoPromise__',
+            '__esquemasHidratacaoPromise__', '__flashcardsHidratacaoPromise__', '__flashcardsNbHidratacaoPromise__', '__glossarioHidratacaoPromise__',
+            '__jurisprudenciaHidratacaoPromise__', '__penasHidratacaoPromise__', '__plannerHidratacaoPromise__', '__prazosHidratacaoPromise__'];
+        return Promise.all(nomes.map(function(n) { return Promise.resolve(window[n]).catch(function() {}); }));
+    },
+    // "Vazio" = só o que o app grava sozinho ao abrir (baterias oficiais,
+    // estruturas vazias, preferências de tela). Na dúvida, NÃO é vazio
+    // (pergunta antes de mesclar).
+    _localVazio: async function() {
+        await this._esperarHidratacao();
+        let self = this;
+        let chaves = ['salinha_longitudinal_runtime', 'cronograma_runtime', 'flashcards_runtime', 'praticar_caderno_runtime', 'flashcards_nb_runtime',
+            'esquemas_runtime', 'jurisprudencia_runtime', 'glossario_runtime', 'prazos_runtime', 'penas_runtime', 'leiseca_runtime',
+            'cordeiro_playlists_soberanas', 'cordeiro_links_uteis', 'monstrinho_factual_db', 'cordeiro_factual_db',
+            'cordeiro_acervo_excluidos', 'planner_historico_excluidos'].map(function(k) { return 'tjpe_v1__' + k; });
+        for (let k of chaves) {
+            let v = this._jsonOuNull(this._lerBruto(k));
+            if (v === undefined || !this._vazioProfundo(v)) return false;
+        }
+        if (typeof window.lerArquivoMorto === 'function' && !this._vazioProfundo(window.lerArquivoMorto())) return false;
+        if (typeof window.lerSessaoAtiva === 'function') {
+            let sessao = await window.lerSessaoAtiva();
+            if (sessao && Array.isArray(sessao.sims) && sessao.sims.length) return false;
+        }
+        let acervo = this._jsonOuNull(this._lerBruto('tjpe_v1__cordeiro_acervo_provas'));
+        if (acervo === undefined || (Array.isArray(acervo) && acervo.some(function(b) { return b && !b.origem_oficial; }))) return false;
+        return true;
+    },
+    _lerCopia: async function(u, meta) {
+        let db = firebase.firestore(), texto = '';
+        for (let n = 1; n <= meta.totalPartes; n++) {
+            let d = await this._comRetry(function() { return db.doc('usuarios/' + u.uid + '/migracao_partes/v' + meta.versao + '_p' + n).get(); });
+            if (!d.exists) throw new Error('Parte ' + n + ' de ' + meta.totalPartes + ' não encontrada.');
+            texto += d.data().dados;
+        }
+        return this._G()._decodificarConteudoNuvem(texto);
+    },
+    // Navegador vazio: a mescla do Gist só preenche sub-chaves que NÃO
+    // existem aqui, e o app já grava estruturas vazias ao abrir — então as
+    // chaves vazias recebem o valor do backup antes (pela mesma camada que a
+    // mescla usa). As listas de exclusão vão primeiro: a mescla do acervo e
+    // do Histórico as consulta.
+    _preencherVazias: async function(jsonString) {
+        let raiz = JSON.parse(jsonString);
+        raiz = raiz.data || raiz;
+        let ignorar = [window.CHAVE_ARQUIVO_MORTO, window.CHAVE_SESSAO_ATIVA, 'tjpe_v1__cordeiro_acervo_provas', 'tjpe_v1__cor_tema'];
+        let ordem = Object.keys(raiz).sort(function(a, b) { return (MIGRACAO_CHAVES_EXTRAS.indexOf(b) > 0) - (MIGRACAO_CHAVES_EXTRAS.indexOf(a) > 0); });
+        for (let k of ordem) {
+            if (k.indexOf('tjpe_v1__') !== 0 || ignorar.indexOf(k) >= 0 || typeof raiz[k] !== 'string') continue;
+            let local = this._jsonOuNull(this._lerBruto(k));
+            if (local !== null && (local === undefined || !this._vazioProfundo(local))) continue;
+            let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[k];
+            if (camada) await camada.salvar(raiz[k]); else localStorage.setItem(k, raiz[k]);
+        }
+    },
+    _importar: async function(u, meta, vazio) {
+        let json = await this._lerCopia(u, meta);
+        if (vazio) await this._preencherVazias(json);
+        let r = await window.SALINHA_BACKUP.aplicarPayloadMerge(json);
+        try { localStorage.setItem(this._CHAVE_IMPORTADA, String(meta.versao)); } catch (e) {}
+        return r;
+    },
+    verificarImportacao: async function() {
+        let u = window.MONSTRINHO_AUTH && MONSTRINHO_AUTH.usuario();
+        if (!u) return;
+        await this._F().carregar(['firestore']);
+        let d = await firebase.firestore().doc('usuarios/' + u.uid + '/migracao/meta').get();
+        if (!d.exists) return;
+        let meta = d.data();
+        if (meta.completo !== true || !meta.versao || !meta.totalPartes) return;
+        if (localStorage.getItem(this._CHAVE_IMPORTADA) === String(meta.versao)) return;
+        if (sessionStorage.getItem(this._CHAVE_ADIADA) === String(meta.versao)) return;
+        let self = this, quando = this._fmtData(meta.salvoEmCliente || meta.versao);
+        if (await this._localVazio()) {
+            let r = await this._importar(u, meta, true);
+            let aviso = '📥 Trouxemos seus dados do endereço antigo (cópia de ' + quando + ').';
+            if (r.chavesComErro && r.chavesComErro.length) aviso += '\n\n⚠️ Não coube no armazenamento deste dispositivo: ' + r.chavesComErro.join(', ');
+            alert(aviso);
+            location.reload();
+            return;
+        }
+        await _aguardarNenhumModalAberto();
+        mostrarModal({
+            titulo: '📥 Dados do endereço antigo',
+            mensagem: 'Encontramos uma cópia dos seus dados feita no endereço antigo em ' + quando + ', mas este navegador já tem dados do Monstrinho. Importar e mesclar?',
+            botoes: [
+                { label: 'Agora não', outline: true, cb: function() { try { sessionStorage.setItem(self._CHAVE_ADIADA, String(meta.versao)); } catch (e) {} } },
+                { label: 'Importar e mesclar', cor: 'var(--app-primary)', cb: function() {
+                    self._importar(u, meta, false).then(function(r) {
+                        alert('Dados do endereço antigo mesclados.\n\nChaves sincronizadas: ' + r.chavesMutadas + '\nNovas entidades: ' + r.entidadesInjetadas +
+                            (r.chavesComErro && r.chavesComErro.length ? '\n\n⚠️ Não coube no armazenamento deste dispositivo: ' + r.chavesComErro.join(', ') : ''));
+                        location.reload();
+                    }, function(e) { alert('Não foi possível importar os dados:\n' + (e.message || e)); });
+                } }
+            ]
+        });
+    },
+
+    iniciar: function() {
+        let self = this;
+        if (!this._naoLab()) {
+            // Laboratório: depois da liberação do portão e do boot do app.
+            if (!window.MONSTRINHO_AUTH) return;
+            MONSTRINHO_AUTH.liberado.then(function() {
+                return new Promise(function(ok) { if (document.readyState === 'complete') ok(); else window.addEventListener('load', ok); });
+            }).then(function() { return self.verificarImportacao(); })
+              .catch(function(e) { console.warn('[MIGRAÇÃO] Verificação da cópia falhou:', e); });
+            return;
+        }
+        // GitHub Pages / localhost.
+        let iniciarFaixa = function() { self.atualizarFaixa(); };
+        if (document.body) iniciarFaixa(); else document.addEventListener('DOMContentLoaded', iniciarFaixa);
+        let voltouDoLogin = sessionStorage.getItem(this._CHAVE_POS_REDIRECT) === '1';
+        if (voltouDoLogin || localStorage.getItem(this._CHAVE_SESSAO) === '1') {
+            window.addEventListener('load', function() {
+                self.preparar().then(function(u) {
+                    if (!voltouDoLogin) return;
+                    try { sessionStorage.removeItem(self._CHAVE_POS_REDIRECT); } catch (e) {}
+                    return firebase.auth().getRedirectResult().then(function(cred) {
+                        let usr = (cred && cred.user) || u;
+                        if (usr) return self._copiarComAviso(usr);
+                    });
+                }).catch(function(e) { console.warn('[MIGRAÇÃO] SDK do Firebase não carregou:', e); });
+            });
+        }
+    }
+};
+window.MIGRACAO.iniciar();
 
 function mostrarOverlayCarregandoNuvem() {
     let el = document.getElementById('overlay-carregando-nuvem');
