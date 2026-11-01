@@ -2061,7 +2061,10 @@ if (inputIncremental) {
         reader.onload = async function(f) {
             try {
                 let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(f.target.result);
+                // Recarrega como o importarNuvem: sem isso, as seções seguem
+                // com o estado antigo em memória e o gravam por cima da mescla.
                 alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${resultado.chavesMutadas}\nNovas entidades injetadas: ${resultado.entidadesInjetadas}`);
+                location.reload();
             } catch (error) {
                 console.error("Erro na fusão incremental:", error);
                 alert("[ERRO CRÍTICO] Falha no processamento do merge estrutural.");
@@ -3238,6 +3241,15 @@ window.SALINHA_BACKUP = {
 
         // PENAS (memorização)
         'tjpe_v1__penas_runtime',
+
+        // LEI SECA (prioridades, leitura por dispositivo, conjuntos)
+        'tjpe_v1__leiseca_runtime',
+
+        // LÁPIDES: baterias excluídas do acervo e resultados excluídos do
+        // Histórico — sem elas, o que foi excluído reaparece ao mesclar o
+        // backup em outro navegador.
+        'tjpe_v1__cordeiro_acervo_excluidos',
+        'tjpe_v1__planner_historico_excluidos',
 
         // TEMA
         'tjpe_v1__cor_tema'
@@ -5536,8 +5548,15 @@ window.SALINHA_GITHUB_OAUTH = {
 // A vitrine inicial (lista de baterias) continua livre pra visualizar —
 // só ABRIR uma bateria específica, ou entrar numa seção de conteúdo, exige
 // login.
-window.exigirLoginParaSecao = function() {
+// No laboratório (Firebase), quem passou pelo portão já entrou com Google:
+// isso basta para abrir seções e baterias. O login do GitHub fica só para o
+// backup no Gist.
+window.temLoginApp = function() {
     if (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken()) return true;
+    return !!(window.MONSTRINHO_AUTH && window.MONSTRINHO_AUTH.usuario());
+};
+window.exigirLoginParaSecao = function() {
+    if (window.temLoginApp()) return true;
     alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub") para acessar esta seção.');
     return false;
 };
@@ -27453,8 +27472,7 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
     // pelo GitHub). Sem checagem de tamanho fixo: tokens OAuth (gho_...)
     // não têm o mesmo formato do antigo token pessoal clássico de 40
     // caracteres que essa checagem media antes.
-    let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    if (!tokenCadastrado) {
+    if (!window.temLoginApp()) {
         alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
         return;
     }
@@ -39379,7 +39397,7 @@ window.LEGISLACAO = (function() {
         if (!est) return;
         let m = MODAIS.find(function(x) { return x.nome === est.nome; });
         // Só com login já feito (sem o alerta de exigirLoginParaSecao no boot).
-        if (!m || !(window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken())) return;
+        if (!m || !window.temLoginApp()) return;
         // Depois do boot (que decide a tela de fundo: Vitrine, Cronograma…) e
         // da hidratação do IndexedDB da seção — abrir antes fazia o carregar()
         // tardio da hidratação esvaziar o acervo já aberto.
