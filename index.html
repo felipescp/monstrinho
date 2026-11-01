@@ -16161,8 +16161,19 @@ window.LEISECA_RUNTIME = {
         if (!a || !j || !j.artigos[a]) return '';
         let inc = this._incidencias[this._diploma], art = j.artigos[a];
         this._leituraArt(a); // migra o "lido" antigo (artigo) para os dispositivos
+        // Cor de cada dispositivo = prioridade do ARTIGO (a mesma do quadrinho
+        // e do seletor, inclusive a escolhida pelo usuário), para não haver
+        // artigo Crítico com texto amarelo. Dentro do artigo, o calor continua:
+        // dispositivos com ao menos metade das cobranças do mais cobrado levam
+        // o nível do artigo; os demais cobrados, um nível abaixo; não cobrados,
+        // sem cor. (Lei nova sem questões: nível estimado por dispositivo.)
+        let nivelA = this._nivelArt(a), maxDisp = 0;
+        if (inc && !inc.estimada) Object.keys(inc.dispositivos || {}).forEach(function(k) {
+            if (k.split(/[§.]/)[0] === a && inc.dispositivos[k] > maxDisp) maxDisp = inc.dispositivos[k];
+        });
         let linha = function(rot, no, chave, cls) {
-            let n = inc ? (inc.dispositivos[chave] || 0) : 0, nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : self._nivelDe(n, inc.limDisp);
+            let n = inc ? (inc.dispositivos[chave] || 0) : 0;
+            let nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : !n ? 0 : (n * 2 >= maxDisp ? nivelA : Math.max(1, nivelA - 1));
             let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
             let lido = !no.revogado && !!self.estado.lidosDisp[self._diploma + '|' + chave];
             let marca = no.revogado ? '' : '<button class="ls-chk' + (lido ? ' on' : '') + '" title="' + (lido ? 'Lido — tocar para desmarcar' : 'Marcar este dispositivo como lido') + '" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.alternarLidoDisp(\'' + self._escJs(a) + '\', \'' + self._escJs(chave) + '\')">✓</button>';
