@@ -86,7 +86,15 @@ O resultado aparece na aba Actions. Para desligar, mude `FIREBASE_DEPLOY` para q
 
 ## Liberar outra pessoa
 
-Crie `acessos/{e-mail-da-pessoa}` com `ativo: true`. Para bloquear, mude para `false` ou apague o documento.
+Não é preciso pedir o e-mail a ninguém:
+
+1. A pessoa abre `www.asalinha.com.br` e clica em **Entrar com Google**.
+2. Sem acesso liberado, o portão cria sozinho `acessos/{e-mail}` com `ativo: false` e mostra "Pedido de acesso registrado".
+3. No console do Firebase, em **Firestore Database → acessos**, os pedidos pendentes são os documentos com `ativo: false`. Para liberar, mude o campo para `true`.
+
+Para bloquear alguém, mude para `false`. Se o documento for apagado, a pessoa volta a gerar um pedido na próxima entrada.
+
+O usuário só consegue criar o próprio documento, e sempre com `ativo: false`: liberar, alterar ou apagar continua restrito ao console (ver `firestore.rules`).
 
 No futuro, esse documento passa a ser gravado pela Cloud Function de pagamento.
 

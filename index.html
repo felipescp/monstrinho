@@ -82,14 +82,37 @@
     function esc(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
     var BOTAO_GOOGLE = '<button type="button" onclick="MONSTRINHO_AUTH.entrar()"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Entrar com Google</button>';
 
+    // Acesso negado: registra o pedido em acessos/{e-mail} com ativo:false
+    // (firestore.rules só deixa o próprio usuário criar o seu, e só assim).
+    // A liberação é o administrador trocar ativo para true no console. Se o
+    // documento já existe (pedido anterior ou acesso bloqueado), não regrava.
+    var BOTAO_OUTRA_CONTA = '<button type="button" onclick="MONSTRINHO_AUTH.sair()">Entrar com outra conta</button>';
+    function pedirAcesso(u) {
+        corpo('<p>Registrando pedido de acesso de <b>' + esc(u.email) + '</b>…</p>');
+        var carregado = (firebase.firestore ? Promise.resolve() : carregarScript(SDK + 'firebase-firestore-compat.js'));
+        carregado.then(function() {
+            var ref = firebase.firestore().collection('acessos').doc(u.email);
+            return ref.get().then(function(doc) {
+                if (doc.exists) return;
+                return ref.set({ ativo: false, pedidoEm: firebase.firestore.FieldValue.serverTimestamp() });
+            });
+        }).then(function() {
+            corpo('<p>Pedido de acesso registrado para <b>' + esc(u.email) + '</b>.<br>Assim que for liberado, é só voltar a esta página.</p>' +
+                '<button type="button" onclick="location.reload()">Verificar de novo</button>' + BOTAO_OUTRA_CONTA);
+        }).catch(function(e) {
+            console.warn('[PORTÃO] Falha ao registrar o pedido de acesso:', e);
+            corpo('<p>Acesso não liberado para <b>' + esc(u.email) + '</b>.<br>Avise o administrador para liberar o seu acesso.</p>' + BOTAO_OUTRA_CONTA);
+        });
+    }
+
     // Acesso confirmado lendo um arquivo pequeno do acervo: 200 = liberado;
-    // 403 = sem documento em acessos/{e-mail}.
+    // 403 = sem documento em acessos/{e-mail}, ou com ativo:false.
     function verificar(u) {
         usuario = u;
         corpo('<p>Verificando acesso de <b>' + esc(u.email) + '</b>…</p>'); erro('');
         lerStorage('dados/leiseca/manifesto.json').then(function(r) {
             if (r.ok) { tela.remove(); liberar(); return; }
-            if (r.status === 403) corpo('<p>Acesso não liberado para <b>' + esc(u.email) + '</b>.</p><button type="button" onclick="MONSTRINHO_AUTH.sair()">Entrar com outra conta</button>');
+            if (r.status === 403) pedirAcesso(u);
             else if (r.status === 404) corpo('<p>O acervo ainda não foi enviado ao Storage.</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
             else corpo('<p>Não foi possível verificar o acesso (HTTP ' + r.status + ').</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
         }).catch(function() {
