@@ -5610,8 +5610,14 @@ window.SALINHA_GITHUB_OAUTH = {
 // A vitrine inicial (lista de baterias) continua livre pra visualizar —
 // só ABRIR uma bateria específica, ou entrar numa seção de conteúdo, exige
 // login.
-window.exigirLoginParaSecao = function() {
+// No laboratório, quem passou pelo portão (login Google) já está logado: o
+// login do GitHub fica só para o backup no Gist.
+window.temLoginApp = function() {
     if (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken()) return true;
+    return !!(window.MONSTRINHO_FIREBASE && window.MONSTRINHO_FIREBASE.lab && window.MONSTRINHO_AUTH && window.MONSTRINHO_AUTH.usuario());
+};
+window.exigirLoginParaSecao = function() {
+    if (window.temLoginApp()) return true;
     alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub") para acessar esta seção.');
     return false;
 };
@@ -27865,8 +27871,7 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
     // pelo GitHub). Sem checagem de tamanho fixo: tokens OAuth (gho_...)
     // não têm o mesmo formato do antigo token pessoal clássico de 40
     // caracteres que essa checagem media antes.
-    let tokenCadastrado = (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken) ? window.SALINHA_GIST_SYNC.getToken() : '';
-    if (!tokenCadastrado) {
+    if (!window.temLoginApp()) {
         alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
         return;
     }
@@ -39791,7 +39796,7 @@ window.LEGISLACAO = (function() {
         if (!est) return;
         let m = MODAIS.find(function(x) { return x.nome === est.nome; });
         // Só com login já feito (sem o alerta de exigirLoginParaSecao no boot).
-        if (!m || !(window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken())) return;
+        if (!m || !window.temLoginApp()) return;
         // Depois do boot (que decide a tela de fundo: Vitrine, Cronograma…) e
         // da hidratação do IndexedDB da seção — abrir antes fazia o carregar()
         // tardio da hidratação esvaziar o acervo já aberto.
