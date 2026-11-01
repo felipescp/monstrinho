@@ -1063,12 +1063,18 @@ async function loadFactualDatabase() {
                 // reinseria de volta no próximo F5.
                 let alvo = db.simulados_avulsos.find(sim => String(sim.id) === String(id));
                 if (alvo && alvo.id_original) {
-                    try {
-                        let excluidos = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}');
+                    // A lápide vive no IndexedDB (index.html, camada pequena com
+                    // união); grava lá e na cópia do localStorage, unindo as duas.
+                    (async function(idOriginal) {
+                        let excluidos = {};
+                        try { excluidos = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}') || {}; } catch (e) {}
+                        try { let doIdb = JSON.parse((await idbGet('planner_historico_excluidos')) || '{}') || {}; Object.keys(doIdb).forEach(function(k) { if (excluidos[k] === undefined) excluidos[k] = doIdb[k]; }); } catch (e) {}
                         if (!excluidos || typeof excluidos !== 'object' || Array.isArray(excluidos)) excluidos = {};
-                        excluidos[String(alvo.id_original)] = new Date().toISOString();
-                        localStorage.setItem('tjpe_v1__planner_historico_excluidos', JSON.stringify(excluidos));
-                    } catch (e) {}
+                        excluidos[idOriginal] = new Date().toISOString();
+                        let json = JSON.stringify(excluidos);
+                        try { localStorage.setItem('tjpe_v1__planner_historico_excluidos', json); } catch (e) {}
+                        try { await idbSet('planner_historico_excluidos', json); } catch (e) {}
+                    })(String(alvo.id_original));
                 }
                 db.simulados_avulsos = db.simulados_avulsos.filter(sim => String(sim.id) !== String(id));
             }
@@ -1929,7 +1935,10 @@ window.abrirBiblioteca = function() {
               if(!Array.isArray(arr)) arr = [arr]; // Garante que seja array
               
               // INTEGRAÇÃO COM A VITRINE: Salva diretamente no Acervo
-              let acervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_provas') || '[]');
+              // O acervo vive no IndexedDB (index.html); a cópia do localStorage
+              // é só reserva e pode ter sido liberada por falta de espaço.
+              return idbGet('cordeiro_acervo_provas').then(function(doIdb) {
+              let acervo = JSON.parse((doIdb !== undefined ? doIdb : localStorage.getItem('tjpe_v1__cordeiro_acervo_provas')) || '[]');
               let map = new Map();
               acervo.forEach(p => map.set(p.id, p));
               
@@ -1945,7 +1954,9 @@ window.abrirBiblioteca = function() {
               });
 
               if (novos > 0) {
-                  localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', JSON.stringify(Array.from(map.values())));
+                  let json = JSON.stringify(Array.from(map.values()));
+                  idbSet('cordeiro_acervo_provas', json);
+                  try { localStorage.setItem('tjpe_v1__cordeiro_acervo_provas', json); } catch (e) {}
                   // Sucesso Visual: Mostra que baixou
                   btnBaixar.style.background = 'var(--success)';
                   btnBaixar.textContent = '✓ OK (' + novos + ')';
@@ -1960,6 +1971,7 @@ window.abrirBiblioteca = function() {
               if(typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
               
               setTimeout(function(){ document.body.removeChild(overlay); }, 1200);
+              });
             })
             .catch(function(err) {
               alert('Erro ao baixar o simulado: ' + err.message);

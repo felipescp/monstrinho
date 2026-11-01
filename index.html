@@ -2954,6 +2954,107 @@ window.__acervoProvasHidratacaoPromise__ = (async function() {
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ACERVO_PROVAS] = { ler: window.lerAcervoProvasBruto, salvar: window.salvarAcervoProvasBruto };
 
 // =========================================================================
+// CAMADAS PEQUENAS: Lei Seca, Praticar caderno, playlists e lápides
+// =========================================================================
+// Pedido explícito do usuário: todas as seções com dados no IndexedDB, como
+// as camadas acima (o localStorage tem ~5 MB e enchia). Mesmo padrão: cache
+// em memória + IndexedDB como fonte primária + cópia reserva best-effort no
+// localStorage + registro em CAMADAS_STORAGE_MIGRADAS (backup, merge e
+// sincronização passam a ler/gravar por aqui). Quem lê/grava usa
+// window.lsLer / window.lsGravar. Antes de o IndexedDB responder, a leitura
+// cai na cópia do localStorage. Lápides (só crescem) gravam a UNIÃO com o
+// que houver no localStorage/IndexedDB — dashboard.html também as grava.
+// Ficam no localStorage só preferências mínimas lidas no instante do boot
+// (tema, aba ativa, visão), de poucos bytes.
+window.CAMADAS_PEQUENAS = {};
+window.criarCamadaPequena = function(chave, opcoes) {
+    opcoes = opcoes || {};
+    const chaveIdb = chave.replace(/^tjpe_v1__/, '');
+    let cache = null, hidratado = false, escritoAntes = false;
+    const uniao = function(a, b) {
+        let x = {}, y = {};
+        try { x = JSON.parse(a || '{}') || {}; } catch (e) {}
+        try { y = JSON.parse(b || '{}') || {}; } catch (e) {}
+        if (typeof x !== 'object' || Array.isArray(x)) x = {};
+        if (typeof y !== 'object' || Array.isArray(y)) y = {};
+        Object.keys(y).forEach(function(k) { if (x[k] === undefined) x[k] = y[k]; });
+        return JSON.stringify(x);
+    };
+    const camada = {
+        ler: function() { return (hidratado || escritoAntes) ? cache : localStorage.getItem(chave); },
+        salvar: function(valor) {
+            if (valor == null) return Promise.resolve(false);
+            valor = String(valor);
+            if (opcoes.uniao) valor = uniao(valor, camada.ler());
+            cache = valor;
+            if (!hidratado) escritoAntes = true;
+            let noLocal = true;
+            try { localStorage.setItem(chave, valor); } catch (e) { noLocal = false; }
+            if (!window._idbDisponivel) {
+                // Sem IndexedDB o localStorage é a única cópia: a falha precisa aparecer.
+                if (!noLocal) throw new Error('Sem espaço para gravar ' + chave);
+                return Promise.resolve(false);
+            }
+            return idbSet(chaveIdb, valor).then(function(ok) {
+                if (!ok) console.warn('[' + chaveIdb + '] Falha ao gravar no IndexedDB.');
+                return ok;
+            });
+        }
+    };
+    camada.pronta = function() { return hidratado; };
+    camada.promessa = (async function() {
+        try {
+            let valor = await idbGet(chaveIdb);
+            let local = null;
+            try { local = localStorage.getItem(chave); } catch (e) {}
+            if (escritoAntes) {
+                // Gravado antes de o IndexedDB responder: vale o mais novo (o cache).
+                if (opcoes.uniao) cache = uniao(cache, valor !== undefined ? valor : local);
+                if (window._idbDisponivel) await idbSet(chaveIdb, cache);
+            } else if (valor !== undefined) {
+                cache = opcoes.uniao ? uniao(valor, local) : valor;
+                if (opcoes.uniao && cache !== valor) await idbSet(chaveIdb, cache);
+            } else {
+                // 1ª vez: migra a cópia do localStorage (ela fica como reserva).
+                cache = local;
+                if (local !== null && window._idbDisponivel) await idbSet(chaveIdb, local);
+            }
+        } catch (e) {
+            console.warn('[' + chaveIdb + '] Falha ao hidratar do IndexedDB:', e);
+            if (!escritoAntes) { try { cache = localStorage.getItem(chave); } catch (e2) {} }
+        } finally {
+            hidratado = true;
+            if (typeof opcoes.aoHidratar === 'function') { try { opcoes.aoHidratar(); } catch (e) {} }
+        }
+    })();
+    window.CAMADAS_STORAGE_MIGRADAS[chave] = camada;
+    window.CAMADAS_PEQUENAS[chave] = camada;
+    return camada;
+};
+window.lsLer = function(chave) {
+    let c = window.CAMADAS_PEQUENAS[chave];
+    return c ? c.ler() : localStorage.getItem(chave);
+};
+window.lsGravar = function(chave, valor) {
+    let c = window.CAMADAS_PEQUENAS[chave];
+    if (c) { c.salvar(valor); return; }
+    localStorage.setItem(chave, valor);
+};
+window.criarCamadaPequena('tjpe_v1__leiseca_runtime', { aoHidratar: function() {
+    // Lei Seca aberta antes de o IndexedDB responder: relê e redesenha.
+    let L = window.LEISECA_RUNTIME, m = document.getElementById('leiseca-modal');
+    if (L && L.manifesto && m && m.classList.contains('active')) { L._carregarEstado(); L.render(); }
+} });
+window.criarCamadaPequena('tjpe_v1__praticar_caderno_runtime', { aoHidratar: function() {
+    let P = window.PRATICAR_CADERNO_RUNTIME;
+    if (P && P._bootstrapped) P.carregar();
+} });
+window.criarCamadaPequena('tjpe_v1__cordeiro_playlists_soberanas');
+window.criarCamadaPequena('tjpe_v1__cordeiro_acervo_excluidos', { uniao: true });
+window.criarCamadaPequena('tjpe_v1__planner_historico_excluidos', { uniao: true });
+window.__camadasPequenasPromise__ = Promise.all(Object.keys(window.CAMADAS_PEQUENAS).map(function(k) { return window.CAMADAS_PEQUENAS[k].promessa; }));
+
+// =========================================================================
 // ESPAÇO DO localStorage: o que só existe aqui tem prioridade
 // =========================================================================
 // As camadas acima gravam no IndexedDB (fonte primária) e tentam também uma
@@ -2972,8 +3073,9 @@ window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ACERVO_PROVAS] = { ler: window.lerA
         let out = [];
         Object.keys(window.CAMADAS_STORAGE_MIGRADAS || {}).forEach(function(k) {
             let c = window.CAMADAS_STORAGE_MIGRADAS[k];
-            // Só se o dado está em memória (veio do IndexedDB ou foi gravado nele).
-            try { if (c && typeof c.ler === 'function' && c.ler() != null) out.push(k); } catch (e) {}
+            // Só se o dado está em memória (veio do IndexedDB ou foi gravado nele);
+            // camada pequena ainda não hidratada lê do próprio localStorage — fica.
+            try { if (c && typeof c.ler === 'function' && (!c.pronta || c.pronta()) && c.ler() != null) out.push(k); } catch (e) {}
         });
         [window.CHAVE_ARQUIVO_MORTO, window.CHAVE_SESSAO_ATIVA, window.CHAVE_PLANNER_RUNTIME_LEGADA].forEach(function(k) { if (k && out.indexOf(k) < 0) out.push(k); });
         return out;
@@ -3016,6 +3118,7 @@ window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ACERVO_PROVAS] = { ler: window.lerA
 window.repararSimuladosNaoSincronizados = async function() {
     await window.__arquivoMortoPromise__;
     await window.__plannerHidratacaoPromise__;
+    await window.__camadasPequenasPromise__;
 
     if (typeof window.sincronizarResultadoComPlanner !== 'function') return [];
 
@@ -3032,7 +3135,7 @@ window.repararSimuladosNaoSincronizados = async function() {
     // este reparo — que roda em TODO carregamento de página — reinseria de
     // volta em simulados_avulsos qualquer exclusão manual no próximo F5.
     let idsExcluidosHistorico = {};
-    try { idsExcluidosHistorico = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
+    try { idsExcluidosHistorico = JSON.parse(window.lsLer('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
 
     let idsJaSincronizados = new Set();
     (dbPlanner.simulados_avulsos || []).forEach(function(r) {
@@ -3366,6 +3469,7 @@ window.SALINHA_BACKUP = {
     ],
 
     construirPayload: async function() {
+        if (window.__camadasPequenasPromise__) await window.__camadasPequenasPromise__;
         let payload = {
             version: 'SALINHA_BACKUP_V1',
             schema: 1,
@@ -3657,7 +3761,7 @@ window.SALINHA_BACKUP = {
                 let idsExcluidosAcervo = null;
                 if (chaveDestinoLocal === 'tjpe_v1__cordeiro_acervo_provas') {
                     try {
-                        let bruto = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+                        let bruto = JSON.parse(window.lsLer('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
                         if (bruto && typeof bruto === 'object' && !Array.isArray(bruto)) idsExcluidosAcervo = bruto;
                     } catch (e) {}
                 }
@@ -3756,7 +3860,7 @@ window.SALINHA_BACKUP = {
                         if (!Array.isArray(objLocal[subChave])) objLocal[subChave] = [];
 
                         let idsExcluidosHistoricoMerge = {};
-                        try { idsExcluidosHistoricoMerge = JSON.parse(localStorage.getItem('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
+                        try { idsExcluidosHistoricoMerge = JSON.parse(window.lsLer('tjpe_v1__planner_historico_excluidos') || '{}'); } catch (e) {}
 
                         objImportado[subChave].forEach(item => {
                             if (!item) return;
@@ -5615,6 +5719,7 @@ window.SALINHA_SYNC = (function() {
         let promessas = ['__acervoProvasHidratacaoPromise__', '__arquivoMortoPromise__', '__sessaoAtivaPromise__', '__cronogramaHidratacaoPromise__',
             '__esquemasHidratacaoPromise__', '__flashcardsHidratacaoPromise__', '__flashcardsNbHidratacaoPromise__', '__glossarioHidratacaoPromise__',
             '__jurisprudenciaHidratacaoPromise__', '__penasHidratacaoPromise__', '__plannerHidratacaoPromise__', '__prazosHidratacaoPromise__',
+            '__camadasPequenasPromise__',
             // O acervo oficial reescreve o acervo inteiro ao terminar: aplicar
             // dados da nuvem no meio disso perderia as baterias pessoais.
             '__bootOficialPromise__'].map(function(n) { return Promise.resolve(window[n]).catch(function() {}); });
@@ -11181,13 +11286,13 @@ window.PRATICAR_CADERNO_RUNTIME = {
 
     carregar: function() {
         let bruto = null;
-        try { bruto = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
+        try { bruto = JSON.parse(window.lsLer(this.STORAGE_KEY) || 'null'); } catch (e) { bruto = null; }
         this.revisaoQuestoes = (bruto && typeof bruto.revisaoQuestoes === 'object') ? bruto.revisaoQuestoes : {};
         this._bootstrapped = true;
     },
 
     salvar: function() {
-        try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ revisaoQuestoes: this.revisaoQuestoes })); } catch (e) {
+        try { window.lsGravar(this.STORAGE_KEY, JSON.stringify({ revisaoQuestoes: this.revisaoQuestoes })); } catch (e) {
             console.warn('[PRATICAR_CADERNO] Falha ao salvar:', e);
         }
     },
@@ -15793,11 +15898,11 @@ window.LEISECA_RUNTIME = {
     _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
     _carregarEstado: function() {
-        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null, coment: e.coment || {}, grifos: e.grifos || {}, vis: e.vis || {} }; } catch (e) {}
+        try { let e = JSON.parse(window.lsLer(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null, coment: e.coment || {}, grifos: e.grifos || {}, vis: e.vis || {} }; } catch (e) {}
         if (!this.estado.conjuntos) this.estado.conjuntos = [];
     },
     _salvar: function() {
-        try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); }
+        try { window.lsGravar(this.CHAVE, JSON.stringify(this.estado)); }
         catch (e) {
             console.warn('[LEI SECA] Falha ao salvar:', e);
             // Antes era só no console: o usuário via a mudança na tela e ela se perdia.
@@ -15806,6 +15911,8 @@ window.LEISECA_RUNTIME = {
     },
 
     init: async function() {
+        // Dados no IndexedDB (camada pequena): espera a 1ª leitura.
+        if (window.CAMADAS_PEQUENAS && window.CAMADAS_PEQUENAS[this.CHAVE]) await window.CAMADAS_PEQUENAS[this.CHAVE].promessa;
         this._carregarEstado();
         let col = document.getElementById('ls-col-diplomas');
         if (!this.manifesto) {
@@ -22404,16 +22511,16 @@ window.excluirBateriasSelecionadas = function() {
     // excluirSimuladoIndividual (ver comentário lá): sem isso, a
     // sincronização automática com a nuvem reinjeta as baterias de volta.
     try {
-        let excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        let excluidosAcervo = JSON.parse(window.lsLer('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
         if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
         let agora = new Date().toISOString();
         ids.forEach(function(id) { excluidosAcervo[id] = agora; });
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+        window.lsGravar('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
     } catch (e) {}
 
-    let playlistsRuntime = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
+    let playlistsRuntime = JSON.parse(window.lsLer('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
     playlistsRuntime = playlistsRuntime.filter(function(p) { return !(p && idsSet.has(p.id)); });
-    localStorage.setItem('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsRuntime));
+    window.lsGravar('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsRuntime));
 
     try {
         let simRuntime = JSON.parse(localStorage.getItem('tjpe_v1__clube_simulado_auto') || '{}');
@@ -27242,18 +27349,18 @@ window.excluirSimuladoIndividual = function(id) {
     // localStorage (o acervo não é um "runtime" com carregar()/salvar()
     // central — é lido/escrito direto em vários pontos do arquivo).
     try {
-        var excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        var excluidosAcervo = JSON.parse(window.lsLer('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
         if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
         excluidosAcervo[id] = new Date().toISOString();
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+        window.lsGravar('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
     } catch (e) {}
 
     // 2. Purga no Runtime de Playlists (Se aplicável à Coluna 3)
-    var playlistsRuntime = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
+    var playlistsRuntime = JSON.parse(window.lsLer('tjpe_v1__cordeiro_playlists_soberanas') || '[]');
     var playlistsFiltradas = playlistsRuntime.filter(function(p) {
         return p && p.id !== id;
     });
-    localStorage.setItem('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsFiltradas));
+    window.lsGravar('tjpe_v1__cordeiro_playlists_soberanas', JSON.stringify(playlistsFiltradas));
 
     // 3. Purga no Runtime de Simulados (Se aplicável à Coluna 2)
     var simRuntime;
@@ -28423,12 +28530,12 @@ window.limparRevisaoQuestaoOrfa = function(idQ, simId) {
     if (!idQ || !simId) return;
     try {
         let chave = idQ + '_' + simId;
-        let raw = localStorage.getItem('tjpe_v1__praticar_caderno_runtime');
+        let raw = window.lsLer('tjpe_v1__praticar_caderno_runtime');
         let obj = null;
         try { obj = raw ? JSON.parse(raw) : null; } catch (e) { obj = null; }
         if (obj && obj.revisaoQuestoes && obj.revisaoQuestoes[chave] !== undefined) {
             delete obj.revisaoQuestoes[chave];
-            localStorage.setItem('tjpe_v1__praticar_caderno_runtime', JSON.stringify(obj));
+            window.lsGravar('tjpe_v1__praticar_caderno_runtime', JSON.stringify(obj));
         }
     } catch (e) {}
 };
@@ -28737,11 +28844,11 @@ window.ACERVO_OFICIAL = acervo;
 window._marcarExcluidosAcervo = function(ids) {
     if (!ids || !ids.length) return;
     try {
-        let excluidosAcervo = JSON.parse(localStorage.getItem('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
+        let excluidosAcervo = JSON.parse(window.lsLer('tjpe_v1__cordeiro_acervo_excluidos') || '{}');
         if (!excluidosAcervo || typeof excluidosAcervo !== 'object' || Array.isArray(excluidosAcervo)) excluidosAcervo = {};
         let agora = new Date().toISOString();
         ids.forEach(function(id) { excluidosAcervo[id] = agora; });
-        localStorage.setItem('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
+        window.lsGravar('tjpe_v1__cordeiro_acervo_excluidos', JSON.stringify(excluidosAcervo));
     } catch (e) {}
 };
 
@@ -28845,9 +28952,7 @@ if (
    try {
 
       playlistsAtuais = JSON.parse(
-         localStorage.getItem(
-            'tjpe_v1__cordeiro_playlists_soberanas'
-         ) || '[]'
+         window.lsLer('tjpe_v1__cordeiro_playlists_soberanas') || '[]'
       );
 
    } catch(e){
@@ -28870,8 +28975,7 @@ if (
 
    });
 
-   localStorage.setItem(
-      'tjpe_v1__cordeiro_playlists_soberanas',
+   window.lsGravar('tjpe_v1__cordeiro_playlists_soberanas',
       JSON.stringify(
          Array.from(mapaPlaylists.values())
       )
