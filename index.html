@@ -16357,12 +16357,15 @@ window.LEISECA_RUNTIME = {
     _md: function(t) {
         let self = this, guard = [];
         let inl = function(s) {
+            s = self._refsComentario(s, guard);
             s = self._esc(s);
             s = s.replace(/`([^`]+)`/g, function(m, c) { guard.push('<code>' + c + '</code>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
             s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function(m, txt, url) { guard.push('<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
             s = s.replace(/\*\*([^*]+?)\*\*/g, '<b>$1</b>').replace(/__([^_]+?)__/g, '<b>$1</b>');
             s = s.replace(/(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*(?![*\w])/g, '$1<i>$2</i>').replace(/(^|[^_\w])_([^_\s](?:[^_]*[^_\s])?)_(?![_\w])/g, '$1<i>$2</i>');
-            return s.replace(/\u0000(\d+)\u0000/g, function(m, i) { return guard[+i]; });
+            // Repete: um marcador pode conter outro (citação dentro do texto de um [link]).
+            for (let n = 0; n < 3 && /\u0000\d+\u0000/.test(s); n++) s = s.replace(/\u0000(\d+)\u0000/g, function(m, i) { return guard[+i]; });
+            return s;
         };
         let html = '', par = [], lista = null, cit = [];
         let fecharPar = function() { if (par.length) { html += '<p>' + par.map(inl).join('<br>') + '</p>'; par = []; } };
@@ -16385,6 +16388,33 @@ window.LEISECA_RUNTIME = {
         return '<div class="ls-md">' + html + '</div>';
     },
 
+    // Citações nos comentários/notas viram links (pedido explícito do
+    // usuário), como nos cards da Jurisprudência: julgado/súmula/tema com
+    // card no acervo → balão com a tese e clique abre o card; artigo de lei
+    // → balão com o texto e clique abre no Planalto. Troca cada trecho por
+    // um marcador (\u0000n\u0000) que _md devolve no fim.
+    _refsComentario: function(s, guard) {
+        let J = window.JURISPRUDENCIA_RUNTIME, L = window.LEGISLACAO, refs = [], self = this;
+        try {
+            if (J && J._refsDoTexto && J.fichas) refs = J._refsDoTexto(s).filter(function(r) { return J._candidatosRef(r.chave).length; });
+            if (L && L.refsDoTexto) L.refsDoTexto(s).forEach(function(r) {
+                if (refs.some(function(x) { return x.ini < r.fim && r.ini < x.fim; })) return;
+                r.lei = true; refs.push(r);
+            });
+        } catch (e) { return s; }
+        refs.sort(function(x, y) { return y.ini - x.ini; });
+        let ult = Infinity;
+        refs.forEach(function(r) {
+            if (r.fim > ult || r.fim <= r.ini) return; // sobreposto a outro já trocado
+            let txt = self._esc(s.slice(r.ini, r.fim)), k = self._esc(r.chave);
+            guard.push(r.lei
+                ? '<span class="jur-ref jur-ref-lei" data-lei="' + k + '" data-ano="" onclick="event.stopPropagation(); window.LEGISLACAO.abrirNoPlanalto(this.getAttribute(\'data-lei\'))">' + txt + '</span>'
+                : '<span class="jur-ref" data-jur-ref="' + k + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute(\'data-jur-ref\'))">' + txt + '</span>');
+            s = s.slice(0, r.ini) + '\u0000' + (guard.length - 1) + '\u0000' + s.slice(r.fim);
+            ult = r.ini;
+        });
+        return s;
+    },
     _comAbertos: {},     // modo normal: 💭 aberto por dispositivo ("DIP|33§1")
     _editandoCom: null,  // chave em edição
     _rascunhoCom: null,
@@ -16580,7 +16610,10 @@ window.LEISECA_RUNTIME = {
         if (inc && !inc.estimada) Object.keys(inc.dispositivos || {}).forEach(function(k) {
             if (k.split(/[§.]/)[0] === a && inc.dispositivos[k] > maxDisp) maxDisp = inc.dispositivos[k];
         });
-        let linha = function(rot, no, chave, cls) {
+        // adiar: o comentário vai depois da linha "Pena –" do dispositivo
+        // (quem chama o acrescenta); com incisos/alíneas no meio, fica logo abaixo.
+        let adiar = function(no) { return !!no.pena && !no.inc && !no.ali && !no.fecho; };
+        let linha = function(rot, no, chave, cls, semCom) {
             let n = inc ? (inc.dispositivos[chave] || 0) : 0;
             let nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : !n ? 0 : (n * 2 >= maxDisp ? nivelA : Math.max(1, nivelA - 1));
             let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : '<span class="ls-tx" data-k="' + self._esc(chave) + '">' + self._htmlGrifado(chave, no.texto || '') + '</span>';
@@ -16590,20 +16623,23 @@ window.LEISECA_RUNTIME = {
             return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + (lido ? ' lido' : '') + (cb ? ' ls-com-on' : '') + '">' + marca + cb + '<span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
                 (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>' +
-                self._htmlComentarios(a, chave, cls);
+                (semCom ? '' : self._htmlComentarios(a, chave, cls));
         };
         this._grifosPerdidos = 0;
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
-        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]) +
-            (no.inc[k].pena ? '<div class="ls-d ls-n0' + (cls ? ' ' + cls : '') + '"><span class="ls-rot">Pena –</span> ' + self._esc(no.inc[k].pena) + '</div>' : ''); }).join('') : ''; };
-        let html = (art.texto || !itens ? linha(self._rotulo() + ' ' + self._esc(a) + '.', art, a) : '') + alineas(art) +
+        let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { let ni = no.inc[k], ch = base + '.' + k; return linha(self._esc(k) + (itens ? '.' : ' –'), ni, ch, cls, adiar(ni)) + alineas(ni) +
+            (ni.pena ? '<div class="ls-d ls-n0' + (cls ? ' ' + cls : '') + '"><span class="ls-rot">Pena –</span> ' + self._esc(ni.pena) + '</div>' : '') + (adiar(ni) ? self._htmlComentarios(a, ch, cls) : ''); }).join('') : ''; };
+        let temCaput = art.texto || !itens;
+        let html = (temCaput ? linha(self._rotulo() + ' ' + self._esc(a) + '.', art, a, '', adiar(art)) : '') + alineas(art) +
             (art.fecho ? '<div class="ls-d ls-n0">' + self._esc(art.fecho) + '</div>' : '') + incisos(art, a);
         if (art.pena) html += '<div class="ls-d ls-n0"><span class="ls-rot">Pena –</span> ' + self._esc(art.pena) + '</div>';
+        if (temCaput && adiar(art)) html += self._htmlComentarios(a, a, '');
         Object.keys(art.par || {}).forEach(function(p) {
-            let no = art.par[p], rot = p === 'pu' ? 'Parágrafo único.' : '§ ' + p + (/^\d$/.test(p) ? 'º' : '') + '.';
-            html += linha(rot, no, a + '§' + p) + alineas(no) + incisos(no, a + '§' + p, 'ls-inc-par');
+            let no = art.par[p], rot = p === 'pu' ? 'Parágrafo único.' : '§ ' + p + (/^\d$/.test(p) ? 'º' : '') + '.', ch = a + '§' + p;
+            html += linha(rot, no, ch, '', adiar(no)) + alineas(no) + incisos(no, ch, 'ls-inc-par');
             if (no.pena) html += '<div class="ls-d ls-n0 ls-inc-par"><span class="ls-rot">Pena –</span> ' + self._esc(no.pena) + '</div>';
+            if (adiar(no)) html += self._htmlComentarios(a, ch, '');
         });
         let manual = this._prioManual(a), sist = this._NOMES_NIVEL[this._nivelSistemaArt(a)];
         let q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null;
