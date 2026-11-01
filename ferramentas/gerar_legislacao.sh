@@ -148,3 +148,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/b1263e6c-L15358.
 # recomeçam no art. 1º, ficam de fora (--fim).
 C=$(mktemp); python3 -I ferramentas/alesp_md.py "/root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/8f939459-LEI_COMPLEMENTAR_N__988_DE_09_DE_JANEIRO_DE_2006_-_Assembleia_Legislativa_do_Estado_de_S_o_Paulo.md" > "$C"
 gera "$C" LCSP988 "Lei Orgânica da Defensoria Pública do Estado de São Paulo (LC estadual 988/2006)" https://www.al.sp.gov.br/repositorio/legislacao/lei.complementar/2006/lei.complementar-988-09.01.2006.html dados/legislacao/lc-sp-988.json 2026-11-01 --rubrica-capitulo --fim "^TÍTULO VIII$"; rm -f "$C"
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/42590227-Lcp80.md LC80 "Lei Orgânica Nacional da Defensoria Pública (LC 80/1994)" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp80.htm dados/legislacao/lc-80.json 2026-11-01 --rubrica-capitulo
