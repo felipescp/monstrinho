@@ -2,9 +2,64 @@
 <html lang="pt-BR">
 <head>
 <script>
+// Firebase compartilhado: a configuração do projeto monstrinho-lab, o
+// carregador preguiçoso do SDK (compat 10.14.1) e o modo do site.
+//   lab   = site publicado no Firebase (*.web.app / *.firebaseapp.com) ou
+//           localhost com ?modo=lab (só para testar; ver LEIAME-firebase.md);
+//   senão = GitHub Pages / localhost: sem portão, login Google opcional no
+//           "☁️⬆️ Salvar" para copiar os dados (window.MIGRACAO).
+window.MONSTRINHO_FIREBASE = (function() {
+    var host = location.hostname;
+    var local = host === 'localhost' || host === '127.0.0.1';
+    var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+    var scripts = {};
+    function script(nome) {
+        if (!scripts[nome]) scripts[nome] = new Promise(function(ok, falha) {
+            var s = document.createElement('script');
+            s.src = SDK + 'firebase-' + nome + '-compat.js';
+            s.onload = ok;
+            s.onerror = function() { delete scripts[nome]; falha(new Error('Falha ao carregar o SDK do Firebase (' + nome + ').')); };
+            document.head.appendChild(s);
+        });
+        return scripts[nome];
+    }
+    var F = {
+        CONFIG: {
+            apiKey: 'AIzaSyC9nBNb9wkqUj3UN55SbhKhXrOMeDndCyE',
+            authDomain: 'monstrinho-lab.firebaseapp.com',
+            projectId: 'monstrinho-lab',
+            storageBucket: 'monstrinho-lab.firebasestorage.app',
+            messagingSenderId: '1031537511970',
+            appId: '1:1031537511970:web:7fe9fcfb4779b3915ac47b'
+        },
+        local: local,
+        lab: /\.(web\.app|firebaseapp\.com)$/.test(host) || (local && /[?&]modo=lab(&|$)/.test(location.search)),
+        // Carrega os módulos em ordem ('app' primeiro) e inicializa uma vez.
+        carregar: function(modulos) {
+            return ['app'].concat(modulos || []).reduce(function(p, m) { return p.then(function() { return script(m); }); }, Promise.resolve())
+                .then(function() { if (!firebase.apps.length) firebase.initializeApp(F.CONFIG); return firebase; });
+        },
+        // Login Google (popup; redirect se o navegador bloquear o popup).
+        // Chamar direto do clique: popup aberto depois de esperas é bloqueado.
+        entrarGoogle: function(aoRedirecionar) {
+            var prov = new firebase.auth.GoogleAuthProvider();
+            prov.setCustomParameters({ prompt: 'select_account' });
+            return firebase.auth().signInWithPopup(prov).catch(function(e) {
+                if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) {
+                    if (aoRedirecionar) aoRedirecionar();
+                    return firebase.auth().signInWithRedirect(prov);
+                }
+                throw e;
+            });
+        }
+    };
+    return F;
+})();
+</script>
+<script>
 // ─────────────────────────────────────────────────────────────────────────
-// PORTÃO DE ACESSO (Firebase) — só no site publicado no Firebase Hosting
-// (*.web.app / *.firebaseapp.com). No localhost e no GitHub Pages nada muda.
+// PORTÃO DE ACESSO (Firebase) — só no modo lab (site publicado no Firebase
+// Hosting, ou localhost com ?modo=lab). No GitHub Pages nada muda.
 // O acervo (dados/) não vai para o Hosting: fica no Cloud Storage, e as
 // regras (storage.rules) só entregam a quem entrou com Google e tem o
 // documento acessos/{e-mail} no Firestore. Este bloco:
@@ -15,17 +70,9 @@
 // Ver LEIAME-firebase.md.
 // ─────────────────────────────────────────────────────────────────────────
 (function() {
-    var HOST = location.hostname;
-    if (!/\.(web\.app|firebaseapp\.com)$/.test(HOST)) return;
-    var CONFIG = {
-        apiKey: 'AIzaSyC9nBNb9wkqUj3UN55SbhKhXrOMeDndCyE',
-        authDomain: 'monstrinho-lab.firebaseapp.com',
-        projectId: 'monstrinho-lab',
-        storageBucket: 'monstrinho-lab.firebasestorage.app',
-        messagingSenderId: '1031537511970',
-        appId: '1:1031537511970:web:7fe9fcfb4779b3915ac47b'
-    };
-    var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+    var F = window.MONSTRINHO_FIREBASE;
+    if (!F.lab) return;
+    var CONFIG = F.CONFIG;
     var BASE = 'https://firebasestorage.googleapis.com/v0/b/' + CONFIG.storageBucket + '/o/';
     var fetchOriginal = window.fetch.bind(window);
     var liberar, liberado = new Promise(function(r) { liberar = r; });
@@ -81,31 +128,37 @@
         corpo('<p>Verificando acesso de <b>' + esc(u.email) + '</b>…</p>'); erro('');
         lerStorage('dados/leiseca/manifesto.json').then(function(r) {
             if (r.ok) { tela.remove(); liberar(); return; }
-            if (r.status === 403) corpo('<p>Acesso não liberado para <b>' + esc(u.email) + '</b>.</p><button type="button" onclick="MONSTRINHO_AUTH.sair()">Entrar com outra conta</button>');
+            if (r.status === 403) {
+                corpo('<p>Acesso não liberado para <b>' + esc(u.email) + '</b>.</p><p id="pa-copia"></p><button type="button" onclick="MONSTRINHO_AUTH.sair()">Entrar com outra conta</button>');
+                // A frase sobre os dados só aparece se a cópia existe mesmo.
+                F.carregar(['firestore']).then(function() { return firebase.firestore().doc('usuarios/' + u.uid + '/migracao/meta').get(); })
+                    .then(function(d) { return d.exists && d.data().completo === true; }, function() { return false; })
+                    .then(function(temCopia) {
+                        var p = document.getElementById('pa-copia');
+                        if (p) p.textContent = temCopia ? 'Seus dados já estão guardados; avise o administrador para liberar o acesso.'
+                            : 'Avise o administrador para liberar o acesso. Antes, salve seus dados no endereço antigo (☁️⬆️ Salvar e Entrar com Google).';
+                    });
+            }
             else if (r.status === 404) corpo('<p>O acervo ainda não foi enviado ao Storage.</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
             else corpo('<p>Não foi possível verificar o acesso (HTTP ' + r.status + ').</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
         }).catch(function() {
             corpo('<p>Sem conexão com o servidor.</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
         });
     }
-    function carregarScript(src) {
-        return new Promise(function(ok, falha) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = falha; document.head.appendChild(s); });
-    }
     window.MONSTRINHO_AUTH = {
         usuario: function() { return usuario; },
+        // Resolve quando o acesso ao acervo é confirmado (window.MIGRACAO
+        // espera por isto para importar os dados do endereço antigo).
+        liberado: liberado,
         entrar: function() {
             erro('');
-            var prov = new firebase.auth.GoogleAuthProvider();
-            prov.setCustomParameters({ prompt: 'select_account' });
-            firebase.auth().signInWithPopup(prov).catch(function(e) {
-                if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) return firebase.auth().signInWithRedirect(prov);
+            F.entrarGoogle().catch(function(e) {
                 if (e && e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') erro('Falha no login: ' + (e.code || e.message));
             });
         },
         sair: function() { firebase.auth().signOut().then(function() { location.reload(); }); }
     };
-    carregarScript(SDK + 'firebase-app-compat.js').then(function() { return carregarScript(SDK + 'firebase-auth-compat.js'); }).then(function() {
-        firebase.initializeApp(CONFIG);
+    F.carregar(['auth']).then(function() {
         firebase.auth().onAuthStateChanged(function(u) {
             if (u) verificar(u);
             else { usuario = null; corpo('<p>Entre com a sua conta Google para acessar.</p>' + BOTAO_GOOGLE); }
