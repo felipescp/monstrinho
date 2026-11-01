@@ -46,6 +46,7 @@ def limpa(l):
     l = re.sub(r'(?<![\w])_([^_]+)_(?![\w])', r'\1', l)  # itálico (_habeas corpus_)
     l = re.sub(r'(?<![\w])_([^_\s][^_]*)_(?=[a-zà-ú])', r'\1', l)  # plural fora do itálico: "_software_s" (Lei 15.211)
     l = l.replace('\\-', '-').replace('\\.', '.').replace(' ', ' ')
+    l = re.sub(r'(?<=\w)\u00ad(?=\w)', '-', l)  # hífen invisível no lugar do hífen: "far\u00adse\u00adá" (LC 80)
     l = re.sub(r'\(\s*VETADO\s*\)', '(VETADO)', l)  # "[§ 2º (VETADO](…) )" (Lei 11.105, art. 12)
     l = re.sub(r'^(\s*Art\.\s*\d+)\s(\d+)(?=\.\s)', r'\1\2', l)  # "Art. 5 7. (VETADO)" (Lei 13.709)
     l = re.sub(r'^(\s*Art)\s+\.(?=\s*\d)', r'\1.', l)  # "Art . 95." (Lei 13.465)
@@ -215,6 +216,8 @@ def linhas_md(caminho):
         # Risco que começa depois do rótulo ("Art. ~115 - Em caso de afastamento…~ (Revogado…)", LC 35):
         # o rótulo vai para dentro do risco, senão o número do artigo some com ele.
         l = re.sub(r'^(\s*)(Art\.\s*)~(?=\d)', r'\1~\2', l)
+        # Risco partido em dois trechos vizinhos ("~Art.~ ~40. Os membros…~", LC 80, arts. 40 e 85): um só.
+        l = re.sub(r'^(\s*~Art\.)~\s+~(?=\d)', r'\1 ', l)
         riscada = re.search(r'(?<!~)~[^~\n]+~(?!~)', l)
         # Dispositivo riscado com a anotação de revogação fora do risco
         # ("~I - texto antigo~ (Revogado pela LC 150…)"): fica o rótulo, revogado.
