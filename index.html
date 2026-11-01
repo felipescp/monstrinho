@@ -15656,12 +15656,17 @@ window.LEISECA_RUNTIME = {
                 return;
             }
         }
+        if (!this._diploma) {
+            let ultimo = null;
+            try { ultimo = localStorage.getItem(this.CHAVE_ULTIMO_DIPLOMA); } catch (e) {}
+            if (ultimo) this._diploma = ultimo;
+        }
         if (!this._diploma || !this._diplomasVisiveis().some(function(d) { return d.id === this._diploma; }, this)) {
             let todos = this._diplomasVisiveis();
             if (!todos.length) { if (col) col.innerHTML = '<div class="fc-vazio-col">Nenhum diploma com mapa de incidência.</div>'; return; }
             this._diploma = todos[0].id;
         }
-        await this.selecionarDiploma(this._diploma, true);
+        await this.selecionarDiploma(this._diploma, true, true);
         this._preCarregarIncidencias();
     },
     // Mapa de incidência de um diploma (uma busca só, mesmo com chamadas
@@ -15803,9 +15808,11 @@ window.LEISECA_RUNTIME = {
     },
     _infoDiploma: function(id) { return this._diplomas().find(function(d) { return d.id === id; }) || null; },
 
-    selecionarDiploma: async function(id, manterArt) {
+    // retomar (ou trocar de lei): abre no ponto de leitura (_pontoDeLeitura).
+    selecionarDiploma: async function(id, manterArt, retomar) {
         this._diploma = id; this._divisao = null;
         if (!manterArt) this._art = null;
+        try { localStorage.setItem(this.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {}
         this._renderDiplomas();
         let principal = document.getElementById('ls-col-principal');
         if (principal) principal.innerHTML = '<div class="fc-vazio-col">Carregando o texto…</div>';
@@ -15818,8 +15825,41 @@ window.LEISECA_RUNTIME = {
             return;
         }
         if (this._diploma !== id) return;
+        let ponto = (!manterArt || retomar) ? this._pontoDeLeitura() : null;
+        if (ponto) this._art = ponto;
         if (this._art && !this._textos[id].artigos[this._art]) this._art = null;
         this.render();
+        if (ponto) this._rolarParaPonto(ponto);
+    },
+
+    // ── Retomar a leitura (pedido explícito do usuário) ──
+    // Ao abrir a lei (ou reabrir a Lei Seca), vai ao primeiro artigo ainda não
+    // lido por inteiro a partir do último dispositivo marcado como lido (pela
+    // data da marcação), na ordem da lei e respeitando o filtro; no fim da
+    // lei, volta ao começo. Sem nenhuma leitura na lei, abre como antes.
+    CHAVE_ULTIMO_DIPLOMA: 'tjpe_v1__leiseca_ultimo_diploma', // deste aparelho (fora da sincronização)
+    _pontoDeLeitura: function() {
+        let self = this, pre = this._diploma + '|', ld = this.estado.lidosDisp, ultimo = null, quando = '';
+        Object.keys(ld).forEach(function(k) {
+            if (k.indexOf(pre) !== 0) return;
+            let t = typeof ld[k] === 'string' ? ld[k] : '';
+            if (!ultimo || t > quando) { quando = t; ultimo = k.slice(pre.length).split(/[§.]/)[0]; }
+        });
+        if (!ultimo) return null;
+        let arts = [].concat.apply([], this._grupos().map(function(g) { return g.arts; })).filter(function(a) { return self._passaFiltro(a); });
+        let i = arts.indexOf(ultimo), ordem = i < 0 ? arts : arts.slice(i).concat(arts.slice(0, i));
+        return ordem.find(function(a) { let l = self._leituraArt(a); return l === '' || l === 'parcial'; }) || null;
+    },
+    // Mapa: o quadrinho do ponto à vista. Texto: primeiro dispositivo sem ✓.
+    _rolarParaPonto: function(a) {
+        let mapa = document.querySelector('#leiseca-modal .ls-mapa'), tile = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
+        if (mapa && tile) {
+            let rm = mapa.getBoundingClientRect(), rt = tile.getBoundingClientRect();
+            if (rt.top < rm.top + 40 || rt.bottom > rm.bottom) mapa.scrollTop += rt.top - rm.top - 80;
+        }
+        let t = document.getElementById('ls-texto'), bloco = document.getElementById('ls-art-' + a);
+        let chk = bloco && bloco.querySelector('.ls-chk:not(.on)'), linha = chk && chk.closest('.ls-d');
+        if (t && linha) t.scrollTop += linha.getBoundingClientRect().top - t.getBoundingClientRect().top - 70;
     },
 
     // Limiares relativos ao diploma: Crítico = quartil superior das contagens
