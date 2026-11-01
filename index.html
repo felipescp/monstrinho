@@ -2953,6 +2953,54 @@ window.__acervoProvasHidratacaoPromise__ = (async function() {
 
 window.CAMADAS_STORAGE_MIGRADAS[window.CHAVE_ACERVO_PROVAS] = { ler: window.lerAcervoProvasBruto, salvar: window.salvarAcervoProvasBruto };
 
+// =========================================================================
+// ESPAÇO DO localStorage: o que só existe aqui tem prioridade
+// =========================================================================
+// As camadas acima gravam no IndexedDB (fonte primária) e tentam também uma
+// CÓPIA RESERVA no localStorage. Com muitos dados (histórico, acervo,
+// planner…), essas cópias enchem a cota (~5 MB) e quem só existe no
+// localStorage — Lei Seca (conjuntos, prioridades, leituras), lápides,
+// preferências — passava a falhar em silêncio: aparecia na tela, mas não era
+// salvo, não ia para o backup nem para a nuvem e sumia ao recarregar
+// (caso real: conjunto "DPE/SP"). Agora, se uma gravação dessas não couber,
+// as cópias reserva saem (da maior para a menor; o IndexedDB continua com o
+// dado) e a gravação é tentada de novo. As próprias cópias reserva seguem
+// "best-effort": nunca expulsam nada.
+(function() {
+    const gravar = Storage.prototype.setItem;
+    function copiasReserva() {
+        let out = [];
+        Object.keys(window.CAMADAS_STORAGE_MIGRADAS || {}).forEach(function(k) {
+            let c = window.CAMADAS_STORAGE_MIGRADAS[k];
+            // Só se o dado está em memória (veio do IndexedDB ou foi gravado nele).
+            try { if (c && typeof c.ler === 'function' && c.ler() != null) out.push(k); } catch (e) {}
+        });
+        [window.CHAVE_ARQUIVO_MORTO, window.CHAVE_SESSAO_ATIVA, window.CHAVE_PLANNER_RUNTIME_LEGADA].forEach(function(k) { if (k && out.indexOf(k) < 0) out.push(k); });
+        return out;
+    }
+    function ehReserva(k) {
+        return !!(window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[k]) ||
+            k === window.CHAVE_ARQUIVO_MORTO || k === window.CHAVE_ARQUIVO_MORTO_LEGADA ||
+            k === window.CHAVE_SESSAO_ATIVA || k === window.CHAVE_SESSAO_ATIVA_LEGADA || k === window.CHAVE_PLANNER_RUNTIME_LEGADA;
+    }
+    Storage.prototype.setItem = function(chave, valor) {
+        try { return gravar.apply(this, arguments); }
+        catch (erro) {
+            if (this !== window.localStorage || !window._idbDisponivel || ehReserva(chave)) throw erro;
+            let ls = this, lista = copiasReserva().filter(function(k) { return ls.getItem(k) !== null; })
+                .sort(function(x, y) { return ls.getItem(y).length - ls.getItem(x).length; });
+            for (let i = 0; i < lista.length; i++) {
+                // delete (e não removeItem): é só a cópia reserva — não é
+                // exclusão de dado e não deve virar envio para a nuvem.
+                try { delete ls[lista[i]]; } catch (e) { continue; }
+                console.warn('[ESPAÇO] Cópia reserva "' + lista[i] + '" liberada do localStorage para gravar "' + chave + '" (o dado continua no IndexedDB).');
+                try { return gravar.apply(this, arguments); } catch (e) {}
+            }
+            throw erro;
+        }
+    };
+})();
+
 // Reparo de simulados finalizados que nunca chegaram ao Planner/Dashboard —
 // sequela do bug de QuotaExceededError corrigido acima. finalizarSimulado()
 // grava primeiro no Arquivo Morto (já em IndexedDB, então sempre teve
@@ -15748,7 +15796,14 @@ window.LEISECA_RUNTIME = {
         try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null, coment: e.coment || {}, grifos: e.grifos || {}, vis: e.vis || {} }; } catch (e) {}
         if (!this.estado.conjuntos) this.estado.conjuntos = [];
     },
-    _salvar: function() { try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); } catch (e) { console.warn('[LEI SECA] Falha ao salvar:', e); } },
+    _salvar: function() {
+        try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); }
+        catch (e) {
+            console.warn('[LEI SECA] Falha ao salvar:', e);
+            // Antes era só no console: o usuário via a mudança na tela e ela se perdia.
+            if (!this._avisouFalha) { this._avisouFalha = true; alert('Não foi possível salvar a Lei Seca neste navegador: o armazenamento está cheio. A última mudança pode se perder ao recarregar a página.'); }
+        }
+    },
 
     init: async function() {
         this._carregarEstado();
