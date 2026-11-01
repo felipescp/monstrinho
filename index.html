@@ -5194,7 +5194,14 @@ window.SALINHA_SYNC = (function() {
     let base = {};
 
     function lerBase() { try { return JSON.parse(localStorage.getItem(CHAVE_BASE) || '{}') || {}; } catch (e) { return {}; } }
-    function salvarBase() { try { localStorage.setItem(CHAVE_BASE, JSON.stringify(base)); } catch (e) {} }
+    // Abas do mesmo navegador dividem a base: ao gravar, mescla com o que
+    // outra aba gravou (fica a versão mais nova de cada chave).
+    function salvarBase() {
+        let gravada = lerBase();
+        Object.keys(base).forEach(function(k) { if (!gravada[k] || base[k].v >= gravada[k].v) gravada[k] = base[k]; });
+        base = gravada;
+        try { localStorage.setItem(CHAVE_BASE, JSON.stringify(base)); } catch (e) {}
+    }
     function hash(s) { // FNV-1a 32 bits + tamanho
         let h = 0x811c9dc5;
         for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
@@ -5340,6 +5347,25 @@ window.SALINHA_SYNC = (function() {
             .then(function() { gravandoNaNuvem = 0; avisarEstado(); }, function() {});
     }
 
+    // ── Outras abas deste navegador ──
+    // Elas dividem o armazenamento (e o "dispositivo"): a nuvem não as avisa
+    // de mudanças daqui, porque são o mesmo aparelho. Este canal avisa que um
+    // dado mudou; a outra aba só precisa recarregar o que tem em memória.
+    let canal = null;
+    try { canal = new BroadcastChannel('salinha-sync'); } catch (e) {}
+    let avisoAbas = null;
+    function avisarOutrasAbas(chave) {
+        if (!canal) return;
+        clearTimeout(avisoAbas);
+        avisoAbas = setTimeout(function() { try { canal.postMessage({ tipo: 'mudou', chave: chave, uid: uid }); } catch (e) {} }, 1500);
+    }
+    if (canal) canal.onmessage = function(ev) {
+        let m = ev.data || {};
+        if (m.tipo !== 'mudou' || !pronto || m.uid !== uid) return;
+        console.info('[SYNC] Mudança feita em outra aba deste navegador: ' + m.chave + '.');
+        recarregarControlado();
+    };
+
     // ── Envio ──
     function aoEscrever(chave) {
         if (aplicando || !EH_SINCRONIZADA[chave]) return;
@@ -5371,6 +5397,9 @@ window.SALINHA_SYNC = (function() {
             if (!base[chave] && vazioLocal(chave, s)) return;
             await gravarRemoto(chave, s, h);
             console.info('[SYNC] Enviado: ' + chave + ' (' + s.length + ' caracteres).');
+            // Só avisa quando o dado mudou de fato (gravações do app ao abrir,
+            // iguais ao que já está na nuvem, não chegam aqui).
+            avisarOutrasAbas(chave);
         }).catch(function(e) { console.warn('[SYNC] Falha ao enviar ' + chave + ':', e); pendentes.add(chave); })
           .then(avisarEstado);
         envios[chave] = atual;
@@ -5446,10 +5475,12 @@ window.SALINHA_SYNC = (function() {
             // recarregada antes de ele sair): se a nuvem não tem nada mais
             // novo, o valor local é o mais recente e sobe de novo; se tem, a
             // chave é tratada sem base (mescla, se os dois lados têm dados).
+            // (A base é dividida entre abas e salvarBase mescla pela versão:
+            // em vez de apagar a entrada, zera o hash na mesma versão.)
             if (B && B.ok === false) {
                 if (R && R.versao === B.v) B.ok = true;
-                else if (!R || R.versao < B.v) { if (L != null) subir.push(chave); delete base[chave]; continue; }
-                else { delete base[chave]; B = undefined; }
+                else if (!R || R.versao < B.v) { if (L != null) subir.push(chave); base[chave] = { v: B.v, h: null }; continue; }
+                else { base[chave] = { v: B.v, h: null }; B = undefined; }
             }
             if (!R) {
                 if (L != null && !vazioLocal(chave, L) && !(B && B.h === Lh)) subir.push(chave);
@@ -5515,7 +5546,9 @@ window.SALINHA_SYNC = (function() {
             let Rh = hash(Rs), L = await lerLocal(chave), Lh = L == null ? null : hash(L);
             let B = base[chave];
             base[chave] = { v: d.versao, h: Rh };
-            if (Lh === Rh) { salvarBase(); return; }
+            // Já igual aqui: outra aba deste navegador aplicou primeiro — o
+            // armazenamento está certo, mas a tela desta aba ainda não.
+            if (Lh === Rh) { salvarBase(); recarregarControlado(); return; }
             if (pendentes.has(chave) || (L != null && B && Lh !== B.h)) {
                 await mesclar({ [chave]: Rs }); // mudou dos dois lados
                 salvarBase();
@@ -5525,6 +5558,7 @@ window.SALINHA_SYNC = (function() {
                 await gravarLocal(chave, Rs);
                 salvarBase();
             }
+            avisarOutrasAbas(chave);
             recarregarControlado();
         }).catch(function(e) { console.warn('[SYNC] Falha ao aplicar ' + chave + ' vinda de outro aparelho:', e); });
     }
