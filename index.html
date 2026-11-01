@@ -3,19 +3,29 @@
 <head>
 <script>
 // ─────────────────────────────────────────────────────────────────────────
-// PORTÃO DE ACESSO (Firebase) — só no site publicado no Firebase Hosting, no
-// domínio www.asalinha.com.br. Os endereços padrão do Firebase (*.web.app /
-// *.firebaseapp.com) e o domínio sem "www" redirecionam para ele: cada
-// endereço tem o seu armazenamento no navegador, então só um pode valer.
-// No localhost e no GitHub Pages nada muda.
-// O acervo (dados/) não vai para o Hosting: fica no Cloud Storage, e as
-// regras (storage.rules) só entregam a quem entrou com Google e tem o
-// documento acessos/{e-mail} no Firestore. Este bloco:
-//   1) mostra a tela "Entrar com Google";
-//   2) troca todo fetch de 'dados/…' por uma leitura no Storage com o token
-//      do usuário — os fetch que o app dispara antes do login esperam o
-//      acesso ser confirmado.
-// Ver LEIAME-firebase.md.
+// LOGIN GOOGLE E ACESSO (Firebase) — window.SALINHA_FB
+// ─────────────────────────────────────────────────────────────────────────
+// Roda em www.asalinha.com.br (produção) e no localhost com ?lab=1 (teste,
+// ver LEIAME-firebase.md). Os endereços padrão do Firebase (*.web.app /
+// *.firebaseapp.com) e o domínio sem "www" redirecionam para o domínio:
+// cada endereço tem o seu armazenamento no navegador, então só um pode
+// valer. Em qualquer outro endereço (localhost sem ?lab=1) nada disto roda.
+//
+// O app abre normalmente, sem tela cheia; o login fica no cabeçalho (ver
+// SALINHA_UI_AUTH). Este bloco:
+//   1) carrega o SDK compat 10.14.1 e acompanha o login Google;
+//   2) confirma o acesso — produção: lendo um arquivo pequeno do acervo no
+//      Storage (200 libera; 403 = sem acessos/{e-mail} ativo); lab: lendo
+//      acessos/{e-mail} no Firestore (o CORS do Storage não aceita
+//      localhost). Sem acesso, registra o pedido (pedirAcesso);
+//   3) faz todo fetch('dados/…') esperar a liberação — em produção lendo do
+//      Storage com o token; no lab, do próprio servidor local. Antes do login
+//      essas cadeias (acervo oficial, manifestos das seções) só ficam
+//      paradas e seguem sozinhas quando o acesso é liberado;
+//   4) avisa a sincronização (SALINHA_SYNC) de toda gravação em localStorage
+//      com prefixo tjpe_v1__ (aoEscrever), desde o primeiro instante.
+// Estado publicado no evento 'salinha-auth' (detail.estado):
+// carregando → deslogado | verificando → liberado | pendente | erro.
 // ─────────────────────────────────────────────────────────────────────────
 (function() {
     var HOST = location.hostname, DOMINIO = 'www.asalinha.com.br';
@@ -24,7 +34,10 @@
         location.replace('https://' + DOMINIO + location.pathname + location.search + location.hash);
         return;
     }
-    if (HOST !== DOMINIO) return;
+    var local = HOST === 'localhost' || HOST === '127.0.0.1';
+    var modo = HOST === DOMINIO ? 'producao' : (local && /[?&]lab=1(&|$)/.test(location.search) ? 'lab' : null);
+    if (!modo) return;
+
     var CONFIG = {
         apiKey: 'AIzaSyC9nBNb9wkqUj3UN55SbhKhXrOMeDndCyE',
         authDomain: 'monstrinho-lab.firebaseapp.com',
@@ -37,8 +50,67 @@
     var BASE = 'https://firebasestorage.googleapis.com/v0/b/' + CONFIG.storageBucket + '/o/';
     var fetchOriginal = window.fetch.bind(window);
     var liberar, liberado = new Promise(function(r) { liberar = r; });
-    var usuario = null;
+    var usuario = null, estado = 'carregando', detalhe = {};
 
+    var FB = window.SALINHA_FB = {
+        modo: modo,
+        liberado: liberado,
+        aoEscrever: null, // SALINHA_SYNC liga aqui o aviso de gravação local
+        usuario: function() { return usuario; },
+        estado: function() { return estado; },
+        detalhe: function() { return detalhe; }
+    };
+    function mudar(novo, extra) {
+        estado = novo; detalhe = extra || {};
+        document.dispatchEvent(new CustomEvent('salinha-auth', { detail: { estado: estado, usuario: usuario, extra: detalhe } }));
+    }
+
+    // ── Gravações locais: avisa a sincronização (inclusive quando a gravação
+    // estoura a cota e lança — a camada IndexedDB pode ter guardado o valor).
+    try {
+        var armazenamento = window.localStorage;
+        var setOriginal = Storage.prototype.setItem, removeOriginal = Storage.prototype.removeItem;
+        var avisar = function(alvo, chave) {
+            if (alvo === armazenamento && FB.aoEscrever && String(chave).indexOf('tjpe_v1__') === 0) {
+                try { FB.aoEscrever(String(chave)); } catch (e) { console.warn('[SYNC] Aviso de gravação falhou:', e); }
+            }
+        };
+        Storage.prototype.setItem = function(chave) { try { return setOriginal.apply(this, arguments); } finally { avisar(this, chave); } };
+        Storage.prototype.removeItem = function(chave) { try { return removeOriginal.apply(this, arguments); } finally { avisar(this, chave); } };
+    } catch (e) { console.warn('[SYNC] Não foi possível acompanhar o localStorage:', e); }
+
+    // ── SDK (carregado uma vez, em ordem: app primeiro) ──
+    var scripts = {};
+    function script(nome) {
+        if (!scripts[nome]) scripts[nome] = new Promise(function(ok, falha) {
+            var s = document.createElement('script');
+            s.src = SDK + 'firebase-' + nome + '-compat.js';
+            s.onload = ok;
+            s.onerror = function() { delete scripts[nome]; falha(new Error('Falha ao carregar o SDK do Firebase (' + nome + ').')); };
+            document.head.appendChild(s);
+        });
+        return scripts[nome];
+    }
+    FB.carregarSDK = function(modulos) {
+        return ['app'].concat(modulos || []).reduce(function(p, m) { return p.then(function() { return script(m); }); }, Promise.resolve())
+            .then(function() { if (!firebase.apps.length) firebase.initializeApp(CONFIG); return firebase; });
+    };
+    // Firestore com persistência offline (gravações ficam na fila sem rede).
+    // enablePersistence tem que vir antes de qualquer outro uso: por isso todo
+    // acesso ao Firestore passa por aqui. Com outra aba antiga aberta, ou sem
+    // suporte do navegador, segue sem cache offline.
+    var dbPromessa = null;
+    FB.db = function() {
+        if (!dbPromessa) dbPromessa = FB.carregarSDK(['auth', 'firestore']).then(function() {
+            var db = firebase.firestore();
+            return db.enablePersistence({ synchronizeTabs: true })
+                .catch(function(e) { console.warn('[SYNC] Persistência offline do Firestore indisponível (' + (e && e.code) + ').'); })
+                .then(function() { return db; });
+        });
+        return dbPromessa;
+    };
+
+    // ── Acervo (dados/) ──
     function caminhoDados(entrada) {
         if (typeof entrada !== 'string' && !(entrada instanceof URL)) return null;
         var u;
@@ -59,89 +131,67 @@
     window.fetch = function(entrada, opcoes) {
         var caminho = caminhoDados(entrada);
         if (!caminho) return fetchOriginal(entrada, opcoes);
-        return liberado.then(function() { return lerStorage(caminho, opcoes); });
+        return liberado.then(function() { return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes); });
     };
 
-    // ── Tela de entrada ──
-    var tela = document.createElement('div');
-    tela.id = 'portao-acesso';
-    tela.innerHTML = '<style>' +
-        '#portao-acesso{position:fixed;inset:0;z-index:2147483000;background:#f8fafc;display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f172a}' +
-        '#portao-acesso .pa-caixa{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px 28px;width:min(380px,100%);text-align:center;box-shadow:0 20px 50px rgba(15,23,42,.08)}' +
-        '#portao-acesso img{width:72px;height:72px;object-fit:contain}' +
-        '#portao-acesso h1{font-size:22px;margin:10px 0 4px}' +
-        '#portao-acesso p{font-size:13px;color:#64748b;line-height:1.5;margin:6px 0 18px}' +
-        '#portao-acesso button{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;font-size:14px;font-weight:700;color:#0f172a;cursor:pointer}' +
-        '#portao-acesso button:hover{background:#f1f5f9}' +
-        '#portao-acesso button + button{margin-top:8px;border:none;font-weight:600;color:#64748b;font-size:12px}' +
-        '#portao-acesso .pa-erro{color:#dc2626;font-size:12px;margin-top:12px;min-height:16px}' +
-        '</style><div class="pa-caixa"><img src="monstrinho.png" alt=""><h1>A Salinha</h1><div id="pa-corpo"><p>Carregando…</p></div><div class="pa-erro" id="pa-erro"></div></div>';
-    document.documentElement.appendChild(tela);
-    function corpo(html) { document.getElementById('pa-corpo').innerHTML = html; }
-    function erro(t) { document.getElementById('pa-erro').textContent = t || ''; }
-    function esc(s) { return String(s).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-    var BOTAO_GOOGLE = '<button type="button" onclick="MONSTRINHO_AUTH.entrar()"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Entrar com Google</button>';
-
-    // Acesso negado: registra o pedido em acessos/{e-mail} com ativo:false
+    // ── Acesso ──
+    function liberarAcesso() { mudar('liberado'); liberar(); }
+    // Sem acesso: registra o pedido em acessos/{e-mail} com ativo:false
     // (firestore.rules só deixa o próprio usuário criar o seu, e só assim).
     // A liberação é o administrador trocar ativo para true no console. Se o
     // documento já existe (pedido anterior ou acesso bloqueado), não regrava.
-    var BOTAO_OUTRA_CONTA = '<button type="button" onclick="MONSTRINHO_AUTH.sair()">Entrar com outra conta</button>';
     function pedirAcesso(u) {
-        corpo('<p>Registrando pedido de acesso de <b>' + esc(u.email) + '</b>…</p>');
-        var carregado = (firebase.firestore ? Promise.resolve() : carregarScript(SDK + 'firebase-firestore-compat.js'));
-        carregado.then(function() {
-            var ref = firebase.firestore().collection('acessos').doc(u.email);
+        mudar('verificando', { texto: 'Registrando pedido de acesso…' });
+        FB.db().then(function(db) {
+            var ref = db.collection('acessos').doc(u.email);
             return ref.get().then(function(doc) {
                 if (doc.exists) return;
                 return ref.set({ ativo: false, pedidoEm: firebase.firestore.FieldValue.serverTimestamp() });
             });
-        }).then(function() {
-            corpo('<p>Pedido de acesso registrado para <b>' + esc(u.email) + '</b>.<br>Assim que for liberado, é só voltar a esta página.</p>' +
-                '<button type="button" onclick="location.reload()">Verificar de novo</button>' + BOTAO_OUTRA_CONTA);
-        }).catch(function(e) {
-            console.warn('[PORTÃO] Falha ao registrar o pedido de acesso:', e);
-            corpo('<p>Acesso não liberado para <b>' + esc(u.email) + '</b>.<br>Avise o administrador para liberar o seu acesso.</p>' + BOTAO_OUTRA_CONTA);
+        }).then(function() { mudar('pendente'); }, function(e) {
+            console.warn('[ACESSO] Falha ao registrar o pedido de acesso:', e);
+            mudar('pendente', { falhaPedido: true });
         });
     }
-
-    // Acesso confirmado lendo um arquivo pequeno do acervo: 200 = liberado;
-    // 403 = sem documento em acessos/{e-mail}, ou com ativo:false.
     function verificar(u) {
-        usuario = u;
-        corpo('<p>Verificando acesso de <b>' + esc(u.email) + '</b>…</p>'); erro('');
-        lerStorage('dados/leiseca/manifesto.json').then(function(r) {
-            if (r.ok) { tela.remove(); liberar(); return; }
-            if (r.status === 403) pedirAcesso(u);
-            else if (r.status === 404) corpo('<p>O acervo ainda não foi enviado ao Storage.</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
-            else corpo('<p>Não foi possível verificar o acesso (HTTP ' + r.status + ').</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
-        }).catch(function() {
-            corpo('<p>Sem conexão com o servidor.</p><button type="button" onclick="location.reload()">Tentar de novo</button>');
+        mudar('verificando');
+        var checagem = modo === 'producao'
+            ? lerStorage('dados/leiseca/manifesto.json').then(function(r) { return r.ok ? 'ok' : r.status === 403 ? 'negado' : 'HTTP ' + r.status; })
+            : FB.db().then(function(db) { return db.collection('acessos').doc(u.email).get(); })
+                .then(function(d) { return d.exists && d.data().ativo === true ? 'ok' : 'negado'; }, function(e) { return e && e.code === 'permission-denied' ? 'negado' : 'falha'; });
+        checagem.then(function(r) {
+            if (r === 'ok') liberarAcesso();
+            else if (r === 'negado') pedirAcesso(u);
+            else mudar('erro', { texto: 'Não foi possível verificar o acesso (' + r + ').' });
+        }, function() { mudar('erro', { texto: 'Sem conexão com o servidor.' }); });
+    }
+    FB.verificarDeNovo = function() { if (usuario) verificar(usuario); };
+
+    // ── Entrar / sair ──
+    FB.entrar = function() {
+        if (!window.firebase || !firebase.auth) return;
+        var prov = new firebase.auth.GoogleAuthProvider();
+        prov.setCustomParameters({ prompt: 'select_account' });
+        firebase.auth().signInWithPopup(prov).catch(function(e) {
+            if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) return firebase.auth().signInWithRedirect(prov);
+            if (e && e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') alert('Falha no login: ' + (e.code || e.message));
         });
-    }
-    function carregarScript(src) {
-        return new Promise(function(ok, falha) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = falha; document.head.appendChild(s); });
-    }
-    window.MONSTRINHO_AUTH = {
-        usuario: function() { return usuario; },
-        entrar: function() {
-            erro('');
-            var prov = new firebase.auth.GoogleAuthProvider();
-            prov.setCustomParameters({ prompt: 'select_account' });
-            firebase.auth().signInWithPopup(prov).catch(function(e) {
-                if (e && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) return firebase.auth().signInWithRedirect(prov);
-                if (e && e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') erro('Falha no login: ' + (e.code || e.message));
-            });
-        },
-        sair: function() { firebase.auth().signOut().then(function() { location.reload(); }); }
     };
-    carregarScript(SDK + 'firebase-app-compat.js').then(function() { return carregarScript(SDK + 'firebase-auth-compat.js'); }).then(function() {
-        firebase.initializeApp(CONFIG);
+    // Com a sincronização ativa, sair envia o pendente e limpa os dados
+    // pessoais deste aparelho (ver SALINHA_SYNC.sair).
+    FB.sair = function() {
+        if (window.SALINHA_SYNC && window.SALINHA_SYNC.sair) return window.SALINHA_SYNC.sair();
+        firebase.auth().signOut().then(function() { location.reload(); });
+    };
+    // Compatibilidade: partes do app consultam MONSTRINHO_AUTH.usuario().
+    window.MONSTRINHO_AUTH = { usuario: FB.usuario, entrar: FB.entrar, sair: FB.sair };
+
+    FB.carregarSDK(['auth']).then(function() {
         firebase.auth().onAuthStateChanged(function(u) {
-            if (u) verificar(u);
-            else { usuario = null; corpo('<p>Entre com a sua conta Google para acessar.</p>' + BOTAO_GOOGLE); }
+            usuario = u || null;
+            if (u) verificar(u); else mudar('deslogado');
         });
-    }).catch(function() { corpo('<p>Não foi possível carregar o login. Verifique a conexão.</p><button type="button" onclick="location.reload()">Tentar de novo</button>'); });
+    }).catch(function() { mudar('erro', { texto: 'Não foi possível carregar o login. Verifique a conexão.' }); });
 })();
 </script>
 <script>
@@ -278,15 +328,15 @@
 
 
 /* #barra-nav (a "‹ INÍCIO" isolada, revelada antes pelo toggle ⚙/× flutuante)
-   fica sempre oculta no mobile agora — .topbar-mobile-fixa (Início + Salvar +
-   Carregar + Entrar com GitHub) é a única barra que deve aparecer em telas
+   fica sempre oculta no mobile agora — .topbar-mobile-fixa (Início, Seções e
+   a conta Google) é a única barra que deve aparecer em telas
    ≤700px, em qualquer tela e independente de body.top-aberto. */
 @media(max-width:700px) { #barra-nav { display: none !important; } }
 body.force-mobile #barra-nav { display: none !important; }
 
 /* Mesmo quando o menu (top-aberto) revela #barra-nav no mobile, "Gerar
    Questões" e a paleta de cores do tema ficam de fora — ganha espaço e
-   a topbar-mobile-fixa (Início/Salvar/Carregar/Entrar com GitHub) já cobre
+   a topbar-mobile-fixa (Início, Seções e a conta Google) já cobre
    o essencial. */
 @media (max-width:700px) { .gerar-q-wrap, #seletor-cor-tema { display: none !important; } }
 body.force-mobile .gerar-q-wrap, body.force-mobile #seletor-cor-tema { display: none !important; }
@@ -1593,22 +1643,6 @@ try {
 } catch (e) {}
 </script>
 
-<!-- OVERLAY: "Carregando última versão salva" — aparece na 1ª abertura do
-     DIA em cada navegador/computador (ver tjpe_v1__ultimo_uso_local, uma
-     data ISO comparada por dia local, atualizada em toda abertura — não é
-     "primeira vez da vida", é "ainda não abriu hoje aqui"). Cobre o caso
-     real: trocar de computador (ou voltar depois de um tempo) com abas de
-     uma versão salva antiga na tela, enquanto a sincronização busca por
-     baixo o que mudou noutro lugar — sem isso, o usuário fica sem entender
-     por que nada atualiza por 10-15s. F5 e reaberturas dentro do MESMO dia,
-     no mesmo navegador, nunca mostram isto — aí é só atualização simples. -->
-<div id="overlay-carregando-nuvem" style="display:none; position:fixed; inset:0; z-index:999999; background:rgba(15,23,42,0.92); color:#fff; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:24px;">
-    <div style="width:36px; height:36px; border:3px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; animation:overlay-carregando-nuvem-spin 0.8s linear infinite;"></div>
-    <div style="font-size:14px; font-weight:700; max-width:320px;">Aguarde... Realizando o carregamento da última versão salva.</div>
-</div>
-<style>
-    @keyframes overlay-carregando-nuvem-spin { to { transform: rotate(360deg); } }
-</style>
 
 <header class="header" id="barra1">
     <div style="display:flex; align-items:center; gap:15px;">
@@ -1642,10 +1676,10 @@ try {
                      #tela-simulado.tema-escuro-simulado no CSS). -->
                 <button id="btn-tema-global" onclick="window.alternarTemaGlobal()" class="b1" style="height:26px; width:26px; font-size:13px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Modo noturno (afeta o site inteiro)">☀</button>
 
-                <button id="btn-salvar-nuvem-desktop" onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Enviar backup pra nuvem (GitHub Gist)">☁️⬆️ Salvar</button>
-                <button onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Trazer o backup mais recente da nuvem">☁️⬇️ Carregar</button>
-                <button id="btn-github-oauth-desktop" onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Login com GitHub — único método de sincronização em nuvem">🔑 Entrar com GitHub</button>
-                <button id="btn-github-logout-desktop" onclick="window.SALINHA_GITHUB_OAUTH.sair()" class="b1" style="display:none; height:26px; width:26px; font-size:11px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Sair da conta do GitHub neste navegador">✕</button>
+                <span id="sync-indicador-desktop" class="b1 sync-indicador" style="display:none;" title="Sincronização dos seus dados com a nuvem"></span>
+                <button id="btn-google-entrar-desktop" onclick="window.SALINHA_FB && window.SALINHA_FB.entrar()" class="b1 btn-google-entrar" style="display:none; gap:5px; height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Entrar com a sua conta Google"><svg width="13" height="13" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-2px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Entrar com Google</button>
+                <span id="usuario-nome-desktop" class="b1 usuario-nome" style="display:none;"></span>
+                <button id="btn-google-sair-desktop" onclick="window.SALINHA_FB && window.SALINHA_FB.sair()" class="b1" style="display:none; height:26px; width:26px; font-size:11px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Sair da conta Google neste navegador">✕</button>
 
                 <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 2px;"></div>
 
@@ -1733,102 +1767,98 @@ try {
     <div style="width:1px; height:24px; background:var(--border-color); flex-shrink:0;"></div>
 
     <!-- ============================================== -->
-    <!-- BLOCO: BACKUP / RESTAURAÇÃO -->
+    <!-- BLOCO: CONTA GOOGLE E SINCRONIZAÇÃO (ver SALINHA_UI_AUTH) -->
     <!-- ============================================== -->
     <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
 
-        <button
-            id="btn-salvar-nuvem-mobile"
-            onclick="window.SALINHA_GIST_SYNC.exportarNuvem(this)"
-            class="b1"
-            style="
-                height:26px;
-                font-size:9.5px;
-                background:var(--bg-white);
-                border:1px solid var(--border-color);
-                color:var(--text-main);
-            "
-            title="Enviar backup pra nuvem (GitHub Gist)"
-        >
-            ☁️⬆️ Salvar
-        </button>
-
-        <button
-            onclick="window.SALINHA_GIST_SYNC.importarNuvem(this)"
-            class="b1"
-            style="
-                height:26px;
-                font-size:9.5px;
-                background:var(--bg-white);
-                border:1px solid var(--border-color);
-                color:var(--text-main);
-            "
-            title="Trazer o backup mais recente da nuvem"
-        >
-            ☁️⬇️ Carregar
-        </button>
-
-        <button
-            id="btn-github-oauth-mobile"
-            onclick="window.SALINHA_GITHUB_OAUTH.abrirModal()"
-            class="b1"
-            style="
-                height:26px;
-                font-size:9.5px;
-                background:var(--bg-white);
-                border:1px solid var(--border-color);
-                color:var(--text-main);
-            "
-            title="Login com GitHub — único método de sincronização em nuvem"
-        >
-            🔑 Entrar com GitHub
-        </button>
-
-        <button
-            id="btn-github-logout-mobile"
-            onclick="window.SALINHA_GITHUB_OAUTH.sair()"
-            class="b1"
-            style="
-                display:none;
-                height:26px;
-                width:26px;
-                font-size:11px;
-                background:var(--bg-white);
-                border:1px solid var(--border-color);
-                color:var(--text-muted);
-            "
-            title="Sair da conta do GitHub neste navegador"
-        >
-            ✕
-        </button>
+        <span id="sync-indicador-mobile" class="b1 sync-indicador" style="display:none;" title="Sincronização dos seus dados com a nuvem"></span>
+        <button id="btn-google-entrar-mobile" onclick="window.SALINHA_FB && window.SALINHA_FB.entrar()" class="b1 btn-google-entrar" style="display:none; gap:5px; height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Entrar com a sua conta Google"><svg width="13" height="13" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-2px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Entrar com Google</button>
+        <span id="usuario-nome-mobile" class="b1 usuario-nome" style="display:none;"></span>
+        <button id="btn-google-sair-mobile" onclick="window.SALINHA_FB && window.SALINHA_FB.sair()" class="b1" style="display:none; height:26px; width:26px; font-size:11px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Sair da conta Google neste navegador">✕</button>
 
     </div>
 
 </div>
 
-<!-- MODAL: Login com GitHub (Device Flow) — único método de
-     autenticação/sincronização em nuvem (o antigo campo manual de token
-     foi removido). Ver window.SALINHA_GITHUB_OAUTH e
-     cloudflare-worker/worker.js. -->
-<div id="modal-github-oauth" class="mo">
+<!-- CONTA GOOGLE NO CABEÇALHO E FAIXAS DE AVISO — ver SALINHA_FB (topo do
+     <head>) e SALINHA_SYNC. Sem Firebase (localhost sem ?lab=1) nada aparece. -->
 <style>
-    #modal-github-oauth { z-index: 10000; }
-    #modal-github-oauth .mdl { max-width:420px; width:92%; padding:24px; display:flex; flex-direction:column; gap:14px; text-align:center; box-sizing:border-box; }
-    #modal-github-oauth .oauth-codigo { font-family:monospace; font-size:26px; font-weight:800; letter-spacing:4px; color:var(--app-primary); background:var(--bg-accent-soft); border-radius:8px; padding:14px; word-break:break-all; }
-    #modal-github-oauth .oauth-status { font-size:12px; color:var(--text-muted); min-height:16px; }
+    /* Mesmo visual dos demais botões do topo (.b1), mas só informativos. */
+    .b1.sync-indicador, .b1.usuario-nome { cursor:default; gap:5px; }
+    .b1.sync-indicador:hover, .b1.usuario-nome:hover { border-color:var(--border-color); color:var(--text-main); }
+    .b1.sync-indicador { color:var(--text-muted); }
+    .b1.sync-indicador:hover { color:var(--text-muted); }
+    .b1.sync-indicador.ok, .b1.sync-indicador.ok:hover { color:#15803d; }
+    .b1.sync-indicador.offline, .b1.sync-indicador.offline:hover { color:#b45309; border-color:#fcd34d; }
+    .b1.usuario-nome .usuario-nome-texto { max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+    .salinha-faixa { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; padding:7px 14px; background:#eef2ff; color:#3730a3; font-size:12.5px; font-weight:600; line-height:1.45; border-bottom:1px solid #c7d2fe; position:relative; z-index:60; }
+    .salinha-faixa.alerta { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+    .salinha-faixa.erro { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .salinha-faixa span { flex:1 1 260px; min-width:0; }
+    .salinha-faixa button { flex-shrink:0; padding:4px 10px; border-radius:6px; border:1px solid currentColor; background:#fff; color:inherit; font-size:11.5px; font-weight:700; cursor:pointer; }
+    .salinha-faixa button.discreto { border:none; background:none; text-decoration:underline; }
+    body.dark .salinha-faixa { background:#1e1b4b; color:#c7d2fe; border-color:#312e81; }
+    body.dark .salinha-faixa.alerta { background:#422006; color:#fde68a; border-color:#713f12; }
+    body.dark .salinha-faixa button { background:transparent; }
 </style>
-    <div class="mdl">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="fc-popup-header" style="font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main);">🔑 Entrar com GitHub</div>
-            <button onclick="window.SALINHA_GITHUB_OAUTH.fecharModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
-        </div>
-        <div style="font-size:12px; color:var(--text-main);">Abra o link abaixo e digite o código pra autorizar A Salinha a usar seus próprios Gists (backup pessoal — só seu, ninguém mais tem acesso):</div>
-        <div class="oauth-codigo" id="oauth-codigo">——</div>
-        <a id="oauth-link" href="#" target="_blank" rel="noopener" style="font-size:13px; font-weight:700; color:var(--app-primary); word-break:break-all;"></a>
-        <div class="oauth-status" id="oauth-status"></div>
-        <button class="fc-footer-btn" style="padding:8px 14px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:11px; font-weight:700; cursor:pointer; color:var(--text-main);" onclick="window.SALINHA_GITHUB_OAUTH.iniciarLogin()">🔄 Tentar de novo / Gerar novo código</button>
-    </div>
-</div>
+<script>
+window.SALINHA_UI_AUTH = (function() {
+    let G_SVG = '<svg width="13" height="13" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-2px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function mostrar(id, sim) { let e = document.getElementById(id); if (e) e.style.display = sim ? '' : 'none'; }
+    // Faixa logo abaixo do topo da página (id distinto para acesso e sync).
+    function faixa(id, html, classe) {
+        let f = document.getElementById(id);
+        if (!html) { if (f) f.remove(); return; }
+        if (!f) { f = document.createElement('div'); f.id = id; f.setAttribute('role', 'status'); document.body.insertBefore(f, document.body.firstChild); }
+        f.className = 'salinha-faixa' + (classe ? ' ' + classe : '');
+        f.innerHTML = html;
+    }
+    function nomeCurto(u) { return String((u && (u.displayName || u.email)) || '').split(/[\s@]+/)[0]; }
+
+    function atualizar() {
+        let FB = window.SALINHA_FB;
+        if (!FB) return;
+        let estado = FB.estado(), u = FB.usuario(), extra = FB.detalhe() || {};
+        ['desktop', 'mobile'].forEach(function(suf) {
+            mostrar('btn-google-entrar-' + suf, estado === 'deslogado');
+            mostrar('btn-google-sair-' + suf, !!u);
+            mostrar('usuario-nome-' + suf, !!u);
+            let nome = document.getElementById('usuario-nome-' + suf);
+            if (nome && u) { nome.innerHTML = G_SVG + '<span class="usuario-nome-texto">' + esc(nomeCurto(u)) + '</span>'; nome.title = 'Conectado com Google: ' + (u.email || ''); }
+            if (estado !== 'liberado') mostrar('sync-indicador-' + suf, false);
+        });
+        let email = u ? '<b>' + esc(u.email) + '</b>' : '';
+        if (estado === 'deslogado') faixa('salinha-faixa-acesso', '<span>Entre com Google para carregar o acervo e os seus dados.</span><button type="button" onclick="SALINHA_FB.entrar()">' + G_SVG + ' Entrar com Google</button>');
+        else if (estado === 'verificando') faixa('salinha-faixa-acesso', '<span>' + esc(extra.texto || 'Verificando o acesso…') + ' ' + email + '</span>');
+        else if (estado === 'pendente') faixa('salinha-faixa-acesso', extra.falhaPedido
+            ? '<span>Acesso não liberado para ' + email + '. Avise o administrador para liberar o seu acesso.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>'
+            : '<span>Pedido de acesso registrado para ' + email + '. Assim que for liberado, é só voltar a esta página.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>', 'alerta');
+        else if (estado === 'erro') faixa('salinha-faixa-acesso', '<span>' + esc(extra.texto || 'Não foi possível verificar o acesso.') + '</span><button type="button" onclick="location.reload()">Tentar de novo</button>', 'erro');
+        else faixa('salinha-faixa-acesso', null);
+    }
+
+    // Indicador da sincronização (evento 'salinha-sync' de SALINHA_SYNC).
+    let TEXTOS = { sincronizado: ['✓ Sincronizado', '✓', 'ok'], sincronizando: ['⏳ Sincronizando', '⏳', ''], offline: ['⚠ Sem conexão — será enviado depois', '⚠', 'offline'] };
+    function atualizarSync(e) {
+        let t = TEXTOS[e.detail && e.detail.estado];
+        ['desktop', 'mobile'].forEach(function(suf) {
+            let el = document.getElementById('sync-indicador-' + suf);
+            if (!el) return;
+            el.style.display = t ? '' : 'none';
+            if (!t) return;
+            el.textContent = suf === 'mobile' ? t[1] : t[0];
+            el.title = t[0];
+            el.className = 'b1 sync-indicador' + (t[2] ? ' ' + t[2] : '');
+        });
+    }
+
+    document.addEventListener('salinha-auth', atualizar);
+    document.addEventListener('salinha-sync', atualizarSync);
+    atualizar();
+    return { atualizar: atualizar, faixa: faixa };
+})();
+</script>
 
 <!-- TELA 1: HOME DO ALUNO (Vitrine) -->
 <div id="tela-home" class="tela ativa" style="padding: 0; background: var(--bg-body); flex-direction: row; height: 100vh; min-height: 0; overflow: hidden;">
@@ -2095,6 +2125,9 @@ if (inputIncremental) {
                 // Recarrega como o importarNuvem: sem isso, as seções seguem
                 // com o estado antigo em memória e o gravam por cima da mescla.
                 alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${resultado.chavesMutadas}\nNovas entidades injetadas: ${resultado.entidadesInjetadas}`);
+                // Com a sincronização ligada, o resultado vai para a nuvem
+                // antes de recarregar (senão o envio é cortado no meio).
+                if (window.SALINHA_SYNC) await window.SALINHA_SYNC.enviarAgora(20000);
                 location.reload();
             } catch (error) {
                 console.error("Erro na fusão incremental:", error);
@@ -4919,11 +4952,9 @@ window.SALINHA_BACKUP = {
                         // página atualiza 3 vezes seguidas" reportado. Sem contar
                         // pra chavesMutadas, esta limpeza acontece (localmente e
                         // na nuvem) sem nunca, por si só, justificar um reload.
-                        try {
-                            await window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa();
-                        } catch (e) {
-                            console.warn('[MERGE] Falha ao enviar correção da sessão ativa pra nuvem:', e);
-                        }
+                        // A correção chega à nuvem sozinha: salvarSessaoAtiva
+                        // passa por idbSet, que a sincronização (SALINHA_SYNC)
+                        // acompanha.
                     }
                 }
             }
@@ -5033,890 +5064,29 @@ window.SALINHA_BACKUP = {
 };
 
 // =========================================================================
-// SINCRONIZAÇÃO EM NUVEM (GITHUB GIST) — pra usar o Monstrinho em mais de
-// um computador sem precisar baixar/subir arquivo manualmente a cada troca.
+// LOGIN E SINCRONIZAÇÃO AUTOMÁTICA (Firebase) — substitui o antigo backup no
+// GitHub Gist (botões ☁️ Salvar/Carregar e login com GitHub saíram; o backup
+// por arquivo em 📁 Arquivo continua). Ver SALINHA_FB no topo do <head> e
+// LEIAME-firebase.md, seção "Sincronização automática".
 // =========================================================================
-window.SALINHA_GIST_SYNC = {
-    NOME_ARQUIVO: 'monstrinho-backup.json',
-    PREFIXO_PARTE: 'monstrinho-backup.part', // formato ANTIGO (sem versão) — só lido pra compatibilidade, nunca mais escrito
-    NOME_MANIFESTO: 'monstrinho-backup.manifest.json',
-    // Formato ATUAL das partes: monstrinho-backup.v<versao>.part<N>.json —
-    // ver _enviarBackupComVersionamento/_lerConteudoDoGist pro porquê.
-    REGEX_PARTE_VERSIONADA: /^monstrinho-backup\.v(\d+)\.part\d+\.json$/,
-    TAMANHO_MAX_PARTE: 700000, // ~700KB por parte — margem de segurança sob o limite de 1MB do Gist
-    // Acima disso, a trava (__salvamentoNuvemEmAndamento) é considerada
-    // abandonada e liberada sozinha — sem isso, um fetch() que nunca resolve
-    // (aba foi pra segundo plano/o notebook dormiu no meio de um upload,
-    // conexão caiu sem erro) trava "☁️⬆️ Salvar" pra sempre, mesmo horas
-    // depois, porque o finally que zera a trava nunca chega a rodar.
-    LOCK_NUVEM_EXPIRA_MS: 45000,
 
-    // Login com GitHub (OAuth) é o ÚNICO caminho de autenticação — o campo
-    // manual ⚙️ (token colado à mão) e configurar() foram removidos.
-    // getToken() só lê a chave do OAuth; exportarNuvem/importarNuvem etc.
-    // continuam chamando só getToken(), sem precisar saber de onde o token
-    // veio.
-    _CHAVE_TOKEN_OAUTH: 'tjpe_v1__salinha_github_oauth_token',
-
-    getToken: function() {
-        return localStorage.getItem(this._CHAVE_TOKEN_OAUTH) || '';
-    },
-
-    getGistId: function() {
-        return localStorage.getItem('tjpe_v1__salinha_github_gist_id') || '';
-    },
-
-    dividirEmPartes: function(texto, tamanhoMax) {
-        let partes = [];
-        for (let i = 0; i < texto.length; i += tamanhoMax) {
-            partes.push(texto.slice(i, i + tamanhoMax));
-        }
-        if (partes.length === 0) partes.push('');
-        return partes;
-    },
-
-    // Codifica o JSON do backup em base64 ANTES de dividir em partes —
-    // corrige o erro "Bad control character in string literal" ao
-    // importar. Causa raiz: dividirEmPartes() corta a string em pontos
-    // arbitrários (por índice de caractere), podendo cair no meio de uma
-    // sequência de escape ("\n" vira "\" numa parte e "n" na próxima) ou de
-    // um par substituto UTF-16 (emoji cortado ao meio). A concatenação das
-    // partes por si só é inofensiva, mas o caminho de importação de partes
-    // GRANDES busca o conteúdo via raw_url (fetch().text() num endpoint
-    // separado do da API), que decodifica bytes por conta própria — e esse
-    // "\" órfão ou par substituto quebrado pode sair diferente do que
-    // entrou. Com o payload inteiro em base64 (alfabeto puramente ASCII,
-    // sem \, sem caracteres de controle, sem substitutos), não existe mais
-    // sequência nenhuma pra cortar ao meio — e atob()/o decoder de base64
-    // do navegador ignora silenciosamente qualquer espaço/quebra de linha
-    // estranha que porventura entre num limite de parte, então mesmo uma
-    // normalização de texto do lado do GitHub deixa de conseguir corromper
-    // o conteúdo.
-    _utf8ParaBase64: function(str) {
-        let bytes = new TextEncoder().encode(str);
-        let binario = '';
-        for (let i = 0; i < bytes.length; i++) binario += String.fromCharCode(bytes[i]);
-        return btoa(binario);
-    },
-
-    _base64ParaUtf8: function(b64) {
-        let binario = atob(b64);
-        let bytes = new Uint8Array(binario.length);
-        for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
-        return new TextDecoder().decode(bytes);
-    },
-
-    // Decodifica o conteúdo reconstruído do Gist — tenta base64 primeiro
-    // (formato novo); se não for base64 válido (InvalidCharacterError),
-    // cai pro texto puro (formato antigo, backups salvos antes desta
-    // correção), mantendo compatibilidade com o que já está salvo na nuvem.
-    _decodificarConteudoNuvem: function(conteudoBruto) {
-        try {
-            return this._base64ParaUtf8(conteudoBruto);
-        } catch (e) {
-            return conteudoBruto;
-        }
-    },
-
-exportarNuvem: async function(botao, opts) {
-        opts = opts || {};
-        // Lock compartilhado com exportarNuvemSilenciosa() — mesmo desativada
-        // hoje (ver verificarSalvamentoPeriodicoNuvem), protege contra dois
-        // salvamentos manuais disparados em cliques duplos, e já deixa a
-        // corrida com o automático coberta pro dia em que for reativado.
-        if (window.__salvamentoNuvemEmAndamento && (Date.now() - (window.__salvamentoNuvemEmAndamentoDesde || 0)) < this.LOCK_NUVEM_EXPIRA_MS) {
-            alert('Já existe uma sincronização com a nuvem em andamento — aguarde alguns segundos e tente de novo.');
-            return;
-        }
-        window.__salvamentoNuvemEmAndamento = true;
-        window.__salvamentoNuvemEmAndamentoDesde = Date.now();
-
-        let htmlOriginal = null;
-        if (botao) {
-            htmlOriginal = botao.innerHTML;
-            botao.innerHTML = '⏳ Salvando...';
-            botao.disabled = true;
-        }
-
-        try {
-            let token = this.getToken();
-            if (!token) {
-                alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
-                return;
-            }
-
-            await _aplicarImportNuvemPendente();
-            let payload = await window.SALINHA_BACKUP.construirPayload();
-            let conteudo = JSON.stringify(payload, null, 2);
-            let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
-            let gistId = this.getGistId();
-            let eraNovoGist = !gistId;
-
-            if (!gistId) {
-                // Cria o gist com um arquivo mínimo, só pra existir e ganhar um ID —
-                // as partes de verdade entram depois, uma requisição PATCH por vez
-                let respostaCriacao = await fetch('https://api.github.com/gists', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'token ' + token,
-                        'Accept': 'application/vnd.github+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        description: 'Backup automático — A Salinha / Monstrinho',
-                        public: false,
-                        files: { 'monstrinho-backup.json': { content: 'inicializando…' } }
-                    })
-                });
-                if (!respostaCriacao.ok) {
-                    let corpoErro = await respostaCriacao.text();
-                    throw new Error('GitHub respondeu ' + respostaCriacao.status + ' (criar gist): ' + corpoErro);
-                }
-                let jsonCriacao = await respostaCriacao.json();
-                gistId = jsonCriacao.id;
-                localStorage.setItem('tjpe_v1__salinha_github_gist_id', gistId);
-            }
-
-            // Ver _enviarBackupComVersionamento (perto de _enviarArquivosComRetry)
-            // pra como isto evita tanto a corrupção por partes de gerações
-            // misturadas quanto request PATCH gigante demais pro Gist aceitar.
-            await this._enviarBackupComVersionamento(gistId, token, partes);
-
-            // suprimirModalSucesso: usado por salvarNuvemAoConcluirBateria(),
-            // que já mostra seu PRÓPRIO popup ("☁️ Salvando bateria
-            // concluída...") na hora — sem isto, um SEGUNDO modal genérico
-            // apareceria empilhado por cima alguns segundos depois, quando
-            // o envio de verdade terminasse.
-            if (!opts.suprimirModalSucesso) {
-                mostrarModal({
-                    titulo: '☁️ Backup enviado com sucesso',
-                    mensagemHtml: true,
-                    // Login com GitHub descobre o Gist sozinho por conta (ver
-                    // _descobrirGistExistente) — não precisa mais copiar/colar
-                    // nenhum ID entre dispositivos, então o campo de cópia saiu
-                    // daqui junto com o fluxo antigo do ⚙️.
-                    mensagem:
-                        '<div>Pra usar em outro computador ou celular: clique em "🔑 Entrar com GitHub" naquele dispositivo e autorize com a MESMA conta. Seus dados são encontrados e carregados automaticamente — não precisa copiar nada.</div>',
-                    botoes: [{ label: 'Fechar', cor: 'var(--app-primary)' }]
-                });
-            }
-        } catch (err) {
-            console.error('[GIST SYNC] Falha ao exportar:', err);
-            alert('Não foi possível enviar o backup pra nuvem:\n' + err.message);
-        } finally {
-            window.__salvamentoNuvemEmAndamento = false;
-            if (botao) {
-                botao.innerHTML = htmlOriginal;
-                botao.disabled = false;
-            }
-        }
-    },
-
-    importarNuvem: async function(botao) {
-        let htmlOriginal = null;
-        if (botao) {
-            htmlOriginal = botao.innerHTML;
-            botao.innerHTML = '⏳ Carregando...';
-            botao.disabled = true;
-        }
-
-        try {
-            let token = this.getToken();
-            let gistId = this.getGistId();
-            if (!token) {
-                alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
-                return;
-            }
-            if (!gistId) {
-                alert('Ainda não existe backup na nuvem — use "☁️⬆️ Salvar" primeiro (em qualquer um dos computadores).');
-                return;
-            }
-
-            let resposta = await fetch('https://api.github.com/gists/' + gistId, {
-                headers: {
-                    'Authorization': 'token ' + token,
-                    'Accept': 'application/vnd.github+json'
-                }
-            });
-
-            if (!resposta.ok) {
-                throw new Error('GitHub respondeu ' + resposta.status);
-            }
-
-            let json = await resposta.json();
-            // Ver _lerConteudoDoGist (perto de _enviarBackupComVersionamento)
-            // — segue o manifesto quando existe, com fallback pro formato
-            // antigo (backups salvos antes desta correção).
-            let conteudoCompleto = await this._lerConteudoDoGist(json);
-
-            let resultado = await window.SALINHA_BACKUP.aplicarPayloadMerge(this._decodificarConteudoNuvem(conteudoCompleto));
-            // Aviso adicional sempre que o parser precisou descartar lixo
-            // sobrando no fim do backup (partes órfãs no Gist, de um envio
-            // anterior interrompido) — o merge em si funcionou, mas vale
-            // avisar pra pessoa saber que a nuvem ainda tem sobras e
-            // considerar "☁️⬆️ Salvar" de novo pra limpar de vez.
-            let avisoRecuperacao = resultado.recuperadoDeCorrupcao
-                ? '\n\n⚠️ O backup na nuvem tinha dados sobrando de um envio anterior interrompido — foi recuperado usando só a parte íntegra. Recomendo clicar em "☁️⬆️ Salvar" novamente daqui a pouco pra limpar essas sobras na nuvem.'
-                : '';
-            if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
-                // Algumas chaves foram calculadas em memória mas NÃO foram
-                // salvas de verdade (ex.: localStorage.setItem estourando a
-                // cota do dispositivo) — nunca mostrar "sucesso" nesse caso,
-                // senão o usuário acha que importou tudo e na real perdeu parte.
-                alert('Backup mesclado PARCIALMENTE — algo não coube no armazenamento deste dispositivo.\n\nChaves sincronizadas com sucesso: ' + resultado.chavesMutadas + '\nNovas entidades encontradas: ' + resultado.entidadesInjetadas + '\n\n⚠️ NÃO foi possível salvar: ' + resultado.chavesComErro.join(', ') + '\n\nProvável falta de espaço livre neste dispositivo (comum em celulares). Tente liberar espaço — ex.: limpar cache/dados de outros sites no navegador — e importe de novo.' + avisoRecuperacao);
-            } else {
-                alert('Backup da nuvem mesclado com sucesso.\n\nChaves sincronizadas: ' + resultado.chavesMutadas + '\nNovas entidades injetadas: ' + resultado.entidadesInjetadas + avisoRecuperacao);
-            }
-            location.reload();
-        } catch (err) {
-            console.error('[GIST SYNC] Falha ao importar:', err);
-            alert('Não foi possível importar o backup da nuvem:\n' + err.message);
-        } finally {
-            if (botao) {
-                botao.innerHTML = htmlOriginal;
-                botao.disabled = false;
-            }
-        }
-    }
-};
-
-// =========================================================================
-// LOGIN COM GITHUB (Device Flow) — único método de autenticação/
-// sincronização em nuvem. O campo manual ⚙️ (token colado à mão) e
-// configurar() foram removidos; SALINHA_GIST_SYNC.getToken() só lê o token
-// de OAuth (_CHAVE_TOKEN_OAUTH) agora.
-//
-// Depende de um Cloudflare Worker próprio (ver cloudflare-worker/worker.js)
-// só pra contornar o bloqueio de CORS do GitHub nesses 2 endpoints — sem
-// ele, WORKER_URL fica vazio e o botão avisa que o login ainda não foi
-// configurado neste site (não há mais fallback manual pra esse caso).
-// =========================================================================
-window.SALINHA_GITHUB_OAUTH = {
-    // PREENCHER depois de publicar o Worker na Cloudflare — ex.:
-    // 'https://monstrinho-oauth.SEU-SUBDOMINIO.workers.dev'
-    WORKER_URL: 'https://monstrinho.felipescp.workers.dev',
-
-    _polling: null, // { deviceCode, intervaloMs, expiraEm, timeoutId }
-
-    _pararPolling: function() {
-        if (this._polling && this._polling.timeoutId) clearTimeout(this._polling.timeoutId);
-        this._polling = null;
-    },
-
-    abrirModal: function() {
-        if (!this.WORKER_URL) {
-            alert('O login com GitHub ainda não foi configurado neste site. Fale com quem administra A Salinha.');
-            return;
-        }
-        document.getElementById('oauth-codigo').textContent = '——';
-        let linkEl = document.getElementById('oauth-link');
-        linkEl.href = '#';
-        linkEl.textContent = '';
-        document.getElementById('oauth-status').textContent = '';
-        document.getElementById('modal-github-oauth').classList.add('open');
-        this.iniciarLogin();
-    },
-
-    fecharModal: function() {
-        document.getElementById('modal-github-oauth').classList.remove('open');
-        this._pararPolling();
-    },
-
-    iniciarLogin: async function() {
-        this._pararPolling();
-        let statusEl = document.getElementById('oauth-status');
-        statusEl.textContent = 'Solicitando código ao GitHub...';
-        try {
-            let resp = await fetch(this.WORKER_URL + '/device/code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: '{}'
-            });
-            let dados = await resp.json();
-            if (!resp.ok || dados.error) throw new Error(dados.error_description || dados.error || ('HTTP ' + resp.status));
-
-            document.getElementById('oauth-codigo').textContent = dados.user_code;
-            let linkEl = document.getElementById('oauth-link');
-            let destino = dados.verification_uri_complete || dados.verification_uri;
-            linkEl.href = destino;
-            linkEl.textContent = destino;
-            statusEl.textContent = 'Aguardando você autorizar no GitHub...';
-
-            this._polling = {
-                deviceCode: dados.device_code,
-                intervaloMs: (dados.interval || 5) * 1000,
-                expiraEm: Date.now() + (dados.expires_in || 900) * 1000,
-                timeoutId: null
-            };
-            this._agendarProximaChecagem();
-        } catch (e) {
-            statusEl.textContent = 'Erro ao iniciar login: ' + e.message;
-        }
-    },
-
-    _agendarProximaChecagem: function() {
-        let self = this;
-        if (!this._polling) return;
-        this._polling.timeoutId = setTimeout(function() { self._checarAutorizacao(); }, this._polling.intervaloMs);
-    },
-
-    // Segue a tabela de erros documentada pelo GitHub pro polling do device
-    // flow: authorization_pending (normal, continua tentando), slow_down
-    // (aumenta o intervalo e continua), expired_token/access_denied (para
-    // de vez, precisa clicar "Tentar de novo").
-    _checarAutorizacao: async function() {
-        if (!this._polling) return;
-        let statusEl = document.getElementById('oauth-status');
-
-        if (Date.now() > this._polling.expiraEm) {
-            statusEl.textContent = 'O código expirou. Clique em "Tentar de novo".';
-            this._pararPolling();
-            return;
-        }
-
-        try {
-            let resp = await fetch(this.WORKER_URL + '/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ device_code: this._polling.deviceCode })
-            });
-            let dados = await resp.json();
-
-            if (dados.access_token) {
-                // Ver comentário em SALINHA_GIST_SYNC.getToken()/_CHAVE_TOKEN_OAUTH.
-                localStorage.setItem(window.SALINHA_GIST_SYNC._CHAVE_TOKEN_OAUTH, dados.access_token);
-                this._pararPolling();
-                statusEl.textContent = '✅ Conectado! Procurando backup na nuvem...';
-                this._atualizarNomeUsuarioCache(dados.access_token); // não bloqueia — só troca o texto do botão quando voltar
-                this._concluirLoginComAutoLoad(dados.access_token);
-                return;
-            }
-
-            if (dados.error === 'authorization_pending') {
-                this._agendarProximaChecagem();
-                return;
-            }
-            if (dados.error === 'slow_down') {
-                this._polling.intervaloMs += 5000;
-                this._agendarProximaChecagem();
-                return;
-            }
-            if (dados.error === 'expired_token') {
-                statusEl.textContent = 'O código expirou. Clique em "Tentar de novo".';
-                this._pararPolling();
-                return;
-            }
-            if (dados.error === 'access_denied') {
-                statusEl.textContent = 'Login cancelado no GitHub.';
-                this._pararPolling();
-                return;
-            }
-            statusEl.textContent = 'Erro: ' + (dados.error_description || dados.error || 'desconhecido');
-            this._pararPolling();
-        } catch (e) {
-            statusEl.textContent = 'Falha de conexão — tentando de novo...';
-            this._agendarProximaChecagem();
-        }
-    },
-
-    // Ao logar pela conta própria da pessoa, não existe ainda um gist_id
-    // salvo neste navegador — só temos o token. Por isso procura entre os
-    // gists da própria conta um que já bata com o
-    // formato de backup do Monstrinho (mesmo nome de arquivo/prefixo de
-    // partes usado por exportarNuvem()), pra achar automaticamente um
-    // backup pré-existente (ex.: login feito antes noutro aparelho).
-    // Retorna { ok, gistId } em vez de só a string — "não achei nada" (ok:
-    // true, gistId vazio) precisa ficar DIFERENTE de "não consegui nem
-    // checar" (ok: false), senão uma falha de rede/permissão vira, pro
-    // usuário, a mensagem enganosa de "essa conta não tem backup".
-    _descobrirGistExistente: async function(token) {
-        try {
-            let resp = await fetch('https://api.github.com/gists?per_page=100', {
-                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-            });
-            if (!resp.ok) {
-                let corpoErro = await resp.text().catch(function() { return ''; });
-                console.warn('[GITHUB OAUTH] Falha ao listar gists da conta (HTTP ' + resp.status + '): ' + corpoErro);
-                return { ok: false, gistId: '' };
-            }
-            let lista = await resp.json();
-            let nomeArquivo = window.SALINHA_GIST_SYNC.NOME_ARQUIVO;
-            let prefixoParte = window.SALINHA_GIST_SYNC.PREFIXO_PARTE;
-            // Uma conta pode ter MAIS DE UM gist nesse formato (ex.: o
-            // desenvolvedor testando em vários dispositivos, ou tokens
-            // emprestados pra outras pessoas — nesse caso não tem como saber
-            // qual é "o certo" só pelo nome do arquivo). Não confia na ordem
-            // que o GitHub devolveu — ordena explicitamente pelo mais
-            // recentemente atualizado, que é a melhor aproximação disponível
-            // de "o backup em uso agora".
-            let candidatos = lista.filter(function(g) {
-                let nomes = Object.keys(g.files || {});
-                return nomes.some(function(n) { return n === nomeArquivo || n.indexOf(prefixoParte) === 0; });
-            });
-            candidatos.sort(function(a, b) { return new Date(b.updated_at) - new Date(a.updated_at); });
-            let candidato = candidatos[0];
-            return { ok: true, gistId: candidato ? candidato.id : '' };
-        } catch (e) {
-            console.warn('[GITHUB OAUTH] Erro de rede ao listar gists da conta:', e);
-            return { ok: false, gistId: '' };
-        }
-    },
-
-    // Auto-load: ao terminar o login, carrega sozinho o backup da nuvem se
-    // achar um (sem exigir clique em "☁️⬇️ Carregar"). O salvamento
-    // continua manual, a critério do usuário, como sempre foi — só o
-    // carregamento inicial deixa de depender de um clique extra aqui.
-    _concluirLoginComAutoLoad: async function(token) {
-        let statusEl = document.getElementById('oauth-status');
-        // Sempre redescobre pela conta que ACABOU de logar — nunca reaproveita
-        // cegamente um gist_id que já estivesse salvo neste navegador. Esse
-        // valor pode ter vindo do antigo fluxo manual, hoje removido (aponta
-        // pro gist de OUTRA conta, a do desenvolvedor) — tentar escrever
-        // nele com o token novo dá 403 (só o dono edita um gist, mesmo
-        // sabendo o ID). Um GET /gists a mais por login é barato; a
-        // alternativa é migração quebrada.
-        let resultado = await this._descobrirGistExistente(token);
-        let gistId = resultado.gistId;
-        if (resultado.ok) {
-            // Só mexe no que está salvo localmente quando a checagem teve
-            // SUCESSO — numa falha de rede/permissão, não apaga um gist_id
-            // que já funcionava só porque não deu pra confirmar agora.
-            if (gistId) {
-                localStorage.setItem('tjpe_v1__salinha_github_gist_id', gistId);
-            } else {
-                localStorage.removeItem('tjpe_v1__salinha_github_gist_id');
-            }
-        } else {
-            gistId = window.SALINHA_GIST_SYNC.getGistId(); // mantém o que já tinha, se houver
-        }
-        if (statusEl) {
-            statusEl.textContent = gistId ? '✅ Conectado! Carregando backup da nuvem...' : '✅ Conectado! (conta nova, ainda sem backup)';
-        }
-        setTimeout(function() {
-            window.SALINHA_GITHUB_OAUTH.fecharModal();
-            if (gistId) {
-                // Mesma rotina que o boot (F5) já usa pra carregar em
-                // silêncio: mescla o que achar e, se houver algo novo,
-                // recarrega a página sozinha — por isso nenhum alert() aqui,
-                // pra não sobrepor um reload que pode acontecer logo em seguida.
-                window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
-            } else if (resultado.ok) {
-                alert('Login com GitHub concluído! Essa conta ainda não tem nenhum backup — use "☁️⬆️ Salvar" quando quiser criar um.');
-            } else {
-                alert('Login com GitHub concluído, mas não consegui verificar se já existe backup na nuvem (falha ao falar com a API do GitHub — veja o console, F12, pra mais detalhes). Se você já salvou antes nesta conta, tente de novo em vez de clicar direto em "☁️⬆️ Salvar", pra não arriscar duplicar.');
-            }
-        }, 900);
-    },
-
-    // Mostra de quem é o token atual no(s) botão(ões) "🔑" — sem isso, depois
-    // de logar o botão continuava com o texto "Entrar com GitHub" pra sempre,
-    // sem nenhum jeito de confirmar visualmente que o login funcionou.
-    _CHAVE_USERNAME_CACHE: 'tjpe_v1__salinha_github_username',
-
-    atualizarBotaoLogin: function() {
-        let nome = localStorage.getItem(this._CHAVE_USERNAME_CACHE) || '';
-        let texto = nome ? ('🔑 ' + (nome.length > 14 ? nome.slice(0, 14) + '…' : nome)) : '🔑 Entrar com GitHub';
-        let titulo = nome ? ('Logado no GitHub como ' + nome + ' — clique pra trocar de conta ou reconectar') : 'Login com GitHub — único método de sincronização em nuvem';
-        ['btn-github-oauth-desktop', 'btn-github-oauth-mobile'].forEach(function(id) {
-            let el = document.getElementById(id);
-            if (el) { el.textContent = texto; el.title = titulo; }
-        });
-        // Botão "✕ Sair" só aparece logado — antes não existia nenhum jeito
-        // de sair sem apagar localStorage manualmente pelo DevTools.
-        ['btn-github-logout-desktop', 'btn-github-logout-mobile'].forEach(function(id) {
-            let el = document.getElementById(id);
-            if (el) el.style.display = nome ? '' : 'none';
-        });
-    },
-
-    // Esquece o login deste navegador (token OAuth + nome em cache + gist_id
-    // associado) — não apaga nada na nuvem nem localmente além disso; os
-    // dados continuam salvos no Gist da conta, só não fica mais acessível
-    // sem entrar de novo. Limpa gist_id também: se a pessoa logar depois com
-    // OUTRA conta, não pode arriscar reaproveitar um gist_id de conta
-    // diferente (escrever nele dá 403 — só o dono edita — mas ainda assim
-    // não deveria nem tentar; _descobrirGistExistente descobre de novo, pela
-    // conta nova, no próximo login).
-    sair: function() {
-        let nome = localStorage.getItem(this._CHAVE_USERNAME_CACHE) || '';
-        if (!confirm('Sair da conta' + (nome ? ' (' + nome + ')' : '') + ' do GitHub neste navegador?\n\nSeus dados continuam salvos na nuvem — você pode entrar de novo quando quiser.')) return;
-        localStorage.removeItem(window.SALINHA_GIST_SYNC._CHAVE_TOKEN_OAUTH); // chave pertence a SALINHA_GIST_SYNC, não a este módulo
-        localStorage.removeItem(this._CHAVE_USERNAME_CACHE);
-        localStorage.removeItem('tjpe_v1__salinha_github_gist_id');
-        this.atualizarBotaoLogin();
-        alert('Você saiu da conta do GitHub neste navegador.');
-    },
-
-    // Busca o login (nome de usuário) dono do token atual e guarda em cache
-    // local — evita bater na API do GitHub de novo a cada F5 só pra mostrar
-    // o nome no botão. Silencioso de propósito: se falhar, o botão só volta
-    // a mostrar "Entrar com GitHub" — não é motivo pra interromper nada.
-    _atualizarNomeUsuarioCache: async function(token) {
-        try {
-            let resp = await fetch('https://api.github.com/user', {
-                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-            });
-            if (!resp.ok) { console.warn('[GITHUB OAUTH] Falha ao buscar usuário logado (HTTP ' + resp.status + ')'); return; }
-            let dados = await resp.json();
-            if (dados.login) {
-                localStorage.setItem(this._CHAVE_USERNAME_CACHE, dados.login);
-                this.atualizarBotaoLogin();
-            }
-        } catch (e) {
-            console.warn('[GITHUB OAUTH] Erro de rede ao buscar usuário logado:', e);
-        }
-    }
-};
-
-// =========================================================================
-// BLOQUEIO DE SEÇÃO POR LOGIN — toda seção de conteúdo (Jurisprudência,
-// Esquemas, Materiais, Cronograma, Caderno de Erros/Axiomas, Praticar
-// Caderno, Flashcards, Estatísticas) exige GitHub logado pra abrir. Abrir
-// uma bateria específica já tinha esse bloqueio (iniciarSimuladoDaVitrine);
-// isto estende a mesma regra pras demais seções, de forma centralizada —
-// um único ponto de verdade pro que "logado" significa, em vez de checar
-// window.SALINHA_GIST_SYNC.getToken() espalhado em cada função de abertura.
-// A vitrine inicial (lista de baterias) continua livre pra visualizar —
-// só ABRIR uma bateria específica, ou entrar numa seção de conteúdo, exige
-// login.
-// No laboratório (Firebase), quem passou pelo portão já entrou com Google:
-// isso basta para abrir seções e baterias. O login do GitHub fica só para o
-// backup no Gist.
+// Sem Firebase (localhost sem ?lab=1) não há login: o app abre como sempre,
+// para testes locais. Com Firebase, só quem entrou com Google e teve o
+// acesso liberado abre seções e baterias.
 window.temLoginApp = function() {
-    if (window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken()) return true;
-    return !!(window.MONSTRINHO_AUTH && window.MONSTRINHO_AUTH.usuario());
+    return !window.SALINHA_FB || window.SALINHA_FB.estado() === 'liberado';
 };
 window.exigirLoginParaSecao = function() {
     if (window.temLoginApp()) return true;
-    alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub") para acessar esta seção.');
+    alert('Entre com Google primeiro (botão "Entrar com Google", no topo) para acessar esta seção.');
     return false;
 };
 
-window.addEventListener('load', function() {
-    window.SALINHA_GITHUB_OAUTH.atualizarBotaoLogin();
-    // Token já existia (de um login/configuração anterior a este recurso)
-    // mas o nome ainda não foi buscado nenhuma vez nesta máquina — busca uma
-    // vez só, pra parar de mostrar "Entrar com GitHub" com alguém já logado.
-    let tokenAtual = window.SALINHA_GIST_SYNC.getToken();
-    let nomeCache = localStorage.getItem(window.SALINHA_GITHUB_OAUTH._CHAVE_USERNAME_CACHE);
-    if (tokenAtual && !nomeCache) {
-        window.SALINHA_GITHUB_OAUTH._atualizarNomeUsuarioCache(tokenAtual);
-    }
-});
-
-// Envia uma parte do backup com retry automático em dois cenários — 3
-// tentativas, com espera CRESCENTE entre elas (800ms, 1600ms) pra dar tempo
-// do outro processo/rede se recuperar:
-//  1) 409 (conflito de escrita concorrente no Gist — ex.: um salvamento
-//     manual e um automático tocando o mesmo Gist quase ao mesmo tempo);
-//  2) falha de REDE (fetch() lança exceção — "Failed to fetch": offline,
-//     Wi-Fi oscilou, VPN reconectou, notebook acordou de suspensão no meio
-//     do envio). Antes só o caso 1 tinha retry — o fetch() ficava fora de
-//     qualquer try/catch, então uma única oscilação de rede no meio de até
-//     12 partes sequenciais abortava o backup inteiro na hora, sem nenhuma
-//     nova tentativa, justamente no tipo de falha mais transitório e mais
-//     fácil de superar tentando de novo.
-// Compartilhado por exportarNuvem() e exportarNuvemSilenciosa().
-// Envia QUALQUER conjunto de arquivos (partes novas + exclusões, ou só uma
-// coisa) numa ÚNICA requisição PATCH, com retry em falha de rede/409 — ver
-// o comentário grande em exportarNuvem() sobre por que isto precisa ser
-// atômico (1 requisição só), não N requisições sequenciais (uma por
-// arquivo). `corpoFiles` já vem pronto no formato { files: {...} }.
-window.SALINHA_GIST_SYNC._enviarArquivosComRetry = async function(gistId, token, corpoFiles) {
-    const MAX_TENTATIVAS = 3;
-
-    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
-        let resposta;
-        try {
-            resposta = await fetch('https://api.github.com/gists/' + gistId, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': 'token ' + token,
-                    'Accept': 'application/vnd.github+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(corpoFiles)
-            });
-        } catch (erroRede) {
-            if (tentativa < MAX_TENTATIVAS) {
-                await new Promise(function(resolve) { setTimeout(resolve, 800 * tentativa); });
-                continue;
-            }
-            throw new Error('Falha de rede (' + erroRede.message + ') após ' + MAX_TENTATIVAS + ' tentativas');
-        }
-
-        if (resposta.ok) return resposta;
-
-        if (resposta.status === 409 && tentativa < MAX_TENTATIVAS) {
-            await new Promise(function(resolve) { setTimeout(resolve, 800 * tentativa); });
-            continue;
-        }
-
-        let corpoErro = await resposta.text();
-        throw new Error('GitHub respondeu ' + resposta.status + ': ' + corpoErro);
-    }
-};
-
-// Escreve o backup no Gist em 2 fases — resolve a corrupção por "partes de
-// gerações diferentes misturadas" (relatada como "JSON.parse: unexpected
-// character..." ao carregar, e "salvei mas não abre em outro navegador")
-// SEM depender de 1 único PATCH gigante com tudo junto (a 1ª tentativa de
-// corrigir isso combinava partes novas + exclusões num PATCH só — que
-// funcionava com pouco conteúdo, mas esbarrou num "422 missing_field:
-// files" quando o corpo da requisição ficou grande demais em backups com
-// bastante Esquemas/Jurisprudência, provavelmente um limite de tamanho do
-// lado do GitHub pra esse tipo de requisição).
-//
-// FASE 1 — cada parte da versão NOVA sobe num arquivo cujo NOME já carrega
-// o número da versão (monstrinho-backup.v<timestamp>.part<N>.json), uma
-// requisição PATCH pequena por parte (mesmo tamanho seguro de sempre, só
-// que agora nunca reaproveitando o nome de um arquivo já existente). Como
-// esses nomes NUNCA colidem com os da versão anterior, mesmo que esta fase
-// seja interrompida no meio (rede cai na parte 3 de 5), a versão anterior
-// continua 100% intacta — as partes novas incompletas ficam só soltas ali,
-// sem efeito nenhum em ninguém que leia o Gist nesse meio-tempo.
-//
-// FASE 2 — só DEPOIS que TODAS as partes novas terminaram de subir, grava
-// o manifesto (monstrinho-backup.manifest.json) apontando pra essa versão
-// + quantas partes ela tem. Esse é o "ponto de virada": um leitor sempre
-// segue o manifesto pra saber QUAL versão ler (ver _lerConteudoDoGist) —
-// até esta escrita terminar, o manifesto antigo ainda aponta pra versão
-// anterior (completa), então ninguém nunca lê uma mistura.
-//
-// FASE 3 — limpeza das versões antigas (partes + manifesto antigo não se
-// aplica, só as partes/formatos obsoletos) é best-effort: roda por último,
-// não lança se falhar. Isso é seguro porque a correção pra qualquer leitor
-// já não depende mais dela — só deixa arquivos não usados no Gist até o
-// próximo salvamento tentar de novo.
-window.SALINHA_GIST_SYNC._enviarBackupComVersionamento = async function(gistId, token, partes) {
-    let versaoNova = Date.now();
-
-    for (let i = 0; i < partes.length; i++) {
-        let nomeArquivo = 'monstrinho-backup.v' + versaoNova + '.part' + (i + 1) + '.json';
-        try {
-            let corpoFiles = {};
-            corpoFiles[nomeArquivo] = { content: partes[i] };
-            await this._enviarArquivosComRetry(gistId, token, { files: corpoFiles });
-        } catch (erroParte) {
-            throw new Error('Falha na parte ' + (i + 1) + ' de ' + partes.length + ': ' + erroParte.message);
-        }
-    }
-
-    let corpoManifesto = {};
-    corpoManifesto[this.NOME_MANIFESTO] = { content: JSON.stringify({ versao: versaoNova, totalPartes: partes.length }) };
-    await this._enviarArquivosComRetry(gistId, token, { files: corpoManifesto });
-
-    try {
-        let respostaAtual = await fetch('https://api.github.com/gists/' + gistId, {
-            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-        });
-        if (respostaAtual.ok) {
-            let jsonAtual = await respostaAtual.json();
-            let self = this;
-            let paraApagar = Object.keys(jsonAtual.files || {}).filter(function(nome) {
-                if (nome === self.NOME_ARQUIVO) return true; // formato antigo, sem partes
-                if (nome.indexOf(self.PREFIXO_PARTE) === 0) return true; // formato antigo, sem versão
-                let m = nome.match(self.REGEX_PARTE_VERSIONADA);
-                return !!(m && Number(m[1]) !== versaoNova); // versão diferente da que acabou de virar atual
-            });
-            if (paraApagar.length > 0) {
-                let corpoLimpeza = {};
-                paraApagar.forEach(function(nome) { corpoLimpeza[nome] = null; });
-                await this._enviarArquivosComRetry(gistId, token, { files: corpoLimpeza });
-            }
-        }
-    } catch (erroLimpeza) {
-        console.warn('[GIST SYNC] Limpeza de versões antigas do backup falhou (sem impacto — só deixa arquivos não usados no Gist, tenta de novo no próximo salvamento):', erroLimpeza);
-    }
-};
-
-// Reconstrói o conteúdo completo do backup a partir de json.files (resposta
-// crua da API de Gists) — usado por importarNuvem()/importarNuvemSilenciosa().
-// Segue o manifesto (formato atual, ver _enviarBackupComVersionamento)
-// quando ele existe: é a ÚNICA forma de garantir que as partes lidas
-// pertencem TODAS à mesma geração do backup, mesmo que o Gist também tenha
-// partes soltas de uma versão anterior ou de um envio interrompido. Sem
-// manifesto (backup salvo antes desta correção), cai no formato antigo:
-// varre tudo com o prefixo sem versão e concatena na ordem numérica.
-window.SALINHA_GIST_SYNC._lerConteudoDoGist = async function(json) {
-    let arquivos = json.files || {};
-
-    let manifesto = arquivos[this.NOME_MANIFESTO];
-    if (manifesto && manifesto.content) {
-        try {
-            let dadosManifesto = JSON.parse(manifesto.content);
-            if (dadosManifesto && dadosManifesto.versao && dadosManifesto.totalPartes > 0) {
-                let conteudoCompleto = '';
-                for (let i = 1; i <= dadosManifesto.totalPartes; i++) {
-                    let nome = 'monstrinho-backup.v' + dadosManifesto.versao + '.part' + i + '.json';
-                    let arquivo = arquivos[nome];
-                    if (!arquivo) throw new Error('Parte ' + i + '/' + dadosManifesto.totalPartes + ' da versão ' + dadosManifesto.versao + ' não foi encontrada no Gist.');
-                    let texto = arquivo.content;
-                    if (arquivo.truncated && arquivo.raw_url) {
-                        let respostaRaw = await fetch(arquivo.raw_url);
-                        if (!respostaRaw.ok) throw new Error('Falha ao buscar o conteúdo completo da parte ' + i + ' (HTTP ' + respostaRaw.status + ').');
-                        texto = await respostaRaw.text();
-                    }
-                    conteudoCompleto += texto;
-                }
-                return conteudoCompleto;
-            }
-        } catch (erroManifesto) {
-            console.warn('[GIST SYNC] Manifesto inválido/incompleto — tentando o formato antigo (sem manifesto):', erroManifesto);
-        }
-    }
-
-    // Formato antigo (sem manifesto) — mesma reconstrução de sempre.
-    let nomesPartes = Object.keys(arquivos)
-        .filter(nome => nome.indexOf(this.PREFIXO_PARTE) === 0)
-        .sort(function(a, b) {
-            let na = parseInt(a.slice(a.lastIndexOf('part') + 4), 10);
-            let nb = parseInt(b.slice(b.lastIndexOf('part') + 4), 10);
-            return na - nb;
-        });
-
-    if (nomesPartes.length > 0) {
-        let conteudoCompleto = '';
-        for (let nome of nomesPartes) {
-            let arquivo = arquivos[nome];
-            let texto = arquivo.content;
-            if (arquivo.truncated && arquivo.raw_url) {
-                let respostaRaw = await fetch(arquivo.raw_url);
-                if (!respostaRaw.ok) throw new Error('Falha ao buscar o conteúdo completo de "' + nome + '" (HTTP ' + respostaRaw.status + ').');
-                texto = await respostaRaw.text();
-            }
-            conteudoCompleto += texto;
-        }
-        return conteudoCompleto;
-    }
-    if (arquivos[this.NOME_ARQUIVO]) {
-        return arquivos[this.NOME_ARQUIVO].content;
-    }
-    throw new Error('Backup não encontrado dentro do Gist.');
-};
-
-// =========================================================================
-// SALVAMENTO AUTOMÁTICO E SILENCIOSO — PERIÓDICO (a cada 5min de atividade)
-// =========================================================================
-// Mesma lógica de upload de exportarNuvem() (cria partes, faz PATCH no
-// Gist, limpa partes velhas), só que sem alert()/mostrarModal() — falhas
-// só viram console.warn, pra não incomodar o usuário a cada 5 minutos.
-// Exige token E gistId já configurados (o próprio usuário precisa ter
-// feito o 1º "☁️⬆️ Salvar" manual pelo menos uma vez); sem isso, não faz
-// nada — nunca cria um Gist novo silenciosamente sozinha.
-// Lock (__salvamentoNuvemEmAndamento) e retry em 409 são geridos AQUI
-// DENTRO, não pelo chamador — assim a função fica correta e auto-suficiente
-// não importa quem a chame (verificarSalvamentoPeriodicoNuvem, hoje
-// desativada, ou qualquer outro gatilho futuro).
-window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa = async function() {
-    let token = this.getToken();
-    let gistId = this.getGistId();
-    if (!token || !gistId) return;
-    if (window.__salvamentoNuvemEmAndamento && (Date.now() - (window.__salvamentoNuvemEmAndamentoDesde || 0)) < this.LOCK_NUVEM_EXPIRA_MS) return; // outro salvamento (manual ou automático) já em curso
-
-    window.__salvamentoNuvemEmAndamento = true;
-    window.__salvamentoNuvemEmAndamentoDesde = Date.now();
-    try {
-        await _aplicarImportNuvemPendente();
-        let payload = await window.SALINHA_BACKUP.construirPayload();
-        let conteudo = JSON.stringify(payload, null, 2);
-        let partes = this.dividirEmPartes(this._utf8ParaBase64(conteudo), this.TAMANHO_MAX_PARTE);
-
-        // Ver _enviarBackupComVersionamento (perto de _enviarArquivosComRetry).
-        await this._enviarBackupComVersionamento(gistId, token, partes);
-
-    } catch (err) {
-        console.warn('[GIST SYNC] Salvamento periódico silencioso falhou:', err);
-    } finally {
-        window.__salvamentoNuvemEmAndamento = false;
-    }
-};
-
-// Salvamento automático na nuvem ao CONCLUIR uma bateria — pedido
-// explícito do usuário: mesmo botão e o mesmo mecanismo do "☁️⬆️ Salvar"
-// manual (exportarNuvem, com lock+retry com backoff prontos), disparado
-// sozinho enquanto a pessoa confere os resultados (não aguardado — não
-// atrasa a transição pra tela de resultado, já feita por finalizarSimulado()
-// ANTES de chamar esta função). Diferente do salvamento periódico
-// (verificarSalvamentoPeriodicoNuvem, hoje desativado por causa de uma
-// corrida 409 investigada antes), este é um gatilho por EVENTO significativo
-// (fim de bateria), não um timer arbitrário — risco de corrida bem menor.
-// Mesma regra de exportarNuvemSilenciosa(): só faz algo se token E gistId
-// já estiverem configurados (a pessoa já salvou manualmente pelo menos uma
-// vez) — nunca força login nem cria Gist novo sozinha, e nunca interrompe
-// quem nunca configurou sincronização em nuvem com um alerta indesejado.
-window.salvarNuvemAoConcluirBateria = function() {
-    if (!window.SALINHA_GIST_SYNC || typeof window.SALINHA_GIST_SYNC.exportarNuvem !== 'function') return;
-    if (!window.SALINHA_GIST_SYNC.getToken() || !window.SALINHA_GIST_SYNC.getGistId()) return;
-
-    function visivel(el) {
-        return !!el && window.getComputedStyle(el).display !== 'none';
-    }
-    let botao = document.getElementById('btn-salvar-nuvem-desktop');
-    if (!visivel(botao)) botao = document.getElementById('btn-salvar-nuvem-mobile');
-    if (!visivel(botao)) botao = null;
-
-    // Pedido explícito do usuário: o único aviso de hoje era o próprio
-    // botão trocando pra "⏳ Salvando..." — discreto demais, passava
-    // despercebido. Este popup aparece NA HORA, já em cima da tela de
-    // Resultados (que finalizarSimulado() já mostrou antes de chamar esta
-    // função — não atrasa a transição), com OK só pra fechar.
-    // suprimirModalSucesso evita um SEGUNDO modal genérico ("☁️ Backup
-    // enviado com sucesso") empilhado por cima deste alguns segundos
-    // depois, quando o envio de verdade terminar no fundo.
-    mostrarModal({
-        titulo: '☁️ Salvando bateria concluída...',
-        mensagem: 'O resultado desta bateria está sendo salvo automaticamente no seu backup na nuvem.',
-        botoes: [{ label: 'OK', cor: 'var(--app-primary)' }]
-    });
-
-    window.SALINHA_GIST_SYNC.exportarNuvem(botao, { suprimirModalSucesso: true });
-};
-
-// Gancho de ativação: reaproveita autoSave() (chamada em ~20 lugares a
-// cada resposta/troca de aba) em vez de um setInterval independente, que
-// rodaria mesmo sem nenhuma atividade do usuário. O lock
-// (window.__salvamentoNuvemEmAndamento) é gerido DENTRO de
-// exportarNuvemSilenciosa() — este chamador só decide O QUANDO, não a
-// concorrência, pra não duplicar (nem desalinhar) a lógica de trava.
-window.__ultimoSalvamentoNuvemPeriodico = window.__ultimoSalvamentoNuvemPeriodico || Date.now();
-window.__salvamentoNuvemEmAndamento = false;
-
-function verificarSalvamentoPeriodicoNuvem() {
-    // DESATIVADO — salvamento automático em nuvem removido a pedido do
-    // usuário (investigação de erro 409 intermitente, provável corrida
-    // entre salvamento manual e automático simultâneos — ver retry com
-    // backoff e o lock em exportarNuvem()/exportarNuvemSilenciosa(), já
-    // implementados e prontos pra quando isso for reativado). Reativar:
-    // apagar a linha "return;" abaixo — o resto da função já funciona.
-    return;
-
-    let agora = Date.now();
-    let cincoMinutos = 5 * 60 * 1000;
-    if (agora - window.__ultimoSalvamentoNuvemPeriodico >= cincoMinutos) {
-        window.__ultimoSalvamentoNuvemPeriodico = agora;
-        if (window.SALINHA_GIST_SYNC && typeof window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa === 'function') {
-            window.SALINHA_GIST_SYNC.exportarNuvemSilenciosa();
-        }
-    }
-}
-
-// =========================================================================
-// CARREGAMENTO AUTOMÁTICO E SILENCIOSO AO ABRIR O SITE
-// =========================================================================
-// Roda por conta própria, sem interferir na sequência de boot existente
-// (RESTAURAÇÃO SOBERANA DE SESSÃO). Se achar algo novo na nuvem, recarrega
-// a página uma vez — a próxima carga já começa com o dado atualizado,
-// sem precisar alterar a ordem de nada que já existia.
-// Guard contra loop de reload — rede de segurança pra QUALQUER causa de
-// loop na sincronização automática silenciosa, não só a que já corrigimos.
-// sessionStorage (não localStorage) é o escopo certo: sobrevive a
-// location.reload() (o contador precisa persistir entre as recargas pra
-// contar), mas some ao fechar a aba — uma sessão nova sempre recomeça
-// zerada, sem exigir limpeza manual. Se detectar 3+ tentativas de reload
-// numa janela de 60s, aborta em vez de recarregar de novo (sem retry).
-// Zerado sempre que um merge não encontra nada novo (chavesMutadas === 0)
-// — sinal de que o ciclo normal (config nova só ocasionalmente) voltou.
+// Guarda contra laço de recarga — rede de segurança para QUALQUER causa de
+// laço na sincronização. sessionStorage é o escopo certo: sobrevive a
+// location.reload() (o contador precisa persistir entre as recargas para
+// contar), mas some ao fechar a aba. Com 3+ recargas em 60s, não recarrega
+// mais nesta sessão (a faixa "Recarregar" continua disponível).
 const SYNC_RELOAD_GUARD_KEY = 'tjpe_v1__sync_reload_guard';
 const SYNC_RELOAD_GUARD_JANELA_MS = 60000;
 const SYNC_RELOAD_GUARD_LIMITE = 3;
@@ -5929,7 +5099,7 @@ function _syncReloadGuardPermiteReload() {
     tentativas = tentativas.filter(function(ts) { return (agora - ts) < SYNC_RELOAD_GUARD_JANELA_MS; });
 
     if (tentativas.length >= SYNC_RELOAD_GUARD_LIMITE) {
-        console.warn('[GIST SYNC] Guard de reload ativado: ' + tentativas.length + ' tentativas de sincronização automática em menos de ' + (SYNC_RELOAD_GUARD_JANELA_MS / 1000) + 's. Abortando pra evitar loop — não tenta de novo sozinho nesta sessão.');
+        console.warn('[SYNC] Guarda de recarga ativada: ' + tentativas.length + ' recargas em menos de ' + (SYNC_RELOAD_GUARD_JANELA_MS / 1000) + 's. Não recarrega sozinho de novo nesta sessão.');
         return false;
     }
 
@@ -5938,21 +5108,15 @@ function _syncReloadGuardPermiteReload() {
     return true;
 }
 
-function _syncReloadGuardZerar() {
-    try { sessionStorage.removeItem(SYNC_RELOAD_GUARD_KEY); } catch (e) {}
-}
-
 // Há algum modal/popup/tela sobreposta aberta? Genérico de propósito — o
 // app tem vários padrões de modal (.mo.open, .analytics-modal.active,
 // #section-* com display:flex, mostrarModal()...). Critério: elemento
-// candidato com position:fixed, visível e cobrindo boa parte da tela. O
-// overlay "carregando da nuvem" não conta (ele é justamente quem espera).
+// candidato com position:fixed, visível e cobrindo boa parte da tela.
 function _algumModalAberto() {
     let candidatos = document.querySelectorAll('.mo, .analytics-modal, [id^="section-"], [id*="modal"], [id^="tela-"], [class*="modal"], [class*="popup"], [class*="overlay"]');
     let minW = window.innerWidth * 0.4, minH = window.innerHeight * 0.4;
     for (let i = 0; i < candidatos.length; i++) {
         let el = candidatos[i];
-        if (el.id === 'overlay-carregando-nuvem') continue;
         let cs = window.getComputedStyle(el);
         if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
         let r = el.getBoundingClientRect();
@@ -5970,125 +5134,538 @@ function _aguardarNenhumModalAberto() {
     });
 }
 
-// Chamado no início de exportarNuvem()/exportarNuvemSilenciosa() — ver
-// comentário em importarNuvemSilenciosa().
-async function _aplicarImportNuvemPendente() {
-    if (window.__importNuvemPendente) {
-        try { await window.__importNuvemPendente.aplicar(); } catch (e) { console.warn('[GIST SYNC] Falha ao aplicar merge pendente antes do envio:', e); }
+// =========================================================================
+// SALINHA_SYNC — dados pessoais no Firestore, sem botão
+// =========================================================================
+// Escopo: as chaves de SALINHA_BACKUP.STORAGE_KEYS (+ o banco factual),
+// menos a tela aberta (salinha_active_module, cordeiro_view_ativa), que é
+// de cada aparelho. Do acervo de provas só vão as baterias pessoais: as
+// oficiais se refazem a cada abertura (carregarAcervosOficiais).
+//
+// Firestore:
+//   usuarios/{uid}/dados/{chave}  versao (ms), partes (0 = inline), valor
+//                                 (texto, se inline), tamanho, hash,
+//                                 dispositivo, atualizadoEm
+//   usuarios/{uid}/dados/{chave}/partes/{versao}_{n}  dados (bytes ≤ 900 KB)
+// Chave grande: as partes da versão nova são gravadas primeiro e só depois o
+// documento da chave passa a apontar para ela — quem lê segue sempre a
+// versão apontada, nunca mistura gerações (mesma ideia do antigo envio
+// versionado do Gist). As partes antigas são apagadas depois.
+//
+// Gravação: toda escrita local numa chave sincronizada (localStorage.setItem/
+// removeItem — ver SALINHA_FB.aoEscrever — e idbSet) marca a chave como
+// pendente; o envio sai 3 s depois da última mudança (10 s para a sessão
+// ativa, gravada a cada resposta), na hora em pagehide/visibilitychange, e
+// nunca reenvia o que é igual ao último envio (hash).
+//
+// "base" (tjpe_v1__sync_base): para cada chave, a versão e o hash do último
+// estado em que este aparelho e a nuvem concordavam. É o que distingue
+// "mudou só lá" (aplica) de "mudou dos dois lados" (mescla com
+// aplicarPayloadMerge, sem descartar nada local em silêncio).
+//
+// Dono dos dados locais (tjpe_v1__sync_uid): os dados no navegador são de
+// uma conta. Sem dono (dados de antes da sincronização, ex.: Merge do
+// backup do Monstrinho), ficam com a primeira conta que entrar. De outra
+// conta, são limpos antes de baixar os da conta atual. Ao sair, os dados
+// pessoais saem do aparelho (estão na nuvem).
+window.SALINHA_SYNC = (function() {
+    const FB = window.SALINHA_FB;
+    if (!FB) return null;
+
+    const PREFIXO = 'tjpe_v1__';
+    const SO_DESTE_APARELHO = ['tjpe_v1__salinha_active_module', 'tjpe_v1__cordeiro_view_ativa'];
+    const CHAVES = window.SALINHA_BACKUP.STORAGE_KEYS.filter(function(k) { return SO_DESTE_APARELHO.indexOf(k) < 0; }).concat([STORAGE_KEY_ATIVO]);
+    const EH_SINCRONIZADA = {};
+    CHAVES.forEach(function(k) { EH_SINCRONIZADA[k] = true; });
+    const CHAVE_DONO = 'tjpe_v1__sync_uid', CHAVE_BASE = 'tjpe_v1__sync_base', CHAVE_DISPOSITIVO = 'tjpe_v1__sync_dispositivo';
+    const LIMITE_INLINE = 900000; // bytes UTF-8 por documento/parte (limite do Firestore: 1 MiB)
+    const PARTES_POR_LOTE = 8;    // ~7,2 MB por lote (limite: 10 MiB)
+    const ESPERA_MS = 3000, ESPERA_SESSAO_MS = 10000;
+    const ACERVO = window.CHAVE_ACERVO_PROVAS;
+
+    let dispositivo = localStorage.getItem(CHAVE_DISPOSITIVO);
+    if (!dispositivo) {
+        dispositivo = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        try { localStorage.setItem(CHAVE_DISPOSITIVO, dispositivo); } catch (e) {}
     }
-}
 
-window.SALINHA_GIST_SYNC.importarNuvemSilenciosa = async function() {
-    let token = this.getToken();
-    let gistId = this.getGistId();
-    if (!token || !gistId) return; // nunca configurado nesta máquina — não faz nada
+    let db = null, uid = null, pronto = false, iniciado = false;
+    let aplicando = 0;            // > 0: gravações locais vindas da nuvem (não reenviar)
+    let pendentes = new Set();
+    let temporizadores = {};
+    let envios = {};              // chave → promessa do envio em andamento
+    let gravandoNaNuvem = 0;
+    let base = {};
 
-    try {
-        let resposta = await fetch('https://api.github.com/gists/' + gistId, {
-            headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
-        });
-        if (!resposta.ok) return;
+    function lerBase() { try { return JSON.parse(localStorage.getItem(CHAVE_BASE) || '{}') || {}; } catch (e) { return {}; } }
+    // Abas do mesmo navegador dividem a base: ao gravar, mescla com o que
+    // outra aba gravou (fica a versão mais nova de cada chave).
+    function salvarBase() {
+        let gravada = lerBase();
+        Object.keys(base).forEach(function(k) { if (!gravada[k] || base[k].v >= gravada[k].v) gravada[k] = base[k]; });
+        base = gravada;
+        try { localStorage.setItem(CHAVE_BASE, JSON.stringify(base)); } catch (e) {}
+    }
+    function hash(s) { // FNV-1a 32 bits + tamanho
+        let h = 0x811c9dc5;
+        for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+        return s.length + ':' + (h >>> 0).toString(36);
+    }
+    function ref(chave) { return db.collection('usuarios').doc(uid).collection('dados').doc(chave); }
 
-        let json = await resposta.json();
-        // Ver _lerConteudoDoGist — se o backup não for encontrado nem no
-        // formato novo nem no antigo, ela lança, e o catch mais externo
-        // desta função (silencioso, só console.warn) já cobre o caso.
-        let conteudoCompleto = await this._lerConteudoDoGist(json);
+    // ── Indicador ──
+    function avisarEstado() {
+        let estado = !pronto || pendentes.size || gravandoNaNuvem ? (navigator.onLine === false ? 'offline' : 'sincronizando') : 'sincronizado';
+        document.dispatchEvent(new CustomEvent('salinha-sync', { detail: { estado: estado } }));
+    }
+    window.addEventListener('online', avisarEstado);
+    window.addEventListener('offline', avisarEstado);
 
-        // Persistência dos modais (pedido explícito do usuário): o download
-        // do Gist leva 10-15s ou mais, e nesse meio tempo o usuário já abriu
-        // algum modal (Jurisprudência, Leitor, Esquemas...). O merge + o
-        // location.reload() logo abaixo fechavam tudo "do nada", parecendo
-        // um F5 espontâneo. Agora o merge e o reload só acontecem quando
-        // NENHUM modal está aberto. Se o usuário salvar na nuvem enquanto
-        // isso, exportarNuvem*() aplica este merge pendente ANTES de montar
-        // o payload — senão o envio sobrescreveria na nuvem os dados mais
-        // novos de outro dispositivo que ainda não foram mesclados aqui.
-        let payloadNuvem = this._decodificarConteudoNuvem(conteudoCompleto);
-        let pendente = { promessa: null };
-        pendente.aplicar = function() {
-            if (!pendente.promessa) {
-                pendente.promessa = window.SALINHA_BACKUP.aplicarPayloadMerge(payloadNuvem);
-                if (window.__importNuvemPendente === pendente) window.__importNuvemPendente = null;
-            }
-            return pendente.promessa;
-        };
-        window.__importNuvemPendente = pendente;
-        await _aguardarNenhumModalAberto();
-        let resultado = await pendente.aplicar();
-        if (resultado.chavesComErro && resultado.chavesComErro.length > 0) {
-            // "Silenciosa" não deve virar alert() interrompendo a página no
-            // load — mas o erro não pode ficar 100% invisível também, então
-            // ao menos fica registrado no console pra quem for investigar.
-            console.warn('[GIST SYNC] Sincronização automática mesclou parcialmente — não coube no armazenamento: ' + resultado.chavesComErro.join(', '));
+    // ── Leitura e gravação local (mesmas camadas do backup) ──
+    async function lerLocal(chave) {
+        if (chave === window.CHAVE_ARQUIVO_MORTO) {
+            let o = window.lerArquivoMorto();
+            return o && Object.keys(o).length ? JSON.stringify(o) : null;
         }
-        if (resultado.chavesMutadas > 0) {
-            // De novo: se um salvamento manual aplicou o merge antes (com
-            // modal aberto), espera fechar antes de recarregar.
-            await _aguardarNenhumModalAberto();
-            if (_syncReloadGuardPermiteReload()) {
-                location.reload();
+        if (chave === window.CHAVE_SESSAO_ATIVA) {
+            let o = await window.lerSessaoAtiva();
+            return o ? JSON.stringify(o) : null;
+        }
+        let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+        let v = camada ? camada.ler() : localStorage.getItem(chave);
+        if (v == null) return null;
+        if (chave === ACERVO) {
+            let lista = [];
+            try { lista = JSON.parse(v) || []; } catch (e) { return null; }
+            return JSON.stringify(lista.filter(function(b) { return b && !b.origem_oficial; }));
+        }
+        return v;
+    }
+    function vazioProfundo(v) {
+        if (v === null || v === undefined || v === '' || v === false || v === 0) return true;
+        if (Array.isArray(v)) return v.every(vazioProfundo);
+        if (typeof v === 'object') return Object.keys(v).every(function(k) { return vazioProfundo(v[k]); });
+        return false;
+    }
+    // "Vazio" = só o que o app grava sozinho ao abrir: estruturas vazias,
+    // sessão sem baterias abertas, acervo só com as oficiais. Na dúvida
+    // (valor que não é JSON, cor de tema escolhida), conta como dado.
+    function vazioLocal(chave, s) {
+        if (s == null) return true;
+        if (chave === window.CHAVE_SESSAO_ATIVA) {
+            try { let o = JSON.parse(s); return !(o && Array.isArray(o.sims) && o.sims.length); } catch (e) { return false; }
+        }
+        try { return vazioProfundo(JSON.parse(s)); } catch (e) { return !s; }
+    }
+    async function gravarLocal(chave, s) {
+        aplicando++;
+        try {
+            if (chave === window.CHAVE_ARQUIVO_MORTO) return await window.salvarArquivoMorto(JSON.parse(s || '{}'));
+            if (chave === window.CHAVE_SESSAO_ATIVA) return await window.salvarSessaoAtiva(s ? JSON.parse(s) : { sims: [], si: -1 });
+            let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+            if (chave === ACERVO) {
+                let local = [];
+                try { local = JSON.parse(camada.ler() || '[]') || []; } catch (e) {}
+                s = JSON.stringify(local.filter(function(b) { return b && b.origem_oficial; }).concat(JSON.parse(s || '[]')));
             }
+            if (camada) return await camada.salvar(s);
+            localStorage.setItem(chave, s);
+        } finally { aplicando--; }
+    }
+    // Mescla com a mesma semântica do backup (lápides, histórico, cronograma…)
+    // — as chaves recebidas entram como um backup parcial.
+    async function mesclar(valores) {
+        let payload = { version: 'SALINHA_BACKUP_V1', schema: 1, created_at: new Date().toISOString(), data: valores };
+        aplicando++;
+        try { return await window.SALINHA_BACKUP.aplicarPayloadMerge(JSON.stringify(payload)); }
+        finally { aplicando--; }
+    }
+    function chaveIdb(chave) { return chave.indexOf(PREFIXO) === 0 ? chave.slice(PREFIXO.length) : chave; }
+    async function limparLocal() {
+        aplicando++;
+        try {
+            CHAVES.concat(['tjpe_v1__etl_planner_db']).forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
+            let banco = await abrirIndexedDB();
+            if (banco) await new Promise(function(ok) {
+                try {
+                    let tx = banco.transaction(IDB_STORE, 'readwrite');
+                    CHAVES.forEach(function(k) { tx.objectStore(IDB_STORE).delete(chaveIdb(k)); });
+                    tx.oncomplete = tx.onerror = tx.onabort = function() { ok(); };
+                } catch (e) { ok(); }
+            });
+        } finally { aplicando--; }
+        try { localStorage.removeItem(CHAVE_BASE); localStorage.removeItem(CHAVE_DONO); } catch (e) {}
+        base = {};
+    }
+
+    // ── Nuvem ──
+    async function lerRemoto(chave, d) {
+        if (!d.partes) return d.valor == null ? null : String(d.valor);
+        let pedacos = [];
+        for (let n = 1; n <= d.partes; n++) {
+            let p = await ref(chave).collection('partes').doc(d.versao + '_' + n).get();
+            if (!p.exists) throw new Error('Parte ' + n + '/' + d.partes + ' de ' + chave + ' não encontrada.');
+            pedacos.push(p.data().dados.toUint8Array());
+        }
+        let total = pedacos.reduce(function(t, p) { return t + p.length; }, 0), bytes = new Uint8Array(total), pos = 0;
+        pedacos.forEach(function(p) { bytes.set(p, pos); pos += p.length; });
+        return new TextDecoder().decode(bytes);
+    }
+    async function gravarRemoto(chave, s, h) {
+        let versao = Date.now();
+        let bytes = new TextEncoder().encode(s);
+        let meta = { versao: versao, tamanho: bytes.length, hash: h, dispositivo: dispositivo, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() };
+        let escritas = [];
+        if (bytes.length <= LIMITE_INLINE) {
+            escritas.push(ref(chave).set(Object.assign(meta, { partes: 0, valor: s })));
         } else {
-            _syncReloadGuardZerar();
+            let n = Math.ceil(bytes.length / LIMITE_INLINE);
+            for (let i = 0; i < n; i += PARTES_POR_LOTE) {
+                let lote = db.batch();
+                for (let j = i; j < Math.min(n, i + PARTES_POR_LOTE); j++) {
+                    lote.set(ref(chave).collection('partes').doc(versao + '_' + (j + 1)), {
+                        versao: versao, indice: j + 1,
+                        dados: firebase.firestore.Blob.fromUint8Array(bytes.subarray(j * LIMITE_INLINE, (j + 1) * LIMITE_INLINE))
+                    });
+                }
+                escritas.push(lote.commit());
+            }
+            escritas.push(ref(chave).set(Object.assign(meta, { partes: n, valor: null })));
+            // Partes de versões antigas: limpeza depois que a nova foi aceita.
+            Promise.all(escritas).then(function() { return ref(chave).collection('partes').get(); }).then(function(snap) {
+                snap.docs.forEach(function(d) { if (d.data().versao !== versao) d.ref.delete(); });
+            }).catch(function(e) { console.warn('[SYNC] Limpeza das partes antigas de ' + chave + ' falhou (sem impacto):', e); });
         }
-    } catch (err) {
-        console.warn('[GIST SYNC] Sincronização automática silenciosa falhou:', err);
+        // A base avança na hora (para não reenviar o mesmo valor), mas só fica
+        // confirmada (ok) quando a nuvem aceita a gravação. Sem confirmação —
+        // página recarregada ou fechada antes do envio sair —, a próxima
+        // abertura reenvia (ver sincronizarInicio) e sair não apaga nada.
+        base[chave] = { v: versao, h: h, ok: false };
+        salvarBase();
+        gravandoNaNuvem++;
+        avisarEstado();
+        Promise.all(escritas).then(function() {
+            if (base[chave] && base[chave].v === versao) { base[chave].ok = true; salvarBase(); }
+        }, function(e) { console.warn('[SYNC] Envio de ' + chave + ' falhou:', e); })
+            .then(function() { return db.waitForPendingWrites(); })
+            .then(function() { gravandoNaNuvem = 0; avisarEstado(); }, function() {});
     }
-};
 
-function mostrarOverlayCarregandoNuvem() {
-    let el = document.getElementById('overlay-carregando-nuvem');
-    if (el) el.style.display = 'flex';
-}
-function esconderOverlayCarregandoNuvem() {
-    let el = document.getElementById('overlay-carregando-nuvem');
-    if (el) el.style.display = 'none';
-}
+    // ── Outras abas deste navegador ──
+    // Elas dividem o armazenamento (e o "dispositivo"): a nuvem não as avisa
+    // de mudanças daqui, porque são o mesmo aparelho. Este canal avisa que um
+    // dado mudou; a outra aba só precisa recarregar o que tem em memória.
+    let canal = null;
+    try { canal = new BroadcastChannel('salinha-sync'); } catch (e) {}
+    let avisoAbas = null;
+    function avisarOutrasAbas(chave) {
+        if (!canal) return;
+        clearTimeout(avisoAbas);
+        avisoAbas = setTimeout(function() { try { canal.postMessage({ tipo: 'mudou', chave: chave, uid: uid }); } catch (e) {} }, 1500);
+    }
+    if (canal) canal.onmessage = function(ev) {
+        let m = ev.data || {};
+        if (m.tipo !== 'mudou' || !pronto || m.uid !== uid) return;
+        console.info('[SYNC] Mudança feita em outra aba deste navegador: ' + m.chave + '.');
+        mostrarMudanca(m.chave);
+    };
 
-// Compara só ano/mês/dia NO FUSO LOCAL — "mesmo dia" pro usuário é o
-// calendário dele, não um corte de 24h corridas a partir de um horário
-// arbitrário.
-function _mesmoDiaLocal(a, b) {
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
+    // ── Envio ──
+    function aoEscrever(chave) {
+        if (aplicando || !EH_SINCRONIZADA[chave]) return;
+        pendentes.add(chave);
+        clearTimeout(temporizadores[chave]);
+        temporizadores[chave] = setTimeout(function() { enviar(chave); }, chave === window.CHAVE_SESSAO_ATIVA ? ESPERA_SESSAO_MS : ESPERA_MS);
+        avisarEstado();
+    }
+    FB.aoEscrever = aoEscrever;
+    // idbSet é usado pelas camadas IndexedDB (chave sem o prefixo tjpe_v1__).
+    const _idbSetOriginal = idbSet;
+    idbSet = function(chave, valor) {
+        aoEscrever(PREFIXO + chave);
+        return _idbSetOriginal(chave, valor);
+    };
 
-window.addEventListener('load', function() {
-    // Overlay "Aguarde... carregando a última versão salva" — dispara
-    // quando este navegador/computador ainda NÃO foi usado HOJE (1ª
-    // abertura do dia aqui), não só na primeira vez da vida inteira. É
-    // exatamente o cenário que gera confusão: abrir de outro computador (ou
-    // voltar depois de um tempo) com abas de uma versão salva antiga,
-    // enquanto a sincronização (10-15s) busca por baixo o que mudou noutro
-    // lugar, sem nenhum aviso de que algo está acontecendo. F5 e reaberturas
-    // dentro do MESMO dia, no mesmo navegador, não mostram — aí sim é só
-    // atualização simples, sem motivo pra alarme. A marca
-    // (tjpe_v1__ultimo_uso_local, uma data ISO) é atualizada em TODA
-    // abertura, não uma vez só — por isso o gatilho é "dia diferente do
-    // último uso", nunca "primeira vez".
-    let agora = new Date();
-    let ultimoUsoBruto = null;
-    try { ultimoUsoBruto = localStorage.getItem('tjpe_v1__ultimo_uso_local'); } catch (e) {}
-    let ultimoUso = ultimoUsoBruto ? new Date(ultimoUsoBruto) : null;
-    let primeiraVezHojeNesteNavegador = !(ultimoUso && !isNaN(ultimoUso.getTime()) && _mesmoDiaLocal(ultimoUso, agora));
-    try { localStorage.setItem('tjpe_v1__ultimo_uso_local', agora.toISOString()); } catch (e) {}
+    function enviar(chave) {
+        clearTimeout(temporizadores[chave]);
+        if (!pronto) return Promise.resolve();
+        let anterior = envios[chave] || Promise.resolve();
+        let atual = anterior.then(async function() {
+            pendentes.delete(chave);
+            let s = await lerLocal(chave);
+            if (s == null) return;
+            let h = hash(s);
+            if (base[chave] && base[chave].h === h) return;
+            // Estrutura vazia que o app grava sozinho ao abrir: só vai para a
+            // nuvem se a chave já existia lá (aí "esvaziar" é uma mudança real).
+            if (!base[chave] && vazioLocal(chave, s)) return;
+            await gravarRemoto(chave, s, h);
+            console.info('[SYNC] Enviado: ' + chave + ' (' + s.length + ' caracteres).');
+            // Só avisa quando o dado mudou de fato (gravações do app ao abrir,
+            // iguais ao que já está na nuvem, não chegam aqui).
+            avisarOutrasAbas(chave);
+        }).catch(function(e) { console.warn('[SYNC] Falha ao enviar ' + chave + ':', e); pendentes.add(chave); })
+          .then(avisarEstado);
+        envios[chave] = atual;
+        return atual;
+    }
+    function enviarPendentes() { return Promise.all(Array.from(pendentes).map(enviar)); }
+    // Envia já e espera a nuvem confirmar (com limite de tempo) — antes de
+    // recarregar a página por conta própria (ex.: 📥 Merge) ou de sair.
+    function enviarAgora(limiteMs) {
+        if (!pronto) return Promise.resolve();
+        return Promise.race([
+            enviarPendentes().then(function() { return Promise.all(Object.values(envios)); }).then(function() { return db.waitForPendingWrites(); }),
+            new Promise(function(ok) { setTimeout(ok, limiteMs || 10000); })
+        ]).catch(function() {});
+    }
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') enviarPendentes(); });
+    window.addEventListener('pagehide', function() { enviarPendentes(); });
 
-    let temSyncConfigurado = !!(window.SALINHA_GIST_SYNC && window.SALINHA_GIST_SYNC.getToken() && window.SALINHA_GIST_SYNC.getGistId());
+    // ── Recarga controlada ──
+    // Os dados novos já estão gravados no aparelho, mas as seções guardam o
+    // estado em memória: recarregar é o que faz a tela mostrá-los. Com um
+    // modal aberto, espera ele fechar (e mostra a faixa, para quem quiser
+    // recarregar antes).
+    // ── Atualização na tela, sem recarregar a página ──
+    // Seções que sabem reler o armazenamento (carregar) e se redesenhar
+    // (render). Jurisprudência, Esquemas e Glossário só guardam os itens
+    // pessoais: os oficiais (vindos de dados/) são preservados da memória.
+    // As demais (baterias, histórico, cronograma, flashcards…) caem na
+    // recarga controlada.
+    const NA_TELA = {
+        'tjpe_v1__jurisprudencia_runtime': { runtime: 'JURISPRUDENCIA_RUNTIME', campo: 'fichas' },
+        'tjpe_v1__esquemas_runtime': { runtime: 'ESQUEMAS_RUNTIME', campo: 'esquemas' },
+        'tjpe_v1__glossario_runtime': { runtime: 'GLOSSARIO_RUNTIME', campo: 'glossario' },
+        'tjpe_v1__prazos_runtime': { runtime: 'PRAZOS_RUNTIME' },  // carregar() já preserva os oficiais
+        'tjpe_v1__penas_runtime': { runtime: 'PENAS_RUNTIME' },
+        'tjpe_v1__leiseca_runtime': { runtime: 'LEISECA_RUNTIME', ler: '_carregarEstado' }
+    };
+    // Digitando num campo: não mexe na tela agora (perderia o que está
+    // sendo escrito) — fica para a recarga controlada.
+    function editando() {
+        let el = document.activeElement;
+        return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+    }
+    // Aba avisada por outra aba: o armazenamento já mudou, mas o cache da
+    // camada IndexedDB desta aba não.
+    async function atualizarCache(chave) {
+        let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+        if (!camada) return;
+        let v = await idbGet(chaveIdb(chave));
+        if (v === undefined || v === camada.ler()) return;
+        aplicando++;
+        try { await camada.salvar(v); } finally { aplicando--; }
+    }
+    async function atualizarNaTela(chave) {
+        let cfg = NA_TELA[chave], R = cfg && window[cfg.runtime];
+        if (!R || editando()) return false;
+        try {
+            await atualizarCache(chave);
+            let oficiais = null;
+            if (cfg.campo && R[cfg.campo]) {
+                oficiais = {};
+                Object.keys(R[cfg.campo]).forEach(function(ch) {
+                    let of = (R[cfg.campo][ch] || []).filter(function(x) { return x && x.origem_oficial; });
+                    if (of.length) oficiais[ch] = of;
+                });
+            }
+            aplicando++; // carregar() de algumas seções regrava (migrações): não reenviar
+            try { R[cfg.ler || 'carregar'](); } finally { aplicando--; }
+            if (oficiais) Object.keys(oficiais).forEach(function(ch) {
+                let lista = R[cfg.campo][ch] = R[cfg.campo][ch] || [];
+                let ids = {};
+                lista.forEach(function(x) { if (x) ids[x.id] = true; });
+                oficiais[ch].forEach(function(o) { if (!ids[o.id]) lista.push(o); });
+            });
+            if (typeof R.render === 'function') R.render();
+            console.info('[SYNC] Tela atualizada sem recarregar: ' + chave + '.');
+            return true;
+        } catch (e) {
+            console.warn('[SYNC] Não foi possível atualizar ' + chave + ' na tela; recarregando:', e);
+            return false;
+        }
+    }
+    async function mostrarMudanca(chave) {
+        if (!(await atualizarNaTela(chave))) recarregarControlado();
+    }
 
-    if (primeiraVezHojeNesteNavegador && temSyncConfigurado) {
-        mostrarOverlayCarregandoNuvem();
-        window.SALINHA_GIST_SYNC.importarNuvemSilenciosa().finally(function() {
-            // Se a sincronização encontrou algo novo, a própria
-            // importarNuvemSilenciosa() já dispara um location.reload() —
-            // o overlay nem chega a sumir sozinho, a página recarrega com
-            // tudo pronto. Só esconde aqui pro caso comum: nada novo pra
-            // trazer (chavesMutadas === 0), sem reload nenhum.
-            esconderOverlayCarregandoNuvem();
+    let recargaAgendada = false;
+    // Balão por cima de tudo (uma faixa no topo ficaria atrás do modal).
+    function mostrarBalao(texto) {
+        let balao = document.getElementById('salinha-aviso-sync');
+        if (!balao) {
+            balao = document.createElement('div');
+            balao.id = 'salinha-aviso-sync';
+            balao.setAttribute('role', 'status');
+            balao.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483000;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:12px;background:#1e1b4b;color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)';
+            document.body.appendChild(balao);
+        }
+        balao.innerHTML = '<span>' + texto + '</span><button type="button" style="padding:5px 12px;border-radius:8px;border:none;background:#fff;color:#1e1b4b;font-weight:800;cursor:pointer" onclick="location.reload()">Recarregar agora</button>';
+    }
+    function recarregarControlado() {
+        if (recargaAgendada) return;
+        recargaAgendada = true;
+        if (_algumModalAberto()) mostrarBalao('🔄 Seus dados foram atualizados em outro aparelho. A página recarrega quando você fechar esta janela.');
+        _aguardarNenhumModalAberto().then(function() {
+            Promise.all(Object.values(envios)).then(function() {
+                if (_syncReloadGuardPermiteReload()) location.reload();
+                else mostrarBalao('🔄 Seus dados foram atualizados em outro aparelho. Recarregue a página para ver.');
+            });
         });
-    } else {
-        window.SALINHA_GIST_SYNC.importarNuvemSilenciosa();
     }
-});
+
+    // ── Primeira sincronização deste navegador nesta abertura ──
+    async function esperarApp() {
+        let promessas = ['__acervoProvasHidratacaoPromise__', '__arquivoMortoPromise__', '__sessaoAtivaPromise__', '__cronogramaHidratacaoPromise__',
+            '__esquemasHidratacaoPromise__', '__flashcardsHidratacaoPromise__', '__flashcardsNbHidratacaoPromise__', '__glossarioHidratacaoPromise__',
+            '__jurisprudenciaHidratacaoPromise__', '__penasHidratacaoPromise__', '__plannerHidratacaoPromise__', '__prazosHidratacaoPromise__',
+            // O acervo oficial reescreve o acervo inteiro ao terminar: aplicar
+            // dados da nuvem no meio disso perderia as baterias pessoais.
+            '__bootOficialPromise__'].map(function(n) { return Promise.resolve(window[n]).catch(function() {}); });
+        await Promise.race([Promise.all(promessas), new Promise(function(ok) { setTimeout(ok, 60000); })]);
+    }
+    async function sincronizarInicio() {
+        await esperarApp();
+        let dono = localStorage.getItem(CHAVE_DONO);
+        if (dono && dono !== uid) await limparLocal();
+        base = dono === uid ? lerBase() : {};
+
+        let snap = await db.collection('usuarios').doc(uid).collection('dados').get();
+        let remotos = {};
+        snap.docs.forEach(function(d) { if (EH_SINCRONIZADA[d.id]) remotos[d.id] = d.data(); });
+
+        let subir = [], conflitos = {}, recarregar = false;
+        for (let chave of CHAVES) {
+            let L = await lerLocal(chave), Lh = L == null ? null : hash(L), B = base[chave], R = remotos[chave];
+            // Último envio daqui sem confirmação da nuvem (página fechada ou
+            // recarregada antes de ele sair): se a nuvem não tem nada mais
+            // novo, o valor local é o mais recente e sobe de novo; se tem, a
+            // chave é tratada sem base (mescla, se os dois lados têm dados).
+            // (A base é dividida entre abas e salvarBase mescla pela versão:
+            // em vez de apagar a entrada, zera o hash na mesma versão.)
+            if (B && B.ok === false) {
+                if (R && R.versao === B.v) B.ok = true;
+                else if (!R || R.versao < B.v) { if (L != null) subir.push(chave); base[chave] = { v: B.v, h: null }; continue; }
+                else { base[chave] = { v: B.v, h: null }; B = undefined; }
+            }
+            if (!R) {
+                if (L != null && !vazioLocal(chave, L) && !(B && B.h === Lh)) subir.push(chave);
+                continue;
+            }
+            if (B && R.versao === B.v) {
+                if (L != null && Lh !== B.h) subir.push(chave);
+                continue;
+            }
+            let Rs = await lerRemoto(chave, R);
+            if (Rs == null) continue;
+            let Rh = hash(Rs);
+            if (Lh === Rh) { base[chave] = { v: R.versao, h: Rh }; continue; }
+            if (L == null || vazioLocal(chave, L) || (B && Lh === B.h)) {
+                await gravarLocal(chave, Rs);
+                base[chave] = { v: R.versao, h: Rh };
+                recarregar = true;
+            } else {
+                conflitos[chave] = Rs;
+                base[chave] = { v: R.versao, h: Rh };
+            }
+        }
+        if (Object.keys(conflitos).length) {
+            let r = await mesclar(conflitos);
+            if (r.chavesComErro && r.chavesComErro.length) console.warn('[SYNC] Mescla parcial — não coube neste aparelho: ' + r.chavesComErro.join(', '));
+            Object.keys(conflitos).forEach(function(k) { subir.push(k); });
+            recarregar = true;
+        }
+        try { localStorage.setItem(CHAVE_DONO, uid); } catch (e) {}
+        salvarBase();
+        pronto = true;
+        subir.forEach(function(k) { pendentes.add(k); });
+        await enviarPendentes();
+        avisarEstado();
+        if (recarregar) {
+            if (_syncReloadGuardPermiteReload()) { location.reload(); return; }
+        }
+        ouvirMudancas();
+    }
+
+    // ── Tempo real ──
+    function ouvirMudancas() {
+        console.info('[SYNC] Pronto; ouvindo mudanças de outros aparelhos (este: ' + dispositivo + ').');
+        db.collection('usuarios').doc(uid).collection('dados').onSnapshot(function(snap) {
+            snap.docChanges().forEach(function(ch) {
+                if (ch.type === 'removed' || ch.doc.metadata.hasPendingWrites) return;
+                let chave = ch.doc.id, d = ch.doc.data();
+                if (!EH_SINCRONIZADA[chave] || d.dispositivo === dispositivo) return;
+                if (base[chave] && d.versao <= base[chave].v) return;
+                console.info('[SYNC] Mudança recebida de outro aparelho: ' + chave + ' (de ' + d.dispositivo + ').');
+                receber(chave, d);
+            });
+        }, function(e) { console.warn('[SYNC] Escuta de mudanças interrompida:', e); });
+    }
+    let recebendo = {};
+    function receber(chave, d) {
+        let anterior = recebendo[chave] || Promise.resolve();
+        recebendo[chave] = anterior.then(async function() {
+            if (base[chave] && d.versao <= base[chave].v) return;
+            await (envios[chave] || Promise.resolve());
+            let Rs = await lerRemoto(chave, d);
+            if (Rs == null) return;
+            let Rh = hash(Rs), L = await lerLocal(chave), Lh = L == null ? null : hash(L);
+            let B = base[chave];
+            base[chave] = { v: d.versao, h: Rh };
+            // Já igual aqui: outra aba deste navegador aplicou primeiro — o
+            // armazenamento está certo, mas a tela desta aba ainda não.
+            if (Lh === Rh) { salvarBase(); await mostrarMudanca(chave); return; }
+            if (pendentes.has(chave) || (L != null && B && Lh !== B.h)) {
+                await mesclar({ [chave]: Rs }); // mudou dos dois lados
+                salvarBase();
+                pendentes.add(chave);
+                enviar(chave);
+            } else {
+                await gravarLocal(chave, Rs);
+                salvarBase();
+            }
+            avisarOutrasAbas(chave);
+            await mostrarMudanca(chave);
+        }).catch(function(e) { console.warn('[SYNC] Falha ao aplicar ' + chave + ' vinda de outro aparelho:', e); });
+    }
+
+    // ── Sair: envia o pendente, limpa os dados pessoais deste aparelho ──
+    async function sair() {
+        if (pronto) {
+            await enviarAgora(15000);
+            let semConfirmacao = Object.keys(base).some(function(k) { return base[k].ok === false; });
+            if ((pendentes.size || gravandoNaNuvem || semConfirmacao) && !confirm('Há alterações que ainda não foram enviadas (sem conexão). Se sair agora, elas se perdem neste aparelho.\n\nSair mesmo assim?')) return;
+        }
+        if (uid && localStorage.getItem(CHAVE_DONO) === uid) await limparLocal();
+        try { await db.terminate(); await db.clearPersistence(); } catch (e) {}
+        await firebase.auth().signOut();
+        location.reload();
+    }
+
+    async function iniciar() {
+        if (iniciado) return;
+        iniciado = true;
+        uid = FB.usuario().uid;
+        // Quem entra depois de abrir o site: a vitrine já foi desenhada com o
+        // acervo vazio; redesenha quando o acervo oficial termina de chegar.
+        Promise.resolve(window.__bootOficialPromise__).then(function() {
+            if (typeof window.renderHomeDashboard === 'function') window.renderHomeDashboard();
+        });
+        avisarEstado();
+        try {
+            db = await FB.db();
+            await sincronizarInicio();
+        } catch (e) {
+            console.warn('[SYNC] Primeira sincronização falhou:', e);
+            window.SALINHA_UI_AUTH && window.SALINHA_UI_AUTH.faixa('salinha-faixa-sync', '<span>⚠ Não foi possível sincronizar os seus dados agora. As mudanças ficam neste aparelho.</span><button type="button" onclick="location.reload()">Tentar de novo</button>', 'alerta');
+        }
+    }
+    document.addEventListener('salinha-auth', function(e) { if (e.detail.estado === 'liberado') iniciar(); });
+    if (FB.estado() === 'liberado') iniciar();
+
+    return { sair: sair, enviarPendentes: enviarPendentes, enviarAgora: enviarAgora, _estado: function() { return { pronto: pronto, pendentes: Array.from(pendentes), base: base, dispositivo: dispositivo }; } };
+})();
 </script>
 <script>
 // =========================================================
@@ -16038,7 +15615,7 @@ window.carregarPenasOficiais = async function() {
 </div>
 <script>
 window.LEISECA_RUNTIME = {
-    CHAVE: 'tjpe_v1__leiseca_runtime', // sincroniza com o Gist (prefixo tjpe_v1__)
+    CHAVE: 'tjpe_v1__leiseca_runtime', // sincronizada com a nuvem (SALINHA_SYNC)
     NIVEIS: [['critico', '🔴 Crítico'], ['importante', '🟡 Importante'], ['regular', '🟢 Regular']],
     manifesto: null,
     _textos: {},       // id → JSON do diploma (window.LEGISLACAO.carregar)
@@ -21266,7 +20843,7 @@ function wsList(prefix,shared){
 // =========================================================
 
 function autoSave(){
-  if(!SIMS.length){ window.salvarSessaoAtiva({ sims: [], si: -1 }); verificarSalvamentoPeriodicoNuvem(); return; }
+  if(!SIMS.length){ window.salvarSessaoAtiva({ sims: [], si: -1 }); return; }
 
   if(SI >= 0 && SIMS[SI]){
     SIMS[SI].dados = JSON.parse(JSON.stringify(D));
@@ -21287,8 +20864,6 @@ function autoSave(){
   } catch(e) {
     console.error("Erro ao auto-salvar:", e);
   }
-
-  verificarSalvamentoPeriodicoNuvem();
 }
 
 // =========================================================
@@ -26128,13 +25703,6 @@ function finalizarSimulado() {
                 tela('tela-resultado');
                 renderTabs();
                 fecharSb();
-
-                // Backup automático na nuvem — dispara depois da tela de
-                // resultado já estar montada, sem aguardar (fire-and-forget):
-                // a pessoa vê os resultados na hora, o backup roda por baixo
-                // enquanto ela confere o desempenho. Pulado pra sessão
-                // temporária pelo mesmo motivo do bloco acima.
-                if (!s.cfg._temporario && typeof window.salvarNuvemAoConcluirBateria === 'function') window.salvarNuvemAoConcluirBateria();
             }}
         ]
     });
@@ -27498,13 +27066,10 @@ if (idxExistente >= 0) {
 
 window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
 
-    // Bloqueia abertura de bateria sem login com GitHub feito — só checa
-    // presença do token (sem chamada de rede, não confirma que é aceito
-    // pelo GitHub). Sem checagem de tamanho fixo: tokens OAuth (gho_...)
-    // não têm o mesmo formato do antigo token pessoal clássico de 40
-    // caracteres que essa checagem media antes.
+    // Bloqueia abertura de bateria sem login Google com acesso liberado
+    // (ver window.temLoginApp).
     if (!window.temLoginApp()) {
-        alert('Faça login com o GitHub primeiro (botão "🔑 Entrar com GitHub").');
+        alert('Entre com Google primeiro (botão "Entrar com Google", no topo).');
         return;
     }
 
@@ -29938,7 +29503,7 @@ window.triggerFileUpload = function(callback) {
 // salvarEsquema() (criação/edição pessoal) — só importarEsquemaOficial()
 // (carregamento do JSON publicado no repositório) atribui esse campo. Um
 // esquema criado por um usuário fica só no tjpe_v1__esquemas_runtime dele
-// (localStorage + backup pessoal via Gist), sem nenhum caminho de código
+// (neste aparelho e na nuvem pessoal da conta), sem nenhum caminho de código
 // que o torne "oficial" ou visível pra outra conta.
 
 // ── PARSER DE IMPORTAÇÃO EM MASSA DE ESQUEMAS ──

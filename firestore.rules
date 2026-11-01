@@ -16,9 +16,35 @@ service cloud.firestore {
         && request.resource.data.pedidoEm == request.time;
       allow update, delete: if false;
     }
-    // Dados de estudo de cada usuário (futura troca do Gist).
-    match /usuarios/{uid}/{doc=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    // Dados pessoais sincronizados (SALINHA_SYNC no index.html): só o próprio
+    // usuário, e só com acesso liberado (acessos/{e-mail}.ativo == true) —
+    // sem isso, qualquer conta Google gravaria dados no projeto. Um documento
+    // por chave tjpe_v1__…; valor inline até ~900 KB, acima disso em partes
+    // (bytes). Nada fora de usuarios/{uid}/dados/{chave}[/partes/{id}].
+    match /usuarios/{uid}/dados/{chave} {
+      function dono() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+      function liberado() {
+        return request.auth.token.email_verified == true
+          && get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data.ativo == true;
+      }
+      allow read, delete: if dono() && liberado();
+      allow create, update: if dono() && liberado()
+        && chave.matches('tjpe_v1__[a-z0-9_]+')
+        && request.resource.data.keys().hasOnly(['versao', 'partes', 'valor', 'tamanho', 'hash', 'dispositivo', 'atualizadoEm'])
+        && request.resource.data.versao is number
+        && request.resource.data.partes is number
+        && (request.resource.data.valor == null
+            || (request.resource.data.valor is string && request.resource.data.valor.size() <= 1000000));
+
+      match /partes/{parte} {
+        allow read, delete: if dono() && liberado();
+        allow create, update: if dono() && liberado()
+          && request.resource.data.keys().hasOnly(['versao', 'indice', 'dados'])
+          && request.resource.data.dados is bytes
+          && request.resource.data.dados.size() <= 950000;
+      }
     }
   }
 }
