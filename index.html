@@ -15631,6 +15631,10 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-md p:last-child, #leiseca-modal .ls-md ul:last-child, #leiseca-modal .ls-md ol:last-child { margin-bottom:0; }
     #leiseca-modal .ls-md ul, #leiseca-modal .ls-md ol { margin:2px 0 4px; padding-left:20px; }
     #leiseca-modal .ls-md blockquote { margin:2px 0 4px; padding-left:8px; border-left:2px solid var(--border-color); color:var(--text-muted); }
+    #leiseca-modal .ls-md .ls-md-tab { overflow-x:auto; margin:4px 0 6px; }
+    #leiseca-modal .ls-md table { border-collapse:collapse; font-size:12px; line-height:1.45; min-width:100%; }
+    #leiseca-modal .ls-md th, #leiseca-modal .ls-md td { border:1px solid var(--border-color); padding:4px 8px; text-align:left; vertical-align:top; }
+    #leiseca-modal .ls-md th { background:var(--bg-soft); font-weight:800; }
     #leiseca-modal .ls-md code { font-size:11.5px; background:var(--bg-soft); border-radius:3px; padding:0 3px; }
     #leiseca-modal .ls-md a { color:var(--app-primary); }
     #leiseca-modal .ls-com-ed { display:flex; flex-direction:column; gap:6px; padding:8px; border:1px solid #fdba74; border-radius:6px; background:var(--bg-white); }
@@ -16367,12 +16371,31 @@ window.LEISECA_RUNTIME = {
             for (let n = 0; n < 3 && /\u0000\d+\u0000/.test(s); n++) s = s.replace(/\u0000(\d+)\u0000/g, function(m, i) { return guard[+i]; });
             return s;
         };
-        let html = '', par = [], lista = null, cit = [];
+        let html = '', par = [], lista = null, cit = [], tab = null;
+        // Tabela: "| a | b |" + linha "|---|---|" + linhas; a 1ª é o cabeçalho.
+        let celulas = function(l) { return l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function(c) { return c.trim(); }); };
+        let fecharTab = function() {
+            if (!tab) return;
+            let cab = tab.linhas[0], corpo = tab.linhas.slice(1);
+            if (!tab.sep) { par = par.concat(tab.brutas); tab = null; fecharPar(); return; } // sem separador: não é tabela
+            html += '<div class="ls-md-tab"><table><thead><tr>' + cab.map(function(c) { return '<th>' + inl(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+                corpo.map(function(r) { return '<tr>' + cab.map(function(x, i) { return '<td>' + inl(r[i] || '') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+            tab = null;
+        };
         let fecharPar = function() { if (par.length) { html += '<p>' + par.map(inl).join('<br>') + '</p>'; par = []; } };
         let fecharLista = function() { if (lista) { html += '<' + lista.tag + '>' + lista.itens.map(function(i) { return '<li>' + inl(i) + '</li>'; }).join('') + '</' + lista.tag + '>'; lista = null; } };
         let fecharCit = function() { if (cit.length) { html += '<blockquote>' + cit.map(inl).join('<br>') + '</blockquote>'; cit = []; } };
         String(t || '').replace(/\r/g, '').split('\n').forEach(function(l) {
             let m;
+            if (/^\s*\|.*\|\s*$/.test(l)) {
+                fecharPar(); fecharLista(); fecharCit();
+                if (!tab) tab = { linhas: [], brutas: [], sep: false };
+                tab.brutas.push(l);
+                if (tab.linhas.length === 1 && !tab.sep && /^\s*\|?(\s*:?-{2,}:?\s*\|)+\s*:?-*:?\s*\|?\s*$/.test(l)) tab.sep = true;
+                else tab.linhas.push(celulas(l));
+                return;
+            }
+            fecharTab();
             if ((m = /^\s*[-*•]\s+(.*)$/.exec(l)) || (m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) {
                 let tag = /^\s*\d/.test(l) ? 'ol' : 'ul';
                 fecharPar(); fecharCit();
@@ -16384,7 +16407,7 @@ window.LEISECA_RUNTIME = {
             else if (!l.trim()) { fecharPar(); fecharLista(); fecharCit(); }
             else { fecharLista(); fecharCit(); par.push(l); }
         });
-        fecharPar(); fecharLista(); fecharCit();
+        fecharTab(); fecharPar(); fecharLista(); fecharCit();
         return '<div class="ls-md">' + html + '</div>';
     },
 
