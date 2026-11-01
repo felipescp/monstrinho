@@ -33349,6 +33349,17 @@ window.carregarEsquemasOficiais = async function() {
     #modal-jurisprudencia-ver .jur-ver-corpo-wrap { flex:1; min-height:0; display:flex; gap:14px; }
     #modal-jurisprudencia-ver .jur-ver-nav { order:99; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:14px; padding-top:8px; border-top:1px solid var(--border-color); }
     #modal-jurisprudencia-ver .jur-ver-nav:empty { display:none; }
+    /* Cadeia de casos relacionados (Caso X › Caso Y): voltar + trilha. */
+    #modal-jurisprudencia-ver .jur-ver-cadeia { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding-bottom:6px; border-bottom:1px solid var(--border-color); }
+    #modal-jurisprudencia-ver .jur-ver-cadeia:empty { display:none; }
+    #modal-jurisprudencia-ver .jur-ver-voltar { max-width:100%; padding:5px 12px; border-radius:99px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #modal-jurisprudencia-ver .jur-ver-voltar:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-ver .jur-ver-trilha { font-size:11px; color:var(--text-muted); line-height:1.5; }
+    #modal-jurisprudencia-ver .jur-ver-trilha > * { display:inline !important; margin:0; padding:0; }
+    #modal-jurisprudencia-ver .jur-ver-trilha a { color:var(--app-primary); text-decoration:none; }
+    #modal-jurisprudencia-ver .jur-ver-trilha a:hover { text-decoration:underline; }
+    #modal-jurisprudencia-ver .jur-ver-trilha .atual { font-weight:700; color:var(--text-main); }
+    #modal-jurisprudencia-ver .jur-ver-trilha .sep { margin:0 5px; }
     #modal-jurisprudencia-ver .jur-ver-nav button { width:36px; height:36px; border-radius:50%; border:1px solid var(--border-color); background:var(--bg-white); font-size:18px; line-height:1; color:var(--text-main); cursor:pointer; }
     #modal-jurisprudencia-ver .jur-ver-nav button:hover:not(:disabled) { border-color:var(--app-primary); color:var(--app-primary); }
     #modal-jurisprudencia-ver .jur-ver-nav button:disabled { opacity:0.35; cursor:default; }
@@ -33396,6 +33407,8 @@ window.carregarEsquemasOficiais = async function() {
         </div>
         <!-- ‹ › — card anterior/seguinte da grade, fixo no rodapé do popup. -->
         <div class="jur-ver-nav" id="jur-ver-nav"></div>
+        <!-- Cadeia de casos relacionados: "‹ Voltar" + trilha X › Y › Z. -->
+        <div class="jur-ver-cadeia" id="jur-ver-cadeia"></div>
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
             <div class="fc-popup-header" id="jur-ver-titulo"></div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharVer()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; flex-shrink:0;" title="Fechar">✖</button>
@@ -35682,9 +35695,11 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     // ── POPUP "VER FICHA" (tese/resumo/conexões completos) ──
 
-    abrirVer: function(chave, id, abrirComentario) {
+    abrirVer: function(chave, id, abrirComentario, manterCadeia) {
         let item = (this.fichas[chave] || []).find(function(f) { return f.id === id; });
         if (!item) return;
+        // Abertura "normal" (grade, ‹ ›, Leitor…) começa uma cadeia nova.
+        if (!manterCadeia) this._cadeiaVer = [];
         this._verAtual = { chave: chave, id: id };
         this._seqVer = this._sequenciaGradeVer();
         // Painel 💭 e canetas compartilham estado com o Leitor — o contexto
@@ -35698,6 +35713,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderVer();
         document.getElementById('modal-jurisprudencia-ver').classList.add('open');
         this._renderNavVer();
+        this._renderCadeiaVer();
         if (!this._teclasVer) {
             let self = this;
             this._teclasVer = function(e) {
@@ -35716,6 +35732,58 @@ window.JURISPRUDENCIA_RUNTIME = {
     // cards na ordem em que aparecem na grade (inclusive grupos recolhidos).
     // Aberto de fora da grade (link de caso relacionado, Leitor…), o card
     // atual não está na sequência e a navegação não aparece.
+    // Cadeia de casos relacionados (pedido explícito do usuário): clicar num
+    // "Caso relacionado" dentro da ficha guarda o caso atual (e a rolagem)
+    // numa pilha; o topo do popup mostra "‹ Voltar a <caso anterior>" e,
+    // com 2+ níveis, a trilha X › Y › Z (cada elo clicável). Fechar o
+    // popup ou abrir um card pela grade zera a cadeia.
+    abrirCasoRelacionado: function(chave, id) {
+        let v = this._verAtual, modal = document.getElementById('modal-jurisprudencia-ver');
+        if (!v || !modal || !modal.classList.contains('open')) { this.abrirVer(chave, id); return; }
+        if (v.id === id) return;
+        let cadeia = this._cadeiaVer || [];
+        // Já está na cadeia (A › B › A): volta até ele em vez de repetir.
+        for (let i = 0; i < cadeia.length; i++) if (cadeia[i].id === id) { this.voltarCadeiaVer(i); return; }
+        let c = modal.querySelector('.jur-ver-conteudo');
+        cadeia.push({ chave: v.chave, id: v.id, titulo: this._tituloCadeiaVer(this._itemVerAtual()), scroll: c ? c.scrollTop : 0 });
+        this._cadeiaVer = cadeia;
+        this.abrirVer(chave, id, this._painelComentarioAberto, true);
+        if (c) c.scrollTop = 0;
+    },
+    voltarCadeiaVer: function(idx) {
+        let cadeia = this._cadeiaVer || [];
+        if (idx == null) idx = cadeia.length - 1;
+        let alvo = cadeia[idx];
+        if (!alvo) return;
+        this._cadeiaVer = cadeia.slice(0, idx);
+        this.abrirVer(alvo.chave, alvo.id, this._painelComentarioAberto, true);
+        let c = document.querySelector('#modal-jurisprudencia-ver .jur-ver-conteudo');
+        if (c) c.scrollTop = alvo.scroll || 0;
+    },
+    _tituloCadeiaVer: function(item) {
+        if (!item) return 'Caso anterior';
+        return (this._ehCorteIDH(item) ? item.processo : this._tituloComTema(item)) || 'Caso anterior';
+    },
+    _renderCadeiaVer: function() {
+        let el = document.getElementById('jur-ver-cadeia');
+        if (!el) return;
+        let cadeia = this._cadeiaVer || [], self = this;
+        if (!cadeia.length) { el.innerHTML = ''; return; }
+        let ant = cadeia[cadeia.length - 1];
+        let h = '<button class="jur-ver-voltar" onclick="window.JURISPRUDENCIA_RUNTIME.voltarCadeiaVer()" title="Voltar ao caso anterior: ' + this._escapar(ant.titulo) + '">‹ ' + this._escapar(ant.titulo) + '</button>';
+        if (cadeia.length >= 2) {
+            let curto = function(t) { t = String(t || ''); return t.length > 48 ? t.slice(0, 46) + '…' : t; };
+            let elos = cadeia.map(function(c, i) {
+                return '<a href="#" title="' + self._escapar(c.titulo) + '" onclick="event.preventDefault(); window.JURISPRUDENCIA_RUNTIME.voltarCadeiaVer(' + i + ')">' + self._escapar(curto(c.titulo)) + '</a>';
+            });
+            // Cadeia longa: primeiro elo … dois últimos.
+            if (elos.length > 3) elos = [elos[0], '<span title="' + this._escapar(cadeia.slice(1, -2).map(function(c) { return c.titulo; }).join(' › ')) + '">…</span>'].concat(elos.slice(-2));
+            elos.push('<span class="atual">' + this._escapar(curto(this._tituloCadeiaVer(this._itemVerAtual()))) + '</span>');
+            h += '<div class="jur-ver-trilha">' + elos.join('<span class="sep">›</span>') + '</div>';
+        }
+        el.innerHTML = h;
+    },
+
     _sequenciaGradeVer: function() {
         let col = document.getElementById('jur-col-cards'), seq = [], vistos = {};
         if (!col) return seq;
@@ -35812,6 +35880,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._painelComentarioAberto = false;
         document.getElementById('modal-jurisprudencia-ver').classList.remove('open', 'jur-painel-comentario-aberto');
         this._verAtual = null;
+        this._cadeiaVer = [];
+        this._renderCadeiaVer();
         this._trocarCtxPainel('leitor');
     },
 
@@ -37274,7 +37344,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         h += bloco('Casos relacionados', lista(item.casosRelacionados, function(c) {
             // Caso que também tem card na base: o nome abre o card dele.
             let alvo = self._acharCasoIDH(c.caso), nome = self._escapar(c.caso) + (c.ano ? ' (' + self._escapar(c.ano) + ')' : '');
-            if (alvo) nome = '<a href="#" class="jur-idh-caso-link" title="Abrir o card deste caso" onclick="event.preventDefault(); event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + alvo.chave.replace(/'/g, "\\'") + '\', \'' + alvo.id + '\')">' + nome + ' ↗</a>';
+            if (alvo) nome = '<a href="#" class="jur-idh-caso-link" title="Abrir o card deste caso" onclick="event.preventDefault(); event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirCasoRelacionado(\'' + alvo.chave.replace(/'/g, "\\'") + '\', \'' + alvo.id + '\')">' + nome + ' ↗</a>';
             return '<b>' + nome + '</b>' +
                 (c.semelhanca ? '<div><span class="jur-idh-obs">Semelhança:</span> ' + self._escapar(c.semelhanca) + '</div>' : '') +
                 (c.diferenca ? '<div><span class="jur-idh-obs">Diferença:</span> ' + self._escapar(c.diferenca) + '</div>' : '');
