@@ -5370,6 +5370,7 @@ window.SALINHA_SYNC = (function() {
             // nuvem se a chave já existia lá (aí "esvaziar" é uma mudança real).
             if (!base[chave] && vazioLocal(chave, s)) return;
             await gravarRemoto(chave, s, h);
+            console.info('[SYNC] Enviado: ' + chave + ' (' + s.length + ' caracteres).');
         }).catch(function(e) { console.warn('[SYNC] Falha ao enviar ' + chave + ':', e); pendentes.add(chave); })
           .then(avisarEstado);
         envios[chave] = atual;
@@ -5491,12 +5492,14 @@ window.SALINHA_SYNC = (function() {
 
     // ── Tempo real ──
     function ouvirMudancas() {
+        console.info('[SYNC] Pronto; ouvindo mudanças de outros aparelhos (este: ' + dispositivo + ').');
         db.collection('usuarios').doc(uid).collection('dados').onSnapshot(function(snap) {
             snap.docChanges().forEach(function(ch) {
                 if (ch.type === 'removed' || ch.doc.metadata.hasPendingWrites) return;
                 let chave = ch.doc.id, d = ch.doc.data();
                 if (!EH_SINCRONIZADA[chave] || d.dispositivo === dispositivo) return;
                 if (base[chave] && d.versao <= base[chave].v) return;
+                console.info('[SYNC] Mudança recebida de outro aparelho: ' + chave + ' (de ' + d.dispositivo + ').');
                 receber(chave, d);
             });
         }, function(e) { console.warn('[SYNC] Escuta de mudanças interrompida:', e); });
