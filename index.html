@@ -2121,6 +2121,9 @@ if (inputIncremental) {
                 // Recarrega como o importarNuvem: sem isso, as seções seguem
                 // com o estado antigo em memória e o gravam por cima da mescla.
                 alert(`[MERGE CONCLUÍDO]\n\nChaves do localStorage sincronizadas: ${resultado.chavesMutadas}\nNovas entidades injetadas: ${resultado.entidadesInjetadas}`);
+                // Com a sincronização ligada, o resultado vai para a nuvem
+                // antes de recarregar (senão o envio é cortado no meio).
+                if (window.SALINHA_SYNC) await window.SALINHA_SYNC.enviarAgora(20000);
                 location.reload();
             } catch (error) {
                 console.error("Erro na fusão incremental:", error);
@@ -5322,13 +5325,17 @@ window.SALINHA_SYNC = (function() {
                 snap.docs.forEach(function(d) { if (d.data().versao !== versao) d.ref.delete(); });
             }).catch(function(e) { console.warn('[SYNC] Limpeza das partes antigas de ' + chave + ' falhou (sem impacto):', e); });
         }
-        // Com a persistência offline, a gravação já está na fila do Firestore:
-        // a base avança na hora (o envio acontece quando houver rede).
-        base[chave] = { v: versao, h: h };
+        // A base avança na hora (para não reenviar o mesmo valor), mas só fica
+        // confirmada (ok) quando a nuvem aceita a gravação. Sem confirmação —
+        // página recarregada ou fechada antes do envio sair —, a próxima
+        // abertura reenvia (ver sincronizarInicio) e sair não apaga nada.
+        base[chave] = { v: versao, h: h, ok: false };
         salvarBase();
         gravandoNaNuvem++;
         avisarEstado();
-        Promise.all(escritas).catch(function(e) { console.warn('[SYNC] Envio de ' + chave + ' falhou:', e); })
+        Promise.all(escritas).then(function() {
+            if (base[chave] && base[chave].v === versao) { base[chave].ok = true; salvarBase(); }
+        }, function(e) { console.warn('[SYNC] Envio de ' + chave + ' falhou:', e); })
             .then(function() { return db.waitForPendingWrites(); })
             .then(function() { gravandoNaNuvem = 0; avisarEstado(); }, function() {});
     }
@@ -5369,6 +5376,15 @@ window.SALINHA_SYNC = (function() {
         return atual;
     }
     function enviarPendentes() { return Promise.all(Array.from(pendentes).map(enviar)); }
+    // Envia já e espera a nuvem confirmar (com limite de tempo) — antes de
+    // recarregar a página por conta própria (ex.: 📥 Merge) ou de sair.
+    function enviarAgora(limiteMs) {
+        if (!pronto) return Promise.resolve();
+        return Promise.race([
+            enviarPendentes().then(function() { return Promise.all(Object.values(envios)); }).then(function() { return db.waitForPendingWrites(); }),
+            new Promise(function(ok) { setTimeout(ok, limiteMs || 10000); })
+        ]).catch(function() {});
+    }
     document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') enviarPendentes(); });
     window.addEventListener('pagehide', function() { enviarPendentes(); });
 
@@ -5378,13 +5394,26 @@ window.SALINHA_SYNC = (function() {
     // modal aberto, espera ele fechar (e mostra a faixa, para quem quiser
     // recarregar antes).
     let recargaAgendada = false;
+    // Balão por cima de tudo (uma faixa no topo ficaria atrás do modal).
+    function mostrarBalao(texto) {
+        let balao = document.getElementById('salinha-aviso-sync');
+        if (!balao) {
+            balao = document.createElement('div');
+            balao.id = 'salinha-aviso-sync';
+            balao.setAttribute('role', 'status');
+            balao.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483000;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:12px;background:#1e1b4b;color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)';
+            document.body.appendChild(balao);
+        }
+        balao.innerHTML = '<span>' + texto + '</span><button type="button" style="padding:5px 12px;border-radius:8px;border:none;background:#fff;color:#1e1b4b;font-weight:800;cursor:pointer" onclick="location.reload()">Recarregar agora</button>';
+    }
     function recarregarControlado() {
         if (recargaAgendada) return;
         recargaAgendada = true;
-        window.SALINHA_UI_AUTH && window.SALINHA_UI_AUTH.faixa('salinha-faixa-sync', '<span>🔄 Seus dados foram atualizados em outro aparelho.</span><button type="button" onclick="location.reload()">Recarregar</button>');
+        if (_algumModalAberto()) mostrarBalao('🔄 Seus dados foram atualizados em outro aparelho. A página recarrega quando você fechar esta janela.');
         _aguardarNenhumModalAberto().then(function() {
             Promise.all(Object.values(envios)).then(function() {
                 if (_syncReloadGuardPermiteReload()) location.reload();
+                else mostrarBalao('🔄 Seus dados foram atualizados em outro aparelho. Recarregue a página para ver.');
             });
         });
     }
@@ -5412,6 +5441,15 @@ window.SALINHA_SYNC = (function() {
         let subir = [], conflitos = {}, recarregar = false;
         for (let chave of CHAVES) {
             let L = await lerLocal(chave), Lh = L == null ? null : hash(L), B = base[chave], R = remotos[chave];
+            // Último envio daqui sem confirmação da nuvem (página fechada ou
+            // recarregada antes de ele sair): se a nuvem não tem nada mais
+            // novo, o valor local é o mais recente e sobe de novo; se tem, a
+            // chave é tratada sem base (mescla, se os dois lados têm dados).
+            if (B && B.ok === false) {
+                if (R && R.versao === B.v) B.ok = true;
+                else if (!R || R.versao < B.v) { if (L != null) subir.push(chave); delete base[chave]; continue; }
+                else { delete base[chave]; B = undefined; }
+            }
             if (!R) {
                 if (L != null && !vazioLocal(chave, L) && !(B && B.h === Lh)) subir.push(chave);
                 continue;
@@ -5491,8 +5529,9 @@ window.SALINHA_SYNC = (function() {
     // ── Sair: envia o pendente, limpa os dados pessoais deste aparelho ──
     async function sair() {
         if (pronto) {
-            await Promise.race([enviarPendentes().then(function() { return db.waitForPendingWrites(); }), new Promise(function(ok) { setTimeout(ok, 8000); })]);
-            if ((pendentes.size || gravandoNaNuvem) && !confirm('Há alterações que ainda não foram enviadas (sem conexão). Se sair agora, elas se perdem neste aparelho.\n\nSair mesmo assim?')) return;
+            await enviarAgora(15000);
+            let semConfirmacao = Object.keys(base).some(function(k) { return base[k].ok === false; });
+            if ((pendentes.size || gravandoNaNuvem || semConfirmacao) && !confirm('Há alterações que ainda não foram enviadas (sem conexão). Se sair agora, elas se perdem neste aparelho.\n\nSair mesmo assim?')) return;
         }
         if (uid && localStorage.getItem(CHAVE_DONO) === uid) await limparLocal();
         try { await db.terminate(); await db.clearPersistence(); } catch (e) {}
@@ -5521,7 +5560,7 @@ window.SALINHA_SYNC = (function() {
     document.addEventListener('salinha-auth', function(e) { if (e.detail.estado === 'liberado') iniciar(); });
     if (FB.estado() === 'liberado') iniciar();
 
-    return { sair: sair, enviarPendentes: enviarPendentes, _estado: function() { return { pronto: pronto, pendentes: Array.from(pendentes), base: base, dispositivo: dispositivo }; } };
+    return { sair: sair, enviarPendentes: enviarPendentes, enviarAgora: enviarAgora, _estado: function() { return { pronto: pronto, pendentes: Array.from(pendentes), base: base, dispositivo: dispositivo }; } };
 })();
 </script>
 <script>

@@ -167,10 +167,12 @@ usuarios/{uid}/dados/{chave}/partes/{versao}_{n}   dados (bytes, até 900 KB)
 **Mudança vinda de outro aparelho:** chega em tempo real.
 - Se este aparelho não tinha mudança pendente naquela chave, a versão da nuvem substitui a local.
 - Se tinha, as duas são mescladas com a regra do 📥 Merge e o resultado sobe.
-- A página recarrega sozinha quando nenhum modal está aberto. Com modal aberto, aparece a faixa "Seus dados foram atualizados em outro aparelho — Recarregar".
+- A página recarrega sozinha quando nenhum modal está aberto. Com modal aberto (ex.: Lei Seca), aparece um balão por cima de tudo, "Seus dados foram atualizados em outro aparelho", com o botão **Recarregar agora**. Se ninguém clicar, a página recarrega quando o modal for fechado.
 - Há uma trava de no máximo 3 recargas automáticas por minuto.
 
-**Ao sair:** o que estiver pendente é enviado, e os dados pessoais saem deste aparelho, porque estão na nuvem. Sem conexão e com mudança não enviada, o app pergunta antes de sair.
+**Envio confirmado:** uma chave só conta como sincronizada depois que a nuvem aceita a gravação. Se a página recarregar ou fechar antes disso, a próxima abertura reenvia. O 📥 Merge espera o envio terminar antes de recarregar.
+
+**Ao sair:** o que estiver pendente é enviado, e os dados pessoais saem deste aparelho, porque estão na nuvem. Se algo ainda não tiver a confirmação da nuvem (por exemplo, sem conexão), o app pergunta antes de sair.
 
 **Regras (`firestore.rules`):** só o próprio usuário, com `acessos/{e-mail}.ativo == true`, lê e grava em `usuarios/{uid}/dados/{chave}`. Os limites são:
 - nome da chave `tjpe_v1__…`;
@@ -195,7 +197,7 @@ Os dados de teste ficam em `usuarios/{uid}` no Firestore de produção. Depois d
 | a | Login | Abra a página, veja a faixa "Entre com Google…" e o app aberto por baixo. Clique em **Entrar com Google**. | A faixa some, o nome aparece no topo e o acervo carrega. O indicador fica ✓. Ainda nada em `usuarios`, se o navegador não tinha dados. |
 | b | Primeira sincronização com dados locais (sobe) | Num navegador com dados (ex.: depois do 📥 Merge de um backup), entre com Google. | Em `usuarios/{uid}/dados` aparecem as chaves com dados (ex.: `tjpe_v1__leiseca_runtime`), com `partes: 0` e `valor` preenchido, ou `partes > 0` nas grandes. |
 | c | Navegador limpo (baixa) | Em janela anônima, entre com a mesma conta. | A página recarrega uma vez e mostra os mesmos dados. No console, nenhum `atualizadoEm` muda (o navegador novo não regrava nada). |
-| d | Dois navegadores ao mesmo tempo | Com os dois abertos, marque algo num deles (ex.: uma prioridade na Lei Seca). | Uns 3 s depois, a chave ganha `versao` e `dispositivo` novos. O outro navegador recarrega sozinho com a mudança. Esperando 10 s, nada mais muda (sem eco nem laço). |
+| d | Dois navegadores ao mesmo tempo | Com os dois abertos, marque algo num deles (ex.: uma prioridade na Lei Seca). | Uns 3 s depois, a chave ganha `versao` e `dispositivo` novos. No outro navegador: sem modal aberto, recarrega sozinho; com modal aberto, aparece o balão "Seus dados foram atualizados em outro aparelho" e a página recarrega ao fechar o modal. Esperando 10 s, nada mais muda (sem eco nem laço). |
 | e | Offline e volta | DevTools → Network → Offline. Faça uma mudança e veja "⚠ Sem conexão". Volte para Online. | Enquanto offline, a `versao` não muda. Ao voltar, o indicador vai para ✓ e a `versao` avança. |
 | f | Chave grande (partes) | Crie esquemas pessoais grandes (somando mais de 900 KB). | `tjpe_v1__esquemas_runtime` com `partes: n` e `valor: null`. A subcoleção `partes` tem exatamente n documentos `{versao}_{1..n}`, todos com a mesma `versao`. |
 | g | Sair e entrar com outra conta | Clique em ✕ (sair) e entre com outra conta liberada. | Depois de sair, os dados pessoais somem deste navegador. A outra conta não recebe nada da primeira: `usuarios/{uid2}` fica vazio ou só com os dados dela. |
