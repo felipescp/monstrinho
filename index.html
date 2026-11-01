@@ -329,16 +329,23 @@
    QUESTÕES/AXIOMAS, que continuam .nav-sub-item). */
 .nav-item-grupo .nav-sub-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; color: #475569; cursor: default; }
 
-/* Menu "Gerar Questões" — recolhido, expande em hover (ver PEDIDO 1) */
-.gerar-q-wrap { display: flex; align-items: center; }
-.gerar-q-itens { display: flex; align-items: center; gap: 8px; max-width: 0; overflow: hidden; opacity: 0; margin-left: 0; white-space: nowrap; transition: max-width 0.3s ease, opacity 0.2s ease, margin-left 0.3s ease; }
-.gerar-q-wrap:hover .gerar-q-itens { max-width: 420px; opacity: 1; margin-left: 10px; }
+/* Menu "Gerar Questões" — abre PARA BAIXO (pedido explícito do usuário:
+   antes expandia para o lado e disputava espaço na barra). Abre ao passar
+   o mouse ou no clique (toque), e fecha ao clicar fora. */
+.gerar-q-wrap { position: relative; display: flex; align-items: center; }
+.gerar-q-wrap::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 8px; } /* ponte: o mouse não "cai" no vão */
+.gerar-q-itens { display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 10060; flex-direction: column; align-items: stretch; gap: 6px; min-width: 100%; padding: 8px; background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 24px rgba(15,23,42,0.18); white-space: nowrap; box-sizing: border-box; }
+.gerar-q-wrap:hover .gerar-q-itens, .gerar-q-wrap.aberto .gerar-q-itens { display: flex; }
+.gerar-q-itens > * { width: 100%; justify-content: flex-start; box-sizing: border-box; }
 
 /* Seletor de paleta de cores do tema — mesmo padrão do color-picker-container/color-swatch já usado noutras telas da mesma família de apps */
 .color-picker-container { display: flex; gap: 6px; align-items: center; margin-left: auto; padding-right: 4px; }
 .color-swatch { width: 14px; height: 14px; border-radius: 3px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; border: 1.5px solid transparent; opacity: 0.6; }
 .color-swatch:hover { transform: scale(1.3); opacity: 1; }
 .color-swatch.active { border-color: #ffffff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.3); opacity: 1; transform: scale(1.1); }
+/* No cabeçalho, ao lado do ✱ (pedido explícito do usuário): fundo claro. */
+#user-auth-zone .color-picker-container { margin-left: 0; padding: 0 2px; }
+#user-auth-zone .color-swatch.active { border-color: var(--text-main); box-shadow: 0 0 0 1.5px var(--bg-white); }
 
 
 /* #barra-nav (a "‹ INÍCIO" isolada, revelada antes pelo toggle ⚙/× flutuante)
@@ -1687,6 +1694,9 @@ try {
                      mexer no resto do app (ver
                      #tela-simulado.tema-escuro-simulado no CSS). -->
                 <button id="btn-tema-global" onclick="window.alternarTemaGlobal()" class="b1" style="height:26px; width:26px; font-size:13px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Modo noturno (afeta o site inteiro)">☀</button>
+                <!-- Cores do tema: ao lado do ☀/✱, que já cuida da aparência
+                     (antes ficavam na barra roxa, disputando espaço). -->
+                <div id="seletor-cor-tema" class="color-picker-container"></div>
 
                 <span id="sync-indicador-desktop" class="b1 sync-indicador" style="display:none;" title="Sincronização dos seus dados com a nuvem"></span>
                 <button id="btn-google-entrar-desktop" onclick="window.SALINHA_FB && window.SALINHA_FB.entrar()" class="b1 btn-google-entrar" style="display:none; gap:5px; height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-main);" title="Entrar com a sua conta Google"><svg width="13" height="13" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-2px"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Entrar com Google</button>
@@ -1726,15 +1736,12 @@ try {
         
     <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
     <div class="gerar-q-wrap">
-        <button class="b1" style="height: 28px;">🔧 Gerar Questões</button>
+        <button class="b1" style="height: 28px;" onclick="event.stopPropagation(); this.parentNode.classList.toggle('aberto')" aria-haspopup="true">🔧 Gerar Questões ▾</button>
         <div class="gerar-q-itens">
             <a href="https://gemini.google.com/gem/e8f1fc104654" target="_blank" class="b1" style="height: 28px; background: #fef3c7; color: #92400e; border-color: #fcd34d; text-decoration:none; display:flex; align-items:center; padding:0 10px; font-size:11px; font-weight:700; border-radius:4px;">🤖 GEM</a>
-            <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.2); flex-shrink:0;"></div>
             <button class="b1" style="color:var(--danger); border-color:rgba(239,68,68,0.3); height: 28px; margin: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);" onclick="window.abrirModalCriacao()" title="Criar Nova Bateria">➕ BATERIA</button>
         </div>
     </div>
-
-    <div id="seletor-cor-tema" class="color-picker-container"></div>
 
 </div>
     <div class="nav-hd-zone">
@@ -5338,6 +5345,13 @@ window.exigirAdmin = function() {
     }
     window.addEventListener('load', travarParaAdmin);
 })();
+
+// Menu "Gerar Questões": fecha ao clicar fora ou numa das opções.
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.gerar-q-wrap.aberto').forEach(function(w) {
+        if (!w.contains(e.target) || e.target.closest('.gerar-q-itens')) w.classList.remove('aberto');
+    });
+});
 
 // Bateria do catálogo público (vitrine antes do login): só avisa.
 window.abrirBateriaBloqueada = function() {
