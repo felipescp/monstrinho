@@ -15590,6 +15590,57 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-fonte { margin-top:12px; font-size:10px; color:var(--text-muted); line-height:1.5; }
     #leiseca-modal .ls-legenda { display:flex; gap:10px; flex-wrap:wrap; font-size:10px; font-weight:700; color:var(--text-muted); }
     #leiseca-modal .ls-legenda i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:3px; }
+    /* Ferramentas de estudo (pedido explícito do usuário): Modo comentado,
+       canetas de grifo e "prioridade só na borda". O grifo é um SUBLINHADO
+       grosso (azul/roxo) ou negrito — nunca fundo — para não brigar com o
+       verde/amarelo/vermelho da prioridade. */
+    #leiseca-modal .ls-ferramentas { gap:6px 12px; padding-top:6px; padding-bottom:6px; }
+    #leiseca-modal .ls-ferramentas select { padding:3px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; }
+    #leiseca-modal .ls-ferr-grupo { display:inline-flex; align-items:center; gap:6px; }
+    #leiseca-modal .ls-ferr-grupo label { display:flex; align-items:center; gap:3px; cursor:pointer; font-weight:600; color:var(--text-main); }
+    #leiseca-modal .ls-ferr-rot { font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-caneta { width:24px; height:24px; border-radius:50%; border:1.5px solid var(--border-color); background:var(--bg-white); color:var(--text-main); cursor:pointer; padding:0; font-size:12px; font-weight:900; line-height:1; display:inline-flex; align-items:center; justify-content:center; }
+    #leiseca-modal .ls-caneta i { display:block; width:13px; height:4px; border-radius:2px; background:var(--c); margin-top:6px; }
+    #leiseca-modal .ls-caneta.ativa { border-color:var(--app-primary); box-shadow:0 0 0 2px var(--app-primary); }
+    #leiseca-modal .ls-g { background:none; color:inherit; text-decoration-line:underline; text-decoration-thickness:3px; text-underline-offset:3px; text-decoration-skip-ink:none; }
+    #leiseca-modal .ls-g-azul { text-decoration-color:#2563eb; }
+    #leiseca-modal .ls-g-roxo { text-decoration-color:#9333ea; }
+    #leiseca-modal .ls-g-negrito { text-decoration:none; font-weight:800; }
+    #leiseca-modal.ls-grifando .ls-tx { cursor:text; }
+    #leiseca-modal.ls-grifando .ls-tx::selection, #leiseca-modal.ls-grifando .ls-tx *::selection { background:#c7d2fe; }
+    #leiseca-modal .ls-g-perdido { background:#fef3c7; color:#92400e; }
+    #leiseca-modal.ls-so-borda .ls-d.ls-n1, #leiseca-modal.ls-so-borda .ls-d.ls-n2, #leiseca-modal.ls-so-borda .ls-d.ls-n3 { background:none; }
+    /* Comentários: bloco recuado abaixo do dispositivo, fundo neutro (nunca a
+       cor da prioridade). 📘 do sistema (cinza-azulado) · 💭 pessoal (laranja). */
+    #leiseca-modal .ls-d.ls-com-on { padding-right:64px; }
+    #leiseca-modal .ls-com-btn { position:absolute; right:34px; top:5px; height:22px; min-width:22px; border-radius:99px; border:1.5px solid #fdba74; background:var(--bg-white); font-size:11px; line-height:1; cursor:pointer; padding:0 4px; }
+    #leiseca-modal .ls-com-btn.novo { border-style:dashed; border-color:#cbd5e1; color:var(--text-muted); font-weight:800; opacity:0; transition:opacity 0.12s; }
+    #leiseca-modal .ls-d:hover .ls-com-btn.novo, #leiseca-modal .ls-com-btn.novo:focus { opacity:1; }
+    @media (hover: none) { #leiseca-modal .ls-com-btn.novo { opacity:0.55; } }
+    #leiseca-modal .ls-com { margin:2px 0 8px 30px; display:flex; flex-direction:column; gap:4px; white-space:normal; font-size:12.5px; line-height:1.55; color:var(--text-main); }
+    #leiseca-modal .ls-com.ls-inc-par { margin-left:40px; }
+    #leiseca-modal .ls-com-sis, #leiseca-modal .ls-com-pes { padding:6px 10px; border-left:3px solid; border-radius:0 6px 6px 0; overflow-wrap:break-word; }
+    #leiseca-modal .ls-com-sis { border-left-color:#64748b; background:color-mix(in srgb, #64748b 8%, var(--bg-white)); }
+    #leiseca-modal .ls-com-pes { border-left-color:#f97316; background:color-mix(in srgb, #f97316 8%, var(--bg-white)); }
+    #leiseca-modal .ls-com-rot { display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); margin-bottom:2px; }
+    #leiseca-modal .ls-com-rot button { margin-left:auto; text-transform:none; letter-spacing:0; background:none; border:1px solid var(--border-color); border-radius:99px; padding:1px 8px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; }
+    #leiseca-modal .ls-com-rot button + button { margin-left:0; }
+    #leiseca-modal .ls-com-prova { background:#fee2e2; color:#b91c1c; border-radius:99px; padding:0 6px; letter-spacing:0; }
+    #leiseca-modal .ls-com-fonte { font-size:10.5px; color:var(--text-muted); margin-top:2px; }
+    #leiseca-modal .ls-md p { margin:0 0 4px; }
+    #leiseca-modal .ls-md p:last-child, #leiseca-modal .ls-md ul:last-child, #leiseca-modal .ls-md ol:last-child { margin-bottom:0; }
+    #leiseca-modal .ls-md ul, #leiseca-modal .ls-md ol { margin:2px 0 4px; padding-left:20px; }
+    #leiseca-modal .ls-md blockquote { margin:2px 0 4px; padding-left:8px; border-left:2px solid var(--border-color); color:var(--text-muted); }
+    #leiseca-modal .ls-md code { font-size:11.5px; background:var(--bg-soft); border-radius:3px; padding:0 3px; }
+    #leiseca-modal .ls-md a { color:var(--app-primary); }
+    #leiseca-modal .ls-com-ed { display:flex; flex-direction:column; gap:6px; padding:8px; border:1px solid #fdba74; border-radius:6px; background:var(--bg-white); }
+    #leiseca-modal .ls-com-ed textarea { width:100%; min-height:90px; box-sizing:border-box; resize:vertical; border:1px solid var(--border-color); border-radius:6px; padding:8px; font-family:var(--font-body); font-size:12.5px; line-height:1.5; background:var(--bg-white); color:var(--text-main); }
+    #leiseca-modal .ls-com-ed textarea:focus { outline:none; border-color:var(--app-primary); }
+    #leiseca-modal .ls-com-dica { font-size:10px; color:var(--text-muted); }
+    #leiseca-modal .ls-com-acoes { display:flex; justify-content:flex-end; gap:6px; }
+    #leiseca-modal .ls-com-acoes button { padding:5px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:700; cursor:pointer; }
+    #leiseca-modal .ls-com-acoes .primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #leiseca-modal .ls-com-acoes .excluir { color:#dc2626; border-color:#fca5a5; margin-right:auto; }
     @media (max-width: 900px) {
         #leiseca-modal .fc-grid { grid-template-columns:1fr; overflow-y:auto; }
         #leiseca-modal .fc-col { max-height:none; }
@@ -15632,12 +15683,16 @@ window.LEISECA_RUNTIME = {
     // dispositivos (não revogados) estão lidos.
     // conjuntos: [{id, nome, diplomas: [ids]}]; conjuntoAtivo: id ou null
     // (todo o acervo). Só filtram a lista de diplomas da Lei Seca.
-    estado: { prio: {}, lidos: {}, lidosDisp: {}, conjuntos: [], conjuntoAtivo: null },
+    // coment: {"DIP|33§1": {t: markdown, em: ISO}} — comentário pessoal por
+    // dispositivo; grifos: {"DIP|33§1": [{ini, fim, cor, tr}]} (tr = trecho
+    // grifado, para reencontrar se o texto da lei mudar); vis: {comentado,
+    // tipos: 'ambos'|'sistema'|'pessoais', soCom, borda}.
+    estado: { prio: {}, lidos: {}, lidosDisp: {}, conjuntos: [], conjuntoAtivo: null, coment: {}, grifos: {}, vis: {} },
 
     _esc: function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _escJs: function(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); },
     _carregarEstado: function() {
-        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null }; } catch (e) {}
+        try { let e = JSON.parse(localStorage.getItem(this.CHAVE) || 'null'); if (e && typeof e === 'object') this.estado = { prio: e.prio || {}, lidos: e.lidos || {}, lidosDisp: e.lidosDisp || {}, conjuntos: Array.isArray(e.conjuntos) ? e.conjuntos : [], conjuntoAtivo: e.conjuntoAtivo || null, coment: e.coment || {}, grifos: e.grifos || {}, vis: e.vis || {} }; } catch (e) {}
         if (!this.estado.conjuntos) this.estado.conjuntos = [];
     },
     _salvar: function() { try { localStorage.setItem(this.CHAVE, JSON.stringify(this.estado)); } catch (e) { console.warn('[LEI SECA] Falha ao salvar:', e); } },
@@ -15820,6 +15875,7 @@ window.LEISECA_RUNTIME = {
         try {
             if (!this._textos[id]) this._textos[id] = await window.LEGISLACAO.carregar(id);
             if (info && info.incidencia) await this._carregarIncidencia(id);
+            if (this._vis().comentado) await this._carregarNotas(id);
         } catch (e) {
             if (principal) principal.innerHTML = '<div class="fc-vazio-col">Não foi possível carregar o diploma.</div>';
             return;
@@ -15977,7 +16033,8 @@ window.LEISECA_RUNTIME = {
             'Progresso: ' + z + ' artigo' + (z === 1 ? '' : 's') +
             (visiveis != null && visiveis < arts.length ? ' (' + visiveis + ' exibido' + (visiveis === 1 ? '' : 's') + ')' : '') +
             ' · <span class="ls-prog-olho lido" title="Artigos lidos">' + this._SVG_OLHO + x + '</span>' +
-            ' · <span class="ls-prog-olho" title="Artigos não lidos">' + this._SVG_OLHO + (z - x) + '</span>';
+            ' · <span class="ls-prog-olho" title="Artigos não lidos">' + this._SVG_OLHO + (z - x) + '</span>' +
+            (function(nc) { return nc ? ' · <span title="Seus comentários neste recorte">💭 ' + nc + '</span>' : ''; })(this._contarComentarios(arts));
     },
     _atualizarProgresso: function() {
         let el = document.getElementById('ls-progresso');
@@ -16068,6 +16125,8 @@ window.LEISECA_RUNTIME = {
     _passaFiltro: function(art) {
         let n = this._nivelArt(art), k = ['nenhum', 'regular', 'importante', 'critico'][n];
         if (!this._filtro[k]) return false;
+        let v = this._vis();
+        if (v.comentado && v.soCom && !this._artTemComentario(art)) return false;
         let b = this._busca.trim().toLowerCase();
         if (!b) return true;
         if (/^\d+(-[a-z])?$/i.test(b)) return art.toLowerCase() === b || art.toLowerCase().indexOf(b + '-') === 0;
@@ -16101,7 +16160,10 @@ window.LEISECA_RUNTIME = {
             (this._divisao !== null ? '<button class="ls-btn ls-mob-ler" onclick="window.LEISECA_RUNTIME.lerRecorteMobile()" title="Ler em sequência os artigos deste recorte">📖 Ler em sequência</button>' : '') +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
             '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
+            this._htmlFerramentas() +
             '<div class="ls-corpo"><div class="ls-mapa"><div class="ls-diploma-tit">' + this._esc((this._infoDiploma(this._diploma) || {}).nome || this._diploma) + '</div>' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
+        this._aplicarClassesModal();
+        this._instalarGrifo();
         this._rolarParaArt();
     },
     // Título ou capítulo escolhido (ou "Todos" em diploma curto): o painel
@@ -16207,6 +16269,298 @@ window.LEISECA_RUNTIME = {
     },
 
     // "Art." / "Arts."; "Regra" / "Regras" nas Regras de Mandela (DIPLOMAS[id].rotulo).
+    // ══ MODO COMENTADO, COMENTÁRIOS E GRIFOS (pedido explícito do usuário) ══
+    _vis: function() { if (!this.estado.vis || typeof this.estado.vis !== 'object') this.estado.vis = {}; return this.estado.vis; },
+    _aplicarClassesModal: function() {
+        let m = document.getElementById('leiseca-modal');
+        if (!m) return;
+        m.classList.toggle('ls-so-borda', !!this._vis().borda);
+        m.classList.toggle('ls-grifando', !!this._caneta);
+    },
+    _htmlFerramentas: function() {
+        let v = this._vis(), c = this._caneta, temNotas = !!(this._infoDiploma(this._diploma) || {}).comentarios;
+        let caneta = function(id, conteudo, titulo) { return '<button class="ls-caneta' + (c === id ? ' ativa' : '') + '" title="' + titulo + '" onclick="window.LEISECA_RUNTIME.escolherCaneta(\'' + id + '\')">' + conteudo + '</button>'; };
+        return '<div class="ls-toolbar ls-ferramentas">' +
+            '<span class="ls-ferr-grupo"><button class="ls-btn' + (v.comentado ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarComentado()" title="Mostra os comentários abaixo de cada dispositivo' + (temNotas ? ' (notas do sistema e os seus)' : ' (os seus; esta lei ainda não tem notas do sistema)') + '">📝 Modo comentado</button>' +
+            (v.comentado ? '<select title="Quais comentários mostrar" onchange="window.LEISECA_RUNTIME.definirTiposComentario(this.value)">' +
+                [['ambos', 'Sistema e pessoais'], ['sistema', 'Só do sistema'], ['pessoais', 'Só pessoais']].map(function(o) { return '<option value="' + o[0] + '"' + ((v.tipos || 'ambos') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
+                '<label title="Só os artigos com algum comentário"><input type="checkbox"' + (v.soCom ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarSoComentados()">Só comentados</label>' : '') + '</span>' +
+            '<span class="ls-ferr-grupo" title="Grifar: escolha a caneta e selecione o trecho no texto"><span class="ls-ferr-rot">🖍 Grifar:</span>' +
+                caneta('azul', '<i style="--c:#2563eb"></i>', 'Sublinhado azul') + caneta('roxo', '<i style="--c:#9333ea"></i>', 'Sublinhado roxo') +
+                caneta('negrito', 'B', 'Negrito') + caneta('borracha', '⌫', 'Borracha: selecione o trecho para apagar o grifo') + '</span>' +
+            '<button class="ls-btn' + (v.borda ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.alternarSoBorda()" title="Mostra a prioridade só na tarja à esquerda, sem o fundo colorido (página mais limpa para grifar)">🎨 Prioridade só na borda</button>' +
+            '</div>';
+    },
+    // Redesenha o painel mantendo à vista o artigo que estava no topo.
+    _renderMantendoPosicao: function() {
+        let t = document.getElementById('ls-texto'), anc = null, off = 0;
+        if (t) {
+            let arts = t.querySelectorAll('.ls-art');
+            for (let i = 0; i < arts.length; i++) {
+                let topo = arts[i].offsetTop - t.offsetTop;
+                if (topo + arts[i].offsetHeight > t.scrollTop) { anc = arts[i].id; off = t.scrollTop - topo; break; }
+            }
+        }
+        this._renderPrincipal();
+        t = document.getElementById('ls-texto');
+        let el = anc && document.getElementById(anc);
+        if (t && el) t.scrollTop = el.offsetTop - t.offsetTop + off;
+    },
+    alternarComentado: async function() {
+        let v = this._vis();
+        v.comentado = !v.comentado;
+        this._salvar();
+        if (v.comentado) await this._carregarNotas(this._diploma);
+        this._renderMantendoPosicao();
+    },
+    definirTiposComentario: function(t) { this._vis().tipos = t; this._salvar(); this._renderMantendoPosicao(); },
+    alternarSoComentados: function() { let v = this._vis(); v.soCom = !v.soCom; this._salvar(); this._renderMantendoPosicao(); },
+    alternarSoBorda: function() { let v = this._vis(); v.borda = !v.borda; this._salvar(); this._renderMantendoPosicao(); },
+
+    // ── Notas do sistema: arquivo indicado no campo "comentarios" do diploma
+    // em dados/leiseca/manifesto.json, no formato
+    //   {"notas": {"155": [{"texto": "markdown", "fonte": "...", "prova": true}], "155§1": [...]}}
+    // (chaves = as do mapa de incidência). Só é baixado no Modo comentado.
+    _notas: {},
+    _notasProm: {},
+    _carregarNotas: function(id) {
+        let self = this, info = this._infoDiploma(id);
+        if (this._notas[id] || !info || !info.comentarios) return Promise.resolve();
+        if (!this._notasProm[id]) {
+            this._notasProm[id] = fetch(info.comentarios + '?v=' + Date.now())
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(j) { if (j && j.notas && typeof j.notas === 'object') self._notas[id] = j.notas; })
+                .catch(function(e) { console.warn('[LEI SECA] Notas do sistema indisponíveis:', e); })
+                .then(function() { delete self._notasProm[id]; });
+        }
+        return this._notasProm[id];
+    },
+    _notasDe: function(chave) { let n = (this._notas[this._diploma] || {})[chave]; return Array.isArray(n) ? n : []; },
+    _artDaChave: function(chave) { return String(chave).split(/[§.]/)[0]; },
+    _artTemComentario: function(a) {
+        let self = this, v = this._vis(), tipos = v.tipos || 'ambos', pre = this._diploma + '|';
+        if (tipos !== 'sistema' && Object.keys(this.estado.coment || {}).some(function(k) { return k.indexOf(pre) === 0 && self._artDaChave(k.slice(pre.length)) === a; })) return true;
+        if (tipos !== 'pessoais') { let n = this._notas[this._diploma] || {}; return Object.keys(n).some(function(k) { return self._artDaChave(k) === a && Array.isArray(n[k]) && n[k].length; }); }
+        return false;
+    },
+    _contarComentarios: function(arts) {
+        let self = this, pre = this._diploma + '|', conj = {}, n = 0;
+        (arts || []).forEach(function(a) { conj[a] = true; });
+        Object.keys(this.estado.coment || {}).forEach(function(k) { if (k.indexOf(pre) === 0 && conj[self._artDaChave(k.slice(pre.length))]) n++; });
+        return n;
+    },
+
+    // Markdown leve (aceito nos comentários pessoais e nas notas do sistema):
+    // **negrito**, *itálico*, `código`, [link](https://…), listas "- " e
+    // "1. ", citação "> " e "# título". O texto é escapado antes: nada de
+    // HTML do comentário chega à página.
+    _md: function(t) {
+        let self = this, guard = [];
+        let inl = function(s) {
+            s = self._esc(s);
+            s = s.replace(/`([^`]+)`/g, function(m, c) { guard.push('<code>' + c + '</code>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
+            s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function(m, txt, url) { guard.push('<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
+            s = s.replace(/\*\*([^*]+?)\*\*/g, '<b>$1</b>').replace(/__([^_]+?)__/g, '<b>$1</b>');
+            s = s.replace(/(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*(?![*\w])/g, '$1<i>$2</i>').replace(/(^|[^_\w])_([^_\s](?:[^_]*[^_\s])?)_(?![_\w])/g, '$1<i>$2</i>');
+            return s.replace(/\u0000(\d+)\u0000/g, function(m, i) { return guard[+i]; });
+        };
+        let html = '', par = [], lista = null, cit = [];
+        let fecharPar = function() { if (par.length) { html += '<p>' + par.map(inl).join('<br>') + '</p>'; par = []; } };
+        let fecharLista = function() { if (lista) { html += '<' + lista.tag + '>' + lista.itens.map(function(i) { return '<li>' + inl(i) + '</li>'; }).join('') + '</' + lista.tag + '>'; lista = null; } };
+        let fecharCit = function() { if (cit.length) { html += '<blockquote>' + cit.map(inl).join('<br>') + '</blockquote>'; cit = []; } };
+        String(t || '').replace(/\r/g, '').split('\n').forEach(function(l) {
+            let m;
+            if ((m = /^\s*[-*•]\s+(.*)$/.exec(l)) || (m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) {
+                let tag = /^\s*\d/.test(l) ? 'ol' : 'ul';
+                fecharPar(); fecharCit();
+                if (lista && lista.tag !== tag) fecharLista();
+                if (!lista) lista = { tag: tag, itens: [] };
+                lista.itens.push(m[1]);
+            } else if ((m = /^\s*>\s?(.*)$/.exec(l))) { fecharPar(); fecharLista(); cit.push(m[1]); }
+            else if ((m = /^\s*#{1,6}\s+(.*)$/.exec(l))) { fecharPar(); fecharLista(); fecharCit(); html += '<p><b>' + inl(m[1]) + '</b></p>'; }
+            else if (!l.trim()) { fecharPar(); fecharLista(); fecharCit(); }
+            else { fecharLista(); fecharCit(); par.push(l); }
+        });
+        fecharPar(); fecharLista(); fecharCit();
+        return '<div class="ls-md">' + html + '</div>';
+    },
+
+    _comAbertos: {},     // modo normal: 💭 aberto por dispositivo ("DIP|33§1")
+    _editandoCom: null,  // chave em edição
+    _rascunhoCom: null,
+    _htmlBotaoComentario: function(a, chave) {
+        let k = this._diploma + '|' + chave, tem = !!(this.estado.coment || {})[k], v = this._vis();
+        let args = '\'' + this._escJs(a) + '\', \'' + this._escJs(chave) + '\'';
+        if (v.comentado) {
+            if (tem || this._editandoCom === k || (v.tipos || 'ambos') === 'sistema') return '';
+            return '<button class="ls-com-btn novo" title="Comentar este dispositivo" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.editarComentario(' + args + ')">+💭</button>';
+        }
+        if (!tem) return '';
+        return '<button class="ls-com-btn" title="' + (this._comAbertos[k] ? 'Esconder' : 'Ver') + ' o seu comentário" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.alternarComentarioAberto(' + args + ')">💭</button>';
+    },
+    _htmlComentarios: function(a, chave, cls) {
+        let self = this, k = this._diploma + '|' + chave, v = this._vis(), tipos = v.tipos || 'ambos';
+        let pes = (this.estado.coment || {})[k], ed = this._editandoCom === k;
+        let args = '\'' + this._escJs(a) + '\', \'' + this._escJs(chave) + '\'';
+        let h = '';
+        if (v.comentado && tipos !== 'pessoais') this._notasDe(chave).forEach(function(n) {
+            if (!n || !n.texto) return;
+            h += '<div class="ls-com-sis"><div class="ls-com-rot">📘 Nota' + (n.prova ? ' <span class="ls-com-prova">cai em prova</span>' : '') + '</div>' + self._md(n.texto) +
+                (n.fonte ? '<div class="ls-com-fonte">Fonte: ' + self._esc(n.fonte) + '</div>' : '') + '</div>';
+        });
+        if (ed) {
+            let val = this._rascunhoCom != null ? this._rascunhoCom : (pes ? pes.t : '');
+            h += '<div class="ls-com-ed"><textarea id="ls-com-txt" placeholder="Seu comentário sobre este dispositivo…" oninput="window.LEISECA_RUNTIME._rascunhoCom = this.value" onkeydown="if ((event.ctrlKey || event.metaKey) && event.key === \'Enter\') window.LEISECA_RUNTIME.salvarComentario(' + args + ')">' + this._esc(val) + '</textarea>' +
+                '<div class="ls-com-dica">Aceita markdown: **negrito**, *itálico*, - lista, 1. lista numerada, > citação, [link](https://…). Ctrl+Enter salva.</div>' +
+                '<div class="ls-com-acoes">' + (pes ? '<button class="excluir" onclick="window.LEISECA_RUNTIME.excluirComentario(' + args + ', this)">Excluir</button>' : '') +
+                '<button onclick="window.LEISECA_RUNTIME.cancelarComentario(' + args + ')">Cancelar</button><button class="primario" onclick="window.LEISECA_RUNTIME.salvarComentario(' + args + ')">Salvar</button></div></div>';
+        } else if (pes && ((v.comentado && tipos !== 'sistema') || (!v.comentado && this._comAbertos[k]))) {
+            h += '<div class="ls-com-pes"><div class="ls-com-rot">💭 Meu comentário<button onclick="window.LEISECA_RUNTIME.editarComentario(' + args + ')">Editar</button></div>' + this._md(pes.t) + '</div>';
+        }
+        return h ? '<div class="ls-com' + (cls ? ' ' + cls : '') + '">' + h + '</div>' : '';
+    },
+    alternarComentarioAberto: function(a, chave) {
+        let k = this._diploma + '|' + chave;
+        if (this._comAbertos[k]) delete this._comAbertos[k]; else this._comAbertos[k] = true;
+        this._atualizarArt(a);
+    },
+    editarComentario: function(a, chave) {
+        let ant = this._editandoCom, k = this._diploma + '|' + chave;
+        this._editandoCom = k; this._rascunhoCom = null;
+        if (ant && ant !== k) { let pre = this._diploma + '|'; if (ant.indexOf(pre) === 0) this._atualizarArt(this._artDaChave(ant.slice(pre.length))); }
+        this._atualizarArt(a);
+        let ta = document.getElementById('ls-com-txt');
+        if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    },
+    _fecharEditor: function(a) { this._editandoCom = null; this._rascunhoCom = null; this._atualizarArt(a); this._atualizarProgresso(); },
+    salvarComentario: function(a, chave) {
+        let ta = document.getElementById('ls-com-txt'), k = this._diploma + '|' + chave;
+        let t = ta ? ta.value.replace(/\s+$/, '') : '';
+        if (!this.estado.coment) this.estado.coment = {};
+        if (t.trim()) this.estado.coment[k] = { t: t, em: new Date().toISOString() }; else delete this.estado.coment[k];
+        this._salvar();
+        if (!this._vis().comentado) this._comAbertos[k] = true;
+        this._fecharEditor(a);
+    },
+    cancelarComentario: function(a) { this._fecharEditor(a); },
+    excluirComentario: function(a, chave, botao) {
+        if (botao && !botao.dataset.confirmar) { botao.dataset.confirmar = '1'; botao.textContent = 'Confirmar exclusão'; return; }
+        let k = this._diploma + '|' + chave;
+        delete this.estado.coment[k]; delete this._comAbertos[k];
+        this._salvar();
+        this._fecharEditor(a);
+    },
+
+    // ── Grifos ── posição (ini/fim) no texto do dispositivo + o trecho, para
+    // reencontrá-lo se a redação mudar; sem achar, não aplica e avisa.
+    _CANETAS: ['azul', 'roxo', 'negrito'],
+    _caneta: null,
+    escolherCaneta: function(c) {
+        this._caneta = this._caneta === c ? null : c;
+        document.querySelectorAll('#leiseca-modal .ls-caneta').forEach(function(b) { b.classList.toggle('ativa', b.getAttribute('onclick').indexOf("'" + c + "'") >= 0 && window.LEISECA_RUNTIME._caneta === c); });
+        this._aplicarClassesModal();
+    },
+    _faixasGrifo: function(chave, texto) {
+        let self = this, lista = (this.estado.grifos || {})[this._diploma + '|' + chave] || [], out = [];
+        lista.forEach(function(g) {
+            let ini = g.ini, fim = g.fim;
+            if (texto.slice(ini, fim) !== g.tr) {
+                let i = g.tr ? texto.indexOf(g.tr) : -1;
+                if (i < 0) { out.push({ perdido: true, g: g }); return; }
+                ini = i; fim = i + g.tr.length;
+            }
+            out.push({ ini: ini, fim: fim, cor: g.cor, g: g });
+        });
+        return out;
+    },
+    _htmlGrifado: function(chave, texto) {
+        let self = this, pos = 0, html = '';
+        this._faixasGrifo(chave, texto).filter(function(f) { if (f.perdido) self._grifosPerdidos = (self._grifosPerdidos || 0) + 1; return !f.perdido; })
+            .sort(function(x, y) { return x.ini - y.ini; }).forEach(function(f) {
+                let ini = Math.max(pos, f.ini), fim = f.fim;
+                if (fim <= ini || self._CANETAS.indexOf(f.cor) < 0) return;
+                html += self._esc(texto.slice(pos, ini)) + '<mark class="ls-g ls-g-' + f.cor + '">' + self._esc(texto.slice(ini, fim)) + '</mark>';
+                pos = fim;
+            });
+        return html + this._esc(texto.slice(pos));
+    },
+    _textoDoDisp: function(chave) {
+        let art = ((this._textos[this._diploma] || {}).artigos || {})[this._artDaChave(chave)];
+        if (!art) return null;
+        let no = art, m = /^[^§.]+(?:§([^.]+))?(?:\.(.+))?$/.exec(chave);
+        if (!m) return null;
+        if (m[1]) no = (no.par || {})[m[1]];
+        if (no && m[2]) no = (no.inc || {})[m[2]];
+        return no && !no.revogado ? String(no.texto || '') : null;
+    },
+    // Aplica a caneta (ou a borracha) em [ini, fim) do dispositivo: o trecho
+    // novo substitui o que houver por baixo (grifos não se sobrepõem).
+    _grifar: function(chave, ini, fim, cor) {
+        let texto = this._textoDoDisp(chave);
+        if (texto == null) return false;
+        while (ini < fim && /\s/.test(texto.charAt(ini))) ini++;
+        while (fim > ini && /\s/.test(texto.charAt(fim - 1))) fim--;
+        if (fim <= ini) return false;
+        // Palavra cortada ao meio na seleção: completa até as bordas dela.
+        let letra = /[0-9A-Za-zÀ-ÖØ-öø-ÿ]/;
+        while (ini > 0 && letra.test(texto.charAt(ini - 1)) && letra.test(texto.charAt(ini))) ini--;
+        while (fim < texto.length && letra.test(texto.charAt(fim)) && letra.test(texto.charAt(fim - 1))) fim++;
+        let k = this._diploma + '|' + chave, nova = [];
+        if (!this.estado.grifos) this.estado.grifos = {};
+        this._faixasGrifo(chave, texto).forEach(function(f) {
+            if (f.perdido) { nova.push(f.g); return; }
+            [[f.ini, Math.min(f.fim, ini)], [Math.max(f.ini, fim), f.fim]].forEach(function(p) {
+                if (p[1] > p[0]) nova.push({ ini: p[0], fim: p[1], cor: f.cor, tr: texto.slice(p[0], p[1]) });
+            });
+        });
+        if (cor !== 'borracha') nova.push({ ini: ini, fim: fim, cor: cor, tr: texto.slice(ini, fim) });
+        if (nova.length) this.estado.grifos[k] = nova; else delete this.estado.grifos[k];
+        return true;
+    },
+    _offsetEm: function(el, no, off) {
+        let r = document.createRange();
+        r.selectNodeContents(el);
+        try { r.setEnd(no, off); } catch (e) { return null; }
+        return r.toString().length;
+    },
+    _aoSelecionar: function() {
+        if (!this._caneta) return;
+        let sel = window.getSelection(), t = document.getElementById('ls-texto');
+        if (!sel || !sel.rangeCount || sel.isCollapsed || !t) return;
+        let r = sel.getRangeAt(0);
+        if (!t.contains(r.commonAncestorContainer)) return;
+        let self = this, arts = {}, mudou = false;
+        t.querySelectorAll('.ls-tx').forEach(function(s) {
+            if (!r.intersectsNode(s)) return;
+            let len = s.textContent.length;
+            let ini = s.contains(r.startContainer) ? self._offsetEm(s, r.startContainer, r.startOffset) : 0;
+            let fim = s.contains(r.endContainer) ? self._offsetEm(s, r.endContainer, r.endOffset) : len;
+            if (ini == null || fim == null) return;
+            // Seleção começando depois do fim do texto (no 3× ou na nota) não pega este dispositivo.
+            if (!s.contains(r.startContainer) && r.comparePoint(s, 0) < 0) return;
+            let ch = s.getAttribute('data-k');
+            if (self._grifar(ch, ini, fim, self._caneta)) { mudou = true; arts[self._artDaChave(ch)] = true; }
+        });
+        if (!mudou) return;
+        sel.removeAllRanges();
+        this._salvar();
+        Object.keys(arts).forEach(function(a) { self._atualizarArt(a); });
+    },
+    _instalarGrifo: function() {
+        if (this._grifoInstalado) return;
+        let m = document.getElementById('leiseca-modal'), self = this;
+        if (!m) return;
+        this._grifoInstalado = true;
+        m.addEventListener('mouseup', function() { setTimeout(function() { self._aoSelecionar(); }, 0); });
+        // Toque: a seleção termina depois do último ajuste das alças.
+        let tm = null;
+        document.addEventListener('selectionchange', function() {
+            if (!self._caneta || !window.matchMedia('(hover: none)').matches) return;
+            clearTimeout(tm);
+            tm = setTimeout(function() { self._aoSelecionar(); }, 900);
+        });
+    },
+
     _rotulo: function(plural) {
         let r = (window.LEGISLACAO.DIPLOMAS[this._diploma] || {}).rotulo;
         return r ? r + (plural ? 's' : '') : (plural ? 'Arts.' : 'Art.');
@@ -16229,13 +16583,16 @@ window.LEISECA_RUNTIME = {
         let linha = function(rot, no, chave, cls) {
             let n = inc ? (inc.dispositivos[chave] || 0) : 0;
             let nv = !inc ? 0 : inc.estimada ? (inc.nivelDisp[chave] || 0) : !n ? 0 : (n * 2 >= maxDisp ? nivelA : Math.max(1, nivelA - 1));
-            let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : self._esc(no.texto || '');
+            let txt = no.revogado ? '<span class="ls-rev">(revogado)</span>' : '<span class="ls-tx" data-k="' + self._esc(chave) + '">' + self._htmlGrifado(chave, no.texto || '') + '</span>';
+            let cb = no.revogado ? '' : self._htmlBotaoComentario(a, chave);
             let lido = !no.revogado && !!self.estado.lidosDisp[self._diploma + '|' + chave];
             let marca = no.revogado ? '' : '<button class="ls-chk' + (lido ? ' on' : '') + '" title="' + (lido ? 'Lido — tocar para desmarcar' : 'Marcar este dispositivo como lido') + '" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.alternarLidoDisp(\'' + self._escJs(a) + '\', \'' + self._escJs(chave) + '\')">✓</button>';
-            return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + (lido ? ' lido' : '') + '">' + marca + '<span class="ls-rot">' + rot + '</span> ' + txt +
+            return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + (lido ? ' lido' : '') + (cb ? ' ls-com-on' : '') + '">' + marca + cb + '<span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
-                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>';
+                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>' +
+                self._htmlComentarios(a, chave, cls);
         };
+        this._grifosPerdidos = 0;
         let alineas = function(no) { return no.ali ? Object.keys(no.ali).map(function(k) { return '<div class="ls-d ls-n0 ls-ali"><span class="ls-rot">' + self._esc(k) + ')</span> ' + (no.ali[k] ? self._esc(no.ali[k]) : '<span class="ls-rev">(revogada)</span>') + '</div>'; }).join('') : ''; };
         let itens = j.numeracao === 'itens'; // CADH: "1." e "a)" em vez de inciso/§
         let incisos = function(no, base, cls) { return no.inc ? Object.keys(no.inc).map(function(k) { return linha(self._esc(k) + (itens ? '.' : ' –'), no.inc[k], base + '.' + k, cls) + alineas(no.inc[k]) +
@@ -16254,6 +16611,7 @@ window.LEISECA_RUNTIME = {
             this.NIVEIS.map(function(nv) { return '<option value="' + nv[0] + '"' + (manual === nv[0] ? ' selected' : '') + '>' + nv[1] + '</option>'; }).join('');
         let d = window.LEGISLACAO.DIPLOMAS[this._diploma] || {};
         return '<div class="ls-art-cab"><span class="ls-art-tit">' + self._rotulo() + ' ' + self._esc(a) + '</span>' + (art.rubrica ? '<span class="ls-art-rub">' + self._esc(art.rubrica) + '</span>' : '') +
+            (this._grifosPerdidos ? '<span class="ls-qt ls-g-perdido" title="O texto da lei mudou e o trecho grifado não foi encontrado. O grifo continua guardado e volta se o trecho reaparecer.">⚠ ' + this._grifosPerdidos + ' grifo' + (this._grifosPerdidos > 1 ? 's' : '') + ' não reaplicado' + (this._grifosPerdidos > 1 ? 's' : '') + '</span>' : '') +
             (q !== null ? '<span class="ls-qt">' + q + ' cobrança(s)</span>' : '') +
             (inc && inc.estimada ? '<span class="ls-qt" title="' + self._esc(inc.fonte || '') + '">prioridade estimada</span>' : '') +
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
@@ -39194,6 +39552,9 @@ window.LEGISLACAO = (function() {
     #leiseca-modal .ls-mob-barra button { flex-shrink:0; padding:7px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-white); font-size:13px; font-weight:800; color:var(--app-primary); }
     #leiseca-modal .ls-mob-barra span { font-size:12.5px; font-weight:800; color:var(--text-main); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     #leiseca-modal .ls-mob-ler { display:inline-flex !important; }
+    /* Texto aberto: ferramentas (comentado, canetas, borda) fixas no rodapé. */
+    #leiseca-modal.mob-texto .ls-ferramentas { position:fixed; left:0; right:0; bottom:0; z-index:10022; background:var(--bg-white); border-top:1px solid var(--border-color); border-bottom:none; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); gap:6px 10px; }
+    #leiseca-modal.mob-texto .ls-texto { padding-bottom:120px !important; }
     #leiseca-modal .ls-legenda { display:none !important; }
     #leiseca-modal .ls-art-acoes { flex-wrap:wrap; }
 
