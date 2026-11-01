@@ -4713,6 +4713,55 @@ window.SALINHA_BACKUP = {
                         return; // essa subChave já foi tratada — não cai no ramo genérico
                     }
 
+                    // ── CASO ESPECIAL: LEI SECA (leiseca_runtime) ──
+                    // Sem isto, a ESTRATÉGIA B genérica só copiava prio/lidos/
+                    // lidosDisp/coment/grifos se a sub-chave nunca tivesse existido
+                    // — e o app grava {} na 1ª abertura da Lei Seca: prioridades e
+                    // leituras do backup sumiam. Política: une os dicionários (o
+                    // local vence no conflito, salvo comentário mais recente);
+                    // conjuntos por id e por nome (sem duplicar "DPE/SP"); o
+                    // conjunto ativo e as preferências do backup valem se o local
+                    // não tiver os seus.
+                    if (chaveSemPrefixoMerge === 'leiseca_runtime') {
+                        const rem = objImportado[subChave], loc = objLocal[subChave];
+                        const ehDict = function(x) { return x && typeof x === 'object' && !Array.isArray(x); };
+                        if (subChave === 'conjuntos' && Array.isArray(rem)) {
+                            if (!Array.isArray(objLocal.conjuntos)) objLocal.conjuntos = [];
+                            rem.forEach(c => {
+                                if (!c || !c.id || !c.nome) return;
+                                const igual = objLocal.conjuntos.find(l => l && (l.id === c.id || String(l.nome).toLowerCase() === String(c.nome).toLowerCase()));
+                                if (!igual) { objLocal.conjuntos.push(c); entidadesInjetadas++; persistirChave = true; }
+                                else if (igual.id !== c.id && objImportado.conjuntoAtivo === c.id && !objLocal.conjuntoAtivo) { objLocal.conjuntoAtivo = igual.id; persistirChave = true; }
+                            });
+                            return;
+                        }
+                        if (subChave === 'conjuntoAtivo') {
+                            if (rem && !objLocal.conjuntoAtivo) {
+                                // Só depois de os conjuntos entrarem (a ordem das sub-chaves pode variar).
+                                const lista = Array.isArray(objLocal.conjuntos) ? objLocal.conjuntos : [];
+                                const remC = (Array.isArray(objImportado.conjuntos) ? objImportado.conjuntos : []).find(c => c && c.id === rem);
+                                if (remC && !lista.some(l => l && l.id === rem) && !lista.some(l => l && String(l.nome).toLowerCase() === String(remC.nome).toLowerCase())) { lista.push(remC); objLocal.conjuntos = lista; entidadesInjetadas++; }
+                                const alvo = lista.find(l => l && l.id === rem) || (remC && lista.find(l => l && String(l.nome).toLowerCase() === String(remC.nome).toLowerCase()));
+                                if (alvo) { objLocal.conjuntoAtivo = alvo.id; persistirChave = true; }
+                            }
+                            return;
+                        }
+                        if (ehDict(rem)) {
+                            if (!ehDict(loc)) { objLocal[subChave] = rem; if (Object.keys(rem).length) { entidadesInjetadas++; persistirChave = true; } return; }
+                            if (subChave === 'vis') {
+                                if (!Object.keys(loc).length && Object.keys(rem).length) { objLocal.vis = rem; persistirChave = true; }
+                                return;
+                            }
+                            Object.keys(rem).forEach(k => {
+                                if (loc[k] === undefined) { loc[k] = rem[k]; entidadesInjetadas++; persistirChave = true; }
+                                else if (subChave === 'coment' && rem[k] && loc[k] && String(rem[k].em || '') > String(loc[k].em || '')) { loc[k] = rem[k]; entidadesInjetadas++; persistirChave = true; }
+                            });
+                            return;
+                        }
+                        if (loc === undefined && rem !== undefined) { objLocal[subChave] = rem; persistirChave = true; }
+                        return;
+                    }
+
                     if (Array.isArray(objImportado[subChave]) && !Array.isArray(objLocal[subChave])) {
                         objLocal[subChave] = [];
                     }
@@ -16096,8 +16145,9 @@ window.LEISECA_RUNTIME = {
                 let inc = self._incidencias[d.id], total = inc ? Object.keys(inc.porArt).reduce(function(s, k) { return s + inc.porArt[k]; }, 0) : 0;
                 return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
-                    (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo">🧭</span>'
-                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + '">🔥' + (total || '') + '</span>') : '') +
+                    // 📝 = diploma com notas do sistema (Modo comentado), pedido explícito do usuário.
+                    (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? '📝' : '') + '</span>'
+                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? '📝' : '') + '</span>') : '') +
                     (function(r) { return r ? '<span class="ls-leitura-selo" title="Leitura iniciada' + (r.total ? ': ' + r.lidos + ' de ' + r.total + ' artigos críticos e importantes lidos' : '') + '">👁' + (r.pct ? ' ' + r.pct + '%' : '') + '</span>' : ''; })(self._resumoLeitura(d.id)) + '</div>';
             }).join('');
         }).join('');
