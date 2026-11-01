@@ -2,6 +2,16 @@
 
 Leia este arquivo inteiro, e também `dados/legislacao/LEIAME.md`, antes de incluir qualquer diploma.
 
+## Tabela de níveis (obrigatório, ao terminar)
+
+A situação de cada diploma (1. Pura · 2. c/ Incidência · 3. Comentado) fica em `LEI-SECA-NIVEIS.md`, na raiz. Ao incluir ou alterar um diploma em qualquer nível, rode no fim:
+
+```
+python3 -I ferramentas/niveis_lei_seca.py
+```
+
+Faça commit do `LEI-SECA-NIVEIS.md` junto com o resto. Antes de publicar, `python3 -I ferramentas/niveis_lei_seca.py --verificar` tem de dizer "em dia".
+
 ## O que o usuário envia
 
 **Texto compilado do Planalto** salvo em Markdown (.md), um diploma por arquivo.

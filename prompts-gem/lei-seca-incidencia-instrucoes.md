@@ -2,6 +2,16 @@
 
 Leia este arquivo inteiro antes de processar qualquer material. É o arquivo público da seção 📜 Lei Seca: os artigos coloridos pela incidência em provas, com o número de cobranças por dispositivo.
 
+## Tabela de níveis (obrigatório, ao terminar)
+
+A situação de cada diploma (1. Pura · 2. c/ Incidência · 3. Comentado) fica em `LEI-SECA-NIVEIS.md`, na raiz. Ao incluir ou alterar um diploma em qualquer nível, rode no fim:
+
+```
+python3 -I ferramentas/niveis_lei_seca.py
+```
+
+Faça commit do `LEI-SECA-NIVEIS.md` junto com o resto. Antes de publicar, `python3 -I ferramentas/niveis_lei_seca.py --verificar` tem de dizer "em dia".
+
 ## Pré-requisito
 
 O diploma precisa já existir **como lei seca pura**:

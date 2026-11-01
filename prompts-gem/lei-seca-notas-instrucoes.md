@@ -2,6 +2,16 @@
 
 Leia este arquivo inteiro antes de processar qualquer material. Ele explica como transformar um material de lei comentada (ex.: Eduardo B. S. Teixeira — "Belisário") nas **notas do sistema** (📘) que aparecem no 📝 Modo comentado da Lei Seca.
 
+## Tabela de níveis (obrigatório, ao terminar)
+
+A situação de cada diploma (1. Pura · 2. c/ Incidência · 3. Comentado) fica em `LEI-SECA-NIVEIS.md`, na raiz. Ao incluir ou alterar um diploma em qualquer nível, rode no fim:
+
+```
+python3 -I ferramentas/niveis_lei_seca.py
+```
+
+Faça commit do `LEI-SECA-NIVEIS.md` junto com o resto. Antes de publicar, `python3 -I ferramentas/niveis_lei_seca.py --verificar` tem de dizer "em dia".
+
 ## Objetivo
 
 Extrair **só o que é relevante e indispensável para a prova**, reescrito de forma curta, e ligado ao dispositivo certo. A nota complementa a lei: não repete o texto do artigo nem a lista de provas (essa já está no mapa de incidência).
