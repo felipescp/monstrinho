@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 125 diplomas · 1. Pura: 125 · 2. Incidência: 109 · 3. Comentado: 2 (48 notas).
+**Totais:** 127 diplomas · 1. Pura: 127 · 2. Incidência: 111 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -42,6 +42,7 @@
 | ADI e ADC (Lei 9.868) | X | X | - |
 | ADPF (Lei 9.882) | X | X | X (14 notas) |
 | Lei Orgânica da Magistratura Nacional – LOMAN (LC 35) | X | X | - |
+| Lei Orgânica Nacional da Defensoria Pública (LC 80) | X | X | - |
 | Súmula Vinculante (Lei 11.417) | X | X | - |
 | Representação Interventiva (Lei 12.562) | X | X | - |
 | Diretrizes e Bases da Educação – LDB (Lei 9.394) | X | X | - |
@@ -206,3 +207,9 @@
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Estatuto da OAB (Lei 8.906) | X | - | - |
+
+### Legislação Estadual de São Paulo
+
+| Diploma | 1. Pura | 2. Incidência | 3. Comentado |
+|---|:---:|:---:|:---:|
+| Lei Orgânica da Defensoria Pública de SP (LC estadual 988/2006) | X | X | - |
