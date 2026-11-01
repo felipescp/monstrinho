@@ -313,6 +313,18 @@
 .main-nav { display: flex; width: 100%; flex-shrink: 0; }
 .nav-ram-zone { display: flex; gap: 20px; padding: 0 25px; flex: 1; background: var(--app-primary); transition: background 0.4s ease; }
 .nav-hd-zone { display: flex; gap: 20px; padding: 0 25px; background: #334155; border-left: 2px solid #1e293b; box-shadow: inset 10px 0 10px -10px rgba(0,0,0,0.3); }
+/* 📚 Seções: rótulo + ícones clicáveis + ▾ (menu com os nomes). */
+.nav-secoes { display: flex; align-items: center; gap: 2px; cursor: default; }
+.nav-secoes-rot, .nav-secoes-seta { cursor: pointer; }
+.nav-secoes-rot { margin-right: 6px; }
+.nav-secoes-rot:hover, .nav-secoes-seta:hover { color: #f8fafc; }
+.nav-secao-ico { cursor: pointer; font-size: 15px; line-height: 1; padding: 3px 4px; border-radius: 6px; filter: grayscale(0.35); opacity: 0.85; transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease, filter 0.15s ease; }
+.nav-secao-ico:hover { opacity: 1; filter: none; transform: translateY(-1px) scale(1.15); background: rgba(255,255,255,0.08); }
+.nav-secoes-seta { margin-left: 4px; padding: 0 2px; }
+#nav-secoes-menu { position: fixed; z-index: 10070; display: none; flex-direction: column; min-width: 210px; padding: 6px 0; background: #334155; border: 1px solid #1e293b; border-radius: 8px; box-shadow: 0 12px 28px rgba(15,23,42,0.35); }
+#nav-secoes-menu.aberto { display: flex; }
+#nav-secoes-menu .nav-secoes-item { padding: 9px 16px; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: #cbd5e1; cursor: pointer; white-space: nowrap; }
+#nav-secoes-menu .nav-secoes-item:hover { background: #1e293b; color: #f8fafc; }
 .nav-item { padding: 14px 0; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: 0; }
 .nav-item.ram-item { color: rgba(255,255,255,0.7); }
 .nav-item.ram-item:hover { color: #ffffff; }
@@ -1746,13 +1758,20 @@ try {
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
-        <div class="nav-item hd-item" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
-        <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
-        <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
-        <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
-        <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
+        <!-- 📚 Seções (pedido explícito do usuário, "opção 2"): os ícones das 7
+             seções ficam sempre à vista (cada um abre a sua; o nome aparece
+             ao passar o mouse) e "📚 SEÇÕES ▾" abre o menu com os nomes. -->
+        <div class="nav-item hd-item nav-secoes" title="Seções de estudo">
+            <span class="nav-secoes-rot" onclick="event.stopPropagation(); window.alternarMenuSecoes(this.parentNode)">📚 SEÇÕES</span>
+            <span class="nav-secao-ico" data-nome="Jurisprudência" onclick="event.stopPropagation(); window.abrirJurisprudenciaModal()" title="Jurisprudência">⚖️</span>
+            <span class="nav-secao-ico" id="btn-nav-leiseca" data-nome="Lei Seca" onclick="event.stopPropagation(); window.abrirLeiSecaModal()" title="Lei Seca — texto com mapa de incidência">📜</span>
+            <span class="nav-secao-ico" data-nome="Esquemas" onclick="event.stopPropagation(); window.abrirEsquemasModal()" title="Esquemas e Tabelas">📄</span>
+            <span class="nav-secao-ico" id="btn-nav-flashcards-nb" data-nome="Flashcards" onclick="event.stopPropagation(); window.abrirFlashcardsNbModal()" title="Flashcards (NotebookLM)">🗂️</span>
+            <span class="nav-secao-ico" id="btn-nav-prazos" data-nome="Prazos" onclick="event.stopPropagation(); window.abrirPrazosModal()" title="Prazos, quóruns e limites — memorização">⏱️</span>
+            <span class="nav-secao-ico" id="btn-nav-penas" data-nome="Penas" onclick="event.stopPropagation(); window.abrirPenasModal()" title="Penas — memorização">⛓️</span>
+            <span class="nav-secao-ico" id="btn-nav-glossario" data-nome="Glossário" onclick="event.stopPropagation(); window.abrirGlossarioModal()" title="Glossário">📖</span>
+            <span class="nav-secoes-seta" onclick="event.stopPropagation(); window.alternarMenuSecoes(this.parentNode)" title="Ver as seções pelo nome">▾</span>
+        </div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -1765,6 +1784,35 @@ try {
         <div class="nav-item hd-item" onclick="openAnalyticsModal()" style="cursor:pointer;" title="Abrir Inteligência Longitudinal">📊 ESTATÍSTICAS</div>
     </div>
 </nav>
+<div id="nav-secoes-menu" role="menu"></div>
+<script>
+// 📚 Seções ▾: menu com os nomes (cada item aciona o ícone correspondente).
+(function() {
+    const menu = document.getElementById('nav-secoes-menu');
+    function fechar() { if (menu) menu.classList.remove('aberto'); }
+    window.alternarMenuSecoes = function(grupo) {
+        if (!menu) return;
+        if (menu.classList.contains('aberto')) { fechar(); return; }
+        menu.innerHTML = '';
+        grupo.querySelectorAll('.nav-secao-ico').forEach(function(ico) {
+            const item = document.createElement('div');
+            item.className = 'nav-secoes-item';
+            item.setAttribute('role', 'menuitem');
+            item.textContent = ico.textContent.trim() + ' ' + ico.getAttribute('data-nome');
+            item.title = ico.title || '';
+            item.onclick = function(e) { e.stopPropagation(); fechar(); ico.click(); };
+            menu.appendChild(item);
+        });
+        const r = grupo.getBoundingClientRect();
+        menu.classList.add('aberto');
+        menu.style.top = Math.round(r.bottom + 2) + 'px';
+        menu.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8))) + 'px';
+    };
+    document.addEventListener('click', function(e) { if (menu && !menu.contains(e.target)) fechar(); });
+    window.addEventListener('scroll', fechar, true);
+    window.addEventListener('resize', fechar);
+})();
+</script>
 
 <div id="barra2"></div>
 </div>
@@ -40022,9 +40070,12 @@ window.MOBILE_UI = (function() {
     function abrirSecoes() {
         var grade = document.getElementById('mob-secoes-grade');
         grade.innerHTML = '';
-        document.querySelectorAll('#barra-nav .nav-item.hd-item[onclick]').forEach(function(item) {
+        // Inclui os ícones de "📚 Seções" da barra (com o nome por extenso).
+        document.querySelectorAll('#barra-nav .nav-item.hd-item[onclick], #barra-nav .nav-secao-ico').forEach(function(item) {
             var b = document.createElement('button');
-            b.textContent = (item.textContent || '').trim();
+            b.textContent = item.classList.contains('nav-secao-ico')
+                ? (item.textContent || '').trim() + ' ' + String(item.getAttribute('data-nome') || '').toUpperCase()
+                : (item.textContent || '').trim();
             b.onclick = function() { fecharSecoes(); item.click(); };
             grade.appendChild(b);
         });
