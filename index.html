@@ -5363,7 +5363,7 @@ window.SALINHA_SYNC = (function() {
         let m = ev.data || {};
         if (m.tipo !== 'mudou' || !pronto || m.uid !== uid) return;
         console.info('[SYNC] Mudança feita em outra aba deste navegador: ' + m.chave + '.');
-        recarregarControlado();
+        mostrarMudanca(m.chave);
     };
 
     // ── Envio ──
@@ -5423,6 +5423,69 @@ window.SALINHA_SYNC = (function() {
     // estado em memória: recarregar é o que faz a tela mostrá-los. Com um
     // modal aberto, espera ele fechar (e mostra a faixa, para quem quiser
     // recarregar antes).
+    // ── Atualização na tela, sem recarregar a página ──
+    // Seções que sabem reler o armazenamento (carregar) e se redesenhar
+    // (render). Jurisprudência, Esquemas e Glossário só guardam os itens
+    // pessoais: os oficiais (vindos de dados/) são preservados da memória.
+    // As demais (baterias, histórico, cronograma, flashcards…) caem na
+    // recarga controlada.
+    const NA_TELA = {
+        'tjpe_v1__jurisprudencia_runtime': { runtime: 'JURISPRUDENCIA_RUNTIME', campo: 'fichas' },
+        'tjpe_v1__esquemas_runtime': { runtime: 'ESQUEMAS_RUNTIME', campo: 'esquemas' },
+        'tjpe_v1__glossario_runtime': { runtime: 'GLOSSARIO_RUNTIME', campo: 'glossario' },
+        'tjpe_v1__prazos_runtime': { runtime: 'PRAZOS_RUNTIME' },  // carregar() já preserva os oficiais
+        'tjpe_v1__penas_runtime': { runtime: 'PENAS_RUNTIME' },
+        'tjpe_v1__leiseca_runtime': { runtime: 'LEISECA_RUNTIME', ler: '_carregarEstado' }
+    };
+    // Digitando num campo: não mexe na tela agora (perderia o que está
+    // sendo escrito) — fica para a recarga controlada.
+    function editando() {
+        let el = document.activeElement;
+        return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+    }
+    // Aba avisada por outra aba: o armazenamento já mudou, mas o cache da
+    // camada IndexedDB desta aba não.
+    async function atualizarCache(chave) {
+        let camada = window.CAMADAS_STORAGE_MIGRADAS && window.CAMADAS_STORAGE_MIGRADAS[chave];
+        if (!camada) return;
+        let v = await idbGet(chaveIdb(chave));
+        if (v === undefined || v === camada.ler()) return;
+        aplicando++;
+        try { await camada.salvar(v); } finally { aplicando--; }
+    }
+    async function atualizarNaTela(chave) {
+        let cfg = NA_TELA[chave], R = cfg && window[cfg.runtime];
+        if (!R || editando()) return false;
+        try {
+            await atualizarCache(chave);
+            let oficiais = null;
+            if (cfg.campo && R[cfg.campo]) {
+                oficiais = {};
+                Object.keys(R[cfg.campo]).forEach(function(ch) {
+                    let of = (R[cfg.campo][ch] || []).filter(function(x) { return x && x.origem_oficial; });
+                    if (of.length) oficiais[ch] = of;
+                });
+            }
+            aplicando++; // carregar() de algumas seções regrava (migrações): não reenviar
+            try { R[cfg.ler || 'carregar'](); } finally { aplicando--; }
+            if (oficiais) Object.keys(oficiais).forEach(function(ch) {
+                let lista = R[cfg.campo][ch] = R[cfg.campo][ch] || [];
+                let ids = {};
+                lista.forEach(function(x) { if (x) ids[x.id] = true; });
+                oficiais[ch].forEach(function(o) { if (!ids[o.id]) lista.push(o); });
+            });
+            if (typeof R.render === 'function') R.render();
+            console.info('[SYNC] Tela atualizada sem recarregar: ' + chave + '.');
+            return true;
+        } catch (e) {
+            console.warn('[SYNC] Não foi possível atualizar ' + chave + ' na tela; recarregando:', e);
+            return false;
+        }
+    }
+    async function mostrarMudanca(chave) {
+        if (!(await atualizarNaTela(chave))) recarregarControlado();
+    }
+
     let recargaAgendada = false;
     // Balão por cima de tudo (uma faixa no topo ficaria atrás do modal).
     function mostrarBalao(texto) {
@@ -5548,7 +5611,7 @@ window.SALINHA_SYNC = (function() {
             base[chave] = { v: d.versao, h: Rh };
             // Já igual aqui: outra aba deste navegador aplicou primeiro — o
             // armazenamento está certo, mas a tela desta aba ainda não.
-            if (Lh === Rh) { salvarBase(); recarregarControlado(); return; }
+            if (Lh === Rh) { salvarBase(); await mostrarMudanca(chave); return; }
             if (pendentes.has(chave) || (L != null && B && Lh !== B.h)) {
                 await mesclar({ [chave]: Rs }); // mudou dos dois lados
                 salvarBase();
@@ -5559,7 +5622,7 @@ window.SALINHA_SYNC = (function() {
                 salvarBase();
             }
             avisarOutrasAbas(chave);
-            recarregarControlado();
+            await mostrarMudanca(chave);
         }).catch(function(e) { console.warn('[SYNC] Falha ao aplicar ' + chave + ' vinda de outro aparelho:', e); });
     }
 
