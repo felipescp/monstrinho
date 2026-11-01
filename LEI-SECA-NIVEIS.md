@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 125 diplomas · 1. Pura: 125 · 2. Incidência: 109 · 3. Comentado: 1 (14 notas).
+**Totais:** 125 diplomas · 1. Pura: 125 · 2. Incidência: 109 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -70,7 +70,7 @@
 | Desapropriação por Utilidade Pública (Decreto-Lei 3.365/1941) | X | X | - |
 | Desapropriação por Interesse Social (Lei 4.132) | X | X | - |
 | Estatuto Geral das Guardas Municipais (Lei 13.022) | X | - | - |
-| Ação Popular (Lei 4.717) | X | X | - |
+| Ação Popular (Lei 4.717) | X | X | X (34 notas) |
 | Prescrição contra a Fazenda (Decreto 20.910/1932) | X | - | - |
 
 ### Direito Processual Civil
