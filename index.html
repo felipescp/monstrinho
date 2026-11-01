@@ -15867,6 +15867,13 @@ window.LEISECA_RUNTIME = {
         Object.keys(a.par || {}).forEach(function(p) { let n = a.par[p]; nos.push(n); Object.keys(n.inc || {}).forEach(function(k) { nos.push(n.inc[k]); }); });
         return nos.some(function(n) { return n && n.alt && self._leiRecente(n.alt); });
     },
+    // Prioridade escolhida pelo usuário só conta (pontinho no quadrinho,
+    // seletor sólido) quando difere da do sistema.
+    _NOMES_NIVEL: ['', 'regular', 'importante', 'critico'],
+    _prioManual: function(art, dip) {
+        let m = this.estado.prio[(dip || this._diploma) + '|' + art];
+        return m && m !== this._NOMES_NIVEL[this._nivelSistemaArt(art, dip)] ? m : null;
+    },
     _nivelArt: function(art, dip) {
         let m = this.estado.prio[(dip || this._diploma) + '|' + art];
         if (m) return { critico: 3, importante: 2, regular: 1 }[m] || 0;
@@ -16043,7 +16050,7 @@ window.LEISECA_RUNTIME = {
                 total++;
                 let passa = self._passaFiltro(a); if (passa) visiveis++;
                 let n = self._nivelArt(a), q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null, ch = self._chaveEstado(a);
-                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self.estado.prio[ch] ? ' manual' : '') + (self._leituraArt(a) ? ' ' + self._leituraArt(a) : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (inc && inc.estimada ? ' · prioridade estimada' : '') + (self.estado.prio[ch] ? ' · prioridade sua' : '') + ({ lido: ' · lido', parcial: ' · leitura iniciada' }[self._leituraArt(a)] || '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + self._htmlMarcaLeitura(a) + '</button>';
+                return '<button class="ls-tile ls-n' + n + (a === self._art ? ' sel' : '') + (passa ? '' : ' esmaecido') + (self._prioManual(a) ? ' manual' : '') + (self._leituraArt(a) ? ' ' + self._leituraArt(a) : '') + (self._artNovo(a) ? ' novo' : '') + '" data-art="' + self._esc(a) + '" title="' + self._rotulo() + ' ' + self._esc(a) + (q !== null ? ' · ' + q + ' cobrança(s)' : '') + (inc && inc.estimada ? ' · prioridade estimada' : '') + (self._prioManual(a) ? ' · prioridade sua' : '') + ({ lido: ' · lido', parcial: ' · leitura iniciada' }[self._leituraArt(a)] || '') + (self._artNovo(a) ? ' · alteração nos últimos 2 anos' : '') + '" onclick="window.LEISECA_RUNTIME.abrirArtigo(\'' + self._escJs(a) + '\')">' + self._esc(a) + self._htmlMarcaLeitura(a) + '</button>';
             }).join('') + '</div>';
         }).join('');
         this._artsRecorte = [].concat.apply([], grupos.map(function(g) { return g.arts; }));
@@ -16134,7 +16141,7 @@ window.LEISECA_RUNTIME = {
         let ch = this._chaveEstado(a), b = document.querySelector('#leiseca-modal .ls-tile[data-art="' + CSS.escape(a) + '"]');
         if (b) {
             b.className = b.className.replace(/\bls-n\d\b/, 'ls-n' + this._nivelArt(a));
-            b.classList.toggle('manual', !!this.estado.prio[ch]);
+            b.classList.toggle('manual', !!this._prioManual(a));
             let l = this._leituraArt(a);
             b.classList.toggle('lido', l === 'lido');
             b.classList.toggle('parcial', l === 'parcial');
@@ -16146,7 +16153,8 @@ window.LEISECA_RUNTIME = {
     definirPrioridade: function(v, a) {
         a = a || this._art;
         let ch = this._chaveEstado(a);
-        if (v) this.estado.prio[ch] = v; else delete this.estado.prio[ch];
+        // Voltar à mesma classificação do sistema = deixar de ter prioridade própria.
+        if (v && v !== this._NOMES_NIVEL[this._nivelSistemaArt(a)]) this.estado.prio[ch] = v; else delete this.estado.prio[ch];
         this._salvar(); this._atualizarArt(a);
     },
     // Artigo inteiro: completo → desmarca todos os dispositivos; senão marca todos.
@@ -16200,7 +16208,7 @@ window.LEISECA_RUNTIME = {
             html += linha(rot, no, a + '§' + p) + alineas(no) + incisos(no, a + '§' + p, 'ls-inc-par');
             if (no.pena) html += '<div class="ls-d ls-n0 ls-inc-par"><span class="ls-rot">Pena –</span> ' + self._esc(no.pena) + '</div>';
         });
-        let ch = this._chaveEstado(a), manual = this.estado.prio[ch], sist = ['', 'regular', 'importante', 'critico'][this._nivelSistemaArt(a)];
+        let manual = this._prioManual(a), sist = this._NOMES_NIVEL[this._nivelSistemaArt(a)];
         let q = inc && !inc.estimada ? (inc.porArt[a] || 0) : null;
         let opcoes = '<option value="">' + (sist ? 'Prioridade' + (inc && inc.estimada ? ' (estimada)' : '') + ': ' + { critico: 'Crítico', importante: 'Importante', regular: 'Regular' }[sist] : 'Sem prioridade') + '</option>' +
             this.NIVEIS.map(function(nv) { return '<option value="' + nv[0] + '"' + (manual === nv[0] ? ' selected' : '') + '>' + nv[1] + '</option>'; }).join('');
