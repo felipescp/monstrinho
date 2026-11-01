@@ -22,5 +22,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
       - name: Acervo → Storage
         run: gcloud storage rsync dados gs://monstrinho-lab.firebasestorage.app/dados --recursive --delete-unmatched-destination-objects --exclude="^materiais/pdfs/"
+      - name: Catálogo público da vitrine (sem questões)
+        run: python3 -I ferramentas/vitrine_publica.py
       - name: App e regras → Firebase
         run: npx --yes firebase-tools@13 deploy --only hosting,storage,firestore:rules --project monstrinho-lab --non-interactive

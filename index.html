@@ -5275,6 +5275,11 @@ window.SALINHA_BACKUP = {
 window.temLoginApp = function() {
     return !window.SALINHA_FB || window.SALINHA_FB.estado() === 'liberado';
 };
+// Bateria do catálogo público (vitrine antes do login): só avisa.
+window.abrirBateriaBloqueada = function() {
+    if (!window.exigirLoginParaSecao()) return;
+    alert('As baterias oficiais ainda estão carregando. Tente de novo em alguns segundos.');
+};
 window.exigirLoginParaSecao = function() {
     if (window.temLoginApp()) return true;
     alert('Entre com Google primeiro (botão "Entrar com Google", no topo) para acessar esta seção.');
@@ -20904,6 +20909,10 @@ window.fecharGlossarioModal = function() {
   <div class="ri" id="ri"></div>
 </div>
 <script src="taxonomia.js"></script>
+<!-- Catálogo público da vitrine (só nomes e contagens, sem questões; gerado
+     no deploy por ferramentas/vitrine_publica.py): antes do login as
+     baterias oficiais aparecem, bloqueadas só no acesso. -->
+<script src="vitrine-publica.js"></script>
 <script>
 // Popula window.MAPA_TAXONOMIA assim que taxonomia.js termina de carregar
 // — SEM esperar o evento 'load' da página (que só dispara depois de TODO
@@ -21978,6 +21987,20 @@ window.renderHomeDashboard = function() {
         acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     } catch(e) { console.error("Erro ao ler o acervo de provas."); }
 
+    // Pedido explícito do usuário: antes do login (ou enquanto o acervo
+    // oficial não chega), as baterias oficiais aparecem na vitrine pelo
+    // catálogo público — só nome, matéria e número de questões — com 🔒;
+    // o acesso continua bloqueado (abrirBateriaBloqueada). Não é gravado
+    // no acervo: some sozinho quando as baterias de verdade chegam.
+    if (Array.isArray(window.VITRINE_PUBLICA) && !acervo.some(function(p) { return p && p.origem_oficial; })) {
+        let jaTem = {}, excluidas = {};
+        acervo.forEach(function(p) { if (p && p.id) jaTem[p.id] = true; });
+        try { excluidas = JSON.parse(window.lsLer('tjpe_v1__cordeiro_acervo_excluidos') || '{}') || {}; } catch (e) {}
+        window.VITRINE_PUBLICA.forEach(function(c) {
+            if (c && c.id && !jaTem[c.id] && !excluidas[c.id]) acervo.push(Object.assign({}, c, { origem_oficial: true, bloqueada: true, dados: { blocos: [] } }));
+        });
+    }
+
     // ==========================================
     // 1. RENDERIZAÇÃO: ÁRVORE E LISTA CERTO/ERRADO
     // ==========================================
@@ -22205,6 +22228,7 @@ function renderizarListaBaterias(filtradas, headerHtml) {
 
                 listCE.innerHTML = filtradas.map(p => {
                     let qtdQ = 0; p.dados.blocos.forEach(b => qtdQ += b.questoes.length);
+                    if (p.bloqueada) qtdQ = p.qtdQuestoes || 0;
                     
                     // 2. Lógica de Identidade Visual (Novo x Resolvido)
                     let isResolvido = !!arquivoMorto[p.id];
@@ -22223,10 +22247,13 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         else if (rendimento >= 50) { bgRend = '#fef3c7'; corRendTexto = '#92400e'; borderRend = '#fde68a'; }
                     }
                     let iconeAcao = isResolvido ? '<span style="font-size: 11px;" title="Ver Resultados">📔</span>' : '<span style="color: var(--danger); font-weight: 800; font-size: 11px;">▶</span>';
+                    if (p.bloqueada) iconeAcao = '<span style="font-size: 11px;" title="Entre com Google para fazer esta bateria">🔒</span>';
 
                     // 3. Lógica de Ação (Abre Resultado x Inicia Simulado)
                     let clickAcao = '';
-                    if (isResolvido) {
+                    if (p.bloqueada) {
+                        clickAcao = `window.abrirBateriaBloqueada()`;
+                    } else if (isResolvido) {
                         clickAcao = `window.abrirResultadoHistorico('${p.id}')`;
                     } else {
                         clickAcao = `window.iniciarSimuladoDaVitrine('${p.id}')`;
@@ -22267,7 +22294,8 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         ? `<input type="checkbox" onclick="event.stopPropagation();" ${selecionado ? 'checked' : ''} onchange="window.toggleSelecionadoBateria('${p.id}')" style="margin-right:2px; flex-shrink:0; cursor:pointer;">`
                         : '';
                     let onclickCard = modoSelecao ? `window.toggleSelecionadoBateria('${p.id}')` : clickAcao;
-                    let kebabHtml = modoSelecao ? '' : `<button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>`;
+                    // Catálogo público (antes do login): sem ações — a bateria ainda nem foi baixada.
+                    let kebabHtml = (modoSelecao || p.bloqueada) ? '' : `<button class="kebab-btn" onclick="window.abrirKebabBateriaVF(event, '${p.id}', ${!!p.origem_oficial})" title="Mais ações">⋮</button>`;
 
 return `
 <div id="card-${p.id}" class="card-item-bateria${selecionado ? ' card-bateria-selecionada' : ''}" style="display: flex; flex-direction: column; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.2s; min-width: 0; width: 100%; box-sizing: border-box;"
@@ -22431,6 +22459,8 @@ window.__modoSelecaoBaterias__ = false;
 window.__selecionadosBaterias__ = {};
 
 window.toggleModoSelecaoBaterias = function() {
+    // Antes do login a vitrine mostra o catálogo público: nada a selecionar/excluir.
+    if (!window.__modoSelecaoBaterias__ && !window.exigirLoginParaSecao()) return;
     window.__modoSelecaoBaterias__ = !window.__modoSelecaoBaterias__;
     window.__selecionadosBaterias__ = {};
     marcarBotaoSelecaoBateriasAtivo();
