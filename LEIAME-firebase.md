@@ -1,6 +1,8 @@
-# Monstrinho no Firebase (laboratório protegido)
+# A Salinha no Firebase (laboratório protegido)
 
-Projeto `monstrinho-lab` · site `https://monstrinho-lab.web.app` · bucket `gs://monstrinho-lab.firebasestorage.app`
+Projeto `monstrinho-lab` · site `https://www.asalinha.com.br` · bucket `gs://monstrinho-lab.firebasestorage.app`
+
+O nome exposto passou a ser **A Salinha**. Os nomes internos (projeto, repositório, chaves `tjpe_v1__`, logo `monstrinho.png`) não mudaram.
 
 ## Como funciona
 
@@ -12,7 +14,9 @@ Projeto `monstrinho-lab` · site `https://monstrinho-lab.web.app` · bucket `gs:
 - **No `index.html`**, o bloco "PORTÃO DE ACESSO", no topo do `<head>`, faz duas coisas:
   - mostra a tela "Entrar com Google";
   - troca cada leitura de `dados/…` por uma leitura no Storage com o token do usuário.
+- **Endereço único:** o portão só roda em `www.asalinha.com.br`. Os endereços `monstrinho-lab.web.app`, `monstrinho-lab.firebaseapp.com` e `asalinha.com.br` redirecionam para ele. Cada endereço tem o seu armazenamento no navegador, por isso só um pode valer.
 - **Fora do Firebase**, o portão não roda: no `localhost` e no GitHub Pages tudo funciona como antes.
+- **No site, o login Google basta para abrir as seções.** O login do GitHub fica só para o backup no Gist.
 - **Sincronização:** a do Gist continua igual. A troca pelo Firestore é uma etapa futura.
 
 ## Primeira publicação (manual, uma vez)
@@ -85,3 +89,29 @@ O resultado aparece na aba Actions. Para desligar, mude `FIREBASE_DEPLOY` para q
 Crie `acessos/{e-mail-da-pessoa}` com `ativo: true`. Para bloquear, mude para `false` ou apague o documento.
 
 No futuro, esse documento passa a ser gravado pela Cloud Function de pagamento.
+
+## Domínio próprio (www.asalinha.com.br)
+
+1. **Firebase → Hosting → Adicionar domínio personalizado:**
+   - `www.asalinha.com.br`;
+   - `asalinha.com.br`, com a opção de **redirecionar** para `www.asalinha.com.br`.
+2. **DNS** (Registro.br ou o provedor do domínio): crie os registros que o Firebase mostrar (TXT de verificação e A/CNAME). **Não apague** registros existentes, como os de e-mail (MX). O certificado HTTPS sai em minutos, podendo levar até 24 h.
+3. **Authentication → Configurações → Domínios autorizados:** adicione `www.asalinha.com.br` e `asalinha.com.br`.
+4. **Configurações do projeto → Geral → Nome voltado ao público:** `A Salinha`.
+5. **Worker do Cloudflare → Settings → Variables → `ALLOWED_ORIGIN`:**
+   `https://felipescp.github.io,https://monstrinho-lab.web.app,https://www.asalinha.com.br`
+6. **CORS do Storage, com o `cors.json` novo:**
+   ```
+   gcloud storage buckets update gs://monstrinho-lab.firebasestorage.app --cors-file=cors.json
+   ```
+
+**Só depois** de `https://www.asalinha.com.br` abrir com o cadeado de HTTPS, publique o código no `main`. A partir daí, `monstrinho-lab.web.app` passa a redirecionar para o domínio.
+
+Se você usou o `monstrinho-lab.web.app` antes, faça lá **📁 Arquivo → 📤 Backup** antes de publicar. Os dados de lá não aparecem no domínio novo, e depois do redirecionamento o endereço antigo não abre mais.
+
+## Levar os dados do GitHub Pages para o site
+
+1. No endereço antigo, **📁 Arquivo → 📤 Backup**.
+2. Em `www.asalinha.com.br`, **Entrar com Google** e depois **📁 Arquivo → 📥 Merge (mantém local)**, escolhendo o arquivo.
+
+Use sempre **Merge**, nunca "Restaurar".

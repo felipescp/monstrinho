@@ -3,8 +3,11 @@
 <head>
 <script>
 // ─────────────────────────────────────────────────────────────────────────
-// PORTÃO DE ACESSO (Firebase) — só no site publicado no Firebase Hosting
-// (*.web.app / *.firebaseapp.com). No localhost e no GitHub Pages nada muda.
+// PORTÃO DE ACESSO (Firebase) — só no site publicado no Firebase Hosting, no
+// domínio www.asalinha.com.br. Os endereços padrão do Firebase (*.web.app /
+// *.firebaseapp.com) e o domínio sem "www" redirecionam para ele: cada
+// endereço tem o seu armazenamento no navegador, então só um pode valer.
+// No localhost e no GitHub Pages nada muda.
 // O acervo (dados/) não vai para o Hosting: fica no Cloud Storage, e as
 // regras (storage.rules) só entregam a quem entrou com Google e tem o
 // documento acessos/{e-mail} no Firestore. Este bloco:
@@ -15,8 +18,13 @@
 // Ver LEIAME-firebase.md.
 // ─────────────────────────────────────────────────────────────────────────
 (function() {
-    var HOST = location.hostname;
-    if (!/\.(web\.app|firebaseapp\.com)$/.test(HOST)) return;
+    var HOST = location.hostname, DOMINIO = 'www.asalinha.com.br';
+    if (/\.(web\.app|firebaseapp\.com)$/.test(HOST) || HOST === 'asalinha.com.br') {
+        document.documentElement.style.display = 'none';
+        location.replace('https://' + DOMINIO + location.pathname + location.search + location.hash);
+        return;
+    }
+    if (HOST !== DOMINIO) return;
     var CONFIG = {
         apiKey: 'AIzaSyC9nBNb9wkqUj3UN55SbhKhXrOMeDndCyE',
         authDomain: 'monstrinho-lab.firebaseapp.com',
@@ -67,7 +75,7 @@
         '#portao-acesso button:hover{background:#f1f5f9}' +
         '#portao-acesso button + button{margin-top:8px;border:none;font-weight:600;color:#64748b;font-size:12px}' +
         '#portao-acesso .pa-erro{color:#dc2626;font-size:12px;margin-top:12px;min-height:16px}' +
-        '</style><div class="pa-caixa"><img src="monstrinho.png" alt=""><h1>Monstrinho</h1><div id="pa-corpo"><p>Carregando…</p></div><div class="pa-erro" id="pa-erro"></div></div>';
+        '</style><div class="pa-caixa"><img src="monstrinho.png" alt=""><h1>A Salinha</h1><div id="pa-corpo"><p>Carregando…</p></div><div class="pa-erro" id="pa-erro"></div></div>';
     document.documentElement.appendChild(tela);
     function corpo(html) { document.getElementById('pa-corpo').innerHTML = html; }
     function erro(t) { document.getElementById('pa-erro').textContent = t || ''; }
@@ -126,7 +134,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monstrinho</title>
+  <title>A Salinha</title>
   <link rel="icon" href="./favicon.ico?v=1" type="image/x-icon">
   
 <script>
@@ -1583,7 +1591,7 @@ try {
     <div style="display:flex; align-items:center; gap:15px;">
     <img 
             src="./monstrinho.png" 
-            alt="Monstrinho"
+            alt="A Salinha"
             style="
                 width:36px;
                 height:36px;
@@ -1592,7 +1600,7 @@ try {
             "
         >
     <h1 style="display:flex; align-items:center; gap:12px; margin:0;">
-        MONSTRINHO 
+        A SALINHA 
         <span style="font-weight:400;">
             | A MÁQUINA DE MOER
         </span>
@@ -1791,7 +1799,7 @@ try {
             <div class="fc-popup-header" style="font-family:var(--font-display); font-size:15px; font-weight:800; color:var(--text-main);">🔑 Entrar com GitHub</div>
             <button onclick="window.SALINHA_GITHUB_OAUTH.fecharModal()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div style="font-size:12px; color:var(--text-main);">Abra o link abaixo e digite o código pra autorizar o Monstrinho a usar seus próprios Gists (backup pessoal — só seu, ninguém mais tem acesso):</div>
+        <div style="font-size:12px; color:var(--text-main);">Abra o link abaixo e digite o código pra autorizar A Salinha a usar seus próprios Gists (backup pessoal — só seu, ninguém mais tem acesso):</div>
         <div class="oauth-codigo" id="oauth-codigo">——</div>
         <a id="oauth-link" href="#" target="_blank" rel="noopener" style="font-size:13px; font-weight:700; color:var(--app-primary); word-break:break-all;"></a>
         <div class="oauth-status" id="oauth-status"></div>
@@ -5274,7 +5282,7 @@ window.SALINHA_GITHUB_OAUTH = {
 
     abrirModal: function() {
         if (!this.WORKER_URL) {
-            alert('O login com GitHub ainda não foi configurado neste site. Fale com quem administra o Monstrinho.');
+            alert('O login com GitHub ainda não foi configurado neste site. Fale com quem administra A Salinha.');
             return;
         }
         document.getElementById('oauth-codigo').textContent = '——';
@@ -26634,7 +26642,7 @@ async function estimarUsoArmazenamento() {
         let mbMonstrinho = (medicaoLocal.totalMonstrinho / (1024 * 1024)).toFixed(1);
         let mbOutros = (medicaoLocal.totalOutros / (1024 * 1024)).toFixed(1);
         let sufixoOutros = medicaoLocal.totalOutros > 1024 ? (' + ' + mbOutros + ' MB de outras chaves nesta origem') : '';
-        return ' (localStorage desta origem: Monstrinho usa ' + mbMonstrinho + ' MB' + sufixoOutros + ' — a maioria dos navegadores trava esse armazenamento específico em ~5–10 MB por origem, bem menor que a cota geral de disco; por isso, pode acontecer mesmo com bastante espaço livre no dispositivo)';
+        return ' (localStorage desta origem: A Salinha usa ' + mbMonstrinho + ' MB' + sufixoOutros + ' — a maioria dos navegadores trava esse armazenamento específico em ~5–10 MB por origem, bem menor que a cota geral de disco; por isso, pode acontecer mesmo com bastante espaço livre no dispositivo)';
     } catch (e) {
         return '';
     }
