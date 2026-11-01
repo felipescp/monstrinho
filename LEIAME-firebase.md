@@ -98,6 +98,25 @@ O usuário só consegue criar o próprio documento, e sempre com `ativo: false`:
 
 No futuro, esse documento passa a ser gravado pela Cloud Function de pagamento.
 
+## Conta de administração (papel "admin")
+
+Algumas opções são só da administração:
+- exportações completas do acervo (Exportar Tudo / Disciplina / Tópico / Visíveis, .json e .md), na Jurisprudência, nos Esquemas, no Glossário, nos Flashcards, em Prazos e em Penas;
+- "Exportar Grupo" e "Exportar Selecionadas" das baterias, e exportar uma bateria oficial;
+- importações em massa de Jurisprudência, Glossário e Flashcards;
+- "📥 Restaurar (apaga atual)".
+
+Para todos continuam: todas as seções, 📤 Backup, 📥 Merge, Gerar Questões e a importação em massa de Esquemas.
+
+Para marcar uma conta como admin:
+1. No console do Firebase, abra **Firestore Database → acessos →** o documento com o e-mail da conta.
+2. Clique em **Adicionar campo**: nome `papel`, tipo `string`, valor `admin`.
+3. Na conta, recarregue o site. As opções aparecem logo depois do login.
+
+Para tirar o privilégio, apague o campo `papel`. Ninguém consegue se dar esse papel pelo app: `firestore.rules` só deixa o usuário criar o próprio pedido (`ativo: false`, sem outros campos) e proíbe alterar o documento.
+
+Os botões somem para quem não é admin, e as funções também recusam. Ainda assim, o que o aluno já baixou para estudar (cards, esquemas, baterias abertas) está no navegador dele: a restrição impede a cópia fácil do acervo inteiro, não a de quem tenha conhecimento técnico.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

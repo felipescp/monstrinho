@@ -135,7 +135,20 @@
     };
 
     // ── Acesso ──
-    function liberarAcesso() { mudar('liberado'); liberar(); }
+    function liberarAcesso() { mudar('liberado'); liberar(); lerPapel(); }
+    // Papel (pedido explícito do usuário): "admin" no documento
+    // acessos/{e-mail} — marcado à mão no console, como o "ativo"; ninguém o
+    // grava pelo app (firestore.rules). Libera exportações completas e
+    // curadoria (ver window.ehAdmin). Sem o campo, conta comum.
+    FB.papel = null;
+    function lerPapel() {
+        if (!usuario) return;
+        FB.db().then(function(db) { return db.collection('acessos').doc(usuario.email).get(); })
+            .then(function(d) {
+                FB.papel = (d && d.exists && d.data().papel) || null;
+                window.dispatchEvent(new CustomEvent('salinha-papel', { detail: { papel: FB.papel } }));
+            }, function(e) { console.warn('[ACESSO] Não foi possível ler o papel da conta:', e); });
+    }
     // Sem acesso: registra o pedido em acessos/{e-mail} com ativo:false
     // (firestore.rules só deixa o próprio usuário criar o seu, e só assim).
     // A liberação é o administrador trocar ativo para true no console. Se o
@@ -1651,6 +1664,7 @@ try {
          No modo noturno ganha um fundo branco arredondado: a luminária é
          azul-escura e sumiria sobre o cabeçalho escuro. -->
     <style>
+        body:not(.salinha-admin) .so-admin { display:none !important; } /* exclusivo do admin (ver window.ehAdmin) */
         .logo-salinha { height:44px; width:auto; display:block; image-rendering:auto; }
         body.dark .logo-salinha { background:#fff; border-radius:8px; padding:3px 4px; box-sizing:content-box; height:38px; }
         /* Sem subtítulo, o nome ganha mais corpo (antes 16 px, ver .header h1). */
@@ -1685,7 +1699,7 @@ try {
                     <button onclick="window.toggleKebab(event)" class="b1" style="height:26px; font-size:9.5px; background: var(--bg-white); border: 1px solid var(--border-color); color: var(--text-muted);" title="Backup e restauração por arquivo — válvula de emergência">📁 Arquivo</button>
                     <div class="kebab-dropdown">
                         <div class="kebab-item" onclick="window.SALINHA_BACKUP.exportar()">📤 Backup</div>
-                        <div class="kebab-item" onclick="document.getElementById('salinha-backup-input').click()">📥 Restaurar (apaga atual)</div>
+                        <div class="so-admin kebab-item" onclick="document.getElementById('salinha-backup-input').click()">📥 Restaurar (apaga atual)</div>
                         <div class="kebab-item" onclick="document.getElementById('import-incremental').click()">📥 Merge (mantém local)</div>
                         <div class="kebab-item" onclick="window.zerarAcervoTotal()" style="color:var(--danger);">🗑️ Zerar Acervo</div>
                     </div>
@@ -1898,10 +1912,10 @@ window.SALINHA_UI_AUTH = (function() {
     <div class="kebab-trigger" onclick="window.toggleKebab(event)">⋮</div>
 
     <div class="kebab-dropdown">
-        <div class="kebab-item" onclick="window.importarGrupoJson('ce');">
+        <div class="so-admin kebab-item" onclick="window.importarGrupoJson('ce');">
             📥 Importar JSON
         </div>
-        <div class="kebab-item" onclick="window.exportarGrupoJson('ce');">
+        <div class="so-admin kebab-item" onclick="window.exportarGrupoJson('ce');">
             📤 Exportar Grupo
         </div>
         <div class="kebab-item" onclick="window.excluirGrupoTotal('ce');" style="color:var(--danger);">
@@ -1935,7 +1949,7 @@ window.SALINHA_UI_AUTH = (function() {
                                 </div>
                                 <div id="grupo-toolbar-baterias-selecao" style="display:none; gap:4px; flex-shrink:0;">
                                     <button id="btn-selecionar-todas-baterias" onclick="window.selecionarTodasBateriasVisiveis()" title="Marca todas as baterias visíveis na lista atual" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Selecionar Todas</button>
-                                    <button id="btn-exportar-selecionadas-baterias" onclick="window.exportarBateriasSelecionadas()" title="Exporta as baterias marcadas num JSON — mesma modalidade de 'Exportar Grupo', apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--app-primary); border-radius:5px; background:var(--app-primary); color:#fff; cursor:pointer;">Exportar Selecionadas</button>
+                                    <button class="so-admin" id="btn-exportar-selecionadas-baterias" onclick="window.exportarBateriasSelecionadas()" title="Exporta as baterias marcadas num JSON — mesma modalidade de 'Exportar Grupo', apto pro repositório de grupos oficiais" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--app-primary); border-radius:5px; background:var(--app-primary); color:#fff; cursor:pointer;">Exportar Selecionadas</button>
                                     <button id="btn-excluir-selecionadas-baterias" onclick="window.excluirBateriasSelecionadas()" title="Exclui permanentemente as baterias marcadas" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--danger); border-radius:5px; background:var(--bg-white); color:var(--danger); cursor:pointer;">Excluir Selecionadas</button>
                                 </div>
                                 <div style="font-size: 10px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;" id="header-filtro-ce">SELECIONE UM TÓPICO</div>
@@ -5275,6 +5289,56 @@ window.SALINHA_BACKUP = {
 window.temLoginApp = function() {
     return !window.SALINHA_FB || window.SALINHA_FB.estado() === 'liberado';
 };
+// ── Privilégios (pedido explícito do usuário) ──
+// Exportações completas do acervo e curadoria (importações em massa de
+// Jurisprudência, Glossário e Flashcards; baterias oficiais em grupo) só
+// para a conta com papel "admin" em acessos/{e-mail}. Botões com a classe
+// .so-admin somem para os demais (CSS + classe salinha-admin no <body>); as
+// funções também recusam (travarParaAdmin), caso sejam chamadas por fora.
+// Sem Firebase (localhost sem ?lab=1, desenvolvimento) tudo fica liberado.
+window.ehAdmin = function() {
+    if (!window.SALINHA_FB) return true;
+    return window.SALINHA_FB.estado() === 'liberado' && window.SALINHA_FB.papel === 'admin';
+};
+window.exigirAdmin = function() {
+    if (window.ehAdmin()) return true;
+    alert('Esta opção é exclusiva da administração d’A Salinha.');
+    return false;
+};
+(function() {
+    function aplicar() { if (document.body) document.body.classList.toggle('salinha-admin', window.ehAdmin()); }
+    window.addEventListener('salinha-papel', aplicar);
+    window.addEventListener('salinha-auth', aplicar);
+    document.addEventListener('DOMContentLoaded', aplicar);
+    // Travas nas funções (definidas em vários pontos do arquivo): na carga completa.
+    const TRAVAS = {
+        JURISPRUDENCIA_RUNTIME: ['exportarTudo', 'exportarTudoMarkdown', 'exportarTudoHtml', 'exportarDisciplina', 'exportarDisciplinaMarkdown', 'exportarDisciplinaHtml',
+            'exportarTopico', 'exportarTopicoMarkdown', 'exportarTopicoHtml', 'exportarMarkdown', 'exportarHtml', 'abrirModalImportar'],
+        ESQUEMAS_RUNTIME: ['exportarTudo', 'exportarTudoMarkdown', 'exportarTudoHtml', 'exportarDisciplina', 'exportarDisciplinaMarkdown', 'exportarDisciplinaHtml',
+            'exportarTopico', 'exportarTopicoMarkdown', 'exportarTopicoHtml'],
+        GLOSSARIO_RUNTIME: ['exportarTudo', 'exportarTudoMarkdown', 'exportarHtmlTudo', 'exportarDisciplina', 'exportarDisciplinaMarkdown', 'exportarHtmlDisciplina',
+            'exportarTopico', 'exportarTopicoMarkdown', 'exportarHtmlTopico', 'abrirModalImportar', 'importarArquivoJson'],
+        FLASHCARDS_NB_RUNTIME: ['escolherArquivo', 'exportarDeck', 'exportarTudo', 'exportarDisciplina', 'exportarTopico'],
+        PRAZOS_RUNTIME: ['exportar'],
+        PENAS_RUNTIME: ['exportar'],
+        '': ['importarGrupoJson', 'exportarGrupoJson', 'exportarBateriasSelecionadas', 'baixarSimuladoAcervo', 'editarSimuladoAcervo']
+    };
+    function travarParaAdmin() {
+        Object.keys(TRAVAS).forEach(function(nome) {
+            let alvo = nome ? window[nome] : window;
+            if (!alvo) return;
+            TRAVAS[nome].forEach(function(f) {
+                let orig = alvo[f];
+                if (typeof orig !== 'function' || orig.__travadaAdmin) return;
+                let travada = function() { if (!window.exigirAdmin()) return; return orig.apply(this, arguments); };
+                travada.__travadaAdmin = true;
+                alvo[f] = travada;
+            });
+        });
+    }
+    window.addEventListener('load', travarParaAdmin);
+})();
+
 // Bateria do catálogo público (vitrine antes do login): só avisa.
 window.abrirBateriaBloqueada = function() {
     if (!window.exigirLoginParaSecao()) return;
@@ -11934,8 +11998,8 @@ window.fecharPraticarCadernoModal = function() {
             <div class="fcnb-cabecalho-acoes">
                 <button class="fcnb-cabecalho-btn fcnb-btn-favoritos" id="fcnb-btn-favoritos" onclick="window.FLASHCARDS_NB_RUNTIME.alternarModoFavoritos()">⭐ Favoritos</button>
                 <button class="fcnb-cabecalho-btn fcnb-btn-criar" onclick="window.FLASHCARDS_NB_RUNTIME.abrirModalCriar()">+ Criar Flashcard</button>
-                <button class="fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
-                <details class="fcnb-export-menu" title="Gera o .json no formato dos baralhos oficiais: salve em dados/flashcards/ e acrescente o caminho em dados/manifesto-flashcards.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="fcnb-export-opcoes"><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTudo()">Tudo</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarDisciplina()">Disciplina selecionada</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTopico()">Tópico (L2) selecionado</button></div></details>
+                <button class="so-admin fcnb-cabecalho-btn" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">&#x1F4E5; Importar .json</button>
+                <details class="so-admin fcnb-export-menu" title="Gera o .json no formato dos baralhos oficiais: salve em dados/flashcards/ e acrescente o caminho em dados/manifesto-flashcards.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="fcnb-export-opcoes"><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTudo()">Tudo</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarDisciplina()">Disciplina selecionada</button><button onclick="window.FLASHCARDS_NB_RUNTIME.exportarTopico()">Tópico (L2) selecionado</button></div></details>
                 <button class="analytics-close-btn" id="fcnb-modal-btn-maximizar" onclick="window.alternarMaximizarFlashcardsNbModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharFlashcardsNbModal()">&#x2715;</button>
             </div>
@@ -12559,7 +12623,7 @@ window.FLASHCARDS_NB_RUNTIME = {
                     (mostrarL2 ? '<span class="fcnb-card-l2" title="' + self._escapar(l2) + '">' + self._escapar(l2) + '</span>' : '') +
                     '<span class="fcnb-card-acoes">' +
                         (d.origem_oficial ? '<span class="fcnb-selo-oficial" title="Baralho oficial">(Oficial)</span>' : '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.renomearDeck(\'' + d.id + '\')" title="Renomear">✏️</button>') +
-                        '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.exportarDeck(\'' + d.id + '\')" title="Exportar este baralho (.json)">📤</button>' +
+                        '<button class="fcnb-btn-icone so-admin" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.exportarDeck(\'' + d.id + '\')" title="Exportar este baralho (.json)">📤</button>' +
                         '<button class="fcnb-btn-icone" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.reiniciarProgresso(\'' + d.id + '\')" title="Reiniciar progresso">↺</button>' +
                         (d.origem_oficial ? '' : '<button class="fcnb-btn-icone perigo" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.excluirDeck(\'' + d.id + '\')" title="Excluir baralho">🗑️</button>') +
                     '</span>' +
@@ -12577,7 +12641,7 @@ window.FLASHCARDS_NB_RUNTIME = {
             aviso = '<div class="fc-vazio-col" style="grid-column:1/-1;">' + (busca ? 'Nenhum baralho encontrado para essa busca.' : 'Nenhum baralho nesta divisão ainda. Importe um arquivo .json do NotebookLM.') + '</div>';
         }
         scroll.innerHTML = '<div class="fcnb-cards-grid">' + cardsHtml + aviso +
-            '<div class="fcnb-card-add" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">➕ Importar flashcards (.json)</div></div>';
+            '<div class="fcnb-card-add so-admin" onclick="window.FLASHCARDS_NB_RUNTIME.escolherArquivo()">➕ Importar flashcards (.json)</div></div>';
         let info = document.getElementById('fcnb-tb-info');
         if (info) info.textContent = lista.length + ' baralho' + (lista.length === 1 ? '' : 's');
     },
@@ -13621,7 +13685,7 @@ window.carregarFlashcardsOficiais = async function() {
             <div class="prz-cab-prio" id="prz-cab-prio"></div>
             <div class="prz-cabecalho-acoes">
                 <button class="prz-cab-btn primario" onclick="window.PRAZOS_RUNTIME.abrirModalCriar()">+ Criar Prazos</button>
-                <details class="prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
+                <details class="so-admin prz-export-menu" title="Gera o .json no formato da base oficial: salve em dados/prazos/ e acrescente o caminho em dados/manifesto-prazos.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="prz-export-opcoes"><button onclick="window.PRAZOS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PRAZOS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
                 <button class="analytics-close-btn" id="prz-modal-btn-maximizar" onclick="window.alternarMaximizarPrazosModal()" title="Minimizar">🗗</button>
                 <button class="analytics-close-btn" onclick="window.fecharPrazosModal()">&#x2715;</button>
             </div>
@@ -14618,7 +14682,7 @@ window.carregarPrazosOficiais = async function() {
             <div class="analytics-modal-title">⛓️ Penas</div>
             <div class="pen-cabecalho-acoes">
                 <button class="pen-cab-btn primario" onclick="window.PENAS_RUNTIME.abrirModalCriar()">+ Criar Penas</button>
-                <details class="pen-export-menu" title="Gera o .json no formato da base oficial: salve em dados/penas/ e acrescente o caminho em dados/manifesto-penas.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="pen-export-opcoes"><button onclick="window.PENAS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PENAS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
+                <details class="so-admin pen-export-menu" title="Gera o .json no formato da base oficial: salve em dados/penas/ e acrescente o caminho em dados/manifesto-penas.txt"><summary>&#x1F4E4; Exportar .json &#x25BE;</summary><div class="pen-export-opcoes"><button onclick="window.PENAS_RUNTIME.exportar('tudo')">Tudo</button><button onclick="window.PENAS_RUNTIME.exportar('diploma')">Diploma selecionado</button></div></details>
                 <button class="analytics-close-btn" id="pen-modal-btn-maximizar" onclick="window.alternarMaximizarPenasModal()" title="Minimizar">🗗</button>
                 <button class="analytics-close-btn" onclick="window.fecharPenasModal()">&#x2715;</button>
             </div>
@@ -18482,11 +18546,11 @@ Object.assign(window.PENAS_RUNTIME, window.ESTRUTURA_MIXIN, {
     <div class="analytics-modal-header" style="flex-shrink:0; height:auto; min-height:54px; flex-wrap:wrap; gap:8px 0; padding:10px 18px;">
         <div class="analytics-modal-title">📖 Glossário</div>
         <div class="esq-cabecalho-acoes">
-            <button class="esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
-            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTudo()">Exportar .html</button></div></details>
-            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()">Exportar .html</button></div></details>
-            <details class="esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()">Exportar .html</button></div></details>
-            <button class="esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
+            <button class="so-admin esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
+            <details class="so-admin esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTudo()">Exportar .html</button></div></details>
+            <details class="so-admin esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlDisciplina()">Exportar .html</button></div></details>
+            <details class="so-admin esq-export-menu" name="glos-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.GLOSSARIO_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.GLOSSARIO_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.GLOSSARIO_RUNTIME.exportarHtmlTopico()">Exportar .html</button></div></details>
+            <button class="so-admin esq-cabecalho-btn" onclick="window.GLOSSARIO_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
             <button class="analytics-close-btn" id="glos-modal-btn-maximizar" onclick="window.alternarMaximizarGlossarioModal()" title="Maximizar">⛶</button>
             <button class="analytics-close-btn" onclick="window.fecharGlossarioModal()">✕</button>
         </div>
@@ -21184,7 +21248,7 @@ window.abrirKebabMenu = function(event, idProva) {
     event.stopPropagation();
     
     // Simulação de Security Rule (No Firebase, checaremos o token JWT)
-    if (typeof IS_ADMIN === 'undefined' || !IS_ADMIN) return;
+    if (!window.ehAdmin()) return;
 
     let menu = document.getElementById('admin-kebab-menu');
     if (!menu) {
@@ -21250,11 +21314,13 @@ window.abrirKebabBateriaVF = function(event, id, ehOficial) {
         ? `<div class="kebab-item" onclick="window.compartilharBateria('${id}'); window.fecharKebabMenu();"><span>🔗</span> Copiar Link</div>`
         : '';
 
+    // Exportar uma bateria OFICIAL é curadoria (só admin); a pessoal, de todos.
+    let itemExportar = (ehOficial && !window.ehAdmin()) ? '' : `<div class="kebab-item" onclick="window.exportarEntidadeJson('baterias_vf', '${id}'); window.fecharKebabMenu();">
+            <span>📤</span> Exportar JSON
+        </div>`;
     menu.innerHTML = `
         ${itemCompartilhar}
-        <div class="kebab-item" onclick="window.exportarEntidadeJson('baterias_vf', '${id}'); window.fecharKebabMenu();">
-            <span>📤</span> Exportar JSON
-        </div>
+        ${itemExportar}
         <div class="kebab-item danger" onclick="window.excluirSimuladoIndividual('${id}'); window.fecharKebabMenu();">
             <span>✕</span> Excluir
         </div>
@@ -29755,9 +29821,9 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
-                <details class="esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
                 <button class="analytics-close-btn" id="esq-modal-btn-maximizar" onclick="window.alternarMaximizarEsquemasModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">&#x2715;</button>
@@ -33713,12 +33779,12 @@ window.carregarEsquemasOficiais = async function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:10px;">
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
-                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
-                <details class="esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
-                <button onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtml()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em HTML estilizado — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🎨 Exportar Visíveis (.html)</button>
+                <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
+                <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
+                <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
+                <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtml()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em HTML estilizado — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🎨 Exportar Visíveis (.html)</button>
                 <button class="analytics-close-btn" id="jur-modal-btn-maximizar" onclick="window.alternarMaximizarJurisprudenciaModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
