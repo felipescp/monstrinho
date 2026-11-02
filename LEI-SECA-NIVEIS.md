@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 158 diplomas · 1. Pura: 158 · 2. Incidência: 152 · 3. Comentado: 2 (48 notas).
+**Totais:** 158 diplomas · 1. Pura: 158 · 2. Incidência: 153 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -127,7 +127,7 @@
 | Lei de Drogas (Lei 11.343) | X | X | - |
 | Estatuto do Desarmamento (Lei 10.826) | X | X | - |
 | Organização Criminosa (Lei 12.850) | X | X | - |
-| Lei Antiterrorismo (Lei 13.260) | X | - | - |
+| Lei Antiterrorismo (Lei 13.260) | X | X | - |
 | Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358) | X | X | - |
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
 | Abuso de Autoridade (Lei 13.869) | X | X | - |
