@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 161 diplomas · 1. Pura: 161 · 2. Incidência: 156 · 3. Comentado: 2 (48 notas).
+**Totais:** 162 diplomas · 1. Pura: 162 · 2. Incidência: 156 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -184,6 +184,7 @@
 | Sociedades por Ações (Lei 6.404) | X | X | - |
 | Recuperação e Falência (Lei 11.101) | X | X | - |
 | Protesto de Títulos (Lei 9.492) | X | X | - |
+| Lei Uniforme de Genebra – letra de câmbio e nota promissória (Decreto 57.663/1966) | X | - | - |
 
 ### Direito do Consumidor
 
