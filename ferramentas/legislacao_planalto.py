@@ -211,6 +211,11 @@ def linhas_md(caminho):
                         for k in range(i, j + 1): linhas[k] = '\n'
                     break
     for l in linhas:
+        # Letra inicial separada do resto da palavra pelo negrito, em título ("D **o Direito à Cultura**",
+        # "Do D **ireito à Cidadania…**", Lei 12.852).
+        if linha_titulo(l.strip()): l = re.sub(r'(?<![\w*])([A-ZÀ-Ú]) \*\*(?=[a-zà-ú])', r'**\1', l)
+        # Número partido pelo fim do link ("[12.780, de 9 de janeiro de 201](…) 3.", Lei 12.852, art. 23, § 8º).
+        l = re.sub(r'(\d)\]\(([^)\s]*)\)\s+(\d{1,3})(?=[.,;]?(?:\s|$))', r'\1\3](\2)', l)
         l = junta_partidas(l, vocab)
         # Bloco ">" do Markdown: às vezes é só formatação de dispositivo real
         # ("> Art. 234-A." no CP); às vezes é texto citado por artigo que altera
