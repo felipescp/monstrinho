@@ -20,6 +20,9 @@ gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/2780c72e-execuca
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/1b7ea2e8-improbidade.md L8429 "Lei de Improbidade Administrativa" https://www.planalto.gov.br/ccivil_03/leis/l8429compilada.htm dados/legislacao/lei-8429.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/ff9ef031-8112.md L8112 "Regime Jurídico dos Servidores Públicos Federais" https://www.planalto.gov.br/ccivil_03/leis/l8112cons.htm dados/legislacao/lei-8112.json 2026-10-09
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/a2dc1cbb-ctb.md CTB "Código de Trânsito Brasileiro" https://www.planalto.gov.br/ccivil_03/leis/l9503compilado.htm dados/legislacao/ctb.json 2026-10-09
+# Lei 8.906: a fonte desta geração terminava no art. 67; os arts. 68 a 87 (Título III e IV) foram
+# acrescentados à mão no JSON a partir do texto do material de questões (§ 1º do art. 69 na redação
+# da Lei 14.365/2022). Ao regenerar com fonte completa, conferir se os arts. 68–87 vieram.
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/430e4539-oab.md L8906 "Estatuto da Advocacia e da OAB" https://www.planalto.gov.br/ccivil_03/leis/l8906.htm dados/legislacao/lei-8906.json 2026-10-09
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/f37daa12-L8213compilado.md L8213 "Lei de Benefícios da Previdência Social" https://www.planalto.gov.br/ccivil_03/leis/l8213compilado.htm dados/legislacao/lei-8213.json 2026-10-26
 gera /root/.claude/uploads/87d883ad-5729-5140-899c-0aa78d286183/f9b5fbea-processoadministrativo.md L9784 "Lei do Processo Administrativo Federal" https://www.planalto.gov.br/ccivil_03/leis/l9784.htm dados/legislacao/lei-9784.json 2026-10-11

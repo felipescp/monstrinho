@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 143 diplomas · 1. Pura: 143 · 2. Incidência: 137 · 3. Comentado: 2 (48 notas).
+**Totais:** 143 diplomas · 1. Pura: 143 · 2. Incidência: 138 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -228,4 +228,4 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Estatuto da OAB (Lei 8.906) | X | - | - |
+| Estatuto da OAB (Lei 8.906) | X | X | - |
