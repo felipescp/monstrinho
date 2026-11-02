@@ -16,7 +16,7 @@ Formato de saída:
   "alt" = lei mais recente anotada no dispositivo ("Lei 15.397/2026");
   "revogado": true quando o dispositivo foi revogado.
 """
-import json, re, sys, datetime
+import difflib, json, re, sys, datetime
 
 def limpa(l):
     # Pontuação solta antes do artigo (".Art. 2º-A.", Lei 9.873): sai, senão o artigo não é reconhecido.
@@ -451,9 +451,11 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             cab = []
         # Nome em maiúsculas com ":"/";" no fim ("…DOS DINHEIROS PÚBLICOS:", "…DECISÕES JUDICIÁRIAS;") ou com sigla entre
         # parênteses ("…SERVIÇOS (CGIBS)"), Lei 1.079: vale, sem a pontuação final.
+        # (Também o fim, com ponto, de nome em maiúsculas partido em duas linhas: "DA DISPOSIÇÃO POST MORTEM DE TECIDOS," /
+        # "ÓRGÃOS E PARTES DO CORPO HUMANO PARA FINS DE TRANSPLANTE.", Lei 9.434, antes do art. 3º.)
         nome_maiusc = cab is not None and t and not re.search(r'[a-zà-ú]', t) and re.search(r'[A-ZÀ-Ú]{3}', t) \
-            and re.search(r'[:;]$|\([A-ZÀ-Ú]+\)$', t)
-        if nome_maiusc: t = t.rstrip(':; ')
+            and (re.search(r'[:;]$|\([A-ZÀ-Ú]+\)$', t) or cab and cab[-1].endswith(',') and t.endswith('.'))
+        if nome_maiusc: t = t.rstrip(':;. ')
         if cab is not None and t and len(t) < 150 and (nome_maiusc or not re.search(r'[.;:!?)”"»]$', t)) and not l.startswith('**'):
             # Nome todo em minúsculas ("da informatização do processo judicial", Lei 11.419): só a inicial sobe.
             cab.append(t[0].upper() + t[1:] if not cab and not re.search(r'[A-ZÀ-Ú]', t) else t)
@@ -489,6 +491,12 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             if chave == '1' and velho and not velho.get('revogado') and (velho.get('texto') == texto
                     or re.search(r'Reda[çc][ãa]o\s+dada|Renumerad', pu.group(1) if pu else m.group(3), re.I)):
                 del art['par']['pu']
+            # O inverso: "Parágrafo único" antigo, sem risco, depois do § 1º que o substituiu, com texto quase igual
+            # (Lei 9.434, art. 10: §§ 1º e 2º da Lei 10.211 e, em seguida, o parágrafo único original): sai.
+            if chave == 'pu' and art.get('par', {}).get('1') and not p.get('alt') and difflib.SequenceMatcher(
+                    None, art['par']['1'].get('texto', ''), texto).ratio() > 0.9:
+                seg, inc, rubrica = {'texto': ''}, None, None
+                continue
             art.setdefault('par', {})[chave] = p
             seg, inc, rubrica = p, None, None
             continue
