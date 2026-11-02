@@ -27,7 +27,8 @@ def limpa(l):
     l = re.sub(r'\[((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\]', r'[(\1]', l)
     # Anotação sem o ")" de fechamento: "[(Incluído pela Lei nº 14.382, de 2022](…)" (Lei 6.015, art. 46, § 6º).
     # (Se o ")" vem logo depois do link, "[(Incluído pela Lei nº 14.026, de 2020](…))", não é o caso.)
-    l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\d{4})\](\([^()\s]*\))(?!\s*\))', r'[\1)]\2', l)
+    # (Também "[(Vide Lei nº 14.133, de 2021](…)", LC 123, arts. 43 a 49.)
+    l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa]|Vide)[^\]()]*\d{4})\](\([^()\s]*\))(?!\s*\))', r'[\1)]\2', l)
     # Anotação com um ")" a mais: "[(Redação dada pelo Decreto nº 7.719, de 2012))](…)" (Decreto 6.514, art. 152).
     l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\)\]', r'[\1]', l)
     # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
@@ -220,6 +221,18 @@ def linhas_md(caminho):
                         for k in range(i, j + 1): linhas[k] = '\n'
                     break
     for l in linhas:
+        # Só o rótulo riscado e o texto não ("~I -~ destinado exclusivamente…", "~§ 2º~ Em caso de início…", LC 123): a
+        # linha toda é a redação antiga (a nova vem depois) — vira linha riscada inteira; anotação de revogação no fim
+        # ("~I -~ ~os Estados…~ (Revogado pela…)", LC 123, art. 19, I) fica de fora do risco, para o dispositivo constar
+        # como revogado.
+        mr = re.match(r'^(\s*)~((?:Art\.?\s*\d+(?:\.\d{3})?\s*[º°o]?(?:-[A-Z])?\.?|§\s*\d+\s*[º°o]?(?:-[A-Z])?\.?|[IVXL]+\s*[-–]|[a-z]\)))~\s+(?=\S)', l)
+        if mr:
+            corpo = l.replace('~', '').rstrip('\n')
+            ma = re.search(r'\s*(\[\(Revogad[\s\S]*)$', corpo)
+            nucleo, anot = (corpo[:ma.start()], ma.group(1)) if ma else (re.split(r'\s*\[\((?:Reda|Inclu|Vide|Acresc|Renumer)', corpo)[0], '')
+            l = mr.group(1) + '~' + nucleo.strip() + '~' + ('    ' + anot if anot else '') + '\n'
+        # Numeral colado ao título ("**SeçãoI**", LC 123): separa.
+        l = re.sub(r'\b((?:Se[çc][ãa]o|SE[ÇC][ÃA]O|Cap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO))([IVXL]+)\b', r'\1 \2', l)
         # Cabeçalho Markdown antes do título em negrito ("#### **TÍTULO I**", "##### **DA ADMINISTRAÇÃO FEDERAL**",
         # DL 200): sai, para o negrito valer como rubrica.
         l = re.sub(r'^\s*#{1,6}\s+(?=\S)', '', l)
@@ -432,6 +445,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # Espécies de Prestações", Lei 8.213, art. 18): recomeça o nome; vale o mais específico.
         # "CAPÍTULO ÚNICO" sem nome próprio (LC 35, art. 89): fica o nome do título.
         if cab is not None and re.fullmatch(r'(?:Cap[íi]tulo|CAP[ÍI]TULO|(?:Sub)?Se[çc][ãa]o|(?:SUB)?SE[ÇC][ÃA]O)\s+(?:[ÚU]nic[oa]|ÚNIC[OA])', t):
+            # Se vier nome próprio depois ("Seção Única" / "Da Sociedade de Propósito Específico…", LC 123, art. 56), ele
+            # substitui o do título; senão, a rubrica (já montada) continua a do título.
+            if rubrica_capitulo: cab = []
             continue
         # (Numeral com minúsculas no meio: "CAPÍTULO Ii", "CAPÍTULO IiI", Lei 13.431.)
         # "PARTE PRIMEIRA" … "PARTE QUINTA" e "TÍTULO ÚNICO" (Lei 1.079): também recomeçam o nome (com --rubrica-capitulo).
