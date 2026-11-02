@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 159 diplomas · 1. Pura: 159 · 2. Incidência: 153 · 3. Comentado: 2 (48 notas).
+**Totais:** 159 diplomas · 1. Pura: 159 · 2. Incidência: 154 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -174,7 +174,7 @@
 | Execução Fiscal (Lei 6.830) | X | X | - |
 | ISS (LC 116) | X | - | - |
 | Lei de Responsabilidade Fiscal (LC 101) | X | X | - |
-| Estatuto da Microempresa e Simples Nacional (LC 123) | X | - | - |
+| Estatuto da Microempresa e Simples Nacional (LC 123) | X | X | - |
 
 ### Direito Empresarial
 
