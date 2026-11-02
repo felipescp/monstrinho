@@ -170,3 +170,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/bb296789-L10216.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/07dc3879-L12852.md L12852 "Estatuto da Juventude" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12852.htm dados/legislacao/lei-12852.json 2026-11-02 --rubrica-capitulo
 # LCP: rubricas em negrito por artigo, como no CP (sem --rubrica-capitulo).
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/9b2c464e-DEL3688.md LCP "Lei das Contravenções Penais" https://www.planalto.gov.br/ccivil_03/decreto-lei/del3688.htm dados/legislacao/lei-contravencoes-penais.json 2026-11-02
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/52224e36-L9807.md L9807 "Lei de Proteção a Vítimas e Testemunhas" https://www.planalto.gov.br/ccivil_03/leis/l9807.htm dados/legislacao/lei-9807.json 2026-11-02 --rubrica-capitulo
