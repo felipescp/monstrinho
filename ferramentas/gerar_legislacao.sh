@@ -163,3 +163,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/88845772-L13140.
 # (a correção à mão feita antes no JSON coincide com a geração, salvo a alteração do inciso I: Lei 15.471/2026).
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6e9e5859-L8080.md L8080 "Lei Orgânica da Saúde" https://www.planalto.gov.br/ccivil_03/leis/l8080.htm dados/legislacao/lei-8080.json 2026-11-02 --rubrica-capitulo
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a5bc06ea-L11445compilado.md L11445 "Lei do Saneamento Básico" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/lei/l11445compilado.htm dados/legislacao/lei-11445.json 2026-11-02 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/d0ffa041-Decreto_n__7053.md D7053 "Política Nacional para a População em Situação de Rua" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/decreto/d7053.htm dados/legislacao/decreto-7053.json 2026-11-02
