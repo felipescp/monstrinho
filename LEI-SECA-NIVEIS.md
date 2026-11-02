@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 127 diplomas · 1. Pura: 127 · 2. Incidência: 111 · 3. Comentado: 2 (48 notas).
+**Totais:** 143 diplomas · 1. Pura: 143 · 2. Incidência: 137 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -13,23 +13,28 @@
 |---|:---:|:---:|:---:|
 | Declaração Universal dos Direitos Humanos (1948) | X | X | - |
 | Convenção Americana sobre Direitos Humanos (Pacto de São José) | X | X | - |
-| Protocolo de San Salvador (Decreto 3.321/1999) | X | - | - |
+| Protocolo de San Salvador (Decreto 3.321/1999) | X | X | - |
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | X | X | - |
 | Pacto Internacional sobre Direitos Econômicos, Sociais e Culturais (Decreto 591/1992) | X | X | - |
 | Convenção Interamericana contra a Tortura (Decreto 98.386/1989) | X | X | - |
 | Convenção de Belém do Pará (Decreto 1.973/1996) | X | X | - |
 | Convenção sobre o Desaparecimento Forçado de Pessoas (Decreto 8.766/2016) | X | - | - |
-| Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | X | - | - |
+| Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | X | X | - |
 | Convenção da Haia sobre Sequestro Internacional de Crianças (Decreto 3.413/2000) | X | X | - |
-| CEDAW – Discriminação contra a Mulher (Decreto 4.377/2002) | X | - | - |
-| Estatuto de Roma do Tribunal Penal Internacional (Decreto 4.388/2002) | X | - | - |
+| CEDAW – Discriminação contra a Mulher (Decreto 4.377/2002) | X | X | - |
+| Convenção Interamericana contra o Racismo (Decreto 10.932/2022) | X | X | - |
+| Estatuto de Roma do Tribunal Penal Internacional (Decreto 4.388/2002) | X | X | - |
 | Convenção 169 da OIT – Povos Indígenas e Tribais | X | X | - |
-| Declaração da ONU sobre os Direitos dos Povos Indígenas (2007) | X | - | - |
-| Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | X | - | - |
-| Protocolo Facultativo à Convenção sobre os Direitos das Pessoas com Deficiência | X | - | - |
+| Declaração da ONU sobre os Direitos dos Povos Indígenas (2007) | X | X | - |
+| Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | X | X | - |
+| Protocolo Facultativo à Convenção sobre os Direitos das Pessoas com Deficiência | X | X | - |
 | Estatuto da Pessoa com Deficiência (Lei 13.146) | X | X | - |
 | Estatuto da Pessoa Idosa (Lei 10.741) | X | X | - |
 | Estatuto da Igualdade Racial (Lei 12.288) | X | X | - |
+| Lei de Migração (Lei 13.445) | X | X | - |
+| População em Situação de Rua (Decreto 7.053) | X | X | - |
+| Busca de Pessoas Desaparecidas (Lei 13.812) | X | X | - |
+| Reforma Psiquiátrica – saúde mental (Lei 10.216) | X | X | - |
 | Regras de Mandela – Regras Mínimas da ONU para o Tratamento de Presos (CNJ, 2016) | X | - | - |
 | Regras de Bangkok – Tratamento de Mulheres Presas (CNJ, 2016) | X | - | - |
 
@@ -49,7 +54,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Servidores Federais (Lei 8.112) | X | - | - |
+| Servidores Federais (Lei 8.112) | X | X | - |
 | Processo Administrativo (Lei 9.784) | X | X | - |
 | Licitações e Contratos Administrativos (Lei 14.133) | X | X | - |
 | Estatuto da Cidade (Lei 10.257) | X | X | - |
@@ -57,6 +62,7 @@
 | Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | Estatuto da Metrópole (Lei 13.089) | X | X | - |
 | Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | - |
+| Saneamento Básico (Lei 11.445) | X | X | - |
 | Lei de Acesso à Informação (Lei 12.527) | X | X | - |
 | Consórcios Públicos (Lei 11.107) | X | X | - |
 | Lei das Estatais (Lei 13.303) | X | X | - |
@@ -70,7 +76,7 @@
 | Desapropriação por Interesse Social (Lei 4.132) | X | X | - |
 | Estatuto Geral das Guardas Municipais (Lei 13.022) | X | - | - |
 | Ação Popular (Lei 4.717) | X | X | X (34 notas) |
-| Prescrição contra a Fazenda (Decreto 20.910/1932) | X | - | - |
+| Prescrição contra a Fazenda (Decreto 20.910/1932) | X | X | - |
 
 ### Direito Institucional (Magistratura, MP e Defensoria)
 
@@ -91,7 +97,8 @@
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Juizados Especiais (Lei 9.099) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
-| Tutela contra a Fazenda (Lei 9.494) | X | - | - |
+| Mediação (Lei 13.140) | X | X | - |
+| Tutela contra a Fazenda (Lei 9.494) | X | X | - |
 | Bem de Família (Lei 8.009) | X | X | - |
 | Ação de Alimentos (Lei 5.478) | X | X | - |
 | Alimentos Gravídicos (Lei 11.804) | X | X | - |
@@ -102,6 +109,7 @@
 |---|:---:|:---:|:---:|
 | Código Penal | X | X | - |
 | Código Penal Militar | X | X | - |
+| Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
 | Maria da Penha (Lei 11.340) | X | X | - |
 | Crimes Raciais (Lei 7.716) | X | X | - |
 | Tortura (Lei 9.455) | X | X | - |
@@ -128,6 +136,7 @@
 | Interceptação Telefônica (Lei 9.296) | X | X | - |
 | Prisão Temporária (Lei 7.960) | X | X | - |
 | Investigação pelo Delegado de Polícia (Lei 12.830) | X | X | - |
+| Proteção a Vítimas e Testemunhas (Lei 9.807) | X | X | - |
 
 ### Direito Civil
 
@@ -149,6 +158,7 @@
 | Código Tributário Nacional | X | X | - |
 | Execução Fiscal (Lei 6.830) | X | X | - |
 | ISS (LC 116) | X | - | - |
+| Lei de Responsabilidade Fiscal (LC 101) | X | X | - |
 
 ### Direito Empresarial
 
@@ -171,6 +181,7 @@
 | Código Eleitoral | X | X | - |
 | Lei das Eleições (Lei 9.504) | X | X | - |
 | Lei dos Partidos Políticos (Lei 9.096) | X | X | - |
+| Lei de Inelegibilidades (LC 64) | X | X | - |
 
 ### Direito Ambiental
 
@@ -187,6 +198,8 @@
 | Infrações e Sanções Administrativas Ambientais (Decreto 6.514) | X | X | - |
 | EIA/RIMA (Resolução CONAMA 1/1986) | X | X | - |
 | Licenciamento Ambiental (Resolução CONAMA 237/1997) | X | X | - |
+| Planos de Adaptação à Mudança do Clima (Lei 14.904) | X | X | - |
+| Lei Geral do Licenciamento Ambiental (Lei 15.190) | X | X | - |
 
 ### Direito da Criança e do Adolescente
 
@@ -199,6 +212,8 @@
 | Lei Henry Borel (Lei 14.344) | X | X | - |
 | Marco Legal da Primeira Infância (Lei 13.257) | X | X | - |
 | ECA Digital (Lei 15.211) | X | X | - |
+| Direito da Criança e do Adolescente à Natureza (Lei 15.512) | X | X | - |
+| Estatuto da Juventude (Lei 12.852) | X | X | - |
 
 ### Direito Previdenciário
 
@@ -207,6 +222,7 @@
 | Lei Orgânica da Seguridade Social – Custeio (Lei 8.212) | X | X | - |
 | Planos de Benefícios (Lei 8.213) | X | X | - |
 | Lei Orgânica da Assistência Social – LOAS (Lei 8.742) | X | X | - |
+| Lei Orgânica da Saúde – SUS (Lei 8.080) | X | X | - |
 
 ### Estatuto da Advocacia
 

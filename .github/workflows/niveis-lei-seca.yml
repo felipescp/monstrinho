@@ -1,0 +1,38 @@
+# Mantém LEI-SECA-NIVEIS.md em dia: a cada push no main que mexa no manifesto,
+# nos mapas/notas da Lei Seca, nos textos das leis ou no index.html, regera a
+# tabela com ferramentas/niveis_lei_seca.py e, se mudou, faz o commit.
+# O commit feito com o GITHUB_TOKEN não dispara outros workflows (sem laço).
+name: Tabela de níveis da Lei Seca
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dados/leiseca/**'
+      - 'dados/legislacao/**'
+      - 'index.html'
+      - 'ferramentas/niveis_lei_seca.py'
+  workflow_dispatch:
+concurrency:
+  group: niveis-lei-seca
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  regerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regerar LEI-SECA-NIVEIS.md
+        run: python3 -I ferramentas/niveis_lei_seca.py
+      - name: Commit, se mudou
+        run: |
+          if git diff --quiet -- LEI-SECA-NIVEIS.md; then
+            echo "Tabela já em dia."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add LEI-SECA-NIVEIS.md
+          git commit -m "Lei Seca: tabela de níveis atualizada (automático)"
+          git pull --rebase origin main
+          git push origin HEAD:main
