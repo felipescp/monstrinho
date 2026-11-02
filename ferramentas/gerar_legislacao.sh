@@ -209,3 +209,7 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/7f3da337-Lcp_123
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/4a5a9fea-L13874.md L13874 "Lei da Liberdade Econômica" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/l13874.htm dados/legislacao/lei-13874.json 2026-11-02 --rubrica-capitulo
 # Lei 9.492: "~§ 3º Revogado.~ [(Redação dada pela Lei nº 9.841…)]" (art. 29): revogado por essa lei.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/99ac4b12-L9492.md L9492 "Lei de Protesto de Títulos" https://www.planalto.gov.br/ccivil_03/leis/l9492.htm dados/legislacao/lei-9492.json 2026-11-02 --rubrica-capitulo
+# Lei Uniforme de Genebra (Anexo I do Decreto 57.663/1966): o Planalto não publica o texto do anexo; vem de material de
+# estudo, limpo dos comentários, das questões e das ênfases por ferramentas/lug_md.py.
+C=$(mktemp); python3 -I ferramentas/lug_md.py "/root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/eb42c78d-Decreto_57.663_de_24_de_janeiro_de_1966___Lei_Uniforme_de_Genebra_LUG.docx.md" > "$C"
+python3 -I ferramentas/convencao_planalto.py "$C" dados/legislacao/decreto-57663-lug.json LUG "Lei Uniforme de Genebra – Letras de Câmbio e Notas Promissórias" https://www.planalto.gov.br/ccivil_03/decreto/antigos/d57663.htm 2026-11-02 "LEI UNIFORME RELATIVA ÀS LETRAS DE CÂMBIO E NOTAS PROMISSÓRIAS" >/dev/null; rm -f "$C"

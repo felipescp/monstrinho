@@ -28,6 +28,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Drogas (Lei 11.343/2006) | `lei-11343.json` | 09/10/2026 |
 | Recuperação Judicial e Falência (Lei 11.101/2005) | `lei-11101.json` | 09/10/2026 |
 | Lei de Protesto de Títulos (Lei 9.492/1997) | `lei-9492.json` | 02/11/2026 |
+| Lei Uniforme de Genebra – Anexo I do Decreto 57.663/1966 (texto de material de estudo, sem os comentários; o Planalto não publica o anexo; sem as reservas do Anexo II) | `decreto-57663-lug.json` | 02/11/2026 |
 | Ação Civil Pública (Lei 7.347/1985) | `lei-7347.json` | 09/10/2026 |
 | Planos de Saúde (Lei 9.656/1998) | `lei-9656.json` | 09/10/2026 |
 | Crimes Ambientais (Lei 9.605/1998) | `lei-9605.json` | 09/10/2026 |

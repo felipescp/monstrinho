@@ -17003,7 +17003,7 @@ window.LEISECA_RUNTIME = {
             (this._artNovo(a) ? '<span class="memo-novo" title="Há dispositivo incluído, alterado ou revogado nos últimos 2 anos">Novo</span>' : '') +
             '<span class="ls-art-acoes"><select class="' + (manual ? '' : 'sistema') + '" title="Prioridade (a sua escolha prevalece sobre a do sistema)" onchange="window.LEISECA_RUNTIME.definirPrioridade(this.value, \'' + self._escJs(a) + '\')">' + opcoes + '</select>' +
             (function(l) { return l === null ? '' : '<button class="ls-btn' + (l === 'lido' ? ' ativo' : '') + '" title="' + (l === 'lido' ? 'Desmarcar todos os dispositivos' : 'Marcar todos os dispositivos como lidos') + '" onclick="window.LEISECA_RUNTIME.alternarLido(\'' + self._escJs(a) + '\')">' + (l === 'lido' ? '✓ Artigo lido' : 'Marcar artigo inteiro') + '</button>'; })(this._leituraArt(a)) +
-            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir o texto ' + self._esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
+            (d.planalto ? '<a class="ls-btn" href="' + self._esc(d.planalto) + '" target="_blank" rel="noopener" title="Abrir ' + self._esc(d.fonteAbrir || 'o texto ' + (d.fonteNo || 'no ' + (d.fonteNome || 'Planalto'))) + '">' + self._esc(d.fonteNome || 'Planalto') + ' ↗</a>' : '') + '</span></div>' + html;
     }
 };
 window.abrirLeiSecaModal = function() {
@@ -39280,6 +39280,12 @@ window.LEGISLACAO = (function() {
         // "LRF" fica de fora: nas baterias é ora a Lei de Responsabilidade Fiscal (LC 101), ora a Lei 11.101.
         L11101: { nome: 'Lei 11.101', arquivo: 'dados/legislacao/lei-11101.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101.htm',
               re: /Lei\s*n?[º°o.]*\s*11\.?101|Lei\s+de\s+(?:Recupera[çc][ãa]o\s+(?:Judicial\s+)?e\s+)?Fal[êe]ncias?|\bLREF\b/g },
+        // Lei Uniforme de Genebra (Anexo I do Decreto 57.663/1966): o Planalto não publica o texto do anexo; texto tirado de
+        // material de estudo, sem os comentários do autor (ferramentas/lug_md.py).
+        LUG: { nome: 'Lei Uniforme de Genebra (letras de câmbio e notas promissórias)', arquivo: 'dados/legislacao/decreto-57663-lug.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/antigos/d57663.htm', itens: true, promulgacao: 'Decreto 57.663/1966',
+              // fonteAbrir: o que o link abre (o decreto, no Planalto), diferente de onde veio o texto (fonteNo).
+              fonteNome: 'Planalto', fonteNo: 'em material de estudo (Anexo I do decreto, sem os comentários; o Planalto não publica o texto do anexo)', fonteAbrir: 'o decreto no Planalto',
+              re: /\bLUG\b|Lei\s+Uniforme(?:\s+de\s+Genebra)?(?:\s+(?:relativa\s+[àa]s|sobre)\s+(?:as\s+)?Letras\s+de\s+C[âa]mbio(?:\s+e\s+Notas\s+Promiss[óo]rias)?)?|Decreto\s*n?[º°o.]*\s*57\.?663(?![\d.])/g },
         L9492: { nome: 'Lei 9.492 (Protesto de Títulos)', arquivo: 'dados/legislacao/lei-9492.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9492.htm',
               re: /Lei\s*n?[º°o.]*\s*9\.?492(?!\.?\d)|Lei\s+(?:de|do)\s+Protestos?(?:\s+de\s+T[íi]tulos)?/g },
         L7347: { nome: 'Lei 7.347', arquivo: 'dados/legislacao/lei-7347.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7347compilada.htm',
@@ -39748,7 +39754,7 @@ window.LEGISLACAO = (function() {
             // Nota do STF no artigo (Convenção da Haia, art. 13: "Vide ADI 4.245").
             let vide = (a.stf || []).map(function(x) { return x.ref; });
             if (vide.length) h += '<div class="jur-ref-dica">⚖️ Vide ' + esc(vide.join(', ')) + ' (STF): confira se o dispositivo foi afetado.</div>';
-            return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir ' + esc(d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '</div>';
+            return h + '<div class="jur-ref-dica">' + (d.promulgacao ? 'Promulgada pelo ' + esc(d.promulgacao) : esc(d.rodape || '')) + ' · clique para abrir ' + esc(d.fonteAbrir || d.fonteNo || 'no ' + (d.fonteNome || 'Planalto')) + '</div>';
         }
         let cab = '<div class="jur-ref-cab">' + esc(d.nome + ' · ' + rotulo(p)) + (a && a.rubrica ? ' — ' + esc(a.rubrica) : '') + '</div>';
         if (!a) return cab + '<div>Dispositivo não localizado no texto compilado.</div>';
@@ -39828,7 +39834,7 @@ window.LEGISLACAO = (function() {
         let dt = String(j.dataTexto || '').split('-').reverse().join('/');
         // Diploma fora do Planalto (Resolução CONAMA: página do MMA) diz a fonte própria.
         let fonteNo = d.fonteNo || 'no ' + (d.fonteNome || 'Planalto');
-        return cab + html + '<div class="jur-ref-dica">' + (d.fonteNome ? 'Texto obtido ' + esc(fonteNo) : 'Texto compilado do Planalto') + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir ' + esc(fonteNo) + '</div>';
+        return cab + html + '<div class="jur-ref-dica">' + (d.fonteNome ? 'Texto obtido ' + esc(fonteNo) : 'Texto compilado do Planalto') + (dt ? ' em ' + esc(dt) : '') + ' · clique para abrir ' + esc(d.fonteAbrir || fonteNo) + '</div>';
     }
     function mostrarBalao(el) {
         let chave = el.getAttribute('data-lei'), ano = el.getAttribute('data-ano'), id = chave.split('|')[0];
