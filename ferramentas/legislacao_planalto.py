@@ -415,7 +415,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
                 ANEXO[m.group(1)] = novo_disp(texto, alt, rev)
             continue
         # (Antes do teste de artigo aberto: o capítulo I vem antes do art. 1º.)
-        t = separa_anotacoes(l)[0] if cab is not None or re.match(RE_CAB, l) else ''
+        t = separa_anotacoes(l)[0] if cab is not None or re.match(RE_CAB, l) or rubrica_capitulo and re.match(r'PARTE\s', l) else ''
         # Título sem negrito ("Capítulo I" / "Disposições Gerais"; "Capítulo VI" / "Do Reconhecimento…" /
         # "Arbitrais Estrangeiras", Lei 9.307): o nome, em uma ou mais linhas, vira a rubrica do artigo seguinte.
         # Com --rubrica-capitulo, também "TÍTULO II" / "CAPÍTULO I" em maiúsculas (Leis 9.096 e 12.288). Não é o
@@ -426,6 +426,10 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if cab is not None and re.fullmatch(r'(?:Cap[íi]tulo|CAP[ÍI]TULO|(?:Sub)?Se[çc][ãa]o|(?:SUB)?SE[ÇC][ÃA]O)\s+(?:[ÚU]nic[oa]|ÚNIC[OA])', t):
             continue
         # (Numeral com minúsculas no meio: "CAPÍTULO Ii", "CAPÍTULO IiI", Lei 13.431.)
+        # "PARTE PRIMEIRA" … "PARTE QUINTA" e "TÍTULO ÚNICO" (Lei 1.079): também recomeçam o nome (com --rubrica-capitulo).
+        if rubrica_capitulo and re.fullmatch(r'PARTE\s+(?:[IVXLC]+|PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA|QUINTA|SEXTA|S[ÉE]TIMA|OITAVA|NONA|D[ÉE]CIMA)|T[ÍI]TULO\s+[ÚU]NICO', t):
+            cab, rubrica = [], None
+            continue
         if re.fullmatch(RE_CAB + r'\s+[IVXLC](?i:[ivxlc]*)(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
@@ -440,7 +444,12 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
                 and re.search(r'[A-ZÀ-Ú]{3}', t) and not re.search(r'[a-zà-ú\d]', t) and not re.search(r'[.;:!?)]$', t) \
                 and not l.startswith('**') and not re.match(r'(?:Art|§|[IVXLC]+\s*[-–])', t):
             cab = []
-        if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**'):
+        # Nome em maiúsculas com ":"/";" no fim ("…DOS DINHEIROS PÚBLICOS:", "…DECISÕES JUDICIÁRIAS;") ou com sigla entre
+        # parênteses ("…SERVIÇOS (CGIBS)"), Lei 1.079: vale, sem a pontuação final.
+        nome_maiusc = cab is not None and t and not re.search(r'[a-zà-ú]', t) and re.search(r'[A-ZÀ-Ú]{3}', t) \
+            and re.search(r'[:;]$|\([A-ZÀ-Ú]+\)$', t)
+        if nome_maiusc: t = t.rstrip(':; ')
+        if cab is not None and t and len(t) < 150 and (nome_maiusc or not re.search(r'[.;:!?)”"»]$', t)) and not l.startswith('**'):
             cab.append(t)
             rubrica = ' '.join(cab)
             continue
@@ -567,8 +576,10 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         # art. 54): um por linha. Vem antes dos filtros de título, que descartariam "38) (VETADO)" e
         # "13)" (só a anotação de revogação).
         alvo = inc if inc is not None else seg
-        if alvo is not None and not alvo.get('ali') and re.match(r'^\d{1,2}[º°]?(?:[.)]|\s[-–])(?:\s|$)', texto) \
-                and re.search(r':$|\n\d{1,2}[º°]?(?:[.)]|\s[-–])[^\n]*$', alvo['texto']):
+        # (Também "1- impedir…", sem espaço antes do hífen, Lei 1.079, arts. 7º, 10 e 39.)
+        if alvo is not None and not alvo.get('ali') and re.match(r'^\d{1,2}[º°]?(?:[.)]|\s?[-–])(?:\s|$)', texto) \
+                and re.search(r':$|\n\d{1,2}[º°]?(?:[.)]|\s?[-–])[^\n]*$', alvo['texto']):
+            if _STF: stf_no_dono(alvo)  # nota do item ("4 - ser patentemente desidioso…" (Vide ADPF 1259), Lei 1.079, art. 39)
             if re.search(r'Vig[êe]ncia\s+encerrada', l, re.I): continue  # item de MP que caducou (art. 167, II, 33)
             if re.fullmatch(r'\d{1,2}[º°]?[.)]', texto): texto += ' (Revogado)' if rev else ''
             alvo['texto'] += '\n' + texto

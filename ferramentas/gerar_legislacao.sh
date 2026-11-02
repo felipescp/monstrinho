@@ -187,3 +187,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/76fbef8e-L12587.
 # Lei 14.129: depois do fim do texto vem a promulgação das partes vetadas (arts. 32 e 35), que o corpo já incorpora: --fim.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/da9797ff-L14129.md L14129 "Lei do Governo Digital" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14129.htm dados/legislacao/lei-14129.json 2026-11-02 --rubrica-capitulo --fim "^Este texto não substitui o publicado no DOU de 30\.3\.2021"
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3ce37d80-Del0201.md DL201 "Responsabilidade dos Prefeitos e Vereadores" https://www.planalto.gov.br/ccivil_03/decreto-lei/del0201.htm dados/legislacao/decreto-lei-201.json 2026-11-02
+# Lei 1.079: itens "1-" (sem espaço) no caput, "PARTE PRIMEIRA"/"TÍTULO ÚNICO" e nomes de capítulo com ":"/";"/"(CGIBS)" no fim.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/355d5cc1-L1079.md L1079 "Lei dos Crimes de Responsabilidade" https://www.planalto.gov.br/ccivil_03/leis/l1079.htm dados/legislacao/lei-1079.json 2026-11-02 --rubrica-capitulo
