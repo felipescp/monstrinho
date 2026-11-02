@@ -97,6 +97,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Migração (Lei 13.445/2017) | `lei-13445.json` | 02/11/2026 |
 | Política Nacional para a População em Situação de Rua (Decreto 7.053/2009) | `decreto-7053.json` | 02/11/2026 |
 | Política Nacional de Busca de Pessoas Desaparecidas (Lei 13.812/2019) | `lei-13812.json` | 02/11/2026 |
+| Lei da Reforma Psiquiátrica (Lei 10.216/2001) | `lei-10216.json` | 02/11/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
 | Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
 | Lei de Registros Públicos (Lei 6.015/1973) | `lei-6015.json` | 28/10/2026 |
