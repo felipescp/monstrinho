@@ -162,7 +162,7 @@ CITACAO = '\u2063'  # marca linha de texto citado (não é dispositivo do diplom
 ART_RISCADO = '\u2064'  # marca artigo inteiro riscado (os filhos que seguem são da redação antiga)
 
 def linhas_md(caminho):
-    em_citacao = anuncia = False
+    em_citacao = anuncia = aspas = False
     for l in open(caminho, encoding='utf8'):
         # Bloco ">" do Markdown: às vezes é só formatação de dispositivo real
         # ("> Art. 234-A." no CP); às vezes é texto citado por artigo que altera
@@ -176,10 +176,17 @@ def linhas_md(caminho):
             anuncia = False
             citado = em_citacao and bool(conteudo)
             l = re.sub(r'^\s*(?:>\s*)+', '', l)
-        elif anuncia and (re.match(r'^\s*\[?\s*[“"«]', l) or not re.search(r'[a-zà-ú]', re.sub(r'\]\([^)]*\)', '', l))):
+        elif aspas and l.strip():
+            # Texto citado sem ">", entre aspas que abriram numa linha anterior: vai até a linha que as fecha
+            # (Lei 15.512, arts. 32 a 34: "**“Art. 2º** …" / "……" / "XI – garantia… equilibrado.”").
+            citado = True
+            if '”' in l: aspas = False
+        elif anuncia and (re.match(r'^\s*(?:\*\*)?\[?\s*[“"«]', l) or not re.search(r'[a-zà-ú]', re.sub(r'\]\([^)]*\)', '', l))):
             # Cabeçalho citado fora do bloco ">" ("[“CAPÍTULO II-B](…)" e "DOS CRIMES EM LICITAÇÕES…",
             # Lei 14.133, art. 178): continua anunciado, e o bloco ">" seguinte é citado.
             citado = True
+            # Aspas abertas e não fechadas na mesma linha, sem bloco ">" depois (Lei 15.512): ver acima.
+            if re.match(r'^\s*(?:\*\*)?“', l) and '”' not in l: aspas = True
         elif l.strip():
             em_citacao = False
             # Linha que anuncia redação de outra lei ("…passa a vigorar com as
