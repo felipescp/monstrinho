@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 150 diplomas · 1. Pura: 150 · 2. Incidência: 144 · 3. Comentado: 2 (48 notas).
+**Totais:** 150 diplomas · 1. Pura: 150 · 2. Incidência: 145 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -48,7 +48,7 @@
 | ADPF (Lei 9.882) | X | X | X (14 notas) |
 | Súmula Vinculante (Lei 11.417) | X | X | - |
 | Representação Interventiva (Lei 12.562) | X | X | - |
-| Crimes de Responsabilidade – impeachment (Lei 1.079) | X | - | - |
+| Crimes de Responsabilidade – impeachment (Lei 1.079) | X | X | - |
 | Diretrizes e Bases da Educação – LDB (Lei 9.394) | X | X | - |
 
 ### Direito Administrativo
