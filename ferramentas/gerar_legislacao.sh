@@ -193,3 +193,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/64660567-L12153.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/14694e82-L10259.md L10259 "Lei dos Juizados Especiais Federais" https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10259.htm dados/legislacao/lei-10259.json 2026-11-02
 # Lei 11.419: títulos em minúsculas ("capítulo iv" / "disposições gerais e finais").
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ca7f9678-Lei_n__11.419.md L11419 "Lei do Processo Eletrônico" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm dados/legislacao/lei-11419.json 2026-11-02 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ab0973a4-L8437.md L8437 "Medidas Cautelares contra Atos do Poder Público" https://www.planalto.gov.br/ccivil_03/leis/l8437.htm dados/legislacao/lei-8437.json 2026-11-02
