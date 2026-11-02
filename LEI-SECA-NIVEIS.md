@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 157 diplomas · 1. Pura: 157 · 2. Incidência: 151 · 3. Comentado: 2 (48 notas).
+**Totais:** 157 diplomas · 1. Pura: 157 · 2. Incidência: 152 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -148,7 +148,7 @@
 | Prisão Temporária (Lei 7.960) | X | X | - |
 | Investigação pelo Delegado de Polícia (Lei 12.830) | X | X | - |
 | Proteção a Vítimas e Testemunhas (Lei 9.807) | X | X | - |
-| Julgamento Colegiado em Primeiro Grau – organizações criminosas (Lei 12.694) | X | - | - |
+| Julgamento Colegiado em Primeiro Grau – organizações criminosas (Lei 12.694) | X | X | - |
 
 ### Direito Civil
 
