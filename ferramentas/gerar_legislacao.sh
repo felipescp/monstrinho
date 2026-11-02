@@ -198,3 +198,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ab0973a4-L8437.m
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/dba7245f-L4591compilado_1.md L4591 "Lei de Condomínio e Incorporações" https://www.planalto.gov.br/ccivil_03/leis/l4591.htm dados/legislacao/lei-4591.json 2026-11-02 --rubrica-capitulo
 # Lei 9.434: nome de capítulo em maiúsculas em duas linhas ("…TECIDOS," / "…TRANSPLANTE.") e parágrafo único antigo depois do § 1º (art. 10).
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a940d13e-L9434compilado.md L9434 "Lei de Transplantes" https://www.planalto.gov.br/ccivil_03/leis/l9434.htm dados/legislacao/lei-9434.json 2026-11-02 --rubrica-capitulo
+# Lei 12.694: art. 9º em duas redações (a antiga sem risco); a nota "(Vide ADI 5157)" da antiga passa para a nova.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/25b74574-L12694.md L12694 "Julgamento Colegiado em Primeiro Grau" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12694.htm dados/legislacao/lei-12694.json 2026-11-02
