@@ -333,7 +333,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
     artigos, art, seg, inc, rubrica = {}, None, None, None, None
     em_anexo = False
     cab = None  # nome de capítulo sem negrito em montagem (Lei 9.307)
-    RE_CAB = r'(?:Cap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|(?:Sub)?[Ss]e[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
+    # (Também "capítulo I" / "capítulo iv" em minúsculas, Lei 11.419.)
+    RE_CAB = r'(?:[Cc]ap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|(?:Sub)?[Ss]e[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)
@@ -430,7 +431,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if rubrica_capitulo and re.fullmatch(r'PARTE\s+(?:[IVXLC]+|PRIMEIRA|SEGUNDA|TERCEIRA|QUARTA|QUINTA|SEXTA|S[ÉE]TIMA|OITAVA|NONA|D[ÉE]CIMA)|T[ÍI]TULO\s+[ÚU]NICO', t):
             cab, rubrica = [], None
             continue
-        if re.fullmatch(RE_CAB + r'\s+[IVXLC](?i:[ivxlc]*)(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
+        if re.fullmatch(RE_CAB + r'\s+(?:[IVXLC](?i:[ivxlc]*)|[ivxlc]+)(?:-[A-Z])?', t) or cab is not None and re.fullmatch(
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
             continue
@@ -450,7 +451,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             and re.search(r'[:;]$|\([A-ZÀ-Ú]+\)$', t)
         if nome_maiusc: t = t.rstrip(':; ')
         if cab is not None and t and len(t) < 150 and (nome_maiusc or not re.search(r'[.;:!?)”"»]$', t)) and not l.startswith('**'):
-            cab.append(t)
+            # Nome todo em minúsculas ("da informatização do processo judicial", Lei 11.419): só a inicial sobe.
+            cab.append(t[0].upper() + t[1:] if not cab and not re.search(r'[A-ZÀ-Ú]', t) else t)
             rubrica = ' '.join(cab)
             continue
         if art is None:
