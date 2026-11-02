@@ -16,11 +16,11 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | processo nao reconhecido | 123 |
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
-| lei citacoes de artigo | 6553 |
-| lei citacoes ligadas | 6112 |
+| lei citacoes de artigo | 6554 |
+| lei citacoes ligadas | 6116 |
 | lei dispositivo nao localizado | 3 |
 | lei artigo sem diploma | 45 |
-| lei citacoes de diplomas fora da base | 393 |
+| lei citacoes de diplomas fora da base | 390 |
 
 ## C — Referências mais citadas que não estão no acervo (top 40)
 
@@ -203,9 +203,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | Decreto-Lei 9.760 | 3 |
 | Lei 14.230 | 3 |
 | Código de Ética Médica | 3 |
-| Lei 4.591 | 3 |
 | Lei 9.278 | 3 |
 | Lei 12.414 | 3 |
 | Lei 14.454 | 3 |
 | Lei 8.929 | 3 |
 | Lei 7.357 | 3 |
+| Lei 8.989 | 3 |

@@ -112,6 +112,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei da Reforma Psiquiátrica (Lei 10.216/2001) | `lei-10216.json` | 02/11/2026 |
 | Investigação de Paternidade (Lei 8.560/1992) | `lei-8560.json` | 20/10/2026 |
 | Lei do Inquilinato (Lei 8.245/1991) | `lei-8245.json` | 20/10/2026 |
+| Lei de Condomínio e Incorporações Imobiliárias (Lei 4.591/1964) | `lei-4591.json` | 02/11/2026 |
 | Lei de Registros Públicos (Lei 6.015/1973) | `lei-6015.json` | 28/10/2026 |
 | Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
 | Lei Geral de Proteção de Dados Pessoais – LGPD (Lei 13.709/2018) | `lei-13709.json` | 20/10/2026 |

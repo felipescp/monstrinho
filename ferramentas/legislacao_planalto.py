@@ -32,6 +32,10 @@ def limpa(l):
     l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\)\]', r'[\1]', l)
     # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
     l = re.sub(r'\[(Revogad[oa]s?\s+pel[oa]\s[^\]()]*)\]', r'[(\1)]', l)
+    # Parênteses dentro da anotação em link: "[(Vide Lei nº 4.864/65 que altera o prazo … para 60 (sessenta) dias)](…)"
+    # (Lei 4.591, art. 35): saem, senão a anotação não é reconhecida.
+    l = re.sub(r'\[\(((?:Vide|Reda[çc][ãa]o|Inclu[íi]d|Revogad|Acrescid|Renumerad)[^\]]*)\)\](?=\()',
+               lambda m: '[(' + m.group(1).replace('(', '').replace(')', '') + ')]', l)
     # "Vide" sem parênteses: "[Vide Lei nº 7.739, de 20.3.1989](…) , [Vide …](…)" (DL 200, arts. 32 e 35).
     l = re.sub(r'\[(Vide\s[^\]()]*)\](?=\()', r'[(\1)]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
