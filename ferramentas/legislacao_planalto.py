@@ -426,8 +426,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if cab is not None and not t and re.match(r'\[?\(', l): continue
         # Aspas de fechamento soltas no fim do nome ("…TECNOLOGIA EM SAÚDE”", Lei 8.080, antes do art. 19-M).
         if cab is not None and '“' not in t and not re.search(r'[a-zà-ú]', t): t = re.sub(r'\s*”$', '', t)
-        # Título solto em maiúsculas antes do primeiro artigo ("DISPOSIÇÃO PRELIMINAR", Lei 8.080).
-        if rubrica_capitulo and cab is None and art is None and ativo and not citado and len(t := separa_anotacoes(l)[0]) < 150 \
+        # Título solto em maiúsculas, sem "CAPÍTULO" antes ("DISPOSIÇÃO PRELIMINAR" antes do art. 1º, Lei 8.080;
+        # "DISPOSIÇÕES GERAIS" antes do art. 16, Lei 9.807).
+        if rubrica_capitulo and cab is None and ativo and not citado and len(t := separa_anotacoes(l)[0]) < 150 \
                 and re.search(r'[A-ZÀ-Ú]{3}', t) and not re.search(r'[a-zà-ú\d]', t) and not re.search(r'[.;:!?)]$', t) \
                 and not l.startswith('**') and not re.match(r'(?:Art|§|[IVXLC]+\s*[-–])', t):
             cab = []
