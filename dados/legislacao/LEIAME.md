@@ -14,6 +14,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei da ADPF (Lei 9.882/1999) | `lei-9882.json` | 30/10/2026 |
 | Lei da Súmula Vinculante (Lei 11.417/2006) | `lei-11417.json` | 30/10/2026 |
 | Lei da Representação Interventiva (Lei 12.562/2011) | `lei-12562.json` | 30/10/2026 |
+| Lei dos Crimes de Responsabilidade (Lei 1.079/1950) | `lei-1079.json` | 02/11/2026 |
 | Lei de Diretrizes e Bases da Educação Nacional (Lei 9.394/1996) | `lei-9394.json` | 30/10/2026 |
 | Lei Orgânica da Magistratura Nacional (LC 35/1979) | `lc-35.json` | 30/10/2026 |
 | Lei Orgânica Nacional da Defensoria Pública (LC 80/1994) | `lc-80.json` | 01/11/2026 |
