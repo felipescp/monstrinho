@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 148 diplomas · 1. Pura: 148 · 2. Incidência: 143 · 3. Comentado: 2 (48 notas).
+**Totais:** 149 diplomas · 1. Pura: 149 · 2. Incidência: 143 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -128,6 +128,7 @@
 | Crimes contra a Economia Popular (Lei 1.521) | X | X | - |
 | Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Crimes contra o Sistema Financeiro (Lei 7.492) | X | X | - |
+| Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | - | - |
 | Crimes contra a Ordem Econômica – Combustíveis (Lei 8.176) | X | X | - |
 | Código de Trânsito Brasileiro | X | X | - |
 
