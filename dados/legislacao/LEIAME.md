@@ -101,6 +101,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei do Mandado de Injunção (Lei 13.300/2016) | `lei-13300.json` | 20/10/2026 |
 | Lei Geral de Proteção de Dados Pessoais – LGPD (Lei 13.709/2018) | `lei-13709.json` | 20/10/2026 |
 | Lei Orgânica da Assistência Social – LOAS (Lei 8.742/1993) | `lei-8742.json` | 20/10/2026 (o art. 20, § 13, vem sem texto no compilado, só com "Vide Medida Provisória nº 871, de 2019") |
+| Lei Orgânica da Saúde (Lei 8.080/1990) | `lei-8080.json` | 02/11/2026 |
 | Marco Civil da Internet (Lei 12.965/2014) | `lei-12965.json` | 20/10/2026 (o texto da MP 1.068/2021, rejeitada, vem riscado no compilado e fica de fora) |
 | Lei de Licitações e Contratos Administrativos (Lei 14.133/2021) | `lei-14133.json` | 20/10/2026 (os arts. 337-E a 337-P que o art. 178 acrescenta ao CP ficam como texto citado; redações da MP 1.167/2023, com vigência encerrada, ficam de fora) |
 | Estatuto da Cidade (Lei 10.257/2001) | `lei-10257.json` | 20/10/2026 |
