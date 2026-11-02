@@ -47,6 +47,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei 9.494/1997 (tutela antecipada contra a Fazenda; art. 1º-F) | `lei-9494.json` | 11/10/2026 |
 | Lei dos Juizados Especiais Cíveis e Criminais (Lei 9.099/1995) | `lei-9099.json` | 11/10/2026 |
 | Lei de Arbitragem (Lei 9.307/1996) | `lei-9307.json` | 28/10/2026 |
+| Lei de Mediação (Lei 13.140/2015) | `lei-13140.json` | 02/11/2026 |
 | Código Eleitoral (Lei 4.737/1965) | `codigo-eleitoral.json` | 11/10/2026 |
 | Código Florestal (Lei 12.651/2012) | `lei-12651.json` | 11/10/2026 |
 | Estatuto do Desarmamento (Lei 10.826/2003) | `lei-10826.json` | 11/10/2026 |
