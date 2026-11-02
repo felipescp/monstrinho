@@ -163,3 +163,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/88845772-L13140.
 # (incisos I–XIII, alíneas a–f do I, §§ 1º–6º, até a Lei 15.471/2026) e a chave "6-A" foram corrigidos à
 # mão no JSON a partir do texto do material de questões. Ao regenerar, conferir os arts. 6 e 6-A.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6e9e5859-L8080.md L8080 "Lei Orgânica da Saúde" https://www.planalto.gov.br/ccivil_03/leis/l8080.htm dados/legislacao/lei-8080.json 2026-11-02 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a5bc06ea-L11445compilado.md L11445 "Lei do Saneamento Básico" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2007/lei/l11445compilado.htm dados/legislacao/lei-11445.json 2026-11-02 --rubrica-capitulo
