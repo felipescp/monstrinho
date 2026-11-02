@@ -76,6 +76,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Crimes contra a Economia Popular (Lei 1.521/1951) | `lei-1521.json` | 20/10/2026 |
 | Crimes contra a Ordem Tributária, Econômica e as Relações de Consumo (Lei 8.137/1990) | `lei-8137.json` | 20/10/2026 |
 | Crimes contra o Sistema Financeiro Nacional (Lei 7.492/1986) | `lei-7492.json` | 20/10/2026 |
+| Responsabilidade dos Prefeitos e Vereadores (Decreto-Lei 201/1967) | `decreto-lei-201.json` | 02/11/2026 |
 | Crimes contra a Ordem Econômica – combustíveis e usurpação de bens da União (Lei 8.176/1991) | `lei-8176.json` | 20/10/2026 |
 | Lei dos Crimes Hediondos (Lei 8.072/1990) | `lei-8072.json` | 20/10/2026 |
 | Lei de Interceptação Telefônica (Lei 9.296/1996) | `lei-9296.json` | 20/10/2026 |
