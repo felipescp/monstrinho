@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 145 diplomas · 1. Pura: 145 · 2. Incidência: 139 · 3. Comentado: 2 (48 notas).
+**Totais:** 145 diplomas · 1. Pura: 145 · 2. Incidência: 140 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -63,7 +63,7 @@
 | Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | Estatuto da Metrópole (Lei 13.089) | X | X | - |
 | Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | - |
-| Defesa do Usuário do Serviço Público (Lei 13.460) | X | - | - |
+| Defesa do Usuário do Serviço Público (Lei 13.460) | X | X | - |
 | Saneamento Básico (Lei 11.445) | X | X | - |
 | Lei de Acesso à Informação (Lei 12.527) | X | X | - |
 | Consórcios Públicos (Lei 11.107) | X | X | - |
