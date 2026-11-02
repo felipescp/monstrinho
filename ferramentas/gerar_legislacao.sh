@@ -155,3 +155,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ead46cdb-L15190.
 # Lei 15.512: os textos alterados (arts. 32 a 34) vêm entre aspas, sem ">": linhas_md segue as aspas até fechar.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/021a2bc7-Lei_n__15.512_de_22_09_2026.md L15512 "Lei do Direito da Criança e do Adolescente à Natureza" https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15512.htm dados/legislacao/lei-15512.json 2026-11-02
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/d385d7d9-Lcp101.md LC101 "Lei de Responsabilidade Fiscal" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp101.htm dados/legislacao/lc-101.json 2026-11-02 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/108960c5-L13445.md L13445 "Lei de Migração" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13445.htm dados/legislacao/lei-13445.json 2026-11-02 --rubrica-capitulo
