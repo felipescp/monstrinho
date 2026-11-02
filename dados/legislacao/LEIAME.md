@@ -92,6 +92,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Investigação Criminal pelo Delegado de Polícia (Lei 12.830/2013) | `lei-12830.json` | 20/10/2026 |
 | Lei da Prisão Temporária (Lei 7.960/1989) | `lei-7960.json` | 20/10/2026 |
 | Lei de Proteção a Vítimas e Testemunhas (Lei 9.807/1999) | `lei-9807.json` | 02/11/2026 |
+| Julgamento Colegiado em Primeiro Grau de crimes de organizações criminosas (Lei 12.694/2012) | `lei-12694.json` | 02/11/2026 |
 | Lei de Abuso de Autoridade (Lei 13.869/2019) | `lei-13869.json` | 20/10/2026 (recortado com `--fim` antes da promulgação das partes vetadas, que repete artigos com reticências) |
 | Lei de Alimentos (Lei 5.478/1968) | `lei-5478.json` | 20/10/2026 |
 | Alienação fiduciária – busca e apreensão (Decreto-Lei 911/1969) | `decreto-lei-911.json` | 20/10/2026 |

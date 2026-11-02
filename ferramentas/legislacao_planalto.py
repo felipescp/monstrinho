@@ -405,6 +405,9 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
                 continue
             art = novo_disp(texto, alt, rev)
             if rubrica: art['rubrica'] = rubrica
+            # Artigo repetido em nova redação, com a antiga sem risco antes (Lei 12.694, art. 9º): a nota do STF da
+            # versão anterior ("(Vide ADI 5157)") fica, se a nova não tiver nenhuma.
+            if num in artigos and artigos[num].get('stf') and not art.get('stf'): art['stf'] = artigos[num]['stf']
             artigos[num] = art
             seg, inc, rubrica, cab = art, None, None, None
             continue
