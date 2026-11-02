@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 146 diplomas · 1. Pura: 146 · 2. Incidência: 141 · 3. Comentado: 2 (48 notas).
+**Totais:** 147 diplomas · 1. Pura: 147 · 2. Incidência: 141 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -60,6 +60,7 @@
 | Prescrição da Ação Punitiva da Administração Federal (Lei 9.873) | X | X | - |
 | Licitações e Contratos Administrativos (Lei 14.133) | X | X | - |
 | Estatuto da Cidade (Lei 10.257) | X | X | - |
+| Política Nacional de Mobilidade Urbana (Lei 12.587) | X | - | - |
 | Parcelamento do Solo Urbano (Lei 6.766) | X | X | - |
 | Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | Estatuto da Metrópole (Lei 13.089) | X | X | - |
