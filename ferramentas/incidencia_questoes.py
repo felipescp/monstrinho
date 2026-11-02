@@ -185,9 +185,10 @@ def main():
                 continue
             if not art or re.match(r'SE[ÇC][ÃA]O\b', t, re.I):
                 continue
-            # Item "1." do artigo; alínea "a." ou "a)" conta no item (ou no caput);
+            # Item "1." (ou "i.", "xiii.", Convenção contra o Racismo, Decreto 10.932) do
+            # artigo, se a base o tiver; alínea "a." ou "a)" conta no item (ou no caput);
             # parágrafo sem número continua o item (ou o caput) corrente.
-            m = re.match(r'(\d+)\s*\.(?!\d)', t)
+            m = re.match(r'(\d+|[ivxlc]+)\s*\.(?!\d)', t)
             if m and m.group(1) in (B[art].get('inc') or {}):
                 inc = m.group(1)
         # Códigos com Parte Geral e Parte Especial repetem a numeração dos títulos.
