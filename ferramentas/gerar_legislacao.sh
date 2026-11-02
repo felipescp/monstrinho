@@ -204,3 +204,6 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/c426f283-L13260.
 # LC 123: rótulo riscado com texto antigo sem risco ("~I -~ destinado…"), "SeçãoI", "Seção Única" com nome próprio,
 # "[(Vide Lei nº 14.133, de 2021](…)" sem ")"; as tabelas dos Anexos I a V (depois das assinaturas) ficam de fora: --fim.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/7f3da337-Lcp_123.md LC123 "Estatuto Nacional da Microempresa e da Empresa de Pequeno Porte" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp123.htm dados/legislacao/lc-123.json 2026-11-02 --rubrica-capitulo --fim "^Este texto não substitui o publicado no DOU de 15\.12\.2006"
+# Lei 13.874: cabeçalho citado sem ">" ("[“CAPÍTULO X](…)" / "DO FUNDO DE INVESTIMENTO") no meio da citação do art. 7º,
+# e trecho riscado dentro do texto citado do art. 13 (art. 19-D da Lei 10.522, revogado depois).
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/4a5a9fea-L13874.md L13874 "Lei da Liberdade Econômica" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/l13874.htm dados/legislacao/lei-13874.json 2026-11-02 --rubrica-capitulo

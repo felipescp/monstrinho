@@ -200,7 +200,7 @@ def junta_partidas(l, vocab):
     return l.replace(t, novo) if novo != t else l
 
 def linhas_md(caminho):
-    em_citacao = anuncia = aspas = False
+    em_citacao = anuncia = aspas = cab_citado = False
     # Vocabulário só do texto dos dispositivos: as partes da palavra partida ("C", "omuns") estão no próprio título.
     # A palavra unida pode estar em outro título ("Disposições Comuns"); URL de link não conta ("%C2%A7").
     sem_link = [re.sub(r'\]\([^)]*\)', ']', l) for l in open(caminho, encoding='utf8')]
@@ -249,6 +249,7 @@ def linhas_md(caminho):
         # próprias aspas e a seguinte vir sem elas: CDC art. 113, ECA art. 263).
         citado = False
         if re.match(r'^\s*>', l):
+            cab_citado = False
             conteudo = re.sub(r'^\s*(?:>\s*)+', '', l).strip()
             if not em_citacao and (re.match(r'^\[?\s*[“"«]', conteudo) or anuncia): em_citacao = True
             anuncia = False
@@ -265,12 +266,20 @@ def linhas_md(caminho):
             citado = True
             # Aspas abertas e não fechadas na mesma linha, sem bloco ">" depois (Lei 15.512): ver acima.
             if re.match(r'^\s*(?:\*\*)?“', l) and '”' not in l: aspas = True
+        elif em_citacao and l.strip() and (re.match(r'^\s*\[?\s*[“‘"«]', l) or cab_citado and not re.search(r'[a-zà-ú]', re.sub(r'\]\([^)]*\)', '', l))):
+            # Cabeçalho citado sem ">" no meio de um bloco citado, aberto com aspas ("[“CAPÍTULO X](…)" / "DO FUNDO DE
+            # INVESTIMENTO", Lei 13.874, art. 7º): continua citado, e o bloco ">" seguinte também (mesmo que abra com "‘").
+            # (Título em maiúsculas sem aspas antes, depois do bloco, é da própria lei: Lei 13.465, art. 68.)
+            citado, cab_citado = True, True
         elif l.strip():
             em_citacao = False
             # Linha que anuncia redação de outra lei ("…passa a vigorar com as
             # seguintes alterações:"): o bloco ">" seguinte é texto citado (ECA, art. 263).
             anuncia = bool(re.search(r'(passa[m]? a vigorar|seguintes? reda[çc]|acrescid[oa]s?|altera[çc][õo]es|seguintes? modifica)[^:]*:\s*(?:\[.*)?$', l, re.I))
         if citado:
+            # Trecho riscado dentro do texto citado (redação revogada depois: "~“Art. 19-D. …~ ~(Revogado pela Medida
+            # Provisória…)~", Lei 13.874, art. 13): sai; a anotação sem risco que sobra informa a revogação.
+            if l.count('~') >= 2: l = re.sub(r'~[^~\n]*~', '', l)
             yield CITACAO + l if l.endswith('\n') else CITACAO + l + '\n'
             continue
         # Texto riscado do compilado (~~redação antiga~~) sai.

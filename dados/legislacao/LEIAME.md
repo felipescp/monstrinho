@@ -131,6 +131,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Concessões e Permissões de Serviços Públicos (Lei 8.987/1995) | `lei-8987.json` | 20/10/2026 |
 | Código de Defesa do Usuário do Serviço Público (Lei 13.460/2017) | `lei-13460.json` | 02/11/2026 |
 | Lei do Governo Digital (Lei 14.129/2021; arts. 32 e 35 na versão promulgada após a derrubada do veto) | `lei-14129.json` | 02/11/2026 |
+| Lei da Liberdade Econômica (Lei 13.874/2019) | `lei-13874.json` | 02/11/2026 |
 | Lei do Saneamento Básico (Lei 11.445/2007) | `lei-11445.json` | 02/11/2026 |
 | Lei de Acesso à Informação (Lei 12.527/2011) | `lei-12527.json` | 25/10/2026 |
 | Lei dos Consórcios Públicos (Lei 11.107/2005) | `lei-11107.json` | 25/10/2026 |
