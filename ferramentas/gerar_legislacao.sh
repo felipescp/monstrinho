@@ -196,3 +196,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ca7f9678-Lei_n__
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ab0973a4-L8437.md L8437 "Medidas Cautelares contra Atos do Poder Público" https://www.planalto.gov.br/ccivil_03/leis/l8437.htm dados/legislacao/lei-8437.json 2026-11-02
 # Lei 4.591: anotação com parênteses internos ("… para 60 (sessenta) dias)", art. 35): limpa tira os de dentro.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/dba7245f-L4591compilado_1.md L4591 "Lei de Condomínio e Incorporações" https://www.planalto.gov.br/ccivil_03/leis/l4591.htm dados/legislacao/lei-4591.json 2026-11-02 --rubrica-capitulo
+# Lei 9.434: nome de capítulo em maiúsculas em duas linhas ("…TECIDOS," / "…TRANSPLANTE.") e parágrafo único antigo depois do § 1º (art. 10).
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a940d13e-L9434compilado.md L9434 "Lei de Transplantes" https://www.planalto.gov.br/ccivil_03/leis/l9434.htm dados/legislacao/lei-9434.json 2026-11-02 --rubrica-capitulo
