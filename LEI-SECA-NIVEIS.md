@@ -41,8 +41,6 @@
 | ADCT | X | X | - |
 | ADI e ADC (Lei 9.868) | X | X | - |
 | ADPF (Lei 9.882) | X | X | X (14 notas) |
-| Lei Orgânica da Magistratura Nacional – LOMAN (LC 35) | X | X | - |
-| Lei Orgânica Nacional da Defensoria Pública (LC 80) | X | X | - |
 | Súmula Vinculante (Lei 11.417) | X | X | - |
 | Representação Interventiva (Lei 12.562) | X | X | - |
 | Diretrizes e Bases da Educação – LDB (Lei 9.394) | X | X | - |
@@ -73,6 +71,14 @@
 | Estatuto Geral das Guardas Municipais (Lei 13.022) | X | - | - |
 | Ação Popular (Lei 4.717) | X | X | X (34 notas) |
 | Prescrição contra a Fazenda (Decreto 20.910/1932) | X | - | - |
+
+### Direito Institucional (Magistratura, MP e Defensoria)
+
+| Diploma | 1. Pura | 2. Incidência | 3. Comentado |
+|---|:---:|:---:|:---:|
+| Lei Orgânica da Magistratura Nacional – LOMAN (LC 35) | X | X | - |
+| Lei Orgânica Nacional da Defensoria Pública (LC 80) | X | X | - |
+| Lei Orgânica da Defensoria Pública de SP (LC estadual 988/2006) | X | X | - |
 
 ### Direito Processual Civil
 
@@ -207,9 +213,3 @@
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Estatuto da OAB (Lei 8.906) | X | - | - |
-
-### Legislação Estadual de São Paulo
-
-| Diploma | 1. Pura | 2. Incidência | 3. Comentado |
-|---|:---:|:---:|:---:|
-| Lei Orgânica da Defensoria Pública de SP (LC estadual 988/2006) | X | X | - |
