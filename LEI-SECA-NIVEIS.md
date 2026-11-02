@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 143 diplomas · 1. Pura: 143 · 2. Incidência: 138 · 3. Comentado: 2 (48 notas).
+**Totais:** 144 diplomas · 1. Pura: 144 · 2. Incidência: 138 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -54,6 +54,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
+| Organização da Administração Federal (Decreto-Lei 200/1967) | X | - | - |
 | Servidores Federais (Lei 8.112) | X | X | - |
 | Processo Administrativo (Lei 9.784) | X | X | - |
 | Licitações e Contratos Administrativos (Lei 14.133) | X | X | - |
