@@ -30,7 +30,7 @@ import json
 import re
 import sys
 
-RE_ARTIGO = re.compile(r'(?:Artigo|ARTIGO)\s+(\d+)\s*(?:º|°)?\s*(?:\.|$)')
+RE_ARTIGO = re.compile(r'(?:Artigo|ARTIGO)\s+(\d+)\s*(?:º|°|o)?\s*(?:\.|$)')  # "Artigo 1o" (CEDAW, Decreto 4.377)
 TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 # Letra do artigo ("Art. 4º-A", "Art. 18-A."), não a palavra que abre o texto
 # ("Art. 4º - A EXECUÇÃO FISCAL…", Lei 6.830): hífen colado ou letra seguida de "." ou "º".
