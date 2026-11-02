@@ -130,6 +130,13 @@ def junta_alt(a, b):
     ka = (int(a[-4:]), a); kb = (int(b[-4:]), b)
     return a if ka >= kb else b
 
+def stf_no_dono(dono):
+    """Nota do STF de alínea (gravada como texto simples) vai para o inciso ou dispositivo que a contém, e não
+    se perde (LC 101, art. 20, II, a a d: "(Vide ADI 6533)"; CP, art. 91, II, b: "(Vide ADPF 569)")."""
+    for ns in _STF:
+        if ns not in dono.setdefault('stf', []): dono['stf'].append(ns)
+    del _STF[:]
+
 def novo_disp(texto, alt, rev):
     d = {'texto': texto}
     if alt: d['alt'] = alt
@@ -460,6 +467,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if m and inc is not None:
             texto, alt, rev = separa_anotacoes(m.group(2))
             inc.setdefault('ali', {})[m.group(1)] = texto
+            if _STF: stf_no_dono(inc)
             inc['alt'] = junta_alt(inc.get('alt'), alt)
             if not inc['alt']: del inc['alt']
             continue
@@ -467,6 +475,7 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
         if m and not seg.get('ali') and m.group(1) == 'a' or m and seg.get('ali') and chr(ord(max(seg['ali'])) + 1) == m.group(1):
             texto, alt, rev = separa_anotacoes(m.group(2))
             seg.setdefault('ali', {})[m.group(1)] = texto
+            if _STF: stf_no_dono(seg)
             seg['alt'] = junta_alt(seg.get('alt'), alt)
             if not seg['alt']: del seg['alt']
             continue

@@ -51,6 +51,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Código Florestal (Lei 12.651/2012) | `lei-12651.json` | 11/10/2026 |
 | Estatuto do Desarmamento (Lei 10.826/2003) | `lei-10826.json` | 11/10/2026 |
 | Lei Complementar 116/2003 (ISS), com a lista de serviços anexa | `lc-116.json` | 11/10/2026 |
+| Lei de Responsabilidade Fiscal (LC 101/2000) | `lc-101.json` | 02/11/2026 |
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
 | Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358/2026) | `lei-15358.json` | 30/10/2026 |
