@@ -64,6 +64,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Responsabilidade Fiscal (LC 101/2000) | `lc-101.json` | 02/11/2026 |
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
+| Lei Antiterrorismo (Lei 13.260/2016) | `lei-13260.json` | 02/11/2026 |
 | Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358/2026) | `lei-15358.json` | 30/10/2026 |
 | Política Nacional do Meio Ambiente (Lei 6.938/1981) | `lei-6938.json` | 11/10/2026 |
 | Lei do SNUC (Lei 9.985/2000) | `lei-9985.json` | 30/10/2026 |
