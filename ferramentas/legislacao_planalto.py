@@ -86,14 +86,14 @@ def separa_anotacoes(l):
             if re.match(r'\s*Revogad', t, re.I): rev = True
             for ns in notas_stf(t):
                 if ns not in _STF: _STF.append(ns)
-            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lcp|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
+            lm = re.search(r'(Emenda Constitucional de Revis[ãa]o|Emenda Constitucional|Lei Complementar|Lcp|Decreto-Lei|Lei|Medida Provis[óo]ria)\s*(?:n\S*\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)', t, re.I)  # "Lei nº 14.811" ou "Lei 14.811" (Lei 8.072)
             # Ano solto ("de 2009") ou no fim da data ("de 19.7.1995", Lei 8.137, art. 16).
             anos = re.findall(r'(?<![\d.])(1[89]\d{2}|20\d{2})(?![\d.])', t) or re.findall(r'(?<![\d.])\d{1,2}\.\d{1,2}\.(1[89]\d{2}|20\d{2})(?![\d.])', t)
             # Data com ano de dois dígitos: "de 15/05/97" (Lei 7.716, arts. 1º e 20), "de 20.12.77" (Lei 4.132, art. 2º, VIII).
             if not anos: anos = [('19' if int(x) >= 30 else '20') + x for x in re.findall(r'(?<![\d/.])\d{1,2}([/.])\d{1,2}\1(\d{2})(?![\d/])', t) for x in [x[1]]]
             if lm and anos and not re.match(r'\s*(Vide|Vig)', t, re.I):
                 g = lm.group(1).lower()
-                tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g or g == 'lcp' else ('MP' if 'edida' in g else 'Lei')))
+                tipo = 'ECR' if 'revis' in g else ('EC' if 'emenda' in g else ('Lei Complementar' if 'omplementar' in g or g == 'lcp' else ('MP' if 'edida' in g else ('Decreto-Lei' if 'decreto' in g else 'Lei'))))
                 num = int(re.sub(r'[.,]', '', lm.group(2)))  # "Lei nº 12,010" (vírgula, Lei 8.560, art. 2º, § 5º)
                 # Número com ponto de milhar mesmo quando o compilado não põe ("Lei nº 10467", CP, art. 337-B).
                 cand = (int(anos[-1]), num, '%s %s/%s' % (tipo, format(num, ',').replace(',', '.'), anos[-1]))
@@ -435,7 +435,15 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             cab.append(t)
             rubrica = ' '.join(cab)
             continue
-        if art is None: continue
+        if art is None:
+            # Rubrica em negrito antes do primeiro artigo ("**Anterioridade da Lei**", CP, art. 1º; "**Aplicação das
+            # regras gerais do Código Penal**", LCP): só linha inteira em negrito, sem número nem ":"/"." no fim.
+            if ativo and not citado and re.fullmatch(r'\*\*[^*]+\*\*', bruto):
+                t = separa_anotacoes(l)[0].strip('* ').strip()
+                if t and len(t) < 160 and not re.search(r'\d|[:.]$', t) and not re.match(
+                        r'^(T[ÍI]TULO|CAP[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|PARTE|LIVRO|DECRETA|O PRESIDENTE|A PRESIDENTA)\b', t, re.I):
+                    rubrica = t
+            continue
         # Fecho do diploma (local, data, assinaturas): nada mais é dispositivo.
         if re.match(r'^(Rio de Janeiro|Bras[íi]lia|Senado Federal|C[âa]mara dos Deputados|Congresso Nacional)\s*,\s*(?:em\s+)?\d', l): art = None; continue  # também "Brasília , 14 de…" (LGPD)
         m = re.match(r'^§\s*(\d+)\.?\s*[ºo°]?\s*(?:-([A-Z])(?![a-zà-ú]))?\s*[.\-–—:]*\s*(.*)$', l)
