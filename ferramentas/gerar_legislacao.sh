@@ -213,3 +213,6 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/99ac4b12-L9492.m
 # estudo, limpo dos comentários, das questões e das ênfases por ferramentas/lug_md.py.
 C=$(mktemp); python3 -I ferramentas/lug_md.py "/root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/eb42c78d-Decreto_57.663_de_24_de_janeiro_de_1966___Lei_Uniforme_de_Genebra_LUG.docx.md" > "$C"
 python3 -I ferramentas/convencao_planalto.py "$C" dados/legislacao/decreto-57663-lug.json LUG "Lei Uniforme de Genebra – Letras de Câmbio e Notas Promissórias" https://www.planalto.gov.br/ccivil_03/decreto/antigos/d57663.htm 2026-11-02 "LEI UNIFORME RELATIVA ÀS LETRAS DE CÂMBIO E NOTAS PROMISSÓRIAS" >/dev/null; rm -f "$C"
+# Lei 7.357: o compilado traz "Art . 52 portador pode exigir…" (sem o "O"): corrigido antes de extrair.
+C=$(mktemp); sed 's/^Art \. 52 portador pode/Art . 52 O portador pode/' /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/769ee302-L7357.md > "$C"
+gera "$C" L7357 "Lei do Cheque" https://www.planalto.gov.br/ccivil_03/leis/l7357.htm dados/legislacao/lei-7357.json 2026-11-02 --rubrica-capitulo; rm -f "$C"
