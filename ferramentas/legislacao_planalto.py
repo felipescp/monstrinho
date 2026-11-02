@@ -196,7 +196,21 @@ def linhas_md(caminho):
     sem_link = [re.sub(r'\]\([^)]*\)', ']', l) for l in open(caminho, encoding='utf8')]
     vocab = (set(w.lower() for l in sem_link if not linha_titulo(l.strip()) for w in re.findall(r'[A-Za-zÀ-ú]+', l)),
              set(w.lower() for l in sem_link for w in re.findall(r'[A-Za-zÀ-ú]+', l)))
-    for l in open(caminho, encoding='utf8'):
+    # NFC: letra com acento combinante ("CAPI\u0301TULO VII", Lei 8.080) não casaria com os padrões.
+    import unicodedata
+    linhas = [unicodedata.normalize('NFC', l) for l in open(caminho, encoding='utf8')]
+    # Título riscado em várias linhas, com um "~" só na primeira e outro só na última ("~CAPÍTULO VII" / "DO
+    # SUBSISTEMA … IMEDIATO" / "[(Incluído pela Lei nº 11.108, de 2005)](…)~", Lei 8.080): sai inteiro. (O "~"
+    # único numa linha, em geral, é artefato e fica: ver abaixo.)
+    for i, l in enumerate(linhas):
+        if l.count('~') == 1 and re.match(r'^\s*~\s*(?:CAP[ÍI]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|Cap[íi]tulo|T[íi]tulo|(?:Sub)?[Ss]e[çc][ãa]o)\b', l):
+            for j in range(i + 1, min(i + 5, len(linhas))):
+                if not linhas[j].strip() or linhas[j].count('~') > 1: break
+                if linhas[j].count('~') == 1:
+                    if linhas[j].rstrip().endswith('~'):
+                        for k in range(i, j + 1): linhas[k] = '\n'
+                    break
+    for l in linhas:
         l = junta_partidas(l, vocab)
         # Bloco ">" do Markdown: às vezes é só formatação de dispositivo real
         # ("> Art. 234-A." no CP); às vezes é texto citado por artigo que altera
@@ -403,6 +417,15 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
                 r'(?:T[ÍIíi]tulo|Cap[ÍIíi]tulo|(?:Sub)?Se[ÇCçc][ÃAãa]o|TÍTULO|CAPÍTULO|(?:SUB)?SEÇÃO)\s+[IVXLC]+(?:-[A-Z])?', t, re.I):
             cab, rubrica = [], None
             continue
+        # Anotação sozinha entre o "CAPÍTULO VIII" e o nome ("[(Incluído pela Lei nº 12.401, de 2011)]", Lei 8.080).
+        if cab is not None and not t and re.match(r'\[?\(', l): continue
+        # Aspas de fechamento soltas no fim do nome ("…TECNOLOGIA EM SAÚDE”", Lei 8.080, antes do art. 19-M).
+        if cab is not None and '“' not in t and not re.search(r'[a-zà-ú]', t): t = re.sub(r'\s*”$', '', t)
+        # Título solto em maiúsculas antes do primeiro artigo ("DISPOSIÇÃO PRELIMINAR", Lei 8.080).
+        if rubrica_capitulo and cab is None and art is None and ativo and not citado and len(t := separa_anotacoes(l)[0]) < 150 \
+                and re.search(r'[A-ZÀ-Ú]{3}', t) and not re.search(r'[a-zà-ú\d]', t) and not re.search(r'[.;:!?)]$', t) \
+                and not l.startswith('**') and not re.match(r'(?:Art|§|[IVXLC]+\s*[-–])', t):
+            cab = []
         if cab is not None and t and len(t) < 150 and not re.search(r'[.;:!?)”"»]$', t) and not l.startswith('**'):
             cab.append(t)
             rubrica = ' '.join(cab)
