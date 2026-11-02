@@ -152,3 +152,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/42590227-Lcp80.m
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/d1b8330c-L14904.md L14904 "Lei dos Planos de Adaptação à Mudança do Clima" https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l14904.htm dados/legislacao/lei-14904.json 2026-11-02
 # Lei 15.190: depois do fim do texto vem a promulgação das partes vetadas, que o corpo já incorpora: --fim.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ead46cdb-L15190.md L15190 "Lei Geral do Licenciamento Ambiental" https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15190.htm dados/legislacao/lei-15190.json 2026-11-02 --rubrica-capitulo --fim "^Este texto não substitui o publicado no DOU de 8\.8\.2025"
+# Lei 15.512: os textos alterados (arts. 32 a 34) vêm entre aspas, sem ">": linhas_md segue as aspas até fechar.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/021a2bc7-Lei_n__15.512_de_22_09_2026.md L15512 "Lei do Direito da Criança e do Adolescente à Natureza" https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15512.htm dados/legislacao/lei-15512.json 2026-11-02
