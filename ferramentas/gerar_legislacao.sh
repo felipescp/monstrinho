@@ -159,4 +159,7 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/108960c5-L13445.
 # Lei 13.140: títulos com palavra partida ("S eção IV", "Disposiç ões"): linhas_md junta as partes.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/88845772-L13140.md L13140 "Lei de Mediação" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13140.htm dados/legislacao/lei-13140.json 2026-11-02 --rubrica-capitulo
 # Lei 8.080: capítulo VII riscado em três linhas ("~CAPÍTULO VII" … "…~") e "CAPÍTULO" com acento combinante (NFC).
+# Esta geração saiu sem o art. 6º e com o 6º-A gravado como "6" (texto "A. As diferentes…"); o art. 6º
+# (incisos I–XIII, alíneas a–f do I, §§ 1º–6º, até a Lei 15.471/2026) e a chave "6-A" foram corrigidos à
+# mão no JSON a partir do texto do material de questões. Ao regenerar, conferir os arts. 6 e 6-A.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/6e9e5859-L8080.md L8080 "Lei Orgânica da Saúde" https://www.planalto.gov.br/ccivil_03/leis/l8080.htm dados/legislacao/lei-8080.json 2026-11-02 --rubrica-capitulo
