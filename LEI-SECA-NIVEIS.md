@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 151 diplomas · 1. Pura: 151 · 2. Incidência: 145 · 3. Comentado: 2 (48 notas).
+**Totais:** 151 diplomas · 1. Pura: 151 · 2. Incidência: 146 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -102,7 +102,7 @@
 | Habeas Data (Lei 9.507) | X | X | - |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Juizados Especiais (Lei 9.099) | X | X | - |
-| Juizados Especiais da Fazenda Pública (Lei 12.153) | X | - | - |
+| Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
 | Mediação (Lei 13.140) | X | X | - |
 | Tutela contra a Fazenda (Lei 9.494) | X | X | - |
