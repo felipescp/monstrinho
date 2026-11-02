@@ -194,3 +194,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/14694e82-L10259.
 # Lei 11.419: títulos em minúsculas ("capítulo iv" / "disposições gerais e finais").
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ca7f9678-Lei_n__11.419.md L11419 "Lei do Processo Eletrônico" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm dados/legislacao/lei-11419.json 2026-11-02 --rubrica-capitulo
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ab0973a4-L8437.md L8437 "Medidas Cautelares contra Atos do Poder Público" https://www.planalto.gov.br/ccivil_03/leis/l8437.htm dados/legislacao/lei-8437.json 2026-11-02
+# Lei 4.591: anotação com parênteses internos ("… para 60 (sessenta) dias)", art. 35): limpa tira os de dentro.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/dba7245f-L4591compilado_1.md L4591 "Lei de Condomínio e Incorporações" https://www.planalto.gov.br/ccivil_03/leis/l4591.htm dados/legislacao/lei-4591.json 2026-11-02 --rubrica-capitulo
