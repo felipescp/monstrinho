@@ -207,3 +207,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/7f3da337-Lcp_123
 # Lei 13.874: cabeçalho citado sem ">" ("[“CAPÍTULO X](…)" / "DO FUNDO DE INVESTIMENTO") no meio da citação do art. 7º,
 # e trecho riscado dentro do texto citado do art. 13 (art. 19-D da Lei 10.522, revogado depois).
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/4a5a9fea-L13874.md L13874 "Lei da Liberdade Econômica" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/lei/l13874.htm dados/legislacao/lei-13874.json 2026-11-02 --rubrica-capitulo
+# Lei 9.492: "~§ 3º Revogado.~ [(Redação dada pela Lei nº 9.841…)]" (art. 29): revogado por essa lei.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/99ac4b12-L9492.md L9492 "Lei de Protesto de Títulos" https://www.planalto.gov.br/ccivil_03/leis/l9492.htm dados/legislacao/lei-9492.json 2026-11-02 --rubrica-capitulo
