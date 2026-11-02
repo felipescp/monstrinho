@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 159 diplomas · 1. Pura: 159 · 2. Incidência: 154 · 3. Comentado: 2 (48 notas).
+**Totais:** 160 diplomas · 1. Pura: 160 · 2. Incidência: 154 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -68,6 +68,7 @@
 | Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | - |
 | Defesa do Usuário do Serviço Público (Lei 13.460) | X | X | - |
 | Governo Digital (Lei 14.129) | X | X | - |
+| Liberdade Econômica (Lei 13.874) | X | - | - |
 | Saneamento Básico (Lei 11.445) | X | X | - |
 | Lei de Acesso à Informação (Lei 12.527) | X | X | - |
 | Consórcios Públicos (Lei 11.107) | X | X | - |
