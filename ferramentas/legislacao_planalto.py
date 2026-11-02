@@ -221,6 +221,11 @@ def linhas_md(caminho):
                         for k in range(i, j + 1): linhas[k] = '\n'
                     break
     for l in linhas:
+        # Riscado que é só "RÓTULO Revogado." com a lei na anotação ("~§ 3º Revogado.~ [(Redação dada pela Lei nº 9.841,
+        # de 5.10.1999)](…)", Lei 9.492, art. 29): o dispositivo foi revogado por essa lei.
+        mv = re.match(r'^(\s*)~\s*((?:Art\.?\s*\d+[º°o]?(?:-[A-Z])?\.?|§\s*\d+\s*[º°o]?(?:-[A-Z])?\.?|[IVXL]+\s*[-–]|[a-z]\)))\s*\(?\s*Revogad[oa]s?\s*\)?\s*\.?\s*~\s*\[\(Reda[çc][ãa]o\s+dada\s+(pel[oa]\s[^\]]*)\)\]', l)
+        if mv:
+            l = mv.group(1) + mv.group(2) + ' (Revogado ' + mv.group(3) + ')\n'
         # Só o rótulo riscado e o texto não ("~I -~ destinado exclusivamente…", "~§ 2º~ Em caso de início…", LC 123): a
         # linha toda é a redação antiga (a nova vem depois) — vira linha riscada inteira; anotação de revogação no fim
         # ("~I -~ ~os Estados…~ (Revogado pela…)", LC 123, art. 19, I) fica de fora do risco, para o dispositivo constar
