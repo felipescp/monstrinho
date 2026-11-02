@@ -183,3 +183,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/e2f568af-DEL_200
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/08aa28f1-L13460.md L13460 "Código de Defesa do Usuário do Serviço Público" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/lei/l13460.htm dados/legislacao/lei-13460.json 2026-11-02 --rubrica-capitulo
 # Lei 9.873: ".Art. 2º-A." (ponto antes do artigo): limpa tira a pontuação solta.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/61a9c375-L9873.md L9873 "Prescrição da Ação Punitiva da Administração Federal" https://www.planalto.gov.br/ccivil_03/leis/l9873.htm dados/legislacao/lei-9873.json 2026-11-02
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/76fbef8e-L12587.md L12587 "Política Nacional de Mobilidade Urbana" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12587.htm dados/legislacao/lei-12587.json 2026-11-02 --rubrica-capitulo
