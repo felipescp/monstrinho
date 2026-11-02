@@ -15778,6 +15778,18 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal #ls-col-principal { background:var(--bg-soft); display:flex; flex-direction:column; overflow:hidden; padding:0; }
     #leiseca-modal .ls-disciplina { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); padding:12px 4px 4px; }
     #leiseca-modal .ls-disciplina:first-child, #leiseca-modal .ls-conj + .ls-disciplina { padding-top:2px; }
+    /* Disciplinas em acordeão (pedido explícito do usuário): cabeçalho com o
+       número de diplomas; os diplomas ficam recuados por baixo. */
+    #leiseca-modal .ls-disc { border-bottom:1px solid var(--border-color); }
+    #leiseca-modal .ls-disc-cab { display:flex; align-items:flex-start; gap:6px; padding:9px 4px; cursor:pointer; font-size:11px; font-weight:800; color:var(--text-main); line-height:1.3; user-select:none; }
+    #leiseca-modal .ls-disc-cab:hover { color:var(--app-primary); background:var(--bg-accent-soft); }
+    #leiseca-modal .ls-disc-seta { flex-shrink:0; width:10px; color:var(--text-muted); font-size:10px; transition:transform 0.15s ease; transform-origin:4px 50%; }
+    #leiseca-modal .ls-disc.aberta .ls-disc-seta { transform:rotate(90deg); }
+    #leiseca-modal .ls-disc-nome { flex:1; min-width:0; }
+    #leiseca-modal .ls-disc-qtd { flex-shrink:0; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-disc.tem-ativo > .ls-disc-cab { color:var(--app-primary); }
+    #leiseca-modal .ls-disc-corpo { display:none; margin:0 0 8px 12px; border-left:2px solid var(--border-color); }
+    #leiseca-modal .ls-disc.aberta .ls-disc-corpo { display:block; }
     #leiseca-modal .fc-materia-item { padding:7px 4px 7px 10px; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
     #leiseca-modal .fc-materia-item:hover { background:var(--bg-accent-soft); }
     #leiseca-modal .fc-materia-item.ativa { background:var(--bg-ativo-forte); }
@@ -16383,10 +16395,16 @@ window.LEISECA_RUNTIME = {
         if (!col || !this.manifesto) return;
         let self = this, disponiveis = {};
         this._diplomasVisiveis().forEach(function(d) { disponiveis[d.id] = true; });
+        let abertas = this._discAbertas();
         col.innerHTML = this._htmlConjuntos() + (this.manifesto.disciplinas || []).map(function(g) {
             let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
             if (!itens.length) return '';
-            return '<div class="ls-disciplina">' + self._esc(g.nome) + '</div>' + itens.map(function(d) {
+            let temAtivo = itens.some(function(d) { return d.id === self._diploma; });
+            // Fechadas por padrão; abre a que tem o diploma em leitura, até o usuário escolher.
+            let aberta = abertas[g.nome] !== undefined ? abertas[g.nome] : temAtivo;
+            return '<div class="ls-disc' + (aberta ? ' aberta' : '') + (temAtivo ? ' tem-ativo' : '') + '" data-disc="' + self._esc(g.nome) + '">' +
+                '<div class="ls-disc-cab" onclick="window.LEISECA_RUNTIME.alternarDisciplina(this.parentNode)"><span class="ls-disc-seta">▶</span><span class="ls-disc-nome">' + self._esc(g.nome) + '</span><span class="ls-disc-qtd">(' + itens.length + ')</span></div>' +
+                '<div class="ls-disc-corpo">' + itens.map(function(d) {
                 let inc = self._incidencias[d.id], total = inc ? Object.keys(inc.porArt).reduce(function(s, k) { return s + inc.porArt[k]; }, 0) : 0;
                 return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
@@ -16394,8 +16412,22 @@ window.LEISECA_RUNTIME = {
                     (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? '📝' : '') + '</span>'
                         : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? '📝' : '') + '</span>') : '') +
                     (function(r) { return r ? '<span class="ls-leitura-selo" title="Leitura iniciada' + (r.total ? ': ' + r.lidos + ' de ' + r.total + ' artigos críticos e importantes lidos' : '') + '">👁' + (r.pct ? ' ' + r.pct + '%' : '') + '</span>' : ''; })(self._resumoLeitura(d.id)) + '</div>';
-            }).join('');
+            }).join('') + '</div></div>';
         }).join('');
+    },
+    // Acordeão das disciplinas: aberto/fechado lembrado neste aparelho.
+    CHAVE_DISC_ABERTAS: 'tjpe_v1__leiseca_disc_abertas', // preferência do aparelho (fora da sincronização)
+    _discAbertas: function() {
+        if (!this._discAbertasCache) {
+            try { this._discAbertasCache = JSON.parse(localStorage.getItem(this.CHAVE_DISC_ABERTAS) || '{}') || {}; } catch (e) { this._discAbertasCache = {}; }
+        }
+        return this._discAbertasCache;
+    },
+    alternarDisciplina: function(el) {
+        let nome = el.getAttribute('data-disc'), aberta = !el.classList.contains('aberta');
+        el.classList.toggle('aberta', aberta);
+        this._discAbertas()[nome] = aberta;
+        try { localStorage.setItem(this.CHAVE_DISC_ABERTAS, JSON.stringify(this._discAbertas())); } catch (e) {}
     },
     _renderDivisoes: function() {
         let col = document.getElementById('ls-col-divisoes');
