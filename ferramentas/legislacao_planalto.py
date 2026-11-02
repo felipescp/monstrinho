@@ -30,6 +30,8 @@ def limpa(l):
     l = re.sub(r'\[(\((?:Reda[çc][ãa]o\s+dada|Inclu[íi]d[oa]|Revogad[oa]|Acrescid[oa]|Renumerad[oa])[^\]()]*\))\)\]', r'[\1]', l)
     # Anotação sem nenhum parêntese: "§ 1º [Revogado pela Lei nº 9.032, de 28.4.95.](…)" (Lei 8.212, art. 30).
     l = re.sub(r'\[(Revogad[oa]s?\s+pel[oa]\s[^\]()]*)\]', r'[(\1)]', l)
+    # "Vide" sem parênteses: "[Vide Lei nº 7.739, de 20.3.1989](…) , [Vide …](…)" (DL 200, arts. 32 e 35).
+    l = re.sub(r'\[(Vide\s[^\]()]*)\](?=\()', r'[(\1)]', l)
     # Link que corta a última letra da palavra: "[…Constituição Federa](…) l." (Lei 13.300, art. 1º).
     l = re.sub(r'\[([^\]]*[a-zà-ú])\]\([^)]*\)\s([b-df-hj-np-tv-z])(?![\wà-ú])', r'[\1\2]()', l)
     # Link que começa uma letra depois da palavra: "com base nos i [ncisos XX do art. 21](…)" (Lei 13.089, art. 1º).
@@ -115,6 +117,7 @@ def separa_anotacoes(l):
     texto = re.sub(r',\s*,', ',', texto)
     texto = re.sub(r'\s+([.;,:])', r'\1', texto).strip()
     texto = re.sub(r'([:;,])\.+$', r'\1', texto)  # "competência;." (duas anotações com ponto, Lei 8.212, art. 30, I, b)
+    texto = re.sub(r'([:;.])(?:\s*,)+$', r'\1', texto)  # vírgulas entre anotações "Vide" retiradas ("seguintes:,,,", DL 200, art. 35)
     if re.fullmatch(r'[.;,:\s–-]*', texto): texto = ''  # sobra de "§ 2º . (Revogado…)"
     # Texto que é só "Revogado." / "(Revogado)." (sem a lei revogadora entre parênteses).
     if re.fullmatch(r'(?:Caput\.\s*)?\(?\s*Revogad[oa]s?\s*\.?\s*\)?\s*[.;]?', texto, re.I): texto, rev = '', True
@@ -211,6 +214,9 @@ def linhas_md(caminho):
                         for k in range(i, j + 1): linhas[k] = '\n'
                     break
     for l in linhas:
+        # Cabeçalho Markdown antes do título em negrito ("#### **TÍTULO I**", "##### **DA ADMINISTRAÇÃO FEDERAL**",
+        # DL 200): sai, para o negrito valer como rubrica.
+        l = re.sub(r'^\s*#{1,6}\s+(?=\S)', '', l)
         # Letra inicial separada do resto da palavra pelo negrito, em título ("D **o Direito à Cultura**",
         # "Do D **ireito à Cidadania…**", Lei 12.852).
         if linha_titulo(l.strip()): l = re.sub(r'(?<![\w*])([A-ZÀ-Ú]) \*\*(?=[a-zà-ú])', r'**\1', l)
@@ -575,6 +581,14 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             if ms and ult and int(ms.group(1)) == int(ult[-1]) + 1:
                 alvo['ali'][letra] += '\n' + (texto if ms.group(2) != ',' else ms.group(1) + '.' + texto[len(ms.group(0)) - 1:])
                 continue
+        # Lista sem número nem pontuação depois de "…seguintes:" ("Ministério da Justiça" / "Ministério das Relações
+        # Exteriores" …, DL 200, art. 35): um item por linha no dispositivo, antes do filtro de títulos.
+        if alvo is not None and not alvo.get('ali') and not alvo.get('inc') and not alvo.get('pena') and texto \
+                and len(texto) < 150 and not re.search(r'[.;:!?)”"»]$', texto) and re.search(r'[a-zà-ú]', texto) \
+                and re.search(r'\bseguintes?\s*:$', alvo['texto'].split('\n')[0].rstrip()) \
+                and (alvo['texto'].rstrip().endswith(':') or not re.search(r'[.;:!?)]$|^\d', alvo['texto'].split('\n')[-1])):
+            alvo['texto'] += '\n' + texto
+            continue
         # Cabeçalho em maiúsculas ("DO FUNDO DE INVESTIMENTO") não é continuação.
         if texto and texto.upper() == texto and re.search(r'[A-ZÁ-Ú]{3}', texto): continue
         # Rubrica/título sem negrito ("Fundos de Participação dos Estados"):
