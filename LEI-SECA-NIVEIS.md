@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 154 diplomas · 1. Pura: 154 · 2. Incidência: 148 · 3. Comentado: 2 (48 notas).
+**Totais:** 154 diplomas · 1. Pura: 154 · 2. Incidência: 149 · 3. Comentado: 2 (48 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -99,7 +99,7 @@
 | Código de Processo Civil | X | X | - |
 | Ação Civil Pública (Lei 7.347) | X | X | - |
 | Mandado de Segurança (Lei 12.016) | X | X | - |
-| Cautelares contra o Poder Público (Lei 8.437) | X | - | - |
+| Cautelares contra o Poder Público (Lei 8.437) | X | X | - |
 | Habeas Data (Lei 9.507) | X | X | - |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Juizados Especiais (Lei 9.099) | X | X | - |
