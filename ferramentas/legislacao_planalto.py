@@ -375,8 +375,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
                 artigos[str(n)] = novo_disp(texto, alt, rev)
             art, seg, inc, rubrica = None, None, None, None
             continue
-        # Também "Art. 10A." sem hífen (Lei 9.613): letra grudada no número e seguida de ponto.
-        m = re.match(r'^Art\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú])|(?<=\d)([A-Z])(?=\.))?\s*[.\-–—:]*\s*(.*)$', l)
+        # Também "Art. 10A." sem hífen (Lei 9.613) e "Art. 6ºA." (Lei 8.080): letra grudada no número e seguida de ponto.
+        m = re.match(r'^Art\.?\s*(\d+(?:\.\d{3})?)\s*[ºo°]?\s*(?:-([A-Z](?:-[A-Z])?)(?![a-zà-ú])|(?<=[\dº°])([A-Z])(?=\.))?\s*[.\-–—:]*\s*(.*)$', l)
         if m:
             suf = m.group(2) or m.group(3)
             num = m.group(1).replace('.', '') + ('-' + suf if suf else '')
