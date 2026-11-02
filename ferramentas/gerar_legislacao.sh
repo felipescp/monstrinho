@@ -201,3 +201,6 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/a940d13e-L9434co
 # Lei 12.694: art. 9º em duas redações (a antiga sem risco); a nota "(Vide ADI 5157)" da antiga passa para a nova.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/25b74574-L12694.md L12694 "Julgamento Colegiado em Primeiro Grau" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12694.htm dados/legislacao/lei-12694.json 2026-11-02
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/c426f283-L13260.md L13260 "Lei Antiterrorismo" https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/lei/l13260.htm dados/legislacao/lei-13260.json 2026-11-02
+# LC 123: rótulo riscado com texto antigo sem risco ("~I -~ destinado…"), "SeçãoI", "Seção Única" com nome próprio,
+# "[(Vide Lei nº 14.133, de 2021](…)" sem ")"; as tabelas dos Anexos I a V (depois das assinaturas) ficam de fora: --fim.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/7f3da337-Lcp_123.md LC123 "Estatuto Nacional da Microempresa e da Empresa de Pequeno Porte" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp123.htm dados/legislacao/lc-123.json 2026-11-02 --rubrica-capitulo --fim "^Este texto não substitui o publicado no DOU de 15\.12\.2006"

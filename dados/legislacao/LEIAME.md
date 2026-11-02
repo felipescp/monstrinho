@@ -62,6 +62,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Estatuto do Desarmamento (Lei 10.826/2003) | `lei-10826.json` | 11/10/2026 |
 | Lei Complementar 116/2003 (ISS), com a lista de serviços anexa | `lc-116.json` | 11/10/2026 |
 | Lei de Responsabilidade Fiscal (LC 101/2000) | `lc-101.json` | 02/11/2026 |
+| Estatuto Nacional da Microempresa e da Empresa de Pequeno Porte – Simples Nacional (LC 123/2006; sem as tabelas dos Anexos I a V) | `lc-123.json` | 02/11/2026 |
 | Decreto 20.910/1932 (prescrição quinquenal contra a Fazenda) | `decreto-20910.json` | 11/10/2026 |
 | Lei de Organizações Criminosas (Lei 12.850/2013) | `lei-12850.json` | 11/10/2026 |
 | Lei Antiterrorismo (Lei 13.260/2016) | `lei-13260.json` | 02/11/2026 |
