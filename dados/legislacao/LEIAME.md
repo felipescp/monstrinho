@@ -38,6 +38,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei Orgânica da Seguridade Social (Lei 8.212/1991) | `lei-8212.json` | 26/10/2026 |
 | Lei de Benefícios da Previdência Social (Lei 8.213/1991) | `lei-8213.json` | 26/10/2026 |
 | Lei do Processo Administrativo Federal (Lei 9.784/1999) | `lei-9784.json` | 11/10/2026 |
+| Prescrição da Ação Punitiva da Administração Pública Federal (Lei 9.873/1999) | `lei-9873.json` | 02/11/2026 |
 | Lei das Eleições (Lei 9.504/1997) | `lei-9504.json` | 11/10/2026 |
 | Lei dos Partidos Políticos (Lei 9.096/1995) | `lei-9096.json` | 30/10/2026 |
 | Lei de Inelegibilidades (LC 64/1990) | `lc-64.json` | 02/11/2026 |
