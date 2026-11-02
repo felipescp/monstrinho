@@ -17,8 +17,8 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 | sumula sem tribunal no processo | 0 |
 | sumula ou sv com mais de uma ficha | 0 |
 | lei citacoes de artigo | 6549 |
-| lei citacoes ligadas | 6085 |
-| lei dispositivo nao localizado | 5 |
+| lei citacoes ligadas | 6087 |
+| lei dispositivo nao localizado | 3 |
 | lei artigo sem diploma | 45 |
 | lei citacoes de diplomas fora da base | 414 |
 
@@ -143,11 +143,9 @@ Gerado por `relatorios/diagnostico_conexoes.py` sobre `dados/jurisprudencia/*.js
 
 ## I — Lei seca: dispositivo citado que não existe no texto (amostra)
 
-- ADPF 862-RJ (jur_1788747185710_ld527r): "Art. 79, §1º" → Lei 8.906: art. 79 não existe no texto
 - REsp 1.854.662-CE, REsp 1.881.324-PE, REsp 1.881.283-RN e REsp 1.881.290-RN (jur_1788747185710_zb9ob8): "Art. 87, §2º" → Lei 8.112: § 2 não existe no art. 87
 - RE 603.580-RJ (jur_1790221375232_e0glqd): "art. 40, § 7º, I" → CF: inciso I não existe no trecho citado
 - ARE 1.215.727-SP (jur_1790222446982_c6cexa): "art. 40, § 4º, II" → CF: inciso II não existe no trecho citado
-- RMS 75.248-RS (jur_1790221818145_frhqt4): "arts. 34 e 70" → Lei 8.906: art. 70 não existe no texto
 
 ## J — Lei seca: artigo citado sem diploma no mesmo trecho (amostra)
 
