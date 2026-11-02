@@ -191,3 +191,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3ce37d80-Del0201
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/355d5cc1-L1079.md L1079 "Lei dos Crimes de Responsabilidade" https://www.planalto.gov.br/ccivil_03/leis/l1079.htm dados/legislacao/lei-1079.json 2026-11-02 --rubrica-capitulo
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/64660567-L12153.md L12153 "Lei dos Juizados Especiais da Fazenda Pública" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l12153.htm dados/legislacao/lei-12153.json 2026-11-02
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/14694e82-L10259.md L10259 "Lei dos Juizados Especiais Federais" https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10259.htm dados/legislacao/lei-10259.json 2026-11-02
+# Lei 11.419: títulos em minúsculas ("capítulo iv" / "disposições gerais e finais").
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/ca7f9678-Lei_n__11.419.md L11419 "Lei do Processo Eletrônico" https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11419.htm dados/legislacao/lei-11419.json 2026-11-02 --rubrica-capitulo
