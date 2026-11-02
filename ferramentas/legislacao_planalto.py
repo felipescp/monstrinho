@@ -19,6 +19,8 @@ Formato de saída:
 import json, re, sys, datetime
 
 def limpa(l):
+    # Pontuação solta antes do artigo (".Art. 2º-A.", Lei 9.873): sai, senão o artigo não é reconhecido.
+    l = re.sub(r'^(\s*)[.,;]\s*(?=Art\.?\s*\d)', r'\1', l)
     # Links "Visualizar…" antes do artigo (STF na CF, Corpus927 no CPC etc.).
     l = re.sub(r'^\s*>?\s*(?:\[[^\]]*\]\([^)]*\)\s*)+(?=Art\.)', '', l)
     # Anotação sem o "(" de abertura: "[Redação dada pela Lei nº 13.204, de 2015)](…)" (Lei 13.019, art. 48, III).
