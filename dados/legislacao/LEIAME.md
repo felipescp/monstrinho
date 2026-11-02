@@ -90,6 +90,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Marco Legal da Primeira Infância (Lei 13.257/2016) | `lei-13257.json` | 30/10/2026 |
 | Estatuto Digital da Criança e do Adolescente – ECA Digital (Lei 15.211/2025) | `lei-15211.json` | 30/10/2026 |
 | Direito da Criança e do Adolescente à Natureza (Lei 15.512/2026) | `lei-15512.json` | 02/11/2026 |
+| Estatuto da Juventude (Lei 12.852/2013) | `lei-12852.json` | 02/11/2026 |
 | Lei de Alimentos Gravídicos (Lei 11.804/2008) | `lei-11804.json` | 20/10/2026 |
 | Estatuto da Pessoa com Deficiência – Lei Brasileira de Inclusão (Lei 13.146/2015) | `lei-13146.json` | 20/10/2026 |
 | Estatuto da Pessoa Idosa (Lei 10.741/2003) | `lei-10741.json` | 20/10/2026 |
