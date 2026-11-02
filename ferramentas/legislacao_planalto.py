@@ -168,9 +168,36 @@ def linhas_html(caminho):
 CITACAO = '\u2063'  # marca linha de texto citado (não é dispositivo do diploma)
 ART_RISCADO = '\u2064'  # marca artigo inteiro riscado (os filhos que seguem são da redação antiga)
 
+def linha_titulo(t):
+    return bool(t) and len(t) <= 150 and not re.search(r'[.;:,)]$', t) and not re.match(r'(?:\**\s*)?(?:Art|§|Par[áa]grafo)', t)
+
+def junta_partidas(l, vocab):
+    """Palavra partida por espaço em linha de título ("S eção IV", "Disposições C omuns", "Da Confi dencialidade",
+    "Disposiç ões", "Da Mediaçã o Judicial": Lei 13.140): junta duas partes vizinhas quando a primeira não é palavra
+    do texto dos dispositivos e a junção é palavra do documento. Só em linha curta sem pontuação final (título/nome de seção), nunca em dispositivo."""
+    t = l.strip()
+    if not linha_titulo(t): return l
+    pal = t.split(' ')
+    i = 0
+    while i < len(pal) - 1:
+        a, b = pal[i], pal[i + 1]
+        if re.fullmatch(r'[A-Za-zÀ-ú]+', a) and re.fullmatch(r'[A-Za-zÀ-ú]+', b) and a.lower() not in vocab[0] \
+                and (a + b).lower() in vocab[1]:
+            pal[i:i + 2] = [a + b]
+        else:
+            i += 1
+    novo = ' '.join(pal)
+    return l.replace(t, novo) if novo != t else l
+
 def linhas_md(caminho):
     em_citacao = anuncia = aspas = False
+    # Vocabulário só do texto dos dispositivos: as partes da palavra partida ("C", "omuns") estão no próprio título.
+    # A palavra unida pode estar em outro título ("Disposições Comuns"); URL de link não conta ("%C2%A7").
+    sem_link = [re.sub(r'\]\([^)]*\)', ']', l) for l in open(caminho, encoding='utf8')]
+    vocab = (set(w.lower() for l in sem_link if not linha_titulo(l.strip()) for w in re.findall(r'[A-Za-zÀ-ú]+', l)),
+             set(w.lower() for l in sem_link for w in re.findall(r'[A-Za-zÀ-ú]+', l)))
     for l in open(caminho, encoding='utf8'):
+        l = junta_partidas(l, vocab)
         # Bloco ">" do Markdown: às vezes é só formatação de dispositivo real
         # ("> Art. 234-A." no CP); às vezes é texto citado por artigo que altera
         # outra lei ("> > “Art. 16. A sentença…”"). Citado = bloco que abre com
