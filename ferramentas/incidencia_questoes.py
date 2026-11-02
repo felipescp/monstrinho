@@ -35,7 +35,7 @@ TAG = re.compile(r'\(([^()]{2,80}?-(?:19|20)\d{2}(?:/(?:19|20)\d{2})*)\)')
 # Letra do artigo ("Art. 4º-A", "Art. 18-A."), não a palavra que abre o texto
 # ("Art. 4º - A EXECUÇÃO FISCAL…", Lei 6.830): hífen colado ou letra seguida de "." ou "º".
 # "Art 1º" sem ponto (Lei 6.938); "Artigo 1º - …" por extenso (Resolução CONAMA 1/1986).
-RE_ART = re.compile(r'Art(?:igo(?=\s)|\.)?\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?(?:(?<=[\dº°o])-\s*([A-Z])|\s*-\s*([A-Z])(?=[.º°]))?')
+RE_ART = re.compile(r'Art(?:igo(?=\s)|\s?\.)?\s*(\d+(?:\.\d{3})?)\s*(?:º|°|o\b)?(?:(?<=[\dº°o])-\s*([A-Z])|\s*-\s*([A-Z])(?=[.º°]))?')
 
 
 def chave_art(m):
@@ -221,6 +221,22 @@ def main():
         m = re.match(r'CAP[ÍI]TULO\s+([IVXL]+(?:-[A-Z])?)\b', t) or re.fullmatch(r'Cap[íi]tulo\s+([IVXL]+(?:-[A-Z])?)', t)
         if m:
             capitulo = 'Cap. ' + m.group(1) + ' — ' + nome_seguinte(i)
+            continue
+        # "Arts. 125 a 144. (Revogados …)" numa linha só (DL 200): os artigos do
+        # intervalo entram aqui, no grupo corrente (ou no de --titulo/--capitulo).
+        m = None if itens else re.match(r'Arts\.\s*(\d+)\s*a\s*(\d+)\b', t)
+        if m and m.group(1) in B and m.group(2) in B and art in POS and 0 < POS[m.group(1)] - POS[art] <= JANELA:
+            for k in list(B)[POS[m.group(1)]:POS[m.group(2)] + 1]:
+                if k in vistos:
+                    continue
+                vistos.add(k)
+                if k in tit_extra:
+                    titulo, capitulo = tit_extra[k], None
+                capitulo = cap_extra.get(k, capitulo)
+                if not estrutura or estrutura[-1]['titulo'] != titulo or estrutura[-1]['capitulo'] != capitulo:
+                    estrutura.append({'titulo': titulo, 'capitulo': capitulo, 'arts': []})
+                estrutura[-1]['arts'].append(k)
+            art, par, inc = m.group(2), None, None
             continue
         m = None if itens else RE_ART.match(t)
         if itens:
