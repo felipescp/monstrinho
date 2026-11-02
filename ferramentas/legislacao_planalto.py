@@ -365,7 +365,8 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
     em_anexo = False
     cab = None  # nome de capítulo sem negrito em montagem (Lei 9.307)
     # (Também "capítulo I" / "capítulo iv" em minúsculas, Lei 11.419.)
-    RE_CAB = r'(?:[Cc]ap[íi]tulo|CAP[ÍI]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|(?:Sub)?[Ss]e[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
+    # (E "CAPíTULO VII", com o "í" minúsculo, Lei 5.474.)
+    RE_CAB = r'(?:[Cc]ap[íi]tulo|CAP[ÍIí]TULO|T[ÍI]TULO|(?:SUB)?SE[ÇC][ÃA]O|(?:Sub)?[Ss]e[çc][ãa]o)' if rubrica_capitulo else r'Cap[íi]tulo'
     ANEXO.clear()
     ativo = inicio is None
     fonte = linhas_html(md) if re.search(r'\.html?$', md, re.I) else linhas_md(md)

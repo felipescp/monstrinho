@@ -216,3 +216,5 @@ python3 -I ferramentas/convencao_planalto.py "$C" dados/legislacao/decreto-57663
 # Lei 7.357: o compilado traz "Art . 52 portador pode exigir…" (sem o "O"): corrigido antes de extrair.
 C=$(mktemp); sed 's/^Art \. 52 portador pode/Art . 52 O portador pode/' /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/769ee302-L7357.md > "$C"
 gera "$C" L7357 "Lei do Cheque" https://www.planalto.gov.br/ccivil_03/leis/l7357.htm dados/legislacao/lei-7357.json 2026-11-02 --rubrica-capitulo; rm -f "$C"
+# Lei 5.474: "CAPíTULO VII" (í minúsculo).
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/833b6bfd-L5474compilado.md L5474 "Lei das Duplicatas" https://www.planalto.gov.br/ccivil_03/leis/l5474.htm dados/legislacao/lei-5474.json 2026-11-02 --rubrica-capitulo

@@ -30,6 +30,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Lei de Protesto de Títulos (Lei 9.492/1997) | `lei-9492.json` | 02/11/2026 |
 | Lei Uniforme de Genebra – Anexo I do Decreto 57.663/1966 (texto de material de estudo, sem os comentários; o Planalto não publica o anexo; sem as reservas do Anexo II) | `decreto-57663-lug.json` | 02/11/2026 |
 | Lei do Cheque (Lei 7.357/1985) | `lei-7357.json` | 02/11/2026 |
+| Lei das Duplicatas (Lei 5.474/1968) | `lei-5474.json` | 02/11/2026 |
 | Ação Civil Pública (Lei 7.347/1985) | `lei-7347.json` | 09/10/2026 |
 | Planos de Saúde (Lei 9.656/1998) | `lei-9656.json` | 09/10/2026 |
 | Crimes Ambientais (Lei 9.605/1998) | `lei-9605.json` | 09/10/2026 |
