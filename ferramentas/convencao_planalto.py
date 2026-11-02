@@ -39,6 +39,9 @@ CADH = ('CADH', 'Convenção Americana sobre Direitos Humanos (Pacto de São Jos
         'https://www.planalto.gov.br/ccivil_03/decreto/d0678.htm', '2026-10-15', 'CONVENÇÃO AMERICANA SOBRE DIREITOS HUMANOS')
 
 
+ROMANOS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx']
+
+
 def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], titulo=CADH[4]):
     brutas = []
     for l in open(src, encoding='utf-8'):
@@ -107,6 +110,18 @@ def main(src, dst, ident=CADH[0], nome=CADH[1], fonte=CADH[2], data=CADH[3], tit
                 ultima = (item, mm.group(1))
             i += 1
             continue
+        # Item em romanos minúsculos com ponto ("i. apoio público…" … "xv. restrição…", Convenção contra o Racismo,
+        # arts. 4 e 15): só em sequência ("i." primeiro, depois o seguinte do último item); alíneas "a)" seguintes
+        # ficam no item ("ii. … que:" / "a) defenda…").
+        m = re.match(r'([ivxl]+)\.\s+(.*)$', t)
+        if m:
+            chaves = list(art.get('inc', {}))
+            prox = ROMANOS[ROMANOS.index(chaves[-1]) + 1] if chaves and chaves[-1] in ROMANOS[:-1] else None
+            if (not chaves and m.group(1) == 'i') or m.group(1) == prox:
+                item, ultima = {'texto': m.group(2)}, None
+                art.setdefault('inc', {})[m.group(1)] = item
+                i += 1
+                continue
         # "a) texto" ou "- a. texto" (Desaparecimento Forçado).
         # "a. Texto" (San Salvador): só com maiúscula depois, para não pegar continuação.
         # "i)", "v)", "x)" só são alínea logo depois da letra anterior; senão, subitem em romanos

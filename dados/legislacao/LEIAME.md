@@ -136,6 +136,7 @@ Cada diploma é um `.json` gerado a partir do texto compilado do Planalto pelo s
 | Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | `decreto-99710.json` | 18/10/2026 |
 | Convenção da Haia sobre os Aspectos Civis do Sequestro Internacional de Crianças (Decreto 3.413/2000) | `decreto-3413.json` | 30/10/2026 |
 | CEDAW – Convenção sobre a Eliminação de Todas as Formas de Discriminação contra a Mulher (Decreto 4.377/2002) | `decreto-4377.json` | 18/10/2026 (o compilado não traz o título "Artigo 22"; inserido antes da extração, ver `gerar_legislacao.sh`) |
+| Convenção Interamericana contra o Racismo, a Discriminação Racial e Formas Correlatas de Intolerância (Decreto 10.932/2022; equivalente a emenda constitucional, art. 5º, § 3º, da CF) | `decreto-10932.json` | 02/11/2026 |
 | Estatuto de Roma do Tribunal Penal Internacional (Decreto 4.388/2002) | `decreto-4388.json` | 18/10/2026 |
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | `decreto-592.json` | 18/10/2026 |
 | Pacto Internacional sobre Direitos Econômicos, Sociais e Culturais (Decreto 591/1992) | `decreto-591.json` | 20/10/2026 (o compilado numera os dois últimos itens do art. 13 como "1." e "2."; renumerados 3 e 4 antes da extração, ver `gerar_legislacao.sh`) |
