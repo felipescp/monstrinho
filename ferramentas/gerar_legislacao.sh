@@ -168,3 +168,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/106b5254-L13812.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/bb296789-L10216.md L10216 "Lei da Reforma Psiquiátrica" https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10216.htm dados/legislacao/lei-10216.json 2026-11-02
 # Lei 12.852: títulos com a inicial fora do negrito ("D **o Direito à Cultura**") e ano partido pelo link ("201](…) 3").
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/07dc3879-L12852.md L12852 "Estatuto da Juventude" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12852.htm dados/legislacao/lei-12852.json 2026-11-02 --rubrica-capitulo
+# LCP: rubricas em negrito por artigo, como no CP (sem --rubrica-capitulo).
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/9b2c464e-DEL3688.md LCP "Lei das Contravenções Penais" https://www.planalto.gov.br/ccivil_03/decreto-lei/del3688.htm dados/legislacao/lei-contravencoes-penais.json 2026-11-02
