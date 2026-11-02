@@ -184,3 +184,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/08aa28f1-L13460.
 # Lei 9.873: ".Art. 2º-A." (ponto antes do artigo): limpa tira a pontuação solta.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/61a9c375-L9873.md L9873 "Prescrição da Ação Punitiva da Administração Federal" https://www.planalto.gov.br/ccivil_03/leis/l9873.htm dados/legislacao/lei-9873.json 2026-11-02
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/76fbef8e-L12587.md L12587 "Política Nacional de Mobilidade Urbana" https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12587.htm dados/legislacao/lei-12587.json 2026-11-02 --rubrica-capitulo
+# Lei 14.129: depois do fim do texto vem a promulgação das partes vetadas (arts. 32 e 35), que o corpo já incorpora: --fim.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/da9797ff-L14129.md L14129 "Lei do Governo Digital" https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14129.htm dados/legislacao/lei-14129.json 2026-11-02 --rubrica-capitulo --fim "^Este texto não substitui o publicado no DOU de 30\.3\.2021"
