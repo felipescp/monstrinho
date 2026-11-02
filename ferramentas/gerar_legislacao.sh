@@ -189,3 +189,4 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/da9797ff-L14129.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/3ce37d80-Del0201.md DL201 "Responsabilidade dos Prefeitos e Vereadores" https://www.planalto.gov.br/ccivil_03/decreto-lei/del0201.htm dados/legislacao/decreto-lei-201.json 2026-11-02
 # Lei 1.079: itens "1-" (sem espaço) no caput, "PARTE PRIMEIRA"/"TÍTULO ÚNICO" e nomes de capítulo com ":"/";"/"(CGIBS)" no fim.
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/355d5cc1-L1079.md L1079 "Lei dos Crimes de Responsabilidade" https://www.planalto.gov.br/ccivil_03/leis/l1079.htm dados/legislacao/lei-1079.json 2026-11-02 --rubrica-capitulo
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/64660567-L12153.md L12153 "Lei dos Juizados Especiais da Fazenda Pública" https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l12153.htm dados/legislacao/lei-12153.json 2026-11-02
