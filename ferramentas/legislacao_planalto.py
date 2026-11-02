@@ -565,6 +565,16 @@ def converter(md, inicio=None, fim=None, rubrica_capitulo=False):
             if re.fullmatch(r'\d{1,2}[º°]?[.)]', texto): texto += ' (Revogado)' if rev else ''
             alvo['texto'] += '\n' + texto
             continue
+        # Subitem numerado da alínea antes dos filtros de título: item curto sem pontuação final ("9. contra a vida e
+        # a dignidade sexual; e", LC 64, art. 1º, I, e) e item com vírgula no lugar do ponto, quando é o seguinte da
+        # sequência ("12, os Secretários de Estado;", art. 1º, II, a).
+        if alvo is not None and alvo.get('ali'):
+            ms = re.match(r'^(\d{1,2})([.),])\s', texto)
+            letra = max(alvo['ali'])
+            ult = re.findall(r'\n(\d{1,2})[.)]', alvo['ali'][letra])
+            if ms and ult and int(ms.group(1)) == int(ult[-1]) + 1:
+                alvo['ali'][letra] += '\n' + (texto if ms.group(2) != ',' else ms.group(1) + '.' + texto[len(ms.group(0)) - 1:])
+                continue
         # Cabeçalho em maiúsculas ("DO FUNDO DE INVESTIMENTO") não é continuação.
         if texto and texto.upper() == texto and re.search(r'[A-ZÁ-Ú]{3}', texto): continue
         # Rubrica/título sem negrito ("Fundos de Participação dos Estados"):

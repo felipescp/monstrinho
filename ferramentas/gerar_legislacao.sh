@@ -171,3 +171,5 @@ gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/07dc3879-L12852.
 # LCP: rubricas em negrito por artigo, como no CP (sem --rubrica-capitulo).
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/9b2c464e-DEL3688.md LCP "Lei das Contravenções Penais" https://www.planalto.gov.br/ccivil_03/decreto-lei/del3688.htm dados/legislacao/lei-contravencoes-penais.json 2026-11-02
 gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/52224e36-L9807.md L9807 "Lei de Proteção a Vítimas e Testemunhas" https://www.planalto.gov.br/ccivil_03/leis/l9807.htm dados/legislacao/lei-9807.json 2026-11-02 --rubrica-capitulo
+# LC 64: itens numerados dentro das alíneas (art. 1º, I, e; II, a; III, b), um por linha no texto da alínea.
+gera /root/.claude/uploads/ef447e4b-ca92-5003-8b73-44611bd8dcfd/36d917be-Lcp64compilado.md LC64 "Lei de Inelegibilidades" https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp64.htm dados/legislacao/lc-64.json 2026-11-02
