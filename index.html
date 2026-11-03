@@ -7498,14 +7498,14 @@ window.CRONOGRAMA_RUNTIME = {
             return '<div class="crono-sim-vazio">Card sem taxonomia — sem correspondência automática.</div>';
         }
         let R = window.FLASHCARDS_NB_RUNTIME;
-        let decks = R.decksDoL2(loc.materia, loc.divisao);
+        let decks = R.decksDoL2(loc.materia, loc.divisao), l2 = R._chaveL2(loc.materia, loc.divisao), l2Js = l2.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         if (decks.length === 0) {
             return '<div class="crono-sim-vazio">Nenhum baralho de flashcards para essa matéria/divisão.</div>';
         }
         return '<div class="crono-sim-lista" style="max-height:220px;">' + decks.map(function(d) {
-            let r = R._resumoDeck(d);
-            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\');" title="' + R._escapar(d.nome) + '">' +
-                '<span class="crono-sim-item-nome">🗂️ ' + R._escapar(d.nome || '(sem nome)') + '</span>' +
+            let r = R._resumoDeck(d, l2);
+            return '<div class="crono-sim-item" onclick="window.CRONOGRAMA_RUNTIME.fecharPainelRelacionados(); window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\', \'' + l2Js + '\');" title="' + R._escapar(d.nome) + '">' +
+                '<span class="crono-sim-item-nome">🗂️ ' + R._escapar(d.nome || '(sem nome)') + (r.total < r.totalDeck ? ' <small style="color:var(--text-muted);">(' + r.total + ' de ' + r.totalDeck + ' cards)</small>' : '') + '</span>' +
                 '<span style="flex-shrink:0; font-size:9px; color:var(--text-muted); font-weight:800; background:#f1f5f9; padding:2px 5px; border-radius:4px; border:1px solid var(--border-color);">' + r.realizadas + '/' + r.total + '</span>' +
             '</div>';
         }).join('') + '</div>';
@@ -12324,6 +12324,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         this.posicoes = (bruto && ehDict(bruto.posicoes)) ? bruto.posicoes : {};
         this._bootstrapped = true;
         this._consolidarDuplicados();
+        if (this._juntarLotesDivididos()) this.salvar();
     },
 
     _garantirCarregado: function() {
@@ -12354,8 +12355,79 @@ window.FLASHCARDS_NB_RUNTIME = {
         return cards.map(function(c) {
             let base = self._hashTexto(self._normNome(c.f));
             vistos[base] = (vistos[base] || 0) + 1;
-            return { id: idDeck + '_' + base + (vistos[base] > 1 ? '_' + vistos[base] : ''), f: c.f, b: c.b };
+            let novo = { id: idDeck + '_' + base + (vistos[base] > 1 ? '_' + vistos[base] : ''), f: c.f, b: c.b };
+            if (c.l2) novo.l2 = c.l2;
+            return novo;
         });
+    },
+
+    // ── BARALHO COM VÁRIAS L2 (pedido explícito do usuário) ──
+    // Um lote colado em "+ Criar Flashcard" vira UM baralho, guardado na L2
+    // principal (a de mais cards). Cada card de outra L2 guarda a sua em
+    // card.l2 ("MATÉRIA > Divisão"); sem card.l2, vale a L2 do baralho.
+    // Na seção Flashcards o baralho aparece só na L2 principal; no Simulado
+    // ativo/Cronograma (decksDoL2) aparece em toda L2 que toca, e o estudo
+    // aberto por lá traz só os cards daquela L2.
+    _l2DoCard: function(card, chaveDeck) { return (card && card.l2) || chaveDeck; },
+    _cardsDaL2: function(deck, l2) {
+        if (!deck || !l2) return (deck && deck.cards) || [];
+        let achado = this._acharDeck(deck.id), chaveDeck = achado ? achado.chave : null, self = this;
+        return (deck.cards || []).filter(function(c) { return self._l2DoCard(c, chaveDeck) === l2; });
+    },
+    _l2sDoDeck: function(deck, chaveDeck) {
+        let cont = {}, self = this;
+        (deck.cards || []).forEach(function(c) { let k = self._l2DoCard(c, chaveDeck); cont[k] = (cont[k] || 0) + 1; });
+        return cont;
+    },
+    // Baralhos PESSOAIS de mesmo nome criados no mesmo lote (antes cada L2
+    // virava um baralho): junta no de mais cards, mantendo o id de cada card
+    // (e portanto o progresso); os absorvidos ganham lápide (o backup/nuvem
+    // não os traz de volta).
+    _juntarLotesDivididos: function() {
+        let self = this, grupos = {}, mudou = false;
+        Object.keys(this.decks).forEach(function(chave) {
+            (self.decks[chave] || []).forEach(function(d) {
+                if (!d || d.origem_oficial || self.excluidos[d.id]) return;
+                let k = self._normNome(d.nome);
+                (grupos[k] = grupos[k] || []).push({ deck: d, chave: chave, t: Date.parse(d.criadoEm) || 0 });
+            });
+        });
+        Object.keys(grupos).forEach(function(k) {
+            let g = grupos[k];
+            if (g.length < 2 || g.every(function(x) { return x.chave === g[0].chave; })) return;
+            g.sort(function(a, b) { return a.t - b.t; });
+            // Mesmo lote = criados com até 2 min de diferença entre si.
+            let lotes = [], atual = [];
+            g.forEach(function(x) {
+                if (atual.length && x.t - atual[atual.length - 1].t > 120000) { lotes.push(atual); atual = []; }
+                atual.push(x);
+            });
+            if (atual.length) lotes.push(atual);
+            lotes.forEach(function(lote) {
+                if (lote.length < 2 || lote.every(function(x) { return x.chave === lote[0].chave; })) return;
+                let alvo = lote.reduce(function(a, b) { return (b.deck.cards || []).length > (a.deck.cards || []).length ? b : a; });
+                let frentes = {};
+                alvo.deck.cards.forEach(function(c) { frentes[self._normNome(c.f)] = true; });
+                lote.forEach(function(x) {
+                    if (x === alvo) return;
+                    (x.deck.cards || []).forEach(function(c) {
+                        let kf = self._normNome(c.f);
+                        if (frentes[kf]) return;
+                        frentes[kf] = true;
+                        let l2 = self._l2DoCard(c, x.chave), novo = { id: c.id, f: c.f, b: c.b };
+                        if (l2 !== alvo.chave) novo.l2 = l2;
+                        alvo.deck.cards.push(novo);
+                    });
+                    (x.deck.topicos || []).forEach(function(t) { if (!(alvo.deck.topicos || []).includes(t)) (alvo.deck.topicos = alvo.deck.topicos || []).push(t); });
+                    self.decks[x.chave] = (self.decks[x.chave] || []).filter(function(d) { return d !== x.deck; });
+                    if (!self.decks[x.chave].length) delete self.decks[x.chave];
+                    delete self.posicoes[x.deck.id];
+                    self.excluidos[x.deck.id] = new Date().toISOString();
+                    mudou = true;
+                });
+            });
+        });
+        return mudou;
     },
 
     _migrarEstado: function(deckAntigo, deckNovo) {
@@ -12469,7 +12541,12 @@ window.FLASHCARDS_NB_RUNTIME = {
     // Relacionado" do Cronograma).
     decksDoL2: function(materia, divisao) {
         this._garantirCarregado();
-        return this.decks[this._chaveL2(materia, divisao)] || [];
+        let alvo = this._chaveL2(materia, divisao), out = (this.decks[alvo] || []).slice(), self = this;
+        Object.keys(this.decks).forEach(function(ch) {
+            if (ch === alvo) return;
+            (self.decks[ch] || []).forEach(function(d) { if ((d.cards || []).some(function(c) { return c.l2 === alvo; })) out.push(d); });
+        });
+        return out;
     },
 
     _acharDeck: function(idDeck) {
@@ -12483,10 +12560,11 @@ window.FLASHCARDS_NB_RUNTIME = {
         return null;
     },
 
-    _resumoDeck: function(deck) {
+    _resumoDeck: function(deck, l2) {
         let self = this;
-        let r = { total: (deck.cards || []).length, realizadas: 0, dificil: 0, medio: 0, facil: 0 };
-        (deck.cards || []).forEach(function(c) {
+        let cards = l2 ? this._cardsDaL2(deck, l2) : (deck.cards || []);
+        let r = { total: cards.length, totalDeck: (deck.cards || []).length, realizadas: 0, dificil: 0, medio: 0, facil: 0 };
+        cards.forEach(function(c) {
             let e = self.estado[c.id];
             if (!e) return;
             if (e.realizada) r.realizadas++;
@@ -12643,7 +12721,10 @@ window.FLASHCARDS_NB_RUNTIME = {
                     '</span>' +
                 '</div>' +
                 '<div class="fcnb-card-titulo">' + self._escapar(d.nome) + '</div>' +
-                '<div class="fcnb-card-meta">' + r.total + ' flashcard' + (r.total === 1 ? '' : 's') + '</div>' +
+                '<div class="fcnb-card-meta">' + r.total + ' flashcard' + (r.total === 1 ? '' : 's') +
+                    (function() { let l2s = self._l2sDoDeck(d, par.chave), outras = Object.keys(l2s).filter(function(k) { return k !== par.chave; });
+                        return outras.length ? ' <span title="' + self._escapar(outras.map(function(k) { return k + ': ' + l2s[k]; }).join('\n')) + '">· também ' + outras.map(function(k) { return self._escapar(k.split(' > ').slice(1).join(' > ')) + ' (' + l2s[k] + ')'; }).join(', ') + '</span>' : ''; })() +
+                '</div>' +
                 '<div class="fcnb-progresso"><div style="width:' + pct + '%;"></div></div>' +
                 '<div class="fcnb-card-rodape"><span>' + r.realizadas + '/' + r.total + ' realizados</span><span>🔴 ' + r.dificil + ' · 🟡 ' + r.medio + ' · 🟢 ' + r.facil + '</span></div>' +
                 '<button class="fcnb-btn-abrir" onclick="event.stopPropagation(); window.FLASHCARDS_NB_RUNTIME.abrirEstudo(\'' + d.id + '\')">Abrir flashcards</button>' +
@@ -12701,7 +12782,9 @@ window.FLASHCARDS_NB_RUNTIME = {
             f = String(f == null ? '' : f).trim();
             b = String(b == null ? '' : b).trim();
             if (!f || !b) { ignorados++; return; }
-            cards.push({ f: f, b: b });
+            let novo = { f: f, b: b };
+            if (typeof item.l2 === 'string' && item.l2.indexOf(' > ') > 0) novo.l2 = item.l2;
+            cards.push(novo);
         });
         if (cards.length === 0) return { ok: false, erro: 'Nenhum flashcard válido (cada item precisa de frente "f" e verso "b").' };
         let topicos = (obj && !Array.isArray(obj) && obj.topics && Array.isArray(obj.topics.covered)) ? obj.topics.covered.map(String) : [];
@@ -13059,6 +13142,7 @@ window.FLASHCARDS_NB_RUNTIME = {
             nomeEl.value = sug; nomeEl.dataset.sugerido = sug;
         }
         let linhasGrupo = Object.keys(grupos).map(function(chave) { return '• ' + self._escapar(chave) + ' — ' + grupos[chave] + ' card(s)'; });
+        if (linhasGrupo.length > 1) linhasGrupo.push('<small>Tudo num só baralho, guardado no tema com mais cards; cada card leva o seu tema.</small>');
         statusEl.innerHTML = '<span class="ok">✓ ' + res.cards.length + ' flashcard' + (res.cards.length === 1 ? '' : 's') + ' reconhecido' + (res.cards.length === 1 ? '' : 's') + '</span>' +
             (res.incompletos ? ' <span class="aviso">(' + res.incompletos + ' incompleto(s), sem Q ou R, ignorado(s))</span>' : '') +
             (linhasGrupo.length ? '<br>' + linhasGrupo.join('<br>') : '') +
@@ -13081,14 +13165,19 @@ window.FLASHCARDS_NB_RUNTIME = {
         let fbDiv = document.getElementById('fcnb-criar-divisao').value;
         if (cr.semTax && (!fbMat || !fbDiv)) { mostrarErro('Escolha a matéria e a divisão para os cards cujo "T =" não foi reconhecido.'); return; }
 
-        let porChave = {};
+        // Um lote = UM baralho (pedido explícito do usuário), guardado na L2
+        // principal (a de mais cards); os cards de outra L2 levam card.l2.
+        let contL2 = {}, ordemL2 = [], subtopicos = [];
         cr.cards.forEach(function(c) {
-            let chave = c._tax ? self._chaveL2(c._tax.materia, c._tax.divisao) : self._chaveL2(fbMat, fbDiv);
-            if (!porChave[chave]) porChave[chave] = { cards: [], subtopicos: [] };
-            porChave[chave].cards.push({ f: c.f, b: c.b });
+            c._l2 = c._tax ? self._chaveL2(c._tax.materia, c._tax.divisao) : self._chaveL2(fbMat, fbDiv);
+            if (!(c._l2 in contL2)) { contL2[c._l2] = 0; ordemL2.push(c._l2); }
+            contL2[c._l2]++;
             let sub = c._tax && c._tax.subtopico;
-            if (sub && porChave[chave].subtopicos.indexOf(sub) === -1) porChave[chave].subtopicos.push(sub);
+            if (sub && subtopicos.indexOf(sub) === -1) subtopicos.push(sub);
         });
+        let principal = ordemL2.reduce(function(a, b) { return contL2[b] > contL2[a] ? b : a; });
+        let porChave = {};
+        porChave[principal] = { cards: cr.cards.map(function(c) { let x = { f: c.f, b: c.b }; if (c._l2 !== principal) x.l2 = c._l2; return x; }), subtopicos: subtopicos };
 
         let nomeNorm = this._normNome(nome);
         let resumo = [];
@@ -13100,9 +13189,10 @@ window.FLASHCARDS_NB_RUNTIME = {
                 let jaTem = {};
                 existente.cards.forEach(function(c) { jaTem[self._normNome(c.f)] = true; });
                 let novos = grupo.cards.filter(function(c) { let k = self._normNome(c.f); if (jaTem[k]) return false; jaTem[k] = true; return true; });
-                let todos = existente.cards.map(function(c) { return { f: c.f, b: c.b }; }).concat(novos);
-                // Ids por conteúdo: os cards antigos mantêm o mesmo id (e o progresso).
-                existente.cards = self._cardsComIdPorConteudo(existente.id, todos);
+                // Os cards antigos ficam como estão (mesmo id = mesmo progresso,
+                // inclusive os vindos de baralhos juntados); só os novos ganham id.
+                let idsNovos = self._cardsComIdPorConteudo(existente.id, existente.cards.map(function(c) { return { f: c.f, b: c.b }; }).concat(novos)).slice(existente.cards.length);
+                existente.cards = existente.cards.concat(idsNovos);
                 existente.topicos = (existente.topicos || []).concat(grupo.subtopicos.filter(function(t) { return (existente.topicos || []).indexOf(t) === -1; }));
                 existente.criadoEm = new Date().toISOString();
                 resumo.push(novos.length + ' card(s) acrescentado(s) ao baralho existente em ' + chave + (grupo.cards.length - novos.length ? ' (' + (grupo.cards.length - novos.length) + ' repetido(s) ignorado(s))' : ''));
@@ -13112,6 +13202,9 @@ window.FLASHCARDS_NB_RUNTIME = {
                 resumo.push('Baralho criado em ' + chave + ' com ' + grupo.cards.length + ' card(s)');
             }
         });
+        if (ordemL2.length > 1) resumo.push('Cards por tema: ' + ordemL2.map(function(k) { return k.split(' > ').slice(1).join(' > ') + ' (' + contL2[k] + ')'; }).join(' · ') +
+            '. No Simulado ativo, o baralho aparece em cada um desses temas, só com os cards dele.');
+        this._juntarLotesDivididos();
         if (!this.salvar()) alert('Atenção: os flashcards foram criados, mas não foi possível gravá-los (armazenamento cheio). Eles serão perdidos ao recarregar a página.');
         let primeira = Object.keys(porChave)[0].split(' > ');
         this._materiaSelecionada = primeira[0];
@@ -13169,7 +13262,7 @@ window.FLASHCARDS_NB_RUNTIME = {
             nome: deck.nome,
             criadoEm: deck.criadoEm || new Date().toISOString(),
             topicos: Array.isArray(deck.topicos) ? deck.topicos : [],
-            cards: (deck.cards || []).map(function(c) { return { id: c.id, f: c.f, b: c.b }; })
+            cards: (deck.cards || []).map(function(c) { let x = { id: c.id, f: c.f, b: c.b }; if (c.l2) x.l2 = c.l2; return x; })
         };
     },
 
@@ -13255,11 +13348,14 @@ window.FLASHCARDS_NB_RUNTIME = {
         }
     },
 
-    abrirEstudo: function(idDeck) {
+    // l2 (opcional, vindo do Simulado ativo/Cronograma): estuda só os cards dessa L2.
+    abrirEstudo: function(idDeck, l2) {
         this._garantirCarregado();
         let achado = this._acharDeck(idDeck);
         if (!achado) { alert('Baralho não encontrado.'); return; }
-        this._est = { deckId: idDeck, chave: achado.chave, filtro: 'todos', embaralhar: false, ordemBase: achado.deck.cards.map(function(c) { return c.id; }), ordem: [], idx: 0, virado: false };
+        let cards = achado.deck.cards;
+        if (l2) { let daL2 = this._cardsDaL2(achado.deck, l2); if (daL2.length && daL2.length < cards.length) cards = daL2; else l2 = null; }
+        this._est = { deckId: idDeck, chave: l2 || achado.chave, l2: l2 || null, filtro: 'todos', embaralhar: false, ordemBase: cards.map(function(c) { return c.id; }), ordem: [], idx: 0, virado: false };
         let idPos = this.posicoes[idDeck];
         this._recalcularOrdem(idPos || null);
         document.getElementById('modal-fcnb-estudo').classList.add('open');
@@ -13327,7 +13423,7 @@ window.FLASHCARDS_NB_RUNTIME = {
         document.getElementById('fcnb-est-sub').textContent = cardOrigem ? (cardOrigem._chave + ' · ' + cardOrigem._deckNome) : est.chave;
         document.getElementById('fcnb-est-btn-embaralhar').classList.toggle('ativo', est.embaralhar);
 
-        let resumo = this._resumoDeck(deck);
+        let resumo = this._resumoDeck(deck, est.l2);
         document.getElementById('fcnb-est-filtros').innerHTML = this.FILTROS.map(function(f) {
             let n = deck.cards.filter(function(c) { return self._passaFiltro(c, f.chave); }).length;
             return '<button class="fcnb-pill' + (est.filtro === f.chave ? ' ativa' : '') + '" onmousedown="event.preventDefault()" onclick="window.FLASHCARDS_NB_RUNTIME.definirFiltro(\'' + f.chave + '\')">' + f.rotulo + ' (' + n + ')</button>';
@@ -25261,9 +25357,12 @@ function renderNav(){
                     }
 
                     if (window.FLASHCARDS_NB_RUNTIME) {
+                        // Baralho que toca esta L2 (mesmo guardado em outra): o estudo traz só os cards dela.
+                        let l2Nb = window.FLASHCARDS_NB_RUNTIME._chaveL2(locBaralhos.materia, locBaralhos.divisao);
+                        let l2NbJs = l2Nb.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         window.FLASHCARDS_NB_RUNTIME.decksDoL2(locBaralhos.materia, locBaralhos.divisao).forEach(function(deckNb) {
-                            let rNb = window.FLASHCARDS_NB_RUNTIME._resumoDeck(deckNb);
-                            itensBaralhos += `<div onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudo('${deckNb.id}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;" title="Flashcards — ${window.FLASHCARDS_NB_RUNTIME._escapar(deckNb.nome)}">
+                            let rNb = window.FLASHCARDS_NB_RUNTIME._resumoDeck(deckNb, l2Nb);
+                            itensBaralhos += `<div onclick="window.FLASHCARDS_NB_RUNTIME.abrirEstudo('${deckNb.id}', '${l2NbJs}')" title="${rNb.total < rNb.totalDeck ? rNb.total + ' de ' + rNb.totalDeck + ' cards deste baralho são deste tema' : ''}" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;" title="Flashcards — ${window.FLASHCARDS_NB_RUNTIME._escapar(deckNb.nome)}">
                                 <span>🃏 ${window.FLASHCARDS_NB_RUNTIME._escapar(deckNb.nome)}</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">${rNb.realizadas}/${rNb.total}</span>
                             </div>`;
                         });
