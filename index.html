@@ -15916,7 +15916,9 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-conj-ico { flex-shrink:0; background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; width:26px; height:26px; font-size:12px; cursor:pointer; color:var(--text-main); padding:0; }
     #leiseca-modal .ls-conj-criar { background:none; border:1px dashed var(--border-color); border-radius:6px; padding:5px 6px; font-size:10.5px; font-weight:700; color:var(--app-primary); cursor:pointer; text-align:left; }
     #leiseca-modal .ls-conj-criar:hover { background:var(--bg-accent-soft); }
-    #leiseca-modal .ls-conj-prog { display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:700; color:var(--text-muted); }
+    #leiseca-modal .ls-conj-prog { display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:700; color:var(--text-muted); flex-wrap:wrap; }
+    #leiseca-modal .ls-so-com { display:inline-flex; align-items:center; gap:3px; margin-left:auto; cursor:pointer; color:var(--text-main); font-weight:700; white-space:nowrap; }
+    #leiseca-modal .ls-so-com input { margin:0; }
     #leiseca-modal .ls-conj-prog .ls-prog-barra { width:70px; }
     #leiseca-modal .ls-conj-fundo { position:fixed; inset:0; z-index:10050; background:rgba(15,23,42,0.45); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
     #leiseca-modal .ls-conj-caixa { background:var(--bg-white); color:var(--text-main); border-radius:12px; width:min(460px,100%); max-height:min(640px,100%); display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; }
@@ -16199,7 +16201,8 @@ window.LEISECA_RUNTIME = {
             '<div class="ls-conj-linha"><select title="Conjunto de Lei Seca exibido (fica salvo como padrão)" onchange="window.LEISECA_RUNTIME.escolherConjunto(this.value)">' + opcoes + '</select>' +
             (c ? '<button type="button" class="ls-conj-ico" title="Editar ou excluir o conjunto" onclick="window.LEISECA_RUNTIME.abrirPainelConjunto(\'' + this._escJs(c.id) + '\')">✎</button>' : '') + '</div>' +
             '<button type="button" class="ls-conj-criar" onclick="window.LEISECA_RUNTIME.abrirPainelConjunto()">＋ Criar conjunto de Lei Seca</button>' +
-            (total ? '<div class="ls-conj-prog" title="' + (c ? 'Conjunto ' + this._esc(c.nome) : 'Todo o acervo') + ': ' + lidos + ' de ' + total + ' artigos críticos e importantes lidos"><span class="ls-prog-barra"><span style="width:' + (lidos && pct < 2 ? 2 : pct) + '%"></span></span>👁 ' + pct + '% · ' + lidos + '/' + total + '</div>' : '') +
+            (total ? '<div class="ls-conj-prog" title="' + (c ? 'Conjunto ' + this._esc(c.nome) : 'Todo o acervo') + ': ' + lidos + ' de ' + total + ' artigos críticos e importantes lidos"><span class="ls-prog-barra"><span style="width:' + (lidos && pct < 2 ? 2 : pct) + '%"></span></span>👁 ' + pct + '% · ' + lidos + '/' + total +
+                '<label class="ls-so-com" title="Mostrar só as leis com notas do 📝 Modo comentado"><input type="checkbox"' + (this._soComentadas() ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.alternarSoComentadas(this.checked)">Apenas Comentadas</label></div>' : '') +
             '</div>';
     },
     abrirPainelConjunto: function(id) {
@@ -16489,15 +16492,15 @@ window.LEISECA_RUNTIME = {
     _renderDiplomas: function() {
         let col = document.getElementById('ls-col-diplomas');
         if (!col || !this.manifesto) return;
-        let self = this, disponiveis = {};
-        this._diplomasVisiveis().forEach(function(d) { disponiveis[d.id] = true; });
+        let self = this, disponiveis = {}, soCom = this._soComentadas();
+        this._diplomasVisiveis().forEach(function(d) { if (!soCom || d.comentarios) disponiveis[d.id] = true; });
         let abertas = this._discAbertas();
         col.innerHTML = this._htmlConjuntos() + (this.manifesto.disciplinas || []).map(function(g) {
             let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
             if (!itens.length) return '';
             let temAtivo = itens.some(function(d) { return d.id === self._diploma; });
             // Fechadas por padrão; abre a que tem o diploma em leitura, até o usuário escolher.
-            let aberta = abertas[g.nome] !== undefined ? abertas[g.nome] : temAtivo;
+            let aberta = soCom ? true : (abertas[g.nome] !== undefined ? abertas[g.nome] : temAtivo);
             return '<div class="ls-disc' + (aberta ? ' aberta' : '') + (temAtivo ? ' tem-ativo' : '') + '" data-disc="' + self._esc(g.nome) + '">' +
                 '<div class="ls-disc-cab" onclick="window.LEISECA_RUNTIME.alternarDisciplina(this.parentNode)"><span class="ls-disc-seta">▶</span><span class="ls-disc-nome">' + self._esc(g.nome) + '</span><span class="ls-disc-qtd">(' + itens.length + ')</span></div>' +
                 '<div class="ls-disc-corpo">' + itens.map(function(d) {
@@ -16505,11 +16508,20 @@ window.LEISECA_RUNTIME = {
                 return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
                     // 📝 = diploma com notas do sistema (Modo comentado), pedido explícito do usuário.
-                    (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? '📝' : '') + '</span>'
-                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? '📝' : '') + '</span>') : '') +
+                    (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? ' 📝' : '') + '</span>'
+                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? ' 📝' : '') + '</span>') : '') +
                     (function(r) { return r ? '<span class="ls-leitura-selo" title="Leitura iniciada' + (r.total ? ': ' + r.lidos + ' de ' + r.total + ' artigos críticos e importantes lidos' : '') + '">👁' + (r.pct ? ' ' + r.pct + '%' : '') + '</span>' : ''; })(self._resumoLeitura(d.id)) + '</div>';
             }).join('') + '</div></div>';
         }).join('');
+    },
+    // "Apenas Comentadas" (pedido explícito do usuário): a lista mostra só as
+    // leis com notas do sistema (campo "comentarios" no manifesto). Preferência
+    // deste aparelho; abre as disciplinas para as poucas leis ficarem à vista.
+    CHAVE_SO_COMENTADAS: 'tjpe_v1__leiseca_so_comentadas',
+    _soComentadas: function() { try { return localStorage.getItem(this.CHAVE_SO_COMENTADAS) === '1'; } catch (e) { return false; } },
+    alternarSoComentadas: function(ligar) {
+        try { if (ligar) localStorage.setItem(this.CHAVE_SO_COMENTADAS, '1'); else localStorage.removeItem(this.CHAVE_SO_COMENTADAS); } catch (e) {}
+        this._renderDiplomas();
     },
     // Acordeão das disciplinas: aberto/fechado lembrado neste aparelho.
     CHAVE_DISC_ABERTAS: 'tjpe_v1__leiseca_disc_abertas', // preferência do aparelho (fora da sincronização)
