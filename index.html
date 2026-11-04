@@ -12156,8 +12156,10 @@ window.fecharPraticarCadernoModal = function() {
     #modal-fcnb-estudo .fcnb-selo.medio { background:#5c4a1f; color:#fdd663; }
     #modal-fcnb-estudo .fcnb-selo.facil { background:#1e4620; color:#81c995; }
     #modal-fcnb-estudo .fcnb-selo.realizada { background:#174ea6; color:#d2e3fc; }
-    #modal-fcnb-estudo .fcnb-carta-corpo { flex:1; min-height:0; display:flex; align-items:center; overflow-y:auto; }
-    #modal-fcnb-estudo .fcnb-carta-texto { width:100%; font-size:28px; line-height:1.4; color:#f1f3f4; white-space:pre-wrap; word-wrap:break-word; padding:8px 0; }
+    /* Centraliza com margin:auto (e não align-items:center): texto maior que o
+       card começa no topo e rola, em vez de ser cortado em cima e embaixo. */
+    #modal-fcnb-estudo .fcnb-carta-corpo { flex:1; min-height:0; display:flex; align-items:flex-start; overflow-y:auto; }
+    #modal-fcnb-estudo .fcnb-carta-texto { width:100%; margin:auto 0; font-size:28px; line-height:1.4; color:#f1f3f4; white-space:pre-wrap; word-wrap:break-word; padding:8px 0; }
     #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:23px; }
     #modal-fcnb-estudo .fcnb-carta-texto.longo { font-size:19px; }
     #modal-fcnb-estudo .fcnb-carta-texto.muito-longo { font-size:16px; }
@@ -12180,18 +12182,49 @@ window.fecharPraticarCadernoModal = function() {
     #modal-fcnb-estudo .fcnb-est-aviso-fav.visivel { opacity:1; max-height:40px; min-height:16px; padding:2px 22px; }
     #modal-fcnb-estudo .fcnb-acao:disabled { opacity:0.35; cursor:default; }
     #modal-fcnb-estudo .fcnb-sep { width:1px; height:30px; background:#3c4043; margin:0 4px; }
+    /* Celular (pedido explícito do usuário): o card ocupa o espaço que
+       sobra — tela cheia, cabeçalho em 1 linha, filtros numa faixa que rola
+       de lado, sem a dica de teclado, botões em 2 linhas no rodapé
+       (🔴 🟡 🟢 / ← ☆ ✓ →). Deslizar no card navega (ver _instalarDeslize). */
     @media (max-width:640px) {
-        #modal-fcnb-estudo .fcnb-carta-texto { font-size:22px; }
-        #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:19px; }
+        #modal-fcnb-estudo.mo { padding:0; }
+        #modal-fcnb-estudo .fcnb-est { width:100vw; height:100dvh; border-radius:0; }
+        #modal-fcnb-estudo .fcnb-est-topo { padding:8px 6px 2px 14px; gap:4px; align-items:center; }
+        #modal-fcnb-estudo .fcnb-est-topo > div:first-child { flex:1; min-width:0; }
+        #modal-fcnb-estudo .fcnb-est-titulo { font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+        #modal-fcnb-estudo .fcnb-est-titulo.expandido { white-space:normal; }
+        #modal-fcnb-estudo .fcnb-est-sub { font-size:10.5px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #modal-fcnb-estudo .fcnb-est-topo-acoes { gap:0; }
+        #modal-fcnb-estudo .fcnb-est-icone { width:34px; height:34px; font-size:15px; }
+        #modal-fcnb-estudo .fcnb-est-filtros { flex-wrap:nowrap; overflow-x:auto; padding:4px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+        #modal-fcnb-estudo .fcnb-est-filtros::-webkit-scrollbar { display:none; }
+        #modal-fcnb-estudo .fcnb-pill { flex-shrink:0; padding:4px 10px; font-size:10.5px; }
+        #modal-fcnb-estudo .fcnb-est-progresso { padding:4px 14px 0 14px; }
+        #modal-fcnb-estudo .fcnb-est-progresso-txt { font-size:10px; }
+        #modal-fcnb-estudo .fcnb-est-dica { display:none; }
+        #modal-fcnb-estudo .fcnb-est-palco { padding:8px 10px 4px 10px; }
+        #modal-fcnb-estudo .fcnb-carta { width:100%; height:100%; padding:14px 16px; border-radius:18px; }
+        #modal-fcnb-estudo .fcnb-carta-texto { font-size:21px; }
+        #modal-fcnb-estudo .fcnb-carta-texto.medio { font-size:18px; }
         #modal-fcnb-estudo .fcnb-carta-texto.longo { font-size:16px; }
-        #modal-fcnb-estudo .fcnb-acao { padding:10px 12px; font-size:12px; }
+        #modal-fcnb-estudo .fcnb-carta-texto.muito-longo { font-size:15px; }
+        #modal-fcnb-estudo .fcnb-est-nav { display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; padding:6px 10px calc(10px + env(safe-area-inset-bottom)) 10px; }
+        #modal-fcnb-estudo .fcnb-acao { padding:9px 4px; font-size:12px; text-align:center; overflow:hidden; text-overflow:ellipsis; }
+        #modal-fcnb-estudo #fcnb-btn-dificil { grid-row:1; grid-column:1 / 3; }
+        #modal-fcnb-estudo #fcnb-btn-medio { grid-row:1; grid-column:3 / 5; }
+        #modal-fcnb-estudo #fcnb-btn-facil { grid-row:1; grid-column:5 / 7; }
+        #modal-fcnb-estudo #fcnb-btn-anterior { grid-row:2; grid-column:1; }
+        #modal-fcnb-estudo #fcnb-btn-favorito { grid-row:2; grid-column:2 / 4; }
+        #modal-fcnb-estudo #fcnb-btn-realizada { grid-row:2; grid-column:4 / 6; }
+        #modal-fcnb-estudo #fcnb-btn-proximo { grid-row:2; grid-column:6; }
+        #modal-fcnb-estudo .fcnb-nav-seta { width:auto; height:auto; min-height:38px; border-radius:99px; font-size:18px; }
         #modal-fcnb-estudo .fcnb-sep { display:none; }
     }
 </style>
     <div class="fcnb-est">
         <div class="fcnb-est-topo">
             <div>
-                <div class="fcnb-est-titulo" id="fcnb-est-titulo"></div>
+                <div class="fcnb-est-titulo" id="fcnb-est-titulo" onclick="this.classList.toggle('expandido')" title="Toque para ver o nome inteiro"></div>
                 <div class="fcnb-est-sub" id="fcnb-est-sub"></div>
             </div>
             <div class="fcnb-est-topo-acoes">
@@ -12222,6 +12255,24 @@ window.fecharPraticarCadernoModal = function() {
 </div>
 
 <script>
+// Celular: deslizar no card passa para o anterior/próximo (o toque continua virando).
+(function() {
+    let x0 = null, y0 = null, t0 = 0;
+    document.addEventListener('touchstart', function(e) {
+        let palco = e.target.closest && e.target.closest('#fcnb-est-palco');
+        if (!palco || e.touches.length !== 1) { x0 = null; return; }
+        x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+        if (x0 === null) return;
+        let t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+        x0 = null;
+        if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - t0 > 800) return;
+        e.preventDefault(); // não vira o card
+        if (window.FLASHCARDS_NB_RUNTIME && window.FLASHCARDS_NB_RUNTIME._est) window.FLASHCARDS_NB_RUNTIME.navegar(dx < 0 ? 1 : -1);
+    }, { passive: false });
+})();
+
 // ── PARSER DE "+ CRIAR FLASHCARD" (texto colado) ──
 // Mesmo princípio do parser de questões (parsDisc): só os campos
 // reconhecidos têm efeito, e o resto (chrome do chat, "GERAR LOTE",
