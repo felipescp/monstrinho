@@ -169,7 +169,7 @@ Avisa por e-mail quando o Storage entrega muito mais dados do que o normal, venh
 3. Em **Select a metric**, procure **GCS Bucket → Sent bytes** (`storage.googleapis.com/network/sent_bytes_count`).
 4. Em **Filter**, escolha `bucket_name = monstrinho-lab.firebasestorage.app`.
 5. Em **Transform data**: *Rolling window* = **1 day**, *Rolling window function* = **sum**.
-6. Em **Configure trigger**: *Threshold* acima de **2 GB**. Para começar, isso dá cerca de 100 aparelhos novos por dia. Ajuste depois de ver o gráfico de alguns dias.
+6. Em **Configure trigger** (Configurar gatilho de alerta): *Threshold*, "Alguma série temporal viola", "Acima do limite" e, em **Valor do limite**, **2000000000**. O campo é em bytes (B), e esse número dá 2 GB. Para começar, isso dá cerca de 100 aparelhos novos por dia. Ajuste depois de ver o gráfico de alguns dias.
 7. Em **Notifications**, crie um canal de **Email** com o seu endereço.
 8. Dê um nome, como "Salinha: download alto do acervo", e salve.
 
