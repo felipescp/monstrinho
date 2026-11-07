@@ -28250,7 +28250,8 @@ window.iniciarSimuladoDaVitrine = async function(simId, moduleIdx) {
     if (provaAlvo.origem_oficial &&
         (!window.ACERVO_OFICIAL_FULL || !window.ACERVO_OFICIAL_FULL[provaAlvo.id]) &&
         window.__bootOficialPromise__) {
-        await window.__bootOficialPromise__;
+        window._avisoCarregando(true);
+        try { await window.__bootOficialPromise__; } finally { window._avisoCarregando(false); }
     }
 
     let targetId = simId;
@@ -29169,7 +29170,9 @@ window.garantirConteudoOficialCompleto = async function(item) {
         } catch (e) {}
     }
     if (urlArquivo) {
-        await window._carregarArquivoOficialCompleto(urlArquivo);
+        window._avisoCarregando(true);
+        try { await window._carregarArquivoOficialCompleto(urlArquivo); }
+        finally { window._avisoCarregando(false); }
         if (window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]) return true;
     }
 
@@ -29182,6 +29185,28 @@ window.garantirConteudoOficialCompleto = async function(item) {
     }
 
     return !!(window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]);
+};
+
+// Aviso "Carregando bateria…" enquanto o arquivo completo é baixado (o
+// clique parecia não funcionar durante a espera).
+window._avisoCarregando = function(ligar, texto) {
+    let el = document.getElementById('aviso-carregando-bateria');
+    if (!ligar) { if (el) el.remove(); document.body.style.cursor = ''; return; }
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'aviso-carregando-bateria';
+        el.setAttribute('role', 'status');
+        el.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:100000;background:rgba(20,20,30,.92);color:#fff;padding:14px 22px;border-radius:12px;font-size:15px;box-shadow:0 6px 24px rgba(0,0,0,.35);display:flex;align-items:center;gap:10px;pointer-events:none';
+        el.innerHTML = '<span style="width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;display:inline-block;animation:giroCarregando .8s linear infinite"></span><span></span>';
+        if (!document.getElementById('estilo-giro-carregando')) {
+            let st = document.createElement('style'); st.id = 'estilo-giro-carregando';
+            st.textContent = '@keyframes giroCarregando{to{transform:rotate(360deg)}}';
+            document.head.appendChild(st);
+        }
+        document.body.appendChild(el);
+    }
+    el.lastChild.textContent = texto || 'Carregando bateria…';
+    document.body.style.cursor = 'progress';
 };
 
 // Busca um arquivo do manifesto e guarda em memória o conteúdo completo das
