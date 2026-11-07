@@ -3300,12 +3300,25 @@ window.repararSimuladosNaoSincronizados = async function() {
 //
 // Idempotente (só mexe no que realmente mudou de posição) e segura de
 // rodar quantas vezes quiser.
+// Versão atual de cada bateria oficial: o conteúdo completo, se já foi
+// aberto nesta sessão, senão a cópia rasa do acervo (tem tópicos e
+// taxonomia — só faltam enunciado e explicação).
+window._mapaOficialAtual = function() {
+    let m = {};
+    try {
+        JSON.parse(window.lerAcervoProvasBruto() || '[]').forEach(function(p) { if (p && p.origem_oficial && p.id) m[p.id] = p; });
+    } catch (e) {}
+    Object.assign(m, window.ACERVO_OFICIAL_FULL || {});
+    return m;
+};
+
 window.repararTopicosNoPlanner = async function() {
     await window.__bootOficialPromise__;
     await window.__arquivoMortoPromise__;
     await window.__plannerHidratacaoPromise__;
 
-    if (!window.ACERVO_OFICIAL_FULL || typeof window.resolverMatTopicoQuestao !== 'function') return [];
+    if (typeof window.resolverMatTopicoQuestao !== 'function') return [];
+    let fonteAtual = window._mapaOficialAtual();
 
     let arquivoMorto = window.lerArquivoMorto() || {};
     let dbStr = window.lerPlannerBruto() || '{}';
@@ -3354,7 +3367,7 @@ window.repararTopicosNoPlanner = async function() {
 
     Object.keys(arquivoMorto).forEach(function(examId) {
         let snap = arquivoMorto[examId];
-        let atual = window.ACERVO_OFICIAL_FULL[examId];
+        let atual = fonteAtual[examId];
         if (!snap || !snap.stats || !snap.dados || !atual || !atual.dados) return;
 
         let mapaAtual = {};
@@ -3454,7 +3467,8 @@ window.repararTaxonomiaSessaoAtiva = async function() {
     await window.__bootOficialPromise__;
     await window.__sessaoAtivaPromise__;
 
-    if (!window.ACERVO_OFICIAL_FULL || !Array.isArray(window.SIMS) || !window.SIMS.length) return [];
+    if (!Array.isArray(window.SIMS) || !window.SIMS.length) return [];
+    let fonteAtual = window._mapaOficialAtual();
 
     let CAMPOS = ['id_taxonomia', 'caminho_completo', 'materia'];
     let mudouAlgumaCoisa = false;
@@ -3463,7 +3477,7 @@ window.repararTaxonomiaSessaoAtiva = async function() {
 
     window.SIMS.forEach(function(sim, i) {
         if (!sim || !sim.cfg || !sim.cfg.id) return;
-        let atual = window.ACERVO_OFICIAL_FULL[sim.cfg.id];
+        let atual = fonteAtual[sim.cfg.id];
         if (!atual) return;
 
         let mudouEsta = false;
@@ -27994,12 +28008,13 @@ window.cancelarEdicaoAcervo = function() {
     }
 };
 
-window.editarSimuladoAcervo = function(id) {
+window.editarSimuladoAcervo = async function(id) {
     let acervo = JSON.parse(window.lerAcervoProvasBruto() || '[]');
     let prova = acervo.find(p => p.id === id);
     if(!prova) return;
 
     if (prova.origem_oficial) {
+        if (!(await window.garantirConteudoOficialCompleto(prova))) { alert('Não foi possível carregar o conteúdo completo desta bateria agora. Verifique sua conexão e tente de novo.'); return; }
         prova = Object.assign({}, prova, { dados: resolverDadosCompletos(prova) });
     }
 
@@ -29144,6 +29159,20 @@ window.garantirConteudoOficialCompleto = async function(item) {
     if (!item || !item.origem_oficial) return true;
     if (window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]) return true;
 
+    // Carregamento sob demanda: o boot só trouxe o índice raso; o arquivo
+    // completo desta bateria é buscado agora (uma vez por sessão).
+    let urlArquivo = item._manifestoUrl;
+    if (!urlArquivo) {
+        try {
+            let local = JSON.parse(window.lerAcervoProvasBruto() || '[]').find(function(p) { return p && p.id === item.id; });
+            urlArquivo = local && local._manifestoUrl;
+        } catch (e) {}
+    }
+    if (urlArquivo) {
+        await window._carregarArquivoOficialCompleto(urlArquivo);
+        if (window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]) return true;
+    }
+
     if (Array.isArray(window.__acervoOficialFalhas__) && window.__acervoOficialFalhas__.length > 0) {
         let falhas = window.__acervoOficialFalhas__.slice();
         window.__acervoOficialFalhas__ = [];
@@ -29153,6 +29182,67 @@ window.garantirConteudoOficialCompleto = async function(item) {
     }
 
     return !!(window.ACERVO_OFICIAL_FULL && window.ACERVO_OFICIAL_FULL[item.id]);
+};
+
+// Busca um arquivo do manifesto e guarda em memória o conteúdo completo das
+// baterias dele. Pedidos simultâneos do mesmo arquivo usam a mesma busca.
+window._carregarArquivoOficialCompleto = function(url) {
+    if (!window.__buscasArquivoOficial__) window.__buscasArquivoOficial__ = {};
+    if (window.__buscasArquivoOficial__[url]) return window.__buscasArquivoOficial__[url];
+    let p = (async function() {
+        const dados = await window._buscarAcervoOficialComRetry(url);
+        if (dados === null || dados === undefined) return false;
+        let lista = Array.isArray(dados) ? dados : (dados && (dados.data || dados.sims || dados.simulados)) || [dados];
+        if (!window.ACERVO_OFICIAL_FULL) window.ACERVO_OFICIAL_FULL = {};
+        (Array.isArray(lista) ? lista : []).forEach(function(it) {
+            if (it && it.id) { it.origem_oficial = true; window.ACERVO_OFICIAL_FULL[it.id] = it; }
+        });
+        // Atualiza também a cópia rasa do acervo (e a poda do arquivo).
+        window.processarImportacaoAcervo(dados, { origemOficial: true, urlOrigem: url });
+        return true;
+    })();
+    window.__buscasArquivoOficial__[url] = p;
+    p.then(function(ok) { if (!ok) delete window.__buscasArquivoOficial__[url]; });
+    return p;
+};
+
+// Boot pelo índice raso (ferramentas/indice_baterias.py): baixa só
+// indice-versao.json (poucos KB) e, se a versão mudou ou falta alguma
+// bateria no aparelho, indice.json (≈ 2,7 MB, sem enunciados). Devolve
+// false se o índice não existir — aí o boot volta a baixar tudo.
+window.CHAVE_INDICE_BATERIAS = 'salinha_indice_baterias_versao';
+window._carregarIndiceBaterias = async function() {
+    let versao;
+    try {
+        const r = await fetch('dados/bateriasvf/indice-versao.json?v=' + Date.now());
+        if (!r.ok) return false;
+        versao = await r.json();
+    } catch (e) { return false; }
+    if (!versao || !versao.versao || !Array.isArray(versao.ids)) return false;
+    window.__ACERVO_IDS_INDICE__ = new Set(versao.ids);
+
+    let guardada = null;
+    try { guardada = localStorage.getItem(window.CHAVE_INDICE_BATERIAS); } catch (e) {}
+    let oficiaisLocais = new Set();
+    try {
+        JSON.parse(window.lerAcervoProvasBruto() || '[]').forEach(function(p) {
+            if (p && p.origem_oficial && p._manifestoUrl) oficiaisLocais.add(p.id);
+        });
+    } catch (e) {}
+    if (guardada === versao.versao && versao.ids.every(function(id) { return oficiaisLocais.has(id); })) return true;
+
+    let indice;
+    try {
+        const r = await fetch('dados/bateriasvf/indice.json?v=' + Date.now());
+        if (!r.ok) return false;
+        indice = await r.json();
+    } catch (e) { return false; }
+    if (!indice || !indice.arquivos) return false;
+    Object.keys(indice.arquivos).forEach(function(url) {
+        window.processarImportacaoAcervo(indice.arquivos[url], { origemOficial: true, urlOrigem: url, raso: true });
+    });
+    try { localStorage.setItem(window.CHAVE_INDICE_BATERIAS, indice.versao || versao.versao); } catch (e) {}
+    return true;
 };
 
 window.carregarAcervosOficiais = async function() {
@@ -29226,7 +29316,11 @@ window.ACERVO_OFICIAL_IDS = new Set(
    // (processarImportacaoAcervo, que usa RUNTIME_LOCK) continua sequencial
    // e síncrono, sem esperar rede — por isso não há disputa de lock, mesmo
    // com a busca sendo concorrente.
-   let resultadosManifesto = await Promise.all(caminhosManifesto.map(function(caminho) {
+   // Medida 2 (carregamento sob demanda): com o índice raso, nenhum arquivo
+   // completo é baixado aqui — cada um vem só quando uma bateria dele é
+   // aberta (garantirConteudoOficialCompleto).
+   const viaIndice = await window._carregarIndiceBaterias();
+   let resultadosManifesto = viaIndice ? [] : await Promise.all(caminhosManifesto.map(function(caminho) {
       return window._buscarAcervoOficialComRetry(caminho).then(function(dados) {
          return { caminho: caminho, dados: dados };
       });
@@ -29301,8 +29395,12 @@ window._marcarExcluidosAcervo = function(ids) {
 // meio, ACERVO_OFICIAL_FULL ficaria incompleto e podar por cima dele
 // apagaria cache válido por engano.
 window.repararAcervoOficialOrfao = function() {
-    if (Array.isArray(window.__acervoOficialFalhas__) && window.__acervoOficialFalhas__.length > 0) return [];
-    if (!window.ACERVO_OFICIAL_FULL) return [];
+    let idsIndice = window.__ACERVO_IDS_INDICE__;
+    if (!idsIndice) {
+        if (Array.isArray(window.__acervoOficialFalhas__) && window.__acervoOficialFalhas__.length > 0) return [];
+        if (!window.ACERVO_OFICIAL_FULL) return [];
+    }
+    let existe = function(id) { return idsIndice ? idsIndice.has(id) : !!window.ACERVO_OFICIAL_FULL[id]; };
 
     let acervoLocal;
     try { acervoLocal = JSON.parse(window.lerAcervoProvasBruto() || '[]'); } catch (e) { return []; }
@@ -29310,7 +29408,7 @@ window.repararAcervoOficialOrfao = function() {
     let removidos = [];
     let idsRemovidos = [];
     let restantes = acervoLocal.filter(function(item) {
-        if (item && item.origem_oficial && !window.ACERVO_OFICIAL_FULL[item.id]) {
+        if (item && item.origem_oficial && !existe(item.id)) {
             removidos.push(item.nome || item.id);
             idsRemovidos.push(item.id);
             return false;
@@ -29476,8 +29574,12 @@ novosItens.forEach(item => {
         if (opcoes.origemOficial) {
             item.origem_oficial = true;
 
-            if (!window.ACERVO_OFICIAL_FULL) window.ACERVO_OFICIAL_FULL = {};
-            window.ACERVO_OFICIAL_FULL[item.id] = item;
+            // opcoes.raso: veio do índice (dados/bateriasvf/indice.json), sem
+            // enunciado/explicação — só o catálogo; o completo vem ao abrir.
+            if (!opcoes.raso) {
+                if (!window.ACERVO_OFICIAL_FULL) window.ACERVO_OFICIAL_FULL = {};
+                window.ACERVO_OFICIAL_FULL[item.id] = item;
+            }
 
             let itemRaso = JSON.parse(JSON.stringify(item));
             if (itemRaso.dados && Array.isArray(itemRaso.dados.blocos)) {
@@ -29588,7 +29690,7 @@ if (opcoes.origemOficial && opcoes.urlOrigem) {
    EXPORTAÇÃO BLINDADA (GRUPOS E ENTIDADES)
    ========================================== */
 
-window.exportarEntidadeJson = function(arg1, arg2) {
+window.exportarEntidadeJson = async function(arg1, arg2) {
     // Truque mágico: aceita tanto 1 argumento (id) quanto 2 argumentos (tipo, id)
     let id = arg2 ? arg2 : arg1; 
     
@@ -29601,6 +29703,7 @@ window.exportarEntidadeJson = function(arg1, arg2) {
     }
 
     if (entidade.origem_oficial) {
+        if (!(await window.garantirConteudoOficialCompleto(entidade))) { alert('Não foi possível carregar o conteúdo completo desta bateria agora. Verifique sua conexão e tente de novo.'); return; }
         entidade = Object.assign({}, entidade, { dados: resolverDadosCompletos(entidade) });
     }
 
