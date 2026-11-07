@@ -52,7 +52,7 @@
     // tentariam baixar o acervo em massa com uma conta liberada. Chave do
     // reCAPTCHA v3 (pública por natureza; a secreta fica no console do
     // Firebase). Vazia = App Check desligado. Ver LEIAME-firebase.md.
-    var APP_CHECK_SITE_KEY = '';
+    var APP_CHECK_SITE_KEY = '6Lf9hhUuAAAAAGWqW4i_O7zidXkuuSc3xKVpjpfT';
     var appCheckLigado = modo === 'producao' && !!APP_CHECK_SITE_KEY, appCheckAtivado = false, appCheckSemToken = false;
     var BASE = 'https://firebasestorage.googleapis.com/v0/b/' + CONFIG.storageBucket + '/o/';
     var fetchOriginal = window.fetch.bind(window);
@@ -103,19 +103,39 @@
             .then(function() {
                 if (!firebase.apps.length) firebase.initializeApp(CONFIG);
                 // Antes de qualquer uso do Firestore/Storage (tokens vão junto sozinhos).
-                if (appCheckLigado && !appCheckAtivado) {
-                    appCheckAtivado = true;
-                    try { firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true); }
-                    catch (e) { console.warn('[APP CHECK] Não foi possível ativar:', e); }
-                }
-                return firebase;
-            });
+                return appCheckLigado ? ativarAppCheck() : null;
+            })
+            .then(function() { return firebase; });
     };
+    // Só ativa se o reCAPTCHA carregar (até 5 s): com ele bloqueado (extensão,
+    // rede), o SDK esperaria o token para sempre e travaria o Firestore. Sem
+    // App Check, o site segue normal — e só seria recusado com a aplicação
+    // ligada no console (aí aparece o aviso do bloqueador).
+    var ativacaoAppCheck = null;
+    function ativarAppCheck() {
+        if (!ativacaoAppCheck) ativacaoAppCheck = new Promise(function(ok) {
+            var s = document.createElement('script'), t = setTimeout(function() { ok(false); }, 5000);
+            s.src = 'https://www.google.com/recaptcha/api.js?render=' + encodeURIComponent(APP_CHECK_SITE_KEY);
+            s.onload = function() { clearTimeout(t); ok(true); };
+            s.onerror = function() { clearTimeout(t); ok(false); };
+            document.head.appendChild(s);
+        }).then(function(carregou) {
+            if (!carregou) { console.warn('[APP CHECK] reCAPTCHA indisponível: seguindo sem App Check.'); return; }
+            try { firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true); appCheckAtivado = true; }
+            catch (e) { console.warn('[APP CHECK] Não foi possível ativar:', e); }
+        });
+        return ativacaoAppCheck;
+    }
     // Token do App Check para as chamadas diretas ao Storage (lerStorage).
     function tokenAppCheck() {
         if (!appCheckLigado) return Promise.resolve(null);
-        return FB.carregarSDK([]).then(function() { return firebase.appCheck().getToken(false); })
-            .then(function(r) { appCheckSemToken = !(r && r.token); return r && r.token; }, function(e) { console.warn('[APP CHECK] Sem token:', e); appCheckSemToken = true; return null; });
+        if (ativacaoAppCheck && !appCheckAtivado) { appCheckSemToken = true; return ativacaoAppCheck.then(function() { return appCheckAtivado ? tokenAppCheck() : null; }); }
+        // Com o reCAPTCHA bloqueado (extensão, rede), getToken pode ficar
+        // esperando indefinidamente: em 5 s segue sem o token (o Firebase só
+        // recusa se o App Check estiver aplicado no console).
+        var limite = new Promise(function(ok, falha) { setTimeout(function() { falha(new Error('tempo esgotado')); }, 5000); });
+        return FB.carregarSDK([]).then(function() { return Promise.race([firebase.appCheck().getToken(false), limite]); })
+            .then(function(r) { appCheckSemToken = !(r && r.token); return r && r.token; }, function(e) { console.warn('[APP CHECK] Sem token:', e && e.message || e); appCheckSemToken = true; return null; });
     }
     // Firestore com persistência offline (gravações ficam na fila sem rede).
     // enablePersistence tem que vir antes de qualquer outro uso: por isso todo
