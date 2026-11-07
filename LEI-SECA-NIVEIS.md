@@ -166,6 +166,7 @@
 | Registros Públicos (Lei 6.015) | X | X | - |
 | Lei Geral de Proteção de Dados – LGPD (Lei 13.709) | X | X | - |
 | Marco Civil da Internet (Lei 12.965) | X | X | - |
+| Estatuto da OAB (Lei 8.906) | X | X | - |
 
 ### Direito Financeiro e Tributário
 
@@ -244,9 +245,3 @@
 | Planos de Benefícios (Lei 8.213) | X | X | - |
 | Lei Orgânica da Assistência Social – LOAS (Lei 8.742) | X | X | - |
 | Lei Orgânica da Saúde – SUS (Lei 8.080) | X | X | - |
-
-### Estatuto da Advocacia
-
-| Diploma | 1. Pura | 2. Incidência | 3. Comentado |
-|---|:---:|:---:|:---:|
-| Estatuto da OAB (Lei 8.906) | X | X | - |

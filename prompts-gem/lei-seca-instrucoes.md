@@ -54,6 +54,7 @@ O mapa de incidência (arquivo público com o mapa de calor) é feito em outra j
    - Ele só aparece no menu quando o mapa de incidência for ligado (`"incidencia"`); até lá a entrada fica guardada.
    - Se a disciplina ainda não existir, crie-a. Siga os nomes do edital e da taxonomia (`taxonomia.js`).
    - **Leis de carreira** (leis orgânicas da Magistratura, do Ministério Público e da Defensoria, nacionais ou estaduais, como LOMAN, LC 80/1994, LC 75/1993, Lei 8.625/1993 e LC paulista 988/2006) vão em **"Direito Institucional (Magistratura, MP e Defensoria)"**, e não em Constitucional nem em legislação estadual.
+   - O **Estatuto da OAB** (Lei 8.906/1994) fica em **"Direito Civil"**.
 
 5. **Atualizar a tabela de `dados/legislacao/LEIAME.md`** com o diploma, o arquivo e a data.
 
