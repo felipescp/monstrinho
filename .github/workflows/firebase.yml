@@ -24,5 +24,14 @@ jobs:
         run: gcloud storage rsync dados gs://monstrinho-lab.firebasestorage.app/dados --recursive --delete-unmatched-destination-objects --exclude="^materiais/pdfs/"
       - name: Catálogo público da vitrine (sem questões)
         run: python3 -I ferramentas/vitrine_publica.py
+      # Só na cópia publicada: o repositório guarda o código legível.
+      # Comprime e embaralha o HTML/JS/CSS (≈ metade do tamanho) para
+      # dificultar a cópia e o reaproveitamento do código.
+      - name: Minificar o app (index.html e dashboard.html)
+        run: |
+          for f in index.html dashboard.html; do
+            npx --yes html-minifier-terser@7.2.0 -c ferramentas/minificar.json -o "$f.min" "$f"
+            test -s "$f.min" && mv "$f.min" "$f"
+          done
       - name: App e regras → Firebase
         run: npx --yes firebase-tools@13 deploy --only hosting,storage,firestore:rules --project monstrinho-lab --non-interactive

@@ -72,8 +72,10 @@ O arquivo `.github/workflows/firebase.yml` fica desligado até você fazer os pa
    - em **Variables**, crie `FIREBASE_DEPLOY` com o valor `sim`.
 4. **Apagar o JSON baixado** do computador. A chave fica só no GitHub.
 
-A partir daí, cada push no `main` faz duas coisas:
+A partir daí, cada push no `main` faz quatro coisas:
 - envia ao Storage o que mudou em `dados/`;
+- gera o catálogo público da vitrine (`vitrine-publica.js`, sem as questões);
+- **minifica** `index.html` e `dashboard.html` só na cópia publicada, com a configuração de `ferramentas/minificar.json`. O repositório continua com o código legível. Se a minificação falhar, a publicação para e nada quebrado vai ao ar;
 - publica o app e as regras.
 
 O resultado aparece na aba Actions. Para desligar, mude `FIREBASE_DEPLOY` para qualquer outro valor.
@@ -95,6 +97,15 @@ Não é preciso pedir o e-mail a ninguém:
 Para bloquear alguém, mude para `false`. Se o documento for apagado, a pessoa volta a gerar um pedido na próxima entrada.
 
 O usuário só consegue criar o próprio documento, e sempre com `ativo: false`: liberar, alterar ou apagar continua restrito ao console (ver `firestore.rules`).
+
+### Acesso com prazo (opcional)
+
+Para liberar alguém só até uma data, acrescente no documento dessa pessoa o campo `expiraEm`, do tipo **timestamp**, com a data e a hora. Sem o campo, o acesso não vence.
+
+- As regras (`firestore.rules` e `storage.rules`) deixam de entregar o acervo e os dados sincronizados depois dessa data.
+- Nos últimos 7 dias, o site mostra "Seu acesso vence em N dias".
+- Depois do prazo, mostra "O acesso de … venceu em …".
+- Para renovar, mude a data. Para tirar o prazo, apague o campo.
 
 No futuro, esse documento passa a ser gravado pela Cloud Function de pagamento.
 
