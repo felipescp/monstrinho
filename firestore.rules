@@ -25,9 +25,12 @@ service cloud.firestore {
       function dono() {
         return request.auth != null && request.auth.uid == uid;
       }
+      // Liberado = ativo e, se houver "expiraEm" (timestamp), ainda no prazo.
       function liberado() {
+        let acesso = get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data;
         return request.auth.token.email_verified == true
-          && get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data.ativo == true;
+          && acesso.ativo == true
+          && (acesso.get('expiraEm', null) == null || acesso.expiraEm > request.time);
       }
       allow read, delete: if dono() && liberado();
       allow create, update: if dono() && liberado()

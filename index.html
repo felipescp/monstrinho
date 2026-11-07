@@ -146,7 +146,12 @@
         FB.db().then(function(db) { return db.collection('acessos').doc(usuario.email).get(); })
             .then(function(d) {
                 FB.papel = (d && d.exists && d.data().papel) || null;
-                window.dispatchEvent(new CustomEvent('salinha-papel', { detail: { papel: FB.papel } }));
+                // Validade (pedido explícito do usuário): acessos/{e-mail}.expiraEm
+                // (timestamp, opcional). As regras já negam o acesso depois dela;
+                // aqui só serve para avisar quando estiver perto de vencer.
+                let exp = d && d.exists && d.data().expiraEm;
+                FB.expiraEm = exp && exp.toDate ? exp.toDate() : null;
+                window.dispatchEvent(new CustomEvent('salinha-papel', { detail: { papel: FB.papel, expiraEm: FB.expiraEm } }));
             }, function(e) { console.warn('[ACESSO] Não foi possível ler o papel da conta:', e); });
     }
     // Sem acesso: registra o pedido em acessos/{e-mail} com ativo:false
@@ -158,10 +163,14 @@
         FB.db().then(function(db) {
             var ref = db.collection('acessos').doc(u.email);
             return ref.get().then(function(doc) {
-                if (doc.exists) return;
+                if (doc.exists) {
+                    let dd = doc.data() || {}, exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null;
+                    if (dd.ativo === true && exp && exp <= new Date()) return { expirado: exp };
+                    return;
+                }
                 return ref.set({ ativo: false, pedidoEm: firebase.firestore.FieldValue.serverTimestamp() });
             });
-        }).then(function() { mudar('pendente'); }, function(e) {
+        }).then(function(r) { mudar('pendente', r && r.expirado ? { expirado: r.expirado.toISOString() } : undefined); }, function(e) {
             console.warn('[ACESSO] Falha ao registrar o pedido de acesso:', e);
             mudar('pendente', { falhaPedido: true });
         });
@@ -171,7 +180,7 @@
         var checagem = modo === 'producao'
             ? lerStorage('dados/leiseca/manifesto.json').then(function(r) { return r.ok ? 'ok' : r.status === 403 ? 'negado' : 'HTTP ' + r.status; })
             : FB.db().then(function(db) { return db.collection('acessos').doc(u.email).get(); })
-                .then(function(d) { return d.exists && d.data().ativo === true ? 'ok' : 'negado'; }, function(e) { return e && e.code === 'permission-denied' ? 'negado' : 'falha'; });
+                .then(function(d) { let dd = d.exists ? d.data() : {}, exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null; return dd.ativo === true && !(exp && exp <= new Date()) ? 'ok' : 'negado'; }, function(e) { return e && e.code === 'permission-denied' ? 'negado' : 'falha'; });
         checagem.then(function(r) {
             if (r === 'ok') liberarAcesso();
             else if (r === 'negado') pedirAcesso(u);
@@ -1863,6 +1872,7 @@ window.SALINHA_UI_AUTH = (function() {
         let email = u ? '<b>' + esc(u.email) + '</b>' : '';
         if (estado === 'deslogado') faixa('salinha-faixa-acesso', '<span>Entre com Google para carregar o acervo e os seus dados.</span><button type="button" onclick="SALINHA_FB.entrar()">' + G_SVG + ' Entrar com Google</button>');
         else if (estado === 'verificando') faixa('salinha-faixa-acesso', '<span>' + esc(extra.texto || 'Verificando o acesso…') + ' ' + email + '</span>');
+        else if (estado === 'pendente' && extra.expirado) faixa('salinha-faixa-acesso', '<span>O acesso de ' + email + ' venceu em ' + esc(new Date(extra.expirado).toLocaleDateString('pt-BR')) + '. Para renovar, fale com a administração d’A Salinha.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Sair</button>', 'alerta');
         else if (estado === 'pendente') faixa('salinha-faixa-acesso', extra.falhaPedido
             ? '<span>Acesso não liberado para ' + email + '. Avise o administrador para liberar o seu acesso.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>'
             : '<span>Pedido de acesso registrado para ' + email + '. Assim que for liberado, é só voltar a esta página.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>', 'alerta');
@@ -1885,6 +1895,14 @@ window.SALINHA_UI_AUTH = (function() {
         });
     }
 
+    // Validade perto do fim: aviso discreto nos últimos 7 dias.
+    window.addEventListener('salinha-papel', function(e) {
+        let exp = e.detail && e.detail.expiraEm, FB = window.SALINHA_FB;
+        if (!exp || !FB || FB.estado() !== 'liberado') { faixa('salinha-faixa-validade', null); return; }
+        let dias = Math.ceil((exp - new Date()) / 86400000);
+        if (dias > 7 || dias < 0) { faixa('salinha-faixa-validade', null); return; }
+        faixa('salinha-faixa-validade', '<span>Seu acesso vence ' + (dias <= 0 ? 'hoje' : dias === 1 ? 'amanhã' : 'em ' + dias + ' dias') + ' (' + esc(exp.toLocaleDateString('pt-BR')) + '). Para renovar, fale com a administração d’A Salinha.</span><button type="button" class="discreto" onclick="this.parentNode.remove()">Fechar</button>', 'alerta');
+    });
     document.addEventListener('salinha-auth', atualizar);
     document.addEventListener('salinha-sync', atualizarSync);
     atualizar();
