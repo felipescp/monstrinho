@@ -128,6 +128,22 @@ Para tirar o privilégio, apague o campo `papel`. Ninguém consegue se dar esse 
 
 Os botões somem para quem não é admin, e as funções também recusam. Ainda assim, o que o aluno já baixou para estudar (cards, esquemas, baterias abertas) está no navegador dele: a restrição impede a cópia fácil do acervo inteiro, não a de quem tenha conhecimento técnico.
 
+## App Check (só o site acessa o acervo)
+
+Com o App Check aplicado, o Storage e o Firestore só atendem pedidos vindos do próprio site em www.asalinha.com.br. Scripts e robôs, mesmo com uma conta liberada, ficam de fora. O código já está pronto em `index.html` (`APP_CHECK_SITE_KEY`) e fica desligado enquanto a chave estiver vazia.
+
+1. **Criar a chave do reCAPTCHA v3** em google.com/recaptcha/admin/create:
+   - tipo **reCAPTCHA v3**;
+   - domínios `www.asalinha.com.br` e `asalinha.com.br`.
+
+   Saem duas chaves: a **chave do site**, que é pública, e a **chave secreta**.
+2. **Firebase → App Check → Apps →** o app web → **reCAPTCHA** → cole a **chave secreta** e salve.
+3. **Colocar a chave do site** em `APP_CHECK_SITE_KEY` (index.html) e publicar.
+4. **Observar por alguns dias**, sem aplicar: em App Check → APIs, veja em Cloud Storage e Cloud Firestore se as solicitações aparecem quase todas como **verificadas**.
+5. **Aplicar** (Enforce) no Cloud Storage e no Cloud Firestore. Para voltar atrás, é só desfazer a aplicação no mesmo lugar.
+
+Quem usa bloqueador de rastreadores pode precisar liberar `www.google.com/recaptcha` para o site. Sem o token, o site mostra um aviso explicando isso, em vez de "acesso não liberado".
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

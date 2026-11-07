@@ -47,6 +47,13 @@
         appId: '1:1031537511970:web:7fe9fcfb4779b3915ac47b'
     };
     var SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
+    // App Check (pedido explícito do usuário): o Storage e o Firestore só
+    // atendem pedidos vindos do próprio site — barra scripts e robôs que
+    // tentariam baixar o acervo em massa com uma conta liberada. Chave do
+    // reCAPTCHA v3 (pública por natureza; a secreta fica no console do
+    // Firebase). Vazia = App Check desligado. Ver LEIAME-firebase.md.
+    var APP_CHECK_SITE_KEY = '';
+    var appCheckLigado = modo === 'producao' && !!APP_CHECK_SITE_KEY, appCheckAtivado = false, appCheckSemToken = false;
     var BASE = 'https://firebasestorage.googleapis.com/v0/b/' + CONFIG.storageBucket + '/o/';
     var fetchOriginal = window.fetch.bind(window);
     var liberar, liberado = new Promise(function(r) { liberar = r; });
@@ -92,9 +99,24 @@
         return scripts[nome];
     }
     FB.carregarSDK = function(modulos) {
-        return ['app'].concat(modulos || []).reduce(function(p, m) { return p.then(function() { return script(m); }); }, Promise.resolve())
-            .then(function() { if (!firebase.apps.length) firebase.initializeApp(CONFIG); return firebase; });
+        return ['app'].concat(appCheckLigado ? ['app-check'] : [], modulos || []).reduce(function(p, m) { return p.then(function() { return script(m); }); }, Promise.resolve())
+            .then(function() {
+                if (!firebase.apps.length) firebase.initializeApp(CONFIG);
+                // Antes de qualquer uso do Firestore/Storage (tokens vão junto sozinhos).
+                if (appCheckLigado && !appCheckAtivado) {
+                    appCheckAtivado = true;
+                    try { firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), true); }
+                    catch (e) { console.warn('[APP CHECK] Não foi possível ativar:', e); }
+                }
+                return firebase;
+            });
     };
+    // Token do App Check para as chamadas diretas ao Storage (lerStorage).
+    function tokenAppCheck() {
+        if (!appCheckLigado) return Promise.resolve(null);
+        return FB.carregarSDK([]).then(function() { return firebase.appCheck().getToken(false); })
+            .then(function(r) { appCheckSemToken = !(r && r.token); return r && r.token; }, function(e) { console.warn('[APP CHECK] Sem token:', e); appCheckSemToken = true; return null; });
+    }
     // Firestore com persistência offline (gravações ficam na fila sem rede).
     // enablePersistence tem que vir antes de qualquer outro uso: por isso todo
     // acesso ao Firestore passa por aqui. Com outra aba antiga aberta, ou sem
@@ -120,9 +142,11 @@
         return m ? decodeURIComponent(m[1]) : null;
     }
     function lerStorage(caminho, opcoes) {
-        return usuario.getIdToken().then(function(token) {
+        return Promise.all([usuario.getIdToken(), tokenAppCheck()]).then(function(t) {
+            var cab = { 'Authorization': 'Firebase ' + t[0] };
+            if (t[1]) cab['X-Firebase-AppCheck'] = t[1];
             return fetchOriginal(BASE + encodeURIComponent(caminho) + '?alt=media', {
-                headers: { 'Authorization': 'Firebase ' + token },
+                headers: cab,
                 cache: 'no-cache',
                 signal: opcoes && opcoes.signal
             });
@@ -178,12 +202,13 @@
     function verificar(u) {
         mudar('verificando');
         var checagem = modo === 'producao'
-            ? lerStorage('dados/leiseca/manifesto.json').then(function(r) { return r.ok ? 'ok' : r.status === 403 ? 'negado' : 'HTTP ' + r.status; })
+            ? lerStorage('dados/leiseca/manifesto.json').then(function(r) { return r.ok ? 'ok' : (appCheckLigado && appCheckSemToken && (r.status === 401 || r.status === 403)) ? 'appcheck' : r.status === 403 ? 'negado' : 'HTTP ' + r.status; })
             : FB.db().then(function(db) { return db.collection('acessos').doc(u.email).get(); })
                 .then(function(d) { let dd = d.exists ? d.data() : {}, exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null; return dd.ativo === true && !(exp && exp <= new Date()) ? 'ok' : 'negado'; }, function(e) { return e && e.code === 'permission-denied' ? 'negado' : 'falha'; });
         checagem.then(function(r) {
             if (r === 'ok') liberarAcesso();
             else if (r === 'negado') pedirAcesso(u);
+            else if (r === 'appcheck') mudar('erro', { texto: 'Não foi possível confirmar que o acesso vem do site. Se usar bloqueador de anúncios ou de rastreadores, libere www.google.com/recaptcha para www.asalinha.com.br e recarregue a página.' });
             else mudar('erro', { texto: 'Não foi possível verificar o acesso (' + r + ').' });
         }, function() { mudar('erro', { texto: 'Sem conexão com o servidor.' }); });
     }
