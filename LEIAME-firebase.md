@@ -146,6 +146,35 @@ Com o App Check aplicado, o Storage e o Firestore só atendem pedidos vindos do 
 
 Quem usa bloqueador de rastreadores pode precisar liberar `www.google.com/recaptcha` para o site. Sem o token, o site mostra um aviso explicando isso, em vez de "acesso não liberado".
 
+## Monitoramento de downloads
+
+São duas camadas: uma no app, por conta, e outra no Google Cloud, pelo volume total.
+
+### 1. Uso por conta (já funciona sozinho)
+
+O app de cada conta soma, por dia, quantos arquivos do acervo baixou, quantos MB e quantas baterias abriu. Os números ficam no Firestore, na coleção `uso`, com um documento por conta e por dia.
+
+- Para ver, entre com a conta de administração e abra **📁 Arquivo → 📊 Uso do acervo**. Aparecem os últimos 7 dias, da conta que mais baixou para a que menos baixou.
+- Fica em vermelho, com ⚠️, a conta que num dia passar de **400 arquivos**, **80 MB** ou **40 baterias**. Os limites estão em `window.USO_LIMITE_ARQUIVOS`, `USO_LIMITE_MB` e `USO_LIMITE_BATERIAS`, no `index.html`.
+- Uso normal: a primeira abertura num aparelho novo baixa uns 65 arquivos (cerca de 20 MB). As seguintes baixam poucos, porque o app guarda as cópias e só busca o que mudou.
+- Cada conta só grava o próprio registro, e os números só podem aumentar. Só a administração vê as outras contas (`firestore.rules`).
+- **Limite:** é um sinal, não uma trava. Quem copiar por fora do app não é contado aqui. Com o App Check aplicado, o Storage só atende o próprio site, o que dificulta esse caminho. Para o volume total, use a camada 2.
+
+### 2. Alerta de volume no Google Cloud (fazer uma vez, no console)
+
+Avisa por e-mail quando o Storage entrega muito mais dados do que o normal, venha de onde vier.
+
+1. Abra https://console.cloud.google.com/monitoring/alerting e escolha o projeto **monstrinho-lab**.
+2. Clique em **Create policy**.
+3. Em **Select a metric**, procure **GCS Bucket → Sent bytes** (`storage.googleapis.com/network/sent_bytes_count`).
+4. Em **Filter**, escolha `bucket_name = monstrinho-lab.firebasestorage.app`.
+5. Em **Transform data**: *Rolling window* = **1 day**, *Rolling window function* = **sum**.
+6. Em **Configure trigger**: *Threshold* acima de **2 GB**. Para começar, isso dá cerca de 100 aparelhos novos por dia. Ajuste depois de ver o gráfico de alguns dias.
+7. Em **Notifications**, crie um canal de **Email** com o seu endereço.
+8. Dê um nome, como "Salinha: download alto do acervo", e salve.
+
+Se o projeto estiver no plano Blaze, também vale um **alerta de orçamento** em https://console.cloud.google.com/billing → *Budgets & alerts*, com um valor baixo (por exemplo, R$ 20 por mês), para ser avisado de qualquer gasto inesperado.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

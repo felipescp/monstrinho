@@ -16,6 +16,38 @@ service cloud.firestore {
         && request.resource.data.pedidoEm == request.time;
       allow update, delete: if false;
     }
+    // Monitoramento (medida 5): o app de cada conta soma quantos arquivos do
+    // acervo (dados/) baixou no dia — um documento por conta e dia,
+    // "<AAAA-MM-DD>_<uid>". A conta só cria/atualiza o próprio documento e
+    // os números só podem crescer; ler, só a própria conta e a administração
+    // (acessos/{e-mail}.papel == "admin"). Ninguém apaga pelo app.
+    match /uso/{docId} {
+      function eAdmin() {
+        return request.auth != null
+          && get(/databases/$(database)/documents/acessos/$(request.auth.token.email)).data.get('papel', null) == 'admin';
+      }
+      function valido() {
+        let d = request.resource.data;
+        return request.auth != null
+          && request.auth.token.email_verified == true
+          && d.keys().hasOnly(['uid', 'email', 'dia', 'arquivos', 'bytes', 'baterias', 'atualizadoEm'])
+          && d.uid == request.auth.uid
+          && d.email == request.auth.token.email
+          && d.dia is string && d.dia.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+          && docId == d.dia + '_' + request.auth.uid
+          && d.arquivos is int && d.arquivos >= 0
+          && d.bytes is int && d.bytes >= 0
+          && d.baterias is int && d.baterias >= 0
+          && d.atualizadoEm == request.time;
+      }
+      allow read: if request.auth != null && (resource.data.uid == request.auth.uid || eAdmin());
+      allow create: if valido();
+      allow update: if valido()
+        && request.resource.data.arquivos >= resource.data.arquivos
+        && request.resource.data.bytes >= resource.data.bytes
+        && request.resource.data.baterias >= resource.data.baterias;
+      allow delete: if false;
+    }
     // Dados pessoais sincronizados (SALINHA_SYNC no index.html): só o próprio
     // usuário, e só com acesso liberado (acessos/{e-mail}.ativo == true) —
     // sem isso, qualquer conta Google gravaria dados no projeto. Um documento

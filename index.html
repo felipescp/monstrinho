@@ -175,8 +175,50 @@
     window.fetch = function(entrada, opcoes) {
         var caminho = caminhoDados(entrada);
         if (!caminho) return fetchOriginal(entrada, opcoes);
-        return liberado.then(function() { return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes); });
+        return liberado.then(function() { return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes); })
+            .then(function(r) { if (r && r.ok) contarUso(caminho, r); return r; });
     };
+
+    // ── Monitoramento (medida 5) ──
+    // Soma, por conta e por dia, quantos arquivos do acervo foram baixados
+    // (e quantos bytes; baterias à parte) em uso/<AAAA-MM-DD>_<uid> no
+    // Firestore, com increment — envia a cada minuto e ao sair da página.
+    // A administração vê o resumo em 📁 Arquivo → 📊 Uso do acervo. É um
+    // sinal, não uma trava: quem copiar por fora do app não é contado aqui
+    // (para isso, o alerta de volume do Storage — ver LEIAME-firebase.md).
+    var usoPendente = { arquivos: 0, bytes: 0, baterias: 0 };
+    function diaLocal() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function contarUso(caminho, r) {
+        usoPendente.arquivos++;
+        var tam = parseInt(r.headers && r.headers.get('content-length'), 10);
+        if (tam > 0) usoPendente.bytes += tam;
+        if (/^dados\/bateriasvf\/(?!indice)/.test(caminho)) usoPendente.baterias++;
+    }
+    function enviarUso() {
+        if (!usuario || estado !== 'liberado' || !usoPendente.arquivos) return Promise.resolve(false);
+        var envio = usoPendente, dia = diaLocal();
+        usoPendente = { arquivos: 0, bytes: 0, baterias: 0 };
+        var inc = firebase.firestore.FieldValue.increment;
+        return FB.db().then(function(db) {
+            return db.collection('uso').doc(dia + '_' + usuario.uid).set({
+                uid: usuario.uid, email: usuario.email, dia: dia,
+                arquivos: inc(envio.arquivos), bytes: inc(envio.bytes), baterias: inc(envio.baterias),
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }).then(function() { return true; }, function(e) {
+            // Devolve ao pendente para a próxima tentativa.
+            usoPendente.arquivos += envio.arquivos; usoPendente.bytes += envio.bytes; usoPendente.baterias += envio.baterias;
+            console.warn('[USO] Não foi possível registrar:', e && e.message || e);
+            return false;
+        });
+    }
+    FB.enviarUso = enviarUso;
+    FB.usoPendente = function() { return Object.assign({}, usoPendente); };
+    setInterval(enviarUso, 60000);
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') enviarUso(); });
 
     // ── Acesso ──
     function liberarAcesso() { mudar('liberado'); liberar(); lerPapel(); }
@@ -1777,6 +1819,7 @@ try {
                     <div class="kebab-dropdown">
                         <div class="kebab-item" onclick="window.SALINHA_BACKUP.exportar()">📤 Backup</div>
                         <div class="so-admin kebab-item" onclick="document.getElementById('salinha-backup-input').click()">📥 Restaurar (apaga atual)</div>
+                        <div class="so-admin kebab-item" onclick="window.abrirPainelUso()">📊 Uso do acervo</div>
                         <div class="kebab-item" onclick="document.getElementById('import-incremental').click()">📥 Merge (mantém local)</div>
                         <div class="kebab-item" onclick="window.zerarAcervoTotal()" style="color:var(--danger);">🗑️ Zerar Acervo</div>
                     </div>
@@ -5396,6 +5439,56 @@ window.temLoginApp = function() {
 window.ehAdmin = function() {
     if (!window.SALINHA_FB) return true;
     return window.SALINHA_FB.estado() === 'liberado' && window.SALINHA_FB.papel === 'admin';
+};
+// Painel da administração: uso do acervo por conta nos últimos 7 dias
+// (coleção uso/, gravada por SALINHA_FB — ver "Monitoramento"). Destaca o
+// dia de uma conta acima dos limites abaixo: o uso normal fica bem aquém
+// (a 1ª abertura num aparelho baixa ~65 arquivos e ~20 MB; as seguintes, poucos).
+window.USO_LIMITE_ARQUIVOS = 400;
+window.USO_LIMITE_MB = 80;
+window.USO_LIMITE_BATERIAS = 40;
+window.abrirPainelUso = async function() {
+    if (!window.exigirAdmin()) return;
+    if (!window.SALINHA_FB || !window.SALINHA_FB.db) { alert('O painel de uso só funciona no site publicado (com login).'); return; }
+    let fundo = document.getElementById('painel-uso');
+    if (fundo) fundo.remove();
+    fundo = document.createElement('div');
+    fundo.id = 'painel-uso';
+    fundo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:820px;width:100%;max-height:85vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3)">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">📊 Uso do acervo — últimos 7 dias</b>' +
+        '<button onclick="document.getElementById(\'painel-uso\').remove()" style="margin-left:auto;border:1px solid var(--border-color,#ccc);background:none;border-radius:6px;padding:4px 10px;cursor:pointer">Fechar</button></div>' +
+        '<div id="painel-uso-corpo" style="font-size:13px">Carregando…</div></div>';
+    fundo.addEventListener('click', function(e) { if (e.target === fundo) fundo.remove(); });
+    document.body.appendChild(fundo);
+    const corpo = document.getElementById('painel-uso-corpo');
+    try {
+        if (window.SALINHA_FB.enviarUso) await window.SALINHA_FB.enviarUso();
+        const d = new Date(); d.setDate(d.getDate() - 6);
+        const desde = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const db = await window.SALINHA_FB.db();
+        const snap = await db.collection('uso').where('dia', '>=', desde).get();
+        let linhas = [];
+        snap.forEach(function(doc) { linhas.push(doc.data()); });
+        linhas.sort(function(a, b) { return a.dia === b.dia ? (b.arquivos || 0) - (a.arquivos || 0) : (a.dia < b.dia ? 1 : -1); });
+        if (!linhas.length) { corpo.textContent = 'Nenhum registro nos últimos 7 dias.'; return; }
+        const esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+        let alertas = 0;
+        let html = '<table style="width:100%;border-collapse:collapse"><thead><tr style="text-align:left;border-bottom:2px solid var(--border-color,#ccc)"><th style="padding:6px">Dia</th><th style="padding:6px">Conta</th><th style="padding:6px;text-align:right">Arquivos</th><th style="padding:6px;text-align:right">MB</th><th style="padding:6px;text-align:right">Baterias</th></tr></thead><tbody>';
+        linhas.forEach(function(l) {
+            const mb = (l.bytes || 0) / 1048576;
+            const alto = (l.arquivos || 0) > window.USO_LIMITE_ARQUIVOS || mb > window.USO_LIMITE_MB || (l.baterias || 0) > window.USO_LIMITE_BATERIAS;
+            if (alto) alertas++;
+            html += '<tr style="border-bottom:1px solid var(--border-color,#eee);' + (alto ? 'background:rgba(220,38,38,.12);font-weight:700' : '') + '"><td style="padding:6px">' + esc(l.dia.split('-').reverse().join('/')) + '</td><td style="padding:6px">' + (alto ? '⚠️ ' : '') + esc(l.email) + '</td><td style="padding:6px;text-align:right">' + (l.arquivos || 0) + '</td><td style="padding:6px;text-align:right">' + mb.toFixed(1) + '</td><td style="padding:6px;text-align:right">' + (l.baterias || 0) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        const resumo = alertas
+            ? '<p style="margin:0 0 10px;color:#b91c1c;font-weight:700">⚠️ ' + alertas + ' registro(s) acima do normal (mais de ' + window.USO_LIMITE_ARQUIVOS + ' arquivos, ' + window.USO_LIMITE_MB + ' MB ou ' + window.USO_LIMITE_BATERIAS + ' baterias num dia).</p>'
+            : '<p style="margin:0 0 10px;color:#15803d">Nenhuma conta acima do normal.</p>';
+        corpo.innerHTML = resumo + html + '<p style="margin:10px 0 0;color:var(--text-muted,#777);font-size:11px">Conta o que cada aparelho baixou pelo app. A primeira abertura num aparelho novo baixa ~65 arquivos (~20 MB); as seguintes, poucos. Os números somam todos os aparelhos da conta no dia.</p>';
+    } catch (e) {
+        corpo.textContent = 'Não foi possível ler o uso: ' + (e && e.message || e);
+    }
 };
 window.exigirAdmin = function() {
     if (window.ehAdmin()) return true;
