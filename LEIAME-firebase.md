@@ -72,7 +72,8 @@ O arquivo `.github/workflows/firebase.yml` fica desligado até você fazer os pa
    - em **Variables**, crie `FIREBASE_DEPLOY` com o valor `sim`.
 4. **Apagar o JSON baixado** do computador. A chave fica só no GitHub.
 
-A partir daí, cada push no `main` faz cinco coisas:
+A partir daí, cada push no `main` faz seis coisas:
+- gera `dados/versoes-oficiais.json` (fora do git) com `ferramentas/versoes_oficiais.py`: um resumo de cada arquivo de Jurisprudência, Esquemas, Flashcards e Glossário. O app guarda uma cópia desses arquivos no aparelho, fora do backup, e só baixa de novo os que mudaram;
 - gera o índice raso das baterias (`dados/bateriasvf/indice.json` e `indice-versao.json`, sem enunciados nem explicações, fora do git) com `ferramentas/indice_baterias.py`. O app lê só esse índice ao abrir e baixa o arquivo completo de uma bateria quando ela é aberta (carregamento sob demanda). Se o índice faltar, o app volta a baixar todos os arquivos;
 - envia ao Storage o que mudou em `dados/`;
 - gera o catálogo público da vitrine (`vitrine-publica.js`, sem as questões);

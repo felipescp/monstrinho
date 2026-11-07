@@ -13777,13 +13777,16 @@ window.fecharFlashcardsNbModal = function() {
 // ── FLASHCARDS OFICIAIS — publicados no repositório (dados/flashcards/*.json),
 // disponíveis pra todo mundo automaticamente. Mesmo padrão de
 // importarEsquemaOficial/carregarEsquemasOficiais: upsert por id do baralho.
-window.importarFlashcardOficial = async function(url) {
+window.importarFlashcardOficial = async function(url, dadosProntos) {
     try {
         // Cache-buster: sem isso, um arquivo já publicado (mesmo nome)
         // fica preso no cache HTTP do GitHub Pages por até 10min.
+        let dados = dadosProntos;
+        if (!dados) {
         const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar flashcards oficiais (' + url + ').');
-        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, nome, criadoEm, topicos, cards:[{id,f,b}]} ] }
+        dados = await r.json();
+        } // { "MATÉRIA > Divisão": [ {id, nome, criadoEm, topicos, cards:[{id,f,b}]} ] }
 
         window.FLASHCARDS_NB_RUNTIME._garantirCarregado();
         const runtime = window.FLASHCARDS_NB_RUNTIME;
@@ -13806,6 +13809,7 @@ window.importarFlashcardOficial = async function(url) {
         // (ou existe cópia pessoal), o mais novo vence.
         runtime._consolidarDuplicados();
         runtime.salvar();
+        return dados;
     } catch (e) {
         console.warn('[FLASHCARDS OFICIAIS] erro:', e);
     }
@@ -13825,9 +13829,7 @@ window.carregarFlashcardsOficiais = async function() {
         console.warn('[FLASHCARDS OFICIAIS] Falha ao carregar manifesto:', e);
     }
     const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    for (const caminho of caminhosManifesto) {
-        await window.importarFlashcardOficial(caminho);
-    }
+    await window._importarManifestoVersionado('flashcards', caminhosManifesto, window.importarFlashcardOficial);
 };
 </script>
 
@@ -20837,11 +20839,14 @@ window.GLOSSARIO_RUNTIME = {
 // *.json { "MATÉRIA > Divisão": [ {id, expressao, significado, contexto,
 // criadoEm} ] }. Publicar um verbete oficial novo = 1 linha nova no
 // manifesto, sem tocar em index.html.
-window.importarTermoGlossarioOficial = async function(url) {
+window.importarTermoGlossarioOficial = async function(url, dadosProntos) {
     try {
+        let dados = dadosProntos;
+        if (!dados) {
         const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar glossário oficial.');
-        const dados = await r.json();
+        dados = await r.json();
+        }
 
         window.GLOSSARIO_RUNTIME._garantirCarregado();
         const runtime = window.GLOSSARIO_RUNTIME;
@@ -20861,6 +20866,7 @@ window.importarTermoGlossarioOficial = async function(url) {
         });
 
         runtime.salvar();
+        return dados;
     } catch (e) {
         console.warn('[GLOSSARIO OFICIAL] erro:', e);
     }
@@ -20878,9 +20884,7 @@ window.carregarGlossarioOficial = async function() {
         console.warn('[GLOSSARIO OFICIAL] Falha ao carregar manifesto:', e);
     }
     const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    for (const caminho of caminhosManifesto) {
-        await window.importarTermoGlossarioOficial(caminho);
-    }
+    await window._importarManifestoVersionado('glossario', caminhosManifesto, window.importarTermoGlossarioOficial);
 };
 
 // Abre/fecha Glossário como MODAL sobre a tela atual, mesmo padrão de
@@ -33818,15 +33822,18 @@ window.fecharEsquemasModal = function() {
 // ── ESQUEMAS OFICIAIS — publicados no repositório, disponíveis pra todo
 // mundo automaticamente. Espelha importarMaterialOficial/carregarMateriais
 // Oficiais função-por-função: upsert por id, sem stub raso (conteúdo leve).
-window.importarEsquemaOficial = async function(url) {
+window.importarEsquemaOficial = async function(url, dadosProntos) {
     try {
         // Cache-buster: sem isso, editar um esquema já publicado (mesmo
         // nome de arquivo) fica preso no cache HTTP do GitHub Pages
         // (max-age=600) por até 10min — F5 na página não ajuda, só
         // revalida o index.html, não este fetch().
+        let dados = dadosProntos;
+        if (!dados) {
         const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar esquemas oficiais.');
-        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, titulo, conteudoHtml, criadoEm} ] }
+        dados = await r.json();
+        } // { "MATÉRIA > Divisão": [ {id, titulo, conteudoHtml, criadoEm} ] }
 
         window.ESQUEMAS_RUNTIME._garantirCarregado();
         const runtime = window.ESQUEMAS_RUNTIME;
@@ -33846,6 +33853,7 @@ window.importarEsquemaOficial = async function(url) {
         });
 
         runtime.salvar();
+        return dados;
     } catch (e) {
         console.warn('[ESQUEMAS OFICIAIS] erro:', e);
     }
@@ -33870,9 +33878,7 @@ window.carregarEsquemasOficiais = async function() {
         console.warn('[ESQUEMAS OFICIAIS] Falha ao carregar manifesto:', e);
     }
     const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    for (const caminho of caminhosManifesto) {
-        await window.importarEsquemaOficial(caminho);
-    }
+    await window._importarManifestoVersionado('esquemas', caminhosManifesto, window.importarEsquemaOficial);
 };
 </script>
 
@@ -39547,15 +39553,18 @@ window.fecharJurisprudenciaModal = function() {
 // ── JURISPRUDÊNCIA OFICIAL — publicada no repositório, disponível pra todo
 // mundo automaticamente. Espelha importarMaterialOficial/importarEsquemaOficial
 // função-por-função: upsert por id, sem stub raso (conteúdo leve).
-window.importarJurisprudenciaOficial = async function(url) {
+window.importarJurisprudenciaOficial = async function(url, dadosProntos) {
     try {
         // Cache-buster: sem isso, editar uma ficha já publicada (mesmo
         // nome de arquivo) fica presa no cache HTTP do GitHub Pages
         // (max-age=600) por até 10min — F5 na página não ajuda, só
         // revalida o index.html, não este fetch().
+        let dados = dadosProntos;
+        if (!dados) {
         const r = await fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'v=' + Date.now());
         if (!r.ok) throw new Error('Falha ao carregar jurisprudência oficial.');
-        const dados = await r.json(); // { "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, ...} ] }
+        dados = await r.json();
+        } // { "MATÉRIA > Divisão": [ {id, materiaL1, divisaoL2, titulo, ...} ] }
 
         window.JURISPRUDENCIA_RUNTIME._garantirCarregado();
         const runtime = window.JURISPRUDENCIA_RUNTIME;
@@ -39576,6 +39585,7 @@ window.importarJurisprudenciaOficial = async function(url) {
         });
 
         runtime.salvar();
+        return dados;
     } catch (e) {
         console.warn('[JURISPRUDÊNCIA OFICIAL] erro:', e);
     }
@@ -39601,13 +39611,45 @@ window.carregarJurisprudenciaOficial = async function() {
         console.warn('[JURISPRUDÊNCIA OFICIAL] Falha ao carregar manifesto:', e);
     }
     const caminhosManifesto = manifestoTexto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    for (const caminho of caminhosManifesto) {
-        await window.importarJurisprudenciaOficial(caminho);
-    }
+    await window._importarManifestoVersionado('jurisprudencia', caminhosManifesto, window.importarJurisprudenciaOficial);
 };
 </script>
 
 <script>
+
+// ── Arquivos oficiais só quando mudam (medida 2) ──
+// O conteúdo oficial de Jurisprudência, Esquemas, Flashcards e Glossário
+// não entra no armazenamento pessoal (nem no backup/sincronização): fica
+// numa cópia à parte no IndexedDB ("oficial|<caminho>"), com o resumo do
+// arquivo. dados/versoes-oficiais.json (ferramentas/versoes_oficiais.py,
+// gerado no deploy) traz o resumo atual de cada arquivo: só os que mudaram
+// são baixados; os demais vêm da cópia. Sem o arquivo de versões, baixa
+// tudo, como antes.
+window._lerVersoesOficiais = function() {
+    let agora = Date.now();
+    if (window.__versoesOficiais__ && agora - window.__versoesOficiais__.em < 60000) return window.__versoesOficiais__.p;
+    let p = fetch('dados/versoes-oficiais.json?v=' + agora)
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(j) { return (j && j.arquivos) ? j : null; })
+        .catch(function() { return null; });
+    window.__versoesOficiais__ = { em: agora, p: p };
+    return p;
+};
+window._importarManifestoVersionado = async function(secao, caminhos, importar) {
+    let versoes = await window._lerVersoesOficiais();
+    for (const caminho of caminhos) {
+        let resumo = versoes && versoes.arquivos[caminho];
+        let chave = 'oficial|' + caminho;
+        if (resumo) {
+            let guardado = await idbGet(chave);
+            if (guardado && guardado.resumo === resumo && guardado.dados) {
+                if (await importar(caminho, guardado.dados)) continue;
+            }
+        }
+        let dados = await importar(caminho);
+        if (dados && resumo) idbSet(chave, { resumo: resumo, dados: dados });
+    }
+};
 
 // Deduplica chamadas CONCORRENTES às 4 buscas de conteúdo oficial
 // (Materiais/Esquemas/Jurisprudência/Glossário) — sem isto, o boot da
