@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 12 (2368 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 13 (2612 notas).
 
 ### Direito Civil
 
@@ -48,7 +48,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código de Defesa do Consumidor | X | X | - |
+| Código de Defesa do Consumidor | X | X | X (244 notas) |
 | Planos de Saúde (Lei 9.656) | X | X | - |
 
 ### Direito da Criança e do Adolescente
