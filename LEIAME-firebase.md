@@ -94,7 +94,7 @@ Há dois níveis, no campo `nivel` do documento `acessos/{e-mail}`:
 
 | Nível | O que libera |
 |---|---|
-| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
+| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). A linha 📜 Lei Seca dos materiais associados aparece com cadeado. As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
 | `completo` | Tudo. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
 
 Não é preciso pedir o e-mail a ninguém:

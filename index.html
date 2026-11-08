@@ -2125,6 +2125,7 @@ window.SALINHA_UI_AUTH = (function() {
                                 <div id="grupo-toolbar-baterias-normal" style="display:flex; gap:4px; flex-shrink:0;">
                                     <button id="btn-ordenar-az" onclick="window.ordenarListaBaterias('az')" title="Ordenar por nome" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">A-Z</button>
                                     <button id="btn-ordenar-data" onclick="window.ordenarListaBaterias('data')" title="Ordenar por data de criação (mais recente primeiro)" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Por Data</button>
+                                    <button id="btn-ordenar-disciplina" onclick="window.ordenarListaBaterias('disciplina')" title="Agrupar por disciplina (mesma ordem da coluna de matérias) e, dentro dela, por tema" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Por Disciplina</button>
                                     <button id="btn-ocultar-oficiais-baterias" onclick="window.toggleOcultarOficiaisBaterias()" title="Ocultar baterias oficiais da lista" style="padding:3px 9px; font-size:9px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border:1px solid var(--border-color); border-radius:5px; background:var(--bg-white); color:var(--text-muted); cursor:pointer;">Ocultar Oficiais</button>
                                 </div>
                                 <div id="grupo-toolbar-baterias-selecao" style="display:none; gap:4px; flex-shrink:0;">
@@ -17523,7 +17524,76 @@ window.abrirLeiSecaModal = function() {
     if (btn) { btn.textContent = '🗗'; btn.title = 'Minimizar'; }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-    window.LEISECA_RUNTIME.init();
+    return window.LEISECA_RUNTIME.init();
+};
+
+// ── Lei Seca nos "Materiais associados" da bateria (pedido explícito do
+// usuário): diplomas citados nos enunciados/explicações da bateria aberta
+// (mesmo reconhecimento das remissões, LEGISLACAO.refsDoTexto), só os que
+// estão no menu da Lei Seca. Cada linha abre a Lei Seca no diploma, no
+// artigo mais citado. No acesso simples, uma linha com cadeado.
+window._lsAssocCache = null;
+window._refsLeiSecaDaBateria = function(chave, dados) {
+    if (window._lsAssocCache && window._lsAssocCache.chave === chave) return window._lsAssocCache.refs;
+    let refs = {};
+    (dados.blocos || []).forEach(function(b) {
+        (b.questoes || []).forEach(function(q) {
+            ['enunciado', 'explicacao', 'bn'].forEach(function(campo) {
+                if (!q || !q[campo]) return;
+                let lista = [];
+                try { lista = window.LEGISLACAO.refsDoTexto(String(q[campo]).replace(/<[^>]+>/g, ' ')); } catch (e) {}
+                lista.forEach(function(r) {
+                    let p = String(r.chave || '').split('|'), id = p[0], art = p[1];
+                    if (!id || !art || art.indexOf('anexo:') === 0) return;
+                    refs[id] = refs[id] || {};
+                    refs[id][art] = (refs[id][art] || 0) + 1;
+                });
+            });
+        });
+    });
+    window._lsAssocCache = { chave: chave, refs: refs };
+    return refs;
+};
+window._htmlLeiSecaAssociada = function() {
+    if (!window.LEGISLACAO || typeof D === 'undefined' || !D || !D.blocos || typeof C === 'undefined' || !C) return '';
+    let refs = window._refsLeiSecaDaBateria(C.id || C.nome || '', D), ids = Object.keys(refs);
+    if (!ids.length) return '';
+    let estilo = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;';
+    let esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    if (window.ehNivelSimples && window.ehNivelSimples()) {
+        return '<div onclick="window.mostrarNivelSimples(\'Lei Seca\')" title="Lei Seca dos diplomas citados nesta bateria (acesso completo)" style="' + estilo + '"><span>📜 Lei Seca 🔒</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">' + ids.length + '</span></div>';
+    }
+    let L = window.LEISECA_RUNTIME;
+    if (!L) return '';
+    if (!L.manifesto) {
+        if (!window.__lsManifestoAssoc) window.__lsManifestoAssoc = fetch('dados/leiseca/manifesto.json?v=' + Date.now())
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(j) { if (j && !L.manifesto) L.manifesto = j; if (j && typeof renderNav === 'function') renderNav(); })
+            .catch(function() {});
+        return '';
+    }
+    let noMenu = {};
+    L._diplomas().forEach(function(d) { noMenu[d.id] = d; });
+    let linhas = ids.filter(function(id) { return noMenu[id]; }).map(function(id) {
+        let arts = Object.keys(refs[id]);
+        let top = arts.slice().sort(function(a, b) { return (refs[id][b] - refs[id][a]) || (parseInt(a, 10) - parseInt(b, 10)); })[0];
+        let ordem = arts.slice().sort(function(a, b) { return (parseInt(a, 10) - parseInt(b, 10)) || a.localeCompare(b); });
+        return { id: id, nome: noMenu[id].nome, arts: ordem, top: top };
+    }).sort(function(a, b) { return b.arts.length - a.arts.length; });
+    return linhas.map(function(l) {
+        let dica = 'Lei Seca — ' + l.nome + ': ' + (l.arts.length === 1 ? 'art. ' : 'arts. ') + l.arts.slice(0, 15).join(', ') + (l.arts.length > 15 ? '…' : '') + ' citado(s) nesta bateria';
+        return '<div onclick="window.abrirLeiSecaNoDiploma(\'' + esc(l.id) + '\', \'' + esc(l.top) + '\')" title="' + esc(dica) + '" style="' + estilo + '"><span>📜 ' + esc(l.nome) + '</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">' + l.arts.length + ' art.</span></div>';
+    }).join('');
+};
+window.abrirLeiSecaNoDiploma = async function(id, art) {
+    if (!window.exigirCompleto('Lei Seca')) return;
+    let L = window.LEISECA_RUNTIME;
+    try { localStorage.setItem(L.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {}
+    L._diploma = id;
+    await window.abrirLeiSecaModal();
+    // Fora do conjunto ativo, o init cai no 1º diploma do conjunto.
+    if (L._diploma !== id) await L.selecionarDiploma(id);
+    if (art && L._textos[id] && L._textos[id].artigos && L._textos[id].artigos[art]) L.abrirArtigo(art);
 };
 window.alternarMaximizarLeiSecaModal = function() {
     const modal = document.getElementById('leiseca-modal');
@@ -22807,6 +22877,37 @@ function renderizarListaBaterias(filtradas, headerHtml) {
                         return (b.dataCriacao || '').localeCompare(a.dataCriacao || ''); // mais recente primeiro
                     });
                 }
+                // Por Disciplina (pedido explícito do usuário): agrupa pela
+                // disciplina, na ordem da taxonomia (a mesma da coluna de
+                // matérias), depois pelo tema (L2, também na ordem da
+                // taxonomia) e pelo nome; um cabeçalho a cada disciplina.
+                let cabecalhoDisc = {};
+                if (window.__ordenacaoListaCE === 'disciplina') {
+                    let ordemMat = {}, ordemDiv = {};
+                    try {
+                        TAXONOMIA_DADOS.taxonomia_concursos.forEach(function(m, i) {
+                            ordemMat[String(m.nivel_1 || '').toUpperCase()] = i;
+                            (m.divisoes || []).forEach(function(d, j) { ordemDiv[d.id] = j; });
+                        });
+                    } catch (e) {}
+                    let matDe = function(p) { return String(p.materia || (p.caminho_completo || '').split(' > ')[0] || 'Sem disciplina').toUpperCase(); };
+                    let pos = function(mapa, k) { return mapa[k] === undefined ? 9999 : mapa[k]; };
+                    filtradas = filtradas.slice().sort(function(a, b) {
+                        let ma = matDe(a), mb = matDe(b);
+                        return (pos(ordemMat, ma) - pos(ordemMat, mb)) || ma.localeCompare(mb, 'pt-BR')
+                            || (pos(ordemDiv, a.id_taxonomia) - pos(ordemDiv, b.id_taxonomia))
+                            || (a.caminho_completo || '').localeCompare(b.caminho_completo || '', 'pt-BR')
+                            || (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
+                    });
+                    let anterior = null, contagem = {};
+                    filtradas.forEach(function(p) { let m = matDe(p); contagem[m] = (contagem[m] || 0) + 1; });
+                    filtradas.forEach(function(p, i) {
+                        let m = matDe(p);
+                        if (m === anterior) return;
+                        anterior = m;
+                        cabecalhoDisc[i] = '<div style="padding:10px 8px 4px; margin-top:' + (i ? '8px' : '0') + '; font-size:10px; font-weight:800; letter-spacing:.5px; color:var(--app-primary); border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between;"><span>' + m.replace(/[&<>]/g, '') + '</span><span style="color:var(--text-muted); font-weight:700;">' + contagem[m] + '</span></div>';
+                    });
+                }
 
                 if (filtradas.length === 0) {
                     listCE.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 11px; font-style: italic;">Nenhuma bateria encontrada.</div>';
@@ -22947,7 +23048,7 @@ return `
         ${etiquetaOficial}Base de Dados: ${estiloTxt} | IA utilizada: ${iaTxt} | Criada em: ${criadaEmTxt} | Resolvida em: ${resolvidaEmTxt}
     </div>
 </div>`;
-                }).join('');
+                }).map(function(h, i) { return (cabecalhoDisc[i] || '') + h; }).join('');
             };
 
 window.filtrarProvasCE = function(materia, divisao) {
@@ -23214,7 +23315,8 @@ function marcarBotaoOrdenacaoAtivo() {
     let btnAz = document.getElementById('btn-ordenar-az');
     let btnData = document.getElementById('btn-ordenar-data');
     let ativo = window.__ordenacaoListaCE;
-    [[btnAz, 'az'], [btnData, 'data']].forEach(function(par) {
+    let btnDisc = document.getElementById('btn-ordenar-disciplina');
+    [[btnAz, 'az'], [btnData, 'data'], [btnDisc, 'disciplina']].forEach(function(par) {
         let btn = par[0], tipo = par[1];
         if (!btn) return;
         let estaAtivo = ativo === tipo;
@@ -25844,6 +25946,9 @@ function renderNav(){
                             </div>`;
                         });
                     }
+
+                    // Lei Seca: diplomas citados nas questões desta bateria.
+                    if (typeof window._htmlLeiSecaAssociada === 'function') itensBaralhos += window._htmlLeiSecaAssociada();
 
                     if (itensBaralhos) {
                         htmlBaralhos = `
