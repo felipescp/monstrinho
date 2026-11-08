@@ -16,7 +16,7 @@ out.lerJsonCerca=n.lerJson('```json\n{"a":1}\n```').a;
 // 3. Gemini simulado
 (async()=>{
  const fakeFetch=async(url,o)=>({ok:true,status:200,json:async()=>({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({fichas:[ficha],observacoes:''})}]}}],usageMetadata:{promptTokenCount:1000,candidatesTokenCount:500,thoughtsTokenCount:200}}), _url:url});
- const g=await n.chamarGemini(fakeFetch,{modelo:'gemini-2.5-flash',chave:'k'},n.validarPedido(base)); out.gemini={fichas:g.json.fichas.length,uso:g.uso};
+ const g=await n.chamarGemini(fakeFetch,{modelo:'gemini-3.8-flash',chave:'k'},n.validarPedido(base)); out.gemini={fichas:g.json.fichas.length,uso:g.uso};
  // 4. Claude: captura a requisição num servidor local
  let capt=null; const srv=http.createServer((req,res)=>{ let b=''; req.on('data',c=>b+=c); req.on('end',()=>{ capt={url:req.url, headers:{beta:req.headers['anthropic-beta'], versao:req.headers['anthropic-version'], chave:req.headers['x-api-key']}, body:JSON.parse(b)}; res.writeHead(400,{'content-type':'application/json'}); res.end(JSON.stringify({type:'error',error:{type:'invalid_request_error',message:'simulado'}})); }); }).listen(0);
  await new Promise(r=>srv.on('listening',r));

@@ -23,7 +23,7 @@ const CHAVE_GEMINI = defineSecret('GEMINI_API_KEY');
 // Modelos e esforço ajustáveis sem mexer no código (arquivo functions/.env).
 const CLAUDE_MODELO = defineString('CLAUDE_MODELO', { default: 'claude-opus-5-5' });
 const CLAUDE_ESFORCO = defineString('CLAUDE_ESFORCO', { default: 'medium' });
-const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-2.5-flash' });
+const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-3.8-flash' });
 
 exports.criarEsquemaIA = onCall({
     region: 'southamerica-east1',
