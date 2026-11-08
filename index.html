@@ -180,7 +180,11 @@
     FB.nivel = null;
     FB.permitidoNoNivel = function(caminho) {
         if (FB.nivel !== 'simples' || FB.papel === 'admin') return true;
-        return ITENS_SIMPLES.indexOf(String(caminho).replace(/^dados\//, '').split('/')[0]) !== -1;
+        var rel = String(caminho).replace(/^dados\//, '');
+        // Amostra da Lei Seca (diplomas citados na bateria): manifesto e
+        // mapas de incidência; os comentários do sistema ficam no completo.
+        if (rel === 'leiseca/manifesto.json' || rel.indexOf('leiseca/incidencia/') === 0) return true;
+        return ITENS_SIMPLES.indexOf(rel.split('/')[0]) !== -1;
     };
     window.fetch = function(entrada, opcoes) {
         var caminho = caminhoDados(entrada);
@@ -1827,6 +1831,9 @@ try {
     <style>
         body:not(.salinha-admin) .so-admin { display:none !important; } /* exclusivo do admin (ver window.ehAdmin) */
         body.salinha-simples .req-completo::after { content:' 🔒'; font-size:.85em; } /* fora do acesso simples (ver window.exigirCompleto) */
+        #leiseca-modal .fc-materia-item.ls-bloq { opacity:.55; }
+        #leiseca-modal .ls-amostra { margin:0 0 10px; padding:8px 10px; border-radius:8px; background:var(--bg-accent-soft, #eef2ff); border:1px solid var(--app-primary); font-size:11px; line-height:1.45; color:var(--text-main); }
+        #leiseca-modal .ls-amostra a { color:var(--app-primary); font-weight:700; }
         .nivel-chip { margin-left:6px; padding:1px 6px; border-radius:6px; font-size:8.5px; font-weight:800; letter-spacing:.4px; background:var(--app-primary); color:#fff; cursor:pointer; vertical-align:1px; }
         .logo-salinha { height:44px; width:auto; display:block; image-rendering:auto; }
         body.dark .logo-salinha { background:#fff; border-radius:8px; padding:3px 4px; box-sizing:content-box; height:38px; }
@@ -5629,8 +5636,8 @@ window.mostrarNivelSimples = function(secao) {
     let titulo = secao ? '🔒 ' + esc(secao) + ' faz parte do acesso completo' : 'Você está no acesso simples';
     fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;line-height:1.5">' +
         '<b style="font-size:16px;display:block;margin-bottom:8px">' + titulo + '</b>' +
-        '<p style="margin:0 0 8px">No <b>acesso simples</b> você tem <b>todas as baterias</b> e, dentro de cada uma, os <b>materiais associados</b> ao tema (Esquemas, Jurisprudência e Flashcards, na barra lateral da bateria).</p>' +
-        '<p style="margin:0 0 14px">O <b>acesso completo</b> libera também as seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário.</p>' +
+        '<p style="margin:0 0 8px">No <b>acesso simples</b> você tem <b>todas as baterias</b> e, dentro de cada uma, os <b>materiais associados</b> ao tema (Esquemas, Jurisprudência, Flashcards e uma amostra da Lei Seca citada, na barra lateral da bateria).</p>' +
+        '<p style="margin:0 0 14px">O <b>acesso completo</b> libera também as seções Jurisprudência, Lei Seca (todos os diplomas, com os comentários do sistema), Esquemas, Flashcards, Prazos, Penas e Glossário.</p>' +
         '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
         (pedido
             ? '<span style="color:var(--text-muted,#666)">✓ Pedido enviado em ' + esc(pedido.toLocaleDateString('pt-BR')) + '. Assim que for liberado, recarregue a página.</span>'
@@ -16475,6 +16482,10 @@ window.LEISECA_RUNTIME = {
     _diploma: null,
     _divisao: null,    // índice do grupo (null = todos)
     _art: null,
+    // Amostra (acesso simples): Set dos diplomas liberados — os citados na
+    // bateria de onde a Lei Seca foi aberta. null = sem restrição.
+    _amostra: null,
+    _bloqueadoNaAmostra: function(id) { return !!(this._amostra && !this._amostra.has(id)); },
     _busca: '',
     _filtro: { critico: true, importante: true, regular: true, nenhum: true },
     // lidos: artigo COMPLETO ("DIP|33"); lidosDisp: cada dispositivo lido
@@ -16553,7 +16564,7 @@ window.LEISECA_RUNTIME = {
     // coluna quando terminam.
     _preCarregarIncidencias: function() {
         let self = this;
-        Promise.all(this._diplomas().map(function(d) { return self._carregarIncidencia(d.id); }))
+        Promise.all(this._diplomas().filter(function(d) { return !self._bloqueadoNaAmostra(d.id); }).map(function(d) { return self._carregarIncidencia(d.id); }))
             .then(function() { self._renderDiplomas(); });
     },
     // Só diplomas com mapa de incidência: os demais de window.LEGISLACAO servem
@@ -16571,7 +16582,7 @@ window.LEISECA_RUNTIME = {
     },
     _diplomasVisiveis: function() {
         let c = this._conjuntoAtivo(), todos = this._diplomas();
-        if (!c) return todos;
+        if (!c || this._amostra) return todos;
         let f = todos.filter(function(d) { return c.diplomas.indexOf(d.id) >= 0; });
         return f.length ? f : todos;
     },
@@ -16675,6 +16686,11 @@ window.LEISECA_RUNTIME = {
 
     // retomar (ou trocar de lei): abre no ponto de leitura (_pontoDeLeitura).
     selecionarDiploma: async function(id, manterArt, retomar) {
+        if (this._bloqueadoNaAmostra(id)) {
+            let info = this._infoDiploma(id);
+            window.mostrarNivelSimples('Lei Seca' + (info && info.nome ? ' — ' + info.nome : ''));
+            return;
+        }
         this._diploma = id; this._divisao = null;
         if (!manterArt) this._art = null;
         try { localStorage.setItem(this.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {}
@@ -16896,7 +16912,10 @@ window.LEISECA_RUNTIME = {
         let self = this, disponiveis = {}, soCom = this._soComentadas();
         this._diplomasVisiveis().forEach(function(d) { if (!soCom || d.comentarios) disponiveis[d.id] = true; });
         let abertas = this._discAbertas();
-        col.innerHTML = this._htmlConjuntos() + (this.manifesto.disciplinas || []).map(function(g) {
+        let faixaAmostra = this._amostra
+            ? '<div class="ls-amostra">Amostra do <b>acesso completo</b>: aberta a Lei Seca citada na bateria. Os demais diplomas, os comentários do sistema e o menu Lei Seca fazem parte do acesso completo. <a href="#" onclick="event.preventDefault(); window.mostrarNivelSimples()">Pedir acesso completo</a></div>'
+            : '';
+        col.innerHTML = faixaAmostra + (this._amostra ? '' : this._htmlConjuntos()) + (this.manifesto.disciplinas || []).map(function(g) {
             let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
             if (!itens.length) return '';
             let temAtivo = itens.some(function(d) { return d.id === self._diploma; });
@@ -16906,8 +16925,9 @@ window.LEISECA_RUNTIME = {
                 '<div class="ls-disc-cab" onclick="window.LEISECA_RUNTIME.alternarDisciplina(this.parentNode)"><span class="ls-disc-seta">▶</span><span class="ls-disc-nome">' + self._esc(g.nome) + '</span><span class="ls-disc-qtd">(' + itens.length + ')</span></div>' +
                 '<div class="ls-disc-corpo">' + itens.map(function(d) {
                 let inc = self._incidencias[d.id], total = inc ? Object.keys(inc.porArt).reduce(function(s, k) { return s + inc.porArt[k]; }, 0) : 0;
-                return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')">' +
-                    '<span class="fc-materia-nome">' + self._esc(d.nome) + '</span>' +
+                let bloq = self._bloqueadoNaAmostra(d.id);
+                return '<div class="fc-materia-item' + (d.id === self._diploma ? ' ativa' : '') + (bloq ? ' ls-bloq' : '') + '" onclick="window.LEISECA_RUNTIME.selecionarDiploma(\'' + self._escJs(d.id) + '\')"' + (bloq ? ' title="Acesso completo"' : '') + '>' +
+                    '<span class="fc-materia-nome">' + self._esc(d.nome) + (bloq ? ' 🔒' : '') + '</span>' +
                     // 📝 = diploma com notas do sistema (Modo comentado), pedido explícito do usuário.
                     (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? ' 📝' : '') + '</span>'
                         : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? ' 📝' : '') + '</span>') : '') +
@@ -17517,6 +17537,10 @@ window.LEISECA_RUNTIME = {
 };
 window.abrirLeiSecaModal = function() {
     if (!window.exigirCompleto('Lei Seca')) return;
+    window.LEISECA_RUNTIME._amostra = null;
+    return window._mostrarLeiSecaModal();
+};
+window._mostrarLeiSecaModal = function() {
     const modal = document.getElementById('leiseca-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado');
@@ -17560,9 +17584,6 @@ window._htmlLeiSecaAssociada = function() {
     if (!ids.length) return '';
     let estilo = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:11px; color:var(--app-primary); font-weight:600;';
     let esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-    if (window.ehNivelSimples && window.ehNivelSimples()) {
-        return '<div onclick="window.mostrarNivelSimples(\'Lei Seca\')" title="Lei Seca dos diplomas citados nesta bateria (acesso completo)" style="' + estilo + '"><span>📜 Lei Seca 🔒</span><span style="color:var(--text-muted); font-weight:700; flex-shrink:0;">' + ids.length + '</span></div>';
-    }
     let L = window.LEISECA_RUNTIME;
     if (!L) return '';
     if (!L.manifesto) {
@@ -17586,11 +17607,16 @@ window._htmlLeiSecaAssociada = function() {
     }).join('');
 };
 window.abrirLeiSecaNoDiploma = async function(id, art) {
-    if (!window.exigirCompleto('Lei Seca')) return;
+    if (!window.exigirLoginParaSecao()) return;
     let L = window.LEISECA_RUNTIME;
-    try { localStorage.setItem(L.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {}
+    // Acesso simples (pedido explícito do usuário): amostra — abre só os
+    // diplomas citados nesta bateria; os outros ficam com cadeado.
+    L._amostra = (window.ehNivelSimples && window.ehNivelSimples())
+        ? new Set(Object.keys((window._lsAssocCache && window._lsAssocCache.refs) || {}).concat([id]))
+        : null;
+    if (!L._amostra) { try { localStorage.setItem(L.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {} }
     L._diploma = id;
-    await window.abrirLeiSecaModal();
+    await window._mostrarLeiSecaModal();
     // Fora do conjunto ativo, o init cai no 1º diploma do conjunto.
     if (L._diploma !== id) await L.selecionarDiploma(id);
     if (art && L._textos[id] && L._textos[id].artigos && L._textos[id].artigos[art]) L.abrirArtigo(art);

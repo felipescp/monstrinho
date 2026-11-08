@@ -37,6 +37,15 @@ service firebase.storage {
                               'manifesto-flashcards.txt', 'manifesto-glossario.txt', 'versoes-oficiais.json']
         && simples();
     }
+    // Amostra da Lei Seca no acesso simples (aberta pela bateria, só os
+    // diplomas citados nela — a escolha do diploma é feita pelo app): o
+    // manifesto e os mapas de incidência. Comentários do sistema, não.
+    match /dados/leiseca/manifesto.json {
+      allow read: if simples();
+    }
+    match /dados/leiseca/incidencia/{resto=**} {
+      allow read: if simples();
+    }
     match /{tudo=**} {
       allow read, write: if false;
     }

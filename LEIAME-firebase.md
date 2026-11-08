@@ -94,7 +94,7 @@ Há dois níveis, no campo `nivel` do documento `acessos/{e-mail}`:
 
 | Nível | O que libera |
 |---|---|
-| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). A linha 📜 Lei Seca dos materiais associados aparece com cadeado. As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
+| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). Pelos materiais associados, uma **amostra da Lei Seca**: abre os diplomas citados naquela bateria (texto e mapa de incidência); os demais aparecem com 🔒, e os comentários do sistema ficam no completo. As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
 | `completo` | Tudo. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
 
 Não é preciso pedir o e-mail a ninguém:
@@ -109,9 +109,9 @@ Outras situações:
 - **Bloquear alguém:** mude `ativo` para `false` e `nivel` para `bloqueado`. O site mostra "acesso suspenso". Só `ativo: false`, sem `nivel: "bloqueado"`, não basta para um pedido antigo, porque ele viraria acesso simples no próximo login.
 - **Pedidos antigos** (de antes dos níveis, com só `ativo: false` e `pedidoEm`) viram acesso simples sozinhos no próximo login da pessoa.
 
-**A trava é no servidor.** `storage.rules` só entrega as pastas `bateriasvf`, `esquemas`, `jurisprudencia`, `flashcards`, `glossario` e `legislacao` (o texto das leis usado nas remissões) a quem está no acesso simples. A Lei Seca (mapas e comentários), Prazos e Penas ficam só no completo. Pelo app, a pessoa só cria a própria conta no acesso simples e só marca o pedido do completo: subir de nível, mudar papel e validade continua só pelo console (`firestore.rules`).
+**A trava é no servidor.** `storage.rules` só entrega as pastas `bateriasvf`, `esquemas`, `jurisprudencia`, `flashcards`, `glossario` e `legislacao` (o texto das leis usado nas remissões) a quem está no acesso simples. Da Lei Seca, o acesso simples recebe só o manifesto e os mapas de incidência (a amostra; a escolha dos diplomas citados na bateria é feita pelo app). Os comentários do sistema, Prazos e Penas ficam só no completo. Pelo app, a pessoa só cria a própria conta no acesso simples e só marca o pedido do completo: subir de nível, mudar papel e validade continua só pelo console (`firestore.rules`).
 
-**Limite:** os materiais associados (Esquemas, Jurisprudência, Flashcards) chegam inteiros ao aparelho de quem está no acesso simples, porque a barra lateral de cada bateria precisa deles. O cadeado nas seções fecha o acesso pela tela, não impede quem tenha conhecimento técnico de olhar esses dados no navegador. A Lei Seca, Prazos e Penas nem são baixados.
+**Limite:** os materiais associados (Esquemas, Jurisprudência, Flashcards) chegam inteiros ao aparelho de quem está no acesso simples, porque a barra lateral de cada bateria precisa deles. O cadeado nas seções fecha o acesso pela tela, não impede quem tenha conhecimento técnico de olhar esses dados no navegador. O mesmo vale para a amostra da Lei Seca: o servidor entrega os mapas de incidência a quem está no acesso simples, e o app limita a amostra aos diplomas citados na bateria. Comentários do sistema, Prazos e Penas nem são baixados.
 
 ### Acesso com prazo (opcional)
 
