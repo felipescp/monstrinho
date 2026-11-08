@@ -18,4 +18,6 @@ O app transforma as citações das Explicações em links: o artigo de lei abre 
 
 ---
 
+O texto acima já está incorporado ao prompt do Gem em `prompts-gem/gerador-questoes-fgv.md` (seção "Padrão de Citação").
+
 Para padronizar baterias já existentes no acervo oficial, rode `ferramentas/normalizar_citacoes.js` (instruções no cabeçalho do script). O relatório da última rodada fica em `relatorios/normalizacao-citacoes.md`.
