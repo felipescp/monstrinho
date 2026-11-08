@@ -34352,8 +34352,27 @@ window.ESQ_IA = {
         }
     },
     editarFicha: function(i) { this._guardarCampos(); this.estado.editando = (this.estado.editando === i ? -1 : i); this.render(); },
-    mudar: function(campo, valor) { this._guardarCampos(); this.estado[campo] = valor; if (campo === 'modo' || campo === 'materia') { this.estado.plano = null; this.estado.selecionadas = {}; this.estado.status = ''; }
-        if (campo === 'modo') this.estado.etapa = 'material'; this.render(); },
+    // Cada modo tem o próprio material, plano e fichas (matéria e IA são comuns).
+    _CAMPOS_DO_MODO: ['tema', 'material', 'fonte', 'arquivo', 'plano', 'selecionadas', 'fichas', 'editando', 'observacoes', 'status', 'etapa'],
+    _trocarModo: function(novo) {
+        let e = this.estado;
+        if (novo === e.modo) return;
+        this._porModo = this._porModo || {};
+        let atual = {}; this._CAMPOS_DO_MODO.forEach(function(k) { atual[k] = e[k]; });
+        this._porModo[e.modo] = atual;
+        let salvo = this._porModo[novo] || { tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, observacoes: [], status: '', etapa: 'material' };
+        this._CAMPOS_DO_MODO.forEach(function(k) { e[k] = salvo[k]; });
+        e.modo = novo;
+    },
+    mudar: function(campo, valor) {
+        this._guardarCampos();
+        if (campo === 'modo') this._trocarModo(valor);
+        else {
+            this.estado[campo] = valor;
+            if (campo === 'materia') { this.estado.plano = null; this.estado.selecionadas = {}; this.estado.status = ''; }
+        }
+        this.render();
+    },
 
     // Etapas: material › (plano, só no lote) › fichas. Uma tela por vez.
     _etapas: function() { return this.estado.modo === 'individual' ? ['material', 'fichas'] : ['material', 'plano', 'fichas']; },
