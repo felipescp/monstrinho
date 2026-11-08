@@ -4,13 +4,13 @@ const path=__dirname+'/';
 const n=require(path+'nucleo'); const Anthropic=require(path+'node_modules/@anthropic-ai/sdk'); const http=require('http');
 const out={};
 // 1. validação
-const base={acao:'gerar',provedor:'gemini',materia:'Direito Civil',divisoes:['Introdução ao Direito Civil e LINDB','Parte Geral: Pessoas'],tema:'Vacatio legis',material:''};
+const base={acao:'gerar',provedor:'gemini',taxonomia:[{materia:'Direito Civil',divisoes:['Introdução ao Direito Civil e LINDB','Parte Geral: Pessoas']},{materia:'Direito Penal',divisoes:['Parte Geral']}],tema:'Vacatio legis',material:''};
 out.valido=!!n.validarPedido(base);
-for (const [k,v] of [['acao','x'],['provedor','gpt'],['materia',''],['divisoes',[]]]) { try{ n.validarPedido(Object.assign({},base,{[k]:v})); out['erro_'+k]='NÃO RECUSOU'; }catch(e){ out['erro_'+k]=e.message; } }
+for (const [k,v] of [['acao','x'],['provedor','gpt'],['taxonomia',[]]]) { try{ n.validarPedido(Object.assign({},base,{[k]:v})); out['erro_'+k]='NÃO RECUSOU'; }catch(e){ out['erro_'+k]=e.message; } }
 try{ n.validarPedido(Object.assign({},base,{material:'x'.repeat(300001)})); }catch(e){ out.limite=e.message; }
 out.prompt=n.mensagemUsuario(n.validarPedido(base)).slice(0,160);
 // 2. saída
-const ficha={divisao:'Introdução ao Direito Civil e LINDB',titulo:'Vacatio legis',subtema:'Vigência',tipo:'requisitos e prazos',referencia:'art. 1º da LINDB',corpo_html:'<table><tr><th>A</th><th>B</th></tr>\n<tr><td>1</td><td>2</td></tr></table>',alerta:'45 dias',fonte:'X'};
+const ficha={materia:'Direito Civil',divisao:'Introdução ao Direito Civil e LINDB',titulo:'Vacatio legis',subtema:'Vigência',tipo:'requisitos e prazos',referencia:'art. 1º da LINDB',corpo_html:'<table><tr><th>A</th><th>B</th></tr>\n<tr><td>1</td><td>2</td></tr></table>',alerta:'45 dias',fonte:'X'};
 out.saida=n.validarSaida('gerar',{fichas:[ficha,{titulo:'sem corpo',divisao:'d',tipo:'Rol',corpo_html:'texto'},{titulo:'tipo errado',divisao:'d',tipo:'Outro',corpo_html:'<p>x</p>'}],observacoes:'ok'});
 out.lerJsonCerca=n.lerJson('```json\n{"a":1}\n```').a;
 // 3. Gemini simulado

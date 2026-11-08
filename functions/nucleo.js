@@ -25,7 +25,7 @@ O QUE É EXTRAÍVEL
 - Esquemas irmãos (o mesmo tema fatiado) viram UMA ficha. Nunca fatie um esquema para inflar a contagem.
 
 CLASSIFICAÇÃO DE CADA FICHA
-- divisao: exatamente um dos nomes da lista "Divisões válidas" (letra por letra). Se nenhum servir, use o mais próximo e diga isso em "observacoes".
+- materia e divisao: identifique pelo conteúdo do material a matéria (L1) e a divisão (L2) de cada ficha, usando exatamente um par da lista "Matérias e divisões válidas" (letra por letra; a divisão tem de pertencer à matéria escolhida). Fichas do mesmo material podem cair em matérias diferentes. Se nenhuma divisão servir bem, use a mais próxima e diga isso em "observacoes".
 - subtema: identificação livre e curta (ex.: "Dosimetria da pena").
 - tipo: exatamente um destes: ${TIPOS.join('; ')}. Ordem de verificação (pare na primeira que bater): é antes/depois de lei? Alteração legislativa. É quadro de teses de tribunal? Jurisprudência esquematizada. Tem requisito, fração, prazo ou percentual como eixo? Requisitos e prazos. Contrasta dois institutos? Comparativo. Enumera hipóteses sem contraste? Rol. Divide um instituto em espécies? Classificação. Nenhuma? Macete. Ficha com mais de uma tabela: o tipo é o da primeira.
 
@@ -64,12 +64,13 @@ function esquemaPlano() {
                     type: 'object',
                     properties: {
                         titulo: { type: 'string' },
+                        materia: { type: 'string' },
                         divisao: { type: 'string' },
                         subtema: { type: 'string' },
                         tipo: { type: 'string', enum: TIPOS },
                         resumo: { type: 'string' }
                     },
-                    required: ['titulo', 'divisao', 'subtema', 'tipo', 'resumo'],
+                    required: ['titulo', 'materia', 'divisao', 'subtema', 'tipo', 'resumo'],
                     additionalProperties: false
                 }
             },
@@ -88,6 +89,7 @@ function esquemaFichas() {
                 items: {
                     type: 'object',
                     properties: {
+                        materia: { type: 'string' },
                         divisao: { type: 'string' },
                         titulo: { type: 'string' },
                         subtema: { type: 'string' },
@@ -97,7 +99,7 @@ function esquemaFichas() {
                         alerta: { type: 'string' },
                         fonte: { type: 'string' }
                     },
-                    required: ['divisao', 'titulo', 'subtema', 'tipo', 'referencia', 'corpo_html', 'alerta', 'fonte'],
+                    required: ['materia', 'divisao', 'titulo', 'subtema', 'tipo', 'referencia', 'corpo_html', 'alerta', 'fonte'],
                     additionalProperties: false
                 }
             },
@@ -114,10 +116,12 @@ function validarPedido(d) {
     const acao = d.acao, provedor = d.provedor;
     if (acao !== 'planejar' && acao !== 'gerar') throw new Error('Ação inválida.');
     if (provedor !== 'claude' && provedor !== 'gemini') throw new Error('Escolha a IA (Claude ou Gemini).');
-    const materia = String(d.materia || '').trim();
-    if (!materia || materia.length > 200) throw new Error('Selecione a matéria.');
-    const divisoes = (Array.isArray(d.divisoes) ? d.divisoes : []).map(x => String(x).trim()).filter(Boolean).slice(0, 80);
-    if (!divisoes.length) throw new Error('A matéria não tem divisões (L2) na taxonomia.');
+    // Taxonomia inteira (a IA escolhe matéria e divisão de cada ficha).
+    const taxonomia = (Array.isArray(d.taxonomia) ? d.taxonomia : []).slice(0, 60).map(m => ({
+        materia: String((m && m.materia) || '').trim().slice(0, 200),
+        divisoes: (Array.isArray(m && m.divisoes) ? m.divisoes : []).map(x => String(x).trim().slice(0, 200)).filter(Boolean).slice(0, 120)
+    })).filter(m => m.materia && m.divisoes.length);
+    if (!taxonomia.length) throw new Error('Taxonomia de matérias ausente.');
     const tema = String(d.tema || '').trim().slice(0, 2000);
     const material = String(d.material || '');
     const fonte = String(d.fonte || '').trim().slice(0, 300);
@@ -127,32 +131,33 @@ function validarPedido(d) {
     if (acao === 'gerar') {
         fichas = (Array.isArray(d.fichas) ? d.fichas : []).slice(0, LIMITE_FICHAS_POR_PEDIDO).map(f => ({
             titulo: String((f && f.titulo) || '').slice(0, 300),
+            materia: String((f && f.materia) || '').slice(0, 200),
             divisao: String((f && f.divisao) || '').slice(0, 300),
             subtema: String((f && f.subtema) || '').slice(0, 300),
             tipo: String((f && f.tipo) || '').slice(0, 60),
             resumo: String((f && f.resumo) || '').slice(0, 1000)
         }));
     }
-    return { acao, provedor, materia, divisoes, tema, material, fonte, fichas };
+    return { acao, provedor, taxonomia, tema, material, fonte, fichas };
 }
 
 function mensagemUsuario(p) {
-    let t = 'Matéria (L1): ' + p.materia + '\nDivisões válidas (L2), use exatamente um destes nomes:\n' + p.divisoes.map(x => '- ' + x).join('\n') + '\n\n';
+    let t = 'Matérias e divisões válidas (L1 e, abaixo de cada uma, as L2; use exatamente estes nomes):\n' + p.taxonomia.map(m => '## ' + m.materia + '\n' + m.divisoes.map(x => '- ' + x).join('\n')).join('\n') + '\n\n';
     if (p.fonte) t += 'Fonte do material (para o campo "fonte"): ' + p.fonte + '\n\n';
     if (p.acao === 'planejar') {
-        t += 'TAREFA: planejar. Leia o material e proponha a lista de fichas extraíveis (sem gerar o corpo), na ordem do material. Para cada uma: titulo, divisao, subtema, tipo e um resumo de uma linha do que a tabela vai conter. Em "observacoes", lacunas, divergências ou trechos sem L2 correspondente (ou "" se nada).';
+        t += 'TAREFA: planejar. Leia o material e proponha a lista de fichas extraíveis (sem gerar o corpo), na ordem do material. Para cada uma: titulo, materia, divisao, subtema, tipo e um resumo de uma linha do que a tabela vai conter. Em "observacoes", lacunas, divergências ou trechos sem L2 correspondente (ou "" se nada).';
         if (p.tema) t += '\nOrientação do usuário: ' + p.tema;
-        t += '\nResponda no formato JSON: {"fichas":[{"titulo","divisao","subtema","tipo","resumo"}],"observacoes"}.';
+        t += '\nResponda no formato JSON: {"fichas":[{"titulo","materia","divisao","subtema","tipo","resumo"}],"observacoes"}.';
     } else {
         if (p.fichas.length) {
-            t += 'TAREFA: gerar estas fichas, uma para cada item, nesta ordem:\n' + p.fichas.map((f, i) => (i + 1) + '. ' + f.titulo + ' | divisão: ' + f.divisao + ' | subtema: ' + f.subtema + ' | tipo: ' + f.tipo + (f.resumo ? ' | conteúdo: ' + f.resumo : '')).join('\n');
+            t += 'TAREFA: gerar estas fichas, uma para cada item, nesta ordem:\n' + p.fichas.map((f, i) => (i + 1) + '. ' + f.titulo + ' | matéria: ' + f.materia + ' | divisão: ' + f.divisao + ' | subtema: ' + f.subtema + ' | tipo: ' + f.tipo + (f.resumo ? ' | conteúdo: ' + f.resumo : '')).join('\n');
             if (p.tema) t += '\nOrientação do usuário: ' + p.tema;
         } else {
             t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o tema tiver dois eixos que não cabem numa só) sobre: ' + p.tema
                 : 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) que esquematize o material abaixo. Dê à ficha um título curto e descritivo do conteúdo.';
         }
-        t += '\nCampos de cada ficha: divisao, titulo, subtema, tipo, referencia (dispositivos e julgados de base, no padrão de citação; ou "(ref. não indicada no material)"), corpo_html, alerta, fonte (a fonte do material, com página se houver). Em "observacoes", o que faltou no material (ou "").';
-        t += '\nResponda no formato JSON: {"fichas":[{"divisao","titulo","subtema","tipo","referencia","corpo_html","alerta","fonte"}],"observacoes"}.';
+        t += '\nCampos de cada ficha: materia, divisao, titulo, subtema, tipo, referencia (dispositivos e julgados de base, no padrão de citação; ou "(ref. não indicada no material)"), corpo_html, alerta, fonte (a fonte do material, com página se houver). Em "observacoes", o que faltou no material (ou "").';
+        t += '\nResponda no formato JSON: {"fichas":[{"materia","divisao","titulo","subtema","tipo","referencia","corpo_html","alerta","fonte"}],"observacoes"}.';
     }
     t += p.material.trim() ? '\n\n<material>\n' + p.material + '\n</material>' : '\n\n(Sem material anexado: use apenas conhecimento jurídico consolidado e seguro; na dúvida, omita.)';
     return t;
@@ -176,7 +181,7 @@ function validarSaida(acao, j) {
     fichasBrutas.forEach(f => {
         if (!f || typeof f !== 'object') { out.descartadas++; return; }
         const tipo = TIPOS.find(x => x.toLowerCase() === String(f.tipo || '').trim().toLowerCase());
-        const base = { titulo: umaLinha(f.titulo), divisao: umaLinha(f.divisao), subtema: umaLinha(f.subtema), tipo: tipo || '' };
+        const base = { titulo: umaLinha(f.titulo), materia: umaLinha(f.materia), divisao: umaLinha(f.divisao), subtema: umaLinha(f.subtema), tipo: tipo || '' };
         if (!base.titulo || !base.divisao || !tipo) { out.descartadas++; return; }
         if (acao === 'planejar') { out.fichas.push(Object.assign(base, { resumo: umaLinha(f.resumo) })); return; }
         const corpo = umaLinha(f.corpo_html);
