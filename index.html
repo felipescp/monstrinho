@@ -12081,7 +12081,7 @@ window.PRATICAR_CADERNO_RUNTIME = {
                     corpo += '<div class="doc-card-titulo">' + self._escapar(q.enunciado || '(sem enunciado)') +
                         ' <span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span></div>';
                     if (q.motivoErro) corpo += '<div class="doc-meta"><span><b>Motivo do erro:</b> ' + self._escapar(q.motivoErro) + '</span></div>';
-                    if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(q.explicacao, null) + '</div>';
+                    if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(q.explicacao, null, { semRefs: true }) + '</div>';
                     corpo += '</div>';
                 });
             });
@@ -17565,7 +17565,7 @@ window._refsLeiSecaDaBateria = function(chave, dados) {
             ['enunciado', 'explicacao', 'bn'].forEach(function(campo) {
                 if (!q || !q[campo]) return;
                 let lista = [];
-                try { lista = window.LEGISLACAO.refsDoTexto(String(q[campo]).replace(/<[^>]+>/g, ' ')); } catch (e) {}
+                try { lista = window.LEGISLACAO.refsDoTexto(String(q[campo]).replace(/<[^>]+>/g, ' '), {}); } catch (e) {}
                 lista.forEach(function(r) {
                     let p = String(r.chave || '').split('|'), id = p[0], art = p[1];
                     if (!id || !art || art.indexOf('anexo:') === 0) return;
@@ -25149,12 +25149,45 @@ function _ehLetraOuNumeroGlosSim(ch) {
 // [links](https://…). O texto é escapado antes; só as marcações simples já
 // usadas nos dados (<i>, <b>, <em>, <strong>, <u>, <sub>, <sup>, <br>)
 // voltam a valer. Os termos do Glossário seguem destacados.
-function mdExplicacao(texto, materia) {
+// Referências nas Explicações (pedido explícito do usuário), como nos cards
+// da Jurisprudência e no Modo comentado da Lei Seca: artigo de lei → balão
+// com o texto (clique abre no Planalto); julgado/súmula/tema com card no
+// acervo → balão com a tese (clique abre o card). opcoes.semRefs: sem links
+// (exportações em HTML, que não têm o app). Artigo sem lei no trecho: a
+// última lei citada antes na mesma explicação. As explicações oficiais citam
+// a lei de forma explícita (ferramentas/normalizar_citacoes.js).
+function mdExplicacao(texto, materia, opcoes) {
     if (texto == null) return '';
-    var guard = [];
+    opcoes = opcoes || {};
+    var guard = [], anterior = '';
     function prot(html) { guard.push(html); return '\u0000' + (guard.length - 1) + '\u0000'; }
     function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function refs(t) {
+        var bruto = t;
+        if (opcoes.semRefs) return t;
+        var J = window.JURISPRUDENCIA_RUNTIME, L = window.LEGISLACAO, lista = [];
+        try {
+            if (J && J._refsDoTexto && J.fichas) lista = J._refsDoTexto(t).filter(function(r) { return J._candidatosRef(r.chave).length; });
+            if (L && L.refsDoTexto) L.refsDoTexto(t, { anterior: anterior }).forEach(function(r) {
+                if (lista.some(function(x) { return x.ini < r.fim && r.ini < x.fim; })) return;
+                r.lei = true; lista.push(r);
+            });
+        } catch (e) { anterior += '\n' + bruto; return t; }
+        lista.sort(function(x, y) { return y.ini - x.ini; });
+        var ult = Infinity;
+        lista.forEach(function(r) {
+            if (r.fim > ult || r.fim <= r.ini) return;
+            var txt = esc(t.slice(r.ini, r.fim)).replace(/&lt;(\/?)(i|b|em|strong|u|sub|sup)&gt;/gi, '<$1$2>'), k = esc(r.chave);
+            t = t.slice(0, r.ini) + prot(r.lei
+                ? '<span class="jur-ref jur-ref-lei" data-lei="' + k + '" data-ano="" onclick="event.stopPropagation(); window.LEGISLACAO.abrirNoPlanalto(this.getAttribute(\'data-lei\'))">' + txt + '</span>'
+                : '<span class="jur-ref" data-jur-ref="' + k + '" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute(\'data-jur-ref\'))">' + txt + '</span>') + t.slice(r.fim);
+            ult = r.ini;
+        });
+        anterior += '\n' + bruto;
+        return t;
+    }
     function inl(t) {
+        t = refs(t);
         t = esc(t).replace(/&lt;(\/?)(i|b|em|strong|u|sub|sup)&gt;/gi, '<$1$2>').replace(/&lt;br\s*\/?&gt;/gi, '<br>');
         t = t.replace(/`([^`]+)`/g, function(m, c) { return prot('<code>' + c + '</code>'); });
         t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function(m, txt, url) { return prot('<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>'); });
@@ -27631,7 +27664,7 @@ function _gerarHtmlCadernoQuestoes() {
       var motivoErroQ = D.res[q.id] && D.res[q.id].motivoErro;
       if (motivoErroQ) meta.push('<span><b>Motivo do erro:</b> ' + escapeHtmlCaderno(motivoErroQ) + '</span>');
       if (meta.length) corpo += '<div class="doc-meta">' + meta.join('') + '</div>';
-      if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(q.explicacao, null) + '</div>';
+      if (q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(q.explicacao, null, { semRefs: true }) + '</div>';
       corpo += '</div>';
     });
   });
@@ -27711,7 +27744,7 @@ function _gerarHtmlProvaCompleta() {
         corpo += '<ul>' + item.q.alternativas.map(function(a) { return '<li>' + escapeHtmlCaderno(a) + '</li>'; }).join('') + '</ul>';
       }
       corpo += '<div class="doc-meta"><span><b>Sua resposta:</b> ' + escapeHtmlCaderno(item.respostaUsuario) + '</span><span><b>Gabarito:</b> ' + escapeHtmlCaderno(item.q.gabarito) + '</span></div>';
-      if (item.q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(item.q.explicacao, null) + '</div>';
+      if (item.q.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(item.q.explicacao, null, { semRefs: true }) + '</div>';
       corpo += '</div>';
     });
   });
@@ -29087,7 +29120,7 @@ function gerarHtmlCaderno(aba, dados, materiaFiltro, topicoFiltro) {
                     let badgeTexto = vf ? '✅ Verdadeiro' : (fBadge ? '❌ Falso' : escapeHtmlCaderno(item.gabarito || '?'));
                     corpo += '<div class="doc-meta"><span class="doc-badge ' + badgeClasse + '">' + badgeTexto + '</span>' +
                         (item.motivoErro ? '<span><b>Motivo do erro:</b> ' + escapeHtmlCaderno(item.motivoErro) + '</span>' : '') + '</div>';
-                    if (item.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(item.explicacao, null) + '</div>';
+                    if (item.explicacao) corpo += '<div class="doc-callout-label">Explicação</div><div class="doc-callout">' + mdExplicacao(item.explicacao, null, { semRefs: true }) + '</div>';
                 } else {
                     corpo += '<div class="doc-callout-label">Axioma</div><div class="doc-callout">📌 ' + escapeHtmlCaderno(item.axioma || '') + '</div>';
                 }
@@ -40115,7 +40148,7 @@ window.LEGISLACAO = (function() {
         CPM: { nome: 'Código Penal Militar', arquivo: 'dados/legislacao/codigo-penal-militar.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del1001.htm',
               re: /\bCPM\b|C[óo]digo\s+Penal\s+Militar|(?:Decreto-[Ll]ei|\bDL)\s*n?[º°o.]*\s*1\.?001(?![\d.])/g },
         CF: { nome: 'CF', arquivo: 'dados/legislacao/constituicao.json', planalto: 'https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm',
-              re: /\b(?:CF|CRFB)(?:\/(?:19)?88)?\b|Constitui[çc][ãa]o(?:\s+Federal|\s+da\s+Rep[úu]blica(?:\s+Federativa\s+do\s+Brasil)?)?(?!\s+(?:Estadual|Estaduais|do\s+Estado|dos\s+Estados))/g },
+              re: /\b(?:CF|CRFB)(?:\/(?:19)?88)?\b|Constitui[çc][ãa]o(?:\s+Federal|\s+da\s+Rep[úu]blica(?:\s+Federativa\s+do\s+Brasil)?)?(?!\s+(?:Estadual|Estaduais|do\s+Estado|dos\s+Estados))|Carta\s+(?:Magna|Maior|Constitucional|Pol[íi]tica|Cidad[ãa]|de\s+1988)|Lei\s+(?:Maior|Fundamental)|Texto\s+(?:Constitucional|Magno|Maior)/g },
         // CPC/73 (e o de 1939) não: fica como "outro diploma", sem link.
         CPC: { nome: 'CPC', arquivo: 'dados/legislacao/cpc.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm',
               re: /\bCPC\b(?!\s*(?:\/|de)\s*(?:19)?(?:73|39)\b)(?:\s*\/\s*(?:20)?15\b)?|C[óo]digo\s+de\s+Processo\s+Civil(?!\s+(?:de\s+)?(?:19)?(?:73|39)\b)(?:\s+de\s+2015)?|Lei\s*n?[º°o.]*\s*13\.?105/g },
@@ -40136,7 +40169,6 @@ window.LEGISLACAO = (function() {
               re: /\bECA\b(?!\s+Digital)|Estatuto\s+da\s+Crian[çc]a\s+e\s+do\s+Adolescente|Lei\s*n?[º°o.]*\s*8\.?069/g },
         L11343: { nome: 'Lei 11.343', arquivo: 'dados/legislacao/lei-11343.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm',
               re: /Lei\s*n?[º°o.]*\s*11\.?343|Lei\s+(?:de\s+Drogas|Antidrogas)/g },
-        // "LRF" fica de fora: nas baterias é ora a Lei de Responsabilidade Fiscal (LC 101), ora a Lei 11.101.
         L11101: { nome: 'Lei 11.101', arquivo: 'dados/legislacao/lei-11101.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2005/lei/l11101.htm',
               re: /Lei\s*n?[º°o.]*\s*11\.?101|Lei\s+de\s+(?:Recupera[çc][ãa]o\s+(?:Judicial\s+)?e\s+)?Fal[êe]ncias?|\bLREF\b/g },
         // Lei Uniforme de Genebra (Anexo I do Decreto 57.663/1966): o Planalto não publica o texto do anexo; texto tirado de
@@ -40238,7 +40270,8 @@ window.LEGISLACAO = (function() {
         LC123: { nome: 'LC 123 (Estatuto da Microempresa e Empresa de Pequeno Porte)', arquivo: 'dados/legislacao/lc-123.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp123.htm',
               re: /(?:\bLC|Lei\s+Complementar)\s*n?[º°o.]*\s*123(?!\d|\.\d)(?!\/(?!(?:2006|06)\b))|Estatuto\s+(?:Nacional\s+)?da\s+Microempresa(?:\s+e\s+(?:da\s+)?Empresa\s+de\s+Pequeno\s+Porte)?/g },
         LC101: { nome: 'LC 101 (Lei de Responsabilidade Fiscal)', arquivo: 'dados/legislacao/lc-101.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp101.htm',
-              re: /(?:\bLC|Lei\s+Complementar)\s*n?[º°o.]*\s*101\b(?!\.\d)|Lei\s+de\s+Responsabilidade\s+Fiscal/g },
+              // "LRF" = esta lei: no acervo, a Lei 11.101 é citada pelo número (ferramentas/normalizar_citacoes.js).
+              re: /(?:\bLC|Lei\s+Complementar)\s*n?[º°o.]*\s*101\b(?!\.\d)|Lei\s+de\s+Responsabilidade\s+Fiscal|\bLRF\b/g },
         D20910: { nome: 'Decreto 20.910/1932', arquivo: 'dados/legislacao/decreto-20910.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto/d20910.htm',
               re: /Dec(?:reto|\.)?\s*n?[º°o.]*\s*20\.?910/g },
         L13260: { nome: 'Lei 13.260 (Antiterrorismo)', arquivo: 'dados/legislacao/lei-13260.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2016/lei/l13260.htm',
@@ -40250,7 +40283,7 @@ window.LEGISLACAO = (function() {
         L6938: { nome: 'Lei 6.938 (PNMA)', arquivo: 'dados/legislacao/lei-6938.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l6938.htm',
               re: /Lei\s*n?[º°o.]*\s*6\.?938|(?:Lei\s+da\s+)?Pol[íi]tica\s+Nacional\s+do\s+Meio\s+Ambiente|\bPNMA\b/g },
         L9985: { nome: 'Lei 9.985 (SNUC)', arquivo: 'dados/legislacao/lei-9985.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9985.htm',
-              re: /Lei\s*n?[º°o.]*\s*9\.?985(?!\.?\d)|Lei\s+do\s+SNUC/g },
+              re: /Lei\s*n?[º°o.]*\s*9\.?985(?!\.?\d)|(?:Lei\s+do\s+)?\bSNUC\b/g },
         L12305: { nome: 'Lei 12.305 (PNRS)', arquivo: 'dados/legislacao/lei-12305.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2010/lei/l12305.htm',
               re: /Lei\s*n?[º°o.]*\s*12\.?305(?!\.?\d)|Pol[íi]tica\s+Nacional\s+de\s+Res[íi]duos\s+S[óo]lidos|\bPNRS\b/g },
         L9433: { nome: 'Lei 9.433 (Recursos Hídricos)', arquivo: 'dados/legislacao/lei-9433.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9433.htm',
@@ -40274,7 +40307,7 @@ window.LEGISLACAO = (function() {
         L15190: { nome: 'Lei 15.190 (Lei Geral do Licenciamento Ambiental)', arquivo: 'dados/legislacao/lei-15190.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15190.htm',
               re: /Lei\s*n?[º°o.]*\s*15\.?190(?!\.?\d)|Lei\s+Geral\s+(?:do|de)\s+Licenciamento(?:\s+Ambiental)?|\bLGLA\b/g },
         L12594: { nome: 'Lei 12.594 (Sinase)', arquivo: 'dados/legislacao/lei-12594.json', planalto: 'https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12594.htm',
-              re: /Lei\s*n?[º°o.]*\s*12\.?594(?![\d.])|Lei\s+do\s+S(?:INASE|inase)\b/g },
+              re: /Lei\s*n?[º°o.]*\s*12\.?594(?![\d.])|(?:Lei\s+d[oa]\s+)?\bS(?:INASE|inase)\b/g },
         L9613: { nome: 'Lei 9.613 (Lavagem de Dinheiro)', arquivo: 'dados/legislacao/lei-9613.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9613compilado.htm',
               re: /Lei\s*n?[º°o.]*\s*9\.?613(?![\d.])|Lei\s+(?:de|da)\s+Lavagem(?:\s+de\s+(?:Dinheiro|Capitais|Bens))?/g },
         L9296: { nome: 'Lei 9.296 (Interceptação Telefônica)', arquivo: 'dados/legislacao/lei-9296.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l9296.htm',
@@ -40392,7 +40425,7 @@ window.LEGISLACAO = (function() {
         L7716: { nome: 'Lei 7.716 (Crimes Raciais)', arquivo: 'dados/legislacao/lei-7716.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7716compilado.htm',
               re: /Lei\s*n?[º°o.]*\s*7\.?716(?![\d.])|Lei\s+(?:de|do|dos)\s+(?:Crimes\s+(?:de\s+)?)?Racismo|Lei\s+dos\s+Crimes\s+Raciais/g },
         L8072: { nome: 'Lei 8.072 (Crimes Hediondos)', arquivo: 'dados/legislacao/lei-8072.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l8072compilada.htm',
-              re: /Lei\s*n?[º°o.]*\s*8\.?072(?![\d.])|Lei\s+(?:dos|de)\s+Crimes\s+Hediondos/g },
+              re: /Lei\s*n?[º°o.]*\s*8\.?072(?![\d.])|Lei\s+(?:dos|de)\s+Crimes\s+Hediondos|\bLCH\b/g },
         DL201: { nome: 'Decreto-Lei 201/1967 (Responsabilidade dos Prefeitos e Vereadores)', arquivo: 'dados/legislacao/decreto-lei-201.json', planalto: 'https://www.planalto.gov.br/ccivil_03/decreto-lei/del0201.htm',
               re: /(?:Decreto-Lei|\bDL)\s*(?:n?[º°o.]*\s*)?201(?!\d|\.\d)(?!\/(?!(?:1967|67)\b))/g },
         L7492: { nome: 'Lei 7.492 (Sistema Financeiro)', arquivo: 'dados/legislacao/lei-7492.json', planalto: 'https://www.planalto.gov.br/ccivil_03/leis/l7492.htm',
@@ -40470,10 +40503,10 @@ window.LEGISLACAO = (function() {
               re: /\bADCT\b|Ato\s+das\s+Disposi[çc][õo]es\s+Constitucionais\s+Transit[óo]rias/g }
     };
     // Outras menções de diploma (só para não atribuir o artigo ao diploma errado).
-    let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado)/g;
+    let RE_OUTROS = /\b(?:CF(?:\/88)?|Constitui[çc][ãa]o|CPC|CPP|CPM|CPPM|CC|CDC|CTN|ECA|LEP|CLT|LCP|LINDB|ADCT|C[óo]digo\s+(?:de\s+|do\s+|da\s+)?[A-ZÁ-Úa-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*|Lei(?:\s+Complementar)?\s*n?[º°o.]*\s*\d|LC\s*n?[º°o.]*\s*\d|Decreto(?:-Lei)?\s*n?[º°o.]*\s*\d|Resolu[çc][ãa]o|Regimento|Estatuto|Conven[çc][ãa]o|Enunciado|Recomenda[çc][ãa]o|Provimento|Portaria|Instru[çc][ãa]o\s+Normativa|C[óo]digo\s+de\s+[ÉEée]tica)/g;
     // "art. 155, § 4º, I, \"a\"" · "arts. 188 e 373, II" · "art. 121-A, caput"
-    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)*)/g;
-    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)/g;
+    let RE_LISTA = /\b(?:[Aa]rts?\.|[Aa]rtigos?)\s*(\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|par[áa]grafo\s+\d+\s*[ºo°]?(?:-[A-Z])?|incisos?\s+[IVXL]+(?:-[A-Z])?\b|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*(?:\s*(?:,|\be\b|\ba\b)\s*(?:e\s+)?\d{1,4}(?:\.\d{3})?(?:[ºo°])?(?:-[A-Z])?(?:[ºo°])?(?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|par[áa]grafo\s+\d+\s*[ºo°]?(?:-[A-Z])?|incisos?\s+[IVXL]+(?:-[A-Z])?\b|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)*)/g;
+    let RE_ITEM = /(\d{1,4}(?:\.\d{3})?)(?:[ºo°])?(-[A-Z])?(?:[ºo°])?((?:\s*,\s*(?:caput|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)*\s+e\s+\d+\s*[ºo°]?(?:-[A-Z])?|§§\s*\d+\s*[ºo°]?(?:-[A-Z])?(?:\s*,\s*\d+\s*[ºo°]?(?:-[A-Z])?)+|§\s*\d+\s*[ºo°]?(?:-[A-Z])?|par[áa]grafo\s+[úu]nico|par[áa]grafo\s+\d+\s*[ºo°]?(?:-[A-Z])?|incisos?\s+[IVXL]+(?:-[A-Z])?\b|[IVXL]+(?:-[A-Z])?\b|al[íi]nea\s*["“]?[a-z]\b["”]?|["“][a-z]["”])|\s+e\s+[IVXL]+(?:-[A-Z])?\b)*)/g;
     let cache = {}, carregando = {};
 
     function mencoes(seg) {
@@ -40496,19 +40529,65 @@ window.LEGISLACAO = (function() {
             d.par = (m[1].match(/\d+\s*[ºo°]?(?:-[A-Z])?/g) || []).map(function(x) { return x.replace(/[\sºo°]/g, ''); }).join(',');
             t = t.replace(m[0], '');
         } else if ((m = t.match(/§\s*(\d+)\s*[ºo°]?(?:-([A-Z]))?/))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
+        else if ((m = t.match(/par[áa]grafo\s+(\d+)\s*[ºo°]?(?:-([A-Z]))?/i))) d.par = m[1] + (m[2] ? '-' + m[2] : '');
         else if (/par[áa]grafo\s+[úu]nico/i.test(t)) d.par = 'pu';
-        let incs = [], ri = /(?:,|\be\b)\s*([IVXL]+(?:-[A-Z])?)\b/g; // também "I-A" (Lei 8.072, art. 1º)
+        let incs = [], ri = /(?:,|\be\b)\s*(?:incisos?\s+)?([IVXL]+(?:-[A-Z])?)\b/g; // também "I-A" (Lei 8.072, art. 1º)
         while ((m = ri.exec(t))) incs.push(m[1]);
         if (incs.length) d.inc = incs.join(',');
         if ((m = t.match(/al[íi]nea\s*["“]?([a-z])\b|["“]([a-z])["”]/))) d.ali = m[1] || m[2];
         return d;
     }
     // → [{ini, fim, chave: "CP|155|4|I|a"}] só para diplomas com base interna.
-    function refsDoTexto(texto) {
+    // ── Contexto (opcional; usado nas Explicações das questões) ──
+    // Artigo sem a lei no trecho ("(art. 157, § 2º)", "desta Lei", "da mesma
+    // norma"): a lei vem da última citada antes no texto (opcoes.anterior =
+    // texto que veio antes, ex.: parágrafos anteriores) ou, sem nenhuma, dos
+    // diplomas-padrão (opcoes.padrao: lei principal da bateria/disciplina).
+    // Pelo padrão, só liga se o dispositivo existir na lei (texto já
+    // carregado). "LRF" é a LC 101; "LREF/LFRE", ou "LRF" num texto sobre
+    // falência (baterias pessoais), a Lei 11.101.
+    function existeDispositivo(id, art, d) {
+        let j = cache[id];
+        if (!j || !j.artigos) return null;
+        let a = j.artigos[art];
+        if (!a) return false;
+        let alvo = a;
+        if (d.par) {
+            let p = a.par && a.par[String(d.par).split(',')[0]];
+            if (!p) return false;
+            alvo = p;
+        }
+        if (d.inc) {
+            let i0 = String(d.inc).split(',')[0];
+            if (!(alvo.inc && alvo.inc[i0])) return false;
+        }
+        return true;
+    }
+    function prepararContexto(texto, opcoes) {
+        let ant = String(opcoes.anterior || ''), junto = ant + '\n' + texto, desloc = ant.length + 1;
+        let pad = (opcoes.padrao || []).filter(function(id) { return DIPLOMAS[id]; });
+        let contar = function(re) { return (junto.match(re) || []).length; };
+        let fal = contar(/fal[êe]ncia|falid[oa]|recupera[çc][ãa]o\s+(?:judicial|extrajudicial)|massa\s+falida|recuperand|concursa|administrador\s+judicial|assembleia\s+(?:geral\s+)?de\s+credores|plano\s+de\s+recupera/gi);
+        let fis = contar(/responsabilidade\s+fiscal|gest[ãa]o\s+fiscal|despesas?\s+(?:total\s+)?(?:com|de)\s+pessoal|receita\s+corrente|ente\s+(?:da\s+)?federa|or[çc]ament|endividamento|opera[çc][õo]es?\s+de\s+cr[ée]dito|restos\s+a\s+pagar|renúncia\s+de\s+receita|transfer[êe]ncias?\s+volunt/gi);
+        // Sem indício de falência, "LRF" é a LC 101 (padrão do acervo).
+        let lrf = opcoes.lrf || (pad.indexOf('L11101') >= 0 ? 'L11101' : pad.indexOf('LC101') >= 0 ? 'LC101' : fal > fis ? 'L11101' : 'LC101');
+        let extras = [], reL = /\bL(?:RF|REF|FRE)\b/g, m;
+        while ((m = reL.exec(junto))) extras.push({ ini: m.index - desloc, fim: m.index - desloc + m[0].length, id: lrf });
+        let todas = mencoes(junto).map(function(x) { return { ini: x.ini - desloc, fim: x.fim - desloc, id: x.id }; })
+            .filter(function(x) { return !extras.some(function(e) { return e.ini < x.fim && x.ini < e.fim; }); })
+            .concat(extras).sort(function(x, y) { return x.ini - y.ini; });
+        return { todas: todas, extras: extras, padrao: pad };
+    }
+    function refsDoTexto(texto, opcoes) {
         texto = String(texto || '');
-        let out = [], base = 0;
+        let out = [], base = 0, ctx = opcoes ? prepararContexto(texto, opcoes) : null;
         texto.split(';').forEach(function(seg) {
             let ms = mencoes(seg), re = new RegExp(RE_LISTA.source, 'g'), m;
+            if (ctx) {
+                let fimSeg = base + seg.length;
+                let ext = ctx.extras.filter(function(e) { return e.ini >= base && e.fim <= fimSeg; }).map(function(e) { return { ini: e.ini - base, fim: e.fim - base, id: e.id }; });
+                ms = ms.filter(function(x) { return !ext.some(function(e) { return e.ini < x.fim && x.ini < e.fim; }); }).concat(ext).sort(function(x, y) { return x.ini - y.ini; });
+            }
             // Trecho só de convenção (CADH, Tortura, Belém do Pará): "art.item" e alíneas
             // ("arts. 4.1, 7.1 a 7.6 e 8.2, h", "art. 7.b, f e g", "arts. 1º, 2º e 7º", "arts. I.a, I.b e III"), lista própria.
             let msIds = ms.map(function(x) { return x.id; }).filter(Boolean);
@@ -40541,11 +40620,28 @@ window.LEGISLACAO = (function() {
                 let depois = ms.filter(function(x) { return x.ini >= fimLista; })[0];
                 let antes = ms.filter(function(x) { return x.fim <= m.index; }).pop();
                 let alvo = depois && seg.slice(fimLista, depois.ini).length < 25 ? depois : (antes || depois);
-                if (!alvo || !alvo.id) continue;
+                // Sem lei no trecho: contexto (ver prepararContexto).
+                let candidatos = null;
+                if (!alvo && ctx) {
+                    let anterior = ctx.todas.filter(function(x) { return x.fim <= base + m.index; }).pop();
+                    if (anterior && !anterior.id) continue; // outra lei, fora da base: não arrisca
+                    candidatos = (anterior ? [{ id: anterior.id, exigir: false }] : []).concat(ctx.padrao.filter(function(id) { return !anterior || id !== anterior.id; }).map(function(id) { return { id: id, exigir: true }; }));
+                    if (!candidatos.length) continue;
+                } else if (!alvo || !alvo.id) continue;
                 let lista = m[1], iniLista = m.index + m[0].indexOf(lista), reI = new RegExp(RE_ITEM.source, 'g'), it, primeiro = true;
                 while ((it = reI.exec(lista))) {
                     if (!it[0].trim()) { reI.lastIndex++; continue; }
                     let d = detalhes(it[3] || ''), fimIt = iniLista + it.index + it[0].length;
+                    if (candidatos) {
+                        let artK = it[1].replace(/\./g, '') + (it[2] || '');
+                        let escolhido = candidatos.find(function(c) {
+                            let ok = existeDispositivo(c.id, artK, d);
+                            if (ok === null && c.exigir) carregar(c.id).catch(function() {});
+                            return c.exigir ? ok === true : ok !== false;
+                        });
+                        if (!escolhido) { primeiro = false; continue; }
+                        alvo = { id: escolhido.id };
+                    }
                     // CADH: "art. 8.4", "art. 8.2, h" → item 4 (inc) e alínea.
                     if (DIPLOMAS[alvo.id].itens) {
                         let mi = seg.slice(fimIt).match(/^\.(?:(\d{1,2})(?:\s*,\s*(?:al[íi]nea\s*)?["“]?([a-j])["”]?\b)?|([a-z])(?![\w]))/);
@@ -40714,7 +40810,15 @@ window.LEGISLACAO = (function() {
         if (typeof _glosEsconderTooltip === 'function') _glosEsconderTooltip();
         window.open(p[1].indexOf('anexo:') === 0 || d.itens ? d.planalto : d.planalto + '#' + (d.ancora || 'art') + p[1].replace(/-/g, '').toLowerCase(), '_blank', 'noopener');
     }
-    return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, carregar: carregar, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
+    // Diplomas citados por nome num texto (ex.: nome/caminho da bateria). LRF
+    // conforme opcoes.lrf.
+    function diplomasCitados(texto, lrf) {
+        let ids = [];
+        mencoes(String(texto || '')).forEach(function(x) { if (x.id && ids.indexOf(x.id) < 0) ids.push(x.id); });
+        if (lrf && /\bL(?:RF|REF|FRE)\b/.test(String(texto || '')) && ids.indexOf(lrf) < 0) ids.push(lrf);
+        return ids;
+    }
+    return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, diplomasCitados: diplomasCitados, carregar: carregar, carregado: function(id) { return !!cache[id]; }, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
 })();
 </script>
 <script>
