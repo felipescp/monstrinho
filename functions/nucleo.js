@@ -132,7 +132,6 @@ function validarPedido(d) {
             tipo: String((f && f.tipo) || '').slice(0, 60),
             resumo: String((f && f.resumo) || '').slice(0, 1000)
         }));
-        if (!fichas.length && !tema) throw new Error('Nada a gerar: descreva o tema ou escolha fichas do plano.');
     }
     return { acao, provedor, materia, divisoes, tema, material, fonte, fichas };
 }
@@ -149,7 +148,8 @@ function mensagemUsuario(p) {
             t += 'TAREFA: gerar estas fichas, uma para cada item, nesta ordem:\n' + p.fichas.map((f, i) => (i + 1) + '. ' + f.titulo + ' | divisão: ' + f.divisao + ' | subtema: ' + f.subtema + ' | tipo: ' + f.tipo + (f.resumo ? ' | conteúdo: ' + f.resumo : '')).join('\n');
             if (p.tema) t += '\nOrientação do usuário: ' + p.tema;
         } else {
-            t += 'TAREFA: gerar UMA ficha (ou duas, se o tema tiver dois eixos que não cabem numa só) sobre: ' + p.tema;
+            t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o tema tiver dois eixos que não cabem numa só) sobre: ' + p.tema
+                : 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) que esquematize o material abaixo. Dê à ficha um título curto e descritivo do conteúdo.';
         }
         t += '\nCampos de cada ficha: divisao, titulo, subtema, tipo, referencia (dispositivos e julgados de base, no padrão de citação; ou "(ref. não indicada no material)"), corpo_html, alerta, fonte (a fonte do material, com página se houver). Em "observacoes", o que faltou no material (ou "").';
         t += '\nResponda no formato JSON: {"fichas":[{"divisao","titulo","subtema","tipo","referencia","corpo_html","alerta","fonte"}],"observacoes"}.';
