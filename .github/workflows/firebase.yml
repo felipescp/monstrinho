@@ -41,6 +41,10 @@ jobs:
             npx --yes html-minifier-terser@7.2.0 -c ferramentas/minificar.json -o "$f.min" "$f"
             test -s "$f.min" && mv "$f.min" "$f"
           done
+      # Acesso intermediário: comentários da Lei Seca só do diploma mais
+      # cobrado de cada disciplina (ordem do manifesto).
+      - name: Regras do acesso intermediário
+        run: python3 -I ferramentas/regras_intermediario.py
       - name: App e regras → Firebase
         run: npx --yes firebase-tools@13 deploy --only hosting,storage,firestore:rules --project monstrinho-lab --non-interactive
       # Funções (Criar Esquema com IA). Separado e sem travar a publicação do

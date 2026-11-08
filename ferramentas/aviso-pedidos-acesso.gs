@@ -3,10 +3,10 @@
  *
  * Níveis: no 1º login a conta já nasce no acesso simples (acessos/{e-mail}
  * com "nivel": "simples"). Quem está no acesso simples pode clicar em "Pedir
- * acesso completo", o que grava "pedidoCompletoEm" no documento. Este
+ * acesso intermediário", o que grava "pedidoCompletoEm" no documento. Este
  * script, rodando na SUA conta Google (dona do projeto monstrinho-lab),
  * confere a cada 10 minutos e manda um e-mail com:
- *   - os PEDIDOS DE ACESSO COMPLETO novos (o que pede ação sua);
+ *   - os PEDIDOS DE ACESSO INTERMEDIÁRIO novos (o que pede ação sua);
  *   - as CONTAS NOVAS no acesso simples (só para saber; já estão liberadas);
  *   - pedidos antigos ainda pendentes ("ativo": false sem nível).
  * Cada item é avisado uma vez só.
@@ -118,14 +118,14 @@ function enviarEmail_(itens, teste) {
 
   var assunto;
   if (teste) assunto = 'A Salinha: teste do aviso';
-  else if (completos.length === 1) assunto = 'A Salinha: pedido de acesso completo — ' + completos[0].email;
-  else if (completos.length > 1) assunto = 'A Salinha: ' + completos.length + ' pedidos de acesso completo';
+  else if (completos.length === 1) assunto = 'A Salinha: pedido de acesso intermediário — ' + completos[0].email;
+  else if (completos.length > 1) assunto = 'A Salinha: ' + completos.length + ' pedidos de acesso intermediário';
   else if (pendentes.length) assunto = 'A Salinha: ' + pendentes.length + ' pedido(s) de acesso pendente(s)';
   else assunto = 'A Salinha: ' + (novos.length === 1 ? 'nova conta no acesso simples — ' + novos[0].email : novos.length + ' novas contas no acesso simples');
 
   var html = (teste ? '<p><i>E-mail de teste: situação atual.</i></p>' : '');
-  if (completos.length) html += '<h3 style="margin:12px 0 4px">Pedidos de acesso completo</h3>' + lista(completos) +
-    '<p>Para liberar: abra o documento, mude <b>nivel</b> para <b>completo</b> e salve (opcional: <b>expiraEm</b> com a validade).</p>';
+  if (completos.length) html += '<h3 style="margin:12px 0 4px">Pedidos de acesso intermediário</h3>' + lista(completos) +
+    '<p>Para liberar: abra o documento, mude <b>nivel</b> para <b>intermediario</b> (ou <b>completo</b>, assinatura) e salve (opcional: <b>expiraEm</b> com a validade).</p>';
   if (pendentes.length) html += '<h3 style="margin:12px 0 4px">Pedidos antigos pendentes</h3>' + lista(pendentes) +
     '<p>Viram acesso simples sozinhos no próximo login da pessoa. Para dar o completo já: <b>ativo</b> = true e <b>nivel</b> = completo.</p>';
   if (novos.length) html += '<h3 style="margin:12px 0 4px">Novas contas no acesso simples</h3>' + lista(novos) +

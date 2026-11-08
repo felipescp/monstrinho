@@ -90,26 +90,29 @@ O resultado aparece na aba Actions. Para desligar, mude `FIREBASE_DEPLOY` para q
 
 ## Níveis de acesso e liberação
 
-Há dois níveis, no campo `nivel` do documento `acessos/{e-mail}`:
+Há três níveis, no campo `nivel` do documento `acessos/{e-mail}` (a lista completa do que cada um libera está em `window.mostrarNiveis`, no `index.html`):
 
-| Nível | O que libera |
-|---|---|
-| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). Pelos materiais associados, uma **amostra da Lei Seca**: abre os diplomas citados naquela bateria (texto e mapa de incidência); os demais aparecem com 🔒, e os comentários do sistema ficam no completo. As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
-| `completo` | Tudo. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
+| Nível | Como chega | O que libera |
+|---|---|---|
+| `simples` | Só o login | Todas as baterias, com os **materiais associados** na barra lateral e todas as estatísticas; as seções **Flashcards** e **Glossário**; uma **amostra da Lei Seca** (os diplomas citados na bateria, sem os comentários do sistema). Não salva questões. |
+| `intermediario` | Permissão da administração | Tudo do simples, mais as seções **Esquemas**, **Jurisprudência**, **Prazos** e **Penas** (sem o Treinar); **Lei Seca** comentada só com o diploma mais cobrado de cada disciplina; **criar 1 esquema com IA por semana** (IA Simples); salvar **5 questões por simulado**; refazer erradas e caderno de questões salvas. |
+| `completo` | Assinatura | Tudo: Lei Seca inteira, Treinar em Prazos e Penas, comentários e grifos (Jurisprudência e questões), exportar selecionados, **10 esquemas com IA por semana**, questões salvas sem limite. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
+
+O que não é do nível aparece **visível, mas desabilitado** (esmaecido, com 🔒); ao clicar, abre a explicação dos níveis.
 
 Não é preciso pedir o e-mail a ninguém:
 
 1. A pessoa abre `www.asalinha.com.br` e clica em **Entrar com Google**.
-2. No primeiro login, o app cria sozinho `acessos/{e-mail}` com `ativo: true` e `nivel: "simples"`, e a pessoa já começa a usar. Ao lado do nome aparece o selo **ACESSO SIMPLES**.
-3. Ao clicar numa seção com 🔒 (ou no selo), ela pode **Pedir acesso completo**. O app grava `pedidoCompletoEm` no documento, e você recebe o e-mail (ver "Aviso por e-mail de pedidos de acesso").
-4. Para liberar o completo: no console do Firebase, em **Firestore Database → acessos →** documento da pessoa, mude `nivel` para `completo`. A pessoa recarrega o site.
+2. No primeiro login, o app cria sozinho `acessos/{e-mail}` com `ativo: true` e `nivel: "simples"`, e a pessoa já começa a usar. Ao lado do nome aparece o selo **ACESSO SIMPLES** (no intermediário, **INTERMEDIÁRIO**).
+3. Ao clicar numa seção com 🔒 (ou no selo), ela pode **Pedir acesso intermediário**. O app grava `pedidoCompletoEm` no documento (o nome antigo do campo foi mantido), e você recebe o e-mail (ver "Aviso por e-mail de pedidos de acesso").
+4. Para liberar: no console do Firebase, em **Firestore Database → acessos →** documento da pessoa, mude `nivel` para `intermediario` (ou `completo`, para assinantes). A pessoa recarrega o site. O botão **Assinar o completo** aparece como "em breve" até existir o pagamento.
 
 Outras situações:
 - **Voltar para o acesso simples:** mude `nivel` para `simples`.
 - **Bloquear alguém:** mude `ativo` para `false` e `nivel` para `bloqueado`. O site mostra "acesso suspenso". Só `ativo: false`, sem `nivel: "bloqueado"`, não basta para um pedido antigo, porque ele viraria acesso simples no próximo login.
 - **Pedidos antigos** (de antes dos níveis, com só `ativo: false` e `pedidoEm`) viram acesso simples sozinhos no próximo login da pessoa.
 
-**A trava é no servidor.** `storage.rules` só entrega as pastas `bateriasvf`, `esquemas`, `jurisprudencia`, `flashcards`, `glossario` e `legislacao` (o texto das leis usado nas remissões) a quem está no acesso simples. Da Lei Seca, o acesso simples recebe só o manifesto e os mapas de incidência (a amostra; a escolha dos diplomas citados na bateria é feita pelo app). Os comentários do sistema, Prazos e Penas ficam só no completo. Pelo app, a pessoa só cria a própria conta no acesso simples e só marca o pedido do completo: subir de nível, mudar papel e validade continua só pelo console (`firestore.rules`).
+**A trava é no servidor.** `storage.rules` só entrega as pastas `bateriasvf`, `esquemas`, `jurisprudencia`, `flashcards`, `glossario` e `legislacao` (o texto das leis usado nas remissões) a quem está no acesso simples. Da Lei Seca, o acesso simples recebe só o manifesto e os mapas de incidência (a amostra; a escolha dos diplomas citados na bateria é feita pelo app). O intermediário recebe também Prazos, Penas e os comentários da Lei Seca do diploma mais cobrado de cada disciplina: a lista desses arquivos em `storage.rules` é regerada a cada publicação por `ferramentas/regras_intermediario.py`, a partir da ordem do manifesto. Os demais comentários do sistema ficam só no completo. A cota de esquemas com IA é contada no servidor (`cotaIA/{e-mail}_{segunda-feira}`, que só a função lê e grava). Pelo app, a pessoa só cria a própria conta no acesso simples e só marca o pedido do completo: subir de nível, mudar papel e validade continua só pelo console (`firestore.rules`).
 
 **Limite:** os materiais associados (Esquemas, Jurisprudência, Flashcards) chegam inteiros ao aparelho de quem está no acesso simples, porque a barra lateral de cada bateria precisa deles. O cadeado nas seções fecha o acesso pela tela, não impede quem tenha conhecimento técnico de olhar esses dados no navegador. O mesmo vale para a amostra da Lei Seca: o servidor entrega os mapas de incidência a quem está no acesso simples, e o app limita a amostra aos diplomas citados na bateria. Comentários do sistema, Prazos e Penas nem são baixados.
 

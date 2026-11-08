@@ -178,19 +178,27 @@
         'manifesto-baterias.txt', 'manifesto-esquemas.txt', 'manifesto-jurisprudencia.txt',
         'manifesto-flashcards.txt', 'manifesto-glossario.txt', 'versoes-oficiais.json'];
     FB.nivel = null;
+    // Intermediário: + Prazos e Penas; comentários da Lei Seca só do
+    // diploma mais cobrado de cada disciplina (FB.comentariosIntermediario,
+    // preenchido pela Lei Seca a partir do manifesto — o servidor confere).
+    var ITENS_INTERMEDIARIO = ['prazos', 'penas', 'manifesto-prazos.txt', 'manifesto-penas.txt'];
+    FB.comentariosIntermediario = null;
     FB.permitidoNoNivel = function(caminho) {
-        if (FB.nivel !== 'simples' || FB.papel === 'admin') return true;
+        if ((FB.nivel !== 'simples' && FB.nivel !== 'intermediario') || FB.papel === 'admin') return true;
         var rel = String(caminho).replace(/^dados\//, '');
         // Amostra da Lei Seca (diplomas citados na bateria): manifesto e
         // mapas de incidência; os comentários do sistema ficam no completo.
         if (rel === 'leiseca/manifesto.json' || rel.indexOf('leiseca/incidencia/') === 0) return true;
-        return ITENS_SIMPLES.indexOf(rel.split('/')[0]) !== -1;
+        if (ITENS_SIMPLES.indexOf(rel.split('/')[0]) !== -1) return true;
+        if (FB.nivel !== 'intermediario') return false;
+        if (ITENS_INTERMEDIARIO.indexOf(rel.split('/')[0]) !== -1) return true;
+        return rel.indexOf('leiseca/comentarios/') === 0 && !!FB.comentariosIntermediario && FB.comentariosIntermediario.has('dados/' + rel);
     };
     window.fetch = function(entrada, opcoes) {
         var caminho = caminhoDados(entrada);
         if (!caminho) return fetchOriginal(entrada, opcoes);
         return liberado.then(function() {
-                if (!FB.permitidoNoNivel(caminho)) return new Response('', { status: 403, statusText: 'Fora do acesso simples' });
+                if (!FB.permitidoNoNivel(caminho)) return new Response('', { status: 403, statusText: 'Fora do seu nível de acesso' });
                 return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes);
             })
             .then(function(r) { if (r && r.ok) contarUso(caminho, r); return r; });
@@ -265,7 +273,11 @@
     }
     // Classe no <body> para o CSS (cadeado nas seções fora do acesso simples).
     function marcarNivelNoCorpo() {
-        var aplicar = function() { document.body.classList.toggle('salinha-simples', FB.nivel === 'simples' && FB.papel !== 'admin'); };
+        var aplicar = function() {
+            var n = FB.papel === 'admin' ? 'completo' : (FB.nivel || 'completo');
+            document.body.classList.toggle('salinha-simples', n === 'simples');
+            document.body.classList.toggle('salinha-intermediario', n === 'intermediario');
+        };
         if (document.body) aplicar(); else document.addEventListener('DOMContentLoaded', aplicar);
     }
     // Níveis (pedido explícito do usuário): no 1º login a conta já nasce no
@@ -1830,7 +1842,10 @@ try {
          azul-escura e sumiria sobre o cabeçalho escuro. -->
     <style>
         body:not(.salinha-admin) .so-admin { display:none !important; } /* exclusivo do admin (ver window.ehAdmin) */
-        body.salinha-simples .req-completo::after { content:' 🔒'; font-size:.85em; } /* fora do acesso simples (ver window.exigirCompleto) */
+        /* Cadeados por nível (ver window.exigirNivel / window.travaNivel) */
+        body.salinha-simples .req-intermediario::after, body.salinha-simples .req-completo::after, body.salinha-intermediario .req-completo::after { content:' 🔒'; font-size:.85em; }
+        [data-trava-nivel] { opacity:.5 !important; cursor:not-allowed !important; }
+        [data-trava-nivel]::after { content:' 🔒'; font-size:.85em; }
         #leiseca-modal .fc-materia-item.ls-bloq { opacity:.55; }
         #leiseca-modal .ls-amostra { margin:0 0 10px; padding:8px 10px; border-radius:8px; background:var(--bg-accent-soft, #eef2ff); border:1px solid var(--app-primary); font-size:11px; line-height:1.45; color:var(--text-main); }
         #leiseca-modal .ls-amostra a { color:var(--app-primary); font-weight:700; }
@@ -1910,13 +1925,13 @@ try {
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item req-completo" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
-        <div class="nav-item hd-item req-completo" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
-        <div class="nav-item hd-item req-completo" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
-        <div class="nav-item hd-item req-completo" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item req-completo" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
-        <div class="nav-item hd-item req-completo" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
-        <div class="nav-item hd-item req-completo" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
+        <div class="nav-item hd-item req-intermediario" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
+        <div class="nav-item hd-item req-intermediario" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
+        <div class="nav-item hd-item req-intermediario" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
+        <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
+        <div class="nav-item hd-item req-intermediario" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
+        <div class="nav-item hd-item req-intermediario" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
+        <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -2009,9 +2024,9 @@ window.SALINHA_UI_AUTH = (function() {
             mostrar('usuario-nome-' + suf, !!u);
             let nome = document.getElementById('usuario-nome-' + suf);
             if (nome && u) {
-                let gratis = estado === 'liberado' && FB.nivel === 'simples' && FB.papel !== 'admin';
+                let nv = estado === 'liberado' && FB.papel !== 'admin' && (FB.nivel === 'simples' || FB.nivel === 'intermediario') ? FB.nivel : '';
                 nome.innerHTML = G_SVG + '<span class="usuario-nome-texto">' + esc(nomeCurto(u)) + '</span>' +
-                    (gratis ? '<span class="nivel-chip" onclick="event.stopPropagation(); window.mostrarNivelSimples()" title="Acesso simples: todas as baterias e os materiais associados. Clique para pedir o acesso completo.">ACESSO SIMPLES</span>' : '');
+                    (nv ? '<span class="nivel-chip" onclick="event.stopPropagation(); window.mostrarNiveis()" title="Clique para ver o que cada nível de acesso libera.">' + (nv === 'simples' ? 'ACESSO SIMPLES' : 'INTERMEDIÁRIO') + '</span>' : '');
                 nome.title = 'Conectado com Google: ' + (u.email || '');
             }
             if (estado !== 'liberado') mostrar('sync-indicador-' + suf, false);
@@ -5589,6 +5604,33 @@ window.exigirAdmin = function() {
         });
     }
     window.addEventListener('load', travarParaAdmin);
+    // Recursos do acesso completo (pedido explícito do usuário): a função
+    // mostra os níveis em vez de agir; "silenciosas" só não agem (a seleção
+    // de texto no leitor abriria o aviso a cada clique).
+    const TRAVAS_NIVEL = [
+        ['JURISPRUDENCIA_RUNTIME', ['abrirComentarioPessoal', 'alternarPainelComentarioBaralho', 'editarPainelComentario', 'selecionarCanetaGrifo'], 'Comentários e grifos'],
+        ['ESQUEMAS_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
+        ['JURISPRUDENCIA_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
+        ['', ['comentarCaderno'], 'Comentários nas questões'],
+        ['JURISPRUDENCIA_RUNTIME', ['_aoSoltarSelecaoLeitor'], null]
+    ];
+    function travarPorNivel() {
+        TRAVAS_NIVEL.forEach(function(t) {
+            let alvo = t[0] ? window[t[0]] : window;
+            if (!alvo) return;
+            t[1].forEach(function(f) {
+                let orig = alvo[f];
+                if (typeof orig !== 'function' || orig.__travadaNivel) return;
+                let travada = function() {
+                    if (!window.temNivel('completo')) { if (t[2]) window.mostrarNiveis(t[2], 'completo'); return; }
+                    return orig.apply(this, arguments);
+                };
+                travada.__travadaNivel = true;
+                alvo[f] = travada;
+            });
+        });
+    }
+    window.addEventListener('load', travarPorNivel);
 })();
 
 // Menu "Gerar Questões": fecha ao clicar fora ou numa das opções.
@@ -5609,44 +5651,89 @@ window.exigirLoginParaSecao = function() {
     return false;
 };
 
-// Níveis de acesso (pedido explícito do usuário): no acesso simples, as seções
-// de conteúdo (Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos,
-// Penas, Glossário) ficam com cadeado; ficam abertas todas as baterias e,
-// dentro delas, os materiais associados ao tema (barra lateral). A trava de
-// verdade é no servidor (storage.rules); aqui é a explicação e o pedido.
-window.ehNivelSimples = function() {
+// Níveis de acesso (pedido explícito do usuário): três níveis no campo
+// "nivel" de acessos/{e-mail} — "simples" (só o login), "intermediario"
+// (depois da permissão da administração) e "completo" (assinatura). Conta
+// ativa sem o campo e a administração valem "completo". A trava de verdade
+// é no servidor (storage.rules, Cloud Function); aqui é a explicação,
+// o cadeado e o pedido.
+//   simples ....... baterias (com os materiais associados e estatísticas),
+//                   Flashcards e Glossário
+//   intermediario . + Esquemas, Jurisprudência, Prazos, Penas; Lei Seca com
+//                   o diploma mais cobrado de cada disciplina (comentado);
+//                   criar 1 esquema com IA por semana; salvar 5 questões por
+//                   simulado; refazer erradas e caderno de questões salvas
+//   completo ...... tudo: Lei Seca inteira, Treinar (Prazos/Penas),
+//                   comentários e grifos, exportar selecionados, 10 esquemas
+//                   com IA por semana, questões salvas sem limite
+window.NIVEIS = { simples: 1, intermediario: 2, completo: 3 };
+window.NIVEL_NOME = { simples: 'Simples', intermediario: 'Intermediário', completo: 'Completo' };
+window.nivelConta = function() {
     let FB = window.SALINHA_FB;
-    return !!(FB && FB.estado() === 'liberado' && FB.nivel === 'simples' && FB.papel !== 'admin');
+    if (!FB || FB.papel === 'admin') return 'completo';
+    if (FB.estado() !== 'liberado') return 'completo'; // sem login, quem barra é exigirLoginParaSecao
+    return window.NIVEIS[FB.nivel] ? FB.nivel : 'completo';
 };
-window.exigirCompleto = function(secao) {
+window.temNivel = function(min) { return window.NIVEIS[window.nivelConta()] >= (window.NIVEIS[min] || 3); };
+window.ehNivelSimples = function() { return window.nivelConta() === 'simples'; };
+// Abre a seção/recurso se o nível atende; senão explica os níveis.
+window.exigirNivel = function(min, recurso) {
     if (!window.exigirLoginParaSecao()) return false;
-    if (!window.ehNivelSimples()) return true;
-    window.mostrarNivelSimples(secao);
+    if (window.temNivel(min)) return true;
+    window.mostrarNiveis(recurso, min);
     return false;
 };
-window.mostrarNivelSimples = function(secao) {
-    let FB = window.SALINHA_FB;
+window.exigirCompleto = function(recurso) { return window.exigirNivel('completo', recurso); };
+// Recurso visível mas desabilitado (pedido explícito do usuário): atributos
+// para um botão/elemento — esmaecido, com 🔒 e o aviso ao clicar.
+window.travaNivel = function(min, recurso) {
+    if (window.temNivel(min)) return '';
+    return ' data-trava-nivel="' + min + '" data-trava-recurso="' + String(recurso || '').replace(/"/g, '&quot;') + '"';
+};
+document.addEventListener('click', function(e) {
+    let el = e.target && e.target.closest && e.target.closest('[data-trava-nivel]');
+    if (!el || window.temNivel(el.getAttribute('data-trava-nivel'))) return;
+    e.preventDefault(); e.stopPropagation();
+    window.mostrarNiveis(el.getAttribute('data-trava-recurso'), el.getAttribute('data-trava-nivel'));
+}, true);
+window.mostrarNiveis = function(recurso, min) {
+    let FB = window.SALINHA_FB, atual = window.nivelConta();
     let antigo = document.getElementById('nivel-simples-aviso');
     if (antigo) antigo.remove();
     let fundo = document.createElement('div');
     fundo.id = 'nivel-simples-aviso';
     fundo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
     let esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-    let pedido = FB && FB.pedidoCompletoEm;
-    let titulo = secao ? '🔒 ' + esc(secao) + ' faz parte do acesso completo' : 'Você está no acesso simples';
-    fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;line-height:1.5">' +
-        '<b style="font-size:16px;display:block;margin-bottom:8px">' + titulo + '</b>' +
-        '<p style="margin:0 0 8px">No <b>acesso simples</b> você tem <b>todas as baterias</b> e, dentro de cada uma, os <b>materiais associados</b> ao tema (Esquemas, Jurisprudência, Flashcards e uma amostra da Lei Seca citada, na barra lateral da bateria).</p>' +
-        '<p style="margin:0 0 14px">O <b>acesso completo</b> libera também as seções Jurisprudência, Lei Seca (todos os diplomas, com os comentários do sistema), Esquemas, Flashcards, Prazos, Penas e Glossário.</p>' +
-        '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
-        (pedido
-            ? '<span style="color:var(--text-muted,#666)">✓ Pedido enviado em ' + esc(pedido.toLocaleDateString('pt-BR')) + '. Assim que for liberado, recarregue a página.</span>'
-            : '<button type="button" onclick="window.pedirAcessoCompleto()" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Pedir acesso completo</button>') +
+    let nomeMin = window.NIVEL_NOME[min] || 'Completo';
+    let titulo = recurso ? '🔒 ' + esc(recurso) + ' faz parte do acesso ' + nomeMin.toLowerCase() : 'Você está no acesso ' + window.NIVEL_NOME[atual].toLowerCase();
+    let col = function(n, itens) {
+        let eu = n === atual;
+        return '<div style="flex:1 1 150px;min-width:0;border:' + (eu ? '2px solid var(--app-primary,#4f46e5)' : '1px solid var(--border-color,#ddd)') + ';border-radius:10px;padding:10px 12px">' +
+            '<b style="display:block;margin-bottom:4px">' + window.NIVEL_NOME[n] + (eu ? ' <span style="font-size:10px;color:var(--app-primary,#4f46e5)">· o seu</span>' : '') + '</b>' +
+            '<div style="font-size:11.5px;color:var(--text-muted,#555)">' + (n === 'simples' ? 'Só o login' : n === 'intermediario' ? 'Com permissão da administração' : 'Assinatura') + '</div>' +
+            '<ul style="margin:6px 0 0;padding-left:16px;font-size:12px">' + itens.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>';
+    };
+    let pedido = FB && FB.pedidoCompletoEm, acao = '';
+    if (atual === 'simples') acao = pedido
+        ? '<span style="color:var(--text-muted,#666)">✓ Pedido do acesso intermediário enviado em ' + esc(pedido.toLocaleDateString('pt-BR')) + '. Assim que for liberado, recarregue a página.</span>'
+        : '<button type="button" onclick="window.pedirAcessoCompleto()" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Pedir acesso intermediário</button>';
+    else if (atual === 'intermediario') acao = '<button type="button" disabled title="Em breve" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;opacity:.55;cursor:default">Assinar o completo · em breve</button>';
+    fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:680px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;line-height:1.45">' +
+        '<b style="font-size:16px;display:block;margin-bottom:12px">' + titulo + '</b>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
+            col('simples', ['Todas as baterias, com os materiais associados e as estatísticas', 'Flashcards e Glossário', 'Amostra da Lei Seca citada na bateria']) +
+            col('intermediario', ['Tudo do Simples', 'Esquemas, Jurisprudência, Prazos e Penas', 'Lei Seca comentada: o diploma mais cobrado de cada disciplina', 'Criar 1 esquema com IA por semana', 'Salvar 5 questões por simulado', 'Refazer erradas e caderno de questões salvas']) +
+            col('completo', ['Tudo do Intermediário', 'Lei Seca comentada completa', 'Treinar em Prazos e Penas', 'Comentários e grifos', 'Exportar selecionados', 'Criar 10 esquemas com IA por semana', 'Questões salvas sem limite']) +
+        '</div>' +
+        '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + acao +
         '<button type="button" onclick="document.getElementById(\'nivel-simples-aviso\').remove()" style="margin-left:auto;border:1px solid var(--border-color,#ccc);background:none;border-radius:8px;padding:8px 14px;cursor:pointer;color:inherit">Fechar</button>' +
         '</div></div>';
     fundo.addEventListener('click', function(e) { if (e.target === fundo) fundo.remove(); });
     document.body.appendChild(fundo);
 };
+window.mostrarNivelSimples = function(recurso) { window.mostrarNiveis(recurso, recurso ? 'intermediario' : null); };
+// Simples pede o intermediário: grava "pedidoCompletoEm" (nome antigo do
+// campo, mantido pelas regras e pelo aviso por e-mail: "pedido de subir de nível").
 window.pedirAcessoCompleto = function() {
     let FB = window.SALINHA_FB, alvo = document.getElementById('nivel-simples-acao');
     if (!FB || !FB.pedirCompleto) return;
@@ -5654,7 +5741,7 @@ window.pedirAcessoCompleto = function() {
     FB.pedirCompleto().then(function() {
         if (alvo) alvo.firstChild.outerHTML = '<span style="color:#15803d;font-weight:700">✓ Pedido enviado. A administração foi avisada; quando liberar, recarregue a página.</span>';
     }, function(e) {
-        console.warn('[ACESSO] Falha ao pedir o acesso completo:', e);
+        console.warn('[ACESSO] Falha ao pedir o acesso intermediário:', e);
         if (alvo) { alvo.firstChild.disabled = false; }
         alert('Não foi possível enviar o pedido agora. Verifique a conexão e tente de novo.');
     });
@@ -14012,7 +14099,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.FLASHCARDS_NB_RUNTIME._onKey(ev); });
 
 window.abrirFlashcardsNbModal = function() {
-    if (!window.exigirCompleto('Flashcards')) return;
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('fcnb-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
@@ -14495,7 +14582,8 @@ window.PRAZOS_RUNTIME = {
 
 
 
-    trocarAba: function(aba) { this._aba = aba; this._renderPrincipal(); },
+    // Treinar: só no acesso completo (pedido explícito do usuário).
+    trocarAba: function(aba) { if (aba === 'treino' && !window.temNivel('completo')) { window.mostrarNiveis('Treinar', 'completo'); return; } this._aba = aba; this._renderPrincipal(); },
     filtrarBusca: function(v) {
         this._busca = v || '';
         let el = document.getElementById('prz-scroll');
@@ -14512,7 +14600,7 @@ window.PRAZOS_RUNTIME = {
                 this._htmlMostrarDivisoes() +
                 '<div class="prz-abas">' +
                     '<button class="prz-aba' + (this._aba === 'tabela' ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.trocarAba(\'tabela\')">📋 Tabela</button>' +
-                    '<button class="prz-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PRAZOS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
+                    '<button class="prz-aba' + (this._aba === 'treino' ? ' ativa' : '') + '"' + window.travaNivel('completo', 'Treinar') + ' onclick="window.PRAZOS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
                 '</div>' +
                 (this._aba === 'tabela' ? '<input type="text" class="prz-busca" id="prz-busca" placeholder="🔎 Buscar..." value="' + this._esc(this._busca) + '" oninput="window.PRAZOS_RUNTIME.filtrarBusca(this.value)">' : '') +
                 '<button class="prz-btn-sistema" onclick="window.PRAZOS_RUNTIME.aplicarPrioridadeSistema()" title="Adota a prioridade sugerida pelo sistema (Crítico, Importante, Regular) nos prazos em que você ainda não escolheu a sua. A que você escolher na tabela sempre prevalece.">🏷️ Aplicar prioridade do sistema</button>' +
@@ -14996,7 +15084,8 @@ window.PRAZOS_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.PRAZOS_RUNTIME._onKey(ev); });
 
 window.abrirPrazosModal = function() {
-    if (!window.exigirCompleto('Prazos')) return;
+    if (!window.exigirNivel('intermediario', 'Prazos')) return;
+    if (window.PRAZOS_RUNTIME && window.PRAZOS_RUNTIME._aba === 'treino' && !window.temNivel('completo')) window.PRAZOS_RUNTIME._aba = 'tabela';
     const modal = document.getElementById('prazos-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado'); // abre maximizado por padrão
@@ -15604,7 +15693,8 @@ window.PENAS_RUNTIME = {
         let self = this;
         if (typeof window.carregarPenasOficiais === 'function') window.carregarPenasOficiais().then(function() { self.render(); });
     },
-    trocarAba: function(aba) { this._aba = aba; this._renderPrincipal(); },
+    // Treinar: só no acesso completo (pedido explícito do usuário).
+    trocarAba: function(aba) { if (aba === 'treino' && !window.temNivel('completo')) { window.mostrarNiveis('Treinar', 'completo'); return; } this._aba = aba; this._renderPrincipal(); },
     filtrarBusca: function(v) { this._busca = v || ''; if (document.getElementById('pen-scroll')) this._renderCorpo(); },
     _renderPrincipal: function() {
         let col = document.getElementById('pen-col-principal');
@@ -15615,7 +15705,7 @@ window.PENAS_RUNTIME = {
                 this._htmlMostrarDivisoes() +
                 '<div class="pen-abas">' +
                     '<button class="pen-aba' + (this._aba === 'tabela' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'tabela\')">📋 Tabela</button>' +
-                    '<button class="pen-aba' + (this._aba === 'treino' ? ' ativa' : '') + '" onclick="window.PENAS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
+                    '<button class="pen-aba' + (this._aba === 'treino' ? ' ativa' : '') + '"' + window.travaNivel('completo', 'Treinar') + ' onclick="window.PENAS_RUNTIME.trocarAba(\'treino\')">🎯 Treinar</button>' +
                 '</div>' +
                 (this._aba === 'tabela' ? '<input type="text" class="pen-busca" placeholder="🔎 Buscar..." value="' + this._esc(this._busca) + '" oninput="window.PENAS_RUNTIME.filtrarBusca(this.value)">' : '') +
                 '<button class="pen-btn-sistema" onclick="window.PENAS_RUNTIME.aplicarPrioridadeSistema()" title="Adota a prioridade sugerida pelo sistema (Crítico, Importante, Regular) nos crimes em que você ainda não escolheu a sua. A que você escolher na tabela sempre prevalece.">🏷️ Aplicar prioridade do sistema</button>' +
@@ -16201,7 +16291,8 @@ window.PENAS_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.PENAS_RUNTIME._onKey(ev); });
 
 window.abrirPenasModal = function() {
-    if (!window.exigirCompleto('Penas')) return;
+    if (!window.exigirNivel('intermediario', 'Penas')) return;
+    if (window.PENAS_RUNTIME && window.PENAS_RUNTIME._aba === 'treino' && !window.temNivel('completo')) window.PENAS_RUNTIME._aba = 'tabela';
     const modal = document.getElementById('penas-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado');
@@ -16485,6 +16576,28 @@ window.LEISECA_RUNTIME = {
     // Amostra (acesso simples): Set dos diplomas liberados — os citados na
     // bateria de onde a Lei Seca foi aberta. null = sem restrição.
     _amostra: null,
+    _amostraTipo: null, // 'simples' (citados na bateria) | 'intermediario' (mais cobrado de cada disciplina)
+    // Acesso intermediário (pedido explícito do usuário): abre o diploma mais
+    // cobrado de cada disciplina (o 1º com incidência — o manifesto está em
+    // ordem decrescente), com os comentários do sistema; os demais com 🔒.
+    // Mantém também os citados na bateria (o que o simples já tinha).
+    _diplomasDoIntermediario: function() {
+        let ids = [], com = [];
+        ((this.manifesto || {}).disciplinas || []).forEach(function(g) {
+            let top = (g.diplomas || []).find(function(d) { return d.incidencia; });
+            if (top) { ids.push(top.id); if (top.comentarios) com.push(top.comentarios); }
+        });
+        return { ids: ids, comentarios: com };
+    },
+    _aplicarNivel: function() {
+        let nv = window.nivelConta ? window.nivelConta() : 'completo';
+        if (nv !== 'intermediario') { if (nv === 'completo') { this._amostra = null; this._amostraTipo = null; } return; }
+        let t = this._diplomasDoIntermediario();
+        if (window.SALINHA_FB) window.SALINHA_FB.comentariosIntermediario = new Set(t.comentarios);
+        let set = new Set(t.ids);
+        if (this._amostra) this._amostra.forEach(function(id) { set.add(id); });
+        this._amostra = set; this._amostraTipo = 'intermediario';
+    },
     _bloqueadoNaAmostra: function(id) { return !!(this._amostra && !this._amostra.has(id)); },
     _busca: '',
     _filtro: { critico: true, importante: true, regular: true, nenhum: true },
@@ -16531,6 +16644,7 @@ window.LEISECA_RUNTIME = {
                 return;
             }
         }
+        this._aplicarNivel();
         if (!this._diploma) {
             let ultimo = null;
             try { ultimo = localStorage.getItem(this.CHAVE_ULTIMO_DIPLOMA); } catch (e) {}
@@ -16690,7 +16804,8 @@ window.LEISECA_RUNTIME = {
     selecionarDiploma: async function(id, manterArt, retomar) {
         if (this._bloqueadoNaAmostra(id)) {
             let info = this._infoDiploma(id);
-            window.mostrarNivelSimples('Lei Seca' + (info && info.nome ? ' — ' + info.nome : ''));
+            let doInter = this._diplomasDoIntermediario().ids.indexOf(id) >= 0;
+            window.mostrarNiveis('Lei Seca' + (info && info.nome ? ' — ' + info.nome : ''), doInter ? 'intermediario' : 'completo');
             return;
         }
         this._diploma = id; this._divisao = null;
@@ -16914,9 +17029,10 @@ window.LEISECA_RUNTIME = {
         let self = this, disponiveis = {}, soCom = this._soComentadas();
         this._diplomasVisiveis().forEach(function(d) { if (!soCom || d.comentarios) disponiveis[d.id] = true; });
         let abertas = this._discAbertas();
-        let faixaAmostra = this._amostra
-            ? '<div class="ls-amostra">Amostra do <b>acesso completo</b>: aberta a Lei Seca citada na bateria. Os demais diplomas, os comentários do sistema e o menu Lei Seca fazem parte do acesso completo. <a href="#" onclick="event.preventDefault(); window.mostrarNivelSimples()">Pedir acesso completo</a></div>'
-            : '';
+        let faixaAmostra = !this._amostra ? ''
+            : this._amostraTipo === 'intermediario'
+            ? '<div class="ls-amostra">No <b>acesso intermediário</b>, a Lei Seca comentada abre o diploma mais cobrado de cada disciplina. Os demais (🔒) fazem parte do acesso completo. <a href="#" onclick="event.preventDefault(); window.mostrarNiveis()">Ver os níveis</a></div>'
+            : '<div class="ls-amostra">Amostra: aberta a Lei Seca citada na bateria. Os demais diplomas, os comentários do sistema e o menu Lei Seca fazem parte dos acessos intermediário e completo. <a href="#" onclick="event.preventDefault(); window.mostrarNiveis()">Ver os níveis</a></div>';
         col.innerHTML = faixaAmostra + (this._amostra ? '' : this._htmlConjuntos()) + (this.manifesto.disciplinas || []).map(function(g) {
             let itens = (g.diplomas || []).filter(function(d) { return disponiveis[d.id]; });
             if (!itens.length) return '';
@@ -17538,8 +17654,9 @@ window.LEISECA_RUNTIME = {
     }
 };
 window.abrirLeiSecaModal = function() {
-    if (!window.exigirCompleto('Lei Seca')) return;
+    if (!window.exigirNivel('intermediario', 'Lei Seca')) return;
     window.LEISECA_RUNTIME._amostra = null;
+    window.LEISECA_RUNTIME._amostraTipo = null;
     return window._mostrarLeiSecaModal();
 };
 window._mostrarLeiSecaModal = function() {
@@ -17613,9 +17730,11 @@ window.abrirLeiSecaNoDiploma = async function(id, art) {
     let L = window.LEISECA_RUNTIME;
     // Acesso simples (pedido explícito do usuário): amostra — abre só os
     // diplomas citados nesta bateria; os outros ficam com cadeado.
-    L._amostra = (window.ehNivelSimples && window.ehNivelSimples())
+    L._amostra = (window.temNivel && !window.temNivel('completo'))
         ? new Set(Object.keys((window._lsAssocCache && window._lsAssocCache.refs) || {}).concat([id]))
         : null;
+    L._amostraTipo = L._amostra ? 'simples' : null;
+    if (L._amostra && L.manifesto) L._aplicarNivel();
     if (!L._amostra) { try { localStorage.setItem(L.CHAVE_ULTIMO_DIPLOMA, id); } catch (e) {} }
     L._diploma = id;
     await window._mostrarLeiSecaModal();
@@ -21245,7 +21364,7 @@ window.carregarGlossarioOficial = async function() {
 // Abre/fecha Glossário como MODAL sobre a tela atual, mesmo padrão de
 // abrirMateriaisModal/fecharMateriaisModal.
 window.abrirGlossarioModal = function() {
-    if (!window.exigirCompleto('Glossário')) return;
+    if (!window.exigirLoginParaSecao()) return;
     const modal = document.getElementById('section-glossario');
     if (!modal) return;
     window._resetarMaximizacaoSecaoModal('section-glossario', 'glos-modal-btn-maximizar');
@@ -25529,6 +25648,8 @@ function mkQ(q, modoRevisao){
   var bca=document.createElement('button'); bca.className='bcad'+(noCad?' ativo':'');bca.id='bcad-'+q.id;
   bca.textContent=noCad?'− Caderno':'+ Caderno';bca.setAttribute('data-qid',q.id);
   bca.onclick=function(e){e.stopPropagation();toggleCaderno(this.getAttribute('data-qid'));};
+  // Salvar questões: só a partir do intermediário (5 por simulado); completo sem limite.
+  if(!window.temNivel('intermediario')){ bca.setAttribute('data-trava-nivel','intermediario'); bca.setAttribute('data-trava-recurso','Salvar questões'); }
 
   // Botão de comentário — só aparece depois que a questão entra no Caderno
   // ("+ Caderno" apertado). O comentário digitado aqui vai junto no
@@ -25540,6 +25661,7 @@ function mkQ(q, modoRevisao){
   bcm.style.display=noCad?'inline-block':'none';
   bcm.setAttribute('data-qid',q.id);
   bcm.onclick=function(e){e.stopPropagation();comentarCaderno(this.getAttribute('data-qid'));};
+  if(!window.temNivel('completo')){ bcm.setAttribute('data-trava-nivel','completo'); bcm.setAttribute('data-trava-recurso','Comentários nas questões'); }
 
   // "Pra onde ela foi": a questão isolada não carrega o mesmo carimbo
   // taxonômico da bateria (baterias "abrangentes"/importadas têm cada
@@ -26280,7 +26402,7 @@ function renderResultado(idx){
   var botoesHTML = '<div class="rbtns" style="margin-top:-0.5rem; display:flex; width:100%; gap:6px;">'+
       '<button class="rba o" data-a="vol" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Revisar Questões">← Revisar Questões</button>'+
       '<button class="rba" data-a="refazer-bateria" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Bateria (sobrescreve este resultado)">🔄 Refazer Bateria</button>'+
-      '<button class="rba" data-a="refazer" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
+      '<button class="rba" data-a="refazer" data-i="'+idx+'"'+window.travaNivel('intermediario', 'Refazer erradas')+' style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Erradas">↺ Refazer Erradas</button>'+
       (h.dados.caderno && h.dados.caderno.length ? '<button class="rba" data-a="refazer-salvas" data-i="'+idx+'" style="flex:1; min-width:0; padding:0.4rem 0.2rem; font-size:9px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Refazer Questões Salvas">💾 Refazer Salvas</button>' : '')+
       '<details class="rba-menu" name="rba-export-grupo"><summary class="rba" style="padding:0.4rem 0.2rem; font-size:9px; color:#8b5cf6; border-color:#e9d5ff; background:#faf5ff; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="Exportar Questões Salvas">🧠 Exportar Salvas</summary>'+
         '<div class="rba-opcoes">'+
@@ -26932,9 +27054,16 @@ function formatarMateriaExibicao(materiaUpper) {
     return (materiaUpper || '').toLowerCase().replace(/(^|\s)\S/g, function(c) { return c.toUpperCase(); });
 }
 
+// Limite de questões salvas por simulado, por nível (pedido explícito do usuário).
+window.LIMITE_SALVAS_SIMULADO = { simples: 0, intermediario: 5, completo: Infinity };
 function toggleCaderno(qId){
   if(!D.caderno)D.caderno=[];
   var idx=D.caderno.indexOf(qId);
+  if(idx<0){
+    var nvC=window.nivelConta(), limC=window.LIMITE_SALVAS_SIMULADO[nvC];
+    if(limC===0){ window.mostrarNiveis('Salvar questões','intermediario'); return; }
+    if(D.caderno.length>=limC){ window.mostrarNiveis('Salvar mais de '+limC+' questões por simulado','completo'); return; }
+  }
   if(idx>=0) D.caderno.splice(idx,1);
   else D.caderno.push(qId);
   if(SI>=0&&SIMS[SI])SIMS[SI].dados=JSON.parse(JSON.stringify(D));
@@ -30722,7 +30851,7 @@ window.triggerFileUpload = function(callback) {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
-                <button class="so-admin esq-cabecalho-btn" onclick="window.ESQ_IA.abrir()" title="Gerar fichas com IA a partir de um tema ou material">&#x2728; Criar com IA</button>
+                <button class="esq-cabecalho-btn" onclick="window.ESQ_IA.abrir()" title="Gerar fichas com IA a partir de um tema ou material">&#x2728; Criar com IA</button>
                 <button class="so-admin esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
@@ -32154,8 +32283,8 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + window.travaNivel('completo', 'Exportar selecionados') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + window.travaNivel('completo', 'Exportar selecionados') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
@@ -34250,7 +34379,7 @@ window.ESQUEMAS_RUNTIME = {
 };
 
 window.abrirEsquemasModal = function() {
-    if (!window.exigirCompleto('Esquemas')) return;
+    if (!window.exigirNivel('intermediario', 'Esquemas')) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
@@ -34360,7 +34489,12 @@ window.ESQ_IA = {
     _listaMaterias: function() { return (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []; },
 
     abrir: function() {
-        if (!window.exigirAdmin()) return;
+        // Níveis (pedido explícito do usuário): intermediário 1 esquema por
+        // semana, completo 10, administração sem limite; a cota é contada no
+        // servidor (functions/index.js) e só exibida aqui.
+        if (!window.exigirNivel('intermediario', 'Criar esquema com IA')) return;
+        if (!window.ehAdmin()) this.estado.provedor = 'gemini'; // IA Plus desabilitada por enquanto
+        this._lerCota();
         let m = document.getElementById('esq-ia-modal');
         if (!m) {
             m = document.createElement('div');
@@ -34373,6 +34507,20 @@ window.ESQ_IA = {
         this.render();
     },
     fechar: function() { let m = document.getElementById('esq-ia-modal'); if (m) m.style.display = 'none'; },
+    _lerCota: function() {
+        let self = this;
+        if (window.ehAdmin()) { this.estado.cota = null; return; }
+        this._chamar({ acao: 'cota' }).then(function(r) { if (r && r.cota) { self.estado.cota = r.cota; self.render(); } }, function() {});
+    },
+    _textoCota: function() {
+        let c = this.estado.cota;
+        if (window.ehAdmin()) return 'administração · sem limite';
+        if (!c || c.limite == null) return '';
+        let dia = new Date(c.renovaEm + 'T12:00:00');
+        let renova = isNaN(dia) ? 'na segunda' : 'na segunda, ' + dia.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        return Math.min(c.usados, c.limite) + ' de ' + c.limite + ' esquema' + (c.limite > 1 ? 's' : '') + ' nesta semana · renova ' + renova;
+    },
+    _cotaEsgotada: function() { let c = this.estado.cota; return !!(c && c.limite != null && c.usados >= c.limite); },
     _guardarCampos: function() {
         let g = function(id) { let e = document.getElementById(id); return e ? e.value : null; };
         let e = this.estado, v;
@@ -34439,6 +34587,7 @@ window.ESQ_IA = {
         'Ex.: Apenas o art. 100 da CF (precatórios), parágrafo por parágrafo',
     _faltaParaGerar: function() {
         this._guardarCampos();
+        if (this._cotaEsgotada()) return 'Você já usou a cota desta semana (' + this._textoCota() + ').';
         if (!this.estado.material.trim()) return 'Cole o material ou anexe o arquivo.';
         return '';
     },
@@ -34460,9 +34609,9 @@ window.ESQ_IA = {
         // Cabeçalho fixo
         let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);height:min(760px,92vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px;overflow:hidden">';
         h += '<div style="padding:16px 20px 10px;border-bottom:1px solid var(--border-color)">';
-        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:var(--text-muted)">fase de teste · só administração</span><button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
+        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:' + (this._cotaEsgotada() ? '#b91c1c;font-weight:700' : 'var(--text-muted)') + '">' + esc(this._textoCota()) + '</span>' + (this._cotaEsgotada() && !window.temNivel('completo') ? '<a href="#" onclick="event.preventDefault(); window.mostrarNiveis(\'Mais esquemas com IA\', \'completo\')" style="font-size:11px;font-weight:700;color:var(--app-primary)">Assinar o completo</a>' : '') + '<button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
         h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span>' +
-            '<span><b>IA:</b> ' + opc('provedor', 'gemini', 'Simples', 'Rápida e econômica') + ' ' + opc('provedor', 'claude', 'Plus', 'Mais detalhado e profundo') + '</span>';
+            '<span><b>IA:</b> ' + opc('provedor', 'gemini', 'Simples', 'Rápida e econômica') + ' ' + (window.ehAdmin() ? opc('provedor', 'claude', 'Plus', 'Mais detalhado e profundo') : '<button type="button" disabled title="Mais detalhado e profundo · em breve" style="' + btn + ';opacity:.45;cursor:not-allowed">Plus 🔒</button>') + '</span>';
         let seta = function(d, txt) { let alvo = l[iAtual + d], ok = alvo && self._etapaDisponivel(alvo) && !e.ocupado; return '<button type="button" onclick="window.ESQ_IA.passo(' + d + ')" style="' + btn + ';padding:4px 10px' + (ok ? '' : ';opacity:.35;cursor:default') + '"' + (ok ? '' : ' disabled') + '>' + txt + '</button>'; };
         h += '<span style="margin-left:auto;display:flex;align-items:center;gap:6px">' + seta(-1, '‹') + l.map(function(et, i) {
             let at = et === e.etapa, ok = self._etapaDisponivel(et) && !e.ocupado;
@@ -34489,7 +34638,7 @@ window.ESQ_IA = {
             corpo += statusHtml + obs;
             let n = Object.keys(e.selecionadas).filter(function(k) { return e.selecionadas[k]; }).length;
             if (e.plano) {
-                corpo += '<div style="margin-bottom:6px"><b>' + e.plano.length + ' ficha(s) sugerida(s)</b> <span style="color:var(--text-muted);font-size:11px">Marque as que quer gerar. Geramos 5 fichas por vez.</span> <span style="float:right"><button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(true)"' + dis + '>Marcar todas</button> <button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(false)"' + dis + '>Desmarcar</button></span></div>';
+                corpo += '<div style="margin-bottom:6px"><b>' + e.plano.length + ' ficha(s) sugerida(s)</b> <span style="color:var(--text-muted);font-size:11px">Marque as que quer gerar. Geramos 5 fichas por vez.' + (e.cota && e.cota.limite != null ? ' Sua cota permite mais ' + Math.max(0, e.cota.limite - e.cota.usados) + ' nesta semana.' : '') + '</span> <span style="float:right"><button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(true)"' + dis + '>Marcar todas</button> <button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(false)"' + dis + '>Desmarcar</button></span></div>';
                 corpo += e.plano.map(function(f, i) {
                     return '<label style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);cursor:pointer"><input type="checkbox"' + (e.selecionadas[i] ? ' checked' : '') + ' onchange="window.ESQ_IA.estado.selecionadas[' + i + ']=this.checked;window.ESQ_IA._guardarCampos();window.ESQ_IA.render()"' + dis + '><span><b>' + esc(f.titulo) + '</b> <span style="color:var(--text-muted);font-size:11px">' + esc(f.materia) + ' › ' + esc(f.divisao) + ' · ' + esc(f.subtema) + ' · ' + esc(f.tipo) + '</span><br><span style="font-size:11.5px">' + esc(f.resumo) + '</span></span></label>';
                 }).join('');
@@ -34619,6 +34768,7 @@ window.ESQ_IA = {
     },
     _reais: function(v) { return v == null ? '?' : 'R$ ' + (v < 0.01 ? v.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); },
     _somarUso: function(r) {
+        if (r && r.cota) this.estado.cota = r.cota;
         let u = this.estado.uso, x = r.uso || {};
         let ia = /^claude/i.test(x.modelo || '') ? 'IA Plus' : 'IA Simples';
         let c = this._custoReais(x.modelo, x.entrada, x.saida);
@@ -34629,6 +34779,7 @@ window.ESQ_IA = {
     _rodar: async function(fn) {
         this._guardarCampos();
         let e = this.estado;
+        if (this._cotaEsgotada()) { e.status = '❌ Você já usou a cota desta semana (' + this._textoCota() + ').'; this.render(); return; }
         e.ocupado = true; this.render();
         try { await fn(); } catch (err) { e.status = '❌ ' + (err && err.message || err); }
         e.ocupado = false; this.render();
@@ -34663,6 +34814,7 @@ window.ESQ_IA = {
     },
     gerarSelecionadas: function() {
         let self = this, e = this.estado;
+        if (this._cotaEsgotada()) { e.status = '❌ Você já usou a cota desta semana (' + this._textoCota() + ').'; this.render(); return; }
         if (e.fichas.length && !confirm('Gerar de novo substitui as fichas atuais. Continuar?')) return;
         e.fichas = []; e.editando = -1; e.observacoes = []; e.etapa = 'fichas';
         return this._rodar(async function() {
@@ -34674,8 +34826,9 @@ window.ESQ_IA = {
                 self._somarUso(r);
                 r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
                 self.render();
+                if (self._cotaEsgotada() && i + 5 < lista.length) break;
             }
-            e.status = '';
+            e.status = e.fichas.length < lista.length && self._cotaEsgotada() ? 'Cota da semana atingida: ' + e.fichas.length + ' de ' + lista.length + ' ficha(s) gerada(s) (' + self._textoCota() + ').' : '';
         });
     },
 
@@ -37296,8 +37449,8 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalTransferir()">📦 Transferir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.ocultarSelecionados()">Ocultar Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exibirSelecionados()">Exibir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
-                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + window.travaNivel('completo', 'Exportar selecionados') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosMarkdown()">📤 Exportar Selecionados (.md)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
+                    '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + window.travaNivel('completo', 'Exportar selecionados') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
                 '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
@@ -38863,7 +39016,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let tem = !!this._comentarioPessoal(id);
         let onclick = onclickCustom || ("window.JURISPRUDENCIA_RUNTIME.abrirComentarioPessoal('" + String(id).replace(/'/g, "\\'") + "')");
         let ativoPainel = onclickCustom && this._painelComentarioAberto ? ' jur-btn-comentario-painel-aberto' : '';
-        return '<button class="bcad bcom jur-btn-comentario' + (tem ? ' ativo' : '') + ativoPainel + '" onclick="' + onclick + '" title="' + (tem ? 'Ver/editar meu comentário' : 'Adicionar comentário') + '">💭</button>';
+        return '<button class="bcad bcom jur-btn-comentario' + (tem ? ' ativo' : '') + ativoPainel + '"' + window.travaNivel('completo', 'Comentários') + ' onclick="' + onclick + '" title="' + (tem ? 'Ver/editar meu comentário' : 'Adicionar comentário') + '">💭</button>';
     },
 
     // ── PAINEL LATERAL DO 💭 NO LEITOR ──
@@ -39359,11 +39512,11 @@ window.JURISPRUDENCIA_RUNTIME = {
             modalEl.classList.toggle('jur-caneta-ativa', !!self._canetaGrifo);
             ['amarelo', 'verde', 'rosa', 'borracha'].forEach(function(c) { modalEl.classList.toggle('jur-caneta-' + c, self._canetaGrifo === c); });
         });
-        let html = '<span class="jur-grifo-canetas-rotulo">🖍 Grifar:</span>' +
+        let html = '<span class="jur-grifo-canetas-rotulo"' + window.travaNivel('completo', 'Grifos') + '>🖍 Grifar:</span>' +
             this._CORES_GRIFO.map(function(c) {
-                return '<button class="jur-grifo-caneta jur-grifo-' + c + (self._canetaGrifo === c ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'' + c + '\')" title="' + (self._canetaGrifo === c ? 'Desligar caneta' : 'Caneta ' + c) + '"></button>';
+                return '<button class="jur-grifo-caneta jur-grifo-' + c + (self._canetaGrifo === c ? ' ativa' : '') + '"' + window.travaNivel('completo', 'Grifos') + ' onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'' + c + '\')" title="' + (self._canetaGrifo === c ? 'Desligar caneta' : 'Caneta ' + c) + '"></button>';
             }).join('') +
-            '<button class="jur-grifo-caneta borracha' + (this._canetaGrifo === 'borracha' ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'borracha\')" title="' + (this._canetaGrifo === 'borracha' ? 'Desligar borracha' : 'Borracha: apaga o grifo do que for selecionado') + '">⌫</button>';
+            '<button class="jur-grifo-caneta borracha' + (this._canetaGrifo === 'borracha' ? ' ativa' : '') + '"' + window.travaNivel('completo', 'Grifos') + ' onclick="window.JURISPRUDENCIA_RUNTIME.selecionarCanetaGrifo(\'borracha\')" title="' + (this._canetaGrifo === 'borracha' ? 'Desligar borracha' : 'Borracha: apaga o grifo do que for selecionado') + '">⌫</button>';
         ['jur-grifo-canetas', 'jur-ver-grifo-canetas'].forEach(function(idEl) {
             let el = document.getElementById(idEl);
             if (el) el.innerHTML = html;
@@ -40399,7 +40552,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 };
 
 window.abrirJurisprudenciaModal = function() {
-    if (!window.exigirCompleto('Jurisprudência')) return;
+    if (!window.exigirNivel('intermediario', 'Jurisprudência')) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
@@ -41341,7 +41494,7 @@ window.LEGISLACAO = (function() {
             if (est.ver && est.ver.id) quandoAchar(acharItem, [est.ver.id], function() { A.abrirVer(est.ver.chave, est.ver.id); });
         }
         let R = m.runtime && window[m.runtime], t = est.treino;
-        if (R && t && t.ids && t.ids.length) {
+        if (R && t && t.ids && t.ids.length && window.temNivel('completo')) {
             let mapa = null;
             let achar = function(id) {
                 if (!mapa || !mapa[id]) { mapa = {}; R._unidades(R._todosItens(), 'todos').forEach(function(p) { mapa[p.item.id] = p; }); }
