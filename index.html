@@ -34395,7 +34395,9 @@ window.ESQ_IA = {
                         let st = 'width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px';
                         return '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">' + rot + '</label>' + (area ? '<textarea id="esq-ia-ed-' + k + '" rows="2" style="' + st + '">' + esc(f[k]) + '</textarea>' : '<input id="esq-ia-ed-' + k + '" style="' + st + '" value="' + esc(f[k]) + '">');
                     };
-                    conteudo = campo('titulo', 'Título') + campo('divisao', 'Divisão') + campo('subtema', 'Subtema') + campo('tipo', 'Tipo') + campo('referencia', 'Referência')
+                    let divs = Array.from(glosDivisoesValidas(mat || '')), stSel = 'width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px';
+                    let campoDiv = divs.length ? '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">Divisão</label><select id="esq-ia-ed-divisao" style="' + stSel + '">' + (divs.indexOf(f.divisao) < 0 ? '<option value="" selected>Escolha a divisão…</option>' : '') + divs.map(function(d) { return '<option value="' + esc(d) + '"' + (d === f.divisao ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select>' : campo('divisao', 'Divisão');
+                    conteudo = campo('titulo', 'Título') + campoDiv + campo('subtema', 'Subtema') + campo('tipo', 'Tipo') + campo('referencia', 'Referência')
                         + '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">Conteúdo (edite direto no texto e na tabela)</label><div id="esq-ia-ed-corpo" class="esq-ia-previa" contenteditable="true" style="border:1px solid var(--border-color);border-radius:6px;padding:8px;min-height:80px;overflow:auto">' + f.corpo_html + '</div>'
                         + campo('alerta', 'Alerta', true) + campo('fonte', 'Fonte');
                 } else {
@@ -34567,10 +34569,24 @@ window.ESQ_IA = {
         // guardadas se ela for reaberta).
         if (R._materiaSelecionada !== mat && R.selecionarMateria) R.selecionarMateria(mat);
         if (R._materiaSelecionada !== mat) { alert('Não consegui abrir a matéria "' + mat + '" em Esquemas.'); return; }
-        this.fechar();
-        R.abrirModalImportar();
+        // Divisão fora da taxonomia seria recusada em silêncio: abre a ficha
+        // para corrigir.
+        let validas = glosDivisoesValidas(mat), e = this.estado;
+        let ruim = e.fichas.findIndex(function(f) { return !validas.has(f.divisao); });
+        if (ruim >= 0) { e.editando = ruim; e.status = '❌ A ficha "' + e.fichas[ruim].titulo + '" está numa divisão que não existe em ' + mat + '. Escolha a divisão em editar.'; this.render(); return; }
+        // Grava direto, pelo mesmo caminho da importação em massa (sem mostrar
+        // a janela de texto, que não serve a quem só quer a ficha pronta).
+        let total = e.fichas.length;
+        R._resultadoPreVisualizado = null;
         document.getElementById('esq-import-textarea').value = this.textoImportacao();
         R.prevvisualizarImportacao();
+        let prev = R._resultadoPreVisualizado;
+        if (!prev || prev.totalFichas !== total) { R._resultadoPreVisualizado = null; e.status = '❌ Não consegui adicionar as fichas (formato inesperado). Use Copiar texto e a Importação em Massa.'; this.render(); return; }
+        R.confirmarImportacao();
+        e.fichas = []; e.editando = -1; e.observacoes = []; e.status = '';
+        this.fechar();
+        if (R._divisaoSelecionada) R.selecionarMateria(mat);
+        window.avisoOk ? window.avisoOk(total + ' ficha(s) adicionada(s) em ' + mat) : alert(total + ' ficha(s) adicionada(s) em ' + mat);
     },
     copiar: function() {
         this._guardarCampos();
