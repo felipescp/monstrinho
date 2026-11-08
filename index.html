@@ -32540,7 +32540,7 @@ window.ESQUEMAS_RUNTIME = {
     _htmlCartaoEsquemaEstudo: function(item) {
         return '<div class="esq-estudo-card">' +
             '<div class="esq-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
-            '<div class="esq-estudo-texto">' + (item.conteudoHtml ? this._comReferencias(item.conteudoHtml, item.titulo) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
+            '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id || '') + '">' + (item.conteudoHtml ? this._comReferencias(item.conteudoHtml, item.titulo) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
         '</div>';
     },
 
@@ -32553,11 +32553,37 @@ window.ESQUEMAS_RUNTIME = {
     // citada antes (o título entra como contexto). Só na exibição: o
     // conteúdo salvo não muda (o editor de esquema pessoal recebe o HTML cru).
     _cacheRefs: {},
+    _refazerRefsNaTela: function() {
+        let self = this;
+        clearTimeout(this._tRefazer);
+        this._tRefazer = setTimeout(function() {
+            document.querySelectorAll('.esq-estudo-texto[data-esq-id]').forEach(function(el) {
+                let id = el.getAttribute('data-esq-id'), ch = id && self._localizarChavePorId(id);
+                let item = ch && (self.esquemas[ch] || []).find(function(e) { return e.id === id; });
+                if (item && item.conteudoHtml) el.innerHTML = self._comReferencias(item.conteudoHtml, item.titulo);
+            });
+            let corpo = document.getElementById('esq-editor-corpo');
+            if (corpo && corpo.contentEditable === 'false' && self._editandoChave && self._editandoId) {
+                let item = (self.esquemas[self._editandoChave] || []).find(function(e) { return e.id === self._editandoId; });
+                if (item && item.conteudoHtml) corpo.innerHTML = self._comReferencias(item.conteudoHtml, item.titulo);
+            }
+        }, 150);
+    },
     _comReferencias: function(html, titulo) {
         let J = window.JURISPRUDENCIA_RUNTIME, L = window.LEGISLACAO;
         if (!html || (!(J && J._refsDoTexto && J.fichas) && !(L && L.refsDoTexto))) return html;
-        let chave = (J && J.fichas ? Object.keys(J.fichas).length : 0) + '|' + (titulo || '') + '|' + html;
+        let chave = (J && J.fichas ? Object.keys(J.fichas).length : 0) + '|' + (L && L.nCarregados ? L.nCarregados() : 0) + '|' + (titulo || '') + '|' + html;
         if (this._cacheRefs[chave] !== undefined) return this._cacheRefs[chave];
+        // Artigo sem lei, depois de lei fora da base: só liga se o dispositivo
+        // existir na lei da base — precisa do texto. Carrega as leis citadas e
+        // refaz o que estiver na tela.
+        if (L && L.diplomasCitados && L.carregar) {
+            let faltam = L.diplomasCitados((titulo || '') + ' ' + html.replace(/<[^>]+>/g, ' ')).filter(function(id) { return !L.carregado(id); });
+            if (faltam.length) {
+                let self = this;
+                Promise.all(faltam.map(function(id) { return L.carregar(id).catch(function() {}); })).then(function() { self._refazerRefsNaTela(); });
+            }
+        }
         let out = html;
         try {
             let tpl = document.createElement('template');
@@ -32571,7 +32597,7 @@ window.ESQUEMAS_RUNTIME = {
                 if (!t || !/\d/.test(t)) { anterior += '\n' + (t || ''); return; }
                 let lista = [];
                 if (J && J._refsDoTexto && J.fichas) lista = J._refsDoTexto(t).filter(function(x) { return J._candidatosRef(x.chave).length; });
-                if (L && L.refsDoTexto) L.refsDoTexto(t, { anterior: anterior }).forEach(function(x) {
+                if (L && L.refsDoTexto) L.refsDoTexto(t, { anterior: anterior, pularForaDaBase: true }).forEach(function(x) {
                     if (lista.some(function(y) { return y.ini < x.fim && x.ini < y.fim; })) return;
                     x.lei = true; lista.push(x);
                 });
@@ -41244,7 +41270,7 @@ window.LEGISLACAO = (function() {
         let lrf = opcoes.lrf || (pad.indexOf('L11101') >= 0 ? 'L11101' : pad.indexOf('LC101') >= 0 ? 'LC101' : fal > fis ? 'L11101' : 'LC101');
         let extras = [], reL = /\bL(?:RF|REF|FRE)\b/g, m;
         while ((m = reL.exec(junto))) extras.push({ ini: m.index - desloc, fim: m.index - desloc + m[0].length, id: lrf });
-        let todas = mencoes(junto).map(function(x) { return { ini: x.ini - desloc, fim: x.fim - desloc, id: x.id }; })
+        let todas = mencoes(junto).map(function(x) { return { ini: x.ini - desloc, fim: x.fim - desloc, id: x.id, txt: junto.slice(x.ini, x.fim) }; })
             .filter(function(x) { return !extras.some(function(e) { return e.ini < x.fim && x.ini < e.fim; }); })
             .concat(extras).sort(function(x, y) { return x.ini - y.ini; });
         return { todas: todas, extras: extras, padrao: pad };
@@ -41294,9 +41320,22 @@ window.LEGISLACAO = (function() {
                 // Sem lei no trecho: contexto (ver prepararContexto).
                 let candidatos = null;
                 if (!alvo && ctx) {
-                    let anterior = ctx.todas.filter(function(x) { return x.fim <= base + m.index; }).pop();
-                    if (anterior && !anterior.id) continue; // outra lei, fora da base: não arrisca
-                    candidatos = (anterior ? [{ id: anterior.id, exigir: false }] : []).concat(ctx.padrao.filter(function(id) { return !anterior || id !== anterior.id; }).map(function(id) { return { id: id, exigir: true }; }));
+                    let antesTodas = ctx.todas.filter(function(x) { return x.fim <= base + m.index; }), anterior = antesTodas.pop();
+                    if (anterior && !anterior.id) {
+                        // Outra lei, fora da base: não arrisca — salvo com opcoes.pularForaDaBase
+                        // (Esquemas: "a Lei 14.230 remodelou o art. 12… (art. 9º)"), em que volta
+                        // à última lei da base citada antes, desde que o dispositivo exista nela.
+                        // Só quando a lei da base é a mais citada até aqui (num esquema sobre a
+                        // Resolução CNJ 350 ou a Lei do FGTS, o "Art. 16" é dela, não do CPC).
+                        let conhecida = opcoes.pularForaDaBase ? antesTodas.filter(function(x) { return x.id; }).pop() : null;
+                        if (!conhecida) continue;
+                        let norm = function(t) { return String(t || '').replace(/\D/g, '') || String(t || '').toLowerCase(); };
+                        let nFora = antesTodas.concat([anterior]).filter(function(x) { return !x.id && norm(x.txt) === norm(anterior.txt); }).length;
+                        let nBase = antesTodas.filter(function(x) { return x.id === conhecida.id; }).length;
+                        if (nBase < nFora) continue;
+                        candidatos = [{ id: conhecida.id, exigir: true }]; // só se o dispositivo existir (texto carregado)
+                    }
+                    if (!candidatos) candidatos = (anterior ? [{ id: anterior.id, exigir: false }] : []).concat(ctx.padrao.filter(function(id) { return !anterior || id !== anterior.id; }).map(function(id) { return { id: id, exigir: true }; }));
                     if (!candidatos.length) continue;
                 } else if (!alvo || !alvo.id) continue;
                 let lista = m[1], iniLista = m.index + m[0].indexOf(lista), reI = new RegExp(RE_ITEM.source, 'g'), it, primeiro = true;
@@ -41489,7 +41528,7 @@ window.LEGISLACAO = (function() {
         if (lrf && /\bL(?:RF|REF|FRE)\b/.test(String(texto || '')) && ids.indexOf(lrf) < 0) ids.push(lrf);
         return ids;
     }
-    return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, diplomasCitados: diplomasCitados, carregar: carregar, carregado: function(id) { return !!cache[id]; }, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
+    return { DIPLOMAS: DIPLOMAS, refsDoTexto: refsDoTexto, diplomasCitados: diplomasCitados, carregar: carregar, carregado: function(id) { return !!cache[id]; }, nCarregados: function() { return Object.keys(cache).length; }, mostrarBalao: mostrarBalao, abrirNoPlanalto: abrirNoPlanalto, _htmlBalao: htmlBalao };
 })();
 </script>
 <script>
