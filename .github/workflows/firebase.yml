@@ -43,3 +43,14 @@ jobs:
           done
       - name: App e regras → Firebase
         run: npx --yes firebase-tools@13 deploy --only hosting,storage,firestore:rules --project monstrinho-lab --non-interactive
+      # Funções (Criar Esquema com IA). Separado e sem travar a publicação do
+      # site: enquanto os segredos e as permissões não estiverem configurados
+      # (LEIAME-firebase.md, "Criar Esquema com IA"), esta etapa falha sozinha.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Funções → Firebase
+        continue-on-error: true
+        run: |
+          cd functions && npm ci --no-audit --no-fund && cd ..
+          npx --yes firebase-tools@15 deploy --only functions --project monstrinho-lab --non-interactive --force

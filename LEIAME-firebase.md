@@ -222,6 +222,42 @@ Instalação (uma vez, cerca de 5 minutos):
 - Para parar: no script, menu **Acionadores** (⏰) → apague o acionador.
 - Se o teste der erro "Firestore respondeu 403", confira se a conta do script é a dona do projeto **monstrinho-lab** e se o `appsscript.json` foi colado (o passo 4).
 
+## Criar Esquema com IA (fase 1: só a administração)
+
+Em **Esquemas**, o botão **✨ Criar com IA** (visível só para a conta admin) gera fichas com o Claude ou o Gemini:
+- **Ficha individual:** um tema, com ou sem trecho do material.
+- **A partir de um material:** a IA propõe o plano de fichas, você marca as que quer e ela gera em lotes de até 5.
+
+Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) ou `.docx`. A conversão é feita no navegador, com as bibliotecas em `vendor/`. O resultado segue pela importação em massa de sempre, com pré-visualização. Também dá para baixar o `.txt` de importação ou copiar o texto.
+
+**Como funciona por dentro:**
+- A função `criarEsquemaIA` (pasta `functions/`, Cloud Functions, região São Paulo) confere se a conta é admin, chama a IA e devolve as fichas.
+- As chaves das IAs ficam no **Secret Manager** e nunca chegam ao navegador.
+- Cada chamada registra o consumo (tokens) na coleção `usoIA` do Firestore, que só o servidor lê e grava.
+- O prompt adapta as instruções da Fábrica de fichas (v4) e o padrão de citação; está em `functions/nucleo.js`.
+- Modelos padrão: `claude-opus-5-5`, com esforço `medium`, e `gemini-2.5-flash`. Para trocar, crie `functions/.env` com `CLAUDE_MODELO=…`, `CLAUDE_ESFORCO=…` ou `GEMINI_MODELO=…`.
+
+**Para ativar (uma vez):**
+
+1. **Chaves das IAs**
+   - **Gemini:** https://aistudio.google.com/apikey → *Create API key*. Tem cota gratuita, boa para testes.
+   - **Claude:** https://console.anthropic.com → *API Keys* → *Create Key*. A API é cobrada à parte da assinatura do Claude.ai: compre créditos em *Billing* (o mínimo basta para testar).
+2. **Guardar as chaves no Secret Manager**
+   - Abra https://console.cloud.google.com/security/secret-manager?project=monstrinho-lab. Se pedir, clique em **Ativar** (Secret Manager API).
+   - **Create secret** com o nome exato `GEMINI_API_KEY` e a chave como valor.
+   - Faça o mesmo com o nome exato `ANTHROPIC_API_KEY`.
+   - Os **dois** segredos precisam existir. Se ainda não tiver a chave do Claude, crie `ANTHROPIC_API_KEY` com o valor `pendente` e troque depois em *New version*.
+3. **Permissões da conta de serviço do GitHub** (a do segredo `FIREBASE_SERVICE_ACCOUNT`)
+   - Em https://console.cloud.google.com/iam-admin/iam?project=monstrinho-lab, clique no lápis da conta de serviço usada pelo GitHub Actions.
+   - Acrescente os papéis: **Cloud Functions Admin**, **Cloud Run Admin**, **Service Account User**, **Cloud Build Editor**, **Artifact Registry Administrator** e **Secret Manager Admin**.
+4. **APIs:** em https://console.cloud.google.com/apis/library?project=monstrinho-lab, ative **Cloud Functions API**, **Cloud Run Admin API**, **Cloud Build API**, **Artifact Registry API** e **Eventarc API**, se ainda não estiverem ativas.
+5. **Publicar:** o próximo push no `main` (ou *Actions → Publicar no Firebase → Run workflow*) publica a função na etapa **Funções → Firebase**.
+   - Essa etapa não trava o site: se faltar algo, ela fica vermelha e o resto da publicação segue normal. O log mostra o que falta.
+
+**Custos:** Cloud Functions tem cota gratuita mensal. A IA é paga por uso, em tokens de entrada (o material) e de saída (as fichas). O consumo de cada pedido aparece no rodapé da janela e fica registrado em `usoIA`. O material longo é relido a cada lote de 5 fichas, então gerar a partir de um material grande custa mais que a ficha individual.
+
+**Teste sem gastar:** `cd functions && npm ci && node teste-nucleo.js` testa o prompt, a validação e o formato da requisição com respostas simuladas.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
