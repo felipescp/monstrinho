@@ -41359,7 +41359,11 @@ window.LEGISLACAO = (function() {
             });
         }
     }
-    window.addEventListener('pagehide', function() {
+    // Grava ao sair (F5, fechar) e também ao esconder/congelar a aba: o
+    // Chrome descarta abas em segundo plano para poupar memória e, na volta,
+    // recarrega a página sem ter disparado o pagehide — a seção aparecia
+    // fechada, "como se tivesse dado F5" (relato do usuário).
+    function gravar() {
         try {
             let m = MODAIS.find(aberto);
             if (!m) { sessionStorage.removeItem(CHAVE); return; }
@@ -41386,14 +41390,32 @@ window.LEGISLACAO = (function() {
             }
             sessionStorage.setItem(CHAVE, JSON.stringify(est));
         } catch (e) {}
-    });
+    }
+    window.addEventListener('pagehide', gravar);
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') gravar(); });
+    document.addEventListener('freeze', gravar);
     window.addEventListener('load', function() {
         let est = null;
         try { est = JSON.parse(sessionStorage.getItem(CHAVE) || 'null'); } catch (e) {}
         if (!est) return;
         let m = MODAIS.find(function(x) { return x.nome === est.nome; });
+        if (!m) return;
         // Só com login já feito (sem o alerta de exigirLoginParaSecao no boot).
-        if (!m || !window.temLoginApp()) return;
+        // Se o login ainda está sendo conferido no carregamento, espera a
+        // liberação (até 30 s) em vez de desistir.
+        if (!window.temLoginApp()) {
+            let ouvir = function(ev) {
+                if (!ev.detail || ev.detail.estado !== 'liberado') return;
+                document.removeEventListener('salinha-auth', ouvir);
+                reabrir(m, est);
+            };
+            document.addEventListener('salinha-auth', ouvir);
+            setTimeout(function() { document.removeEventListener('salinha-auth', ouvir); }, 30000);
+            return;
+        }
+        reabrir(m, est);
+    });
+    function reabrir(m, est) {
         // Depois do boot (que decide a tela de fundo: Vitrine, Cronograma…) e
         // da hidratação do IndexedDB da seção — abrir antes fazia o carregar()
         // tardio da hidratação esvaziar o acervo já aberto.
@@ -41405,7 +41427,7 @@ window.LEGISLACAO = (function() {
             if (est.max === false && typeof window[m.alternar] === 'function') window[m.alternar]();
             restaurarInterno(m, est);
         }, 400); });
-    });
+    }
 })();
 </script>
 <!-- ════════════════════════════════════════════════════════════════════
