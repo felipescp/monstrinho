@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 11 (2310 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 12 (2368 notas).
 
 ### Direito Civil
 
@@ -30,7 +30,7 @@
 | Código de Processo Civil | X | X | X (1017 notas) |
 | Ação Civil Pública (Lei 7.347) | X | X | X (48 notas) |
 | Juizados Especiais (Lei 9.099) | X | X | X (114 notas) |
-| Mandado de Segurança (Lei 12.016) | X | X | - |
+| Mandado de Segurança (Lei 12.016) | X | X | X (58 notas) |
 | Habeas Data (Lei 9.507) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
 | Mediação (Lei 13.140) | X | X | - |
