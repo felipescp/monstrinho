@@ -96,7 +96,7 @@ Há três níveis, no campo `nivel` do documento `acessos/{e-mail}` (a lista com
 |---|---|---|
 | `simples` | Só o login | Todas as baterias, com os **materiais associados** na barra lateral e todas as estatísticas; as seções **Flashcards** e **Glossário**; uma **amostra da Lei Seca** (os diplomas citados na bateria, sem os comentários do sistema). Não salva questões. |
 | `intermediario` | Permissão da administração | Tudo do simples, mais as seções **Esquemas**, **Jurisprudência**, **Prazos** e **Penas** (sem o Treinar); **Lei Seca** comentada só com o diploma mais cobrado de cada disciplina; **criar 1 esquema com IA por semana** (IA Simples); salvar **5 questões por simulado**; refazer erradas e caderno de questões salvas. |
-| `completo` | Assinatura | Tudo: Lei Seca inteira, Treinar em Prazos e Penas, comentários e grifos (Jurisprudência e questões), exportar selecionados, **10 esquemas com IA por semana**, questões salvas sem limite. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
+| `completo` | Em breve (será a assinatura) | Tudo: Lei Seca inteira, Treinar em Prazos e Penas, comentários e grifos (Jurisprudência e questões), exportar selecionados, clonar esquemas, **10 esquemas com IA por semana**, questões salvas sem limite. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
 
 O que não é do nível aparece **visível, mas desabilitado** (esmaecido, com 🔒); ao clicar, abre a explicação dos níveis.
 
@@ -105,7 +105,7 @@ Não é preciso pedir o e-mail a ninguém:
 1. A pessoa abre `www.asalinha.com.br` e clica em **Entrar com Google**.
 2. No primeiro login, o app cria sozinho `acessos/{e-mail}` com `ativo: true` e `nivel: "simples"`, e a pessoa já começa a usar. Ao lado do nome aparece o selo **ACESSO SIMPLES** (no intermediário, **INTERMEDIÁRIO**).
 3. Ao clicar numa seção com 🔒 (ou no selo), ela pode **Pedir acesso intermediário**. O app grava `pedidoCompletoEm` no documento (o nome antigo do campo foi mantido), e você recebe o e-mail (ver "Aviso por e-mail de pedidos de acesso").
-4. Para liberar: no console do Firebase, em **Firestore Database → acessos →** documento da pessoa, mude `nivel` para `intermediario` (ou `completo`, para assinantes). A pessoa recarrega o site. O botão **Assinar o completo** aparece como "em breve" até existir o pagamento.
+4. Para liberar: no console do Firebase, em **Firestore Database → acessos →** documento da pessoa, mude `nivel` para `intermediario` (ou `completo`, para assinantes). A pessoa recarrega o site. Para quem está no intermediário, o botão **Completo** aparece desabilitado, sem preço nem chamada de assinatura (divulgação como ferramenta, não como produto).
 
 Outras situações:
 - **Voltar para o acesso simples:** mude `nivel` para `simples`.

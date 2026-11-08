@@ -1845,6 +1845,7 @@ try {
         /* Cadeados por nível (ver window.exigirNivel / window.travaNivel) */
         body.salinha-simples .req-intermediario::after, body.salinha-simples .req-completo::after, body.salinha-intermediario .req-completo::after { content:' 🔒'; font-size:.85em; }
         [data-trava-nivel] { opacity:.5 !important; cursor:not-allowed !important; }
+        body.salinha-simples button.req-completo, body.salinha-intermediario button.req-completo { opacity:.5; }
         [data-trava-nivel]::after { content:' 🔒'; font-size:.85em; }
         #leiseca-modal .fc-materia-item.ls-bloq { opacity:.55; }
         #leiseca-modal .ls-amostra { margin:0 0 10px; padding:8px 10px; border-radius:8px; background:var(--bg-accent-soft, #eef2ff); border:1px solid var(--app-primary); font-size:11px; line-height:1.45; color:var(--text-main); }
@@ -5664,7 +5665,8 @@ window.exigirLoginParaSecao = function() {
 //                   criar 1 esquema com IA por semana; salvar 5 questões por
 //                   simulado; refazer erradas e caderno de questões salvas
 //   completo ...... tudo: Lei Seca inteira, Treinar (Prazos/Penas),
-//                   comentários e grifos, exportar selecionados, 10 esquemas
+//                   comentários e grifos, exportar selecionados, clonar
+//                   esquemas, 10 esquemas
 //                   com IA por semana, questões salvas sem limite
 window.NIVEIS = { simples: 1, intermediario: 2, completo: 3 };
 window.NIVEL_NOME = { simples: 'Simples', intermediario: 'Intermediário', completo: 'Completo' };
@@ -5710,20 +5712,20 @@ window.mostrarNiveis = function(recurso, min) {
         let eu = n === atual;
         return '<div style="flex:1 1 150px;min-width:0;border:' + (eu ? '2px solid var(--app-primary,#4f46e5)' : '1px solid var(--border-color,#ddd)') + ';border-radius:10px;padding:10px 12px">' +
             '<b style="display:block;margin-bottom:4px">' + window.NIVEL_NOME[n] + (eu ? ' <span style="font-size:10px;color:var(--app-primary,#4f46e5)">· o seu</span>' : '') + '</b>' +
-            '<div style="font-size:11.5px;color:var(--text-muted,#555)">' + (n === 'simples' ? 'Só o login' : n === 'intermediario' ? 'Com permissão da administração' : 'Assinatura') + '</div>' +
+            '<div style="font-size:11.5px;color:var(--text-muted,#555)">' + (n === 'simples' ? 'Só o login' : n === 'intermediario' ? 'Com permissão da administração' : 'Em breve') + '</div>' +
             '<ul style="margin:6px 0 0;padding-left:16px;font-size:12px">' + itens.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>';
     };
     let pedido = FB && FB.pedidoCompletoEm, acao = '';
     if (atual === 'simples') acao = pedido
         ? '<span style="color:var(--text-muted,#666)">✓ Pedido do acesso intermediário enviado em ' + esc(pedido.toLocaleDateString('pt-BR')) + '. Assim que for liberado, recarregue a página.</span>'
         : '<button type="button" onclick="window.pedirAcessoCompleto()" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Pedir acesso intermediário</button>';
-    else if (atual === 'intermediario') acao = '<button type="button" disabled title="Em breve" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;opacity:.55;cursor:default">Assinar o completo · em breve</button>';
+    else if (atual === 'intermediario') acao = '<button type="button" disabled style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;opacity:.45;cursor:default">Completo</button>';
     fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:680px;width:100%;max-height:92vh;overflow:auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;line-height:1.45">' +
         '<b style="font-size:16px;display:block;margin-bottom:12px">' + titulo + '</b>' +
         '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
             col('simples', ['Todas as baterias, com os materiais associados e as estatísticas', 'Flashcards e Glossário', 'Amostra da Lei Seca citada na bateria']) +
             col('intermediario', ['Tudo do Simples', 'Esquemas, Jurisprudência, Prazos e Penas', 'Lei Seca comentada: o diploma mais cobrado de cada disciplina', 'Criar 1 esquema com IA por semana', 'Salvar 5 questões por simulado', 'Refazer erradas e caderno de questões salvas']) +
-            col('completo', ['Tudo do Intermediário', 'Lei Seca comentada completa', 'Treinar em Prazos e Penas', 'Comentários e grifos', 'Exportar selecionados', 'Criar 10 esquemas com IA por semana', 'Questões salvas sem limite']) +
+            col('completo', ['Tudo do Intermediário', 'Lei Seca comentada completa', 'Treinar em Prazos e Penas', 'Comentários e grifos', 'Exportar selecionados', 'Clonar esquemas', 'Criar 10 esquemas com IA por semana', 'Questões salvas sem limite']) +
         '</div>' +
         '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + acao +
         '<button type="button" onclick="document.getElementById(\'nivel-simples-aviso\').remove()" style="margin-left:auto;border:1px solid var(--border-color,#ccc);background:none;border-radius:8px;padding:8px 14px;cursor:pointer;color:inherit">Fechar</button>' +
@@ -31198,7 +31200,7 @@ window.triggerFileUpload = function(callback) {
         <div class="mfoot">
             <!-- ‹ › — esquema anterior/seguinte da grade, sem fechar o editor. -->
             <div class="esq-editor-nav" id="esq-editor-nav"></div>
-            <button class="fc-footer-btn" id="esq-editor-btn-clonar" onclick="window.ESQUEMAS_RUNTIME.clonarEsquema()" style="display:none;" title="Cria uma cópia pessoal editável deste esquema">📋 Clonar Ficha</button>
+            <button class="fc-footer-btn req-completo" id="esq-editor-btn-clonar" onclick="window.ESQUEMAS_RUNTIME.clonarEsquema()" style="display:none;" title="Cria uma cópia pessoal editável deste esquema">📋 Clonar Ficha</button>
             <button class="fc-footer-btn" onclick="window.ESQUEMAS_RUNTIME.fecharEditor()">Fechar</button>
             <button class="fc-footer-btn primario" id="esq-editor-btn-salvar" onclick="window.ESQUEMAS_RUNTIME.salvarEsquema()">Salvar</button>
         </div>
@@ -33380,6 +33382,8 @@ window.ESQUEMAS_RUNTIME = {
     // decide isso sozinho, olhando origem_oficial do item). O original
     // oficial nunca é alterado.
     clonarEsquema: function() {
+        // Clonar: só no acesso completo (pedido explícito do usuário); o botão fica visível com 🔒.
+        if (!window.temNivel('completo')) { window.mostrarNiveis('Clonar esquema', 'completo'); return; }
         let item = (this.esquemas[this._editandoChave] || []).find(e => e.id === this._editandoId);
         if (!item) return;
         let novoId = 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -34609,7 +34613,7 @@ window.ESQ_IA = {
         // Cabeçalho fixo
         let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);height:min(760px,92vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px;overflow:hidden">';
         h += '<div style="padding:16px 20px 10px;border-bottom:1px solid var(--border-color)">';
-        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:' + (this._cotaEsgotada() ? '#b91c1c;font-weight:700' : 'var(--text-muted)') + '">' + esc(this._textoCota()) + '</span>' + (this._cotaEsgotada() && !window.temNivel('completo') ? '<a href="#" onclick="event.preventDefault(); window.mostrarNiveis(\'Mais esquemas com IA\', \'completo\')" style="font-size:11px;font-weight:700;color:var(--app-primary)">Assinar o completo</a>' : '') + '<button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
+        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:' + (this._cotaEsgotada() ? '#b91c1c;font-weight:700' : 'var(--text-muted)') + '">' + esc(this._textoCota()) + '</span>' + (this._cotaEsgotada() && !window.temNivel('completo') ? '<a href="#" onclick="event.preventDefault(); window.mostrarNiveis(\'Mais esquemas com IA\', \'completo\')" style="font-size:11px;font-weight:700;color:var(--app-primary)">Ver os níveis</a>' : '') + '<button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
         h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span>' +
             '<span><b>IA:</b> ' + opc('provedor', 'gemini', 'Simples', 'Rápida e econômica') + ' ' + (window.ehAdmin() ? opc('provedor', 'claude', 'Plus', 'Mais detalhado e profundo') : '<button type="button" disabled title="Mais detalhado e profundo · em breve" style="' + btn + ';opacity:.45;cursor:not-allowed">Plus 🔒</button>') + '</span>';
         let seta = function(d, txt) { let alvo = l[iAtual + d], ok = alvo && self._etapaDisponivel(alvo) && !e.ocupado; return '<button type="button" onclick="window.ESQ_IA.passo(' + d + ')" style="' + btn + ';padding:4px 10px' + (ok ? '' : ';opacity:.35;cursor:default') + '"' + (ok ? '' : ' disabled') + '>' + txt + '</button>'; };
