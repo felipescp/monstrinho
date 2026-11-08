@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 7 (1065 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 8 (1131 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -65,7 +65,7 @@
 | Parcelamento do Solo Urbano (Lei 6.766) | X | X | - |
 | Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | Estatuto da Metrópole (Lei 13.089) | X | X | - |
-| Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | - |
+| Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | X (66 notas) |
 | Defesa do Usuário do Serviço Público (Lei 13.460) | X | X | - |
 | Governo Digital (Lei 14.129) | X | X | - |
 | Liberdade Econômica (Lei 13.874) | X | X | - |
