@@ -34557,6 +34557,13 @@ window.ESQ_IA = {
         let R = window.ESQUEMAS_RUNTIME;
         if (!R || !this.estado.fichas.length) return;
         this._guardarCampos();
+        let mat = this._materia();
+        if (!mat) { alert('Escolha a matéria na lista acima.'); return; }
+        // A importação da seção usa a matéria aberta na barra lateral: abre a
+        // escolhida aqui antes (só então fecha esta janela; as fichas ficam
+        // guardadas se ela for reaberta).
+        if (R._materiaSelecionada !== mat && R.selecionarMateria) R.selecionarMateria(mat);
+        if (R._materiaSelecionada !== mat) { alert('Não consegui abrir a matéria "' + mat + '" em Esquemas.'); return; }
         this.fechar();
         R.abrirModalImportar();
         document.getElementById('esq-import-textarea').value = this.textoImportacao();
