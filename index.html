@@ -34320,9 +34320,10 @@ window.carregarEsquemasOficiais = async function() {
 // Arquivos: .md e .txt direto; .pdf (pdf.js) e .docx (mammoth) convertidos
 // para texto aqui no navegador, com as bibliotecas em vendor/.
 window.ESQ_IA = {
-    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, uso: { entrada: 0, saida: 0, chamadas: 0 }, observacoes: [], ocupado: false, status: '' },
+    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', uso: { entrada: 0, saida: 0, chamadas: 0 }, observacoes: [], ocupado: false, status: '' },
     _esc: function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
-    _materia: function() { return (window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME._materiaSelecionada) || ''; },
+    _materia: function() { return this.estado.materia || (window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME._materiaSelecionada) || ''; },
+    _listaMaterias: function() { return (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []; },
 
     abrir: function() {
         if (!window.exigirAdmin()) return;
@@ -34351,7 +34352,7 @@ window.ESQ_IA = {
         }
     },
     editarFicha: function(i) { this._guardarCampos(); this.estado.editando = (this.estado.editando === i ? -1 : i); this.render(); },
-    mudar: function(campo, valor) { this._guardarCampos(); this.estado[campo] = valor; if (campo === 'modo') { this.estado.plano = null; this.estado.selecionadas = {}; } this.render(); },
+    mudar: function(campo, valor) { this._guardarCampos(); this.estado[campo] = valor; if (campo === 'modo' || campo === 'materia') { this.estado.plano = null; this.estado.selecionadas = {}; } this.render(); },
 
     render: function() {
         let m = document.getElementById('esq-ia-modal');
@@ -34362,8 +34363,7 @@ window.ESQ_IA = {
         let opc = function(campo, valor, rotulo) { let on = e[campo] === valor; return '<button type="button" onclick="window.ESQ_IA.mudar(\'' + campo + '\', \'' + valor + '\')" style="' + btn + (on ? ';background:var(--app-primary);color:#fff;border-color:var(--app-primary)' : '') + '"' + (e.ocupado ? ' disabled' : '') + '>' + rotulo + '</button>'; };
         let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px">';
         h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:var(--text-muted)">fase de teste · só administração</span><button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + (e.ocupado ? ' disabled' : '') + '>Fechar</button></div>';
-        if (!mat) h += '<div style="padding:10px;border-radius:8px;background:#fef3c7;color:#92400e;margin-bottom:10px">Selecione uma matéria na barra lateral de Esquemas antes de criar.</div>';
-        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'A partir de um material') + '</span><span><b>IA:</b> ' + opc('provedor', 'gemini', 'Gemini') + ' ' + opc('provedor', 'claude', 'Claude') + '</span><span><b>Matéria:</b> ' + esc(mat || '—') + '</span></div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'A partir de um material') + '</span><span><b>IA:</b> ' + opc('provedor', 'gemini', 'Gemini') + ' ' + opc('provedor', 'claude', 'Claude') + '</span><span><b>Matéria:</b> <select onchange="window.ESQ_IA.mudar(\'materia\', this.value)" style="padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px;max-width:320px"' + (e.ocupado ? ' disabled' : '') + '>' + (mat ? '' : '<option value="" selected>Escolha a matéria…</option>') + self._listaMaterias().map(function(n) { return '<option value="' + esc(n) + '"' + (n === mat ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></span></div>';
         h += '<label style="display:block;font-weight:700;margin:8px 0 4px">' + (e.modo === 'individual' ? 'Tema da ficha' : 'Orientação (opcional)') + '</label><textarea id="esq-ia-tema" rows="2" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font:inherit" placeholder="' + (e.modo === 'individual' ? 'Ex.: Hipóteses de intervenção espontânea federal e estadual' : 'Ex.: priorizar prazos e róis; ignorar o capítulo X') + '">' + esc(e.tema) + '</textarea>';
         h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;flex-wrap:wrap"><label style="font-weight:700">Material' + (e.modo === 'individual' ? ' (recomendado)' : '') + '</label><label style="' + btn + ';display:inline-block">📎 Anexar arquivo<input type="file" accept=".md,.txt,.pdf,.docx" style="display:none" onchange="window.ESQ_IA.lerArquivo(this)"' + (e.ocupado ? ' disabled' : '') + '></label><span style="font-size:11px;color:var(--text-muted)">.md, .txt, .pdf (com texto) ou .docx · ' + (e.arquivo ? esc(e.arquivo) + ' · ' : '') + '<span id="esq-ia-contagem">' + e.material.length.toLocaleString('pt-BR') + '</span> caracteres (máx. 300.000)</span></div>';
         h += '<textarea id="esq-ia-material" rows="7" oninput="document.getElementById(\'esq-ia-contagem\').textContent=this.value.length.toLocaleString(\'pt-BR\')" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font-family:monospace;font-size:11.5px" placeholder="Cole aqui o trecho do material (ou anexe o arquivo)">' + esc(e.material) + '</textarea>';
