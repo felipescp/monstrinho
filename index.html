@@ -32540,8 +32540,70 @@ window.ESQUEMAS_RUNTIME = {
     _htmlCartaoEsquemaEstudo: function(item) {
         return '<div class="esq-estudo-card">' +
             '<div class="esq-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
-            '<div class="esq-estudo-texto">' + (item.conteudoHtml || '<em>Sem conteúdo ainda.</em>') + '</div>' +
+            '<div class="esq-estudo-texto">' + (item.conteudoHtml ? this._comReferencias(item.conteudoHtml, item.titulo) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
         '</div>';
+    },
+
+    // Referências nos Esquemas (pedido explícito do usuário), como nas
+    // Explicações das questões, nos cards da Jurisprudência e no Modo
+    // comentado da Lei Seca: artigo de lei → balão com o texto (clique abre
+    // no Planalto); julgado/súmula/tema com ficha no acervo → balão com a tese
+    // (clique abre a ficha). Percorre só os nós de texto do HTML (tabelas e
+    // listas ficam intactas); artigo sem a lei no trecho usa a última lei
+    // citada antes (o título entra como contexto). Só na exibição: o
+    // conteúdo salvo não muda (o editor de esquema pessoal recebe o HTML cru).
+    _cacheRefs: {},
+    _comReferencias: function(html, titulo) {
+        let J = window.JURISPRUDENCIA_RUNTIME, L = window.LEGISLACAO;
+        if (!html || (!(J && J._refsDoTexto && J.fichas) && !(L && L.refsDoTexto))) return html;
+        let chave = (J && J.fichas ? Object.keys(J.fichas).length : 0) + '|' + (titulo || '') + '|' + html;
+        if (this._cacheRefs[chave] !== undefined) return this._cacheRefs[chave];
+        let out = html;
+        try {
+            let tpl = document.createElement('template');
+            tpl.innerHTML = html;
+            let anterior = String(titulo || ''), nos = [], w = document.createTreeWalker(tpl.content, NodeFilter.SHOW_TEXT, {
+                acceptNode: function(n) { return n.parentNode && n.parentNode.closest && n.parentNode.closest('a, code, .jur-ref, script, style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+            });
+            while (w.nextNode()) nos.push(w.currentNode);
+            nos.forEach(function(no) {
+                let t = no.nodeValue;
+                if (!t || !/\d/.test(t)) { anterior += '\n' + (t || ''); return; }
+                let lista = [];
+                if (J && J._refsDoTexto && J.fichas) lista = J._refsDoTexto(t).filter(function(x) { return J._candidatosRef(x.chave).length; });
+                if (L && L.refsDoTexto) L.refsDoTexto(t, { anterior: anterior }).forEach(function(x) {
+                    if (lista.some(function(y) { return y.ini < x.fim && x.ini < y.fim; })) return;
+                    x.lei = true; lista.push(x);
+                });
+                anterior += '\n' + t;
+                if (!lista.length) return;
+                lista.sort(function(a, b) { return a.ini - b.ini; });
+                let frag = document.createDocumentFragment(), pos = 0;
+                lista.forEach(function(x) {
+                    if (x.ini < pos || x.fim <= x.ini) return;
+                    if (x.ini > pos) frag.appendChild(document.createTextNode(t.slice(pos, x.ini)));
+                    let sp = document.createElement('span');
+                    sp.textContent = t.slice(x.ini, x.fim);
+                    if (x.lei) {
+                        sp.className = 'jur-ref jur-ref-lei'; sp.setAttribute('data-lei', x.chave); sp.setAttribute('data-ano', '');
+                        sp.setAttribute('onclick', "event.stopPropagation(); window.LEGISLACAO.abrirNoPlanalto(this.getAttribute('data-lei'))");
+                    } else {
+                        sp.className = 'jur-ref'; sp.setAttribute('data-jur-ref', x.chave);
+                        sp.setAttribute('onclick', "event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute('data-jur-ref'))");
+                    }
+                    frag.appendChild(sp); pos = x.fim;
+                });
+                if (pos < t.length) frag.appendChild(document.createTextNode(t.slice(pos)));
+                no.parentNode.replaceChild(frag, no);
+            });
+            let div = document.createElement('div');
+            div.appendChild(tpl.content.cloneNode(true));
+            out = div.innerHTML;
+        } catch (e) { console.warn('[ESQUEMAS] referências:', e); out = html; }
+        let ks = Object.keys(this._cacheRefs);
+        if (ks.length > 300) this._cacheRefs = {};
+        this._cacheRefs[chave] = out;
+        return out;
     },
 
     // ── ABAS "🔴 CRÍTICO" / "🟡 IMPORTANTE" / "🟢 REGULAR" ──
@@ -33313,7 +33375,8 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-form-titulo').value = item.titulo || '';
         document.getElementById('esq-form-titulo').readOnly = somenteLeitura;
         let corpo = document.getElementById('esq-editor-corpo');
-        corpo.innerHTML = item.conteudoHtml || '';
+        // Só leitura (oficial): com as referências ligadas; editável: HTML cru (seria salvo junto).
+        corpo.innerHTML = somenteLeitura ? this._comReferencias(item.conteudoHtml || '', item.titulo) : (item.conteudoHtml || '');
         corpo.contentEditable = somenteLeitura ? 'false' : 'true';
         document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
