@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 2 (48 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 3 (78 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -105,7 +105,7 @@
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Juizados Especiais (Lei 9.099) | X | X | - |
 | Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | - |
-| Juizados Especiais Federais (Lei 10.259) | X | X | - |
+| Juizados Especiais Federais (Lei 10.259) | X | X | X (30 notas) |
 | Processo Eletrônico (Lei 11.419) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
 | Mediação (Lei 13.140) | X | X | - |
