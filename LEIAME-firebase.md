@@ -175,6 +175,33 @@ Avisa por e-mail quando o Storage entrega muito mais dados do que o normal, venh
 
 Se o projeto estiver no plano Blaze, também vale um **alerta de orçamento** em https://console.cloud.google.com/billing → *Budgets & alerts*, com um valor baixo (por exemplo, R$ 20 por mês), para ser avisado de qualquer gasto inesperado.
 
+## Backup do Firestore (dados pessoais dos usuários)
+
+O acervo oficial está seguro no GitHub. Os dados pessoais sincronizados (cadernos, progresso, conjuntos, grifos, comentários) só existem no Firestore e nos aparelhos. O backup agendado protege contra exclusão acidental ou um erro que apague dados. Requer o plano Blaze; o custo é de centavos, porque os dados são pequenos.
+
+1. Abra https://console.cloud.google.com/firestore/databases/-default-/disaster-recovery?project=monstrinho-lab. Se não abrir: Google Cloud Console → projeto **monstrinho-lab** → **Firestore** → banco **(default)** → **Recuperação de desastres** (*Disaster recovery*).
+2. Em **Backups**, clique em **Criar agendamento** (*Create schedule*): **Diário** (*Daily*), retenção de **14 dias**. Salve.
+3. Opcional: em **Recuperação pontual** (*Point-in-time recovery*, PITR), clique em **Ativar**. Permite voltar o banco a qualquer minuto dos últimos 7 dias.
+
+Para restaurar, o backup vira um **banco novo**, sem sobrescrever o atual: na lista de backups, **Restaurar** → dê um nome ao banco novo. Depois é preciso copiar de volta só o que se perdeu; peça ajuda numa sessão do Claude.
+
+## Aviso por e-mail de pedidos de acesso
+
+Quando alguém entra com a conta Google sem ter acesso, o site cria `acessos/{e-mail}` com `"ativo": false`. Um script do Google Apps Script, na **sua** conta (dona do projeto), confere a cada 10 minutos e manda um e-mail para você com os pedidos novos e o link para liberar. Não precisa de servidor, senha de e-mail nem plano pago.
+
+Instalação (uma vez, cerca de 5 minutos):
+
+1. Abra https://script.google.com, com a mesma conta Google que é dona do projeto no Firebase, e clique em **Novo projeto**. Dê o nome "A Salinha — aviso de pedidos".
+2. Apague o conteúdo de `Código.gs` e cole todo o conteúdo de `ferramentas/aviso-pedidos-acesso.gs`.
+3. Clique na engrenagem ⚙️ (**Configurações do projeto**) e marque **Mostrar o arquivo de manifesto "appsscript.json" no editor**.
+4. Volte ao **Editor** (`< >`), abra `appsscript.json`, apague o conteúdo e cole o de `ferramentas/aviso-pedidos-acesso.appsscript.json`. Salve (💾).
+5. No topo, escolha a função **testarAviso** e clique em **Executar**. Na primeira vez, o Google pede autorização: **Revisar permissões** → sua conta → *Avançado* → *Acessar A Salinha — aviso de pedidos (não seguro)* → **Permitir**. O aviso de "não seguro" aparece porque o script é seu e não foi publicado; é normal. Deve chegar um e-mail de teste com os pedidos pendentes, ou "Nenhum pedido pendente".
+6. Escolha a função **instalarAcionador** e clique em **Executar**. A partir daí, o script confere sozinho a cada 10 minutos.
+
+- Cada pedido é avisado uma vez. Vários pedidos no mesmo intervalo vêm num e-mail só.
+- Para parar: no script, menu **Acionadores** (⏰) → apague o acionador.
+- Se o teste der erro "Firestore respondeu 403", confira se a conta do script é a dona do projeto **monstrinho-lab** e se o `appsscript.json` foi colado (o passo 4).
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
