@@ -235,7 +235,7 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 - As chaves das IAs ficam no **Secret Manager** e nunca chegam ao navegador.
 - Cada chamada registra o consumo (tokens) na coleção `usoIA` do Firestore, que só o servidor lê e grava.
 - O prompt adapta as instruções da Fábrica de fichas (v4) e o padrão de citação; está em `functions/nucleo.js`.
-- Modelos padrão: `claude-opus-5-5`, com esforço `medium`, e `gemini-2.5-flash`. Para trocar, crie `functions/.env` com `CLAUDE_MODELO=…`, `CLAUDE_ESFORCO=…` ou `GEMINI_MODELO=…`.
+- Modelos padrão: `claude-opus-5-5`, com esforço `medium`, e `gemini-2.5-flash`. Ficam em `functions/.env` (obrigatório na publicação automática); para trocar, edite `CLAUDE_MODELO=…`, `CLAUDE_ESFORCO=…` ou `GEMINI_MODELO=…`.
 
 **Para ativar (uma vez):**
 
