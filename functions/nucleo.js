@@ -146,14 +146,14 @@ function mensagemUsuario(p) {
     if (p.fonte) t += 'Fonte do material (para o campo "fonte"): ' + p.fonte + '\n\n';
     if (p.acao === 'planejar') {
         t += 'TAREFA: planejar. Leia o material e proponha a lista de fichas extraíveis (sem gerar o corpo), na ordem do material. Para cada uma: titulo, materia, divisao, subtema, tipo e um resumo de uma linha do que a tabela vai conter. Em "observacoes", lacunas, divergências ou trechos sem L2 correspondente (ou "" se nada).';
-        if (p.tema) t += '\nOrientação do usuário: ' + p.tema;
+        if (p.tema) t += '\nOrientação/delimitação do usuário (siga-a: planeje só o que ela abrange): ' + p.tema;
         t += '\nResponda no formato JSON: {"fichas":[{"titulo","materia","divisao","subtema","tipo","resumo"}],"observacoes"}.';
     } else {
         if (p.fichas.length) {
             t += 'TAREFA: gerar estas fichas, uma para cada item, nesta ordem:\n' + p.fichas.map((f, i) => (i + 1) + '. ' + f.titulo + ' | matéria: ' + f.materia + ' | divisão: ' + f.divisao + ' | subtema: ' + f.subtema + ' | tipo: ' + f.tipo + (f.resumo ? ' | conteúdo: ' + f.resumo : '')).join('\n');
-            if (p.tema) t += '\nOrientação do usuário: ' + p.tema;
+            if (p.tema) t += '\nOrientação/delimitação do usuário (siga-a): ' + p.tema;
         } else {
-            t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o tema tiver dois eixos que não cabem numa só) sobre: ' + p.tema
+            t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) a partir do material abaixo, seguindo esta orientação/delimitação do usuário — restrinja o conteúdo ao que ela pede, adote o formato que ela indicar e dê à ficha um título curto e descritivo: ' + p.tema
                 : 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) que esquematize o material abaixo. Dê à ficha um título curto e descritivo do conteúdo.';
         }
         t += '\nCampos de cada ficha: materia, divisao, titulo, subtema, tipo, referencia (dispositivos e julgados de base, no padrão de citação; ou "(ref. não indicada no material)"), corpo_html, alerta, fonte (a fonte do material, com página se houver). Em "observacoes", o que faltou no material (ou "").';
