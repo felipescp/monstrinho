@@ -6057,7 +6057,65 @@ window.SALINHA_SYNC = (function() {
         }
     }
     async function mostrarMudanca(chave) {
+        if (chave === window.CHAVE_SESSAO_ATIVA && !editando() && await aplicarSessaoNaTela(await window.lerSessaoAtiva())) return;
         if (!(await atualizarNaTela(chave))) recarregarControlado();
+    }
+
+    // ── Abas de simulados abertas (sessão ativa) na tela, sem recarregar ──
+    // Espera o boot montar a rota inicial (__rotaInicialPronta__) e o RUNTIME_LOCK
+    // ficar livre; troca SIMS/SI pela sessão recebida e redesenha as abas
+    // (e o simulado, se é ele que está na tela).
+    async function aplicarSessaoNaTela(sessao) {
+        if (!sessao || !window.validarRuntime || !window.validarRuntime(sessao) || !sessao.sims.length) return false;
+        for (let i = 0; i < 150 && !window.__rotaInicialPronta__; i++) await new Promise(function(ok) { setTimeout(ok, 100); });
+        for (let i = 0; i < 50 && window.RUNTIME_LOCK; i++) await new Promise(function(ok) { setTimeout(ok, 100); });
+        if (window.RUNTIME_LOCK) return false;
+        try {
+            window.importarRuntime(sessao);
+            if (typeof renderTabs === 'function') renderTabs();
+            if (window.__TELA_ATIVA__ === 'tela-simulado' || window.__TELA_ATIVA__ === 'tela-home' || !window.__TELA_ATIVA__) {
+                // Na vitrine ou no simulado: abre a aba ativa da sessão recebida.
+                tela('tela-simulado');
+                renderSim();
+                renderNav();
+                if (typeof QA !== 'undefined' && QA && typeof setQA === 'function') setQA(QA);
+            }
+            console.info('[SYNC] Abas de simulados atualizadas na tela, sem recarregar.');
+            return true;
+        } catch (e) {
+            console.warn('[SYNC] Não foi possível mostrar as abas recebidas; recarregando:', e);
+            return false;
+        }
+    }
+
+    // Prioridade (pedido explícito do usuário): as abas de simulados abertas
+    // sincronizam antes de tudo — logo após o login, sem esperar o acervo
+    // oficial nem as demais seções. Só aplica quando é seguro sem mesclar
+    // (nada mudou aqui desde a última sincronização, ou aqui está vazio);
+    // conflito ou troca de conta ficam para a sincronização completa.
+    let sessaoPedeRecarga = false;
+    async function sincronizarSessaoPrimeiro() {
+        const chave = window.CHAVE_SESSAO_ATIVA;
+        let dono = localStorage.getItem(CHAVE_DONO);
+        if (dono && dono !== uid) return;
+        await Promise.resolve(window.__sessaoAtivaPromise__).catch(function() {});
+        base = dono === uid ? lerBase() : {};
+        let doc = await ref(chave).get();
+        if (!doc.exists) return;
+        let R = doc.data(), B = base[chave];
+        if ((B && B.ok === false) || (B && R.versao === B.v)) return;
+        let L = await lerLocal(chave), Lh = L == null ? null : hash(L);
+        let Rs = await lerRemoto(chave, R);
+        if (Rs == null) return;
+        let Rh = hash(Rs);
+        if (Lh !== Rh) {
+            if (!(L == null || vazioLocal(chave, L) || (B && Lh === B.h))) return; // mudou dos dois lados: mescla depois
+            await gravarLocal(chave, Rs);
+            if (!(await aplicarSessaoNaTela(JSON.parse(Rs)))) sessaoPedeRecarga = true; // gravada; a tela atualiza na recarga
+        }
+        base[chave] = { v: R.versao, h: Rh };
+        if (dono === uid) salvarBase();
+        console.info('[SYNC] Abas de simulados sincronizadas primeiro.');
     }
 
     let recargaAgendada = false;
@@ -6106,7 +6164,7 @@ window.SALINHA_SYNC = (function() {
         let remotos = {};
         snap.docs.forEach(function(d) { if (EH_SINCRONIZADA[d.id]) remotos[d.id] = d.data(); });
 
-        let subir = [], conflitos = {}, recarregar = false;
+        let subir = [], conflitos = {}, recarregar = sessaoPedeRecarga;
         for (let chave of CHAVES) {
             let L = await lerLocal(chave), Lh = L == null ? null : hash(L), B = base[chave], R = remotos[chave];
             // Último envio daqui sem confirmação da nuvem (página fechada ou
@@ -6226,6 +6284,7 @@ window.SALINHA_SYNC = (function() {
         avisarEstado();
         try {
             db = await FB.db();
+            try { await sincronizarSessaoPrimeiro(); } catch (e) { console.warn('[SYNC] Sincronização prioritária das abas falhou (segue a completa):', e); }
             await sincronizarInicio();
         } catch (e) {
             console.warn('[SYNC] Primeira sincronização falhou:', e);
@@ -23573,6 +23632,11 @@ else if (auditId) {
             }
 }
     } // <-- Fim do bloco principal else do Roteador
+
+    // Rota inicial montada (abas restauradas do aparelho): a sincronização
+    // prioritária das abas (SALINHA_SYNC) espera isto para não ser
+    // sobrescrita pela restauração local.
+    window.__rotaInicialPronta__ = true;
 
     // 6. REVELAÇÃO DA PÁGINA (A mágica acontece aqui, apenas após a rota estar montada)
     document.body.classList.add('pagina-carregada');
