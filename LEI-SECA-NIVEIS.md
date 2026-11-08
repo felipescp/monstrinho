@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 6 (580 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 7 (1065 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -156,7 +156,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código Civil | X | X | - |
+| Código Civil | X | X | X (485 notas) |
 | LINDB | X | X | - |
 | Alienação Fiduciária (Decreto-Lei 911/1969) | X | X | - |
 | Investigação de Paternidade (Lei 8.560) | X | X | - |
