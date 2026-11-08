@@ -18,7 +18,7 @@ const nucleo = require('./nucleo');
 initializeApp();
 
 const CHAVE_CLAUDE = defineSecret('ANTHROPIC_API_KEY');
-const CLAUDE_LIGADO = true; // false = publica só com GEMINI_API_KEY
+const CLAUDE_LIGADO = false; // desligado no app (custo); true = volta a aceitar o Claude
 const CHAVE_GEMINI = defineSecret('GEMINI_API_KEY');
 // Modelos e esforço ajustáveis sem mexer no código (arquivo functions/.env).
 const CLAUDE_MODELO = defineString('CLAUDE_MODELO', { default: 'claude-opus-5-5' });

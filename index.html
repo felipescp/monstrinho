@@ -30721,7 +30721,7 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
                 <button class="so-admin esq-cabecalho-btn" onclick="window.ESQ_IA.abrir()" title="Gerar fichas com IA a partir de um tema ou material">&#x2728; Criar com IA</button>
-                <button class="esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
+                <button class="so-admin esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
@@ -33625,6 +33625,7 @@ window.ESQUEMAS_RUNTIME = {
     // vem do marcador "### L2:" dentro do próprio texto colado, podendo
     // conter várias divisões diferentes num único lote.
     abrirModalImportar: function() {
+        if (!window.exigirAdmin()) return;
         if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
         document.getElementById('esq-import-textarea').value = '';
         document.getElementById('esq-import-preview').style.display = 'none';
@@ -34420,7 +34421,7 @@ window.ESQ_IA = {
         let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);height:min(760px,92vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px;overflow:hidden">';
         h += '<div style="padding:16px 20px 10px;border-bottom:1px solid var(--border-color)">';
         h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:var(--text-muted)">fase de teste · só administração</span><button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
-        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span><span><b>IA:</b> ' + opc('provedor', 'gemini', 'Gemini') + ' ' + opc('provedor', 'claude', 'Claude') + '</span>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span>';
         let seta = function(d, txt) { let alvo = l[iAtual + d], ok = alvo && self._etapaDisponivel(alvo) && !e.ocupado; return '<button type="button" onclick="window.ESQ_IA.passo(' + d + ')" style="' + btn + ';padding:4px 10px' + (ok ? '' : ';opacity:.35;cursor:default') + '"' + (ok ? '' : ' disabled') + '>' + txt + '</button>'; };
         h += '<span style="margin-left:auto;display:flex;align-items:center;gap:6px">' + seta(-1, '‹') + l.map(function(et, i) {
             let at = et === e.etapa, ok = self._etapaDisponivel(et) && !e.ocupado;
@@ -34557,7 +34558,7 @@ window.ESQ_IA = {
     _base: function(acao) {
         let e = this.estado;
         let taxonomia = this._listaMaterias().map(function(m) { return { materia: m, divisoes: Array.from(glosDivisoesValidas(m)) }; });
-        return { acao: acao, provedor: e.provedor, taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
+        return { acao: acao, provedor: 'gemini', taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
     },
     // Custo estimado (preço de tabela, US$ por milhão de tokens) convertido a
     // R$ pelo câmbio abaixo. Só referência: a cobrança real vem das contas
@@ -34598,7 +34599,7 @@ window.ESQ_IA = {
         if (e.fichas.length && !confirm('Gerar de novo substitui a ficha atual. Continuar?')) return;
         e.fichas = []; e.editando = -1; e.observacoes = []; e.etapa = 'fichas';
         return this._rodar(async function() {
-            e.status = 'Gerando com ' + (e.provedor === 'claude' ? 'Claude' : 'Gemini') + '… (pode levar até 1 minuto)'; self.render();
+            e.status = 'Gerando… (pode levar até 1 minuto)'; self.render();
             let r = await self._chamar(Object.assign(self._base('gerar'), { tema: '', fichas: [] }));
             self._somarUso(r);
             r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
@@ -34611,7 +34612,7 @@ window.ESQ_IA = {
         if (falta) { e.status = '❌ ' + falta; this.render(); return; }
         e.observacoes = []; e.etapa = 'plano';
         return this._rodar(async function() {
-            e.status = 'Planejando com ' + (e.provedor === 'claude' ? 'Claude' : 'Gemini') + '… (pode levar alguns minutos em material longo)'; self.render();
+            e.status = 'Planejando… (pode levar alguns minutos em material longo)'; self.render();
             let r = await self._chamar(self._base('planejar'));
             self._somarUso(r);
             e.plano = r.fichas; e.selecionadas = {};
