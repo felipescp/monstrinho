@@ -34320,7 +34320,7 @@ window.carregarEsquemasOficiais = async function() {
 // Arquivos: .md e .txt direto; .pdf (pdf.js) e .docx (mammoth) convertidos
 // para texto aqui no navegador, com as bibliotecas em vendor/.
 window.ESQ_IA = {
-    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', etapa: 'material', uso: { entrada: 0, saida: 0, chamadas: 0 }, observacoes: [], ocupado: false, status: '' },
+    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', etapa: 'material', uso: { entrada: 0, saida: 0, chamadas: 0, porIA: {} }, observacoes: [], ocupado: false, status: '' },
     _esc: function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _listaMaterias: function() { return (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []; },
 
@@ -34482,7 +34482,9 @@ window.ESQ_IA = {
             rodape = voltar(e.modo === 'individual' ? 'Material' : 'Plano') + '<span style="display:flex;gap:8px;flex-wrap:wrap">' + (e.fichas.length ? '<button type="button" style="' + btn + '" onclick="window.ESQ_IA.copiar()"' + dis + '>Copiar texto</button><button type="button" style="' + btn + '" onclick="window.ESQ_IA.limparFichas()"' + dis + ' title="Descarta todas as fichas geradas (para remover uma só, use o botão dela)">Descartar todas</button><button type="button" style="' + prim + '" onclick="window.ESQ_IA.importar()"' + dis + '>Adicionar aos Esquemas</button>' : '') + '</span>';
         }
         h += '<div id="esq-ia-corpo" style="flex:1;overflow:auto;padding:14px 20px"><div' + (animar ? ' style="animation:' + animar + ' .22s ease-out"' : '') + '>' + corpo + '</div></div>';
-        let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px">Consumo nesta janela: ' + e.uso.chamadas + ' pedido(s) · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída.</div>' : '';
+        let porIA = Object.keys(e.uso.porIA || {}).map(function(k) { let p = e.uso.porIA[k]; return k + ' ' + p.chamadas + ' pedido(s) ≈ ' + self._reais(p.custo) + (p.semPreco ? ' (sem preço p/ algum modelo)' : ''); }).join(' · ');
+        let ult = e.uso.ultimo ? ' · Último pedido (' + e.uso.ultimo.ia + ') ≈ <b>' + self._reais(e.uso.ultimo.custo) + '</b>' : '';
+        let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px" title="Estimativa pelo preço de tabela e câmbio de R$ ' + self._CAMBIO.toLocaleString('pt-BR') + '; a cobrança real vem das contas da Anthropic e do Google.">Custo estimado nesta janela: ' + porIA + ult + ' · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada, ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída.</div>' : '';
         h += '<div style="border-top:1px solid var(--border-color)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 20px">' + rodape + '</div>' + uso + '</div>';
         h += '</div>';
         let rolagem = animar ? 0 : ((document.getElementById('esq-ia-corpo') || {}).scrollTop || 0);
@@ -34557,7 +34559,31 @@ window.ESQ_IA = {
         let taxonomia = this._listaMaterias().map(function(m) { return { materia: m, divisoes: Array.from(glosDivisoesValidas(m)) }; });
         return { acao: acao, provedor: e.provedor, taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
     },
-    _somarUso: function(r) { let u = this.estado.uso; u.chamadas++; u.entrada += (r.uso && r.uso.entrada) || 0; u.saida += (r.uso && r.uso.saida) || 0; if (r.observacoes) this.estado.observacoes.push(r.observacoes); },
+    // Custo estimado (preço de tabela, US$ por milhão de tokens) convertido a
+    // R$ pelo câmbio abaixo. Só referência: a cobrança real vem das contas
+    // da Anthropic e do Google. Revisar ao trocar de modelo ou de preço.
+    _CAMBIO: 5.50,
+    _precos: function(modelo) {
+        let m = String(modelo || '').toLowerCase();
+        if (m.indexOf('claude-opus') === 0) return { ent: 4, sai: 20 };
+        if (m.indexOf('claude-sonnet') === 0) return { ent: 2, sai: 10 };
+        if (m.indexOf('claude-haiku') === 0) return { ent: 0.10, sai: 0.50 };
+        if (m.indexOf('gemini') === 0 && m.indexOf('flash') >= 0) return new Date() < new Date('2027-01-01T00:00:00-03:00') ? { ent: 0.75, sai: 3.75 } : { ent: 1.50, sai: 7.50 };
+        return null;
+    },
+    _custoReais: function(modelo, entrada, saida) {
+        let p = this._precos(modelo);
+        return p ? ((entrada || 0) * p.ent + (saida || 0) * p.sai) / 1e6 * this._CAMBIO : null;
+    },
+    _reais: function(v) { return v == null ? '?' : 'R$ ' + (v < 0.01 ? v.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); },
+    _somarUso: function(r) {
+        let u = this.estado.uso, x = r.uso || {};
+        let ia = /^claude/i.test(x.modelo || '') ? 'Claude' : 'Gemini';
+        let c = this._custoReais(x.modelo, x.entrada, x.saida);
+        let p = u.porIA[ia] = u.porIA[ia] || { chamadas: 0, custo: 0, semPreco: false };
+        p.chamadas++; if (c == null) p.semPreco = true; else p.custo += c;
+        u.ultimo = { ia: ia, custo: c };
+        u.chamadas++; u.entrada += x.entrada || 0; u.saida += x.saida || 0; if (r.observacoes) this.estado.observacoes.push(r.observacoes); },
     _rodar: async function(fn) {
         this._guardarCampos();
         let e = this.estado;
