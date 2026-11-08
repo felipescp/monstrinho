@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 8 (1131 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 15 (3147 notas).
 
 ### Direito Civil
 
@@ -27,10 +27,10 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código de Processo Civil | X | X | - |
-| Ação Civil Pública (Lei 7.347) | X | X | - |
-| Juizados Especiais (Lei 9.099) | X | X | - |
-| Mandado de Segurança (Lei 12.016) | X | X | - |
+| Código de Processo Civil | X | X | X (1017 notas) |
+| Ação Civil Pública (Lei 7.347) | X | X | X (48 notas) |
+| Juizados Especiais (Lei 9.099) | X | X | X (114 notas) |
+| Mandado de Segurança (Lei 12.016) | X | X | X (58 notas) |
 | Habeas Data (Lei 9.507) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
 | Mediação (Lei 13.140) | X | X | - |
@@ -48,15 +48,15 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código de Defesa do Consumidor | X | X | - |
+| Código de Defesa do Consumidor | X | X | X (244 notas) |
 | Planos de Saúde (Lei 9.656) | X | X | - |
 
 ### Direito da Criança e do Adolescente
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Estatuto da Criança e do Adolescente | X | X | - |
-| Sinase (Lei 12.594) | X | X | - |
+| Estatuto da Criança e do Adolescente | X | X | X (392 notas) |
+| Sinase (Lei 12.594) | X | X | X (143 notas) |
 | Escuta Protegida – vítima ou testemunha de violência (Lei 13.431) | X | X | - |
 | Alienação Parental (Lei 12.318) | X | X | - |
 | Lei Henry Borel (Lei 14.344) | X | X | - |
