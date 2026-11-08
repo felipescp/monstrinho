@@ -3,9 +3,10 @@
 // criarEsquemaIA (chamável pelo app): planeja e gera fichas da seção
 // "Esquemas e Tabelas" com IA (Claude ou Gemini). Fase 1: só a conta de
 // administração (acessos/{e-mail}.papel == "admin"). As chaves das IAs ficam
-// no Secret Manager do Google Cloud (ANTHROPIC_API_KEY e GEMINI_API_KEY) e
-// nunca chegam ao navegador. Cada chamada grava o consumo (tokens) em
-// usoIA/ (só o servidor lê e grava). Ver LEIAME-firebase.md.
+// no Secret Manager do Google Cloud e nunca chegam ao navegador. Por ora só
+// GEMINI_API_KEY está configurada; para ligar o Claude, criar o segredo
+// ANTHROPIC_API_KEY e mudar CLAUDE_LIGADO para true. Cada chamada grava o
+// consumo (tokens) em usoIA/ (só o servidor lê e grava). Ver LEIAME-firebase.md.
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -17,7 +18,8 @@ const nucleo = require('./nucleo');
 
 initializeApp();
 
-const CHAVE_CLAUDE = defineSecret('ANTHROPIC_API_KEY');
+const CHAVE_CLAUDE = defineSecret('ANTHROPIC_API_KEY'); // ainda não ligado (ver acima)
+const CLAUDE_LIGADO = false;
 const CHAVE_GEMINI = defineSecret('GEMINI_API_KEY');
 // Modelos e esforço ajustáveis sem mexer no código (arquivo functions/.env).
 const CLAUDE_MODELO = defineString('CLAUDE_MODELO', { default: 'claude-opus-5-5' });
@@ -26,7 +28,7 @@ const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-2.5-flash
 
 exports.criarEsquemaIA = onCall({
     region: 'southamerica-east1',
-    secrets: [CHAVE_CLAUDE, CHAVE_GEMINI],
+    secrets: CLAUDE_LIGADO ? [CHAVE_CLAUDE, CHAVE_GEMINI] : [CHAVE_GEMINI],
     timeoutSeconds: 540,
     memory: '512MiB',
     maxInstances: 3
@@ -43,6 +45,8 @@ exports.criarEsquemaIA = onCall({
     let pedido;
     try { pedido = nucleo.validarPedido(req.data); }
     catch (e) { throw new HttpsError('invalid-argument', e.message); }
+
+    if (pedido.provedor === 'claude' && !CLAUDE_LIGADO) throw new HttpsError('failed-precondition', 'O Claude ainda não foi configurado (falta a chave ANTHROPIC_API_KEY). Use o Gemini.');
 
     let r;
     try {

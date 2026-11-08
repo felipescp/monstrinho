@@ -246,7 +246,7 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
    - Abra https://console.cloud.google.com/security/secret-manager?project=monstrinho-lab. Se pedir, clique em **Ativar** (Secret Manager API).
    - **Create secret** com o nome exato `GEMINI_API_KEY` e a chave como valor.
    - Faça o mesmo com o nome exato `ANTHROPIC_API_KEY`.
-   - Os **dois** segredos precisam existir. Se ainda não tiver a chave do Claude, crie `ANTHROPIC_API_KEY` com o valor `pendente` e troque depois em *New version*.
+   - Por ora a função usa só o `GEMINI_API_KEY`. Para ligar o Claude: crie o segredo `ANTHROPIC_API_KEY` e, em `functions/index.js`, mude `CLAUDE_LIGADO` para `true`; depois, publique de novo.
 3. **Permissões da conta de serviço do GitHub** (a do segredo `FIREBASE_SERVICE_ACCOUNT`)
    - Em https://console.cloud.google.com/iam-admin/iam?project=monstrinho-lab, clique no lápis da conta de serviço usada pelo GitHub Actions.
    - Acrescente os papéis: **Cloud Functions Admin**, **Cloud Run Admin**, **Service Account User**, **Cloud Build Editor**, **Artifact Registry Administrator** e **Secret Manager Admin**.
