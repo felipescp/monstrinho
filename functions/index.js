@@ -3,10 +3,9 @@
 // criarEsquemaIA (chamável pelo app): planeja e gera fichas da seção
 // "Esquemas e Tabelas" com IA (Claude ou Gemini). Fase 1: só a conta de
 // administração (acessos/{e-mail}.papel == "admin"). As chaves das IAs ficam
-// no Secret Manager do Google Cloud e nunca chegam ao navegador. Por ora só
-// GEMINI_API_KEY está configurada; para ligar o Claude, criar o segredo
-// ANTHROPIC_API_KEY e mudar CLAUDE_LIGADO para true. Cada chamada grava o
-// consumo (tokens) em usoIA/ (só o servidor lê e grava). Ver LEIAME-firebase.md.
+// no Secret Manager do Google Cloud (GEMINI_API_KEY e ANTHROPIC_API_KEY) e
+// nunca chegam ao navegador. Cada chamada grava o consumo (tokens) em
+// usoIA/ (só o servidor lê e grava). Ver LEIAME-firebase.md.
 'use strict';
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -18,8 +17,8 @@ const nucleo = require('./nucleo');
 
 initializeApp();
 
-const CHAVE_CLAUDE = defineSecret('ANTHROPIC_API_KEY'); // ainda não ligado (ver acima)
-const CLAUDE_LIGADO = false;
+const CHAVE_CLAUDE = defineSecret('ANTHROPIC_API_KEY');
+const CLAUDE_LIGADO = true; // false = publica só com GEMINI_API_KEY
 const CHAVE_GEMINI = defineSecret('GEMINI_API_KEY');
 // Modelos e esforço ajustáveis sem mexer no código (arquivo functions/.env).
 const CLAUDE_MODELO = defineString('CLAUDE_MODELO', { default: 'claude-opus-5-5' });
