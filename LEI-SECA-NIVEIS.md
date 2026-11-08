@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 5 (371 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 6 (580 notas).
 
 ### Noções Gerais de Direito, Formação Humanística e Direitos Humanos
 
@@ -143,7 +143,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código de Processo Penal | X | X | - |
+| Código de Processo Penal | X | X | X (209 notas) |
 | Código de Processo Penal Militar | X | X | - |
 | Execução Penal (Lei 7.210) | X | X | - |
 | Interceptação Telefônica (Lei 9.296) | X | X | - |
