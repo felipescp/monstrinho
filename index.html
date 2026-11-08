@@ -14,10 +14,9 @@
 // O app abre normalmente, sem tela cheia; o login fica no cabeçalho (ver
 // SALINHA_UI_AUTH). Este bloco:
 //   1) carrega o SDK compat 10.14.1 e acompanha o login Google;
-//   2) confirma o acesso — produção: lendo um arquivo pequeno do acervo no
-//      Storage (200 libera; 403 = sem acessos/{e-mail} ativo); lab: lendo
-//      acessos/{e-mail} no Firestore (o CORS do Storage não aceita
-//      localhost). Sem acesso, registra o pedido (pedirAcesso);
+//   2) confirma o acesso lendo acessos/{e-mail} no Firestore — no 1º login
+//      cria a conta já no acesso simples (lerOuCriarAcesso); em produção
+//      confere também o Storage (App Check barrado por bloqueador);
 //   3) faz todo fetch('dados/…') esperar a liberação — em produção lendo do
 //      Storage com o token; no lab, do próprio servidor local. Antes do login
 //      essas cadeias (acervo oficial, manifestos das seções) só ficam
@@ -172,10 +171,24 @@
             });
         });
     }
+    // Acesso simples (ver firestore.rules/storage.rules): só estas pastas e
+    // arquivos da raiz de dados/ — o resto o Storage recusaria; aqui nem se
+    // pede (sem ida à rede nem erro no console).
+    var ITENS_SIMPLES = ['bateriasvf', 'esquemas', 'jurisprudencia', 'flashcards', 'glossario', 'legislacao',
+        'manifesto-baterias.txt', 'manifesto-esquemas.txt', 'manifesto-jurisprudencia.txt',
+        'manifesto-flashcards.txt', 'manifesto-glossario.txt', 'versoes-oficiais.json'];
+    FB.nivel = null;
+    FB.permitidoNoNivel = function(caminho) {
+        if (FB.nivel !== 'simples' || FB.papel === 'admin') return true;
+        return ITENS_SIMPLES.indexOf(String(caminho).replace(/^dados\//, '').split('/')[0]) !== -1;
+    };
     window.fetch = function(entrada, opcoes) {
         var caminho = caminhoDados(entrada);
         if (!caminho) return fetchOriginal(entrada, opcoes);
-        return liberado.then(function() { return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes); })
+        return liberado.then(function() {
+                if (!FB.permitidoNoNivel(caminho)) return new Response('', { status: 403, statusText: 'Fora do acesso simples' });
+                return modo === 'producao' ? lerStorage(caminho, opcoes) : fetchOriginal(entrada, opcoes);
+            })
             .then(function(r) { if (r && r.ok) contarUso(caminho, r); return r; });
     };
 
@@ -232,48 +245,80 @@
         FB.db().then(function(db) { return db.collection('acessos').doc(usuario.email).get(); })
             .then(function(d) {
                 FB.papel = (d && d.exists && d.data().papel) || null;
+                if (d && d.exists) {
+                    FB.nivel = d.data().nivel || 'completo';
+                    let pc = d.data().pedidoCompletoEm;
+                    FB.pedidoCompletoEm = pc && pc.toDate ? pc.toDate() : null;
+                }
+                marcarNivelNoCorpo();
                 // Validade (pedido explícito do usuário): acessos/{e-mail}.expiraEm
                 // (timestamp, opcional). As regras já negam o acesso depois dela;
                 // aqui só serve para avisar quando estiver perto de vencer.
                 let exp = d && d.exists && d.data().expiraEm;
                 FB.expiraEm = exp && exp.toDate ? exp.toDate() : null;
-                window.dispatchEvent(new CustomEvent('salinha-papel', { detail: { papel: FB.papel, expiraEm: FB.expiraEm } }));
+                window.dispatchEvent(new CustomEvent('salinha-papel', { detail: { papel: FB.papel, expiraEm: FB.expiraEm, nivel: FB.nivel } }));
             }, function(e) { console.warn('[ACESSO] Não foi possível ler o papel da conta:', e); });
     }
-    // Sem acesso: registra o pedido em acessos/{e-mail} com ativo:false
-    // (firestore.rules só deixa o próprio usuário criar o seu, e só assim).
-    // A liberação é o administrador trocar ativo para true no console. Se o
-    // documento já existe (pedido anterior ou acesso bloqueado), não regrava.
-    function pedirAcesso(u) {
-        mudar('verificando', { texto: 'Registrando pedido de acesso…' });
-        FB.db().then(function(db) {
+    // Classe no <body> para o CSS (cadeado nas seções fora do acesso simples).
+    function marcarNivelNoCorpo() {
+        var aplicar = function() { document.body.classList.toggle('salinha-simples', FB.nivel === 'simples' && FB.papel !== 'admin'); };
+        if (document.body) aplicar(); else document.addEventListener('DOMContentLoaded', aplicar);
+    }
+    // Níveis (pedido explícito do usuário): no 1º login a conta já nasce no
+    // acesso simples (acessos/{e-mail} com ativo:true e nivel:"simples" — único
+    // formato que firestore.rules deixa o próprio usuário criar). Pedido
+    // antigo pendente (ativo:false, de antes dos níveis) vira acesso simples.
+    // Subir para "completo" é o administrador mudar "nivel" no console.
+    // Conta sem "nivel" e ativa = completo (liberadas antes dos níveis).
+    function lerOuCriarAcesso(u) {
+        return FB.db().then(function(db) {
             var ref = db.collection('acessos').doc(u.email);
             return ref.get().then(function(doc) {
-                if (doc.exists) {
-                    let dd = doc.data() || {}, exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null;
-                    if (dd.ativo === true && exp && exp <= new Date()) return { expirado: exp };
-                    return;
-                }
-                return ref.set({ ativo: false, pedidoEm: firebase.firestore.FieldValue.serverTimestamp() });
+                var ts = firebase.firestore.FieldValue.serverTimestamp();
+                var dd = doc.exists ? (doc.data() || {}) : null;
+                if (!dd) return ref.set({ ativo: true, nivel: 'simples', pedidoEm: ts }).then(function() { return { nivel: 'simples' }; });
+                var legado = dd.ativo === false && Object.keys(dd).every(function(k) { return k === 'ativo' || k === 'pedidoEm'; });
+                if (legado && dd.pedidoEm) return ref.set({ ativo: true, nivel: 'simples', pedidoEm: dd.pedidoEm }).then(function() { return { nivel: 'simples' }; });
+                if (dd.ativo !== true) return { bloqueado: true };
+                var exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null;
+                if (exp && exp <= new Date()) return { expirado: exp };
+                var pc = dd.pedidoCompletoEm;
+                FB.pedidoCompletoEm = pc && pc.toDate ? pc.toDate() : null;
+                return { nivel: dd.nivel || 'completo', papel: dd.papel || null };
             });
-        }).then(function(r) { mudar('pendente', r && r.expirado ? { expirado: r.expirado.toISOString() } : undefined); }, function(e) {
-            console.warn('[ACESSO] Falha ao registrar o pedido de acesso:', e);
-            mudar('pendente', { falhaPedido: true });
         });
     }
     function verificar(u) {
         mudar('verificando');
-        var checagem = modo === 'producao'
-            ? lerStorage('dados/leiseca/manifesto.json').then(function(r) { return r.ok ? 'ok' : (appCheckLigado && appCheckSemToken && (r.status === 401 || r.status === 403)) ? 'appcheck' : r.status === 403 ? 'negado' : 'HTTP ' + r.status; })
-            : FB.db().then(function(db) { return db.collection('acessos').doc(u.email).get(); })
-                .then(function(d) { let dd = d.exists ? d.data() : {}, exp = dd.expiraEm && dd.expiraEm.toDate ? dd.expiraEm.toDate() : null; return dd.ativo === true && !(exp && exp <= new Date()) ? 'ok' : 'negado'; }, function(e) { return e && e.code === 'permission-denied' ? 'negado' : 'falha'; });
-        checagem.then(function(r) {
-            if (r === 'ok') liberarAcesso();
-            else if (r === 'negado') pedirAcesso(u);
-            else if (r === 'appcheck') mudar('erro', { texto: 'Não foi possível confirmar que o acesso vem do site. Se usar bloqueador de anúncios ou de rastreadores, libere www.google.com/recaptcha para www.asalinha.com.br e recarregue a página.' });
-            else mudar('erro', { texto: 'Não foi possível verificar o acesso (' + r + ').' });
-        }, function() { mudar('erro', { texto: 'Sem conexão com o servidor.' }); });
+        lerOuCriarAcesso(u).then(function(r) {
+            if (r.expirado) { mudar('pendente', { expirado: r.expirado.toISOString() }); return; }
+            if (r.bloqueado) { mudar('pendente', { bloqueado: true }); return; }
+            FB.nivel = r.nivel;
+            if (r.papel) FB.papel = r.papel;
+            marcarNivelNoCorpo();
+            if (modo !== 'producao') { liberarAcesso(); return; }
+            // Produção: confirma que o Storage atende (pega o App Check
+            // barrado por bloqueador) com um arquivo que todo nível lê.
+            return lerStorage('dados/manifesto-baterias.txt').then(function(resp) {
+                if (resp.ok) liberarAcesso();
+                else if (appCheckLigado && appCheckSemToken && (resp.status === 401 || resp.status === 403)) mudar('erro', { texto: 'Não foi possível confirmar que o acesso vem do site. Se usar bloqueador de anúncios ou de rastreadores, libere www.google.com/recaptcha para www.asalinha.com.br e recarregue a página.' });
+                else if (resp.status === 403) mudar('erro', { texto: 'O servidor recusou o acesso ao acervo. Recarregue a página; se continuar, fale com a administração d’A Salinha.' });
+                else mudar('erro', { texto: 'Não foi possível verificar o acesso (HTTP ' + resp.status + ').' });
+            });
+        }).catch(function(e) {
+            console.warn('[ACESSO] Falha ao verificar o acesso:', e);
+            mudar('erro', { texto: e && e.code === 'permission-denied' ? 'O servidor recusou o acesso desta conta.' : 'Sem conexão com o servidor.' });
+        });
     }
+    // Acesso simples pede o completo: só marca a data no próprio documento (o
+    // aviso por e-mail ao administrador vem do script do Apps Script).
+    FB.pedidoCompletoEm = null;
+    FB.pedirCompleto = function() {
+        if (!usuario) return Promise.reject(new Error('sem login'));
+        return FB.db().then(function(db) {
+            return db.collection('acessos').doc(usuario.email).update({ pedidoCompletoEm: firebase.firestore.FieldValue.serverTimestamp() });
+        }).then(function() { FB.pedidoCompletoEm = new Date(); return true; });
+    };
     FB.verificarDeNovo = function() { if (usuario) verificar(usuario); };
 
     // ── Entrar / sair ──
@@ -1781,6 +1826,8 @@ try {
          azul-escura e sumiria sobre o cabeçalho escuro. -->
     <style>
         body:not(.salinha-admin) .so-admin { display:none !important; } /* exclusivo do admin (ver window.ehAdmin) */
+        body.salinha-simples .req-completo::after { content:' 🔒'; font-size:.85em; } /* fora do acesso simples (ver window.exigirCompleto) */
+        .nivel-chip { margin-left:6px; padding:1px 6px; border-radius:6px; font-size:8.5px; font-weight:800; letter-spacing:.4px; background:var(--app-primary); color:#fff; cursor:pointer; vertical-align:1px; }
         .logo-salinha { height:44px; width:auto; display:block; image-rendering:auto; }
         body.dark .logo-salinha { background:#fff; border-radius:8px; padding:3px 4px; box-sizing:content-box; height:38px; }
         /* Sem subtítulo, o nome ganha mais corpo (antes 16 px, ver .header h1). */
@@ -1856,13 +1903,13 @@ try {
 </div>
     <div class="nav-hd-zone">
         <div class="nav-item hd-item" id="btn-nav-cronograma" onclick="if(!window.exigirLoginParaSecao())return; localStorage.setItem('tjpe_v1__salinha_active_module', 'section-cronograma'); tela('section-cronograma'); if(window.CRONOGRAMA_RUNTIME) window.CRONOGRAMA_RUNTIME.init();" style="cursor:pointer;" title="Cronograma de Estudos">🗓️ CRONOGRAMAS</div>
-        <div class="nav-item hd-item" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
-        <div class="nav-item hd-item" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
-        <div class="nav-item hd-item" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
-        <div class="nav-item hd-item" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
-        <div class="nav-item hd-item" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
-        <div class="nav-item hd-item" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
-        <div class="nav-item hd-item" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
+        <div class="nav-item hd-item req-completo" onclick="window.abrirJurisprudenciaModal()" style="cursor:pointer;" title="Jurisprudência">⚖️ JURISPRUDÊNCIA</div>
+        <div class="nav-item hd-item req-completo" id="btn-nav-leiseca" onclick="window.abrirLeiSecaModal()" style="cursor:pointer;" title="Lei Seca — texto com mapa de incidência">📜 LEI SECA</div>
+        <div class="nav-item hd-item req-completo" onclick="window.abrirEsquemasModal()" style="cursor:pointer;" title="Esquemas e Tabelas">📄 ESQUEMAS</div>
+        <div class="nav-item hd-item req-completo" id="btn-nav-flashcards-nb" onclick="window.abrirFlashcardsNbModal()" style="cursor:pointer;" title="Flashcards (NotebookLM)">🗂️ FLASHCARDS</div>
+        <div class="nav-item hd-item req-completo" id="btn-nav-prazos" onclick="window.abrirPrazosModal()" style="cursor:pointer;" title="Prazos, quóruns e limites — memorização">⏱️ PRAZOS</div>
+        <div class="nav-item hd-item req-completo" id="btn-nav-penas" onclick="window.abrirPenasModal()" style="cursor:pointer;" title="Penas — memorização">⛓️ PENAS</div>
+        <div class="nav-item hd-item req-completo" id="btn-nav-glossario" onclick="window.abrirGlossarioModal()" style="cursor:pointer;" title="Glossário">📖 GLOSSÁRIO</div>
         <div class="nav-item hd-item nav-item-grupo" title="Caderno de Questões e Axiomas Salvos">
             <span onclick="abrirCadernoModal()" style="cursor:pointer;">📓 CADERNO DE QUESTÕES E AXIOMAS</span>
             <span class="nav-sub-row">
@@ -1954,13 +2001,19 @@ window.SALINHA_UI_AUTH = (function() {
             mostrar('btn-google-sair-' + suf, !!u);
             mostrar('usuario-nome-' + suf, !!u);
             let nome = document.getElementById('usuario-nome-' + suf);
-            if (nome && u) { nome.innerHTML = G_SVG + '<span class="usuario-nome-texto">' + esc(nomeCurto(u)) + '</span>'; nome.title = 'Conectado com Google: ' + (u.email || ''); }
+            if (nome && u) {
+                let gratis = estado === 'liberado' && FB.nivel === 'simples' && FB.papel !== 'admin';
+                nome.innerHTML = G_SVG + '<span class="usuario-nome-texto">' + esc(nomeCurto(u)) + '</span>' +
+                    (gratis ? '<span class="nivel-chip" onclick="event.stopPropagation(); window.mostrarNivelSimples()" title="Acesso simples: todas as baterias e os materiais associados. Clique para pedir o acesso completo.">ACESSO SIMPLES</span>' : '');
+                nome.title = 'Conectado com Google: ' + (u.email || '');
+            }
             if (estado !== 'liberado') mostrar('sync-indicador-' + suf, false);
         });
         let email = u ? '<b>' + esc(u.email) + '</b>' : '';
         if (estado === 'deslogado') faixa('salinha-faixa-acesso', '<span>Entre com Google para carregar o acervo e os seus dados.</span><button type="button" onclick="SALINHA_FB.entrar()">' + G_SVG + ' Entrar com Google</button>');
         else if (estado === 'verificando') faixa('salinha-faixa-acesso', '<span>' + esc(extra.texto || 'Verificando o acesso…') + ' ' + email + '</span>');
         else if (estado === 'pendente' && extra.expirado) faixa('salinha-faixa-acesso', '<span>O acesso de ' + email + ' venceu em ' + esc(new Date(extra.expirado).toLocaleDateString('pt-BR')) + '. Para renovar, fale com a administração d’A Salinha.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Sair</button>', 'alerta');
+        else if (estado === 'pendente' && extra.bloqueado) faixa('salinha-faixa-acesso', '<span>O acesso de ' + email + ' está suspenso. Fale com a administração d’A Salinha.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>', 'alerta');
         else if (estado === 'pendente') faixa('salinha-faixa-acesso', extra.falhaPedido
             ? '<span>Acesso não liberado para ' + email + '. Avise o administrador para liberar o seu acesso.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>'
             : '<span>Pedido de acesso registrado para ' + email + '. Assim que for liberado, é só voltar a esta página.</span><button type="button" onclick="SALINHA_FB.verificarDeNovo()">Verificar de novo</button><button type="button" class="discreto" onclick="SALINHA_FB.sair()">Entrar com outra conta</button>', 'alerta');
@@ -1984,6 +2037,7 @@ window.SALINHA_UI_AUTH = (function() {
     }
 
     // Validade perto do fim: aviso discreto nos últimos 7 dias.
+    window.addEventListener('salinha-papel', function() { atualizar(); });
     window.addEventListener('salinha-papel', function(e) {
         let exp = e.detail && e.detail.expiraEm, FB = window.SALINHA_FB;
         if (!exp || !FB || FB.estado() !== 'liberado') { faixa('salinha-faixa-validade', null); return; }
@@ -5545,6 +5599,57 @@ window.exigirLoginParaSecao = function() {
     if (window.temLoginApp()) return true;
     alert('Entre com Google primeiro (botão "Entrar com Google", no topo) para acessar esta seção.');
     return false;
+};
+
+// Níveis de acesso (pedido explícito do usuário): no acesso simples, as seções
+// de conteúdo (Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos,
+// Penas, Glossário) ficam com cadeado; ficam abertas todas as baterias e,
+// dentro delas, os materiais associados ao tema (barra lateral). A trava de
+// verdade é no servidor (storage.rules); aqui é a explicação e o pedido.
+window.ehNivelSimples = function() {
+    let FB = window.SALINHA_FB;
+    return !!(FB && FB.estado() === 'liberado' && FB.nivel === 'simples' && FB.papel !== 'admin');
+};
+window.exigirCompleto = function(secao) {
+    if (!window.exigirLoginParaSecao()) return false;
+    if (!window.ehNivelSimples()) return true;
+    window.mostrarNivelSimples(secao);
+    return false;
+};
+window.mostrarNivelSimples = function(secao) {
+    let FB = window.SALINHA_FB;
+    let antigo = document.getElementById('nivel-simples-aviso');
+    if (antigo) antigo.remove();
+    let fundo = document.createElement('div');
+    fundo.id = 'nivel-simples-aviso';
+    fundo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    let esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    let pedido = FB && FB.pedidoCompletoEm;
+    let titulo = secao ? '🔒 ' + esc(secao) + ' faz parte do acesso completo' : 'Você está no acesso simples';
+    fundo.innerHTML = '<div style="background:var(--bg-white,#fff);color:var(--text-main,#222);border-radius:12px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;line-height:1.5">' +
+        '<b style="font-size:16px;display:block;margin-bottom:8px">' + titulo + '</b>' +
+        '<p style="margin:0 0 8px">No <b>acesso simples</b> você tem <b>todas as baterias</b> e, dentro de cada uma, os <b>materiais associados</b> ao tema (Esquemas, Jurisprudência e Flashcards, na barra lateral da bateria).</p>' +
+        '<p style="margin:0 0 14px">O <b>acesso completo</b> libera também as seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário.</p>' +
+        '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+        (pedido
+            ? '<span style="color:var(--text-muted,#666)">✓ Pedido enviado em ' + esc(pedido.toLocaleDateString('pt-BR')) + '. Assim que for liberado, recarregue a página.</span>'
+            : '<button type="button" onclick="window.pedirAcessoCompleto()" style="background:var(--app-primary,#4f46e5);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">Pedir acesso completo</button>') +
+        '<button type="button" onclick="document.getElementById(\'nivel-simples-aviso\').remove()" style="margin-left:auto;border:1px solid var(--border-color,#ccc);background:none;border-radius:8px;padding:8px 14px;cursor:pointer;color:inherit">Fechar</button>' +
+        '</div></div>';
+    fundo.addEventListener('click', function(e) { if (e.target === fundo) fundo.remove(); });
+    document.body.appendChild(fundo);
+};
+window.pedirAcessoCompleto = function() {
+    let FB = window.SALINHA_FB, alvo = document.getElementById('nivel-simples-acao');
+    if (!FB || !FB.pedirCompleto) return;
+    if (alvo) alvo.firstChild.disabled = true;
+    FB.pedirCompleto().then(function() {
+        if (alvo) alvo.firstChild.outerHTML = '<span style="color:#15803d;font-weight:700">✓ Pedido enviado. A administração foi avisada; quando liberar, recarregue a página.</span>';
+    }, function(e) {
+        console.warn('[ACESSO] Falha ao pedir o acesso completo:', e);
+        if (alvo) { alvo.firstChild.disabled = false; }
+        alert('Não foi possível enviar o pedido agora. Verifique a conexão e tente de novo.');
+    });
 };
 
 // Guarda contra laço de recarga — rede de segurança para QUALQUER causa de
@@ -13840,7 +13945,7 @@ window.FLASHCARDS_NB_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.FLASHCARDS_NB_RUNTIME._onKey(ev); });
 
 window.abrirFlashcardsNbModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Flashcards')) return;
     const modal = document.getElementById('fcnb-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
@@ -14824,7 +14929,7 @@ window.PRAZOS_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.PRAZOS_RUNTIME._onKey(ev); });
 
 window.abrirPrazosModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Prazos')) return;
     const modal = document.getElementById('prazos-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado'); // abre maximizado por padrão
@@ -16029,7 +16134,7 @@ window.PENAS_RUNTIME = {
 document.addEventListener('keydown', function(ev) { window.PENAS_RUNTIME._onKey(ev); });
 
 window.abrirPenasModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Penas')) return;
     const modal = document.getElementById('penas-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado');
@@ -17351,7 +17456,7 @@ window.LEISECA_RUNTIME = {
     }
 };
 window.abrirLeiSecaModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Lei Seca')) return;
     const modal = document.getElementById('leiseca-modal');
     if (!modal) return;
     modal.classList.add('modal-maximizado');
@@ -20983,7 +21088,7 @@ window.carregarGlossarioOficial = async function() {
 // Abre/fecha Glossário como MODAL sobre a tela atual, mesmo padrão de
 // abrirMateriaisModal/fecharMateriaisModal.
 window.abrirGlossarioModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Glossário')) return;
     const modal = document.getElementById('section-glossario');
     if (!modal) return;
     window._resetarMaximizacaoSecaoModal('section-glossario', 'glos-modal-btn-maximizar');
@@ -33881,7 +33986,7 @@ window.ESQUEMAS_RUNTIME = {
 };
 
 window.abrirEsquemasModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Esquemas')) return;
     const modal = document.getElementById('esquemas-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).
@@ -39615,7 +39720,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 };
 
 window.abrirJurisprudenciaModal = function() {
-    if (!window.exigirLoginParaSecao()) return;
+    if (!window.exigirCompleto('Jurisprudência')) return;
     const modal = document.getElementById('jurisprudencia-modal');
     if (!modal) return;
     // Abre maximizado por padrão (ver _resetarMaximizacaoSecaoModal).

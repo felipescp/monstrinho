@@ -88,17 +88,30 @@ O resultado aparece na aba Actions. Para desligar, mude `FIREBASE_DEPLOY` para q
 - O GitHub Pages (Monstrinho antigo, branch `pages-legado`) sai do ar.
 - O Worker do Cloudflare (`cloudflare-worker/`) só serve ao login do GitHub do Monstrinho antigo. A Salinha não o usa.
 
-## Liberar outra pessoa
+## Níveis de acesso e liberação
+
+Há dois níveis, no campo `nivel` do documento `acessos/{e-mail}`:
+
+| Nível | O que libera |
+|---|---|
+| `simples` | Todas as baterias e, dentro de cada uma, os **materiais associados** ao tema (Esquemas, Jurisprudência e Flashcards na barra lateral, mais os destaques do Glossário nas questões). As seções Jurisprudência, Lei Seca, Esquemas, Flashcards, Prazos, Penas e Glossário aparecem com 🔒. |
+| `completo` | Tudo. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
 
 Não é preciso pedir o e-mail a ninguém:
 
 1. A pessoa abre `www.asalinha.com.br` e clica em **Entrar com Google**.
-2. Sem acesso liberado, o app cria sozinho `acessos/{e-mail}` com `ativo: false` e mostra a faixa "Pedido de acesso registrado".
-3. No console do Firebase, em **Firestore Database → acessos**, os pedidos pendentes são os documentos com `ativo: false`. Para liberar, mude o campo para `true`.
+2. No primeiro login, o app cria sozinho `acessos/{e-mail}` com `ativo: true` e `nivel: "simples"`, e a pessoa já começa a usar. Ao lado do nome aparece o selo **ACESSO SIMPLES**.
+3. Ao clicar numa seção com 🔒 (ou no selo), ela pode **Pedir acesso completo**. O app grava `pedidoCompletoEm` no documento, e você recebe o e-mail (ver "Aviso por e-mail de pedidos de acesso").
+4. Para liberar o completo: no console do Firebase, em **Firestore Database → acessos →** documento da pessoa, mude `nivel` para `completo`. A pessoa recarrega o site.
 
-Para bloquear alguém, mude para `false`. Se o documento for apagado, a pessoa volta a gerar um pedido na próxima entrada.
+Outras situações:
+- **Voltar para o acesso simples:** mude `nivel` para `simples`.
+- **Bloquear alguém:** mude `ativo` para `false` e `nivel` para `bloqueado`. O site mostra "acesso suspenso". Só `ativo: false`, sem `nivel: "bloqueado"`, não basta para um pedido antigo, porque ele viraria acesso simples no próximo login.
+- **Pedidos antigos** (de antes dos níveis, com só `ativo: false` e `pedidoEm`) viram acesso simples sozinhos no próximo login da pessoa.
 
-O usuário só consegue criar o próprio documento, e sempre com `ativo: false`: liberar, alterar ou apagar continua restrito ao console (ver `firestore.rules`).
+**A trava é no servidor.** `storage.rules` só entrega as pastas `bateriasvf`, `esquemas`, `jurisprudencia`, `flashcards`, `glossario` e `legislacao` (o texto das leis usado nas remissões) a quem está no acesso simples. A Lei Seca (mapas e comentários), Prazos e Penas ficam só no completo. Pelo app, a pessoa só cria a própria conta no acesso simples e só marca o pedido do completo: subir de nível, mudar papel e validade continua só pelo console (`firestore.rules`).
+
+**Limite:** os materiais associados (Esquemas, Jurisprudência, Flashcards) chegam inteiros ao aparelho de quem está no acesso simples, porque a barra lateral de cada bateria precisa deles. O cadeado nas seções fecha o acesso pela tela, não impede quem tenha conhecimento técnico de olhar esses dados no navegador. A Lei Seca, Prazos e Penas nem são baixados.
 
 ### Acesso com prazo (opcional)
 
@@ -126,7 +139,7 @@ Para marcar uma conta como admin:
 2. Clique em **Adicionar campo**: nome `papel`, tipo `string`, valor `admin`.
 3. Na conta, recarregue o site. As opções aparecem logo depois do login.
 
-Para tirar o privilégio, apague o campo `papel`. Ninguém consegue se dar esse papel pelo app: `firestore.rules` só deixa o usuário criar o próprio pedido (`ativo: false`, sem outros campos) e proíbe alterar o documento.
+Para tirar o privilégio, apague o campo `papel`. Ninguém consegue se dar esse papel pelo app: `firestore.rules` só deixa o usuário criar a própria conta no acesso simples e marcar o pedido do completo, nada além disso.
 
 Os botões somem para quem não é admin, e as funções também recusam. Ainda assim, o que o aluno já baixou para estudar (cards, esquemas, baterias abertas) está no navegador dele: a restrição impede a cópia fácil do acervo inteiro, não a de quem tenha conhecimento técnico.
 
@@ -187,7 +200,14 @@ Para restaurar, o backup vira um **banco novo**, sem sobrescrever o atual: na li
 
 ## Aviso por e-mail de pedidos de acesso
 
-Quando alguém entra com a conta Google sem ter acesso, o site cria `acessos/{e-mail}` com `"ativo": false`. Um script do Google Apps Script, na **sua** conta (dona do projeto), confere a cada 10 minutos e manda um e-mail para você com os pedidos novos e o link para liberar. Não precisa de servidor, senha de e-mail nem plano pago.
+Um script do Google Apps Script, na **sua** conta (dona do projeto), confere a cada 10 minutos e manda um e-mail para você, com o link de cada conta no console. O e-mail traz:
+- os **pedidos de acesso completo** (quem clicou em "Pedir acesso completo"): é o que pede ação sua;
+- as **contas novas no acesso simples**, só para saber, porque elas já estão liberadas;
+- pedidos antigos ainda pendentes, de antes dos níveis.
+
+Cada item é avisado uma vez só. Não precisa de servidor, senha de e-mail nem plano pago.
+
+Se você já instalou a versão anterior do script, troque o conteúdo de `Código.gs` pelo de `ferramentas/aviso-pedidos-acesso.gs` e salve. O manifesto e o acionador continuam os mesmos.
 
 Instalação (uma vez, cerca de 5 minutos):
 

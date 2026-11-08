@@ -6,15 +6,40 @@ service cloud.firestore {
     // o SEU documento, sempre com ativo:false — o portão faz isso sozinho
     // quando o acesso é negado. Liberar (ativo:true), alterar ou apagar só
     // pelo console ou pelo servidor (Admin SDK).
+    //
+    // Níveis (pedido explícito do usuário): "nivel" = "simples" (todas as
+    // baterias e os materiais associados) ou "completo" (tudo). Sem o campo,
+    // com ativo:true, vale "completo" (contas liberadas antes dos níveis).
+    // O acesso simples é automático: no 1º login o app cria o documento já com
+    // ativo:true e nivel:"simples". Subir para "completo", mudar papel,
+    // validade ou bloquear (ativo:false + nivel:"bloqueado") só pelo console.
     match /acessos/{email} {
+      function propria() {
+        return request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email == email;
+      }
       allow read: if request.auth != null && request.auth.token.email == email;
-      allow create: if request.auth != null
-        && request.auth.token.email_verified == true
-        && request.auth.token.email == email
-        && request.resource.data.keys().hasOnly(['ativo', 'pedidoEm'])
-        && request.resource.data.ativo == false
-        && request.resource.data.pedidoEm == request.time;
-      allow update, delete: if false;
+      allow create: if propria()
+        && request.resource.data.pedidoEm == request.time
+        && ((request.resource.data.keys().hasOnly(['ativo', 'pedidoEm'])
+             && request.resource.data.ativo == false)
+          || (request.resource.data.keys().hasOnly(['ativo', 'nivel', 'pedidoEm'])
+             && request.resource.data.ativo == true
+             && request.resource.data.nivel == 'simples'));
+      allow update: if propria() && (
+        // Pedido antigo (de antes dos níveis), ainda pendente: vira acesso simples.
+        (resource.data.keys().hasOnly(['ativo', 'pedidoEm'])
+          && resource.data.ativo == false
+          && request.resource.data.keys().hasOnly(['ativo', 'nivel', 'pedidoEm'])
+          && request.resource.data.ativo == true
+          && request.resource.data.nivel == 'simples'
+          && request.resource.data.pedidoEm == resource.data.pedidoEm)
+        // Quem está no acesso simples pede o completo (só marca a data do pedido).
+        || (resource.data.get('nivel', null) == 'simples'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pedidoCompletoEm'])
+          && request.resource.data.pedidoCompletoEm == request.time));
+      allow delete: if false;
     }
     // Monitoramento (medida 5): o app de cada conta soma quantos arquivos do
     // acervo (dados/) baixou no dia — um documento por conta e dia,

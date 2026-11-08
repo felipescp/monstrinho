@@ -6,13 +6,36 @@ rules_version = '2';
 // de pagamento. Ninguém grava pelo app: o envio é feito pelo gcloud/Action.
 service firebase.storage {
   match /b/{bucket}/o {
-    match /dados/{caminho=**} {
-      // Ativo e, se houver "expiraEm" (timestamp), ainda no prazo.
-      allow read: if request.auth != null
+    // Níveis (ver firestore.rules, acessos/{email}): "completo" (ou sem
+    // "nivel", contas de antes dos níveis) e a administração leem tudo;
+    // "simples" lê só as pastas das baterias e dos materiais associados a
+    // elas (Esquemas, Jurisprudência, Flashcards, Glossário), o texto das
+    // leis (remissões) e os manifestos/versões dessas pastas.
+    function acesso() {
+      return firestore.get(/databases/(default)/documents/acessos/$(request.auth.token.email)).data;
+    }
+    function valido() {
+      return request.auth != null
         && request.auth.token.email_verified == true
-        && firestore.get(/databases/(default)/documents/acessos/$(request.auth.token.email)).data.ativo == true
-        && (firestore.get(/databases/(default)/documents/acessos/$(request.auth.token.email)).data.get('expiraEm', null) == null
-            || firestore.get(/databases/(default)/documents/acessos/$(request.auth.token.email)).data.expiraEm > request.time);
+        && acesso().ativo == true
+        && (acesso().get('expiraEm', null) == null || acesso().expiraEm > request.time);
+    }
+    function completo() {
+      return valido() && (acesso().get('nivel', 'completo') == 'completo' || acesso().get('papel', null) == 'admin');
+    }
+    function simples() {
+      return valido() && acesso().get('nivel', 'completo') in ['simples', 'completo'];
+    }
+    match /dados/{caminho=**} {
+      allow read: if completo();
+    }
+    // {resto=**} também casa com zero segmentos: cobre as pastas e os
+    // arquivos soltos na raiz de dados/ da lista.
+    match /dados/{item}/{resto=**} {
+      allow read: if item in ['bateriasvf', 'esquemas', 'jurisprudencia', 'flashcards', 'glossario', 'legislacao',
+                              'manifesto-baterias.txt', 'manifesto-esquemas.txt', 'manifesto-jurisprudencia.txt',
+                              'manifesto-flashcards.txt', 'manifesto-glossario.txt', 'versoes-oficiais.json']
+        && simples();
     }
     match /{tudo=**} {
       allow read, write: if false;
