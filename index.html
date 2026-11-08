@@ -34320,7 +34320,7 @@ window.carregarEsquemasOficiais = async function() {
 // Arquivos: .md e .txt direto; .pdf (pdf.js) e .docx (mammoth) convertidos
 // para texto aqui no navegador, com as bibliotecas em vendor/.
 window.ESQ_IA = {
-    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', uso: { entrada: 0, saida: 0, chamadas: 0 }, observacoes: [], ocupado: false, status: '' },
+    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', etapa: 'material', uso: { entrada: 0, saida: 0, chamadas: 0 }, observacoes: [], ocupado: false, status: '' },
     _esc: function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _materia: function() { return this.estado.materia || (window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME._materiaSelecionada) || ''; },
     _listaMaterias: function() { return (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []; },
@@ -34352,64 +34352,116 @@ window.ESQ_IA = {
         }
     },
     editarFicha: function(i) { this._guardarCampos(); this.estado.editando = (this.estado.editando === i ? -1 : i); this.render(); },
-    mudar: function(campo, valor) { this._guardarCampos(); this.estado[campo] = valor; if (campo === 'modo' || campo === 'materia') { this.estado.plano = null; this.estado.selecionadas = {}; } this.render(); },
+    mudar: function(campo, valor) { this._guardarCampos(); this.estado[campo] = valor; if (campo === 'modo' || campo === 'materia') { this.estado.plano = null; this.estado.selecionadas = {}; this.estado.status = ''; }
+        if (campo === 'modo') this.estado.etapa = 'material'; this.render(); },
+
+    // Etapas: material › (plano, só no lote) › fichas. Uma tela por vez.
+    _etapas: function() { return this.estado.modo === 'individual' ? ['material', 'fichas'] : ['material', 'plano', 'fichas']; },
+    _etapaDisponivel: function(et) {
+        let e = this.estado;
+        if (et === 'material') return true;
+        if (et === 'plano') return e.modo !== 'individual' && (!!e.plano || (e.ocupado && e.etapa === 'plano'));
+        return e.fichas.length > 0 || (e.ocupado && e.etapa === 'fichas') || (e.etapa === 'fichas');
+    },
+    irPara: function(et) {
+        if (this.estado.ocupado || !this._etapaDisponivel(et)) return;
+        this._guardarCampos(); this.estado.etapa = et; this.estado.status = ''; this.render();
+    },
+    passo: function(d) {
+        let l = this._etapas(), i = l.indexOf(this.estado.etapa) + d;
+        if (i >= 0 && i < l.length) this.irPara(l[i]);
+    },
+    _faltaParaGerar: function() {
+        this._guardarCampos();
+        if (!this._materia()) return 'Escolha a matéria.';
+        if (!this.estado.material.trim()) return 'Cole o material ou anexe o arquivo.';
+        return '';
+    },
 
     render: function() {
         let m = document.getElementById('esq-ia-modal');
         if (!m || m.style.display === 'none') return;
         let e = this.estado, esc = this._esc, mat = this._materia(), self = this;
+        let l = this._etapas();
+        if (l.indexOf(e.etapa) < 0) e.etapa = 'material';
         let btn = 'border:1px solid var(--border-color);background:var(--bg-white,#fff);color:var(--text-main);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer';
         let prim = 'border:none;background:var(--app-primary);color:#fff;border-radius:7px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer';
-        let opc = function(campo, valor, rotulo) { let on = e[campo] === valor; return '<button type="button" onclick="window.ESQ_IA.mudar(\'' + campo + '\', \'' + valor + '\')" style="' + btn + (on ? ';background:var(--app-primary);color:#fff;border-color:var(--app-primary)' : '') + '"' + (e.ocupado ? ' disabled' : '') + '>' + rotulo + '</button>'; };
-        let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px">';
-        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:var(--text-muted)">fase de teste · só administração</span><button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + (e.ocupado ? ' disabled' : '') + '>Fechar</button></div>';
-        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'A partir de um material') + '</span><span><b>IA:</b> ' + opc('provedor', 'gemini', 'Gemini') + ' ' + opc('provedor', 'claude', 'Claude') + '</span><span><b>Matéria:</b> <select onchange="window.ESQ_IA.mudar(\'materia\', this.value)" style="padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px;max-width:320px"' + (e.ocupado ? ' disabled' : '') + '>' + (mat ? '' : '<option value="" selected>Escolha a matéria…</option>') + self._listaMaterias().map(function(n) { return '<option value="' + esc(n) + '"' + (n === mat ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></span></div>';
-        // Ficha individual: sem campo de tema; a IA esquematiza o material e
-        // sugere o título, editável depois de gerada.
-        if (e.modo !== 'individual') h += '<label style="display:block;font-weight:700;margin:8px 0 4px">' + (e.modo === 'individual' ? 'Tema da ficha' : 'Orientação (opcional)') + '</label><textarea id="esq-ia-tema" rows="2" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font:inherit" placeholder="' + (e.modo === 'individual' ? 'Ex.: Hipóteses de intervenção espontânea federal e estadual' : 'Ex.: priorizar prazos e róis; ignorar o capítulo X') + '">' + esc(e.tema) + '</textarea>';
-        h += '<div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;flex-wrap:wrap"><label style="font-weight:700">Material</label><label style="' + btn + ';display:inline-block">📎 Anexar arquivo<input type="file" accept=".md,.txt,.pdf,.docx" style="display:none" onchange="window.ESQ_IA.lerArquivo(this)"' + (e.ocupado ? ' disabled' : '') + '></label><span style="font-size:11px;color:var(--text-muted)">.md, .txt, .pdf (com texto) ou .docx · ' + (e.arquivo ? esc(e.arquivo) + ' · ' : '') + '<span id="esq-ia-contagem">' + e.material.length.toLocaleString('pt-BR') + '</span> caracteres (máx. 300.000)</span></div>';
-        h += '<textarea id="esq-ia-material" rows="7" oninput="document.getElementById(\'esq-ia-contagem\').textContent=this.value.length.toLocaleString(\'pt-BR\')" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font-family:monospace;font-size:11.5px" placeholder="Cole aqui o trecho do material (ou anexe o arquivo)">' + esc(e.material) + '</textarea>';
-        h += '<label style="display:block;font-weight:700;margin:8px 0 4px">Fonte do material</label><input id="esq-ia-fonte" style="width:100%;box-sizing:border-box;padding:7px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit" placeholder="Ex.: Legislação 360 - LINDB e Código Civil, ed. 2026.1" value="' + esc(e.fonte) + '">';
-        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px">';
-        if (e.modo === 'individual') h += '<button type="button" style="' + prim + '" onclick="window.ESQ_IA.gerarIndividual()"' + (e.ocupado ? ' disabled' : '') + '>Gerar ficha</button>';
-        else h += '<button type="button" style="' + prim + '" onclick="window.ESQ_IA.planejar()"' + (e.ocupado ? ' disabled' : '') + '>1. Planejar fichas</button>';
-        h += '</div>';
-        if (e.status) h += '<div style="margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--bg-body,#f8fafc)">' + (e.ocupado ? '⏳ ' : '') + esc(e.status) + '</div>';
-        if (e.plano) {
+        let dis = e.ocupado ? ' disabled' : '';
+        let opc = function(campo, valor, rotulo) { let on = e[campo] === valor; return '<button type="button" onclick="window.ESQ_IA.mudar(\'' + campo + '\', \'' + valor + '\')" style="' + btn + (on ? ';background:var(--app-primary);color:#fff;border-color:var(--app-primary)' : '') + '"' + dis + '>' + rotulo + '</button>'; };
+        let nomes = { material: 'Material', plano: 'Plano', fichas: e.modo === 'individual' ? 'Ficha' : 'Fichas' };
+        let iAtual = l.indexOf(e.etapa);
+
+        // Cabeçalho fixo
+        let h = '<div style="background:var(--bg-white,#fff);color:var(--text-main);border-radius:12px;width:min(920px,100%);height:min(760px,92vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px;overflow:hidden">';
+        h += '<div style="padding:16px 20px 10px;border-bottom:1px solid var(--border-color)">';
+        h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:var(--text-muted)">fase de teste · só administração</span><button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
+        h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span><span><b>IA:</b> ' + opc('provedor', 'gemini', 'Gemini') + ' ' + opc('provedor', 'claude', 'Claude') + '</span>';
+        let seta = function(d, txt) { let alvo = l[iAtual + d], ok = alvo && self._etapaDisponivel(alvo) && !e.ocupado; return '<button type="button" onclick="window.ESQ_IA.passo(' + d + ')" style="' + btn + ';padding:4px 10px' + (ok ? '' : ';opacity:.35;cursor:default') + '"' + (ok ? '' : ' disabled') + '>' + txt + '</button>'; };
+        h += '<span style="margin-left:auto;display:flex;align-items:center;gap:6px">' + seta(-1, '‹') + l.map(function(et, i) {
+            let at = et === e.etapa, ok = self._etapaDisponivel(et) && !e.ocupado;
+            return (i ? '<span style="color:var(--text-muted)">›</span>' : '') + '<span onclick="window.ESQ_IA.irPara(\'' + et + '\')" style="padding:3px 9px;border-radius:999px;font-size:12px;' + (at ? 'background:var(--app-primary);color:#fff;font-weight:800' : 'color:' + (ok ? 'var(--text-main);cursor:pointer;text-decoration:underline' : 'var(--text-muted)')) + '">' + (i + 1) + ' ' + nomes[et] + '</span>';
+        }).join(' ') + seta(1, '›') + '</span></div></div>';
+
+        // Corpo da etapa
+        let animar = this._ultimaEtapa !== e.etapa ? (l.indexOf(this._ultimaEtapa) > iAtual ? 'esqIaVoltar' : 'esqIaAvancar') : '';
+        this._ultimaEtapa = e.etapa;
+        let corpo = '', rodape = '';
+        let statusHtml = e.status ? '<div style="margin:0 0 10px;padding:8px 10px;border-radius:8px;background:var(--bg-body,#f8fafc)">' + (e.ocupado ? '⏳ ' : '') + esc(e.status) + '</div>' : '';
+        let obs = e.observacoes.length ? '<div style="margin:0 0 10px;font-size:12px;color:#92400e"><b>Observações da IA:</b> ' + e.observacoes.map(esc).join(' · ') + '</div>' : '';
+        let voltar = function(rot) { return '<button type="button" style="' + btn + '" onclick="window.ESQ_IA.passo(-1)"' + dis + '>‹ ' + rot + '</button>'; };
+
+        if (e.etapa === 'material') {
+            corpo += '<label style="display:block;font-weight:700;margin:0 0 4px">Matéria</label><select onchange="window.ESQ_IA.mudar(\'materia\', this.value)" style="width:100%;box-sizing:border-box;padding:7px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit"' + dis + '>' + (mat ? '' : '<option value="" selected>Escolha a matéria…</option>') + self._listaMaterias().map(function(n) { return '<option value="' + esc(n) + '"' + (n === mat ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
+            if (e.modo !== 'individual') corpo += '<label style="display:block;font-weight:700;margin:12px 0 4px">Orientação (opcional)</label><textarea id="esq-ia-tema" rows="2" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font:inherit" placeholder="Ex.: priorizar prazos e róis; ignorar o capítulo X">' + esc(e.tema) + '</textarea>';
+            corpo += '<div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;flex-wrap:wrap"><label style="font-weight:700">Material</label><label style="' + btn + ';display:inline-block">📎 Anexar arquivo<input type="file" accept=".md,.txt,.pdf,.docx" style="display:none" onchange="window.ESQ_IA.lerArquivo(this)"' + dis + '></label><span style="font-size:11px;color:var(--text-muted)">.md, .txt, .pdf (com texto) ou .docx · ' + (e.arquivo ? esc(e.arquivo) + ' · ' : '') + '<span id="esq-ia-contagem">' + e.material.length.toLocaleString('pt-BR') + '</span> caracteres (máx. 300.000)</span></div>';
+            corpo += '<textarea id="esq-ia-material" rows="14" oninput="document.getElementById(\'esq-ia-contagem\').textContent=this.value.length.toLocaleString(\'pt-BR\')" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border-color);border-radius:6px;font-family:monospace;font-size:11.5px" placeholder="Cole aqui o trecho do material (ou anexe o arquivo)">' + esc(e.material) + '</textarea>';
+            corpo += '<label style="display:block;font-weight:700;margin:12px 0 4px">Fonte do material</label><input id="esq-ia-fonte" style="width:100%;box-sizing:border-box;padding:7px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit" placeholder="Ex.: Legislação 360 - LINDB e Código Civil, ed. 2026.1" value="' + esc(e.fonte) + '">';
+            corpo += statusHtml ? '<div style="margin-top:12px">' + statusHtml + '</div>' : '';
+            rodape = '<span></span><button type="button" style="' + prim + '" onclick="window.ESQ_IA.' + (e.modo === 'individual' ? 'gerarIndividual' : 'planejar') + '()"' + dis + '>' + (e.modo === 'individual' ? 'Gerar ficha ›' : 'Planejar fichas ›') + '</button>';
+        } else if (e.etapa === 'plano') {
+            corpo += statusHtml + obs;
             let n = Object.keys(e.selecionadas).filter(function(k) { return e.selecionadas[k]; }).length;
-            h += '<div style="margin-top:10px;border-top:1px solid var(--border-color);padding-top:10px"><b>Plano: ' + e.plano.length + ' ficha(s) sugerida(s)</b> <span style="color:var(--text-muted);font-size:11px">marque as que quer gerar (cada pedido gera até 5)</span>';
-            h += '<div style="max-height:260px;overflow:auto;margin-top:6px">' + e.plano.map(function(f, i) {
-                return '<label style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-color);cursor:pointer"><input type="checkbox"' + (e.selecionadas[i] ? ' checked' : '') + ' onchange="window.ESQ_IA.estado.selecionadas[' + i + ']=this.checked;window.ESQ_IA._guardarCampos();window.ESQ_IA.render()"' + (e.ocupado ? ' disabled' : '') + '><span><b>' + esc(f.titulo) + '</b> <span style="color:var(--text-muted);font-size:11px">' + esc(f.divisao) + ' · ' + esc(f.subtema) + ' · ' + esc(f.tipo) + '</span><br><span style="font-size:11.5px">' + esc(f.resumo) + '</span></span></label>';
-            }).join('') + '</div><div style="display:flex;gap:8px;margin-top:8px"><button type="button" style="' + btn + '" onclick="window.ESQ_IA.marcarTodas(true)"' + (e.ocupado ? ' disabled' : '') + '>Marcar todas</button><button type="button" style="' + btn + '" onclick="window.ESQ_IA.marcarTodas(false)"' + (e.ocupado ? ' disabled' : '') + '>Desmarcar</button><button type="button" style="' + prim + '" onclick="window.ESQ_IA.gerarSelecionadas()"' + (e.ocupado || !n ? ' disabled' : '') + '>2. Gerar selecionadas (' + n + ')</button></div></div>';
-        }
-        if (e.observacoes.length) h += '<div style="margin-top:10px;font-size:12px;color:#92400e"><b>Observações da IA:</b> ' + e.observacoes.map(esc).join(' · ') + '</div>';
-        if (e.fichas.length) {
-            h += '<div style="margin-top:12px;border-top:1px solid var(--border-color);padding-top:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>' + e.fichas.length + ' ficha(s) gerada(s)</b><button type="button" style="' + prim + '" onclick="window.ESQ_IA.importar()"' + (e.ocupado ? ' disabled' : '') + '>Adicionar aos Esquemas</button><button type="button" style="' + btn + '" onclick="window.ESQ_IA.copiar()">Copiar texto</button><button type="button" style="' + btn + '" onclick="window.ESQ_IA.limparFichas()"' + (e.ocupado ? ' disabled' : '') + ' title="Descarta todas as fichas geradas (para remover uma só, use o botão dela)">Descartar todas</button></div>';
-            h += '<div style="font-size:11px;color:var(--text-muted);margin:4px 0 8px">Gerado por IA: confira artigos, prazos e julgados antes de estudar. As fichas entram como esquemas pessoais.</div>';
-            h += e.fichas.map(function(f, i) {
-                let ed = e.editando === i, pq = btn + ';padding:2px 8px;font-size:10px;margin-left:4px';
-                let botoes = '<span style="float:right"><button type="button" style="' + pq + '" onclick="event.preventDefault();window.ESQ_IA.editarFicha(' + i + ')">' + (ed ? 'concluir edição' : 'editar') + '</button><button type="button" style="' + pq + '" title="Remove só esta ficha" onclick="event.preventDefault();window.ESQ_IA.removerFicha(' + i + ')">remover esta</button></span>';
-                let conteudo;
-                if (ed) {
-                    let campo = function(k, rot, area) {
+            if (e.plano) {
+                corpo += '<div style="margin-bottom:6px"><b>' + e.plano.length + ' ficha(s) sugerida(s)</b> <span style="color:var(--text-muted);font-size:11px">marque as que quer gerar (cada pedido gera até 5)</span> <span style="float:right"><button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(true)"' + dis + '>Marcar todas</button> <button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(false)"' + dis + '>Desmarcar</button></span></div>';
+                corpo += e.plano.map(function(f, i) {
+                    return '<label style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);cursor:pointer"><input type="checkbox"' + (e.selecionadas[i] ? ' checked' : '') + ' onchange="window.ESQ_IA.estado.selecionadas[' + i + ']=this.checked;window.ESQ_IA._guardarCampos();window.ESQ_IA.render()"' + dis + '><span><b>' + esc(f.titulo) + '</b> <span style="color:var(--text-muted);font-size:11px">' + esc(f.divisao) + ' · ' + esc(f.subtema) + ' · ' + esc(f.tipo) + '</span><br><span style="font-size:11.5px">' + esc(f.resumo) + '</span></span></label>';
+                }).join('');
+            }
+            rodape = voltar('Material') + '<button type="button" style="' + prim + '" onclick="window.ESQ_IA.gerarSelecionadas()"' + (e.ocupado || !n ? ' disabled' : '') + '>Gerar selecionadas (' + n + ') ›</button>';
+        } else {
+            corpo += statusHtml + obs;
+            if (e.fichas.length) {
+                corpo += '<div style="font-size:11px;color:var(--text-muted);margin:0 0 8px">Gerado por IA: confira artigos, prazos e julgados antes de estudar. As fichas entram como esquemas pessoais.</div>';
+                corpo += e.fichas.map(function(f, i) {
+                    let ed = e.editando === i, pq = btn + ';padding:2px 8px;font-size:10px;margin-left:4px';
+                    let botoes = '<span style="float:right"><button type="button" style="' + pq + '" onclick="event.preventDefault();window.ESQ_IA.editarFicha(' + i + ')">' + (ed ? 'concluir edição' : 'editar') + '</button><button type="button" style="' + pq + '" title="Remove só esta ficha" onclick="event.preventDefault();window.ESQ_IA.removerFicha(' + i + ')">remover esta</button></span>';
+                    let conteudo;
+                    if (ed) {
                         let st = 'width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px';
-                        return '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">' + rot + '</label>' + (area ? '<textarea id="esq-ia-ed-' + k + '" rows="2" style="' + st + '">' + esc(f[k]) + '</textarea>' : '<input id="esq-ia-ed-' + k + '" style="' + st + '" value="' + esc(f[k]) + '">');
-                    };
-                    let divs = Array.from(glosDivisoesValidas(mat || '')), stSel = 'width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--border-color);border-radius:6px;font:inherit;font-size:12px';
-                    let campoDiv = divs.length ? '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">Divisão</label><select id="esq-ia-ed-divisao" style="' + stSel + '">' + (divs.indexOf(f.divisao) < 0 ? '<option value="" selected>Escolha a divisão…</option>' : '') + divs.map(function(d) { return '<option value="' + esc(d) + '"' + (d === f.divisao ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select>' : campo('divisao', 'Divisão');
-                    conteudo = campo('titulo', 'Título') + campoDiv + campo('subtema', 'Subtema') + campo('tipo', 'Tipo') + campo('referencia', 'Referência')
-                        + '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">Conteúdo (edite direto no texto e na tabela)</label><div id="esq-ia-ed-corpo" class="esq-ia-previa" contenteditable="true" style="border:1px solid var(--border-color);border-radius:6px;padding:8px;min-height:80px;overflow:auto">' + f.corpo_html + '</div>'
-                        + campo('alerta', 'Alerta', true) + campo('fonte', 'Fonte');
-                } else {
-                    let ficha = { subtema: f.subtema, tipo: f.tipo, referencia: f.referencia, corpo: f.corpo_html, alerta: f.alerta, fonte: f.fonte, dataCuradoria: '' };
-                    conteudo = window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME._montarConteudoHtmlImportado ? window.ESQUEMAS_RUNTIME._montarConteudoHtmlImportado(ficha) : f.corpo_html;
-                }
-                return '<details style="border:1px solid var(--border-color);border-radius:8px;padding:6px 10px;margin-bottom:6px"' + (ed || i === e.fichas.length - 1 ? ' open' : '') + '><summary style="cursor:pointer"><b>' + esc(f.titulo) + '</b> <span style="color:var(--text-muted);font-size:11px">' + esc(f.divisao) + '</span> ' + botoes + '</summary><div class="esq-ia-previa" style="margin-top:8px;overflow:auto">' + conteudo + '</div></details>';
-            }).join('') + '</div>';
+                        let rot = function(t) { return '<label style="display:block;font-size:11px;font-weight:700;margin:6px 0 2px">' + t + '</label>'; };
+                        let campo = function(k, t, area) { return rot(t) + (area ? '<textarea id="esq-ia-ed-' + k + '" rows="2" style="' + st + '">' + esc(f[k]) + '</textarea>' : '<input id="esq-ia-ed-' + k + '" style="' + st + '" value="' + esc(f[k]) + '">'); };
+                        let divs = Array.from(glosDivisoesValidas(mat || ''));
+                        let campoDiv = divs.length ? rot('Divisão') + '<select id="esq-ia-ed-divisao" style="' + st + '">' + (divs.indexOf(f.divisao) < 0 ? '<option value="" selected>Escolha a divisão…</option>' : '') + divs.map(function(d) { return '<option value="' + esc(d) + '"' + (d === f.divisao ? ' selected' : '') + '>' + esc(d) + '</option>'; }).join('') + '</select>' : campo('divisao', 'Divisão');
+                        conteudo = campo('titulo', 'Título') + campoDiv + campo('subtema', 'Subtema') + campo('tipo', 'Tipo') + campo('referencia', 'Referência')
+                            + rot('Conteúdo (edite direto no texto e na tabela)') + '<div id="esq-ia-ed-corpo" class="esq-ia-previa" contenteditable="true" style="border:1px solid var(--border-color);border-radius:6px;padding:8px;min-height:80px;overflow:auto">' + f.corpo_html + '</div>'
+                            + campo('alerta', 'Alerta', true) + campo('fonte', 'Fonte');
+                    } else {
+                        let ficha = { subtema: f.subtema, tipo: f.tipo, referencia: f.referencia, corpo: f.corpo_html, alerta: f.alerta, fonte: f.fonte, dataCuradoria: '' };
+                        conteudo = window.ESQUEMAS_RUNTIME && window.ESQUEMAS_RUNTIME._montarConteudoHtmlImportado ? window.ESQUEMAS_RUNTIME._montarConteudoHtmlImportado(ficha) : f.corpo_html;
+                    }
+                    let aberta = ed || e.fichas.length === 1 || i === e.fichas.length - 1;
+                    return '<details style="border:1px solid var(--border-color);border-radius:8px;padding:6px 10px;margin-bottom:6px"' + (aberta ? ' open' : '') + '><summary style="cursor:pointer"><b>' + esc(f.titulo) + '</b> <span style="color:var(--text-muted);font-size:11px">' + esc(f.divisao) + '</span> ' + botoes + '</summary><div class="esq-ia-previa" style="margin-top:8px;overflow:auto">' + conteudo + '</div></details>';
+                }).join('');
+            } else if (!e.ocupado) corpo += '<div style="color:var(--text-muted);padding:20px 0;text-align:center">Nenhuma ficha. Volte ao material e gere de novo.</div>';
+            rodape = voltar(e.modo === 'individual' ? 'Material' : 'Plano') + '<span style="display:flex;gap:8px;flex-wrap:wrap">' + (e.fichas.length ? '<button type="button" style="' + btn + '" onclick="window.ESQ_IA.copiar()"' + dis + '>Copiar texto</button><button type="button" style="' + btn + '" onclick="window.ESQ_IA.limparFichas()"' + dis + ' title="Descarta todas as fichas geradas (para remover uma só, use o botão dela)">Descartar todas</button><button type="button" style="' + prim + '" onclick="window.ESQ_IA.importar()"' + dis + '>Adicionar aos Esquemas</button>' : '') + '</span>';
         }
-        if (e.uso.chamadas) h += '<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Consumo nesta janela: ' + e.uso.chamadas + ' pedido(s) · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída.</div>';
+        h += '<div id="esq-ia-corpo" style="flex:1;overflow:auto;padding:14px 20px"><div' + (animar ? ' style="animation:' + animar + ' .22s ease-out"' : '') + '>' + corpo + '</div></div>';
+        let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px">Consumo nesta janela: ' + e.uso.chamadas + ' pedido(s) · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída.</div>' : '';
+        h += '<div style="border-top:1px solid var(--border-color)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 20px">' + rodape + '</div>' + uso + '</div>';
         h += '</div>';
-        m.innerHTML = '<style>#esq-ia-modal .esq-ia-previa table{border-collapse:collapse;width:100%;margin:8px 0}#esq-ia-modal .esq-ia-previa th,#esq-ia-modal .esq-ia-previa td{border:1px solid var(--text-main,#000);padding:6px 8px;vertical-align:top}</style>' + h;
+        let rolagem = animar ? 0 : ((document.getElementById('esq-ia-corpo') || {}).scrollTop || 0);
+        m.innerHTML = '<style>#esq-ia-modal .esq-ia-previa table{border-collapse:collapse;width:100%;margin:8px 0}#esq-ia-modal .esq-ia-previa th,#esq-ia-modal .esq-ia-previa td{border:1px solid var(--text-main,#000);padding:6px 8px;vertical-align:top}@keyframes esqIaAvancar{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}@keyframes esqIaVoltar{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}</style>' + h;
+        let c = document.getElementById('esq-ia-corpo'); if (c) c.scrollTop = rolagem;
     },
     marcarTodas: function(sim) { this._guardarCampos(); let e = this.estado; (e.plano || []).forEach(function(f, i) { e.selecionadas[i] = sim; }); this.render(); },
     removerFicha: function(i) { this._guardarCampos(); let e = this.estado; e.fichas.splice(i, 1); if (e.editando === i) e.editando = -1; else if (e.editando > i) e.editando--; this.render(); },
@@ -34482,36 +34534,43 @@ window.ESQ_IA = {
     _rodar: async function(fn) {
         this._guardarCampos();
         let e = this.estado;
-        if (!this._materia()) { e.status = '❌ Escolha a matéria na lista acima.'; this.render(); return; }
+        if (!this._materia()) { e.status = '❌ Escolha a matéria.'; this.render(); return; }
         e.ocupado = true; this.render();
         try { await fn(); } catch (err) { e.status = '❌ ' + (err && err.message || err); }
         e.ocupado = false; this.render();
     },
     gerarIndividual: function() {
         let self = this, e = this.estado;
+        let falta = this._faltaParaGerar();
+        if (falta) { e.status = '❌ ' + falta; this.render(); return; }
+        if (e.fichas.length && !confirm('Gerar de novo substitui a ficha atual. Continuar?')) return;
+        e.fichas = []; e.editando = -1; e.observacoes = []; e.etapa = 'fichas';
         return this._rodar(async function() {
-            if (!e.material.trim()) throw new Error('Cole o material ou anexe o arquivo.');
             e.status = 'Gerando com ' + (e.provedor === 'claude' ? 'Claude' : 'Gemini') + '… (pode levar até 1 minuto)'; self.render();
             let r = await self._chamar(Object.assign(self._base('gerar'), { tema: '', fichas: [] }));
             self._somarUso(r);
             r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
-            e.status = r.fichas.length + ' ficha(s) gerada(s)' + (r.descartadas ? '; ' + r.descartadas + ' descartada(s) por formato inválido' : '') + '.';
+            e.status = r.descartadas ? r.descartadas + ' ficha(s) descartada(s) por formato inválido.' : '';
         });
     },
     planejar: function() {
         let self = this, e = this.estado;
+        let falta = this._faltaParaGerar();
+        if (falta) { e.status = '❌ ' + falta; this.render(); return; }
+        e.observacoes = []; e.etapa = 'plano';
         return this._rodar(async function() {
-            if (!e.material.trim()) throw new Error('Cole o material ou anexe o arquivo.');
             e.status = 'Planejando com ' + (e.provedor === 'claude' ? 'Claude' : 'Gemini') + '… (pode levar alguns minutos em material longo)'; self.render();
             let r = await self._chamar(self._base('planejar'));
             self._somarUso(r);
             e.plano = r.fichas; e.selecionadas = {};
             r.fichas.forEach(function(f, i) { e.selecionadas[i] = true; });
-            e.status = 'Plano pronto: ' + r.fichas.length + ' ficha(s). Revise a lista e gere as selecionadas.';
+            e.status = '';
         });
     },
     gerarSelecionadas: function() {
         let self = this, e = this.estado;
+        if (e.fichas.length && !confirm('Gerar de novo substitui as fichas atuais. Continuar?')) return;
+        e.fichas = []; e.editando = -1; e.observacoes = []; e.etapa = 'fichas';
         return this._rodar(async function() {
             let lista = (e.plano || []).filter(function(f, i) { return e.selecionadas[i]; });
             for (let i = 0; i < lista.length; i += 5) {
@@ -34522,7 +34581,7 @@ window.ESQ_IA = {
                 r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
                 self.render();
             }
-            e.status = 'Pronto: ' + e.fichas.length + ' ficha(s) na lista.';
+            e.status = '';
         });
     },
 
@@ -34583,7 +34642,7 @@ window.ESQ_IA = {
         let prev = R._resultadoPreVisualizado;
         if (!prev || prev.totalFichas !== total) { R._resultadoPreVisualizado = null; e.status = '❌ Não consegui adicionar as fichas (formato inesperado). Use Copiar texto e a Importação em Massa.'; this.render(); return; }
         R.confirmarImportacao();
-        e.fichas = []; e.editando = -1; e.observacoes = []; e.status = '';
+        e.fichas = []; e.editando = -1; e.observacoes = []; e.status = ''; e.etapa = 'material';
         this.fechar();
         if (R._divisaoSelecionada) R.selecionarMateria(mat);
         window.avisoOk ? window.avisoOk(total + ' ficha(s) adicionada(s) em ' + mat) : alert(total + ' ficha(s) adicionada(s) em ' + mat);
