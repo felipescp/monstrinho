@@ -5,13 +5,13 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 2 (48 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 8 (1131 notas).
 
 ### Direito Civil
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código Civil | X | X | - |
+| Código Civil | X | X | X (485 notas) |
 | Registros Públicos (Lei 6.015) | X | X | - |
 | LINDB | X | X | - |
 | Lei do Inquilinato (Lei 8.245) | X | X | - |
@@ -36,7 +36,7 @@
 | Mediação (Lei 13.140) | X | X | - |
 | Bem de Família (Lei 8.009) | X | X | - |
 | Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | - |
-| Juizados Especiais Federais (Lei 10.259) | X | X | - |
+| Juizados Especiais Federais (Lei 10.259) | X | X | X (30 notas) |
 | Processo Eletrônico (Lei 11.419) | X | X | - |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Cautelares contra o Poder Público (Lei 8.437) | X | X | - |
@@ -69,7 +69,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código Penal | X | X | - |
+| Código Penal | X | X | X (221 notas) |
 | Lei de Drogas (Lei 11.343) | X | X | - |
 | Maria da Penha (Lei 11.340) | X | X | - |
 | Organização Criminosa (Lei 12.850) | X | X | - |
@@ -94,7 +94,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código de Processo Penal | X | X | - |
+| Código de Processo Penal | X | X | X (209 notas) |
 | Execução Penal (Lei 7.210) | X | X | - |
 | Interceptação Telefônica (Lei 9.296) | X | X | - |
 | Código de Processo Penal Militar | X | X | - |
@@ -168,11 +168,11 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Licitações e Contratos Administrativos (Lei 14.133) | X | X | - |
+| Licitações e Contratos Administrativos (Lei 14.133) | X | X | X (72 notas) |
 | Processo Administrativo (Lei 9.784) | X | X | - |
 | Estatuto da Cidade (Lei 10.257) | X | X | - |
 | Improbidade Administrativa (Lei 8.429) | X | X | - |
-| Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | - |
+| Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | X (66 notas) |
 | Servidores Federais (Lei 8.112) | X | X | - |
 | Ação Popular (Lei 4.717) | X | X | X (34 notas) |
 | Desapropriação por Utilidade Pública (Decreto-Lei 3.365/1941) | X | X | - |
