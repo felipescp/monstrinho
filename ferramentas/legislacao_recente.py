@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 """Verificação semanal da legislação recente (pedido explícito do usuário).
 
-Não vasculha o Planalto inteiro: leis, leis complementares, medidas
+DESCOBERTA pelos Dados Abertos do Senado (legislacao/lista: número, data e
+ementa de leis, LCs, MPs e emendas do ano), porque o Planalto bloqueia o
+acesso automatizado. O texto compilado continua vindo do Planalto: o
+relatório lista as leis da base a atualizar, com o link de cada uma, e a
+conversão (passos 3 e 4 abaixo) só roda com --planalto, de onde o acesso
+for liberado.
+
+Histórico: a 1ª versão testava os números no próprio Planalto; leis, leis complementares, medidas
 provisórias e emendas constitucionais são numeradas em sequência, então o
 script testa os números SEGUINTES aos últimos já vistos (relatorios/
 legislacao-recente-estado.json) até encontrar uma sequência de números ainda
@@ -254,47 +261,67 @@ def semente_estado():
     return {'ultimo': ult, 'verificadoEm': None}
 
 
+# ── Descoberta pelos Dados Abertos do Senado (o Planalto bloqueia acesso automatizado) ──
+SENADO = 'https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=%s&ano=%d'
+TIPOS_SENADO = {'Lei': 'LEI', 'Lei Complementar': 'LCP', 'MP': 'MPV', 'EC': 'EMC'}
+
+
+def listar_senado(especie, ano):
+    req = urllib.request.Request(SENADO % (TIPOS_SENADO[especie], ano), headers={'Accept': 'application/json', 'User-Agent': 'ASalinha-dados-abertos/1.0'})
+    with urllib.request.urlopen(req, timeout=90) as r:
+        j = json.loads(r.read().decode('utf-8'))
+    docs = ((j.get('ListaDocumento') or {}).get('documentos') or {}).get('documento') or []
+    if isinstance(docs, dict): docs = [docs]
+    out = []
+    for d in docs:
+        try: n = int(re.sub(r'\D', '', str(d.get('numero') or '')))
+        except ValueError: continue
+        dt = str(d.get('dataassinatura') or '')
+        m = re.match(r'(\d{2})/(\d{2})/(\d{4})', dt)
+        data = '%s-%s-%s' % (m.group(3), m.group(2), m.group(1)) if m else None
+        a = int(d.get('anoassinatura') or ano)
+        out.append({'especie': especie, 'numero': n, 'ano': a, 'norma': rotulo(especie, n, a), 'data': data,
+                    'ementa': (d.get('ementa') or '').strip(), 'texto': (d.get('ementa') or '').strip(),
+                    'url': urls(especie, n, a)[0], 'nomeSenado': d.get('normaNome')})
+    return out
+
+
 def main():
     estado = json.load(open(ESTADO, encoding='utf8')) if os.path.exists(ESTADO) else semente_estado()
     mapa = base()
-    novas, falhas = [], []
-    conferidas = []
+    novas, falhas, conferidas = [], [], []
+    anos = [HOJE.year] + ([HOJE.year - 1] if HOJE.month <= 2 else [])
     for esp in ('Lei', 'Lei Complementar', 'MP', 'EC'):
-        # Autoverificação: a última norma conhecida tem de ser lida pelo mesmo
-        # endereço; senão o padrão de URL mudou e "nada novo" não seria confiável.
         ult = estado['ultimo'].get(esp, 0)
-        try: ref = ler_norma(esp, ult, diag=True) if ult else None
-        except Exception as e: ref = None; DIAG.append('%s %s: %r' % (esp, ult, e))
-        if ult and not ref:
-            falhas.append('%s %s (última conhecida) não foi encontrada no Planalto: o endereço pode ter mudado.' % (esp, fmt_num(ult)))
-            continue
-        if ref: conferidas.append(ref['norma'])
-        n, vazios = ult + 1, 0
-        while vazios < FOLGA[esp]:
-            try: nr = ler_norma(esp, n)
-            except Exception as e:
-                falhas.append('%s %s: %s' % (esp, fmt_num(n), e)); nr = None; vazios = FOLGA[esp]
-            if nr:
-                novas.append(nr); estado['ultimo'][esp] = n; vazios = 0
-            else:
-                vazios += 1
-            n += 1
+        docs = []
+        for ano in anos:
+            try: docs += listar_senado(esp, ano)
+            except Exception as e: falhas.append('%s (%d): %r' % (esp, ano, e))
+        if not docs and esp == 'Lei':
+            falhas.append('Lei: a lista do Senado veio vazia (fora do ar ou mudou o formato).')
+        if docs: conferidas.append('%s até nº %s' % (esp, fmt_num(max(d['numero'] for d in docs))))
+        for d in sorted(docs, key=lambda x: x['numero']):
+            if d['numero'] > ult and d['norma'] not in [x['norma'] for x in novas]:
+                novas.append(d)
+        if docs: estado['ultimo'][esp] = max(ult, max(d['numero'] for d in docs))
+    # Texto compilado: só o Planalto publica, e ele bloqueia o acesso automatizado.
+    # Com --planalto (ex.: rodando de onde o acesso é liberado), baixa e converte.
+    usar_planalto = '--planalto' in sys.argv
     afetados = {}
     for nr in novas:
         nr['diplomas'] = diplomas_alterados(nr, mapa)
         for d in nr['diplomas']: afetados.setdefault(d['saida'], {'d': d, 'normas': []})['normas'].append(nr['norma'])
     mudancas, avisos = {}, {}
-    for saida, x in afetados.items():
+    for saida, x in (afetados.items() if usar_planalto else []):
         try:
             ok, mud, aviso = atualizar_diploma(x['d'], x['normas'], HOJE.isoformat())
         except Exception as e:
             ok, mud, aviso = False, [], 'erro ao baixar/converter: %s' % e
         if mud: mudancas.setdefault(x['d']['id'], []).extend(mud)
         if aviso: avisos[x['d']['id']] = aviso
-    # Planalto inacessível em todas as espécies: falha visível (o GitHub avisa por e-mail).
+    # Fonte inacessível: falha visível (o GitHub avisa por e-mail).
     if falhas and not novas:
-        print('Planalto inacessível:\n' + '\n'.join(falhas))
-        print('Diagnóstico:\n' + '\n'.join(DIAG))
+        print('Fonte inacessível:\n' + '\n'.join(falhas))
         print('mudou=0')
         sys.exit(2)
     estado['verificadoEm'] = HOJE.isoformat()
@@ -302,15 +329,17 @@ def main():
     # ── Relatório ──
     pend = []
     md = ['# Legislação recente — verificação de %s' % HOJE.strftime('%d/%m/%Y'), '',
-          'Gerado por `ferramentas/legislacao_recente.py`. Normas novas: %d. Leis da base atualizadas: %d.' % (len(novas), len(mudancas)), '']
-    if falhas: md += ['## Falhas de acesso ao Planalto', ''] + ['- ' + f for f in falhas] + ['']
+          'Gerado por `ferramentas/legislacao_recente.py` com os Dados Abertos do Senado. Normas novas: %d (%d alteram leis da base).' % (len(novas), len([x for x in novas if x.get('diplomas')])), '']
+    if falhas: md += ['## Falhas de acesso', ''] + ['- ' + f for f in falhas] + ['']
     alteram = [nr for nr in novas if nr['diplomas']]
     avulsas = [nr for nr in novas if not nr['diplomas'] and not IRRELEVANTE.search(nr['ementa'] or '')]
     if alteram:
         md += ['## Normas que alteram leis da base', '']
         for nr in alteram:
             ids = sorted(set(d['id'] for d in nr['diplomas']))
-            md += ['### %s (%s)' % (nr['norma'], nr['data'] or '?'), '', nr['ementa'], '', 'Leis da base: %s · [Planalto](%s)' % (', '.join(ids), nr['url']), '']
+            md += ['### %s (%s)' % (nr['norma'], nr['data'] or '?'), '', nr['ementa'], '', 'Norma: [Planalto](%s)' % nr['url'], '',
+                   'Leis da base a atualizar (salve a página do texto compilado e envie numa sessão):'] + \
+                  ['- **%s** — %s: %s' % (d['id'], d['nome'], d['fonte']) for d in sorted(nr['diplomas'], key=lambda x: x['id'])] + ['']
             mud = [m for i in ids for m in mudancas.get(i, []) if m['norma'] == nr['norma']]
             for i in ids:
                 if i in avisos: md.append('- ⚠ %s: %s' % (i, avisos[i]))
@@ -332,7 +361,7 @@ def main():
     if mudou:
         open(RELATORIO, 'w', encoding='utf8').write('\n'.join(md) + '\n')
         json.dump({'verificadoEm': HOJE.isoformat(), 'normas': pend}, open(PENDENTES, 'w', encoding='utf8'), ensure_ascii=False, indent=1)
-    print('Conferidas (última conhecida de cada espécie): ' + (', '.join(conferidas) or '—'))
+    print('Listas do Senado: ' + (', '.join(conferidas) or '—'))
     if falhas: print('Falhas:\n- ' + '\n- '.join(falhas))
     print('Normas novas: %d (%s) · leis atualizadas: %s · falhas: %d' % (len(novas), ', '.join(nr['norma'] for nr in novas) or '—', ', '.join(mudancas) or '—', len(falhas)))
     print('mudou=%d' % (1 if mudou else 0))
