@@ -19726,6 +19726,70 @@ function parsearImportacaoGlossario(textoBruto) {
 // uma divisão específica na barra lateral, só na visão agregada "Todas as
 // divisões" (que casa só pelo prefixo da matéria, sem checar se a divisão
 // depois dele existe de verdade).
+// Importação em massa (Glossário, Esquemas, Jurisprudência): descobre a
+// matéria de cada "### L2:" pela taxonomia, sem exigir matéria aberta na
+// barra lateral. Quase todo nome de L2 é único na taxonomia; o que se
+// repete em mais de uma matéria (hoje só "Sujeitos do Processo", Civil e
+// Penal) usa a matéria aberta, se for uma delas, ou exige a forma completa
+// "### L2: Matéria > Divisão" — aceita em qualquer L2. Nome que não existe
+// continua recusado (nunca grava chave órfã). Reorganiza saida.porDivisao
+// por "Matéria > Divisão", cada grupo com .materia e .divisao, e devolve
+// as recusas pra prévia mostrar.
+function resolverDivisoesImportacao(saida, campoLista, campoTotal, materiaAberta) {
+    let tax = (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) || [];
+    let norm = function(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); };
+    let porL2 = {}, porL1 = {};
+    tax.forEach(function(m) {
+        porL1[norm(m.nivel_1)] = m;
+        (m.divisoes || []).forEach(function(d) { (porL2[d.nivel_2] = porL2[d.nivel_2] || []).push(m.nivel_1); });
+    });
+    let novo = {}, recusadas = [], totalRecusado = 0;
+    Object.keys(saida.porDivisao).forEach(function(div) {
+        let grupo = saida.porDivisao[div], nome = String(div).replace(/\s+/g, ' ').trim(), materia = null, divisao = nome, motivo = null, opcoes = null;
+        let corte = nome.indexOf(' > ');
+        if (corte > 0) {
+            let mat = porL1[norm(nome.slice(0, corte))];
+            divisao = nome.slice(corte + 3).trim();
+            if (!mat) motivo = 'materia';
+            else if (!(mat.divisoes || []).some(function(d) { return d.nivel_2 === divisao; })) motivo = 'inexistente';
+            else materia = mat.nivel_1;
+        } else {
+            let mats = porL2[nome] || [];
+            if (mats.length === 1) materia = mats[0];
+            else if (mats.length > 1 && mats.indexOf(materiaAberta) >= 0) materia = materiaAberta;
+            else if (mats.length > 1) { motivo = 'ambigua'; opcoes = mats; }
+            else motivo = 'inexistente';
+        }
+        let qtd = (grupo[campoLista] || []).length;
+        if (!materia) {
+            recusadas.push({ nome: div, qtd: qtd, motivo: motivo, opcoes: opcoes });
+            totalRecusado += qtd;
+            saida[campoTotal] -= qtd;
+            return;
+        }
+        let chave = materia + ' > ' + divisao;
+        if (!novo[chave]) { novo[chave] = grupo; grupo.materia = materia; grupo.divisao = divisao; return; }
+        // Mesma divisão escrita de dois jeitos ("X" e "Matéria > X"): junta.
+        let alvo = novo[chave];
+        alvo[campoLista] = alvo[campoLista].concat(grupo[campoLista] || []);
+        Object.keys(grupo).forEach(function(k) { if (typeof grupo[k] === 'number') alvo[k] = (alvo[k] || 0) + grupo[k]; });
+    });
+    saida.porDivisao = novo;
+    return { recusadas: recusadas, totalRecusado: totalRecusado };
+}
+// Aviso da prévia para as divisões recusadas (rotulo = "ficha(s)", "expressão(ões)").
+function avisoDivisoesRecusadas(res, rotulo, escapar) {
+    if (!res.recusadas.length) return '';
+    let txt = function(r) {
+        let n = '"' + escapar(r.nome) + '" (' + r.qtd + ')';
+        if (r.motivo === 'ambigua') return n + ': essa divisão existe em ' + r.opcoes.map(escapar).join(' e ') + '; escreva "### L2: Matéria > ' + escapar(r.nome) + '" ou abra a matéria certa antes de importar';
+        if (r.motivo === 'materia') return n + ': matéria não encontrada';
+        return n + ': divisão inexistente';
+    };
+    return '<div style="color:var(--danger); margin-top:6px;"><strong>' + res.totalRecusado + ' ' + rotulo + ' recusada(s)</strong> — ' + res.recusadas.map(txt).join('; ') +
+        '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>';
+}
+
 function glosDivisoesValidas(materia) {
     if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) return new Set();
     let mat = TAXONOMIA_DADOS.taxonomia_concursos.find(function(m) { return m.nivel_1 === materia; });
@@ -21431,7 +21495,6 @@ window.GLOSSARIO_RUNTIME = {
     // ── IMPORTAR EM MASSA ──
 
     abrirModalImportar: function() {
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
         document.getElementById('glos-import-textarea').value = '';
         document.getElementById('glos-import-preview').style.display = 'none';
         document.getElementById('glos-import-preview').innerHTML = '';
@@ -21454,17 +21517,8 @@ window.GLOSSARIO_RUNTIME = {
         // resultado ANTES de guardar em _resultadoPreVisualizado, então
         // confirmarImportacao() nunca chega a ver (nem gravar) essas
         // divisões inventadas/com erro de digitação.
-        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
-        let divisoesInvalidas = [];
-        let totalRecusado = 0;
-        Object.keys(saida.porDivisao).forEach(function(div) {
-            if (!divisoesValidas.has(div)) {
-                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].verbetes.length });
-                totalRecusado += saida.porDivisao[div].verbetes.length;
-                saida.totalVerbetes -= saida.porDivisao[div].verbetes.length;
-                delete saida.porDivisao[div];
-            }
-        });
+        // Matéria de cada divisão vem da taxonomia (ver resolverDivisoesImportacao).
+        let resolucao = resolverDivisoesImportacao(saida, 'verbetes', 'totalVerbetes', this._materiaSelecionada);
 
         this._resultadoPreVisualizado = saida;
 
@@ -21472,11 +21526,7 @@ window.GLOSSARIO_RUNTIME = {
         let btnConfirmar = document.getElementById('glos-import-btn-confirmar');
         let self = this;
 
-        let avisoInvalidas = divisoesInvalidas.length > 0
-            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' expressão(ões) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
-                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
-                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
-            : '';
+        let avisoInvalidas = avisoDivisoesRecusadas(resolucao, 'expressão(ões)', function(t) { return self._escapar(t); });
 
         if (saida.totalVerbetes === 0) {
             previewEl.innerHTML = '<strong>Nenhuma expressão reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e, pra cada expressão, uma linha com o termo seguida de "Significado: ..." (obrigatório), separando uma expressão da outra com uma linha em branco.' +
@@ -21490,7 +21540,7 @@ window.GLOSSARIO_RUNTIME = {
 
         let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
             let d = saida.porDivisao[div];
-            return '<div>• <strong>' + div + '</strong>: ' + d.verbetes.length + ' expressão(ões)' + (d.malformados > 0 ? ' <span style="color:var(--danger);">(+' + d.malformados + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+            return '<div>• <strong>' + self._escapar(div) + '</strong>: ' + d.verbetes.length + ' expressão(ões)' + (d.malformados > 0 ? ' <span style="color:var(--danger);">(+' + d.malformados + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
         }).join('');
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalVerbetes + ' expressão(ões)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
@@ -21503,13 +21553,13 @@ window.GLOSSARIO_RUNTIME = {
     confirmarImportacao: function() {
         if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalVerbetes === 0) return;
         let self = this;
-        let materiaAtual = this._materiaSelecionada;
         let agora = new Date().toISOString();
 
-        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
-            let chave = self._chaveL2(materiaAtual, divisao);
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(k) {
+            let grupo = self._resultadoPreVisualizado.porDivisao[k];
+            let chave = self._chaveL2(grupo.materia, grupo.divisao);
             if (!Array.isArray(self.glossario[chave])) self.glossario[chave] = [];
-            self._resultadoPreVisualizado.porDivisao[divisao].verbetes.forEach(function(v) {
+            grupo.verbetes.forEach(function(v) {
                 self.glossario[chave].push({
                     id: 'glos_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                     expressao: v.expressao,
@@ -21524,7 +21574,7 @@ window.GLOSSARIO_RUNTIME = {
         let totalImportado = this._resultadoPreVisualizado.totalVerbetes;
         this._resultadoPreVisualizado = null;
         this.fecharModalImportar();
-        this._renderGradeCards();
+        this.render();
         if (!salvouComSucesso) {
             alert('⚠️ As ' + totalImportado + ' expressão(ões) foram processadas, mas NÃO foram salvas — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço). Elas continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Libere espaço (exporte e exclua expressões antigas, ou limpe dados de outros sites no navegador) antes de importar de novo.');
         }
@@ -21725,7 +21775,7 @@ window.fecharGlossarioModal = function() {
             <div class="fc-popup-header">📥 Importar Expressões em Massa</div>
             <button onclick="window.GLOSSARIO_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="glos-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui). Dentro de cada divisão, separe as expressões por uma linha em branco; cada expressão começa com o termo, seguido de <code>Significado: ...</code> (obrigatório) e, opcionalmente, <code>Contexto: ...</code>.</div>
+        <div id="glos-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui). Dentro de cada divisão, separe as expressões por uma linha em branco; cada expressão começa com o termo, seguido de <code>Significado: ...</code> (obrigatório) e, opcionalmente, <code>Contexto: ...</code>. A matéria é descoberta pelo nome da divisão, sem precisar abrir a matéria antes; se o nome existir em mais de uma matéria, use <code>### L2: Matéria &gt; Divisão</code> (essa forma completa vale para qualquer divisão).</div>
         <textarea id="glos-import-textarea" placeholder="Cole aqui o texto com as expressões..."></textarea>
         <div id="glos-import-preview"></div>
         <div class="mfoot">
@@ -31454,7 +31504,7 @@ window.triggerFileUpload = function(callback) {
             <div class="fc-popup-header">📥 Importar Esquemas</div>
             <button onclick="window.ESQUEMAS_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA".</div>
+        <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA". A matéria é descoberta pelo nome da divisão, sem precisar abrir a matéria antes; se o nome existir em mais de uma matéria, use <code>### L2: Matéria &gt; Divisão</code> (essa forma completa vale para qualquer divisão).</div>
         <textarea id="esq-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="esq-import-preview"></div>
         <div class="mfoot">
@@ -34329,7 +34379,6 @@ window.ESQUEMAS_RUNTIME = {
     abrirModalImportar: function() {
         // Importar Esquemas: acesso completo (a administração também); visível com 🔒 nos demais níveis.
         if (!window.temNivel('completo')) { window.mostrarNiveis('Importar esquemas', 'completo'); return; }
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
         document.getElementById('esq-import-textarea').value = '';
         document.getElementById('esq-import-preview').style.display = 'none';
         document.getElementById('esq-import-preview').innerHTML = '';
@@ -34395,17 +34444,8 @@ window.ESQUEMAS_RUNTIME = {
         // Tributos..." com "Direito Processual Penal" selecionado) virava
         // uma chave inválida, que nunca aparece em nenhum L2 da lista, só
         // em "Todas as divisões" (bug relatado pelo usuário).
-        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
-        let divisoesInvalidas = [];
-        let totalRecusado = 0;
-        Object.keys(saida.porDivisao).forEach(function(div) {
-            if (!divisoesValidas.has(div)) {
-                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].fichas.length });
-                totalRecusado += saida.porDivisao[div].fichas.length;
-                saida.totalFichas -= saida.porDivisao[div].fichas.length;
-                delete saida.porDivisao[div];
-            }
-        });
+        // Matéria de cada divisão vem da taxonomia (ver resolverDivisoesImportacao).
+        let resolucao = resolverDivisoesImportacao(saida, 'fichas', 'totalFichas', this._materiaSelecionada);
 
         this._resultadoPreVisualizado = saida;
 
@@ -34413,11 +34453,7 @@ window.ESQUEMAS_RUNTIME = {
         let btnConfirmar = document.getElementById('esq-import-btn-confirmar');
         let self = this;
 
-        let avisoInvalidas = divisoesInvalidas.length > 0
-            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' ficha(s) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
-                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
-                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
-            : '';
+        let avisoInvalidas = avisoDivisoesRecusadas(resolucao, 'ficha(s)', function(t) { return self._escapar(t); });
 
         if (saida.totalFichas === 0) {
             previewEl.innerHTML = '<strong>Nenhuma ficha reconhecida.</strong> Confira se o texto tem os marcadores "### L2: ..." e o padrão de 7 linhas por ficha (conferência, título, "Subtema: ... | Tipo: ...", "Referência:", "CORPO:", "ALERTA:", "FONTE: ... | Data da curadoria: DD/MM/AAAA").' +
@@ -34431,7 +34467,7 @@ window.ESQUEMAS_RUNTIME = {
 
         let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
             let d = saida.porDivisao[div];
-            return '<div>• <strong>' + div + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+            return '<div>• <strong>' + self._escapar(div) + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
         }).join('');
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
@@ -34473,13 +34509,13 @@ window.ESQUEMAS_RUNTIME = {
     confirmarImportacao: function() {
         if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalFichas === 0) return;
         let self = this;
-        let materiaAtual = this._materiaSelecionada;
         let agora = new Date().toISOString();
 
-        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
-            let chave = self._chaveL2(materiaAtual, divisao);
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(k) {
+            let grupo = self._resultadoPreVisualizado.porDivisao[k];
+            let chave = self._chaveL2(grupo.materia, grupo.divisao);
             if (!Array.isArray(self.esquemas[chave])) self.esquemas[chave] = [];
-            self._resultadoPreVisualizado.porDivisao[divisao].fichas.forEach(function(ficha) {
+            grupo.fichas.forEach(function(ficha) {
                 self.esquemas[chave].push({
                     id: 'esq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                     titulo: ficha.titulo,
@@ -34495,7 +34531,7 @@ window.ESQUEMAS_RUNTIME = {
         let totalImportado = this._resultadoPreVisualizado.totalFichas;
         this._resultadoPreVisualizado = null;
         this.fecharModalImportar();
-        this._renderGradeCards();
+        this.render();
         if (!salvouComSucesso) {
             alert('⚠️ As ' + totalImportado + ' ficha(s) foram processadas, mas NÃO foram salvas — falha ao gravar no armazenamento deste dispositivo (provável falta de espaço, muito comum logo depois de uma importação grande como esta). Elas continuam visíveis só nesta sessão; ao recarregar a página ou sincronizar com a nuvem, esse conteúdo se perde. Libere espaço (exporte e ocultar/exclua esquemas antigos, ou limpe dados de outros sites no navegador) antes de importar de novo.');
         }
@@ -36135,7 +36171,7 @@ window.ESQ_IA = {
             <div class="fc-popup-header">📥 Importar Jurisprudência em Massa</div>
             <button onclick="window.JURISPRUDENCIA_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
-        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "Informativo: NNN" — opcional; "Informativo: EE NN" para Edição Extraordinária —, "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMENTÁRIO: ..." — aceita também o rótulo antigo "COMO PODE SER COBRADO EM PROVA:", útil pra súmulas curtas com boa explicação doutrinária —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório).</div>
+        <div id="jur-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas (título, "Tribunal: X | Órgão: Y", "Processo: ... | Relator: ... | Data: DD/MM/AAAA", "Sistemática: ...", "Informativo: NNN" — opcional; "Informativo: EE NN" para Edição Extraordinária —, "TESE FIXADA / DECISÃO: ...", "RESUMO DO CASO: ...", "COMENTÁRIO: ..." — aceita também o rótulo antigo "COMO PODE SER COBRADO EM PROVA:", útil pra súmulas curtas com boa explicação doutrinária —, "CONEXÕES: ...", "LINK: ..." — opcional, link direto pro julgado no Buscador Dizer o Direito ou outro repositório). A matéria é descoberta pelo nome da divisão, sem precisar abrir a matéria antes; se o nome existir em mais de uma matéria, use <code>### L2: Matéria &gt; Divisão</code> (essa forma completa vale para qualquer divisão).</div>
         <textarea id="jur-import-textarea" placeholder="Cole aqui o texto com as fichas..."></textarea>
         <div id="jur-import-preview"></div>
         <div class="mfoot">
@@ -38798,7 +38834,6 @@ window.JURISPRUDENCIA_RUNTIME = {
     // ── IMPORTAÇÃO EM MASSA ──
 
     abrirModalImportar: function() {
-        if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
         document.getElementById('jur-import-textarea').value = '';
         document.getElementById('jur-import-preview').style.display = 'none';
         document.getElementById('jur-import-preview').innerHTML = '';
@@ -38858,17 +38893,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         // "Teoria Geral dos Tributos..." com "Direito Processual Penal"
         // selecionado) virava uma chave inválida, que nunca aparece em
         // nenhum L2 da lista, só em "Todas as divisões" (bug relatado).
-        let divisoesValidas = glosDivisoesValidas(this._materiaSelecionada);
-        let divisoesInvalidas = [];
-        let totalRecusado = 0;
-        Object.keys(saida.porDivisao).forEach(function(div) {
-            if (!divisoesValidas.has(div)) {
-                divisoesInvalidas.push({ nome: div, qtd: saida.porDivisao[div].fichas.length });
-                totalRecusado += saida.porDivisao[div].fichas.length;
-                saida.totalFichas -= saida.porDivisao[div].fichas.length;
-                delete saida.porDivisao[div];
-            }
-        });
+        // Matéria de cada divisão vem da taxonomia (ver resolverDivisoesImportacao).
+        let resolucao = resolverDivisoesImportacao(saida, 'fichas', 'totalFichas', this._materiaSelecionada);
 
         this._resultadoPreVisualizado = saida;
 
@@ -38876,11 +38902,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let btnConfirmar = document.getElementById('jur-import-btn-confirmar');
         let self = this;
 
-        let avisoInvalidas = divisoesInvalidas.length > 0
-            ? '<div style="color:var(--danger); margin-top:6px;"><strong>' + totalRecusado + ' ficha(s) recusada(s)</strong> — divisão inexistente em "' + self._escapar(self._materiaSelecionada) + '": ' +
-                divisoesInvalidas.map(function(d) { return '"' + self._escapar(d.nome) + '" (' + d.qtd + ')'; }).join(', ') +
-                '. Confira o nome EXATO da divisão (tem que bater com a barra lateral, sem abreviar/traduzir/inventar).</div>'
-            : '';
+        let avisoInvalidas = avisoDivisoesRecusadas(resolucao, 'ficha(s)', function(t) { return self._escapar(t); });
 
         // Detecta, NA PRÉVIA (antes de confirmar), fichas cujo "processo" já
         // existe em QUALQUER matéria do acervo — pedido explícito do
@@ -38919,7 +38941,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let linhas = Object.keys(saida.porDivisao).sort().map(function(div) {
             let d = saida.porDivisao[div];
-            return '<div>• <strong>' + div + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
+            return '<div>• <strong>' + self._escapar(div) + '</strong>: ' + d.fichas.length + ' ficha(s)' + (d.malformadas > 0 ? ' <span style="color:var(--danger);">(+' + d.malformadas + ' ignorada(s) por formato inválido)</span>' : '') + '</div>';
         }).join('');
 
         previewEl.innerHTML = '<div style="margin-bottom:6px;"><strong>' + saida.totalFichas + ' ficha(s)</strong> detectada(s) em ' + Object.keys(saida.porDivisao).length + ' divisão(ões)' +
@@ -38932,16 +38954,16 @@ window.JURISPRUDENCIA_RUNTIME = {
     confirmarImportacao: function() {
         if (!this._resultadoPreVisualizado || this._resultadoPreVisualizado.totalFichas === 0) return;
         let self = this;
-        let materiaAtual = this._materiaSelecionada;
         let agora = new Date().toISOString();
 
-        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(divisao) {
-            let chave = self._chaveL2(materiaAtual, divisao);
+        Object.keys(this._resultadoPreVisualizado.porDivisao).forEach(function(k) {
+            let grupo = self._resultadoPreVisualizado.porDivisao[k];
+            let chave = self._chaveL2(grupo.materia, grupo.divisao);
             if (!Array.isArray(self.fichas[chave])) self.fichas[chave] = [];
-            self._resultadoPreVisualizado.porDivisao[divisao].fichas.forEach(function(ficha) {
+            grupo.fichas.forEach(function(ficha) {
                 ficha.id = 'jur_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-                ficha.materiaL1 = materiaAtual;
-                ficha.divisaoL2 = divisao;
+                ficha.materiaL1 = grupo.materia;
+                ficha.divisaoL2 = grupo.divisao;
                 ficha.criadoEm = agora;
                 // Deliberadamente SEM origem_oficial — importação pessoal
                 // nunca atribui esse campo.
@@ -38952,8 +38974,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         this.salvar();
         this._resultadoPreVisualizado = null;
         this.fecharModalImportar();
-        this._renderColunaDivisoes(materiaAtual);
-        this._renderGradeCards();
+        this.render();
     },
 
     // Slug ASCII reaproveitado por exportarTudo/exportarMarkdown/
