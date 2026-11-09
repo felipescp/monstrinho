@@ -89,15 +89,21 @@ def rotulo(especie, n, ano):
     return '%s %s/%d' % (especie, fmt_num(n), ano)
 
 
-def ler_norma(especie, n):
+DIAG = []  # tentativas da autoverificação (aparece no log se falhar)
+
+
+def ler_norma(especie, n, diag=False):
     """Tenta o ano corrente e o anterior; devolve dict ou None (não publicada)."""
     for ano in (HOJE.year, HOJE.year - 1):
         for u in urls(especie, n, ano):
             try:
-                linhas = texto_html(baixar(u))
+                bruto = baixar(u)
+                linhas = texto_html(bruto)
             except urllib.error.HTTPError as e:
+                if diag: DIAG.append('%s → HTTP %s' % (u, e.code))
                 if e.code in (404, 410): continue
                 raise
+            if diag: DIAG.append('%s → %d bytes; início: %s' % (u, len(bruto), ' | '.join(linhas[:12])[:400]))
             titulo, data, i_tit = None, None, -1
             for i, l in enumerate(linhas[:80]):
                 m = re.search(r'(LEI COMPLEMENTAR|LEI|MEDIDA PROVIS[ÓO]RIA|EMENDA CONSTITUCIONAL)\s+N[º°o.]*\s*[\d.]+\s*,?\s*DE\s+(\d{1,2})\s*[º°o]?\s+DE\s+([A-ZÇÃa-zçã]+)\s+DE\s+(\d{4})', l, re.I)
@@ -257,8 +263,8 @@ def main():
         # Autoverificação: a última norma conhecida tem de ser lida pelo mesmo
         # endereço; senão o padrão de URL mudou e "nada novo" não seria confiável.
         ult = estado['ultimo'].get(esp, 0)
-        try: ref = ler_norma(esp, ult) if ult else None
-        except Exception as e: ref = None
+        try: ref = ler_norma(esp, ult, diag=True) if ult else None
+        except Exception as e: ref = None; DIAG.append('%s %s: %r' % (esp, ult, e))
         if ult and not ref:
             falhas.append('%s %s (última conhecida) não foi encontrada no Planalto: o endereço pode ter mudado.' % (esp, fmt_num(ult)))
             continue
@@ -288,6 +294,7 @@ def main():
     # Planalto inacessível em todas as espécies: falha visível (o GitHub avisa por e-mail).
     if falhas and not novas:
         print('Planalto inacessível:\n' + '\n'.join(falhas))
+        print('Diagnóstico:\n' + '\n'.join(DIAG))
         print('mudou=0')
         sys.exit(2)
     estado['verificadoEm'] = HOJE.isoformat()

@@ -25,6 +25,7 @@ jobs:
       - name: Verificar normas novas no Planalto
         id: v
         run: |
+          set -o pipefail
           python3 -I ferramentas/legislacao_recente.py | tee saida.txt
           grep -q '^mudou=1' saida.txt && echo "mudou=1" >> "$GITHUB_OUTPUT" || echo "mudou=0" >> "$GITHUB_OUTPUT"
       - name: Abrir pull request para revisão
