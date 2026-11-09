@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**47** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **171** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**44** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **150** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -194,44 +194,6 @@ Alterados: LEP art. 52 (§ 1, III; § 1, IV; § 9; § 10); LEP art. 54 (§ 2; §
 - ❓ Lei de Execução Penal (Lei 7.210/84) · questão 20 · `sim_1789667188418_q20`
 - ❓ Lei de Execução Penal (Lei 7.210/84) · questão 21 · `sim_1789667188418_q21`
 - ❓ Lei de Execução Penal (Lei 7.210/84) · questão 25 · `sim_1789667188418_q25`
-
-</details>
-
-## Lei 15.384/2026: Vicaricídio e violência vicária (3 + 21 só o artigo)
-
-Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
-
-- 🧩 **Crimes Hediondos por Extensão (Legislação Extravagante e CPM)** (art. 1, pu) · `esq_1786571782166_prlnx6` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes Hediondos · Tipo: Rol · Ref.: art. 1º, parágrafo único, da Lei nº 8.072/90 Hipóteses Hediondas de Extensão na Legislação Especial e no Código Pe…
-- 🧩 **Feminicídio e Vicaricídio (Leis nº 14.994/24 e 15.384/26)** (art. 121-B) · `esq_1786594778866_pxs1in` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Alteração legislativa · Ref.: art. 121-A e art. 121-B do CP Regime de Crimes Autônomos de Gênero no Código Penal Delito de Gênero Conduta Típic…
-  > …rimento de MPUs; circunstâncias objetivas do art. 121, § 2º, III, IV e VIII. Vicaricídio (Art. 121-B do CP) Matar descendente, ascendente, dependente, enteado ou sob guarda da mulher, com o…
-- 🧩 **Lei nº 11.340/2006 - Bloco I (Arts. 1º a 7º)** (art. 7; 7, IV,VI) · `esq_1788045688231_0fcbcr` · dados/esquemas/esquemas-direito-penal.json
-  > …bjetivo de punir a mãe não é enquadrada na Lei Maria da Penha. Ambas as teses são falsas (Art. 7º, IV e VI). ⚠ A Lei Maria da Penha é aplicável a mulheres trans, e sua vulnerabilidade é presumida…
-
-<details><summary>Citam só o artigo (21)</summary>
-
-- 🧩 Espécies de Violência Doméstica (Lei Maria da Penha) e Novas Figuras · `esq_1786571326485_2k3bty`
-- 🧩 Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA) · `esq_1786572834465_6c0if3`
-- 🧩 Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA) · `esq_1786572834465_qx07dj`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
-- ❓ Lei Maria da Penha · questão 10 · `sim_1788215085553_q10`
-- ❓ Lei Maria da Penha · questão 41 · `sim_1788215085553_q41`
 
 </details>
 
