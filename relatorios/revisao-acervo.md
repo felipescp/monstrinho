@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**93** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **198** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**85** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **196** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -79,38 +79,6 @@ Alterados: CP art. 155 (§ 10; § 11; § 11, I; § 11, II; § 11, III; § 11, IV
 - 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
 - ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
 - ❓ Pessoa e Patrimônio (Juris) · questão 30 · `sim_1783735414572_q30`
-
-</details>
-
-## Lei 15.484/2026: CPC: relevância da questão federal no recurso especial (8 + 2 só o artigo)
-
-Alterados: CPC art. 1035-A; CPC art. 927 (III-A); CPC art. 932 (IV; V); CPC art. 988 (V; § 4; § 5; § 5, II); CPC art. 1030 (I; II; V); CPC art. 1042
-
-- 🧩 **Recurso Especial (REsp): Cabimento e Admissibilidade** (art. 1030; 1042) · `esq_1786554760204_5hb3yq` · dados/esquemas/esquemas-direito-processual-civil.json
-  > …tada na aplicação de precedente de repetitivo, desafia Agravo Interno , e não o Agravo do art. 1.042 do CPC. ⚠ A Súmula 115/STJ não autoriza mais a inadmissão sumária do REsp por defeito de…
-- ❓ **Ordem dos Processos e Competência Originária dos Tribunais (arts. 926 a 993, CPC) · questão 12** (art. 932, V; 932, IV) · `sim_1789809837795_q12` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > Nos termos do Art. 932, V, do CPC, para que o relator possa dar provimento monocraticamente ao recurso com base em…
-  > …"). A dispensa do contraditório prévio aplica-se apenas para negar provimento ao recurso (Art. 932, IV).
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 23** (art. 1042) · `sim_1789809766996_q23` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > …matéria afeita a recursos repetitivos/repercussão geral, e o Agravo em Recurso Especial (Art. 1.042 do CPC) para questionar os demais óbices genéricos de admissibilidade.
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 35** (art. 1030, I, b; 1042) · `sim_1789809766996_q35` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > Por expressa disposição do Art. 1.030, § 2º, c/c o Art. 1.030, I, alínea b, do CPC, a decisão calcada em rito de recurso repetitivo desafia agravo interno na própri…
-  > …etitivo desafia agravo interno na própria origem. O manejo de Agravo em Recurso Especial (Art. 1.042) para esse fim configura erro grosseiro que obsta a fungibilidade, conforme diretriz das…
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 41** (art. 1030, I, b) · `sim_1789809766996_q41` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > O Art. 1.030, I, alínea "b", do CPC estabelece expressamente que os autos conclusos ao presidente ou vice-presidente…
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 45** (art. 1042; 1030, V) · `sim_1789809766996_q45` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > Da leitura sistemática do Art. 1.042 e do Art. 1.030, V e § 2º, do CPC, extrai-se que o sistema recursal brasileiro não prevê…
-  > Da leitura sistemática do Art. 1.042 e do Art. 1.030, V e § 2º, do CPC, extrai-se que o sistema recursal brasileiro não prevê instrumento de impu…
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 48** (art. 1042; 1030, I, b) · `sim_1789809766996_q48` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > …olidou (Info 11, Edição Extraordinária) que a interposição de agravo em recurso especial (Art. 1.042 do CPC) nas hipóteses de inadmissão fundada no Art. 1.030, I, alínea "b" (conformidade co…
-  > …de agravo em recurso especial (Art. 1.042 do CPC) nas hipóteses de inadmissão fundada no Art. 1.030, I, alínea "b" (conformidade com recursos repetitivos) é erro inescusável. O instrumento processual cabí…
-- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 49** (art. 1042) · `sim_1789809766996_q49` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
-  > …vo Interno ao respectivo órgão colegiado do tribunal local. O Agravo em Recurso Especial (Art. 1.042) presta-se unicamente ao combate da inadmissão genérica dos recursos de superposição.
-
-<details><summary>Citam só o artigo (2)</summary>
-
-- ❓ Ordem dos Processos e Competência Originária dos Tribunais (arts. 926 a 993, CPC) · questão 7 · `sim_1789809837795_q7`
-- ❓ Poder Legislativo (menos Processo Legislativo) · questão 39 · `sim_1787346959085_q39`
 
 </details>
 
