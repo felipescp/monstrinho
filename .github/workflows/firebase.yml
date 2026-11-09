@@ -28,6 +28,9 @@ jobs:
       # Glossário: o app só baixa de novo os que mudaram.
       - name: Versões dos arquivos oficiais
         run: python3 -I ferramentas/versoes_oficiais.py
+      # Questões atualizadas (🔄 também nas baterias feitas antes da atualização).
+      - name: Questões atualizadas
+        run: python3 -I ferramentas/indice_atualizacoes.py
       - name: Acervo → Storage
         run: gcloud storage rsync dados gs://monstrinho-lab.firebasestorage.app/dados --recursive --delete-unmatched-destination-objects --exclude="^materiais/pdfs/"
       - name: Catálogo público da vitrine (sem questões)

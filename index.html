@@ -5834,9 +5834,38 @@ window.VERSAO_ACERVO = {
         return '<div class="acv-faixa"><div><b>🔄 Esta ficha foi atualizada em ' + this.dataBR(u.data) + '</b><br>' + this.esc(this.texto(u)) + hist + '</div>' +
             '<button type="button" data-id="' + this.esc(item.id) + '" data-data="' + this.esc(u.data) + '" onclick="event.stopPropagation(); window.VERSAO_ACERVO.marcarVista(this)">Ok</button></div>';
     },
+    // Atualizações de uma questão: a lista publicada (dados/bateriasvf/
+    // atualizacoes.json, pelo id) vale também para cópias antigas salvas no
+    // aparelho, de baterias feitas antes da atualização; senão, o campo da
+    // própria questão.
+    _indiceQuestoes: null,
+    atualizacoesDe: function(q) {
+        let i = this._indiceQuestoes;
+        return (q && i && i[q.id]) || (q && q.atualizacoes) || null;
+    },
+    // Baixa a lista uma vez por abertura do app; ao chegar, redesenha a
+    // grade e acrescenta o 🔄 às questões já respondidas na tela.
+    carregarIndiceQuestoes: function() {
+        if (this._carregandoIndice) return;
+        this._carregandoIndice = true;
+        let self = this;
+        fetch('dados/bateriasvf/atualizacoes.json?v=' + new Date().toISOString().slice(0, 13))
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(j) {
+                if (!j || !j.questoes) return;
+                self._indiceQuestoes = j.questoes;
+                try {
+                    if (typeof D !== 'undefined' && D && D.blocos && document.getElementById('sbnav')) {
+                        renderNav();
+                        D.blocos.forEach(function(b) { (b.questoes || []).forEach(function(q) { if (D.res[q.id] && D.res[q.id].c) anexarSinalAtualizacao(q); }); });
+                    }
+                } catch (e) { console.warn('[ACERVO] 🔄 nas questões:', e); }
+            })
+            .catch(function() {});
+    },
     // Sinal da questão.
     sinalQuestao: function(q) {
-        let u = this.ultima(q && q.atualizacoes);
+        let u = this.ultima(this.atualizacoesDe(q));
         if (!u) return null;
         let s = document.createElement('span');
         s.className = 'acv-sinal';
@@ -26324,6 +26353,7 @@ window.garantirOficiaisParaBaralhosAssociados = function() {
 };
 
 function renderNav(){
+    if(window.VERSAO_ACERVO && !window.VERSAO_ACERVO._indiceQuestoes) window.VERSAO_ACERVO.carregarIndiceQuestoes();
     var nav=g('sbnav');nav.innerHTML='';var gi=0;
 
     var h2Questoes = nav.parentElement.querySelector('h2');
@@ -26486,7 +26516,7 @@ function renderNav(){
       }
       
       // 🔄 discreto no canto do número, só em questão já respondida e atualizada.
-      var uAt=resp&&window.VERSAO_ACERVO&&window.VERSAO_ACERVO.ultima(q.atualizacoes);
+      var uAt=resp&&window.VERSAO_ACERVO&&window.VERSAO_ACERVO.ultima(window.VERSAO_ACERVO.atualizacoesDe(q));
       if(uAt){
         var sAt=document.createElement('span');sAt.className='nb-atu';sAt.textContent='🔄';btn.appendChild(sAt);
         btn.title='Questão atualizada em '+window.VERSAO_ACERVO.dataBR(uAt.data)+' — '+window.VERSAO_ACERVO.texto(uAt);
