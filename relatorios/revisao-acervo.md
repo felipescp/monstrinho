@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**60** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **178** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**55** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **178** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -339,21 +339,6 @@ Alterados: L13709 art. 55-A; L13709 art. 55-C (V-A; V-B; VI); L13709 art. 5 (VII
 - 🧩 Conceitos Fundamentais: Dado Pessoal, Sensível, Anonimizado e Agentes de Tratamento · `esq_1789006530653_dh8t4d`
 
 </details>
-
-## EC 139/2026: Tribunais de Contas: instituições permanentes (5)
-
-Alterados: CF art. 75; CF art. 31 (§ 1)
-
-- 🧩 **Defensoria Pública Estadual (DPE-PE): Autonomia e Regras de Organização na CE-PE** (art. 75) · `esq_1790163932401_g99ko1` · dados/esquemas/esquemas-direito-constitucional.json
-  > …lo Governador a partir de lista tríplice. Fonte: Constituição de Pernambuco 4, arts. 72 a 75 da CE-PE · Curadoria: 23/09/26
-- 🧩 **Fiscalização dos Tribunais de Contas e Jurisprudência do TCU** (art. 75) · `esq_1786628156798_1dnxva` · dados/esquemas/esquemas-direito-constitucional.json
-  > Subtema: Tribunais de Contas e Fiscalização · Tipo: Comparativo · Ref.: arts. 70 a 75 da CF; Súmula nº 347 do STF; Súmula nº 653 do STF O controle externo da execução contábil…
-- 🧩 **Julgamento de Contas dos Prefeitos: Governo vs. Gestão** (art. 31, 1,2) · `esq_1786627617066_ff3mwk` · dados/esquemas/esquemas-direito-constitucional.json
-  > Subtema: Repartição de Competências e Entes Federados · Tipo: Comparativo · Ref.: art. 31, §§ 1º e 2º, e art. 71, II, da CF; Temas nº 157, 835 e 1287 do STF Regime de Competência e Efeitos Té…
-- 🧩 **Tribunal de Contas do Estado (TCE-PE): Composição, Escolha dos Conselheiros e Autonomia** (art. 75) · `esq_1790164014503_b1b4w2` · dados/esquemas/esquemas-direito-constitucional.json
-  > …ontrole Externo e TCE-PE · Tipo: Classificação · Ref.: arts. 29 a 31 da CE-PE; arts. 73 e 75 da CF/88 Órgão / Agente Quantitativo e Regra de Escolha / Provimento Garantias e Prerroga…
-- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 33** (art. 75) · `sim_1788654352739_q33` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
-  > …e ADI 5323/RN) já cristalizou que os Tribunais de Contas atraem, por simetria (arts. 73, 75 e 96, II, "d", da CF), a iniciativa reservada (competência privativa) para instaurar proc…
 
 ## Lei Complementar 227/2026: ITBI no CTN, contribuição de iluminação e monitoramento, CGIBS (3)
 
