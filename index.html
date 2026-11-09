@@ -35368,6 +35368,29 @@ window.ESQ_IA = {
     /* "⚠️ Superado" — visível na grade sem precisar abrir o popup (selo +
        tratamento do card), cor de alerta (âmbar) distinta do vermelho já
        usado por "(Oficial)". */
+    #jurisprudencia-modal .jur-selo-mudanca { font-size:8px; font-weight:800; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; border:1px solid; }
+    .jur-selo-mud-mudanca, .jur-mud-mudanca .jur-mud-selo, .jur-mud-mudanca .jur-ver-mud-selo { color:#1e40af; background:#dbeafe; border-color:#93c5fd; }
+    .jur-selo-mud-viva, .jur-mud-viva .jur-mud-selo, .jur-mud-viva .jur-ver-mud-selo { color:#6b21a8; background:#f3e8ff; border-color:#d8b4fe; }
+    .jur-selo-mud-resolvida, .jur-mud-resolvida .jur-mud-selo, .jur-mud-resolvida .jur-ver-mud-selo { color:#166534; background:#dcfce7; border-color:#86efac; }
+    .jur-selo-mud-superado, .jur-mud-superado .jur-mud-selo, .jur-mud-superado .jur-ver-mud-selo { color:#92400e; background:#fef3c7; border-color:#fbbf24; }
+    #jurisprudencia-modal .jur-mud-scroll { align-items:stretch; }
+    #jurisprudencia-modal .jur-mud-intro { font-size:11.5px; color:var(--text-muted); max-width:820px; width:100%; margin:0 auto; }
+    #jurisprudencia-modal .jur-mud-sep { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin:10px 2px 2px; }
+    .jur-mud-item { max-width:820px; width:100%; margin:0 auto; box-sizing:border-box; background:var(--bg-white); border:1px solid var(--border-color); border-left:4px solid #93c5fd; border-radius:8px; padding:10px 14px; cursor:pointer; display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+    .jur-mud-item:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .jur-mud-item.jur-mud-viva { border-left-color:#c084fc; }
+    .jur-mud-item.jur-mud-resolvida { border-left-color:#4ade80; }
+    .jur-mud-item.jur-mud-superado { border-left-color:#fbbf24; }
+    .jur-mud-topo { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .jur-mud-selo, .jur-ver-mud-selo { font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px; border:1px solid; }
+    .jur-mud-quando { font-size:10.5px; color:var(--text-muted); font-weight:600; }
+    .jur-mud-titulo { font-size:13px; font-weight:700; color:var(--text-main); line-height:1.35; }
+    .jur-mud-meta, .jur-mud-origem { font-size:10.5px; color:var(--text-muted); }
+    .jur-mud-resumo, .jur-ver-mud-resumo { font-size:12px; color:var(--text-main); line-height:1.5; }
+    .jur-mud-ver { font-size:11px; color:var(--text-muted); }
+    .jur-mud-link { color:var(--app-primary); font-weight:600; text-decoration:none; }
+    .jur-mud-link:hover { text-decoration:underline; }
+    #modal-jurisprudencia-ver .jur-ver-mud-bloco { margin-top:10px; padding:8px 12px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-soft); display:flex; flex-direction:column; gap:5px; align-items:flex-start; }
     #jurisprudencia-modal .jur-selo-superado { font-size:8px; font-weight:800; color:#92400e; background:#fef3c7; border:1px solid #fbbf24; padding:1px 5px; border-radius:3px; flex-shrink:0; white-space:nowrap; }
     /* Casos da CIDH: selo com o tipo de decisão (campo tipoCIDH), uma cor por tipo. */
     .jur-selo-tipo-cidh { display:inline-block; font-size:9.5px; font-weight:800; border-radius:99px; padding:1px 8px; margin-left:4px; white-space:nowrap; border:1px solid; }
@@ -35587,6 +35610,7 @@ window.ESQ_IA = {
                 <button class="fc-tab" id="jur-tab-facil" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('facil')">🟢 Regular <span class="fc-tab-count" id="jur-tab-facil-count"></span></button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarMarkdownAba('facil')" title="Exportar MD: fichas Regular">📤</button>
                 <button class="fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
+                <button class="fc-tab" id="jur-tab-mudancas" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('mudancas')" title="Mudanças de entendimento, divergências entre Turmas e Tribunais e súmulas superadas ou canceladas">🆕 Divergências e Mudanças <span class="fc-tab-count" id="jur-tab-mudancas-count"></span></button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
                 <button class="jur-aplicar-sistema-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
             </div>
@@ -35617,6 +35641,15 @@ window.ESQ_IA = {
             <div class="fc-col" id="jur-col-materias"></div>
             <div class="fc-col" id="jur-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
             <div class="fc-col" id="jur-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+        </div>
+
+        <div class="fc-aba-revisao" id="jur-aba-mudancas" style="display:none;">
+            <div class="fc-aba-revisao-corpo">
+                <div class="fc-aba-revisao-sidebar">
+                    <div class="fc-pills" id="jur-pills-mudancas"></div>
+                </div>
+                <div class="fc-aba-revisao-scroll jur-mud-scroll" id="jur-corpo-mudancas"></div>
+            </div>
         </div>
 
         <div class="fc-aba-revisao" id="jur-aba-dificil" style="display:none;">
@@ -36726,6 +36759,8 @@ window.JURISPRUDENCIA_RUNTIME = {
             let el = document.getElementById('jur-tab-' + aba + '-count');
             if (el) el.textContent = '(' + self.listarFichasPorClassificacao(null, aba).length + ')';
         });
+        let elMud = document.getElementById('jur-tab-mudancas-count');
+        if (elMud) { let n = this._fichasComMudanca().length; elMud.textContent = n ? '(' + n + ')' : ''; }
     },
 
     _chaveL2: function(materia, divisao) {
@@ -36839,6 +36874,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // o usuário marca "Superado" manualmente (ou, no futuro, a automação via
     // MCP). Fallback lido aqui, sem migração/escrita silenciosa no storage.
     _statusAtual: function(item) {
+        if (item && item.mudanca && item.mudanca.tipo === 'superado') return 'superado';
         return (item && item.statusAtual) || 'vigente';
     },
 
@@ -37805,7 +37841,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             : '';
         let seloOficial = item.origem_oficial ? '<span class="jur-selo-oficial" title="Ficha oficial">(Oficial)</span>' : '';
         let seloOculto = oculto ? '<span class="jur-selo-oculto">🙈 Oculto</span>' : '';
-        let seloSuperado = superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '';
+        let tipoMud = self._tipoMudanca(item);
+        let seloSuperado = tipoMud
+            ? '<span class="jur-selo-mudanca jur-selo-mud-' + tipoMud + '" title="' + self._escapar(item.mudanca.resumo || '') + '">' + self._escapar(self._seloMudancaTexto(item)) + '</span>'
+            : (superado ? '<span class="jur-selo-superado" title="' + self._escapar(item.supersedidoPor ? ('Superado por: ' + item.supersedidoPor) : 'Julgado superado') + '">⚠️ Superado</span>' : '');
         let etiquetaDoItem = window._etiquetaEfetivaDoItem(item, (self.etiquetas[chave] || {})[self.etiquetaPorFicha[item.id]]);
         // Mesmo padrão de ESQUEMAS_RUNTIME/GLOSSARIO_RUNTIME: lado ESQUERDO
         // do cabeçalho, junto do checkbox — extremo oposto de Ocultar/Excluir.
@@ -38406,6 +38445,15 @@ window.JURISPRUDENCIA_RUNTIME = {
     _renderBlocoSuperado: function(item) {
         let alvo = document.getElementById('jur-ver-superado');
         if (!alvo) return;
+        if (item.mudanca) {
+            let quando = item.mudanca.data && item.mudanca.data !== item.dataJulgado ? ' · ' + this._fmtDataMud(item.mudanca.data) : '';
+            alvo.innerHTML = '<div class="jur-ver-mud-bloco jur-mud-' + this._tipoMudanca(item) + '">' +
+                '<div class="jur-ver-mud-selo">' + this._escapar(this._seloMudancaTexto(item)) + quando + '</div>' +
+                '<div class="jur-ver-mud-resumo">' + this._escapar(item.mudanca.resumo || '') + '</div>' +
+                this._htmlLinksMudanca(item) +
+            '</div>';
+            return;
+        }
         if (item.origem_oficial) { alvo.innerHTML = ''; return; }
 
         let superado = this._statusAtual(item) === 'superado';
@@ -40459,14 +40507,132 @@ window.JURISPRUDENCIA_RUNTIME = {
         document.querySelectorAll('#jurisprudencia-modal .fc-tab').forEach(function(el) { el.classList.remove('ativa'); });
         let tabEl = document.getElementById('jur-tab-' + aba);
         if (tabEl) tabEl.classList.add('ativa');
-        let idsPorAba = { grade: 'jur-grid', dificil: 'jur-aba-dificil', medio: 'jur-aba-medio', facil: 'jur-aba-facil' };
+        let idsPorAba = { grade: 'jur-grid', dificil: 'jur-aba-dificil', medio: 'jur-aba-medio', facil: 'jur-aba-facil', mudancas: 'jur-aba-mudancas' };
         Object.keys(idsPorAba).forEach(function(a) {
             let el = document.getElementById(idsPorAba[a]);
             if (!el) return;
             el.style.display = (a !== aba) ? 'none' : (a === 'grade' ? 'grid' : 'flex');
         });
         if (aba === 'dificil' || aba === 'medio' || aba === 'facil') this.renderAbaRevisao(aba);
+        if (aba === 'mudancas') this.renderAbaMudancas();
     },
+
+    // ── ABA "🆕 DIVERGÊNCIAS E MUDANÇAS" ──
+    // Fichas oficiais com o campo `mudanca` (curadoria em
+    // ferramentas/curadoria_mudancas_jur.py): mudanças de entendimento,
+    // divergências vivas ou resolvidas e súmulas/teses superadas ou
+    // canceladas. Mais recentes primeiro (data da mudança, ou do julgado).
+    _MUD_TIPOS: [
+        { chave: 'mudanca', rotulo: '🔄 Mudanças de entendimento', selo: '🔄 Mudança de entendimento' },
+        { chave: 'viva', rotulo: '⚖️ Divergências vivas', selo: '⚖️ Divergência' },
+        { chave: 'resolvida', rotulo: '✅ Divergências resolvidas', selo: '✅ Divergência resolvida' },
+        { chave: 'superado', rotulo: '⛔ Superados e cancelados', selo: '⛔ Superado' }
+    ],
+    _tipoMudanca: function(item) {
+        let m = item && item.mudanca;
+        if (!m) return null;
+        if (m.tipo === 'divergencia') return m.situacao === 'resolvida' ? 'resolvida' : 'viva';
+        return m.tipo;
+    },
+    _seloMudancaTexto: function(item) {
+        let t = this._tipoMudanca(item);
+        if (!t) return '';
+        if (t === 'superado') {
+            let r = item.mudanca.resumo || '';
+            if (/^Cancelad/.test(r)) return '⛔ Cancelada';
+            if (/^Superad[ao] em parte|^Parcialmente/.test(r)) return '⛔ Superado em parte';
+            return item.mudanca.causa === 'lei' ? '⛔ Superado por lei' : '⛔ Superado';
+        }
+        return (this._MUD_TIPOS.find(function(x) { return x.chave === t; }) || {}).selo || '';
+    },
+    _fmtDataMud: function(d) {
+        if (/^\d{4}-\d{2}$/.test(d || '')) return d.slice(5) + '/' + d.slice(0, 4);
+        return this._formatarDataBR(d);
+    },
+    _dataMudanca: function(item) {
+        return (item.mudanca && item.mudanca.data) || item.dataJulgado || '';
+    },
+    _localizarFicha: function(id) {
+        let fichas = this.fichas || {};
+        for (let chave in fichas) {
+            let f = (fichas[chave] || []).find(function(x) { return x.id === id; });
+            if (f) return { chave: chave, item: f };
+        }
+        return null;
+    },
+    _fichasComMudanca: function() {
+        this._garantirCarregado();
+        let self = this, lista = [];
+        Object.keys(this.fichas || {}).forEach(function(chave) {
+            (self.fichas[chave] || []).forEach(function(f) { if (f && f.mudanca && !self.ocultos[f.id]) lista.push({ chave: chave, item: f }); });
+        });
+        lista.sort(function(a, b) { return self._dataMudanca(b.item).localeCompare(self._dataMudanca(a.item)); });
+        return lista;
+    },
+    filtrarMudancas: function(campo, valor) {
+        if (!this._mudFiltro) this._mudFiltro = { tipo: null, materia: null };
+        this._mudFiltro[campo] = (valor === null || this._mudFiltro[campo] === valor) ? null : valor;
+        this.renderAbaMudancas();
+    },
+    limparFiltroMudancas: function() {
+        this._mudFiltro = { tipo: null, materia: null };
+        this.renderAbaMudancas();
+    },
+    _htmlLinksMudanca: function(item) {
+        let self = this, ver = (item.mudanca && item.mudanca.ver) || [];
+        let links = ver.map(function(id) {
+            let r = self._localizarFicha(id);
+            if (!r) return '';
+            let rot = r.item.processo || r.item.titulo || 'ficha';
+            return '<a href="#" class="jur-mud-link" onclick="event.preventDefault(); event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirCasoRelacionado(\'' + r.chave.replace(/'/g, "\\'") + '\', \'' + id + '\')">' + self._escapar(rot.length > 70 ? rot.slice(0, 70) + '…' : rot) + '</a>';
+        }).filter(Boolean);
+        return links.length ? '<div class="jur-mud-ver">Ver também: ' + links.join(' · ') + '</div>' : '';
+    },
+    renderAbaMudancas: function() {
+        let self = this;
+        if (!this._mudFiltro) this._mudFiltro = { tipo: null, materia: null };
+        let F = this._mudFiltro;
+        let materiaDe = function(r) { return r.chave.split(' > ')[0]; };
+        let todas = this._fichasComMudanca();
+        let conta = function(lista, fn) { let m = {}; lista.forEach(function(r) { let k = fn(r); m[k] = (m[k] || 0) + 1; }); return m; };
+        let nTipo = conta(todas.filter(function(r) { return !F.materia || materiaDe(r) === F.materia; }), function(r) { return self._tipoMudanca(r.item); });
+        let nMat = conta(todas.filter(function(r) { return !F.tipo || self._tipoMudanca(r.item) === F.tipo; }), materiaDe);
+        let pill = function(campo, valor, rotulo, n) {
+            return '<button class="fc-pill' + (F[campo] === valor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.filtrarMudancas(\'' + campo + '\', \'' + String(valor).replace(/'/g, "\\'") + '\')">' + self._escapar(rotulo) + ' (' + (n || 0) + ')</button>';
+        };
+        let pillsEl = document.getElementById('jur-pills-mudancas');
+        if (pillsEl) pillsEl.innerHTML =
+            '<button class="fc-pill' + (!F.tipo && !F.materia ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.limparFiltroMudancas()">Todas (' + todas.length + ')</button>' +
+            this._MUD_TIPOS.map(function(t) { return pill('tipo', t.chave, t.rotulo, nTipo[t.chave]); }).join('') +
+            '<div class="jur-mud-sep">Disciplinas</div>' +
+            Object.keys(nMat).sort(function(x, y) {
+                let ordem = (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : [];
+                let ix = ordem.indexOf(x), iy = ordem.indexOf(y);
+                return (ix < 0 ? 999 : ix) - (iy < 0 ? 999 : iy) || x.localeCompare(y);
+            }).map(function(m) { return pill('materia', m, m, nMat[m]); }).join('');
+        let visiveis = todas.filter(function(r) {
+            return (!F.tipo || self._tipoMudanca(r.item) === F.tipo) && (!F.materia || materiaDe(r) === F.materia);
+        });
+        let corpo = document.getElementById('jur-corpo-mudancas');
+        if (!corpo) return;
+        if (!visiveis.length) { corpo.innerHTML = '<div class="fc-vazio-col">' + (todas.length ? 'Nada com esse filtro.' : 'Carregando…') + '</div>'; return; }
+        corpo.innerHTML = '<div class="jur-mud-intro">Destaques do acervo: mudanças de entendimento, divergências entre Turmas e Tribunais e súmulas ou teses superadas. Clique para abrir a ficha.</div>' +
+            visiveis.map(function(r) {
+                let it = r.item, t = self._tipoMudanca(it);
+                let meta = [it.tribunal, it.orgao, it.processo, self._formatarDataBR(it.dataJulgado)].filter(Boolean).join(' · ');
+                let quando = it.mudanca.data && it.mudanca.data !== it.dataJulgado ? '<span class="jur-mud-quando">mudança em ' + self._fmtDataMud(it.mudanca.data) + '</span>' : '';
+                return '<div class="jur-mud-item jur-mud-' + t + '" onclick="window.JURISPRUDENCIA_RUNTIME.abrirVer(\'' + r.chave.replace(/'/g, "\\'") + '\', \'' + it.id + '\')">' +
+                    '<div class="jur-mud-topo"><span class="jur-mud-selo">' + self._escapar(self._seloMudancaTexto(it)) + '</span>' + quando + '</div>' +
+                    '<div class="jur-mud-titulo">' + self._escapar(self._tituloComTema(it)) + '</div>' +
+                    '<div class="jur-mud-meta">' + self._escapar(meta) + '</div>' +
+                    '<div class="jur-mud-resumo">' + self._escapar(it.mudanca.resumo || '') + '</div>' +
+                    self._htmlLinksMudanca(it) +
+                    '<div class="jur-mud-origem">' + self._escapar(r.chave) + '</div>' +
+                '</div>';
+            }).join('');
+        this._atualizarContagensAbas();
+    },
+
 
     // Sem cache — mesmo raciocínio de Flashcards/Praticar Caderno: volume
     // esperado (jurisprudência pessoal + oficial, não um catálogo enorme)

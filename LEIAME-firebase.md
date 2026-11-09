@@ -276,6 +276,17 @@ Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança d
 - **Questão:** aparece só o sinal 🔄 ao lado do número; passar o mouse ou clicar mostra em que consistiu a mudança.
 - Questões já salvas em cadernos são cópias: só as cópias feitas depois da atualização carregam o sinal.
 
+## Jurisprudência: aba "🆕 Divergências e Mudanças"
+
+A aba reúne as fichas oficiais com o campo `mudanca`, mais recentes primeiro:
+
+- 🔄 **Mudança de entendimento**: a ficha registra o entendimento novo.
+- ⚖️ **Divergência viva**: Turmas ou Tribunais decidem de modo diferente, sem uniformização.
+- ✅ **Divergência resolvida**: Seção, Corte Especial ou Plenário uniformizou.
+- ⛔ **Superado / cancelado**: súmula ou tese que não vale mais (por lei, EC ou novo precedente). A ficha também ganha o selo na grade.
+
+A curadoria fica em `ferramentas/curadoria_mudancas_jur.py` (id da ficha, tipo, resumo de uma linha, data da mudança e fichas ligadas em "Ver também"). Para incluir ou tirar uma ficha, edite a lista e rode `python3 ferramentas/curadoria_mudancas_jur.py`. Súmulas que só a doutrina considera superadas ficam de fora.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
