@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**171** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **298** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**156** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **251** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -386,97 +386,6 @@ Alterados: L11340 art. 16 (p.ú.)
 - 🧩 Retratação da representação · `esq_1786501407107_5uc4kl`
 - ❓ Ação Penal · questão 4 · `sim_1788573246600_q4`
 - ❓ Lei Maria da Penha · questão 30 · `sim_1788215085553_q30`
-
-</details>
-
-## Lei 15.358/2026: Marco legal do combate ao crime organizado: facções ultraviolentas, hediondos e custódia por vídeo (15 + 47 só o artigo)
-
-Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L11343 art. 40-A; LEP art. 112 (V; VI; VI-A; VII; VIII); LEP art. 41-A; CPP art. 310; CPP art. 78 (I); CPP art. 313 (V); L8072 art. 1 (p.ú., VIII)
-
-- 🧩 **Antes e depois da Lei 15.358/26 - Art. 3º-B, § 1º** (art. 310) · `esq_1786498860358_347qjb` · dados/esquemas/esquemas-direito-processual-penal.json
-  > …mprego de videoconferência. Realizar-se-á, por videoconferência , a audiência na forma do art. 310 do CPP. Prazo legal No prazo de 24 horas. Mantido o prazo de 24 horas. Presenças obrigató…
-- 🧩 **Antes e depois da Lei 15.358/26 - Art. 78, I** (art. 78, I) · `esq_1786502113364_dws1jh` · dados/esquemas/esquemas-direito-processual-penal.json
-  > Subtema: Conexão e Continência · Tipo: Alteração legislativa · Ref.: art. 78, I, do CPP (redação da Lei 15.358/26) Critério Comparativo ANTES da Lei 15.358/26 DEPOIS da…
-- 🧩 **Audiência de Custódia e a Apresentação em 24 Horas** (art. 310) · `esq_1786595030588_e8ylxv` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Prisão e Medidas Cautelares · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 1º ao 4º do CPP (redação da Lei nº 13.964/19) Ritos Rígidos de Controle de Custódia F…
-  > …e de Custódia Física de Presos Prazo / Condição Regramento e Limites Rígidos de Custódia (Art. 310 do CPP) Prazo de Apresentação O preso será encaminhado à presença do juiz no prazo de 24…
-- 🧩 **Extorsão e Extorsão Mediante Sequestro (Regime Sancionatório)** (art. 158; 158, 4) · `esq_1786594751898_npk3k0` · dados/esquemas/esquemas-direito-penal.json
-  > …cado por integrante de organização criminosa ultraviolenta, grupo paramilitar ou milícia (art. 158, § 4º, do CP / art. 159, § 5º, do CP). &#8627; Extorsão simples/relâmpago: aplica-se a pena em…
-- 🧩 **Pacto Internacional sobre Direitos Civis e Políticos (PIDCP/1966): Direitos Protegidos, Cláusulas de Derrogação e Exceções** (art. 310) · `esq_1791918824304_094i2d` · dados/esquemas/esquemas-nocoes-gerais-de-direito-formacao-humanistica-e-direitos-humanos.json
-  > …quer pessoa presa à autoridade judicial. Incorporada integralmente no ordenamento pátrio (Art. 310 do CPP e Res. 213/CNJ). Trabalho Forçado Penal (Art. 8.3.b) Admite trabalho forçado impos…
-- 🧩 **Prisão em flagrante e Audiência de Custódia (Lei 13.964/19 e 15.358/26)** (art. 310) · `esq_1786533315176_nrxr9z` · dados/esquemas/esquemas-direito-processual-penal.json
-  > Subtema: Prisão em Flagrante · Tipo: Classificação · Ref.: art. 301 a 310 do CPP; Súmula Vinculante 11/STF; Súmula 676/STJ Modalidades de Prisão em Flagrante Espéc…
-- 🧩 **Standard probatório para conversão de flagrante (Lei 15.272/25)** (art. 310, 5,6; 310; 310, 5) · `esq_1786533315176_lozs96` · dados/esquemas/esquemas-direito-processual-penal.json
-  > …sões Provisórias (Flagrante, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedim…
-  > …prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedimental de Conversão (Lei 15.272/25) Prática reiterada Haver prov…
-- ❓ **Crimes contra o Patrimônio · questão 19** (art. 157, 4) · `sim_1783734802398_q19` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > Trata-se da rígida determinação do Art. 157, § 4º, do Código Penal (introduzido por reforma legislativa). O dispositivo impõe a aplicação d…
-- ❓ **Crimes contra o Patrimônio · questão 25** (art. 157, 4; 158, 4) · `sim_1783734802398_q25` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > A assertiva erra ao generalizar as frações. Enquanto no Roubo (Art. 157, § 4º, do CP) e na Extorsão (Art. 158, § 4º, do CP) a pena aplica-se em **triplo**, o legislado…
-  > …erra ao generalizar as frações. Enquanto no Roubo (Art. 157, § 4º, do CP) e na Extorsão (Art. 158, § 4º, do CP) a pena aplica-se em **triplo**, o legislador estipulou, no Art. 159, § 5º, do CP,…
-- ❓ **Júri · questão 6** (art. 78, I) · `sim_1787068094870_q6` · dados/bateriasvf/grupo-ce-lindbinterceptacaolicitacoesjuri.json
-  > …delito conexo é remetido automaticamente ao julgamento pelo Tribunal do Júri por força do art. 78, I, do Código de Processo Penal, preservando-se a competência constitucional e exclusiva do…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 49** (art. 112, VIII; 112, VI) · `sim_1789667188418_q49` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > …ido a lacuna legislativa sobre o reincidente genérico ao restringir a nova fração de 85% (art. 112, VIII, da LEP) apenas aos reincidentes específicos em crime hediondo com resultado morte, major…
-  > …rte, majorou expressamente a fração aplicável ao agente primário nessas mesmas condições (art. 112, VI, 'a'), de modo que a construção jurisprudencial consolidada pelo STJ no Tema 1196 — funda…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 55** (art. 112, VI, d) · `sim_1789667188418_q55` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > A Lei nº 15.358/2026 alterou as frações de cumprimento de pena e incluiu o art. 112, VI, "d", na LEP, estabelecendo a fração gravosa de 75% (setenta e cinco por cento) para o condena…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 9** (art. 41-A) · `sim_1789667188418_q9` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > Conforme o art. 41-A, caput e § 1º, da LEP (introduzido pela Lei nº 15.358/2026), os encontros de presos ligados a or…
-- ❓ **Prisão · questão 40** (art. 310) · `sim_1781783375084_q40` · dados/bateriasvf/grupo-ce-prisao.json
-  > ….506/STF e HC 198.896 AgR/STF) que, embora o descumprimento do prazo exíguo estipulado no art. 310 configure grave irregularidade procedimental, a não realização da audiência de custódia n…
-- ❓ **Prisão · questão 45** (art. 310, 4) · `sim_1781783375084_q45` · dados/bateriasvf/grupo-ce-prisao.json
-  > A redação atual do **art. 310, § 4º, do CPP** (embora o dispositivo seja alvo de discussões no STF - ADI 6.305) determina que…
-
-<details><summary>Citam só o artigo (47)</summary>
-
-- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
-- 🧩 Confronto entre Roubo e Extorsão · `esq_1786594751898_zg53za`
-- 🧩 Consequências da Prática de Falta Grave · `esq_1786568035891_nlh065`
-- 🧩 Consumação e Espécies de Roubo (Próprio e Impróprio) · `esq_1786594751898_itosvi`
-- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
-- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
-- 🧩 Garantismo na Execução Penal, Falta Grave e Súmula Vinculante 56 · `esq_1791815770774_mtnln2`
-- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
-- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
-- 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
-- 🧩 Prisão Preventiva em Violência Doméstica (LMP vs. Contravenções) · `esq_1786571326485_y3ggxz`
-- 🧩 Regras dos Regimes Prisionais (Fechado, Semiaberto e Aberto) · `esq_1786594816717_512ys7`
-- 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
-- 🧩 Tráfico Privilegiado (Art. 33, § 4º): Requisitos, Natureza e Afastamento · `esq_1786570744236_x7tb4w`
-- ❓ Crimes contra a Administração · questão 26 · `sim_1785726484167_q26`
-- ❓ Crimes contra a Administração · questão 38 · `sim_1785726484167_q38`
-- ❓ Crimes contra a Administração · questão 52 · `sim_1785726484167_q52`
-- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
-- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
-- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
-- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
-- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
-- ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 22 · `sim_1788654225381_q22`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 5 · `sim_1788654225381_q5`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 57 · `sim_1788654225381_q57`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
-- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 27 · `sim_1789667188418_q27`
-- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 42 · `sim_1789667188418_q42`
-- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
-- ❓ Prisão · questão 10 · `sim_1781783375084_q10`
-- ❓ Prisão · questão 14 · `sim_1781783375084_q14`
 
 </details>
 
