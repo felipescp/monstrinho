@@ -31040,7 +31040,7 @@ window.triggerFileUpload = function(callback) {
             <div class="analytics-modal-title">📊 Esquemas e Tabelas</div>
             <div class="esq-cabecalho-acoes">
                 <button class="esq-cabecalho-btn" onclick="window.ESQ_IA.abrir()" title="Gerar fichas com IA a partir de um tema ou material">&#x2728; Criar com IA</button>
-                <button class="so-admin esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()">&#x1F4E5; Importar em Massa</button>
+                <button class="req-completo esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()" title="Importar esquemas próprios a partir de texto (acesso completo)">&#x1F4E5; Importar Esquemas</button>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
@@ -31409,7 +31409,7 @@ window.triggerFileUpload = function(callback) {
 </style>
     <div class="mdl" style="max-width:640px; width:95%; max-height:88vh; padding:20px; display:flex; flex-direction:column; gap:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div class="fc-popup-header">📥 Importar Esquemas em Massa</div>
+            <div class="fc-popup-header">📥 Importar Esquemas</div>
             <button onclick="window.ESQUEMAS_RUNTIME.fecharModalImportar()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1;" title="Fechar">✖</button>
         </div>
         <div id="esq-import-ajuda">Cole o texto com uma ou mais divisões, cada uma iniciada por <code>### L2: Nome Exato da Divisão</code> (os <code>###</code> são opcionais — funciona também só com <code>L2: Nome Exato da Divisão</code>, útil quando a IA que gerou o texto trata <code>###</code> como cabeçalho de markdown e não os inclui), seguida das fichas: linha de conferência "L1 - L2", título, "Subtema: ... | Tipo: ...", "Referência: ...", "CORPO: &lt;html de uma linha&gt;", "ALERTA: ...", "FONTE: ... | Data da curadoria: DD/MM/AAAA".</div>
@@ -34040,7 +34040,8 @@ window.ESQUEMAS_RUNTIME = {
     // vem do marcador "### L2:" dentro do próprio texto colado, podendo
     // conter várias divisões diferentes num único lote.
     abrirModalImportar: function() {
-        if (!window.exigirAdmin()) return;
+        // Importar Esquemas: acesso completo (a administração também); visível com 🔒 nos demais níveis.
+        if (!window.temNivel('completo')) { window.mostrarNiveis('Importar esquemas', 'completo'); return; }
         if (!this._materiaSelecionada) { alert('Selecione uma matéria antes de importar.'); return; }
         document.getElementById('esq-import-textarea').value = '';
         document.getElementById('esq-import-preview').style.display = 'none';
