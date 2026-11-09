@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**85** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **196** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**77** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **196** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -599,29 +599,6 @@ Alterados: CP art. 157 (§ 2, VIII); CP art. 180 (§ 7)
 - ❓ Extinção da Punibilidade · questão 39 · `sim_1784907766722_q39`
 
 </details>
-
-## Lei 15.160/2025: Idade: sem atenuante nem prescrição pela metade em violência sexual contra a mulher (8)
-
-Alterados: CP art. 65 (I); CP art. 115
-
-- 🧩 **Agravantes Genéricas e a Reincidência para Fins Penais** 🆗 (art. 65, I) · `esq_1786594816717_mfblzs` · dados/esquemas/esquemas-direito-penal.json
-  > …ulher , afasta-se obrigatoriamente qualquer redução de pena por menoridade ou senilidade (art. 65, I, do CP). ⚠ A prática de contravenção penal anterior seguida do cometimento de crime poste…
-- 🧩 **Prescrição da Pretensão Socioeducativa e Regras da Lei nº 12.594/2012** 🆗 (art. 115) · `esq_1791816207942_g0os3g` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > …escricional reduz-se obrigatoriamente pela metade para todos os adolescentes. Aplica-se o art. 115 do CP (agente menor de 21 anos na data do fato/sentença). Prazo Abstrato/Concreto Prescri…
-- 🧩 **Redução dos Prazos Prescricionais (Art. 115) e Acórdãos Confirmatórios** 🆗 (art. 115) · `esq_1786594795420_gmoz6e` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Prescrição · Tipo: Jurisprudência esquematizada · Ref.: art. 115 do CP; Lei nº 15.160/25; STJ RHC nº 219.766/SP; STJ EDcl no AgRg no REsp nº 1.877.388/CE;…
-  > …olver violência sexual contra a mulher , afasta-se obrigatoriamente a redução de prazo do art. 115 do CP. Integração por Embargos STJ : Aplica-se a redução se o réu completa 70 anos entre…
-- 🧩 **Tutela Penal da Infância e Regras de Prescrição do ECA (Arts. 225 e 226)** 🆗 (art. 115) · `esq_1786572834465_qjvg5r` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Tutela Penal da Infância · Tipo: Classificação · Ref.: arts. 225 e 226 do ECA; art. 115 do CP Regras Gerais de Aplicação Penal e Prescrição no Estatuto da Infância Regra / Insti…
-  > …não conflitem com as regras protetivas especiais do ECA. Redução do Prazo Prescricional (Art. 115 do CP) São reduzidos de metade os prazos de prescrição penal quando o criminoso era, ao t…
-- ❓ **Extinção da Punibilidade · questão 12** 🆗 (art. 115) · `sim_1784907766722_q12` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
-  > Em conformidade com a redação conferida pela Lei nº 15.160/2025 ao artigo 115 do Código Penal, os prazos são reduzidos de metade nas hipóteses de menoridade relativa o…
-- ❓ **Extinção da Punibilidade · questão 19** 🆗 (art. 115) · `sim_1784907766722_q19` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
-  > …. 109, V, CP). Como Marcos tinha 19 anos ao tempo do crime (menor de 21), a incidência do Art. 115 do CP reduz o prazo pela **metade**, fixando-o em 2 anos. Entre o recebimento da denúncia…
-- ❓ **Extinção da Punibilidade · questão 20** 🆗 (art. 115) · `sim_1784907766722_q20` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
-  > De acordo com a jurisprudência pacificada do STJ e do STF, para incidir o art. 115 do CP, o condenado deve possuir mais de 70 anos no momento da **primeira decisão condenat…
-- ❓ **Extinção da Punibilidade · questão 38** 🆗 (art. 115) · `sim_1784907766722_q38` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
-  > …zo prescricional de 8 anos. Tratando-se de agente **menor de 21 anos ao tempo do crime** (art. 115, CP), o prazo é **reduzido pela metade**, alcançando a marca fatal de **4 anos**.
 
 ## Lei 15.159/2025: Crimes em instituições de ensino (0 + 2 só o artigo)
 
