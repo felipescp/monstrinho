@@ -227,7 +227,7 @@ async function chamarGemini(fetchFn, cfg, p) {
         })
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error('Gemini respondeu ' + r.status + ': ' + String((j.error && j.error.message) || '').slice(0, 200));
+    if (!r.ok) { const e = new Error('Gemini respondeu ' + r.status + ': ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
     const cand = (j.candidates || [])[0] || {};
     if (cand.finishReason === 'MAX_TOKENS') throw new Error('A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.');
     if (cand.finishReason && cand.finishReason !== 'STOP') throw new Error('O Gemini interrompeu a resposta (' + cand.finishReason + ').');
@@ -254,7 +254,7 @@ async function chamarGPT(fetchFn, cfg, p) {
         })
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error('GPT respondeu ' + r.status + ': ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
+    if (!r.ok) { const e = new Error('GPT respondeu ' + r.status + ' (' + String((j.error && (j.error.code || j.error.type)) || '') + '): ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
     if (j.status === 'incomplete') {
         const motivo = j.incomplete_details && j.incomplete_details.reason;
         throw new Error(motivo === 'max_output_tokens' ? 'A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.' : 'O GPT interrompeu a resposta (' + (motivo || 'incompleta') + ').');

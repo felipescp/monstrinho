@@ -130,6 +130,9 @@ exports.criarEsquemaIA = onCall({
         await devolver(reserva);
         const status = e && e.status;
         const msg = status === 401 ? 'A chave da IA foi recusada (confira o segredo no Secret Manager).'
+            // 429 da OpenAI/Gemini também vem quando a conta está sem crédito
+            // (insufficient_quota): aí esperar não adianta, precisa recarregar.
+            : status === 429 && /quota|billing|credit|cr[eé]dit/i.test((e && e.message) || '') ? 'A conta da IA (' + (pedido.provedor === 'gpt' ? 'OpenAI' : pedido.provedor === 'claude' ? 'Anthropic' : 'Google') + ') está sem créditos ou sem cota. É preciso adicionar créditos no painel de cobrança dela.'
             : status === 429 ? 'Limite de uso da IA atingido. Tente de novo em alguns minutos.'
             : (e && e.message) || 'Falha ao chamar a IA.';
         throw new HttpsError('internal', msg);
