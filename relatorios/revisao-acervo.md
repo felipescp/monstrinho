@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**118** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **213** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**105** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **199** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -79,74 +79,6 @@ Alterados: CP art. 155 (§ 10; § 11; § 11, I; § 11, II; § 11, III; § 11, IV
 - 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
 - ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
 - ❓ Pessoa e Patrimônio (Juris) · questão 30 · `sim_1783735414572_q30`
-
-</details>
-
-## Lei 15.487/2026: ECA: crimes digitais contra crianças reescritos, ronda virtual e infiltração (13 + 20 só o artigo)
-
-Alterados: ECA art. 240; ECA art. 241-A; ECA art. 241-B; ECA art. 241-D; ECA art. 241-E; ECA art. 190-F; ECA art. 226-A; L8072 art. 1 (p.ú., VII); CPP art. 313 (VI)
-
-- 🧩 **Agravantes Digitais de Crimes contra a Dignidade Sexual de Menor** (art. 226-A; 226-A, pu) · `esq_1787449674336_k166fh` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Requisitos e prazos · Ref.: Art. 226-A do ECA; Lei nº 15.487/2026 A Lei nº 15.487/2026 puniu com maior rigor as condutas pratica…
-  > …Gatilhador da Majorante Base Legal Fração de Aumento e Ressalva Uso de Modulador de Proxy Art. 226-A, caput, do ECA Pena de crimes previstos no capítulo é aumentada de 1/3 a 2/3 se o crime for come…
-- 🧩 **Consunção e Concurso Material nos Crimes de Pornografia Infantil (Arts. 241-A vs. 241-B do ECA)** (art. 241-A; 241-B) · `esq_1786572834465_fz0wh8` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Concurso de Crimes em Pornografia Infantil · Tipo: Comparativo · Ref.: arts. 241-A e 241-B do ECA; REsp 1.971.049/SP do STJ Critérios de Acoplamento e Independência Probató…
-  > …ema: Concurso de Crimes em Pornografia Infantil · Tipo: Comparativo · Ref.: arts. 241-A e 241-B do ECA; REsp 1.971.049/SP do STJ Critérios de Acoplamento e Independência Probatória do C…
-- 🧩 **Crime de Aliciamento Digital e Grooming de Menor** (art. 241-D) · `esq_1787449674336_927mo3` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-D do ECA; Lei nº 15.487/2026 O crime de grooming ou aliciamento digital pune as condutas pr…
-  > …agens ou favores sexuais perante vulneráveis de menor idade. Elemento do Tipo Base Legal (Art. 241-D do ECA) Regra de Aplicação e Aumentos Conduta de Aliciamento Caput Aliciar, assediar, con…
-- 🧩 **Crime de Aquisição e Armazenamento de Pornografia Infantil** (art. 241-B; 241-A) · `esq_1787449674336_yv651a` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-B do ECA; Lei nº 15.487/2026 A conduta do mero consumidor de material de exploração infanto…
-  > …ero consumidor de material de exploração infanto-juvenil é apenada de forma autônoma pelo art. 241-B do ECA, recentemente estendida para abranger visualizações em streaming em 2026. Vetor do…
-- 🧩 **Crime de Compartilhamento e Disponibilização de Abuso Sexual** (art. 241-A) · `esq_1787449674336_hbx2r9` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-A do ECA; Tema 393/STF; Lei nº 15.487/2026 A circulação virtual e disponibilização em redes…
-  > …bertas ou fechadas de conteúdo de exploração sexual da criança e adolescente é apenada no art. 241-A do ECA, estruturando-se o concurso de plataformas em 2026. Vetor Delitivo Base Legal (Art…
-- 🧩 **Crime de Produção de Material de Pornografia Infantil** (art. 240) · `esq_1787449674336_rwhu5t` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 240 do ECA; Lei nº 15.487/2026 A produção de material que exponha o menor à lascívia atrai se…
-  > …rado e unificado em suas terminologias de violência sexual. Elemento do Crime Base Legal (Art. 240 do ECA) Regra e Sanção Cominada Condutas Típicas (Dolo) Caput Produzir, reproduzir, dirig…
-- 🧩 **Definição de Conteúdo de Violência Sexual e Poses Lascivas** (art. 241-E; 241-E, III) · `esq_1787449674336_7g4dcg` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-E do ECA; Lei nº 15.487/2026 A Lei nº 15.487/2026 positivou parâmetros interpretativos do S…
-  > …smo diante de exposições sexuais sem nudez total física. Caracterização Legal Base Legal (Art. 241-E do ECA) Parâmetro de Enquadramento Judicial Conceito de Conteúdo Caput Definido como qual…
-- 🧩 **Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA)** (art. 240) · `esq_1786572834465_6c0if3` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 240, 241 e 241-C do ECA Regime das Infrações de Criação, Comércio e Adulteração de Conteúdo P…
-  > …co Crime (Dispositivo) Núcleo da Conduta Incriminadora Pena Cominada Produção / Registro (Art. 240 do ECA) Produzir, reproduzir, dirigir, fotografar, filmar ou registrar, por qualquer meio…
-- 🧩 **Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA)** (art. 241-A; 241-B; 241-D) · `esq_1786572834465_qx07dj` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 241-A, 241-B e 241-D do ECA Condutas de Circulação, Consumo e Assédio Virtual contra Menores Cr…
-  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 241-A, 241-B e 241-D do ECA Condutas de Circulação, Consumo e Assédio Virtual contra Menores Crime (Di…
-- 🧩 **Quem é Punido em Cada Tipo Penal (Art. 240 ao 241-D do ECA)** (art. 240; 241-A; 241-B; 241-D) · `esq_1786572834465_qrso2s` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Pornografia Infantil · Tipo: Rol · Ref.: arts. 240, 241, 241-A, 241-B, 241-C e 241-D do ECA Identificação Subjetiva dos Infratores e Eixos d…
-  > Subtema: Pornografia Infantil · Tipo: Rol · Ref.: arts. 240, 241, 241-A, 241-B, 241-C e 241-D do ECA Identificação Subjetiva dos Infratores e Eixos de Enquadrame…
-- 🧩 **Requisição de Dados Cadastrais sem Ordem Judicial Prévia na Ronda Virtual** (art. 190-F, 2,3; 190-F; 190-F, 2; 190-F, 3) · `esq_1787449649999_bsjyl5` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Escuta Especializada e Depoimento Especial · Tipo: Requisitos e prazos · Ref.: Art. 190-F, §§ 2º e 3º do ECA; Lei nº 15.487/2026 A autoridade de persecução penal dispõe de mecanismos céleres…
-  > …rante situações fáticas de perigo em ambiente digital. Gatilho / Procedimento Base Legal (Art. 190-F do ECA) Regra de Execução e Controle Judicial Gatilhos de Requisição Art. 190-F, § 2º, do…
-- 🧩 **Resolução CNMP nº 287/2024** (art. 240; 241-A; 241-D) · `esq_1788029912398_v4a57h` · dados/esquemas/esquemas-direito-institucional-magistratura-mp-e-defensoria.json
-  > …de Segurança e Trâmite Constatação de Exploração Sexual Prática de crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual d…
-  > …râmite Constatação de Exploração Sexual Prática de crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual de crianças e…
-- 🧩 **Ronda Virtual e Coleta de Provas Cibernéticas de Violência Sexual** (art. 190-F, 1,4,5) · `esq_1787449649999_aunpcv` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Escuta Especializada e Depoimento Especial · Tipo: Requisitos e prazos · Ref.: Art. 190-F, §§ 1º, 4º e 5º do ECA; Lei nº 15.487/2026 A inovação legislativa de 2026 normatizou a ronda virtual cibe…
-
-<details><summary>Citam só o artigo (20)</summary>
-
-- 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
-- 🧩 Prisão Preventiva em Violência Doméstica (LMP vs. Contravenções) · `esq_1786571326485_y3ggxz`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
-- ❓ Prisão · questão 10 · `sim_1781783375084_q10`
-- ❓ Prisão · questão 14 · `sim_1781783375084_q14`
 
 </details>
 
@@ -312,7 +244,7 @@ Alterados: LEP art. 52 (§ 1, III; § 1, IV; § 9; § 10); LEP art. 54 (§ 2; §
 
 </details>
 
-## Lei 15.384/2026: Vicaricídio e violência vicária (3 + 19 só o artigo)
+## Lei 15.384/2026: Vicaricídio e violência vicária (3 + 21 só o artigo)
 
 Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
 
@@ -324,9 +256,11 @@ Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
 - 🧩 **Lei nº 11.340/2006 - Bloco I (Arts. 1º a 7º)** (art. 7; 7, IV,VI) · `esq_1788045688231_0fcbcr` · dados/esquemas/esquemas-direito-penal.json
   > …bjetivo de punir a mãe não é enquadrada na Lei Maria da Penha. Ambas as teses são falsas (Art. 7º, IV e VI). ⚠ A Lei Maria da Penha é aplicável a mulheres trans, e sua vulnerabilidade é presumida…
 
-<details><summary>Citam só o artigo (19)</summary>
+<details><summary>Citam só o artigo (21)</summary>
 
 - 🧩 Espécies de Violência Doméstica (Lei Maria da Penha) e Novas Figuras · `esq_1786571326485_2k3bty`
+- 🧩 Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA) · `esq_1786572834465_6c0if3`
+- 🧩 Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA) · `esq_1786572834465_qx07dj`
 - ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
 - ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
 - ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
@@ -386,6 +320,18 @@ Alterados: L11340 art. 16 (p.ú.)
 - 🧩 Retratação da representação · `esq_1786501407107_5uc4kl`
 - ❓ Ação Penal · questão 4 · `sim_1788573246600_q4`
 - ❓ Lei Maria da Penha · questão 30 · `sim_1788215085553_q30`
+
+</details>
+
+## Lei 15.358/2026: Marco legal do combate ao crime organizado: facções ultraviolentas, hediondos e custódia por vídeo (0 + 2 só o artigo)
+
+Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L11343 art. 40-A; LEP art. 112 (V; VI; VI-A; VII; VIII); LEP art. 41-A; CPP art. 310; CPP art. 78 (I); CPP art. 313 (V); L8072 art. 1 (p.ú., VIII)
+
+
+<details><summary>Citam só o artigo (2)</summary>
+
+- 🧩 Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA) · `esq_1786572834465_6c0if3`
+- 🧩 Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA) · `esq_1786572834465_qx07dj`
 
 </details>
 
@@ -748,6 +694,18 @@ Alterados: CP art. 65 (I); CP art. 115
   > De acordo com a jurisprudência pacificada do STJ e do STF, para incidir o art. 115 do CP, o condenado deve possuir mais de 70 anos no momento da **primeira decisão condenat…
 - ❓ **Extinção da Punibilidade · questão 38** 🆗 (art. 115) · `sim_1784907766722_q38` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
   > …zo prescricional de 8 anos. Tratando-se de agente **menor de 21 anos ao tempo do crime** (art. 115, CP), o prazo é **reduzido pela metade**, alcançando a marca fatal de **4 anos**.
+
+## Lei 15.159/2025: Crimes em instituições de ensino (0 + 2 só o artigo)
+
+Alterados: CP art. 121 (§ 2, X; § 2-C; § 2-C, I; § 2-C, II); CP art. 129 (§ 12; § 12, I; § 12, II); CP art. 61 (II); L8072 art. 1 (I; I-A)
+
+
+<details><summary>Citam só o artigo (2)</summary>
+
+- 🧩 Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA) · `esq_1786572834465_6c0if3`
+- 🧩 Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA) · `esq_1786572834465_qx07dj`
+
+</details>
 
 ## Lei 15.134/2025: Homicídio qualificado contra juízes, MP, Defensoria e Advocacia Pública (5 + 10 só o artigo)
 
