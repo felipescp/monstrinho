@@ -36762,7 +36762,8 @@ window.JURISPRUDENCIA_RUNTIME = {
     // tribunal pra onde o usuário trocou, desmarca (evita grade vazia
     // "grudada" num informativo que sumiu da lista filtrada).
     toggleFiltroTribunalInformativo: function(tribunal) {
-        this._filtroTribunal = (this._filtroTribunal === tribunal) ? '' : tribunal;
+        // Sem "TODOS" (pedido explícito do usuário): sempre um tribunal escolhido.
+        this._filtroTribunal = tribunal;
         if (this._infSelecionado) {
             let tribSel = this._infSelecionado.split('|')[0];
             if (this._filtroTribunal && tribSel !== this._filtroTribunal) this._infSelecionado = null;
@@ -36924,9 +36925,13 @@ window.JURISPRUDENCIA_RUNTIME = {
             let ORDEM_TRIB = { STJ: 0, STF: 1, TSE: 2 };
             let tribunaisPresentes = Array.from(new Set(todasInf.map(function(f) { return f.tribunal || '?'; })))
                 .sort(function(a, b) { return (ORDEM_TRIB.hasOwnProperty(a) ? ORDEM_TRIB[a] : 9) - (ORDEM_TRIB.hasOwnProperty(b) ? ORDEM_TRIB[b] : 9); });
+            // Só STJ | STF (sem "TODOS"): começa no primeiro tribunal da ordem.
+            if (tribunaisPresentes.length > 1 && tribunaisPresentes.indexOf(self._filtroTribunal) < 0) {
+                let tribInf = self._infSelecionado ? self._infSelecionado.split('|')[0] : '';
+                self._filtroTribunal = tribunaisPresentes.indexOf(tribInf) >= 0 ? tribInf : tribunaisPresentes[0];
+            }
             let htmlToggle = tribunaisPresentes.length > 1
                 ? '<div class="jur-toggle-tribunal-inf">' +
-                    '<button class="jur-toggle-tribunal-inf-btn' + (!self._filtroTribunal ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroTribunalInformativo(\'\')">TODOS</button>' +
                     tribunaisPresentes.map(function(t) {
                         return '<button class="jur-toggle-tribunal-inf-btn' + (self._filtroTribunal === t ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroTribunalInformativo(\'' + t.replace(/'/g, "\\'") + '\')">' + self._escapar(t) + '</button>';
                     }).join('') +
