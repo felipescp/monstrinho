@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**44** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **150** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**41** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **133** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -513,38 +513,5 @@ Alterados: CF art. 155 (§ 6, III)
 
 - 🧩 Divisão de Impostos Federais, Estaduais e Municipais · `esq_1786638170006_69s796`
 - 🧩 Divisão e Competência dos Impostos (União, Estados, Municípios e DF) · `esq_1786647730343_zw4013`
-
-</details>
-
-## EC 136/2025: Precatórios: limite de pagamento pela receita e correção pelo IPCA (3 + 17 só o artigo)
-
-Alterados: CF art. 100 (§ 1; § 5; § 23; § 23, I; § 23, II; § 23, III; § 23, IV; § 23, V; § 23, VI; § 23, VII; § 23, VIII; § 23, IX; § 24; § 25; § 26; § 27; § 27, I; § 27, II; § 27, III; § 27, IV; § 28; § 29; § 30; § 19-A); CF art. 165 (§ 18; § 19; § 20; § 21; § 22); ADCT art. 97 (§ 16; § 16-A); ADCT art. 76-B; ADCT art. 115
-
-- 🧩 **Regime Geral de Precatórios e Créditos Preferenciais** 🆗 (art. 100, 1,2) · `esq_1786631128045_ggspcx` · dados/esquemas/esquemas-direito-constitucional.json
-  > Subtema: Precatórios · Tipo: Requisitos e prazos · Ref.: art. 100, caput, §§ 1º e 2º, da CF; RE nº 1.515.163/RS Os pagamentos de condenações contra as Fazendas Públicas reali…
-- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 57** 🆗 (art. 100, 1) · `sim_1788654352739_q57` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
-  > …ário tem pleno direito a gozar da preferência constitucional atrelada à origem do débito (art. 100, § 1º, CF), mantida intacta a sua posição na ordem cronológica da expedição.
-- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 60** 🆗 (art. 100, 5) · `sim_1788654352739_q60` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
-  > …firmado no Tema 1.335 do STF (RE 1515163/RS), durante o interregno do "período de graça" (art. 100, § 5º, CF - precatórios apresentados até 1º de julho/fevereiro a serem pagos no exercício segui…
-
-<details><summary>Citam só o artigo (17)</summary>
-
-- 🧩 23. Execução Contra a Fazenda Pública, Massa Falida e Empresa em Recuperação Judicial · `esq_1793051385937_ptru9f`
-- 🧩 Características dos bens públicos · `esq_1786473518359_zx8pia`
-- 🧩 Compensações, Cessão e Atualização de Precatórios · `esq_1786631128045_lymz5o`
-- 🧩 Execução contra a Fazenda Pública, Precatórios e RPV (Art. 910) · `esq_1786553359193_dg2s5j`
-- 🧩 Lei Complementar nº 35/1979 - Bloco III (Arts. 78 a 147) · `esq_1788175149135_6zhoha`
-- 🧩 Leis Orçamentárias em Confronto: PPA, LDO e LOA · `esq_1786638170006_schu4k`
-- 🧩 Remoção Ex Officio, Vedação Persecutória e Direito de Acompanhar Cônjuge · `esq_1790163864590_9wii2b`
-- ❓ Desapropriações · questão 10 · `sim_1789219611448_q10`
-- ❓ Funções Essenciais à Justiça (arts. 127 a 135, CF) · questão 18 · `sim_1788654560960_q18`
-- ❓ Funções Essenciais à Justiça (arts. 127 a 135, CF) · questão 19 · `sim_1788654560960_q19`
-- ❓ Normas de Direito Financeiro (Lei 4.320/1964) · questão 6 · `sim_1788653330830_q6`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 51 · `sim_1788654352739_q51`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 52 · `sim_1788654352739_q52`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 54 · `sim_1788654352739_q54`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 56 · `sim_1788654352739_q56`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 66 · `sim_1788654352739_q66`
-- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 69 · `sim_1788654352739_q69`
 
 </details>
