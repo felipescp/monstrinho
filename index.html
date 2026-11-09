@@ -1027,6 +1027,8 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .nb.nr { background: var(--bg-white); color: var(--text-muted); border-color: var(--border-color); }
 .nb.nr:hover { border-color: var(--app-primary); color: var(--app-primary); }
 .nb.rp { background: var(--border-color); color: var(--text-main); border-color: var(--text-muted); }
+.nb { position: relative; }
+.nb .nb-atu { position: absolute; top: -6px; right: -6px; font-size: 10px; line-height: 1; background: var(--bg-white); border-radius: 50%; padding: 1px; box-shadow: 0 0 0 1px var(--border-color); pointer-events: none; }
 
 /* QUESTÕES E BLOCOS */
 .bloco { margin-bottom: 3rem; }
@@ -25871,7 +25873,9 @@ function mkQ(q, modoRevisao){
 
   var num=document.createElement('div');num.className='qn';
   num.textContent=q.bn+' · Questão '+(q.numOrig || q.id)+(q.taxonomia?' · '+q.taxonomia:'');
-  var sinalAt=window.VERSAO_ACERVO && window.VERSAO_ACERVO.sinalQuestao(q); if(sinalAt) num.appendChild(sinalAt);
+  // 🔄 só depois de respondida (pedido explícito do usuário): antes, não
+  // antecipa nada; depois, marca a questão que merece atenção na revisão.
+  if(D.res[q.id]&&D.res[q.id].c){ var sinalAt=window.VERSAO_ACERVO && window.VERSAO_ACERVO.sinalQuestao(q); if(sinalAt) num.appendChild(sinalAt); }
 
   if(isAnulada){
      var bNula = document.createElement('span');
@@ -26011,6 +26015,13 @@ function mkQ(q, modoRevisao){
   return div;
 }
 
+// 🔄 da questão atualizada no cabeçalho, quando ela acaba de ser respondida.
+function anexarSinalAtualizacao(q){
+  var qel=g('q-'+q.id), num=qel&&qel.querySelector('.qn');
+  if(!num||num.querySelector('.acv-sinal')) return;
+  var s=window.VERSAO_ACERVO && window.VERSAO_ACERVO.sinalQuestao(q); if(s) num.appendChild(s);
+}
+
 function selVF(qId,v){
   var q = getQ(qId);
   if(!q || q.gabarito === 'ANULADA')return;
@@ -26080,6 +26091,7 @@ function conf(qId){
     if(!cegas) { qel.classList.add(r.ok ? 'qv' : 'qf'); } else { qel.style.borderColor = '#e0e0e0'; }
   }
 
+  anexarSinalAtualizacao(q);
   var ew = g('ew-'+qId); if(ew && !cegas) ew.style.display = '';
   var me = g('me-'+qId); if(me) me.style.display = (!r.ok && !cegas) ? '' : 'none';
   if(SI >= 0 && SIMS[SI]) SIMS[SI].dados = JSON.parse(JSON.stringify(D));
@@ -26473,6 +26485,12 @@ function renderNav(){
         btn.classList.add('nr');
       }
       
+      // 🔄 discreto no canto do número, só em questão já respondida e atualizada.
+      var uAt=resp&&window.VERSAO_ACERVO&&window.VERSAO_ACERVO.ultima(q.atualizacoes);
+      if(uAt){
+        var sAt=document.createElement('span');sAt.className='nb-atu';sAt.textContent='🔄';btn.appendChild(sAt);
+        btn.title='Questão atualizada em '+window.VERSAO_ACERVO.dataBR(uAt.data)+' — '+window.VERSAO_ACERVO.texto(uAt);
+      }
       btn.setAttribute('data-qid',q.id);
       btn.onclick=function(){
         var qid=this.getAttribute('data-qid');
