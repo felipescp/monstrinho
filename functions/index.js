@@ -31,7 +31,7 @@ const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-3.8-flash
 // OPENAI_API_KEY no Secret Manager: com GPT_LIGADO = false o segredo nem é
 // pedido no deploy e o botão aparece como "em breve" no app. O nome do
 // modelo vai em GPT_MODELO (functions/.env), conferido no painel da OpenAI.
-const GPT_LIGADO = false;
+const GPT_LIGADO = true;
 const CHAVE_GPT = defineSecret('OPENAI_API_KEY');
 const GPT_MODELO = defineString('GPT_MODELO', { default: 'gpt-6-luna' });
 

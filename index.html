@@ -35402,13 +35402,14 @@ window.ESQ_IA = {
     },
     // Custo estimado (preço de tabela, US$ por milhão de tokens) convertido a
     // R$ pelo câmbio abaixo. Só referência: a cobrança real vem das contas
-    // da Anthropic e do Google. Revisar ao trocar de modelo ou de preço.
+    // da Anthropic, do Google e da OpenAI. Revisar ao trocar de modelo ou de preço.
     _CAMBIO: 5.50,
     _precos: function(modelo) {
         let m = String(modelo || '').toLowerCase();
         if (m.indexOf('claude-opus') === 0) return { ent: 4, sai: 20 };
         if (m.indexOf('claude-sonnet') === 0) return { ent: 2, sai: 10 };
         if (m.indexOf('claude-haiku') === 0) return { ent: 0.10, sai: 0.50 };
+        if (m.indexOf('gpt-6-luna') === 0) return { ent: 0.10, sai: 0.50 };
         if (m.indexOf('gemini') === 0 && m.indexOf('flash') >= 0) return new Date() < new Date('2027-01-01T00:00:00-03:00') ? { ent: 0.75, sai: 3.75 } : { ent: 1.50, sai: 7.50 };
         return null;
     },
