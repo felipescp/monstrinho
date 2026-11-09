@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**71** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **189** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**65** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **188** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -468,31 +468,6 @@ Alterados: L12850 art. 21-A; L12850 art. 21-B; L12850 art. 2 (§ 1); CP art. 288
 - 🧩 Circunstâncias Incomunicáveis e Casos de Impunibilidade · `esq_1786594846368_hyu27n`
 - 🧩 Progressão especial para mulheres gestantes e mães · `esq_1789659571899_n7zm8y`
 - ❓ Lei de Execução Penal (Lei 7.210/84) · questão 43 · `sim_1789667188418_q43`
-
-</details>
-
-## Lei 15.240/2025: ECA: abandono afetivo como ilícito (6 + 1 só o artigo)
-
-Alterados: ECA art. 4 (§ 1; § 2; § 3; § 3, I; § 3, II; § 3, III); ECA art. 5 (p.ú.); ECA art. 22
-
-- 🧩 **Assistência Afetiva e Abandono Afetivo como Ilícito Civil (Lei 15.240/2025)** 🆗 (art. 4, 2,3; 4, 2; 4, 3, I) · `esq_1787449510069_eke86g` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Teoria Geral e Direitos Fundamentais · Tipo: Requisitos e prazos · Ref.: art. 4º, §§ 2º e 3º, e art. 5º, parágrafo único do ECA (Lei nº 15.240/2025) As inovações legislativas de 2025…
-  > …se Normativa (Lei nº 15.240/2025) Conteúdo e Alcance Técnico Dever de Assistência Afetiva Art. 4º, § 2º do ECA Dever dos pais de prestar assistência afetiva por meio de convívio ou de visitação…
-- 🧩 **Garantia de Prioridade Absoluta e suas Quatro Vertentes** 🆗 (art. 4, pu) · `esq_1787449510069_szyfdq` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
-  > Subtema: Teoria Geral e Direitos Fundamentais · Tipo: Rol · Ref.: art. 4º, parágrafo único do ECA; art. 227, caput da CF/88 A prioridade absoluta assegurada à população infanto-juv…
-- 🧩 **Resolução CNMP nº 293/2024** 🆗 (art. 5, 4; 4, 2; 4, 4) · `esq_1788029525963_b4u51m` · dados/esquemas/esquemas-direito-institucional-magistratura-mp-e-defensoria.json
-  > …embro do MP é indispensável e insubstituível, sendo as equipes técnicas meras assessoras (Art. 5º, §4º). 3. Instauração de Procedimento de Fiscalização e Relação Procedimental Subtema: Convivê…
-  > …doria-Geral local, a quem cabe enviar à CIJE do CNMP nos prazos de 31/maio e 10/dezembro (Art. 4º, §2º), prorrogando-se os prazos vencidos em fins de semana para o primeiro dia útil (Art. 4º,…
-- ❓ **Convivência Familiar e Comunitária · questão 16** 🆗 (art. 22, pu) · `sim_1787099561712_q16` · dados/bateriasvf/grupo-ce-convivenciafamiliarecomunitaria.json
-  > Nos termos da Lei nº 8.069/90 (ECA, art. 22, parágrafo único), a mãe, o pai ou os responsáveis devem resguardar "o direito de transmissão familiar de…
-- ❓ **Convivência Familiar e Comunitária · questão 20** 🆗 (art. 22) · `sim_1787099561712_q20` · dados/bateriasvf/grupo-ce-convivenciafamiliarecomunitaria.json
-  > …ditório" (Art. 24, ECA) nos casos civis ou por descumprimento injustificado de deveres do art. 22. Ainda que fundamentada pelo Conselho Tutelar, é impossível suprimir a etapa garantista d…
-- ❓ **Entidades de Atendimento, Medidas dos Pais e Infrações Administrativas · questão 39** 🆗 (art. 22) · `sim_1787164985467_q39` · dados/bateriasvf/grupo-ce-ecasinaselicitacoes.json
-  > …gramento aplicável à perda das prerrogativas familiares por falha nos deveres protetivos (art. 22 do ECA). O art. 129 do ECA elenca nos incisos VIII (perda da guarda), IX (destituição da…
-
-<details><summary>Citam só o artigo (1)</summary>
-
-- 🧩 Princípios Constitucionais do Direito de Família · `esq_1786642759573_lx7pyn`
 
 </details>
 
