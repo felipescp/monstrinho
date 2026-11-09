@@ -252,8 +252,18 @@ def main():
     estado = json.load(open(ESTADO, encoding='utf8')) if os.path.exists(ESTADO) else semente_estado()
     mapa = base()
     novas, falhas = [], []
+    conferidas = []
     for esp in ('Lei', 'Lei Complementar', 'MP', 'EC'):
-        n, vazios = estado['ultimo'].get(esp, 0) + 1, 0
+        # Autoverificação: a última norma conhecida tem de ser lida pelo mesmo
+        # endereço; senão o padrão de URL mudou e "nada novo" não seria confiável.
+        ult = estado['ultimo'].get(esp, 0)
+        try: ref = ler_norma(esp, ult) if ult else None
+        except Exception as e: ref = None
+        if ult and not ref:
+            falhas.append('%s %s (última conhecida) não foi encontrada no Planalto: o endereço pode ter mudado.' % (esp, fmt_num(ult)))
+            continue
+        if ref: conferidas.append(ref['norma'])
+        n, vazios = ult + 1, 0
         while vazios < FOLGA[esp]:
             try: nr = ler_norma(esp, n)
             except Exception as e:
@@ -276,7 +286,7 @@ def main():
         if mud: mudancas.setdefault(x['d']['id'], []).extend(mud)
         if aviso: avisos[x['d']['id']] = aviso
     # Planalto inacessível em todas as espécies: falha visível (o GitHub avisa por e-mail).
-    if falhas and not novas and len(falhas) >= len(FOLGA):
+    if falhas and not novas:
         print('Planalto inacessível:\n' + '\n'.join(falhas))
         print('mudou=0')
         sys.exit(2)
@@ -315,6 +325,8 @@ def main():
     if mudou:
         open(RELATORIO, 'w', encoding='utf8').write('\n'.join(md) + '\n')
         json.dump({'verificadoEm': HOJE.isoformat(), 'normas': pend}, open(PENDENTES, 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+    print('Conferidas (última conhecida de cada espécie): ' + (', '.join(conferidas) or '—'))
+    if falhas: print('Falhas:\n- ' + '\n- '.join(falhas))
     print('Normas novas: %d (%s) · leis atualizadas: %s · falhas: %d' % (len(novas), ', '.join(nr['norma'] for nr in novas) or '—', ', '.join(mudancas) or '—', len(falhas)))
     print('mudou=%d' % (1 if mudou else 0))
 
