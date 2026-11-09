@@ -1171,6 +1171,13 @@ mark.esq-grifo { color:inherit; padding:0 1px; border-radius:2px; }
 .esq-coment-textarea { width:100%; box-sizing:border-box; border:1px solid #d8b4fe; border-radius:6px; padding:8px; font:inherit; font-size:14px; resize:vertical; }
 .esq-coment-texto { font-size:14px; color:#374151; line-height:1.5; }
 .esq-card-coment { font-size:.85em; }
+.esq-classif-grupo { display:inline-flex; align-items:center; gap:4px; }
+.esq-sinal-atualizado { cursor:help; font-size:13px; }
+.esq-baralho-lista-item-etiqueta .esq-sinal-atualizado, .esq-baralho-lista-item-etiqueta .esq-card-coment { font-size:12px; margin-left:4px; }
+#esquemas-modal .esq-btn-coment { background:none; border:none; cursor:pointer; font-size:13px; padding:0 2px; opacity:.75; }
+#esquemas-modal .esq-btn-coment:hover { opacity:1; }
+#esq-editor-coment:empty { display:none; }
+#esq-editor-coment .esq-coment { margin-top:0; }
 .esq-baralho-revisao-controle { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
 #esq-baralho-btn-ocultar.ativo { background:#ede9fe; border-color:#8b5cf6; color:#5b21b6; }
 #esq-baralho-aviso-revisao { font-size:12px; color:#6b7280; }
@@ -31473,6 +31480,7 @@ window.triggerFileUpload = function(callback) {
             </div>
         </div>
         <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onpaste="window.ESQUEMAS_RUNTIME._colarComMarkdown(event)" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
+        <div id="esq-editor-coment"></div>
         <div style="font-size:10px; color:var(--text-muted);">💡 Cole um trecho em Markdown (títulos com #, **negrito**, listas com -, tabelas com |) que ele já entra formatado.</div>
         <div id="esq-editor-somente-leitura-aviso" style="display:none; font-size:10px; font-weight:700; color:#dc2626; text-transform:uppercase;">📊 (Oficial) — somente leitura</div>
         <div class="mfoot">
@@ -32701,11 +32709,11 @@ window.ESQUEMAS_RUNTIME = {
                 origemHtml +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
-                    '<span class="esq-card-tags-dir">' + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
+                    '<span class="esq-card-tags-dir">' + (self._modoSelecao ? '' : '<button class="esq-btn-coment" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.abrirComentarioDoCard(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + idEsc + '\')" title="Meu comentário">💭</button>') + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
-                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + (self._comentarioEsq(item.id) ? ' <span class="esq-card-coment" title="Tem comentário seu">💭</span>' : '') + '</div>' +
+                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + self._sinalAnotadoEsqHtml(item.id) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
-                '<div class="esq-card-classificacao">' + btnVisualizado + classificarHtml + '</div>' +
+                '<div class="esq-card-classificacao">' + btnVisualizado + '<span class="esq-classif-grupo">' + self._sinalAtualizadoEsqHtml(item) + classificarHtml + '</span></div>' +
             '</div>';
         }).join('');
 
@@ -32974,6 +32982,30 @@ window.ESQUEMAS_RUNTIME = {
         document.querySelectorAll('.esq-estudo-texto[data-esq-id]').forEach(function(el) {
             if (el.getAttribute('data-esq-id') === id && item.conteudoHtml) el.innerHTML = self._htmlConteudoEstudo(item);
         });
+    },
+    // 🔄 ao lado da classificação (grade) e na lista do Leitor quando o
+    // esquema tem atualização registrada (VERSAO_ACERVO); 💭 quando o aluno
+    // comentou ou grifou.
+    _sinalAtualizadoEsqHtml: function(item) {
+        let V = window.VERSAO_ACERVO, u = V && V.ultima(item && item.atualizacoes);
+        if (!u) return '';
+        return '<span class="esq-sinal-atualizado" title="' + V.esc('Atualizado em ' + V.dataBR(u.data) + ' — ' + V.texto(u)) + '">🔄</span>';
+    },
+    _temGrifoEsq: function(id) { let g = (this.grifos || {})[id]; return !!(g && g.faixas && g.faixas.length); },
+    _sinalAnotadoEsqHtml: function(id) {
+        let c = !!this._comentarioEsq(id), g = this._temGrifoEsq(id);
+        if (!c && !g) return '';
+        return ' <span class="esq-card-coment" title="' + (c && g ? 'Você comentou e grifou' : c ? 'Tem comentário seu' : 'Tem grifos seus') + '">💭</span>';
+    },
+    // Botão 💭 do cartão da grade: abre o esquema já no comentário.
+    abrirComentarioDoCard: function(chave, id) {
+        this.abrirEditorExistente(chave, id);
+        let self = this;
+        setTimeout(function() {
+            if (!self._comentarioEsq(id)) self.editarComentarioEsq(id);
+            let box = document.getElementById('esq-editor-coment');
+            if (box) box.scrollIntoView({ block: 'nearest' });
+        }, 50);
     },
     _comentarioEsq: function(id) {
         let c = (this.comentarios || {})[id];
@@ -33774,7 +33806,7 @@ window.ESQUEMAS_RUNTIME = {
             // etiqueta (mesma linha) — verde se já visualizado, vermelho se
             // não. Sempre aparece, mesmo em item sem etiqueta nenhuma.
             let olhoHtml = '<span class="esq-baralho-lista-item-olho ' + (visualizado ? 'visualizado' : 'nao-visualizado') + '" title="' + (visualizado ? 'Visualizado' : 'Não visualizado') + '">👁</span>';
-            let etiquetaHtml = '<div class="esq-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + '</div>';
+            let etiquetaHtml = '<div class="esq-baralho-lista-item-etiqueta">' + etiquetaPillHtml + olhoHtml + self._sinalAtualizadoEsqHtml(item) + self._sinalAnotadoEsqHtml(item.id) + '</div>';
             return '<div class="esq-baralho-lista-item' + (idx === s.indiceAtual ? ' ativo' : '') + '" onclick="window.ESQUEMAS_RUNTIME.irParaBaralho(' + idx + ')" title="' + self._escapar(titulo) + '">' +
                 origem + '<span class="esq-baralho-lista-item-nome">' + self._escapar(titulo) + '</span>' + etiquetaHtml +
                 '</div>';
@@ -33894,6 +33926,8 @@ window.ESQUEMAS_RUNTIME = {
         let nav = document.getElementById('esq-editor-nav');
         if (nav) nav.innerHTML = '';
         if (!this._materiaSelecionada || !this._divisaoSelecionada) return;
+        let comentEl = document.getElementById('esq-editor-coment');
+        if (comentEl) comentEl.innerHTML = '';
         this._editandoId = null;
         this._editandoChave = null;
 
@@ -33926,7 +33960,9 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-form-titulo').readOnly = somenteLeitura;
         let corpo = document.getElementById('esq-editor-corpo');
         // Só leitura (oficial): com as referências ligadas; editável: HTML cru (seria salvo junto).
-        corpo.innerHTML = somenteLeitura ? window.VERSAO_ACERVO.faixaEsquema(item) + '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id) + '">' + this._htmlConteudoEstudo(item) + '</div>' + this._htmlComentarioEsq(item.id) : (item.conteudoHtml || '');
+        corpo.innerHTML = somenteLeitura ? window.VERSAO_ACERVO.faixaEsquema(item) + '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id) + '">' + this._htmlConteudoEstudo(item) + '</div>' : (item.conteudoHtml || '');
+        let comentEl = document.getElementById('esq-editor-coment');
+        if (comentEl) comentEl.innerHTML = this._htmlComentarioEsq(item.id);
         corpo.contentEditable = somenteLeitura ? 'false' : 'true';
         document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
