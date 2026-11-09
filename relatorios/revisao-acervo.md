@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**132** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **218** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**118** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **213** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -624,49 +624,6 @@ Alterados: L9504 art. 11 (§ 2; § 2, I; § 2, II; § 2, III); L9504 art. 38 (§
 <details><summary>Citam só o artigo (1)</summary>
 
 - ❓ Lei das Eleições (Lei 9.504/1997) · questão 65 · `sim_1789299797199_q65`
-
-</details>
-
-## Lei Complementar 219/2025: Inelegibilidades: dolo exigido, teto de 12 anos e aferição no registro (14 + 5 só o artigo)
-
-Alterados: LC64 art. 1 (I; II; IV; § 6; § 7; § 8; § 9; § 4-B; § 4-C; § 4-D; § 4-E; § 4-F); LC64 art. 26-D; L9504 art. 11 (§ 10; § 16)
-
-- 🧩 **A novel Inelegibilidade do art. 1º, I, "l" (Improbidade Administrativa)** 🆗 (art. 1, I, l) · `esq_1786724792928_tdu50a` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "l" e § 4º-B, da LC nº 64/90; com alterações da LC nº 219/25 A condenação por improbidade adm…
-- 🧩 **Inelegibilidade por Rejeição de Contas: Requisitos do art. 1º, I, "g"** 🆗 (art. 1, I, g) · `esq_1786724792928_xo84a3` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Requisitos e prazos · Ref.: art. 1º, I, "g", da LC nº 64/90; Súmulas nº 1 e 41 do TSE A inelegibilidade decorrente de contas públicas…
-- 🧩 **Inelegibilidade por Renúncia ao Mandato e Outros Atos** 🆗 (art. 1, I, k) · `esq_1786724792928_lwsxro` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "k" e "q", da LC nº 64/90; com alterações da LC nº 219/25 A renúncia ao mandato sob suspeita…
-- 🧩 **Inelegibilidades por Condenações Criminais e Óbices** 🆗 (art. 1, I, e) · `esq_1786724792928_2ls5fw` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "e" e § 4º, da LC nº 64/90; com alterações da LC nº 219/25 A condenação criminal por órgãos j…
-- 🧩 **Inelegibilidades por Perda de Mandato Legislativo e Executivo** 🆗 (art. 1, I, b) · `esq_1786724792928_nf0iyl` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "b" e "c", da LC nº 64/90; com alterações da LC nº 219/25 A perda de mandato eletivo acarreta…
-- 🧩 **Julgamento de Contas dos Prefeitos: Governo vs. Gestão** 🆗 (art. 1, I) · `esq_1786627617066_ff3mwk` · dados/esquemas/esquemas-direito-constitucional.json
-  > …pela Câmara Municipal (Temas 157 e 835/STF). Para fins de inelegibilidade de Ficha Limpa (art. 1º, I, 'g' LC 64/90), as contas de gestão também dependem de julgamento da Câmara. ⚠ O Tribunal…
-- 🧩 **Julgamento de Contas e Órgãos Competentes** 🆗 (art. 1, I, g) · `esq_1786724792928_2nnj72` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Classificação · Ref.: art. 1º, I, "g" e § 4º-A, da LC nº 64/90; STF, Tema nº 1.304 A definição do órgão competente para julgame…
-- 🧩 **Regras de Desincompatibilização Municipais para Prefeito e Vereador** 🆗 (art. 1, IV) · `esq_1786724792928_yohaby` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, IV, da LC nº 64/90; com alterações da LC nº 219/25 As candidaturas no âmbito municipal subme…
-- 🧩 **Regras de Desincompatibilização para Cargos Nacionais e Estaduais** 🆗 (art. 1, II) · `esq_1786724792928_cyvi8m` · dados/esquemas/esquemas-direito-eleitoral.json
-  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, II e § 1º, da LC nº 64/90; com alterações da LC nº 219/25 Os detentores de cargos diretivos…
-- ❓ **Ações e Recursos Eleitorais · questão 42** 🆗 (art. 1, I, j) · `sim_1788259440496_q42` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
-  > Conforme assentado pelo Supremo Tribunal Federal (ADI nº 3.592) e consolidado no Art. 1º, I, "j", da LC nº 64/90, a representação do Art. 41-A não implica a declaração direta de inelegib…
-- ❓ **Elegibilidade e Inelegibilidade · questão 46** 🆗 (art. 1, I) · `sim_1781884144689_q46` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
-  > O legislador traçou na LC nº 64/90, art. 1º, inciso I, alínea 'l' um feixe cumulativo extremamente gravoso de condições. Para afastar a capacid…
-- ❓ **Elegibilidade e Inelegibilidade · questão 51** 🆗 (art. 1, I, k) · `sim_1781884144689_q51` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
-  > A Lei Complementar nº 64/90 (Lei das Inelegibilidades), em seu art. 1º, I, "k", encerra uma blindagem contra a interrupção prematura do mandato visando fugir de puniçõe…
-- ❓ **Elegibilidade e Inelegibilidade · questão 54** 🆗 (art. 26-D) · `sim_1781884144689_q54` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
-  > …ndamental temporal, contudo, há espaço temporal dilatado em favor do candidato. O novel **art. 26-D da LC 64/90** positiva com clareza cristalina que eventuais fatos excludentes (ex: o trân…
-- ❓ **Lei das Eleições (Lei 9.504/1997) · questão 28** 🆗 (art. 11, 16) · `sim_1789299797199_q28` · dados/bateriasvf/grupo-ce-codigoeleitoralleidaseleicoes.json
-  > Trata-se da positivação do Art. 11, § 16, da Lei nº 9.504/1997 (incluído pela novel LC 219/2025). O dispositivo faculta ao pré-can…
-
-<details><summary>Citam só o artigo (5)</summary>
-
-- ❓ Elegibilidade e Inelegibilidade · questão 45 · `sim_1781884144689_q45`
-- ❓ Elegibilidade e Inelegibilidade · questão 50 · `sim_1781884144689_q50`
-- ❓ Elegibilidade e Inelegibilidade · questão 73 · `sim_1781884144689_q73`
-- ❓ Elegibilidade e Inelegibilidade · questão 74 · `sim_1781884144689_q74`
-- ❓ Elegibilidade e Inelegibilidade · questão 79 · `sim_1781884144689_q79`
 
 </details>
 
