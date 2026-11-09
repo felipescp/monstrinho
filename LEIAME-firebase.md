@@ -261,6 +261,21 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 
 **Teste sem gastar:** `cd functions && npm ci && node teste-nucleo.js` testa o prompt, a validação e o formato da requisição com respostas simuladas.
 
+## Atualização de fichas (versionamento do acervo)
+
+Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança de lei ou de entendimento, acrescente ao objeto (no JSON de `dados/esquemas/` ou de `dados/bateriasvf/`) o campo `atualizacoes`, da mais recente para a mais antiga:
+
+```json
+"atualizacoes": [
+  { "data": "2026-10-20", "motivo": "lei", "texto": "a jornada passou de 44 para 40 horas semanais", "ref": "EC 141/2026" }
+]
+```
+
+- `motivo`: `lei` ("Houve modificação na legislação"), `jurisprudencia` ("O entendimento anterior foi superado") ou `correcao` ("Correção do conteúdo").
+- **Esquema:** aparece a faixa "🔄 Esta ficha foi atualizada em …" com o motivo e o histórico. O botão **Ok** some com a faixa para aquele usuário, até a próxima atualização.
+- **Questão:** aparece só o sinal 🔄 ao lado do número; passar o mouse ou clicar mostra em que consistiu a mudança.
+- Questões já salvas em cadernos são cópias: só as cópias feitas depois da atualização carregam o sinal.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

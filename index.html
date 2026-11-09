@@ -1850,6 +1850,13 @@ try {
         #leiseca-modal .fc-materia-item.ls-bloq { opacity:.55; }
         #leiseca-modal .ls-amostra { margin:0 0 10px; padding:8px 10px; border-radius:8px; background:var(--bg-accent-soft, #eef2ff); border:1px solid var(--app-primary); font-size:11px; line-height:1.45; color:var(--text-main); }
         #leiseca-modal .ls-amostra a { color:var(--app-primary); font-weight:700; }
+        .acv-faixa { display:flex; gap:10px; align-items:flex-start; margin:0 0 10px; padding:9px 12px; border-radius:8px; background:#eff6ff; border:1px solid #93c5fd; color:#1e3a8a; font-size:12px; line-height:1.45; }
+        .acv-faixa > div { flex:1; min-width:0; }
+        .acv-faixa button { flex-shrink:0; border:1px solid #93c5fd; background:#fff; color:#1e3a8a; border-radius:6px; padding:3px 10px; font-weight:800; cursor:pointer; }
+        .acv-faixa details { margin-top:4px; } .acv-faixa summary { cursor:pointer; font-weight:700; } .acv-faixa ul { margin:4px 0 0; padding-left:18px; }
+        body.dark .acv-faixa { background:#1e293b; border-color:#334155; color:#bfdbfe; }
+        .acv-sinal { margin-left:8px; cursor:pointer; font-size:13px; }
+        .acv-caixa { margin:4px 0 6px; padding:6px 10px; border-radius:6px; background:#eff6ff; border:1px solid #93c5fd; color:#1e3a8a; font-size:12px; }
         .nivel-chip { margin-left:6px; padding:1px 6px; border-radius:6px; font-size:8.5px; font-weight:800; letter-spacing:.4px; background:var(--app-primary); color:#fff; cursor:pointer; vertical-align:1px; }
         .logo-salinha { height:44px; width:auto; display:block; image-rendering:auto; }
         body.dark .logo-salinha { background:#fff; border-radius:8px; padding:3px 4px; box-sizing:content-box; height:38px; }
@@ -5747,6 +5754,58 @@ window.pedirAcessoCompleto = function() {
         if (alvo) { alvo.firstChild.disabled = false; }
         alert('Não foi possível enviar o pedido agora. Verifique a conexão e tente de novo.');
     });
+};
+
+// ── Versionamento do acervo (pedido explícito do usuário) ──
+// Esquemas e questões oficiais podem ter "atualizacoes": [{data: "AAAA-MM-DD",
+// motivo: "lei" | "jurisprudencia" | "correcao", texto, ref}], preenchido na
+// revisão (ver relatorios/revisao-acervo.md). Esquema: faixa "Esta ficha foi
+// atualizada" até o usuário dar "Ok" (por aparelho). Questão: só o 🔄, com a
+// explicação ao passar o mouse ou tocar.
+window.VERSAO_ACERVO = {
+    MOTIVO: { lei: 'Houve modificação na legislação', jurisprudencia: 'O entendimento anterior foi superado', correcao: 'Correção do conteúdo' },
+    CHAVE: 'tjpe_v1__atualizacoes_vistas',
+    ultima: function(lista) {
+        if (!Array.isArray(lista) || !lista.length) return null;
+        return lista.slice().sort(function(a, b) { return String(b.data || '').localeCompare(String(a.data || '')); })[0];
+    },
+    dataBR: function(d) { let m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : String(d || ''); },
+    esc: function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
+    texto: function(a) { return (this.MOTIVO[a.motivo] || 'Atualização') + (a.texto ? ': ' + a.texto : '') + (a.ref ? ' (' + a.ref + ')' : ''); },
+    _vistas: function() { try { return JSON.parse(localStorage.getItem(this.CHAVE) || '{}') || {}; } catch (e) { return {}; } },
+    vista: function(id, data) { let v = this._vistas()[id]; return !!v && String(v) >= String(data); },
+    marcarVista: function(btn) {
+        let id = btn.getAttribute('data-id'), data = btn.getAttribute('data-data');
+        try { let v = this._vistas(); v[id] = data; localStorage.setItem(this.CHAVE, JSON.stringify(v)); } catch (e) {}
+        let el = btn.closest('.acv-faixa'); if (el) el.remove();
+    },
+    // Faixa do esquema (vazia se não houver atualização ou se já foi vista).
+    faixaEsquema: function(item) {
+        let u = this.ultima(item && item.atualizacoes);
+        if (!u || this.vista(item.id, u.data)) return '';
+        let hist = item.atualizacoes.length > 1 ? '<details><summary>Histórico</summary><ul>' + item.atualizacoes.slice().sort(function(a, b) { return String(b.data).localeCompare(String(a.data)); }).map(function(a) {
+            return '<li>' + VERSAO_ACERVO.dataBR(a.data) + ' — ' + VERSAO_ACERVO.esc(VERSAO_ACERVO.texto(a)) + '</li>'; }).join('') + '</ul></details>' : '';
+        return '<div class="acv-faixa"><div><b>🔄 Esta ficha foi atualizada em ' + this.dataBR(u.data) + '</b><br>' + this.esc(this.texto(u)) + hist + '</div>' +
+            '<button type="button" data-id="' + this.esc(item.id) + '" data-data="' + this.esc(u.data) + '" onclick="event.stopPropagation(); window.VERSAO_ACERVO.marcarVista(this)">Ok</button></div>';
+    },
+    // Sinal da questão.
+    sinalQuestao: function(q) {
+        let u = this.ultima(q && q.atualizacoes);
+        if (!u) return null;
+        let s = document.createElement('span');
+        s.className = 'acv-sinal';
+        s.textContent = '🔄';
+        s.title = 'Questão atualizada em ' + this.dataBR(u.data) + ' — ' + this.texto(u);
+        s.onclick = function(e) {
+            e.stopPropagation();
+            let box = s.parentNode && s.parentNode.parentNode && s.parentNode.parentNode.querySelector('.acv-caixa');
+            if (box) { box.remove(); return; }
+            box = document.createElement('div'); box.className = 'acv-caixa';
+            box.textContent = s.title;
+            s.parentNode.insertAdjacentElement('afterend', box);
+        };
+        return s;
+    }
 };
 
 // Guarda contra laço de recarga — rede de segurança para QUALQUER causa de
@@ -25718,6 +25777,7 @@ function mkQ(q, modoRevisao){
 
   var num=document.createElement('div');num.className='qn';
   num.textContent=q.bn+' · Questão '+(q.numOrig || q.id)+(q.taxonomia?' · '+q.taxonomia:'');
+  var sinalAt=window.VERSAO_ACERVO && window.VERSAO_ACERVO.sinalQuestao(q); if(sinalAt) num.appendChild(sinalAt);
 
   if(isAnulada){
      var bNula = document.createElement('span');
@@ -32666,6 +32726,7 @@ window.ESQUEMAS_RUNTIME = {
     _htmlCartaoEsquemaEstudo: function(item) {
         return '<div class="esq-estudo-card">' +
             '<div class="esq-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
+            window.VERSAO_ACERVO.faixaEsquema(item) +
             '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id || '') + '">' + (item.conteudoHtml ? this._comReferencias(item.conteudoHtml, item.titulo) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
         '</div>';
     },
@@ -32691,7 +32752,7 @@ window.ESQUEMAS_RUNTIME = {
             let corpo = document.getElementById('esq-editor-corpo');
             if (corpo && corpo.contentEditable === 'false' && self._editandoChave && self._editandoId) {
                 let item = (self.esquemas[self._editandoChave] || []).find(function(e) { return e.id === self._editandoId; });
-                if (item && item.conteudoHtml) corpo.innerHTML = self._comReferencias(item.conteudoHtml, item.titulo);
+                if (item && item.conteudoHtml) corpo.innerHTML = window.VERSAO_ACERVO.faixaEsquema(item) + self._comReferencias(item.conteudoHtml, item.titulo);
             }
         }, 150);
     },
@@ -33528,7 +33589,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-form-titulo').readOnly = somenteLeitura;
         let corpo = document.getElementById('esq-editor-corpo');
         // Só leitura (oficial): com as referências ligadas; editável: HTML cru (seria salvo junto).
-        corpo.innerHTML = somenteLeitura ? this._comReferencias(item.conteudoHtml || '', item.titulo) : (item.conteudoHtml || '');
+        corpo.innerHTML = somenteLeitura ? window.VERSAO_ACERVO.faixaEsquema(item) + this._comReferencias(item.conteudoHtml || '', item.titulo) : (item.conteudoHtml || '');
         corpo.contentEditable = somenteLeitura ? 'false' : 'true';
         document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
