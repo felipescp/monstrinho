@@ -148,7 +148,9 @@ function validarPedido(d) {
 //             de entrada do provedor reaproveita o material nos lotes
 //             seguintes. Conteúdo igual; só muda a posição, e por isso a
 //             tarefa diz "material acima" em vez de "material abaixo".
-function mensagemUsuario(p) {
+// Partes da mensagem, para a mensagem em si, para a variante em dois blocos
+// e para as impressões digitais gravadas em usoIA (diagnóstico do cache).
+function partesMensagem(p) {
     const cache = p.ordem === 'cache';
     let cab = 'Matérias e divisões válidas (L1 e, abaixo de cada uma, as L2; use exatamente estes nomes):\n' + p.taxonomia.map(m => '## ' + m.materia + '\n' + m.divisoes.map(x => '- ' + x).join('\n')).join('\n') + '\n\n';
     if (p.fonte) cab += 'Fonte do material (para o campo "fonte"): ' + p.fonte + '\n\n';
@@ -170,7 +172,31 @@ function mensagemUsuario(p) {
         t += '\nResponda no formato JSON: {"fichas":[{"materia","divisao","titulo","subtema","tipo","referencia","corpo_html","alerta","fonte"}],"observacoes"}.';
     }
     const mat = p.material.trim() ? '<material>\n' + p.material + '\n</material>' : '(Sem material anexado: use apenas conhecimento jurídico consolidado e seguro; na dúvida, omita.)';
-    return cache ? cab + mat + '\n\n' + t : cab + t + '\n\n' + mat;
+    return { cache, cab, tarefa: t, mat };
+}
+function mensagemUsuario(p) {
+    const x = partesMensagem(p);
+    return x.cache ? x.cab + x.mat + '\n\n' + x.tarefa : x.cab + x.tarefa + '\n\n' + x.mat;
+}
+// Entrada enviada à IA. Padrão: um texto só (mensagemUsuario). Teste da
+// administração (p.blocos, só na ordem 'cache'): duas mensagens — a parte
+// estável (taxonomia, fonte, material) e a tarefa —, para verificar se o
+// cache reaproveita até o fim de um bloco.
+function entradaGPT(p) {
+    if (!(p.blocos && p.ordem === 'cache')) return mensagemUsuario(p);
+    const x = partesMensagem(p);
+    return [
+        { role: 'user', content: [{ type: 'input_text', text: x.cab + x.mat }] },
+        { role: 'user', content: [{ type: 'input_text', text: x.tarefa }] }
+    ];
+}
+// Impressões digitais (SHA-256, 16 caracteres) de cada parte do pedido:
+// mostram em usoIA o que mudou entre dois pedidos da mesma execução.
+function impressoes(p) {
+    const h = t => require('crypto').createHash('sha256').update(String(t)).digest('hex').slice(0, 16);
+    const x = partesMensagem(p);
+    const tax = x.cab.split('\n\nFonte do material')[0];
+    return { instrucoes: h(SISTEMA), formato: h(JSON.stringify(p.acao === 'planejar' ? esquemaPlano() : esquemaFichas())), taxonomia: h(tax), cabecalho: h(x.cab), material: h(x.mat), tarefa: h(x.tarefa), entrada: h(JSON.stringify(entradaGPT(p))) };
 }
 
 // Extrai o JSON do texto da IA (tolera cercas ```json).
@@ -264,24 +290,40 @@ async function chamarGemini(fetchFn, cfg, p) {
 // GPT (OpenAI): API REST de respostas (Responses), saída em JSON pelo mesmo
 // schema do Claude (strict desligado: os schemas daqui têm campos opcionais).
 async function chamarGPT(fetchFn, cfg, p) {
-    const r = await fetchFn('https://api.openai.com/v1/responses', {
+    const corpo = {
+        model: cfg.modelo,
+        instructions: SISTEMA,
+        input: entradaGPT(p),
+        max_output_tokens: 32000,
+        text: { format: { type: 'json_schema', name: p.acao === 'planejar' ? 'plano' : 'fichas', schema: p.acao === 'planejar' ? esquemaPlano() : esquemaFichas(), strict: false } }
+    };
+    // Diagnóstico oficial de cache (p.comparacao = id da resposta anterior da
+    // mesma execução). Se a API recusar o parâmetro (400, nada cobrado),
+    // repete o pedido sem ele e anota que o diagnóstico não está disponível.
+    if (p.comparacao) corpo.prompt_cache_options = { comparison_response_id: p.comparacao };
+    const enviar = () => fetchFn('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.chave },
-        body: JSON.stringify({
-            model: cfg.modelo,
-            instructions: SISTEMA,
-            input: mensagemUsuario(p),
-            max_output_tokens: 32000,
-            text: { format: { type: 'json_schema', name: p.acao === 'planejar' ? 'plano' : 'fichas', schema: p.acao === 'planejar' ? esquemaPlano() : esquemaFichas(), strict: false } }
-        })
+        body: JSON.stringify(corpo)
     });
-    const j = await r.json().catch(() => ({}));
+    let r = await enviar();
+    let j = await r.json().catch(() => ({}));
+    let diagnosticoRecusado = '';
+    if (!r.ok && r.status === 400 && corpo.prompt_cache_options) {
+        diagnosticoRecusado = String((j.error && j.error.message) || 'recusado').slice(0, 200);
+        delete corpo.prompt_cache_options;
+        r = await enviar();
+        j = await r.json().catch(() => ({}));
+    }
     if (!r.ok) { const e = new Error('GPT respondeu ' + r.status + ' (' + String((j.error && (j.error.code || j.error.type)) || '') + '): ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
     // Uso devolvido pela OpenAI: input_tokens inclui os lidos do cache
     // (input_tokens_details.cached_tokens); output_tokens inclui o
     // raciocínio (output_tokens_details.reasoning_tokens).
     const u = j.usage || {}, ue = u.input_tokens_details || {}, us = u.output_tokens_details || {};
-    const uso = { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0, cache: ue.cached_tokens || 0, raciocinio: us.reasoning_tokens || 0, detalhes: { entrada: soNumeros(ue), saida: soNumeros(us) }, respostaId: j.id || '' };
+    // cached_tokens (lidos), cache_write_tokens (gravados) e o restante são
+    // partes separadas de input_tokens (conferido nos registros reais).
+    const uso = { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0, cache: ue.cached_tokens || 0, cacheEscrita: ue.cache_write_tokens || 0, raciocinio: us.reasoning_tokens || 0, detalhes: { entrada: soNumeros(ue), saida: soNumeros(us) }, respostaId: j.id || '' };
+    if (p.comparacao) uso.diagnostico = diagnosticoRecusado ? { indisponivel: diagnosticoRecusado } : (j.prompt_cache_diagnostics != null ? j.prompt_cache_diagnostics : { ausente: true });
     try {
     if (j.status === 'incomplete') {
         const motivo = j.incomplete_details && j.incomplete_details.reason;
@@ -296,4 +338,4 @@ async function chamarGPT(fetchFn, cfg, p) {
     } catch (e) { throw erroComUso(e, uso); }
 }
 
-module.exports = { TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };
+module.exports = { partesMensagem, entradaGPT, impressoes, TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };

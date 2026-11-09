@@ -93,9 +93,22 @@ exports.criarEsquemaIA = onCall({
     if (pedido.provedor === 'claude' && !CLAUDE_LIGADO) throw new HttpsError('failed-precondition', 'O Claude ainda não foi configurado (falta a chave ANTHROPIC_API_KEY). Use o Gemini.');
     const ordemPedida = req.data && req.data.ordemPrompt;
     // Por ora só no GPT (o Gemini e o Claude seguem com a ordem original).
+    // O planejamento fica sempre na ordem original: no teste de 9/11 a ordem
+    // nova deu um plano de 21 fichas contra 36 (mesmo material), e o plano
+    // não divide cache com os lotes (o formato de saída é outro). Só a
+    // administração força outra ordem, para testar. 'cache2' = ordem cache
+    // com a entrada em dois blocos (teste do cache; ver entradaGPT).
+    const ordemValida = ordemPedida === 'antiga' || ordemPedida === 'cache' || ordemPedida === 'cache2';
+    // 'cache2' testa só os lotes; o plano continua na ordem original.
+    const testeLotes = ordemPedida === 'cache2' && pedido.acao === 'planejar';
     pedido.ordem = pedido.provedor !== 'gpt' ? 'antiga'
-        : admin && (ordemPedida === 'antiga' || ordemPedida === 'cache') ? ordemPedida
+        : admin && ordemValida && !testeLotes ? (ordemPedida === 'cache2' ? 'cache' : ordemPedida)
+        : pedido.acao === 'planejar' ? 'antiga'
         : (ORDEM_PROMPT.value() === 'antiga' ? 'antiga' : 'cache');
+    pedido.blocos = pedido.provedor === 'gpt' && admin && ordemPedida === 'cache2' && !testeLotes;
+    // Diagnóstico de cache: id da resposta anterior da mesma execução.
+    const comparacao = String((req.data && req.data.comparacao) || '');
+    if (admin && pedido.provedor === 'gpt' && /^resp_[A-Za-z0-9]{10,100}$/.test(comparacao)) pedido.comparacao = comparacao;
     // Identificação para a auditoria de custo: execução (um plano e os seus
     // lotes, ou uma ficha individual) e número do lote (0 = plano).
     const execucao = String((req.data && req.data.execucao) || '').replace(/[^\w-]/g, '').slice(0, 40);
@@ -108,9 +121,11 @@ exports.criarEsquemaIA = onCall({
         try {
             await db.collection('usoIA').add(Object.assign({
                 uid: req.auth.uid, email, acao: pedido.acao, provedor: pedido.provedor, modelo: uso.modelo || '',
-                entrada: uso.entrada || 0, saida: uso.saida || 0, cacheEntrada: uso.cache || 0, raciocinio: uso.raciocinio || 0,
+                entrada: uso.entrada || 0, saida: uso.saida || 0, cacheEntrada: uso.cache || 0, cacheEscrita: uso.cacheEscrita || 0, raciocinio: uso.raciocinio || 0,
                 detalhesUso: uso.detalhes || {}, respostaId: uso.respostaId || '',
-                execucao, lote, ordemPrompt: pedido.ordem, fichasPedidas, caracteresMaterial: pedido.material.length,
+                execucao, lote, ordemPrompt: pedido.ordem, formatoEntrada: pedido.blocos ? 'dois-blocos' : 'texto', fichasPedidas, caracteresMaterial: pedido.material.length,
+                comparacao: pedido.comparacao || '', diagnosticoCache: uso.diagnostico ? JSON.stringify(uso.diagnostico).slice(0, 3000) : '',
+                impressoes: pedido.provedor === 'gpt' ? nucleo.impressoes(pedido) : {},
                 em: FieldValue.serverTimestamp()
             }, extra));
         } catch (e) { console.warn('[criarEsquemaIA] não registrou o uso:', e.message); }
