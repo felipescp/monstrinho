@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**55** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **178** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**47** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **171** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -154,21 +154,6 @@ Alterados: L11340 art. 22 (§ 4; § 10)
 
 </details>
 
-## Lei 15.411/2026: Maria da Penha: afastamento imediato do lar em mais hipóteses (4)
-
-Alterados: L11340 art. 12-C
-
-- 🧩 **Afastamento do Lar e Monitoração Eletrônica de Urgência (Lei 15.383/26)** (art. 12-C; 12-C, 1) · `esq_1786571326485_le3pbg` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra Grupos Vulneráveis · Tipo: Requisitos e prazos · Ref.: art. 12-C e art. 12-D da Lei nº 11.340/06 (LMP); Lei nº 15.383/26 Ritos de Afastamento do Agressor…
-  > …idade Competente Procedimento e Prazo Judicial de Saneamento Afastamento imediato do lar (Art. 12-C da Lei 11.340) ↳ Autoridade Judicial; ↳ Delegado de Polícia (se o município não for sede…
-- 🧩 **Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A)** (art. 12-C; 12-C, 2; 12-C, III) · `esq_1788045809866_l1votg` · dados/esquemas/esquemas-direito-penal.json
-  > …de saúde para suprir a perícia oficial. 4. O Afastamento do Lar pela Autoridade Policial (Art. 12-C da Lei 11.340) e Monitoramento Eletrônico (Art. 12-D da Lei 11.340) Subtema: Afastamento…
-  > …lio, admitindo-se atuação policial supletiva. Autoridade Competente Cenário de Aplicação (Art. 12-C da Lei 11.340) Fluxo de Controle e Revisão 1. Autoridade Judicial Competência primária e…
-- ❓ **Lei Maria da Penha · questão 12** (art. 12-C, III) · `sim_1788215085553_q12` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
-  > A atuação descrita é expressamente validada pelo art. 12-C, inciso III, e § 1º, da Lei nº 11.340/2006. O Supremo Tribunal Federal (ADI 6138) chancelou a constit…
-- ❓ **Lei Maria da Penha · questão 20** (art. 12-C, 2) · `sim_1788215085553_q20` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
-  > …lternativas à prisão nesta hipótese específica colide com a proibição expressa cravada no art. 12-C, § 2º, da Lei Maria da Penha: "Nos casos de risco à integridade física da ofendida ou à efetivi…
-
 ## Lei 15.410/2026: Tortura no contexto doméstico e execução penal do agressor (0 + 14 só o artigo)
 
 Alterados: L9455 art. 1 (III); LEP art. 50 (IX); LEP art. 52 (§ 8); LEP art. 86 (§ 4)
@@ -247,33 +232,6 @@ Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
 - ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
 - ❓ Lei Maria da Penha · questão 10 · `sim_1788215085553_q10`
 - ❓ Lei Maria da Penha · questão 41 · `sim_1788215085553_q41`
-
-</details>
-
-## Lei 15.383/2026: Maria da Penha: monitoração eletrônica do agressor (4 + 7 só o artigo)
-
-Alterados: L11340 art. 12-D; L11340 art. 22 (VIII; § 5; § 6; § 7; § 8; § 9); L11340 art. 24-A (§ 4)
-
-- 🧩 **Afastamento do Lar e Monitoração Eletrônica de Urgência (Lei 15.383/26)** (art. 12-D) · `esq_1786571326485_le3pbg` · dados/esquemas/esquemas-direito-penal.json
-  > …Subtema: Crimes contra Grupos Vulneráveis · Tipo: Requisitos e prazos · Ref.: art. 12-C e art. 12-D da Lei nº 11.340/06 (LMP); Lei nº 15.383/26 Ritos de Afastamento do Agressor e Monitoraçã…
-  > …azo sobre a manutenção (art. 12-C, § 1º, da Lei 11.340). Monitoração eletrônica imediata (Art. 12-D da Lei 11.340) ↳ Autoridade Judicial; ↳ Delegado de Polícia (quando o município não for s…
-- 🧩 **Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A)** (art. 24-A; 12-D) · `esq_1788045809866_l1votg` · dados/esquemas/esquemas-direito-penal.json
-  > …nto do Lar pela Autoridade Policial (Art. 12-C da Lei 11.340) e Monitoramento Eletrônico (Art. 12-D da Lei 11.340) Subtema: Afastamento do Lar | Tipo: Competência Extraordinária | Referênci…
-  > …e urgência para estancar a iminência de feminicídio. DISPOSITIVO CHAVE (Art. 12-C, § 2º e Art. 12-D, da Lei 11.340): Verificado risco à integridade da vítima ou à eficácia da MPU, não será…
-- ❓ **Lei Maria da Penha · questão 33** (art. 24-A, 4) · `sim_1788215085553_q33` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
-  > Trata-se da reprodução literal da causa de aumento inserida no artigo 24-A, parágrafo 4º, da Lei 11.340/06 pelas inovações legislativas da Lei 15.383/2026. A alteração, violação,…
-- ❓ **Lei Maria da Penha · questão 42** (art. 12-D) · `sim_1788215085553_q42` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
-  > A assertiva contraria a inovação legal consolidada pelo artigo 12-D da Lei nº 11.340/06, inserido pela Lei nº 15.383/2026. A referida norma franqueia express…
-
-<details><summary>Citam só o artigo (7)</summary>
-
-- 🧩 Descumprimento de Medidas Protetivas de Urgência · `esq_1786594715358_fqi3th`
-- 🧩 Descumprimento de Medidas Protetivas e Consentimento da Vítima (Art. 24-A) · `esq_1786571326485_cdz9hp`
-- 🧩 Medidas Protetivas de Urgência: Natureza, Vigência e Revisão (STJ Repetitivo) · `esq_1786571326485_m8wirg`
-- 🧩 Vedações e Restrições na Lei Maria da Penha · `esq_1786571326485_ialia3`
-- ❓ Crimes contra a Pessoa · questão 32 · `sim_1783734731369_q32`
-- ❓ Lei Maria da Penha · questão 34 · `sim_1788215085553_q34`
-- ❓ Lei Maria da Penha · questão 38 · `sim_1788215085553_q38`
 
 </details>
 
