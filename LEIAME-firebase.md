@@ -289,6 +289,8 @@ A aba reúne as fichas oficiais com o campo `mudanca`, mais recentes primeiro:
 
 A curadoria fica em `ferramentas/curadoria_mudancas_jur.py` (id da ficha, tipo, resumo de uma linha, data da mudança e fichas ligadas em "Ver também"). Para incluir ou tirar uma ficha, edite a lista e rode `python3 ferramentas/curadoria_mudancas_jur.py`. Súmulas que só a doutrina considera superadas ficam de fora.
 
+A mesma curadoria alimenta os **Esquemas**: quando um esquema cita uma súmula ou tese marcada como superada, cancelada ou em divergência viva, aparece um selo logo depois da citação (⛔ Cancelada, ⛔ Superado por lei, ⚖️ Divergência…), e o tooltip da citação mostra o motivo. Só vale quando o tribunal está identificado na citação (ex.: "Súmula 212/STJ"); "Súmula 212" solta não ganha selo, porque pode ser de outro tribunal.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

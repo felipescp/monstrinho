@@ -1147,6 +1147,14 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 #glos-tooltip-flutuante .jur-ref-sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 8px 0; }
 #glos-tooltip-flutuante .jur-ref-dica { margin-top: 6px; font-size: 10px; color: #cbd5e1; font-style: italic; }
 .jur-ref { text-decoration: underline dotted var(--app-primary); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: pointer; color: inherit; }
+.jur-ref-alerta { display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px; font-size:.78em; font-weight:800; line-height:1.5; vertical-align:baseline; cursor:pointer; white-space:nowrap; border:1px solid; }
+.jur-ref-alerta-superado { color:#92400e; background:#fef3c7; border-color:#fbbf24; }
+.jur-ref-alerta-viva { color:#6b21a8; background:#f3e8ff; border-color:#d8b4fe; }
+.jur-ref-mud { margin:0 0 6px 0; padding:5px 7px; border-radius:5px; font-size:.95em; line-height:1.4; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); }
+.jur-ref-mud.jur-mud-superado { background:rgba(251,191,36,.16); border-color:#fbbf24; color:#fde68a; }
+.jur-ref-mud.jur-mud-viva { background:rgba(192,132,252,.16); border-color:#c084fc; color:#e9d5ff; }
+.jur-ref-mud.jur-mud-mudanca { background:rgba(147,197,253,.16); border-color:#93c5fd; color:#bfdbfe; }
+.jur-ref-mud.jur-mud-resolvida { background:rgba(134,239,172,.16); border-color:#86efac; color:#bbf7d0; }
 .jur-ref:hover { color: var(--app-primary); }
 .jur-ref-lei { text-decoration-color: #0d9488; }
 #glos-tooltip-flutuante .lei-disp { margin-top: 4px; white-space: pre-line; }
@@ -32805,6 +32813,18 @@ window.ESQUEMAS_RUNTIME = {
                         sp.setAttribute('onclick', "event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute('data-jur-ref'))");
                     }
                     frag.appendChild(sp); pos = x.fim;
+                    // Súmula/tese citada que a curadoria marcou como superada,
+                    // cancelada ou em divergência viva: alerta logo depois.
+                    let mud = !x.lei && J._mudancaDaRef ? J._mudancaDaRef(x.chave) : null;
+                    if (mud) {
+                        let al = document.createElement('span');
+                        al.className = 'jur-ref-alerta jur-ref-alerta-' + mud.tipo;
+                        al.textContent = mud.tipo === 'superado' ? mud.selo : '⚖️ Divergência';
+                        al.title = mud.resumo;
+                        al.setAttribute('data-jur-ref', x.chave);
+                        al.setAttribute('onclick', "event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirRef(this.getAttribute('data-jur-ref'))");
+                        frag.appendChild(al);
+                    }
                 });
                 if (pos < t.length) frag.appendChild(document.createTextNode(t.slice(pos)));
                 no.parentNode.replaceChild(frag, no);
@@ -39703,6 +39723,22 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
         return html;
     },
+    // Curadoria "Divergências e Mudanças" aplicada a uma citação: se alguma
+    // ficha citada está superada/cancelada (ou em divergência viva), devolve
+    // {tipo, selo, resumo} — usado no alerta ao lado da citação nos Esquemas
+    // e no topo do tooltip. Superado tem prioridade sobre divergência.
+    _mudancaDaRef: function(chave) {
+        // Sem tribunal identificado ("SUM ? 212"), a citação pode ser de outro
+        // tribunal com o mesmo número (Súmula 212 do TST x do STJ): não alerta.
+        if (String(chave).split(' ')[1] === '?') return null;
+        let self = this, achada = null;
+        this._candidatosRef(chave).forEach(function(r) {
+            let f = self._fichaPorRef(r), t = f && self._tipoMudanca(f);
+            if (!t || (t !== 'superado' && t !== 'viva')) return;
+            if (!achada || (t === 'superado' && achada.tipo !== 'superado')) achada = { tipo: t, selo: self._seloMudancaTexto(f), resumo: f.mudanca.resumo || '' };
+        });
+        return achada;
+    },
     _htmlTooltipRef: function(chave) {
         let self = this, lista = this._candidatosRef(chave).map(function(r) { return self._fichaPorRef(r); }).filter(Boolean);
         if (!lista.length) return '';
@@ -39713,7 +39749,15 @@ window.JURISPRUDENCIA_RUNTIME = {
             let cab = [f.tribunal, f.processo, f.dataJulgado ? self._formatarDataBR(f.dataJulgado) : '', f.tema ? 'Tema ' + f.tema : '', f.sistematica].filter(Boolean).join(' · ');
             let corpo = f.tese ? '<span class="jur-ref-rot">Tese</span>' + self._escapar(corta(f.tese, mostrar.length > 1 ? 380 : 700))
                 : (f.resumo ? '<span class="jur-ref-rot">Resumo</span>' + self._escapar(corta(f.resumo, 380)) : self._escapar(f.titulo || ''));
-            return '<div class="jur-ref-cab">' + self._escapar(cab) + '</div><div>' + corpo + '</div>';
+            let mud = '';
+            if (self._tipoMudanca(f)) {
+                let selo = self._seloMudancaTexto(f), res = f.mudanca.resumo || '';
+                // "⛔ Cancelada" + "Cancelada pela 2ª Seção…": não repete a palavra.
+                let palavra = selo.replace(/^\S+\s+/, '').split(' ')[0].toLowerCase();
+                let cab = palavra && res.toLowerCase().indexOf(palavra) === 0 ? selo.split(' ')[0] : selo;
+                mud = '<div class="jur-ref-mud jur-mud-' + self._tipoMudanca(f) + '"><strong>' + self._escapar(cab) + '</strong> ' + self._escapar(res) + '</div>';
+            }
+            return mud + '<div class="jur-ref-cab">' + self._escapar(cab) + '</div><div>' + corpo + '</div>';
         }).join('<div class="jur-ref-sep"></div>') +
         (lista.length > 2 ? '<div class="jur-ref-dica">+ ' + (lista.length - 2) + ' ficha(s) com a mesma referência</div>' : '') +
         '<div class="jur-ref-dica">Clique para abrir a ficha</div>';
