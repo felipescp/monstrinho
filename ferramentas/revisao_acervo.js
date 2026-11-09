@@ -178,7 +178,7 @@ function alcance(cit, lista, art) {
         const it = itens[a.i];
         for (const n of alvo[a.k]) {
             // Já marcado como atualizado por essa norma: sai da lista.
-            if ((it.atualizacoes || []).some((u) => u && u.ref && u.ref.replace(/\s/g, '') === n.norma.replace(/\s/g, ''))) continue;
+            if ((it.atualizacoes || []).some((u) => u && u.ref && u.ref.replace(/\s/g, '').indexOf(n.norma.replace(/\s/g, '')) >= 0)) continue;
             if (jaConferido(n, it.id)) { nConferidos++; continue; }
             const p = a.chave.split('|');
             const nivel = alcance([p[2] || '', p[3] || '', p[4] || ''], mudou[n.id + '|' + a.k], artigoDe(p[0], p[1]) || {});
@@ -207,7 +207,7 @@ function alcance(cit, lista, art) {
     linhas.push('');
     linhas.push('Gerado por `ferramentas/revisao_acervo.js` em ' + new Date().toISOString().slice(0, 10) + '. Lista de trabalho só da administração: o usuário não vê nada disto.');
     linhas.push('');
-    linhas.push('Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` igual à norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.');
+    linhas.push('Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.');
     linhas.push('');
     linhas.push('**' + total + '** itens citam o próprio dispositivo alterado (' + itens.length + ' analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **' + genericos + '** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).');
     linhas.push('');

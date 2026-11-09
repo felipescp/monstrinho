@@ -2,9 +2,9 @@
 
 Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só da administração: o usuário não vê nada disto.
 
-Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` igual à norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
+Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**195** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **305** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**171** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **298** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -312,75 +312,6 @@ Alterados: LEP art. 52 (§ 1, III; § 1, IV; § 9; § 10); LEP art. 54 (§ 2; §
 
 </details>
 
-## Lei 15.402/2026: Progressão de regime: nova regra geral de 1/6 e frações para crimes violentos (22 + 3 só o artigo)
-
-Alterados: LEP art. 112; LEP art. 126 (§ 9); CP art. 359-M-A; CP art. 359-M-B
-
-- 🧩 **Consequências da Prática de Falta Grave** (art. 112) · `esq_1786568035891_nlh065` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Faltas Disciplinares · Tipo: Rol · Ref.: arts. 50, 112 e 127 da LEP; Súmulas 441, 534, 535 e 660 do STJ 1. Reflexos Judiciais Decorrentes do Com…
-- 🧩 **Garantismo na Execução Penal, Falta Grave e Súmula Vinculante 56** (art. 112) · `esq_1791815770774_mtnln2` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Direitos do Condenado na Execução Penal · Tipo: Rol · Ref.: Arts. 45, 50, 112 e 118 da LEP; Súmula Vinculante 56/STF; Súmulas 441, 493 e 533 do STJ A Execução Penal su…
-  > …gressão de Regime Interrompe o prazo e reinicia a contagem do lapso para nova progressão (art. 112 da LEP). Remição de Pena Revoga até no máximo 1/3 do tempo remido (art. 127 da LEP). Livr…
-- 🧩 **Inconstitucionalidades de Regimes e o Tráfico Privilegiado** (art. 112, 5) · `esq_1786571782166_6uk4me` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes Hediondos · Tipo: Classificação · Ref.: art. 2º da Lei nº 8.072/90; art. 112, § 5º, da LEP Garantias, Inconstitucionalidades de Regimes e o Tráfico Privilegiado Dispositivo…
-  > …Tráfico Privilegiado (Art. 33, § 4º da LD) Afastado o caráter hediondo (Lei 13.964/19 c/c art. 112, § 5º da LEP). Não se considera hediondo ou equiparado, aplicando-se regimes normais e frações…
-- 🧩 **Interrupção do prazo de progressão e readquisição do bom comportamento** (art. 112, 6,7; 112, 6; 112, 7) · `esq_1789659571899_zmqpe4` · dados/esquemas/esquemas-direito-penal.json
-  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112, §§ 6º e 7º, da LEP (Pacote Anticrime); Súmula 534/STJ O cometimento de falta grave durante a execuçã…
-  > …ulo. Efeito da Falta Grave Regra Legal e Cômputo do Novo Prazo Interrupção da Progressão (art. 112, § 6º, da LEP) O cometimento de falta grave INTERROMPE o prazo para a obtenção da progressão no…
-- 🧩 **Livramento Condicional: Requisitos e as Novas Vedações** (art. 112, VI, a) · `esq_1786594816717_bdqopw` · dados/esquemas/esquemas-direito-penal.json
-  > …ivramento e Efeitos da Condenação · Tipo: Requisitos e prazos · Ref.: art. 83 e §§ do CP; art. 112, VI, "a", da LEP; Súmula nº 617 do STJ; Temas Repetitivos nº 1.161 e 1.367 do STJ Limites Objetivo…
-  > …siderar todo o histórico prisional , não se limitando a 12 meses. Homicídio Hediondo LEP, art. 112, VI, "a" : O condenado por crime hediondo ou equiparado com resultado morte NÃO tem direito a livr…
-- 🧩 **Progressão de regime do reincidente genérico em crime hediondo** (art. 112, V,VI; 112, V; 112, VI; 112) · `esq_1789659571899_jrdr2y` · dados/esquemas/esquemas-direito-penal.json
-  > …Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Jurisprudência esquematizada · Ref.: art. 112, V e VI, da LEP; STJ (Tema 1084 e Tema 1196); STF (Tema 1169) O Pacote Anticrime (Lei 13.964/19)…
-  > …ão da analogia in malam partem, aplica-se a fração do apenado primário em crime hediondo (art. 112, V da LEP). 40% da pena (STJ Tema 1084 / STF Tema 1169). Reincidente Genérico em Crime Hedio…
-- 🧩 **Progressão de Regime no Art. 112 da LEP: Quadro Comparativo de Frações, Percentuais e Retroatividade** (art. 112) · `esq_1790182862846_hmzqi5` · dados/esquemas/esquemas-direito-penal.json
-  > …erdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Alteração legislativa · Ref.: art. 112 da LEP (Lei nº 7.210/84); Lei nº 13.964/19; Lei nº 14.843/24; Lei nº 15.358/26; Lei nº 15…
-  > …lógico (Lei 14.843/24) são IRRETROATIVAS. Fonte: Lei de Execução Penal (Lei nº 7.210/84), art. 112 · Curadoria: 23/09/26
-- 🧩 **Progressão de Regime pós-Pacote Anticrime** (art. 112) · `esq_1786595030588_ksxoh4` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Progressão de Regime · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP (redação da Lei nº 13.964/19) Os Novos Patamares Percentuais de Regime Executório…
-  > …s de Regime Executório Fração / Percentual Requisito Objetivo e Delitos de Enquadramento (Art. 112 LEP) 16% da pena Primário + crime sem violência ou grave ameaça à pessoa. 20% da pena Rei…
-- 🧩 **Progressão de Regime Prisional e Percentuais (Lei 13.964/19)** (art. 112) · `esq_1786565097765_dzbpke` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Regimes de Cumprimento de Pena · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP; Lei 13.964/19; Lei 15.358/26; Temas Repetitivos do STJ 1. Tabela de Percentuais d…
-- 🧩 **Progressão especial para mulheres gestantes e mães** (art. 112, 3; 112, 4) · `esq_1789659571899_n7zm8y` · dados/esquemas/esquemas-direito-penal.json
-  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112, § 3º, da LEP (incluído pela Lei nº 13.769/18); HC 522.651/SP (STJ) No caso de mulher gestante…
-  > …ão de regime dar-se-á com o cumprimento de 1/8 (um oitavo) da pena. Requisito Cumulativo (art. 112, § 3º, da LEP) Detalhamento e Interpretação Jurisprudencial Fração Temporal Reduzida Cumpriment…
-- 🧩 **Regras dos Regimes Prisionais (Fechado, Semiaberto e Aberto)** (art. 112) · `esq_1786594816717_512ys7` · dados/esquemas/esquemas-direito-penal.json
-  > …umprimento de Pena · Tipo: Comparativo · Ref.: arts. 33 a 36 do CP; Súmula nº 439 do STJ; art. 112 da LEP (Lei nº 14.843/24) Diretrizes Práticas de Execução dos Regimes no CP Critério de R…
-- 🧩 **Tabela geral de progressão de regime prisional** (art. 112) · `esq_1789659571899_u87a8s` · dados/esquemas/esquemas-direito-penal.json
-  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP (redação do Pacote Anticrime e Leis 15.358/26 e 15.402/26) A pena privativa de lib…
-  > …rcentuais objetivos e o bom comportamento. % de Cumprimento Situação Jurídica do Apenado (art. 112 da LEP) Vedação de Benefício 16% Primário + crime cometido SEM violência à pessoa ou grav…
-- 🧩 **Tráfico Privilegiado (Art. 33, § 4º): Requisitos, Natureza e Afastamento** (art. 112; 112, 5) · `esq_1786570744236_x7tb4w` · dados/esquemas/esquemas-direito-penal.json
-  > …TF Tema 712). Não se dedicar a atividades criminosas . A vedação à progressão especial do art. 112 da LEP não afasta o privilégio se o crime associativo de Orcrim não restar tipificado na…
-  > …dionda , restando expressamente afastada a equiparação da Lei 8.072/90 (Tese 55/STJ e LEP art. 112, § 5º). Admite-se plenamente a fixação de regime inicial aberto e a substituição por restritiva…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 5** (art. 112) · `sim_1788654225381_q5` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > …s) encontram-se parametrizados por **porcentagens objetivas** alocadas exclusivamente no *artigo 112 da Lei de Execução Penal (LEP)*.
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 57** (art. 112) · `sim_1788654225381_q57` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > …dica atual, integralmente controlada pelas diretrizes e percentuais alocados no escopo do artigo 112 da Lei de Execução Penal.
-  > …cartesianas, migraram e estão consolidados única e exclusivamente no cerne estrutural do artigo 112 da LEP (Lei 7.210/1984).
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 27** (art. 112) · `sim_1789667188418_q27` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > …do, sendo desnecessária a observância de etapas intermediárias como ocorre na progressão (art. 112 da LEP).
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 39** (art. 112, 3) · `sim_1789667188418_q39` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > …e § 2º, da LEP obriga o DEPEN a rastrear os impactos sociológicos da progressão especial (art. 112, § 3º) para avaliar institucionalmente a dispensa do regime fechado para mulheres processadas p…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 42** (art. 112) · `sim_1789667188418_q42` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > …AgR, Info 780 e EP 16, Info 832), embora o pagamento da multa não conste expressamente no art. 112 da LEP, o adimplemento da sanção pecuniária revela o censo de responsabilidade exigido do…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 43** (art. 112, 3, V) · `sim_1789667188418_q43` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > O STJ (HC 522651/SP, Info 678) assentou que a vedação estampada no art. 112, § 3º, V, da LEP ("não ter integrado organização criminosa") deve ser interpretada de forma estrit…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 49** (art. 112, VIII; 112, VI) · `sim_1789667188418_q49` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > …ido a lacuna legislativa sobre o reincidente genérico ao restringir a nova fração de 85% (art. 112, VIII, da LEP) apenas aos reincidentes específicos em crime hediondo com resultado morte, major…
-  > …rte, majorou expressamente a fração aplicável ao agente primário nessas mesmas condições (art. 112, VI, 'a'), de modo que a construção jurisprudencial consolidada pelo STJ no Tema 1196 — funda…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 51** (art. 112, 6) · `sim_1789667188418_q51` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > Segundo a expressa dicção do art. 112, § 6º, da LEP, o cometimento de falta grave interrompe o prazo para a obtenção da progressão de…
-- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 55** (art. 112, VI, d) · `sim_1789667188418_q55` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
-  > A Lei nº 15.358/2026 alterou as frações de cumprimento de pena e incluiu o art. 112, VI, "d", na LEP, estabelecendo a fração gravosa de 75% (setenta e cinco por cento) para o condena…
-
-<details><summary>Citam só o artigo (3)</summary>
-
-- 🧩 Remição da pena por trabalho e por estudo · `esq_1789666359187_p7kvkb`
-- 🧩 Remição de Pena: Trabalho, Estudo e Práticas Sociais · `esq_1786565097765_ez4ayh`
-- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 63 · `sim_1789667188418_q63`
-
-</details>
-
 ## Lei 15.384/2026: Vicaricídio e violência vicária (3 + 19 só o artigo)
 
 Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
@@ -458,7 +389,7 @@ Alterados: L11340 art. 16 (p.ú.)
 
 </details>
 
-## Lei 15.358/2026: Marco legal do combate ao crime organizado: facções ultraviolentas, hediondos e custódia por vídeo (17 + 51 só o artigo)
+## Lei 15.358/2026: Marco legal do combate ao crime organizado: facções ultraviolentas, hediondos e custódia por vídeo (15 + 47 só o artigo)
 
 Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L11343 art. 40-A; LEP art. 112 (V; VI; VI-A; VII; VIII); LEP art. 41-A; CPP art. 310; CPP art. 78 (I); CPP art. 313 (V); L8072 art. 1 (p.ú., VIII)
 
@@ -471,16 +402,10 @@ Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L
   > …e de Custódia Física de Presos Prazo / Condição Regramento e Limites Rígidos de Custódia (Art. 310 do CPP) Prazo de Apresentação O preso será encaminhado à presença do juiz no prazo de 24…
 - 🧩 **Extorsão e Extorsão Mediante Sequestro (Regime Sancionatório)** (art. 158; 158, 4) · `esq_1786594751898_npk3k0` · dados/esquemas/esquemas-direito-penal.json
   > …cado por integrante de organização criminosa ultraviolenta, grupo paramilitar ou milícia (art. 158, § 4º, do CP / art. 159, § 5º, do CP). &#8627; Extorsão simples/relâmpago: aplica-se a pena em…
-- 🧩 **Livramento Condicional: Requisitos e as Novas Vedações** (art. 112, VI, a) · `esq_1786594816717_bdqopw` · dados/esquemas/esquemas-direito-penal.json
-  > …ivramento e Efeitos da Condenação · Tipo: Requisitos e prazos · Ref.: art. 83 e §§ do CP; art. 112, VI, "a", da LEP; Súmula nº 617 do STJ; Temas Repetitivos nº 1.161 e 1.367 do STJ Limites Objetivo…
-  > …siderar todo o histórico prisional , não se limitando a 12 meses. Homicídio Hediondo LEP, art. 112, VI, "a" : O condenado por crime hediondo ou equiparado com resultado morte NÃO tem direito a livr…
 - 🧩 **Pacto Internacional sobre Direitos Civis e Políticos (PIDCP/1966): Direitos Protegidos, Cláusulas de Derrogação e Exceções** (art. 310) · `esq_1791918824304_094i2d` · dados/esquemas/esquemas-nocoes-gerais-de-direito-formacao-humanistica-e-direitos-humanos.json
   > …quer pessoa presa à autoridade judicial. Incorporada integralmente no ordenamento pátrio (Art. 310 do CPP e Res. 213/CNJ). Trabalho Forçado Penal (Art. 8.3.b) Admite trabalho forçado impos…
 - 🧩 **Prisão em flagrante e Audiência de Custódia (Lei 13.964/19 e 15.358/26)** (art. 310) · `esq_1786533315176_nrxr9z` · dados/esquemas/esquemas-direito-processual-penal.json
   > Subtema: Prisão em Flagrante · Tipo: Classificação · Ref.: art. 301 a 310 do CPP; Súmula Vinculante 11/STF; Súmula 676/STJ Modalidades de Prisão em Flagrante Espéc…
-- 🧩 **Progressão de regime do reincidente genérico em crime hediondo** (art. 112, V,VI; 112, V; 112, VI) · `esq_1789659571899_jrdr2y` · dados/esquemas/esquemas-direito-penal.json
-  > …Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Jurisprudência esquematizada · Ref.: art. 112, V e VI, da LEP; STJ (Tema 1084 e Tema 1196); STF (Tema 1169) O Pacote Anticrime (Lei 13.964/19)…
-  > …ão da analogia in malam partem, aplica-se a fração do apenado primário em crime hediondo (art. 112, V da LEP). 40% da pena (STJ Tema 1084 / STF Tema 1169). Reincidente Genérico em Crime Hedio…
 - 🧩 **Standard probatório para conversão de flagrante (Lei 15.272/25)** (art. 310, 5,6; 310; 310, 5) · `esq_1786533315176_lozs96` · dados/esquemas/esquemas-direito-processual-penal.json
   > …sões Provisórias (Flagrante, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedim…
   > …prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedimental de Conversão (Lei 15.272/25) Prática reiterada Haver prov…
@@ -503,7 +428,7 @@ Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L
 - ❓ **Prisão · questão 45** (art. 310, 4) · `sim_1781783375084_q45` · dados/bateriasvf/grupo-ce-prisao.json
   > A redação atual do **art. 310, § 4º, do CPP** (embora o dispositivo seja alvo de discussões no STF - ADI 6.305) determina que…
 
-<details><summary>Citam só o artigo (51)</summary>
+<details><summary>Citam só o artigo (47)</summary>
 
 - 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
 - 🧩 Confronto entre Roubo e Extorsão · `esq_1786594751898_zg53za`
@@ -516,12 +441,8 @@ Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L
 - 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
 - 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
 - 🧩 Prisão Preventiva em Violência Doméstica (LMP vs. Contravenções) · `esq_1786571326485_y3ggxz`
-- 🧩 Progressão de Regime no Art. 112 da LEP: Quadro Comparativo de Frações, Percentuais e Retroatividade · `esq_1790182862846_hmzqi5`
-- 🧩 Progressão de Regime pós-Pacote Anticrime · `esq_1786595030588_ksxoh4`
-- 🧩 Progressão de Regime Prisional e Percentuais (Lei 13.964/19) · `esq_1786565097765_dzbpke`
 - 🧩 Regras dos Regimes Prisionais (Fechado, Semiaberto e Aberto) · `esq_1786594816717_512ys7`
 - 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
-- 🧩 Tabela geral de progressão de regime prisional · `esq_1789659571899_u87a8s`
 - 🧩 Tráfico Privilegiado (Art. 33, § 4º): Requisitos, Natureza e Afastamento · `esq_1786570744236_x7tb4w`
 - ❓ Crimes contra a Administração · questão 26 · `sim_1785726484167_q26`
 - ❓ Crimes contra a Administração · questão 38 · `sim_1785726484167_q38`
