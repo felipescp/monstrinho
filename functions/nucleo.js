@@ -206,6 +206,17 @@ function opcoesCache(p) {
     if (p.comparacao) o.comparison_response_id = p.comparacao;
     return Object.keys(o).length ? o : null;
 }
+// Identidade de um plano, para reaproveitá-lo sem nova chamada à IA: muda
+// se mudar qualquer coisa que influencie o plano — material, orientação,
+// fonte, taxonomia (dentro da mensagem), instruções, formato de saída, IA,
+// modelo e configuração (modeloCfg). VERSAO_PLANO invalida todos os planos
+// guardados quando a lógica de planejamento mudar.
+const VERSAO_PLANO = 1;
+function chavePlano(p, modeloCfg) {
+    const base = JSON.stringify({ v: VERSAO_PLANO, provedor: p.provedor, modelo: modeloCfg, instrucoes: SISTEMA, formato: esquemaPlano(), mensagem: mensagemUsuario(p) });
+    return require('crypto').createHash('sha256').update(base).digest('hex').slice(0, 40);
+}
+
 // Impressões digitais (SHA-256, 16 caracteres) de cada parte do pedido:
 // mostram em usoIA o que mudou entre dois pedidos da mesma execução.
 function impressoes(p) {
@@ -357,4 +368,4 @@ async function chamarGPT(fetchFn, cfg, p) {
     } catch (e) { throw erroComUso(e, uso); }
 }
 
-module.exports = { partesMensagem, entradaGPT, opcoesCache, impressoes, TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };
+module.exports = { chavePlano, VERSAO_PLANO, partesMensagem, entradaGPT, opcoesCache, impressoes, TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };

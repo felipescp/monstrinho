@@ -35194,14 +35194,14 @@ window.ESQ_IA = {
     },
     editarFicha: function(i) { this._guardarCampos(); this.estado.editando = (this.estado.editando === i ? -1 : i); this.render(); },
     // Cada modo tem o próprio material, plano e fichas (matéria e IA são comuns).
-    _CAMPOS_DO_MODO: ['tema', 'material', 'fonte', 'arquivo', 'plano', 'selecionadas', 'fichas', 'editando', 'observacoes', 'status', 'etapa'],
+    _CAMPOS_DO_MODO: ['tema', 'material', 'fonte', 'arquivo', 'plano', 'planoReaproveitado', 'selecionadas', 'fichas', 'editando', 'observacoes', 'status', 'etapa'],
     _trocarModo: function(novo) {
         let e = this.estado;
         if (novo === e.modo) return;
         this._porModo = this._porModo || {};
         let atual = {}; this._CAMPOS_DO_MODO.forEach(function(k) { atual[k] = e[k]; });
         this._porModo[e.modo] = atual;
-        let salvo = this._porModo[novo] || { tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, observacoes: [], status: '', etapa: 'material' };
+        let salvo = this._porModo[novo] || { tema: '', material: '', fonte: '', arquivo: '', plano: null, planoReaproveitado: null, selecionadas: {}, fichas: [], editando: -1, observacoes: [], status: '', etapa: 'material' };
         this._CAMPOS_DO_MODO.forEach(function(k) { e[k] = salvo[k]; });
         e.modo = novo;
     },
@@ -35291,6 +35291,11 @@ window.ESQ_IA = {
         } else if (e.etapa === 'plano') {
             corpo += statusHtml + obs;
             let n = Object.keys(e.selecionadas).filter(function(k) { return e.selecionadas[k]; }).length;
+            if (e.plano && e.planoReaproveitado) {
+                let quando = new Date(e.planoReaproveitado), dd = function(n) { return String(n).padStart(2, '0'); };
+                corpo += '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px">♻️ <b>Plano reaproveitado</b>, feito em ' + dd(quando.getDate()) + '/' + dd(quando.getMonth() + 1) + ' às ' + dd(quando.getHours()) + 'h' + dd(quando.getMinutes()) + ' com o mesmo material, orientação, fonte e IA. Sem custo. ' +
+                    '<button type="button" style="' + btn + ';padding:3px 8px;margin-left:4px" onclick="window.ESQ_IA.planejar(true)"' + dis + '>Planejar de novo</button></div>';
+            }
             if (e.plano) {
                 corpo += '<div style="margin-bottom:6px"><b>' + e.plano.length + ' ficha(s) sugerida(s)</b> <span style="color:var(--text-muted);font-size:11px">Marque as que quer gerar. Geramos 5 fichas por vez.' + (e.cota && e.cota.limite != null ? ' Sua cota permite mais ' + Math.max(0, e.cota.limite - e.cota.usados) + ' nesta semana.' : '') + '</span> <span style="float:right"><button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(true)"' + dis + '>Marcar todas</button> <button type="button" style="' + btn + ';padding:3px 9px;font-size:11px" onclick="window.ESQ_IA.marcarTodas(false)"' + dis + '>Desmarcar</button></span></div>';
                 corpo += e.plano.map(function(f, i) {
@@ -35472,16 +35477,22 @@ window.ESQ_IA = {
             e.status = r.descartadas ? r.descartadas + ' ficha(s) descartada(s) por formato inválido.' : '';
         });
     },
-    planejar: function() {
+    // replanejar: ignora o plano guardado para o mesmo pedido e chama a IA.
+    planejar: function(replanejar) {
         let self = this, e = this.estado;
+        if (replanejar && !confirm('Planejar de novo chama a IA outra vez (com custo) e pode sugerir outra lista. Continuar?')) return;
         let falta = this._faltaParaGerar();
         if (falta) { e.status = '❌ ' + falta; this.render(); return; }
         e.observacoes = []; e.etapa = 'plano';
         return this._rodar(async function() {
             e.status = 'Planejando… (pode levar alguns minutos em material longo)'; self.render();
             self._novaExecucao();
-            let r = await self._chamar(Object.assign(self._base('planejar'), { lote: 0 }));
-            self._somarUso(r);
+            let r = await self._chamar(Object.assign(self._base('planejar'), { lote: 0 }, replanejar ? { replanejar: true } : {}));
+            // Plano reaproveitado: o servidor devolveu o plano guardado do
+            // mesmo pedido, sem chamar a IA — nada a somar ao custo.
+            e.planoReaproveitado = r.reaproveitado ? r.reaproveitado.em : null;
+            if (r.reaproveitado) { if (r.cota) e.cota = r.cota; if (r.observacoes) e.observacoes.push(r.observacoes); }
+            else self._somarUso(r);
             e.plano = r.fichas; e.selecionadas = {};
             r.fichas.forEach(function(f, i) { e.selecionadas[i] = true; });
             e.status = '';

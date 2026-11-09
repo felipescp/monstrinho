@@ -49,6 +49,11 @@ const ORDEM_PROMPT = defineString('ORDEM_PROMPT', { default: 'cache' });
 // (volta ao comportamento anterior, cache implícito).
 const CACHE_EXPLICITO = defineString('CACHE_EXPLICITO', { default: 'sim' });
 
+// Planos guardados para reaproveitar (planosIA/{uid}_{chave}, só o servidor
+// lê e grava): o mesmo pedido de planejamento dentro deste prazo devolve o
+// plano guardado, sem chamar a IA. "Planejar de novo" (replanejar) ignora.
+const PLANO_VALIDADE_DIAS = 30;
+
 // Esquemas por semana (segunda a domingo, horário de Brasília).
 const COTA_SEMANAL = { intermediario: 1, completo: 10 };
 const IA_PLUS_SO_ADMIN = true; // IA Plus desabilitada para os demais por enquanto
@@ -180,6 +185,26 @@ exports.criarEsquemaIA = onCall({
         if (n > 0) { try { await refCota.update({ usados: FieldValue.increment(-n) }); } catch (e) { console.warn('[criarEsquemaIA] não devolveu a cota:', e.message); } }
     };
 
+    // Reaproveitamento do plano: mesmo usuário e mesma identidade do pedido
+    // (ver chavePlano). Não chama a IA e não custa nada.
+    let refPlano = null;
+    if (pedido.acao === 'planejar') {
+        const modeloCfg = pedido.provedor === 'claude' ? CLAUDE_MODELO.value() + '|' + CLAUDE_ESFORCO.value()
+            : pedido.provedor === 'gpt' ? GPT_MODELO.value() : GEMINI_MODELO.value();
+        refPlano = db.doc('planosIA/' + req.auth.uid + '_' + nucleo.chavePlano(pedido, modeloCfg));
+        if (!(req.data && req.data.replanejar === true)) {
+            try {
+                const g = await refPlano.get();
+                const d = g.exists ? g.data() : null;
+                const em = d && d.criadoEm && d.criadoEm.toDate ? d.criadoEm.toDate() : null;
+                if (d && em && Date.now() - em.getTime() < PLANO_VALIDADE_DIAS * 86400000 && Array.isArray(d.fichas) && d.fichas.length) {
+                    await registrarUso({ modelo: d.modelo || '', entrada: 0, saida: 0 }, { status: 'reaproveitado', fichas: d.fichas.length });
+                    return { acao: 'planejar', fichas: d.fichas, descartadas: 0, observacoes: d.observacoes || '', uso: { modelo: d.modelo || '', entrada: 0, saida: 0 }, reaproveitado: { em: em.toISOString() }, cota: await lerCota() };
+                }
+            } catch (e) { console.warn('[criarEsquemaIA] plano guardado ilegível:', e.message); }
+        }
+    }
+
     let r;
     try {
         if (pedido.provedor === 'claude') {
@@ -217,6 +242,10 @@ exports.criarEsquemaIA = onCall({
     }
 
     await registrarUso(r.uso, { status: 'ok', fichas: saida.fichas.length, descartadas: saida.descartadas || 0 });
+    if (refPlano && saida.fichas.length) {
+        try { await refPlano.set({ uid: req.auth.uid, email, provedor: pedido.provedor, modelo: r.uso.modelo || '', fichas: saida.fichas, observacoes: saida.observacoes || '', caracteresMaterial: pedido.material.length, criadoEm: FieldValue.serverTimestamp() }); }
+        catch (e) { console.warn('[criarEsquemaIA] não guardou o plano:', e.message); }
+    }
 
     return { acao: pedido.acao, fichas: saida.fichas, descartadas: saida.descartadas, observacoes: saida.observacoes, uso: r.uso, cota: await lerCota() };
 });
