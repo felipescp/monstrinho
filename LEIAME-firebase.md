@@ -239,6 +239,11 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 - Cada chamada registra o consumo (tokens) na coleção `usoIA` do Firestore, que só o servidor lê e grava.
 - O prompt adapta as instruções da Fábrica de fichas (v4) e o padrão de citação; está em `functions/nucleo.js`.
 - Modelos padrão: `claude-opus-5-5`, com esforço `medium`, e `gemini-3.8-flash`. Ficam em `functions/.env` (obrigatório na publicação automática); para trocar, edite `CLAUDE_MODELO=…`, `CLAUDE_ESFORCO=…` ou `GEMINI_MODELO=…`.
+- **IA Simples com duas opções: Gemini 3.8 Flash e GPT-6 Luna.** O GPT está pronto no código (`chamarGPT` em `functions/nucleo.js`, API de respostas da OpenAI), mas desligado: no app aparece "GPT-6 Luna (em breve)". Para ligar:
+  1. Crie a chave em https://platform.openai.com/api-keys e guarde no Secret Manager com o nome exato `OPENAI_API_KEY`, como foi feito com a do Gemini.
+  2. Confira no painel da OpenAI o nome exato do modelo e ajuste `GPT_MODELO=…` em `functions/.env` (hoje `gpt-6-luna`).
+  3. Em `functions/index.js`, troque `GPT_LIGADO = false` para `true` e publique as functions. O app passa a mostrar o botão ativo sozinho (o servidor informa na consulta da cota).
+  - Conta na mesma cota semanal da IA Simples. O custo em R$ do painel aparece como "sem preço" até o preço do modelo entrar em `_precos` (index.html).
 
 **Para ativar (uma vez):**
 

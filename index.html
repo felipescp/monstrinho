@@ -35133,7 +35133,8 @@ window.ESQ_IA = {
         // semana, completo 10, administração sem limite; a cota é contada no
         // servidor (functions/index.js) e só exibida aqui.
         if (!window.exigirNivel('intermediario', 'Criar esquema com IA')) return;
-        if (!window.ehAdmin()) this.estado.provedor = 'gemini'; // IA Plus desabilitada por enquanto
+        if (!window.ehAdmin() && this.estado.provedor === 'claude') this.estado.provedor = 'gemini'; // IA Plus desabilitada por enquanto
+        if (this.estado.provedor === 'gpt' && !this._gptLigado()) this.estado.provedor = 'gemini';
         this._lerCota();
         let m = document.getElementById('esq-ia-modal');
         if (!m) {
@@ -35150,8 +35151,15 @@ window.ESQ_IA = {
     _lerCota: function() {
         let self = this;
         if (window.ehAdmin()) { this.estado.cota = null; return; }
-        this._chamar({ acao: 'cota' }).then(function(r) { if (r && r.cota) { self.estado.cota = r.cota; self.render(); } }, function() {});
+        this._chamar({ acao: 'cota' }).then(function(r) {
+            if (r && r.provedores) self.estado.provedores = r.provedores;
+            if (r && r.cota) { self.estado.cota = r.cota; self.render(); }
+        }, function() {});
     },
+    // IA Simples tem duas opções: Gemini e GPT. O servidor diz se o GPT já
+    // foi configurado (chave OPENAI_API_KEY); até lá o botão fica desligado.
+    MODELOS_IA: { gemini: 'Gemini 3.8 Flash', gpt: 'GPT-6 Luna', claude: 'Plus' },
+    _gptLigado: function() { return !!(this.estado.provedores && this.estado.provedores.gpt); },
     _textoCota: function() {
         let c = this.estado.cota;
         if (window.ehAdmin()) return 'administração · sem limite';
@@ -35251,7 +35259,9 @@ window.ESQ_IA = {
         h += '<div style="padding:16px 20px 10px;border-bottom:1px solid var(--border-color)">';
         h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><b style="font-size:16px">✨ Criar Esquema com IA</b><span style="font-size:11px;color:' + (this._cotaEsgotada() ? '#b91c1c;font-weight:700' : 'var(--text-muted)') + '">' + esc(this._textoCota()) + '</span>' + (this._cotaEsgotada() && !window.temNivel('completo') ? '<a href="#" onclick="event.preventDefault(); window.mostrarNiveis(\'Mais esquemas com IA\', \'completo\')" style="font-size:11px;font-weight:700;color:var(--app-primary)">Ver os níveis</a>' : '') + '<button type="button" onclick="window.ESQ_IA.fechar()" style="margin-left:auto;' + btn + '"' + dis + '>Fechar</button></div>';
         h += '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center"><span><b>Modo:</b> ' + opc('modo', 'individual', 'Ficha individual') + ' ' + opc('modo', 'material', 'Lote de fichas') + '</span>' +
-            '<span><b>IA:</b> ' + opc('provedor', 'gemini', 'Simples', 'Rápida e econômica') + ' ' + (window.ehAdmin() ? opc('provedor', 'claude', 'Plus', 'Mais detalhado e profundo') : '<button type="button" disabled title="Mais detalhado e profundo · em breve" style="' + btn + ';opacity:.45;cursor:not-allowed">Plus 🔒</button>') + '</span>';
+            '<span><b>IA Simples:</b> ' + opc('provedor', 'gemini', this.MODELOS_IA.gemini, 'Gemini · rápida e econômica') + ' ' +
+                (this._gptLigado() ? opc('provedor', 'gpt', this.MODELOS_IA.gpt, 'GPT · rápida e econômica') : '<button type="button" disabled title="GPT · em configuração" style="' + btn + ';opacity:.45;cursor:not-allowed">' + this.MODELOS_IA.gpt + ' (em breve)</button>') +
+            '</span><span><b>IA Plus:</b> ' + (window.ehAdmin() ? opc('provedor', 'claude', 'Plus', 'Mais detalhado e profundo') : '<button type="button" disabled title="Mais detalhado e profundo · em breve" style="' + btn + ';opacity:.45;cursor:not-allowed">Plus 🔒</button>') + '</span>';
         let seta = function(d, txt) { let alvo = l[iAtual + d], ok = alvo && self._etapaDisponivel(alvo) && !e.ocupado; return '<button type="button" onclick="window.ESQ_IA.passo(' + d + ')" style="' + btn + ';padding:4px 10px' + (ok ? '' : ';opacity:.35;cursor:default') + '"' + (ok ? '' : ' disabled') + '>' + txt + '</button>'; };
         h += '<span style="margin-left:auto;display:flex;align-items:center;gap:6px">' + seta(-1, '‹') + l.map(function(et, i) {
             let at = et === e.etapa, ok = self._etapaDisponivel(et) && !e.ocupado;
@@ -35388,7 +35398,7 @@ window.ESQ_IA = {
     _base: function(acao) {
         let e = this.estado;
         let taxonomia = this._listaMaterias().map(function(m) { return { materia: m, divisoes: Array.from(glosDivisoesValidas(m)) }; });
-        return { acao: acao, provedor: e.provedor === 'claude' ? 'claude' : 'gemini', taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
+        return { acao: acao, provedor: e.provedor === 'claude' || e.provedor === 'gpt' ? e.provedor : 'gemini', taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
     },
     // Custo estimado (preço de tabela, US$ por milhão de tokens) convertido a
     // R$ pelo câmbio abaixo. Só referência: a cobrança real vem das contas
@@ -35410,7 +35420,7 @@ window.ESQ_IA = {
     _somarUso: function(r) {
         if (r && r.cota) this.estado.cota = r.cota;
         let u = this.estado.uso, x = r.uso || {};
-        let ia = /^claude/i.test(x.modelo || '') ? 'IA Plus' : 'IA Simples';
+        let ia = /^claude/i.test(x.modelo || '') ? 'IA Plus' : /^gpt/i.test(x.modelo || '') ? 'IA Simples (GPT)' : 'IA Simples (Gemini)';
         let c = this._custoReais(x.modelo, x.entrada, x.saida);
         let p = u.porIA[ia] = u.porIA[ia] || { chamadas: 0, custo: 0, semPreco: false };
         p.chamadas++; if (c == null) p.semPreco = true; else p.custo += c;

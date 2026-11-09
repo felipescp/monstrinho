@@ -115,7 +115,7 @@ function validarPedido(d) {
     d = d || {};
     const acao = d.acao, provedor = d.provedor;
     if (acao !== 'planejar' && acao !== 'gerar') throw new Error('Ação inválida.');
-    if (provedor !== 'claude' && provedor !== 'gemini') throw new Error('Escolha a IA (Claude ou Gemini).');
+    if (provedor !== 'claude' && provedor !== 'gemini' && provedor !== 'gpt') throw new Error('Escolha a IA (Gemini, GPT ou Claude).');
     // Taxonomia inteira (a IA escolhe matéria e divisão de cada ficha).
     const taxonomia = (Array.isArray(d.taxonomia) ? d.taxonomia : []).slice(0, 60).map(m => ({
         materia: String((m && m.materia) || '').trim().slice(0, 200),
@@ -239,4 +239,36 @@ async function chamarGemini(fetchFn, cfg, p) {
     };
 }
 
-module.exports = { TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini };
+// GPT (OpenAI): API REST de respostas (Responses), saída em JSON pelo mesmo
+// schema do Claude (strict desligado: os schemas daqui têm campos opcionais).
+async function chamarGPT(fetchFn, cfg, p) {
+    const r = await fetchFn('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.chave },
+        body: JSON.stringify({
+            model: cfg.modelo,
+            instructions: SISTEMA,
+            input: mensagemUsuario(p),
+            max_output_tokens: 32000,
+            text: { format: { type: 'json_schema', name: p.acao === 'planejar' ? 'plano' : 'fichas', schema: p.acao === 'planejar' ? esquemaPlano() : esquemaFichas(), strict: false } }
+        })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error('GPT respondeu ' + r.status + ': ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
+    if (j.status === 'incomplete') {
+        const motivo = j.incomplete_details && j.incomplete_details.reason;
+        throw new Error(motivo === 'max_output_tokens' ? 'A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.' : 'O GPT interrompeu a resposta (' + (motivo || 'incompleta') + ').');
+    }
+    const partes = [];
+    (j.output || []).forEach(o => (o.content || []).forEach(c => {
+        if (c.type === 'refusal') throw new Error('A IA recusou o pedido' + (c.refusal ? ': ' + c.refusal : '.'));
+        if (c.type === 'output_text' && c.text) partes.push(c.text);
+    }));
+    const u = j.usage || {};
+    return {
+        json: lerJson(partes.join('')),
+        uso: { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0 }
+    };
+}
+
+module.exports = { TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };

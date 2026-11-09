@@ -1,7 +1,7 @@
 // Cloud Functions d'A Salinha.
 //
 // criarEsquemaIA (chamável pelo app): planeja e gera fichas da seção
-// "Esquemas e Tabelas" com IA (Claude ou Gemini). Níveis (pedido explícito
+// "Esquemas e Tabelas" com IA (Claude, Gemini ou GPT). Níveis (pedido explícito
 // do usuário): intermediário cria 1 esquema por semana e completo 10, só com
 // a IA Simples (Gemini); a administração, sem limite e com a IA Plus
 // (Claude). A cota é contada aqui, em cotaIA/{e-mail}_{segunda-feira}
@@ -27,6 +27,13 @@ const CHAVE_GEMINI = defineSecret('GEMINI_API_KEY');
 const CLAUDE_MODELO = defineString('CLAUDE_MODELO', { default: 'claude-opus-5-5' });
 const CLAUDE_ESFORCO = defineString('CLAUDE_ESFORCO', { default: 'medium' });
 const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-3.8-flash' });
+// GPT (IA Simples, segunda opção). Desligado até criar o segredo
+// OPENAI_API_KEY no Secret Manager: com GPT_LIGADO = false o segredo nem é
+// pedido no deploy e o botão aparece como "em breve" no app. O nome do
+// modelo vai em GPT_MODELO (functions/.env), conferido no painel da OpenAI.
+const GPT_LIGADO = false;
+const CHAVE_GPT = defineSecret('OPENAI_API_KEY');
+const GPT_MODELO = defineString('GPT_MODELO', { default: 'gpt-6-luna' });
 
 // Esquemas por semana (segunda a domingo, horário de Brasília).
 const COTA_SEMANAL = { intermediario: 1, completo: 10 };
@@ -45,7 +52,7 @@ exports._semanaAtual = semanaAtual;
 
 exports.criarEsquemaIA = onCall({
     region: 'southamerica-east1',
-    secrets: CLAUDE_LIGADO ? [CHAVE_CLAUDE, CHAVE_GEMINI] : [CHAVE_GEMINI],
+    secrets: [CHAVE_GEMINI].concat(CLAUDE_LIGADO ? [CHAVE_CLAUDE] : [], GPT_LIGADO ? [CHAVE_GPT] : []),
     timeoutSeconds: 540,
     memory: '512MiB',
     maxInstances: 3
@@ -70,13 +77,14 @@ exports.criarEsquemaIA = onCall({
         const d = await refCota.get();
         return { limite, usados: (d.exists && d.data().usados) || 0, renovaEm: sem.renovaEm };
     };
-    if (req.data && req.data.acao === 'cota') return { cota: await lerCota() };
+    if (req.data && req.data.acao === 'cota') return { cota: await lerCota(), provedores: { gemini: true, gpt: GPT_LIGADO, claude: CLAUDE_LIGADO && (admin || !IA_PLUS_SO_ADMIN) } };
 
     let pedido;
     try { pedido = nucleo.validarPedido(req.data); }
     catch (e) { throw new HttpsError('invalid-argument', e.message); }
 
     if (pedido.provedor === 'claude' && !CLAUDE_LIGADO) throw new HttpsError('failed-precondition', 'O Claude ainda não foi configurado (falta a chave ANTHROPIC_API_KEY). Use o Gemini.');
+    if (pedido.provedor === 'gpt' && !GPT_LIGADO) throw new HttpsError('failed-precondition', 'O GPT ainda está em configuração. Use o Gemini.');
     if (pedido.provedor === 'claude' && IA_PLUS_SO_ADMIN && !admin) throw new HttpsError('permission-denied', 'A IA Plus ainda não está disponível.');
 
     // Reserva a cota antes de chamar a IA (pedidos simultâneos não passam do
@@ -112,6 +120,8 @@ exports.criarEsquemaIA = onCall({
         if (pedido.provedor === 'claude') {
             const cliente = new Anthropic({ apiKey: CHAVE_CLAUDE.value(), timeout: 520000, maxRetries: 1 });
             r = await nucleo.chamarClaude(cliente, { modelo: CLAUDE_MODELO.value(), esforco: CLAUDE_ESFORCO.value() }, pedido);
+        } else if (pedido.provedor === 'gpt') {
+            r = await nucleo.chamarGPT(fetch, { modelo: GPT_MODELO.value(), chave: CHAVE_GPT.value() }, pedido);
         } else {
             r = await nucleo.chamarGemini(fetch, { modelo: GEMINI_MODELO.value(), chave: CHAVE_GEMINI.value() }, pedido);
         }
