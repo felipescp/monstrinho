@@ -1,0 +1,50 @@
+# Verificação semanal da legislação recente (ferramentas/legislacao_recente.py):
+# testa os números seguintes de leis, LCs, MPs e emendas no Planalto; se uma
+# norma nova altera lei da base, baixa e converte de novo o texto compilado e
+# compara antes e depois. Nada vai ao ar sozinho: abre um pull request com o
+# relatório para curadoria e revisão (ao aprovar, a publicação roda como
+# sempre). Sem norma nova, não faz nada. Planalto fora do ar: a execução falha
+# e o GitHub avisa por e-mail.
+name: Legislação recente (semanal)
+on:
+  schedule:
+    - cron: '17 11 * * 1'   # segunda-feira, 8h17 em Brasília
+  workflow_dispatch:
+concurrency:
+  group: legislacao-recente
+  cancel-in-progress: false
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar normas novas no Planalto
+        id: v
+        run: |
+          python3 -I ferramentas/legislacao_recente.py | tee saida.txt
+          grep -q '^mudou=1' saida.txt && echo "mudou=1" >> "$GITHUB_OUTPUT" || echo "mudou=0" >> "$GITHUB_OUTPUT"
+      - name: Abrir pull request para revisão
+        if: steps.v.outputs.mudou == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RAMO="legislacao/$(date +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$RAMO"
+          git add dados/legislacao relatorios/legislacao-recente.md relatorios/novidades-pendentes.json relatorios/legislacao-recente-estado.json
+          git commit -m "Legislação recente: verificação de $(date +%d/%m/%Y)"
+          git push origin "$RAMO"
+          TITULO="Legislação recente — $(grep -m1 '^Normas novas' saida.txt | cut -c1-200)"
+          if ! gh pr create --base main --head "$RAMO" --title "$TITULO" --body-file relatorios/legislacao-recente.md; then
+            # Sem permissão para abrir PR (Settings → Actions → "Allow GitHub Actions to create
+            # and approve pull requests"): avisa por issue, com o link do ramo.
+            gh issue create --title "$TITULO" --body "O ramo **$RAMO** tem a verificação da legislação recente. Abra o pull request por ele. $(printf '\n\n')$(cat relatorios/legislacao-recente.md)"
+          fi
+      - name: Sem novidade (só registra a data)
+        if: steps.v.outputs.mudou != '1'
+        run: echo "Nenhuma norma nova."
