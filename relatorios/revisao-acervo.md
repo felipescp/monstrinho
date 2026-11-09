@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**156** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **251** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**132** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **218** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -791,103 +791,6 @@ Alterados: CP art. 65 (I); CP art. 115
   > De acordo com a jurisprudência pacificada do STJ e do STF, para incidir o art. 115 do CP, o condenado deve possuir mais de 70 anos no momento da **primeira decisão condenat…
 - ❓ **Extinção da Punibilidade · questão 38** 🆗 (art. 115) · `sim_1784907766722_q38` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
   > …zo prescricional de 8 anos. Tratando-se de agente **menor de 21 anos ao tempo do crime** (art. 115, CP), o prazo é **reduzido pela metade**, alcançando a marca fatal de **4 anos**.
-
-## Lei 15.159/2025: Crimes em instituições de ensino (24 + 33 só o artigo)
-
-Alterados: CP art. 121 (§ 2, X; § 2-C; § 2-C, I; § 2-C, II); CP art. 129 (§ 12; § 12, I; § 12, II); CP art. 61 (II); L8072 art. 1 (I; I-A)
-
-- 🧩 **Aumento de Pena nas Lesões Dolosas e Escolares (Lei nº 15.159/25)** 🆗 (art. 129, 12, I,II; 129, 12) · `esq_1786594778866_5l5qix` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 129, § 12, incisos I e II, do CP Regime de Exasperações do Tipo de Lesão Corporal Dolosa Patamar de Aumento Requisi…
-  > …e Lesão Corporal Dolosa Patamar de Aumento Requisitos Judiciais e Condições de Aplicação (Art. 129, § 12, do CP) Aumento de 1/3 a 2/3 (Inciso I) &#8627; Contra autoridade/agente de segurança púb…
-- 🧩 **Crimes Hediondos por Extensão (Legislação Extravagante e CPM)** 🆗 (art. 1, pu) · `esq_1786571782166_prlnx6` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes Hediondos · Tipo: Rol · Ref.: art. 1º, parágrafo único, da Lei nº 8.072/90 Hipóteses Hediondas de Extensão na Legislação Especial e no Código Pe…
-- 🧩 **Delito de Abandono Material: Penal e Civil** 🆗 (art. 61, II) · `esq_1786594732551_psmn66` · dados/esquemas/esquemas-direito-penal.json
-  > …REsp 1.087.561/RS). Agravamento Genérico Aplica-se a agravante de violência de gênero do art. 61, II, 'f' do CP se praticada em contexto doméstico (STJ, REsp 2.192.013/MS). Indenização cível…
-- 🧩 **Dosimetria, Majorantes e Concurso de Crimes** 🆗 (art. 61, II) · `esq_1786594732551_67khbo` · dados/esquemas/esquemas-direito-penal.json
-  > …agravantes e majorantes . Não configura bis in idem a incidência conjunta da agravante do art. 61, II, 'f' com a majorante do art. 226, II, do CP, exceto em idêntico pretexto de autoridade. ⚠…
-  > …êntico pretexto de autoridade. ⚠ O concurso da agravante genérica de violência de gênero (art. 61, II, 'f') e a majorante de parentesco (art. 226, II, do CP) não gera bis in idem, salvo se fu…
-- 🧩 **Embriaguez e seus Reflexos na Culpabilidade** 🆗 (art. 61, II, l) · `esq_1786594846368_0log5v` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Culpabilidade · Tipo: Classificação · Ref.: art. 28, II, §§ 1º e 2º, e art. 61, II, "l", do CP Reflexos e Dosimetria da Embriaguez na Culpabilidade Modalidade de Embriaguez Cons…
-  > …emi-imputabilidade). Preordenada (Beber para cometer o crime) Não exclui e agrava a pena (art. 61, II, "l", do CP). O dolo se projeta na fase de sobriedade, sendo punido com maior rigor como circu…
-- 🧩 **Homicídio e Dolo Eventual nos Tribunais** 🆗 (art. 121, 2) · `esq_1786594778866_iosaoj` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Comparativo · Ref.: art. 18, I, do CP; art. 121, § 2º, do CP; precedentes do STF e STJ Compatibilidade do Dolo Eventual nos Delitos contra a Vi…
-- 🧩 **Homicídio Qualificado Geral** 🆗 (art. 121, 2, I,II,III,IV,V,VII,VIII,IX,X; 121, 2) · `esq_1786594778866_kyh4bf` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Classificação · Ref.: art. 121, § 2º, I, II, III, IV, V, VII, VIII, IX, X, do CP Natureza e Divisão Temática das Qualificadoras de Homicídio Natureza das Qualifica…
-  > …Temática das Qualificadoras de Homicídio Natureza das Qualificadoras Eixo de Incidência (Art. 121, § 2º, do CP) Espécies de Qualificadoras e Exemplos no CP Subjetivas Ligadas diretamente aos mo…
-- 🧩 **Lesão Corporal de Gênero contra a Mulher (Lei nº 14.994/24)** 🆗 (art. 61, II, f) · `esq_1786594778866_qkr7co` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 129, § 13, do CP; art. 61, II, "f", do CP; precedentes do STJ Regime Sancionatório e de Concurso de Normas da Violência Físi…
-  > …Proibição de cumulação com agravante genérica : a aplicação concomitante da agravante do art. 61, II, "f", do CP (violência doméstica) com a qualificadora do § 13 configura bis in idem , pois a v…
-- 🧩 **Lesão Corporal Hedionda e Novas Hipóteses (Lei 15.159/25)** 🆗 (art. 1, I-A) · `esq_1786571782166_vrb9tm` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes Hediondos · Tipo: Alteração legislativa · Ref.: art. 1º, inciso I-A, da Lei nº 8.072/90; art. 129, §§ 2º e 3º, do Código Penal Evolução das Hipóteses de Lesã…
-- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** 🆗 (art. 1, I; 121, 2) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes Hediondos · Tipo: Classificação · Ref.: art. 1º, incisos I a XII, da Lei nº 8.072/90 Catálogo de Crimes Hediondos Tipificados no Código Penal Infraç…
-  > …o em atividade de grupo de extermínio (ainda que por um só agente) ou se for qualificado (art. 121, § 2º, do CP). Feminicídio (Art. 121-A do CP) Hediondo em todas as suas modalidades típicas e c…
-- ❓ **Crimes contra a Dignidade Sexual · questão 37** 🆗 (art. 61, II, f) · `sim_1785940914255_q37` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
-  > …ivo (Tema 1.215, Info 834). Conforme o tribunal, a aplicação concomitante da agravante do art. 61, II, "f", do CP, e da majorante do art. 226, II, do CP, não gera bis in idem salvo quando houver a…
-- ❓ **Crimes contra a Pessoa · questão 22** 🆗 (art. 61, II, l) · `sim_1783734731369_q22` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > …enada não exclui a imputabilidade penal, figurando como circunstância agravante genérica (art. 61, II, "l", do CP). Por sua vez, a asfixia, tratando-se de meio de execução, qualifica o homicídio d…
-- ❓ **Crimes contra a Pessoa · questão 47** 🆗 (art. 61, II, f) · `sim_1783734731369_q47` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > …entre as partes (âmbito doméstico, coabitação), independentemente do sexo da vítima. Já o art. 61, II, "f", do CP, agrava o crime fundado exclusivamente no gênero feminino da vítima. Portanto, qua…
-- ❓ **Crimes contra a Pessoa · questão 53** 🆗 (art. 129, 12, I) · `sim_1783734731369_q53` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > …unção, impõe-se a aplicação da causa de aumento de pena correspondente à lesão funcional (art. 129, § 12, I, 'a', do Código Penal), que exaspera a sanção de 1/3 a 2/3.
-- ❓ **Crimes contra a Pessoa · questão 57** 🆗 (art. 61, II, f) · `sim_1783734731369_q57` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > …licação dessa majorante específica afasta a incidência da agravante genérica equivalente (art. 61, II, "f"), a fim de obstar o ne bis in idem.
-- ❓ **Crimes contra a Pessoa · questão 59** 🆗 (art. 129; 61, II, c) · `sim_1783734731369_q59` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > …). A referida qualificadora tutela a motivação de gênero. Já a dissimulação (agravante do art. 61, II, "c", do CP) sanciona o modo de execução furtivo e enganoso do crime (o falso pretexto da devo…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 11** 🆗 (art. 1, I) · `sim_1788654225381_q11` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > Conforme o artigo 1º, inciso I, da Lei 8.072/90, o homicídio simples apenas é considerado hediondo (homicídio condiciona…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 12** 🆗 (art. 1, I) · `sim_1788654225381_q12` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > Nos termos consolidados da Lei 8.072/90, o artigo 1º, inciso I, categoriza expressamente o homicídio qualificado (artigo 121, parágrafo 2º) como crime h…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 13** 🆗 (art. 1, I-A, c) · `sim_1788654225381_q13` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > O artigo 1º, inciso I-A, alínea c, da Lei 8.072/90, incluído por reforma legislativa recente, estabelece a hediondez nas de…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 18** 🆗 (art. 1, I-A, a) · `sim_1788654225381_q18` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > O artigo 1º, inciso I-A, alínea a, da Lei 8.072/90 prescreve incontinenti que a hipótese incide quando a agressão é perpetr…
-- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 20** 🆗 (art. 1, I-A, b) · `sim_1788654225381_q20` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
-  > …l gravíssima. A assertiva subverte a legislação ao excluir a vítima do bojo garantidor: o artigo 1º, inciso I-A, alínea b, da Lei 8.072/90 nomeia taxativa e indubitavelmente o Oficial de Justiça, no exercício da…
-- ❓ **Das Penas · questão 32** 🆗 (art. 61, II) · `sim_1781785703088_q32` · dados/bateriasvf/grupo-ce-daspenas.json
-  > …'d', do CP) com a agravante de ter sido o crime praticado com violência contra a mulher (Art. 61, II, 'f', do CP)". Ambas coexistem e se anulam na segunda fase da dosimetria.
-- ❓ **Das Penas · questão 33** 🆗 (art. 61, II) · `sim_1781785703088_q33` · dados/bateriasvf/grupo-ce-daspenas.json
-  > O **Art. 61, II, 'l', do Código Penal** prevê expressamente que a pena será agravada se o crime for comet…
-- ❓ **Das Penas · questão 38** 🆗 (art. 61, II) · `sim_1781785703088_q38` · dados/bateriasvf/grupo-ce-daspenas.json
-  > …dição 180)**, "A incidência da circunstância agravante da calamidade pública, prevista no art. 61, II, 'j', do Código Penal, **exige demonstração concreta de que o agente se valeu do contexto…
-
-<details><summary>Citam só o artigo (33)</summary>
-
-- 🧩 Agravantes Genéricas e a Reincidência para Fins Penais · `esq_1786594816717_mfblzs`
-- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
-- 🧩 Contravenções contra a Pessoa e Vias de Fato Qualificada · `esq_1786567987632_fae8se`
-- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
-- 🧩 Dano Emocional vs. Dano Psíquico nas Relações de Gênero · `esq_1786594778866_mmk2n8`
-- 🧩 Diferenciação de Ofensas Físicas e Humilhações · `esq_1786594778866_5cdp2n`
-- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
-- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
-- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
-- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
-- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
-- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
-- ❓ Crimes contra a Pessoa · questão 39 · `sim_1783734731369_q39`
-- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
-- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
-- ❓ Das Penas · questão 37 · `sim_1781785703088_q37`
-- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
-- ❓ Pessoa e Patrimônio (Juris) · questão 19 · `sim_1783735414572_q19`
-
-</details>
 
 ## Lei 15.134/2025: Homicídio qualificado contra juízes, MP, Defensoria e Advocacia Pública (5 + 10 só o artigo)
 
