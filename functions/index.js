@@ -41,6 +41,13 @@ const GPT_MODELO = defineString('GPT_MODELO', { default: 'gpt-6-luna' });
 // A administração pode forçar uma das duas num pedido (ordemPrompt), para
 // comparar as duas com o mesmo material sem republicar.
 const ORDEM_PROMPT = defineString('ORDEM_PROMPT', { default: 'cache' });
+// Cache explícito do GPT (aprovado no teste real de 9/11/2026): ponto de
+// corte depois do material nos lotes de execuções com mais de um lote; nas
+// demais chamadas (plano, ficha individual, lote único), modo explícito sem
+// ponto de corte, para não pagar gravação de cache que nada vai ler.
+// Desligar para todos: CACHE_EXPLICITO=nao em functions/.env e publicar
+// (volta ao comportamento anterior, cache implícito).
+const CACHE_EXPLICITO = defineString('CACHE_EXPLICITO', { default: 'sim' });
 
 // Esquemas por semana (segunda a domingo, horário de Brasília).
 const COTA_SEMANAL = { intermediario: 1, completo: 10 };
@@ -98,11 +105,16 @@ exports.criarEsquemaIA = onCall({
     // não divide cache com os lotes (o formato de saída é outro). Só a
     // administração força outra ordem, para testar. 'cache2' = ordem cache
     // com a entrada em dois blocos (teste do cache; ver entradaGPT).
-    // 'explicito' (teste da administração): ponto de corte explícito do cache
-    // só nos lotes de uma execução com mais de um lote (req.data.multiLote);
-    // plano, ficha individual e execução de lote único seguem o padrão.
+    // Cache explícito (padrão): ponto de corte só nos lotes de uma execução
+    // com mais de um lote (req.data.multiLote); nas demais chamadas do GPT,
+    // modo explícito sem ponto de corte (sem gravação). A administração pode
+    // pedir o comportamento anterior ('semcache' ou os testes de ordem
+    // 'antiga', 'cache' e 'cache2'), que segue exatamente como era.
     const loteDeVarios = pedido.acao === 'gerar' && pedido.fichas.length > 0 && req.data && req.data.multiLote === true;
-    pedido.cacheExplicito = pedido.provedor === 'gpt' && admin && ordemPedida === 'explicito' && loteDeVarios;
+    const testeAnterior = admin && ['semcache', 'antiga', 'cache', 'cache2'].indexOf(ordemPedida) >= 0;
+    const explicitoLigado = pedido.provedor === 'gpt' && CACHE_EXPLICITO.value() !== 'nao' && !testeAnterior;
+    pedido.cacheExplicito = explicitoLigado && loteDeVarios;
+    pedido.semGravar = explicitoLigado && !loteDeVarios;
     const ordemValida = ordemPedida === 'antiga' || ordemPedida === 'cache' || ordemPedida === 'cache2';
     // 'cache2' testa só os lotes; o plano continua na ordem original.
     const testeLotes = ordemPedida === 'cache2' && pedido.acao === 'planejar';

@@ -194,12 +194,15 @@ function entradaGPT(p) {
         { role: 'user', content: [{ type: 'input_text', text: x.tarefa }] }
     ];
 }
-// Opções de cache do pedido: modo explícito só quando há ponto de corte
-// (sem ponto de corte, o modo explícito não usa cache); comparação
-// diagnóstica com a resposta anterior da mesma execução.
+// Opções de cache do pedido. Com ponto de corte (p.cacheExplicito): modo
+// explícito, retenção de 30 min. Sem reaproveitamento (p.semGravar: plano,
+// ficha individual, lote único): modo explícito sem ponto de corte — pela
+// documentação, não usa cache e não grava. Comparação diagnóstica com a
+// resposta anterior da mesma execução (administração).
 function opcoesCache(p) {
     const o = {};
     if (p.cacheExplicito && p.ordem === 'cache') { o.mode = 'explicit'; o.ttl = '30m'; }
+    else if (p.semGravar) o.mode = 'explicit';
     if (p.comparacao) o.comparison_response_id = p.comparacao;
     return Object.keys(o).length ? o : null;
 }
@@ -338,7 +341,7 @@ async function chamarGPT(fetchFn, cfg, p) {
     // cached_tokens (lidos), cache_write_tokens (gravados) e o restante são
     // partes separadas de input_tokens (conferido nos registros reais).
     const uso = { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0, cache: ue.cached_tokens || 0, cacheEscrita: ue.cache_write_tokens || 0, raciocinio: us.reasoning_tokens || 0, detalhes: { entrada: soNumeros(ue), saida: soNumeros(us) }, respostaId: j.id || '' };
-    uso.cacheModo = diagnosticoRecusado ? 'recusado' : (opc && opc.mode) || 'implicito';
+    uso.cacheModo = diagnosticoRecusado ? 'recusado' : p.cacheExplicito && opc ? 'explicit' : p.semGravar && opc ? 'sem-gravacao' : 'implicito';
     if (opc) uso.diagnostico = diagnosticoRecusado ? { indisponivel: diagnosticoRecusado } : (j.prompt_cache_diagnostics != null ? j.prompt_cache_diagnostics : { ausente: true });
     try {
     if (j.status === 'incomplete') {
