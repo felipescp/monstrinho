@@ -1,0 +1,1417 @@
+# Revisão do acervo: itens que citam dispositivos alterados
+
+Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só da administração: o usuário não vê nada disto.
+
+Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` igual à norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
+
+**294** itens citam o próprio dispositivo alterado (10196 analisados). Outros **304** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+
+## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
+
+Alterados: CF art. 7 (XIII; § 1; § 2; § 3)
+
+
+<details><summary>Citam só o artigo (8)</summary>
+
+- 🧩 01. Fontes do Direito do Trabalho, Hierarquia, Eficácia e Prevalência do Negociado · `esq_1793048714195_plsata`
+- 🧩 05. Direito de Greve, Serviços Essenciais, Abusividade e Lockout (Lei nº 7.783/89) · `esq_1793048714196_lid68d`
+- 🧩 06. Relação de Trabalho vs. Relação de Emprego e Requisitos da Caracterização do Empregado · `esq_1793048924226_ufgwpd`
+- 🧩 10. Regime Jurídico dos Empregados Domésticos, Rurais e Categorias Diferenciadas · `esq_1793048924227_ihuyrg`
+- 🧩 Mora Legislativa nos Direitos Sociais · `esq_1786627080624_5e0j1u`
+- 🧩 Resolução CNJ nº 60/2008 - Código de Ética da Magistratura Nacional · `esq_1788174384280_hg88zq`
+- 🧩 Teoria do Diálogo das Fontes · `esq_1786732732298_gb3b6m`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 59 · `sim_1789667188418_q59`
+
+</details>
+
+## EC 140/2026: Agentes comunitários de saúde e de endemias: aposentadoria diferenciada e vínculo efetivo (0 + 8 só o artigo)
+
+Alterados: CF art. 40 (§ 4; § 5-A); CF art. 198 (IV; § 10; § 4-A; § 4-B); CF art. 201 (§ 8-A)
+
+
+<details><summary>Citam só o artigo (8)</summary>
+
+- 🧩 20. RPPS: Princípios, Diretrizes, Regras Gerais e Custeio · `esq_1793053262085_pwlfe3`
+- 🧩 Agentes Comunitários de Saúde e de Combate às Endemias · `esq_1786635232229_15f5t6`
+- 🧩 Aposentadoria no Regime Geral de Previdência Social · `esq_1786635232229_rtg89c`
+- 🧩 Ministério Público: Princípios, Organização e Autonomias · `esq_1786632289061_u1d06e`
+- 🧩 Regime de Aposentadoria (Art. 40) e Perda de Cargo do Estável (Art. 41) · `esq_1786627617066_pn1iad`
+- 🧩 Resolução CNJ nº 60/2008 - Código de Ética da Magistratura Nacional · `esq_1788174384280_hg88zq`
+- ❓ Agentes Públicos · questão 36 · `sim_1789234179842_q36`
+- ❓ Agentes Públicos · questão 47 · `sim_1789234179842_q47`
+
+</details>
+
+## Lei Complementar 238/2026: MEI: novo limite de receita e de empregados (2)
+
+Alterados: LC123 art. 18-A
+
+- 🧩 **Desenquadramento do MEI: Hipóteses e Efeitos Práticos** (art. 18-A, 6,7; 18-A, 7) · `esq_1786713768041_vavsnc` · dados/esquemas/esquemas-direito-empresarial.json
+  > …: Microempresa e Empresa de Pequeno Porte (LC 123/06) · Tipo: Requisitos e prazos · Ref.: art. 18-A, §§ 6º e 7º da LC nº 123/2006; p. 194, 214 O desenquadramento do regime de pagamento fixo do MEI pode…
+  > …lei, com efeitos temporais distintos. Hipótese de Desenquadramento Causa Geradora do Ato (art. 18-A, § 7º, da LC 123) Termo Inicial dos Efeitos Práticos Por Opção Comunicação voluntária efetuada…
+- 🧩 **Microempreendedor Individual (MEI): Enquadramento e Custos** (art. 18-A, 1,2,3; 18-A, 1; 18-A, 2; 18-A, 3, V; 18-A, 4) · `esq_1786713768041_7d66dn` · dados/esquemas/esquemas-direito-empresarial.json
+  > …: Microempresa e Empresa de Pequeno Porte (LC 123/06) · Tipo: Requisitos e prazos · Ref.: art. 18-A, caput, §§ 1º, 2º e 3º da LC nº 123/2006; p. 182, 194 O Microempreendedor Individual (MEI) representa figura esp…
+  > …e Valor Fixo Benefícios e Isenções Fiscais Teto de Receita Bruta Até R$ 81.000,00 anuais (art. 18-A, § 1º, da LC 123). R$ 6.750,00 proporcionais por mês no início de atividade (art. 18-A, § 2º, d…
+
+## Lei Complementar 237/2026: LRF: transferências voluntárias a Municípios de até 65 mil habitantes (2)
+
+Alterados: LC101 art. 25
+
+- ❓ **LRF · questão 41** (art. 25, 3) · `sim_1781886753953_q41` · dados/bateriasvf/grupo-ce-lrf.json
+  > …rotege os serviços essenciais à população dos efeitos deletérios da má gestão fiscal. O **Art. 25, § 3º, da LRF** consagra a "exceção de ouro": para fins da aplicação das sanções de suspensão d…
+- ❓ **LRF · questão 47** (art. 25, 1, IV) · `sim_1781886753953_q47` · dados/bateriasvf/grupo-ce-lrf.json
+  > …ia como filtros para o auxílio intergovernamental não compulsório. Nos exatos termos do **Art. 25, § 1º, inciso IV, alínea 'a', da LRF**, exige-se a comprovação, por parte do beneficiário, "de que se acha…
+
+## Lei 15.517/2026: Combustíveis: furto qualificado e novos crimes contra a ordem econômica (1 + 8 só o artigo)
+
+Alterados: CP art. 155 (§ 10; § 11; § 11, I; § 11, II; § 11, III; § 11, IV; § 12; § 12, I; § 12, II; § 12, III; § 12, IV; § 12, V; § 12, VI); CP art. 157 (§ 2, XI; § 2-A, III); L8176 art. 1-A; L8176 art. 1-B; L8176 art. 1-C
+
+- 🧩 **Roubo com Emprego de Arma e Evolução Legislativa** (art. 157, 2,2-A,2-B) · `esq_1786594751898_k1c8zh` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Roubo · Tipo: Alteração legislativa · Ref.: art. 157, §§ 2º, 2º-A e 2º-B, do CP (Lei nº 13.654/18 e Lei nº 13.964/19) Regime de Emprego de Armas e Exasperações de…
+
+<details><summary>Citam só o artigo (8)</summary>
+
+- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
+- 🧩 Confronto entre Roubo e Extorsão · `esq_1786594751898_zg53za`
+- 🧩 Consumação e Espécies de Roubo (Próprio e Impróprio) · `esq_1786594751898_itosvi`
+- 🧩 Furto: Tipificação, Repouso Noturno e Furto Privilegiado · `esq_1786594751898_3z82jm`
+- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
+- 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
+- ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
+- ❓ Pessoa e Patrimônio (Juris) · questão 30 · `sim_1783735414572_q30`
+
+</details>
+
+## Lei 15.487/2026: ECA: crimes digitais contra crianças reescritos, ronda virtual e infiltração (13 + 20 só o artigo)
+
+Alterados: ECA art. 240; ECA art. 241-A; ECA art. 241-B; ECA art. 241-D; ECA art. 241-E; ECA art. 190-F; ECA art. 226-A; L8072 art. 1 (p.ú., VII); CPP art. 313 (VI)
+
+- 🧩 **Agravantes Digitais de Crimes contra a Dignidade Sexual de Menor** (art. 226-A; 226-A, pu) · `esq_1787449674336_k166fh` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Requisitos e prazos · Ref.: Art. 226-A do ECA; Lei nº 15.487/2026 A Lei nº 15.487/2026 puniu com maior rigor as condutas pratica…
+  > …Gatilhador da Majorante Base Legal Fração de Aumento e Ressalva Uso de Modulador de Proxy Art. 226-A, caput, do ECA Pena de crimes previstos no capítulo é aumentada de 1/3 a 2/3 se o crime for come…
+- 🧩 **Consunção e Concurso Material nos Crimes de Pornografia Infantil (Arts. 241-A vs. 241-B do ECA)** (art. 241-A; 241-B) · `esq_1786572834465_fz0wh8` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Concurso de Crimes em Pornografia Infantil · Tipo: Comparativo · Ref.: arts. 241-A e 241-B do ECA; REsp 1.971.049/SP do STJ Critérios de Acoplamento e Independência Probató…
+  > …ema: Concurso de Crimes em Pornografia Infantil · Tipo: Comparativo · Ref.: arts. 241-A e 241-B do ECA; REsp 1.971.049/SP do STJ Critérios de Acoplamento e Independência Probatória do C…
+- 🧩 **Crime de Aliciamento Digital e Grooming de Menor** (art. 241-D) · `esq_1787449674336_927mo3` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-D do ECA; Lei nº 15.487/2026 O crime de grooming ou aliciamento digital pune as condutas pr…
+  > …agens ou favores sexuais perante vulneráveis de menor idade. Elemento do Tipo Base Legal (Art. 241-D do ECA) Regra de Aplicação e Aumentos Conduta de Aliciamento Caput Aliciar, assediar, con…
+- 🧩 **Crime de Aquisição e Armazenamento de Pornografia Infantil** (art. 241-B; 241-A) · `esq_1787449674336_yv651a` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-B do ECA; Lei nº 15.487/2026 A conduta do mero consumidor de material de exploração infanto…
+  > …ero consumidor de material de exploração infanto-juvenil é apenada de forma autônoma pelo art. 241-B do ECA, recentemente estendida para abranger visualizações em streaming em 2026. Vetor do…
+- 🧩 **Crime de Compartilhamento e Disponibilização de Abuso Sexual** (art. 241-A) · `esq_1787449674336_hbx2r9` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-A do ECA; Tema 393/STF; Lei nº 15.487/2026 A circulação virtual e disponibilização em redes…
+  > …bertas ou fechadas de conteúdo de exploração sexual da criança e adolescente é apenada no art. 241-A do ECA, estruturando-se o concurso de plataformas em 2026. Vetor Delitivo Base Legal (Art…
+- 🧩 **Crime de Produção de Material de Pornografia Infantil** (art. 240) · `esq_1787449674336_rwhu5t` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 240 do ECA; Lei nº 15.487/2026 A produção de material que exponha o menor à lascívia atrai se…
+  > …rado e unificado em suas terminologias de violência sexual. Elemento do Crime Base Legal (Art. 240 do ECA) Regra e Sanção Cominada Condutas Típicas (Dolo) Caput Produzir, reproduzir, dirig…
+- 🧩 **Definição de Conteúdo de Violência Sexual e Poses Lascivas** (art. 241-E; 241-E, III) · `esq_1787449674336_7g4dcg` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Tutela Penal Infanto-Juvenil · Tipo: Classificação · Ref.: Art. 241-E do ECA; Lei nº 15.487/2026 A Lei nº 15.487/2026 positivou parâmetros interpretativos do S…
+  > …smo diante de exposições sexuais sem nudez total física. Caracterização Legal Base Legal (Art. 241-E do ECA) Parâmetro de Enquadramento Judicial Conceito de Conteúdo Caput Definido como qual…
+- 🧩 **Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA)** (art. 240) · `esq_1786572834465_6c0if3` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 240, 241 e 241-C do ECA Regime das Infrações de Criação, Comércio e Adulteração de Conteúdo P…
+  > …co Crime (Dispositivo) Núcleo da Conduta Incriminadora Pena Cominada Produção / Registro (Art. 240 do ECA) Produzir, reproduzir, dirigir, fotografar, filmar ou registrar, por qualquer meio…
+- 🧩 **Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA)** (art. 241-A; 241-B; 241-D) · `esq_1786572834465_qx07dj` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 241-A, 241-B e 241-D do ECA Condutas de Circulação, Consumo e Assédio Virtual contra Menores Cr…
+  > Subtema: Pornografia Infantil · Tipo: Classificação · Ref.: arts. 241-A, 241-B e 241-D do ECA Condutas de Circulação, Consumo e Assédio Virtual contra Menores Crime (Di…
+- 🧩 **Quem é Punido em Cada Tipo Penal (Art. 240 ao 241-D do ECA)** (art. 240; 241-A; 241-B; 241-D) · `esq_1786572834465_qrso2s` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Pornografia Infantil · Tipo: Rol · Ref.: arts. 240, 241, 241-A, 241-B, 241-C e 241-D do ECA Identificação Subjetiva dos Infratores e Eixos d…
+  > Subtema: Pornografia Infantil · Tipo: Rol · Ref.: arts. 240, 241, 241-A, 241-B, 241-C e 241-D do ECA Identificação Subjetiva dos Infratores e Eixos de Enquadrame…
+- 🧩 **Requisição de Dados Cadastrais sem Ordem Judicial Prévia na Ronda Virtual** (art. 190-F, 2,3; 190-F; 190-F, 2; 190-F, 3) · `esq_1787449649999_bsjyl5` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Escuta Especializada e Depoimento Especial · Tipo: Requisitos e prazos · Ref.: Art. 190-F, §§ 2º e 3º do ECA; Lei nº 15.487/2026 A autoridade de persecução penal dispõe de mecanismos céleres…
+  > …rante situações fáticas de perigo em ambiente digital. Gatilho / Procedimento Base Legal (Art. 190-F do ECA) Regra de Execução e Controle Judicial Gatilhos de Requisição Art. 190-F, § 2º, do…
+- 🧩 **Resolução CNMP nº 287/2024** (art. 240; 241-A; 241-D) · `esq_1788029912398_v4a57h` · dados/esquemas/esquemas-direito-institucional-magistratura-mp-e-defensoria.json
+  > …de Segurança e Trâmite Constatação de Exploração Sexual Prática de crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual d…
+  > …râmite Constatação de Exploração Sexual Prática de crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual de crianças e…
+- 🧩 **Ronda Virtual e Coleta de Provas Cibernéticas de Violência Sexual** (art. 190-F, 1,4,5) · `esq_1787449649999_aunpcv` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Escuta Especializada e Depoimento Especial · Tipo: Requisitos e prazos · Ref.: Art. 190-F, §§ 1º, 4º e 5º do ECA; Lei nº 15.487/2026 A inovação legislativa de 2026 normatizou a ronda virtual cibe…
+
+<details><summary>Citam só o artigo (20)</summary>
+
+- 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
+- 🧩 Prisão Preventiva em Violência Doméstica (LMP vs. Contravenções) · `esq_1786571326485_y3ggxz`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
+- ❓ Prisão · questão 10 · `sim_1781783375084_q10`
+- ❓ Prisão · questão 14 · `sim_1781783375084_q14`
+
+</details>
+
+## Lei 15.484/2026: CPC: relevância da questão federal no recurso especial (8 + 2 só o artigo)
+
+Alterados: CPC art. 1035-A; CPC art. 927 (III-A); CPC art. 932 (IV; V); CPC art. 988 (V; § 4; § 5; § 5, II); CPC art. 1030 (I; II; V); CPC art. 1042
+
+- 🧩 **Recurso Especial (REsp): Cabimento e Admissibilidade** (art. 1030; 1042) · `esq_1786554760204_5hb3yq` · dados/esquemas/esquemas-direito-processual-civil.json
+  > …tada na aplicação de precedente de repetitivo, desafia Agravo Interno , e não o Agravo do art. 1.042 do CPC. ⚠ A Súmula 115/STJ não autoriza mais a inadmissão sumária do REsp por defeito de…
+- ❓ **Ordem dos Processos e Competência Originária dos Tribunais (arts. 926 a 993, CPC) · questão 12** (art. 932, V; 932, IV) · `sim_1789809837795_q12` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > Nos termos do Art. 932, V, do CPC, para que o relator possa dar provimento monocraticamente ao recurso com base em…
+  > …"). A dispensa do contraditório prévio aplica-se apenas para negar provimento ao recurso (Art. 932, IV).
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 23** (art. 1042) · `sim_1789809766996_q23` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > …matéria afeita a recursos repetitivos/repercussão geral, e o Agravo em Recurso Especial (Art. 1.042 do CPC) para questionar os demais óbices genéricos de admissibilidade.
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 35** (art. 1030, I, b; 1042) · `sim_1789809766996_q35` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > Por expressa disposição do Art. 1.030, § 2º, c/c o Art. 1.030, I, alínea b, do CPC, a decisão calcada em rito de recurso repetitivo desafia agravo interno na própri…
+  > …etitivo desafia agravo interno na própria origem. O manejo de Agravo em Recurso Especial (Art. 1.042) para esse fim configura erro grosseiro que obsta a fungibilidade, conforme diretriz das…
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 41** (art. 1030, I, b) · `sim_1789809766996_q41` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > O Art. 1.030, I, alínea "b", do CPC estabelece expressamente que os autos conclusos ao presidente ou vice-presidente…
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 45** (art. 1042; 1030, V) · `sim_1789809766996_q45` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > Da leitura sistemática do Art. 1.042 e do Art. 1.030, V e § 2º, do CPC, extrai-se que o sistema recursal brasileiro não prevê…
+  > Da leitura sistemática do Art. 1.042 e do Art. 1.030, V e § 2º, do CPC, extrai-se que o sistema recursal brasileiro não prevê instrumento de impu…
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 48** (art. 1042; 1030, I, b) · `sim_1789809766996_q48` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > …olidou (Info 11, Edição Extraordinária) que a interposição de agravo em recurso especial (Art. 1.042 do CPC) nas hipóteses de inadmissão fundada no Art. 1.030, I, alínea "b" (conformidade co…
+  > …de agravo em recurso especial (Art. 1.042 do CPC) nas hipóteses de inadmissão fundada no Art. 1.030, I, alínea "b" (conformidade com recursos repetitivos) é erro inescusável. O instrumento processual cabí…
+- ❓ **Recursos (menos Apelação e Agravo de Instrumento) · questão 49** (art. 1042) · `sim_1789809766996_q49` · dados/bateriasvf/grupo-ce-recursosecompetecniadostribunais.json
+  > …vo Interno ao respectivo órgão colegiado do tribunal local. O Agravo em Recurso Especial (Art. 1.042) presta-se unicamente ao combate da inadmissão genérica dos recursos de superposição.
+
+<details><summary>Citam só o artigo (2)</summary>
+
+- ❓ Ordem dos Processos e Competência Originária dos Tribunais (arts. 926 a 993, CPC) · questão 7 · `sim_1789809837795_q7`
+- ❓ Poder Legislativo (menos Processo Legislativo) · questão 39 · `sim_1787346959085_q39`
+
+</details>
+
+## Lei 15.455/2026: Violência contra a trabalhadora doméstica (3 + 9 só o artigo)
+
+Alterados: CP art. 129 (§ 9); L11340 art. 11 (p.ú.)
+
+- ❓ **Crimes contra a Pessoa · questão 46** (art. 129, 9) · `sim_1783734731369_q46` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A figura qualificada da violência doméstica disposta no art. 129, § 9º, do Código Penal não se confunde com o instituto protetivo da Lei Maria da Penha, que se…
+- ❓ **Crimes contra a Pessoa · questão 47** (art. 129, 9) · `sim_1783734731369_q47` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Conforme entendimento exarado pela 5ª Turma do STJ, o art. 129, § 9º, do CP, qualifica o crime em decorrência do local e da relação vulnerável entre as partes…
+- ❓ **Crimes contra a Pessoa · questão 52** (art. 129, 9) · `sim_1783734731369_q52` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O art. 129, § 9º, do Código Penal prevê expressamente que a qualificadora incidirá se a lesão for praticad…
+
+<details><summary>Citam só o artigo (9)</summary>
+
+- 🧩 Dano Emocional vs. Dano Psíquico nas Relações de Gênero · `esq_1786594778866_mmk2n8`
+- 🧩 Diferenciação de Ofensas Físicas e Humilhações · `esq_1786594778866_5cdp2n`
+- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
+- 🧩 Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A) · `esq_1788045809866_l1votg`
+- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
+- ❓ Crimes contra a Pessoa · questão 39 · `sim_1783734731369_q39`
+- ❓ Crimes contra a Pessoa · questão 59 · `sim_1783734731369_q59`
+- ❓ Lei Maria da Penha · questão 47 · `sim_1788215085553_q47`
+- ❓ Pessoa e Patrimônio (Juris) · questão 19 · `sim_1783735414572_q19`
+
+</details>
+
+## Lei 15.438/2026: Violência doméstica: decadência em 12 meses (1 + 5 só o artigo)
+
+Alterados: CP art. 103 (p.ú.); CPP art. 38 (§ 1; § 2); L11340 art. 16-A
+
+- ❓ **Lei Maria da Penha · questão 44** (art. 16-A) · `sim_1788215085553_q44` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > A Lei nº 15.438/2026 inovou o arcabouço protetivo ao instituir o artigo 16-A na Lei Maria da Penha. Por essa disposição, a ofendida decai do direito de queixa ou de r…
+
+<details><summary>Citam só o artigo (5)</summary>
+
+- 🧩 Decadência do Direito de Queixa ou Representação (Arts. 102 e 103) · `esq_1786594795420_01iqgc`
+- 🧩 Queixa-crime · `esq_1786501407107_p7jty9`
+- ❓ Ação Penal · questão 54 · `sim_1788573246600_q54`
+- ❓ Ação Penal · questão 69 · `sim_1788573246600_q69`
+- ❓ Juizados Especiais Criminais (Lei nº 9.909/95) · questão 15 · `sim_1788215588670_q15`
+
+</details>
+
+## Lei 15.425/2026: Exercício ilegal da medicina, veterinária, odontologia e farmácia (2)
+
+Alterados: CP art. 282
+
+- 🧩 **Exercício Ilegal da Medicina e Outras Infrações à Saúde** (art. 282) · `esq_1786594672964_oegxyh` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Incolumidade, Paz Pública e Sentimento Religioso · Tipo: Classificação · Ref.: arts. 282, 283 e 284 do CP (com as severas alterações da Lei nº 15.425/2026) Tratamento das Prática…
+  > …ares Típicas Regime Sancionatório e Qualificadoras (Lei nº 15.425/2026) Exercício Ilegal (Art. 282 do CP) Exercer, ainda que gratuitamente, a profissão de médico, médico veterinário , dent…
+- ❓ **Lei de Drogas · questão 36** (art. 282) · `sim_1786392721918_q36` · dados/bateriasvf/grupo-ce-drogasfepublicaeinadimplemento.json
+  > …a, prescreve substância caracterizada como droga, resta configurado, em tese, o delito do art. 282 do Código Penal, em *concurso formal* com o art. 33, caput, da Lei 11.343/06. Não há abso…
+
+## Lei 15.412/2026: Maria da Penha: medidas cíveis são título executivo (2 + 5 só o artigo)
+
+Alterados: L11340 art. 22 (§ 4; § 10)
+
+- ❓ **Lei Maria da Penha · questão 43** (art. 22, 10) · `sim_1788215085553_q43` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > A redação retrata fielmente o comando imperativo do artigo 22, parágrafo 10, da Lei nº 11.340/06, com redação dada pela Lei nº 15.412/2026. O dispositivo positiva a…
+- ❓ **Lei Maria da Penha · questão 50** (art. 22, 4) · `sim_1788215085553_q50` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > A assertiva é a reprodução exata da disposição constante do artigo 22, parágrafo 4º, introduzido no bojo da Lei Maria da Penha pela Lei nº 15.412/2026. O dispositivo transpô…
+
+<details><summary>Citam só o artigo (5)</summary>
+
+- 🧩 Descumprimento de Medidas Protetivas de Urgência · `esq_1786594715358_fqi3th`
+- 🧩 Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A) · `esq_1788045809866_l1votg`
+- 🧩 Medidas Protetivas de Urgência: Natureza, Vigência e Revisão (STJ Repetitivo) · `esq_1786571326485_m8wirg`
+- ❓ Crimes contra a Pessoa · questão 32 · `sim_1783734731369_q32`
+- ❓ Lei Maria da Penha · questão 38 · `sim_1788215085553_q38`
+
+</details>
+
+## Lei 15.411/2026: Maria da Penha: afastamento imediato do lar em mais hipóteses (4)
+
+Alterados: L11340 art. 12-C
+
+- 🧩 **Afastamento do Lar e Monitoração Eletrônica de Urgência (Lei 15.383/26)** (art. 12-C; 12-C, 1) · `esq_1786571326485_le3pbg` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra Grupos Vulneráveis · Tipo: Requisitos e prazos · Ref.: art. 12-C e art. 12-D da Lei nº 11.340/06 (LMP); Lei nº 15.383/26 Ritos de Afastamento do Agressor…
+  > …idade Competente Procedimento e Prazo Judicial de Saneamento Afastamento imediato do lar (Art. 12-C da Lei 11.340) ↳ Autoridade Judicial; ↳ Delegado de Polícia (se o município não for sede…
+- 🧩 **Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A)** (art. 12-C; 12-C, 2; 12-C, III) · `esq_1788045809866_l1votg` · dados/esquemas/esquemas-direito-penal.json
+  > …de saúde para suprir a perícia oficial. 4. O Afastamento do Lar pela Autoridade Policial (Art. 12-C da Lei 11.340) e Monitoramento Eletrônico (Art. 12-D da Lei 11.340) Subtema: Afastamento…
+  > …lio, admitindo-se atuação policial supletiva. Autoridade Competente Cenário de Aplicação (Art. 12-C da Lei 11.340) Fluxo de Controle e Revisão 1. Autoridade Judicial Competência primária e…
+- ❓ **Lei Maria da Penha · questão 12** (art. 12-C, III) · `sim_1788215085553_q12` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > A atuação descrita é expressamente validada pelo art. 12-C, inciso III, e § 1º, da Lei nº 11.340/2006. O Supremo Tribunal Federal (ADI 6138) chancelou a constit…
+- ❓ **Lei Maria da Penha · questão 20** (art. 12-C, 2) · `sim_1788215085553_q20` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > …lternativas à prisão nesta hipótese específica colide com a proibição expressa cravada no art. 12-C, § 2º, da Lei Maria da Penha: "Nos casos de risco à integridade física da ofendida ou à efetivi…
+
+## Lei 15.410/2026: Tortura no contexto doméstico e execução penal do agressor (0 + 14 só o artigo)
+
+Alterados: L9455 art. 1 (III); LEP art. 50 (IX); LEP art. 52 (§ 8); LEP art. 86 (§ 4)
+
+
+<details><summary>Citam só o artigo (14)</summary>
+
+- 🧩 Abuso de Autoridade: Comunicação de Prisão, Constrangimento e Tortura · `esq_1786570744236_dtbvic`
+- 🧩 Classificação das Faltas Disciplinares e Sanções · `esq_1786568035891_e9xz9m`
+- 🧩 Consequências da Prática de Falta Grave · `esq_1786568035891_nlh065`
+- 🧩 Faltas disciplinares graves em espécie · `esq_1789659571899_a8qs3m`
+- 🧩 Garantismo na Execução Penal, Falta Grave e Súmula Vinculante 56 · `esq_1791815770774_mtnln2`
+- 🧩 Monitoração eletrônica: hipóteses, deveres e descumprimento · `esq_1789666359187_jcrsha`
+- 🧩 Regime Disciplinar Diferenciado (RDD) · `esq_1789659571899_af0duf`
+- 🧩 Separação de Presos e Regras de Transferência (Lei 15.358/26) · `esq_1786565097765_ib9w4o`
+- 🧩 Súmulas e Jurisprudência do STJ sobre Falta Grave · `esq_1786565097765_i6zsy0`
+- ❓ Lei de Drogas · questão 14 · `sim_1786392721918_q14`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 17 · `sim_1789667188418_q17`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 19 · `sim_1789667188418_q19`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 21 · `sim_1789667188418_q21`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 52 · `sim_1789667188418_q52`
+
+</details>
+
+## Lei 15.407/2026: RDD: inclusão cautelar e prazo para decidir (0 + 9 só o artigo)
+
+Alterados: LEP art. 52 (§ 1, III; § 1, IV; § 9; § 10); LEP art. 54 (§ 2; § 3)
+
+
+<details><summary>Citam só o artigo (9)</summary>
+
+- 🧩 Faltas disciplinares graves em espécie · `esq_1789659571899_a8qs3m`
+- 🧩 Regime Disciplinar Diferenciado (RDD) · `esq_1789659571899_af0duf`
+- 🧩 Sanções disciplinares, competência e isolamento preventivo · `esq_1789659571899_hmakfc`
+- ❓ Lei de Drogas · questão 14 · `sim_1786392721918_q14`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 17 · `sim_1789667188418_q17`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 19 · `sim_1789667188418_q19`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 20 · `sim_1789667188418_q20`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 21 · `sim_1789667188418_q21`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 25 · `sim_1789667188418_q25`
+
+</details>
+
+## Lei 15.402/2026: Progressão de regime: nova regra geral de 1/6 e frações para crimes violentos (22 + 3 só o artigo)
+
+Alterados: LEP art. 112; LEP art. 126 (§ 9); CP art. 359-M-A; CP art. 359-M-B
+
+- 🧩 **Consequências da Prática de Falta Grave** (art. 112) · `esq_1786568035891_nlh065` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Faltas Disciplinares · Tipo: Rol · Ref.: arts. 50, 112 e 127 da LEP; Súmulas 441, 534, 535 e 660 do STJ 1. Reflexos Judiciais Decorrentes do Com…
+- 🧩 **Garantismo na Execução Penal, Falta Grave e Súmula Vinculante 56** (art. 112) · `esq_1791815770774_mtnln2` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Direitos do Condenado na Execução Penal · Tipo: Rol · Ref.: Arts. 45, 50, 112 e 118 da LEP; Súmula Vinculante 56/STF; Súmulas 441, 493 e 533 do STJ A Execução Penal su…
+  > …gressão de Regime Interrompe o prazo e reinicia a contagem do lapso para nova progressão (art. 112 da LEP). Remição de Pena Revoga até no máximo 1/3 do tempo remido (art. 127 da LEP). Livr…
+- 🧩 **Inconstitucionalidades de Regimes e o Tráfico Privilegiado** (art. 112, 5) · `esq_1786571782166_6uk4me` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes Hediondos · Tipo: Classificação · Ref.: art. 2º da Lei nº 8.072/90; art. 112, § 5º, da LEP Garantias, Inconstitucionalidades de Regimes e o Tráfico Privilegiado Dispositivo…
+  > …Tráfico Privilegiado (Art. 33, § 4º da LD) Afastado o caráter hediondo (Lei 13.964/19 c/c art. 112, § 5º da LEP). Não se considera hediondo ou equiparado, aplicando-se regimes normais e frações…
+- 🧩 **Interrupção do prazo de progressão e readquisição do bom comportamento** (art. 112, 6,7; 112, 6; 112, 7) · `esq_1789659571899_zmqpe4` · dados/esquemas/esquemas-direito-penal.json
+  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112, §§ 6º e 7º, da LEP (Pacote Anticrime); Súmula 534/STJ O cometimento de falta grave durante a execuçã…
+  > …ulo. Efeito da Falta Grave Regra Legal e Cômputo do Novo Prazo Interrupção da Progressão (art. 112, § 6º, da LEP) O cometimento de falta grave INTERROMPE o prazo para a obtenção da progressão no…
+- 🧩 **Livramento Condicional: Requisitos e as Novas Vedações** (art. 112, VI, a) · `esq_1786594816717_bdqopw` · dados/esquemas/esquemas-direito-penal.json
+  > …ivramento e Efeitos da Condenação · Tipo: Requisitos e prazos · Ref.: art. 83 e §§ do CP; art. 112, VI, "a", da LEP; Súmula nº 617 do STJ; Temas Repetitivos nº 1.161 e 1.367 do STJ Limites Objetivo…
+  > …siderar todo o histórico prisional , não se limitando a 12 meses. Homicídio Hediondo LEP, art. 112, VI, "a" : O condenado por crime hediondo ou equiparado com resultado morte NÃO tem direito a livr…
+- 🧩 **Progressão de regime do reincidente genérico em crime hediondo** (art. 112, V,VI; 112, V; 112, VI; 112) · `esq_1789659571899_jrdr2y` · dados/esquemas/esquemas-direito-penal.json
+  > …Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Jurisprudência esquematizada · Ref.: art. 112, V e VI, da LEP; STJ (Tema 1084 e Tema 1196); STF (Tema 1169) O Pacote Anticrime (Lei 13.964/19)…
+  > …ão da analogia in malam partem, aplica-se a fração do apenado primário em crime hediondo (art. 112, V da LEP). 40% da pena (STJ Tema 1084 / STF Tema 1169). Reincidente Genérico em Crime Hedio…
+- 🧩 **Progressão de Regime no Art. 112 da LEP: Quadro Comparativo de Frações, Percentuais e Retroatividade** (art. 112) · `esq_1790182862846_hmzqi5` · dados/esquemas/esquemas-direito-penal.json
+  > …erdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Alteração legislativa · Ref.: art. 112 da LEP (Lei nº 7.210/84); Lei nº 13.964/19; Lei nº 14.843/24; Lei nº 15.358/26; Lei nº 15…
+  > …lógico (Lei 14.843/24) são IRRETROATIVAS. Fonte: Lei de Execução Penal (Lei nº 7.210/84), art. 112 · Curadoria: 23/09/26
+- 🧩 **Progressão de Regime pós-Pacote Anticrime** (art. 112) · `esq_1786595030588_ksxoh4` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Progressão de Regime · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP (redação da Lei nº 13.964/19) Os Novos Patamares Percentuais de Regime Executório…
+  > …s de Regime Executório Fração / Percentual Requisito Objetivo e Delitos de Enquadramento (Art. 112 LEP) 16% da pena Primário + crime sem violência ou grave ameaça à pessoa. 20% da pena Rei…
+- 🧩 **Progressão de Regime Prisional e Percentuais (Lei 13.964/19)** (art. 112) · `esq_1786565097765_dzbpke` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Regimes de Cumprimento de Pena · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP; Lei 13.964/19; Lei 15.358/26; Temas Repetitivos do STJ 1. Tabela de Percentuais d…
+- 🧩 **Progressão especial para mulheres gestantes e mães** (art. 112, 3; 112, 4) · `esq_1789659571899_n7zm8y` · dados/esquemas/esquemas-direito-penal.json
+  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112, § 3º, da LEP (incluído pela Lei nº 13.769/18); HC 522.651/SP (STJ) No caso de mulher gestante…
+  > …ão de regime dar-se-á com o cumprimento de 1/8 (um oitavo) da pena. Requisito Cumulativo (art. 112, § 3º, da LEP) Detalhamento e Interpretação Jurisprudencial Fração Temporal Reduzida Cumpriment…
+- 🧩 **Regras dos Regimes Prisionais (Fechado, Semiaberto e Aberto)** (art. 112) · `esq_1786594816717_512ys7` · dados/esquemas/esquemas-direito-penal.json
+  > …umprimento de Pena · Tipo: Comparativo · Ref.: arts. 33 a 36 do CP; Súmula nº 439 do STJ; art. 112 da LEP (Lei nº 14.843/24) Diretrizes Práticas de Execução dos Regimes no CP Critério de R…
+- 🧩 **Tabela geral de progressão de regime prisional** (art. 112) · `esq_1789659571899_u87a8s` · dados/esquemas/esquemas-direito-penal.json
+  > …iberdade: Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 112 da LEP (redação do Pacote Anticrime e Leis 15.358/26 e 15.402/26) A pena privativa de lib…
+  > …rcentuais objetivos e o bom comportamento. % de Cumprimento Situação Jurídica do Apenado (art. 112 da LEP) Vedação de Benefício 16% Primário + crime cometido SEM violência à pessoa ou grav…
+- 🧩 **Tráfico Privilegiado (Art. 33, § 4º): Requisitos, Natureza e Afastamento** (art. 112; 112, 5) · `esq_1786570744236_x7tb4w` · dados/esquemas/esquemas-direito-penal.json
+  > …TF Tema 712). Não se dedicar a atividades criminosas . A vedação à progressão especial do art. 112 da LEP não afasta o privilégio se o crime associativo de Orcrim não restar tipificado na…
+  > …dionda , restando expressamente afastada a equiparação da Lei 8.072/90 (Tese 55/STJ e LEP art. 112, § 5º). Admite-se plenamente a fixação de regime inicial aberto e a substituição por restritiva…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 5** (art. 112) · `sim_1788654225381_q5` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …s) encontram-se parametrizados por **porcentagens objetivas** alocadas exclusivamente no *artigo 112 da Lei de Execução Penal (LEP)*.
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 57** (art. 112) · `sim_1788654225381_q57` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …dica atual, integralmente controlada pelas diretrizes e percentuais alocados no escopo do artigo 112 da Lei de Execução Penal.
+  > …cartesianas, migraram e estão consolidados única e exclusivamente no cerne estrutural do artigo 112 da LEP (Lei 7.210/1984).
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 27** (art. 112) · `sim_1789667188418_q27` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …do, sendo desnecessária a observância de etapas intermediárias como ocorre na progressão (art. 112 da LEP).
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 39** (art. 112, 3) · `sim_1789667188418_q39` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …e § 2º, da LEP obriga o DEPEN a rastrear os impactos sociológicos da progressão especial (art. 112, § 3º) para avaliar institucionalmente a dispensa do regime fechado para mulheres processadas p…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 42** (art. 112) · `sim_1789667188418_q42` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …AgR, Info 780 e EP 16, Info 832), embora o pagamento da multa não conste expressamente no art. 112 da LEP, o adimplemento da sanção pecuniária revela o censo de responsabilidade exigido do…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 43** (art. 112, 3, V) · `sim_1789667188418_q43` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > O STJ (HC 522651/SP, Info 678) assentou que a vedação estampada no art. 112, § 3º, V, da LEP ("não ter integrado organização criminosa") deve ser interpretada de forma estrit…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 49** (art. 112, VIII; 112, VI) · `sim_1789667188418_q49` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …ido a lacuna legislativa sobre o reincidente genérico ao restringir a nova fração de 85% (art. 112, VIII, da LEP) apenas aos reincidentes específicos em crime hediondo com resultado morte, major…
+  > …rte, majorou expressamente a fração aplicável ao agente primário nessas mesmas condições (art. 112, VI, 'a'), de modo que a construção jurisprudencial consolidada pelo STJ no Tema 1196 — funda…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 51** (art. 112, 6) · `sim_1789667188418_q51` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > Segundo a expressa dicção do art. 112, § 6º, da LEP, o cometimento de falta grave interrompe o prazo para a obtenção da progressão de…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 55** (art. 112, VI, d) · `sim_1789667188418_q55` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > A Lei nº 15.358/2026 alterou as frações de cumprimento de pena e incluiu o art. 112, VI, "d", na LEP, estabelecendo a fração gravosa de 75% (setenta e cinco por cento) para o condena…
+
+<details><summary>Citam só o artigo (3)</summary>
+
+- 🧩 Remição da pena por trabalho e por estudo · `esq_1789666359187_p7kvkb`
+- 🧩 Remição de Pena: Trabalho, Estudo e Práticas Sociais · `esq_1786565097765_ez4ayh`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 63 · `sim_1789667188418_q63`
+
+</details>
+
+## Lei 15.397/2026: Crimes patrimoniais: penas maiores no furto, roubo e receptação; estelionato sem representação (70)
+
+Alterados: CP art. 155; CP art. 157; CP art. 171; CP art. 180; CP art. 180-A; CP art. 266
+
+- 🧩 **Ação Penal no Crime de Estelionato** (art. 171, 5) · `esq_1786595030588_rgkzjt` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra o Patrimônio · Tipo: Alteração legislativa · Ref.: art. 171, § 5º, do CP (redação da Lei nº 13.964/19) Sistemática Procedimental da Ação no Estelionato Des…
+  > …ão no Estelionato Destinatário / Ofendido Natureza Jurídica da Ação Penal no Estelionato (Art. 171, § 5º, do CP) Regra Geral (Vítima Comum) Ação Penal Pública condicionada à representação da ofe…
+- 🧩 **Apropriação Indébita Comum e Apropriação de Coisa Achada** (art. 155, 2) · `esq_1786594751898_xhkbv8` · dados/esquemas/esquemas-direito-penal.json
+  > …bstituição e Privilégio (Art. 170 do CP) Aplica-se a todas as modalidades o privilégio do art. 155, § 2º, do CP (criminoso primário + pequeno valor do bem autoriza substituição, redução ou multa…
+- 🧩 **Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras** (art. 157) · `esq_1786594883450_vqcbxz` · dados/esquemas/esquemas-direito-penal.json
+  > …Completas (Perfeitas) Apresentam todos os elementos necessários para a subsunção do fato. Art. 157, caput, do CP (Roubo). Incompletas (Imperfeitas) Reclamam complementação valorativa do magistrad…
+- 🧩 **Confronto entre Roubo e Extorsão** (art. 157) · `esq_1786594751898_zg53za` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Extorsão · Tipo: Comparativo · Ref.: arts. 157 e 158 do CP; Súmula nº 96 do STJ Distinções Dogmáticas entre Roubo e Extorsão no Código P…
+  > …Dogmáticas entre Roubo e Extorsão no Código Penal Parâmetro de Confronto Crime de Roubo (Art. 157 do CP) Crime de Extorsão (Art. 158 do CP) Natureza do Crime Crime material : consuma-se a…
+- 🧩 **Confronto: Estelionato vs. Furto Mediante Fraude** (art. 155, 4, II; 171; 171, 2-A; 155, 4-B) · `esq_1786594751898_7xzvbc` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Furto e Estelionato · Tipo: Comparativo · Ref.: art. 155, § 4º, II e § 4º-B, do CP; art. 171, caput, do CP; precedentes do STJ Diferenciação Dogmática do Em…
+  > …tema: Furto e Estelionato · Tipo: Comparativo · Ref.: art. 155, § 4º, II e § 4º-B, do CP; art. 171, caput, do CP; precedentes do STJ Diferenciação Dogmática do Emprego da Fraude no Patrimônio Cri…
+- 🧩 **Confronto: Receptação vs. Lavagem de Dinheiro** (art. 180) · `esq_1786594751898_47czaa` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Receptação · Tipo: Comparativo · Ref.: art. 180 do CP; art. 1º da Lei nº 9.613/98 Parâmetros de Distinção entre Receptação e Lavagem de C…
+  > …âmetros de Distinção entre Receptação e Lavagem de Capitais Critério Crime de Receptação (Art. 180 do CP) Crime de Lavagem de Dinheiro (Lei nº 9.613/98) Elemento Subjetivo Dolo direto ou d…
+- 🧩 **Consumação e Espécies de Roubo (Próprio e Impróprio)** (art. 157, 1; 157) · `esq_1786594751898_itosvi` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Roubo · Tipo: Comparativo · Ref.: art. 157, caput, § 1º, do CP (Lei nº 15.397/26); Súmula nº 582 do STJ Confronto Prático entre Roubo Próprio e I…
+  > …onto Prático entre Roubo Próprio e Impróprio e Teorias de Consumação Vetor Roubo Próprio (Art. 157, caput, do CP) Roubo Impróprio (Art. 157, § 1º, do CP) Definição Subtrair coisa móvel alheia med…
+- 🧩 **Estelionato e Outras Fraudes Bilaterais e Unilaterais** (art. 171) · `esq_1786594751898_t5sxl2` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Estelionato · Tipo: Comparativo · Ref.: art. 171 do CP; art. 332 do CP; art. 357 do CP; art. 19 da Lei nº 7.492/86 Confronto de Delitos de…
+  > …cífico Instituto Conduta Típica de Enquadramento Pena e Natureza Consumativa Estelionato (Art. 171 do CP) Obter vantagem ilícita, em prejuízo alheio, induzindo ou mantendo alguém em erro m…
+- 🧩 **Estelionato Previdenciário: Natureza e Consumação** (art. 171, 3; 171) · `esq_1786594751898_8wai3t` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Estelionato · Tipo: Classificação · Ref.: art. 171, § 3º, do CP; Súmula nº 24 do STJ; precedentes do STF e STJ Regime de Consunção e Classificação…
+  > …revidenciário Eixo de Análise Hipótese Fática e Consequências Práticas na Execução Penal (Art. 171, § 3º, do CP) Majorante (§ 3º) A pena aumenta-se de 1/3 se o estelionato é cometido em detrimen…
+- 🧩 **Exercício Ilegal de Profissão ou Atividade** (art. 171) · `esq_1786567987632_zn3gl9` · dados/esquemas/esquemas-direito-penal.json
+  > …vantagem econômica ilícita em prejuízo da vítima, é absorvido pelo crime de Estelionato (art. 171 do CP). ⚠ O exercício ilegal de profissão do art. 47 da LCP exige a demonstração fática d…
+- 🧩 **Fraude na Obtenção de Financiamento vs. Estelionato** (art. 171) · `esq_1786595078273_1dx8ie` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra o SFN · Tipo: Comparativo · Ref.: art. 19 da Lei nº 7.492/86; art. 171 do Código Penal; precedentes do STJ (CC nº 165.727/SP) Critérios de Distinção pela Destin…
+  > …da de Recursos Parâmetro Fraude na Obtenção de Financiamento (Art. 19) Estelionato Comum (Art. 171 do CP) Definição do Objeto A fraude é perpetrada especificamente para obter financiamento…
+- 🧩 **Furto: Tipificação, Repouso Noturno e Furto Privilegiado** (art. 155, 1,2,3; 155) · `esq_1786594751898_3z82jm` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Furto · Tipo: Classificação · Ref.: art. 155, caput, §§ 1º, 2º e 3º, do CP (Lei nº 15.397/26); Súmula nº 511 do STJ; Tema Repetitivo nº 1087 do STJ Modalidad…
+  > …; Tema Repetitivo nº 1087 do STJ Modalidades, Majorantes e Privilégio do Delito de Furto (Art. 155 do CP) Instituto Conduta, Parâmetros Legais e Acórdãos Judiciais (Lei nº 15.397/26) Furto…
+- 🧩 **Latrocínio: Consumação, Tentativa e Súmula 610/STF** (art. 157, 3, II) · `esq_1786594751898_n15diz` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Roubo · Tipo: Comparativo · Ref.: art. 157, § 3º, II, do CP (Lei nº 15.397/26); Súmulas nº 603 e 610 do STF Quadrantes Fáticos de Enquadrament…
+- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** (art. 157; 155) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
+  > …ça, Judiciário, MP, Defensoria, Oficiais de Justiça ou nas dependências de ensino. Roubo (Art. 157 do CP) Circunstanciado por restrição de liberdade da vítima, pelo emprego de arma de fogo…
+  > …ituição ou outra forma de exploração sexual de criança, adolescente ou vulnerável. Furto (Art. 155 do CP) Apenas se qualificado pelo emprego de explosivo ou artefato análogo (§ 4º-A). Indu…
+- 🧩 **Moeda Falsa e Delitos de Moeda** (art. 171) · `esq_1786594672964_5llglz` · dados/esquemas/esquemas-direito-penal.json
+  > …asta o crime de moeda falsa (fé pública) e caracteriza, em tese, o delito de estelionato (art. 171 do CP), transferindo a competência para a Justiça Estadual (Súmula nº 73/STJ). Fonte: Fon…
+- 🧩 **Receptação Qualificada e de Semoventes** (art. 180, 1; 180-A; 180; 180, 7) · `esq_1786594751898_josrai` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Receptação · Tipo: Rol · Ref.: art. 180, § 1º, § 6º, § 7º e art. 180-A do CP (Lei nº 15.181/25 e Lei nº 15.397/26); precedentes do STJ Modalidades…
+  > Subtema: Receptação · Tipo: Rol · Ref.: art. 180, § 1º, § 6º, § 7º e art. 180-A do CP (Lei nº 15.181/25 e Lei nº 15.397/26); precedentes do STJ Modalidades Qualificadas…
+- 🧩 **Regime de Ação Penal no Estelionato e Evolução** (art. 171, 5; 171) · `esq_1786594751898_n9zgch` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Estelionato · Tipo: Alteração legislativa · Ref.: art. 171, § 5º, do CP (Lei nº 13.964/19 e Lei nº 15.397/26) Regime Jurídico da Ação Penal e Exceções de…
+  > …de Processamento Período Normativo Regra Geral de Processamento do Crime de Estelionato (Art. 171 do CP) Exceções Legais de Processabilidade Incondicionada (Ação Pública) Antes do Pacote…
+- 🧩 **Roubo com Emprego de Arma** (art. 157, 2, VII,I; 157; 157, 2, VII; 157, 2-A, I; 157, 2-B) · `esq_1786595030588_huozjl` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra o Patrimônio · Tipo: Alteração legislativa · Ref.: art. 157, § 2º, VII, § 2º-A, I, e § 2º-B do CP (redação da Lei nº 13.964/19) Balanço de Penas do Roubo por Instrumentos…
+  > …strumentos Ofensivos Natureza da Arma Utilizada Consequência Penal e Exasperação de Pena (Art. 157 do CP) Arma Branca Causa de aumento (majorante) de 1/3 até a metade (art. 157, § 2º, VII,…
+- 🧩 **Roubo com Emprego de Arma e Evolução Legislativa** (art. 157, 2,2-A,2-B; 157, 2, VII; 157, 2-A, I; 157, 2-B) · `esq_1786594751898_k1c8zh` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Roubo · Tipo: Alteração legislativa · Ref.: art. 157, §§ 2º, 2º-A e 2º-B, do CP (Lei nº 13.654/18 e Lei nº 13.964/19) Regime de Emprego de Armas e Exasperações de…
+  > …23/01/2020 aos dias atuais) Reintroduzido : causa de aumento de pena de 1/3 até a metade (art. 157, § 2º, VII, do CP). Cisão Sancionatória : &#8627; Arma de fogo de uso permitido: aumento de 2/3 (art…
+- ❓ **Concurso de Crimes e de Pessoas · questão 09** (art. 157, 2, II; 155, 4, IV) · `sim_1784685719839_q09` · dados/bateriasvf/grupo-ce-concurso.json
+  > …, na 3ª fase (como causa de aumento de pena, ex: roubo majorado pelo concurso de pessoas, Art. 157, § 2º, II) ou, ainda, como circunstância qualificadora (ex: furto qualificado, Art. 155, § 4º, IV).…
+  > …, Art. 157, § 2º, II) ou, ainda, como circunstância qualificadora (ex: furto qualificado, Art. 155, § 4º, IV). No entanto, sua incidência se dá em tese e de forma alternativa, nunca concomitantement…
+- ❓ **Concurso de Crimes e de Pessoas (Juris) · questão 6** (art. 180) · `sim_1784685533034_q6` · dados/bateriasvf/grupo-ce-concurso.json
+  > O STJ (AgRg no AREsp 2.712.504-MG) orienta que a qualificadora do § 1º do artigo 180 do Código Penal (receptação qualificada pelo exercício de comércio) possui natureza objet…
+- ❓ **Crimes contra a Pessoa · questão 48** (art. 171, 2, V) · `sim_1783734731369_q48` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …e estelionato na modalidade de fraude para recebimento de indenização ou valor de seguro (art. 171, § 2º, V, do Código Penal).
+- ❓ **Crimes contra o Patrimônio · questão 1** (art. 155, 1) · `sim_1783734802398_q1` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …enta-se de metade, se o crime é praticado durante o repouso noturno, conforme determina o Art. 155, § 1º, do Código Penal. A assertiva tenta induzir o candidato ao erro trocando as frações adota…
+- ❓ **Crimes contra o Patrimônio · questão 10** (art. 155, 4, II; 155, 4-B) · `sim_1783734802398_q10` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A arquitetura do delito de furto separa a fraude ordinária (Art. 155, § 4º, inciso II, do CP - reclusão de 2 a 8 anos) da fraude cibernética/eletrônica. Esta última possui tip…
+  > …a 8 anos) da fraude cibernética/eletrônica. Esta última possui tipo qualificado autônomo (Art. 155, § 4º-B, do CP), prevendo reclusão de 4 a 10 anos quando o furto mediante fraude é cometido por m…
+- ❓ **Crimes contra o Patrimônio · questão 11** (art. 155, 4-A) · `sim_1783734802398_q11` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O legislador equiparou a gravidade abstrata das condutas. Nos termos do Art. 155, § 4º-A, do CP, a pena é de reclusão de 4 a 10 anos e multa, se houver emprego de explosivo ou de…
+- ❓ **Crimes contra o Patrimônio · questão 12** (art. 155, 5; 157, 2, IV) · `sim_1783734802398_q12` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …Estado ou exterior configura modalidade qualificada, punida com reclusão de 4 a 10 anos (Art. 155, § 5º, do CP). No crime de roubo, a mesma circunstância fática atua como causa de aumento de pe…
+  > …ma circunstância fática atua como causa de aumento de pena (majorante) de 1/3 até metade (Art. 157, § 2º, inciso IV, do CP).
+- ❓ **Crimes contra o Patrimônio · questão 13** (art. 157, 1) · `sim_1783734802398_q13` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A conduta se subsume perfeitamente ao Art. 157, § 1º, do Código Penal. O agente, após a subtração (inicialmente caracterizando furto), emprega…
+- ❓ **Crimes contra o Patrimônio · questão 14** (art. 157, 2, VII; 157, 2-A, I; 157, 2-B) · `sim_1783734802398_q14` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A assertiva mistura as frações de aumento. Segundo o Art. 157, § 2º, VII, do CP, o emprego de arma branca aumenta a pena de 1/3 até metade. O emprego de arma de f…
+  > …ta a pena de 1/3 até metade. O emprego de arma de fogo (permitida) aumenta a pena em 2/3 (Art. 157, § 2º-A, I, do CP). Por fim, a pena é aplicada em dobro apenas se a violência ou grave ameaça for ex…
+- ❓ **Crimes contra o Patrimônio · questão 15** (art. 157, 3) · `sim_1783734802398_q15` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O Art. 157, § 3º, do CP, estabelece que, se da violência resulta lesão corporal grave, a pena é de reclusã…
+- ❓ **Crimes contra o Patrimônio · questão 16** (art. 157, 2, V) · `sim_1783734802398_q16` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A conduta narrada atrai a incidência do Art. 157, § 2º, inciso V, do Código Penal, que determina o aumento da pena de 1/3 até a metade se o agente mantém…
+- ❓ **Crimes contra o Patrimônio · questão 17** (art. 157, 2, V) · `sim_1783734802398_q17` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > No roubo (Art. 157, § 2º, V, do CP), a restrição de liberdade é meio para assegurar a subtração de coisa alheia móvel…
+- ❓ **Crimes contra o Patrimônio · questão 19** (art. 157, 4) · `sim_1783734802398_q19` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Trata-se da rígida determinação do Art. 157, § 4º, do Código Penal (introduzido por reforma legislativa). O dispositivo impõe a aplicação d…
+- ❓ **Crimes contra o Patrimônio · questão 2** (art. 155, 8) · `sim_1783734802398_q2` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …previu expressamente a compatibilidade do privilégio com essa qualificadora específica. O Art. 155, § 8º, do CP, ao tipificar a subtração de fios, cabos ou equipamentos de energia e telefonia (r…
+- ❓ **Crimes contra o Patrimônio · questão 20** (art. 171, 2, VI) · `sim_1783734802398_q20` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …ocedimento criminal contra a vítima ou contra terceiro". O cheque sem provisão de fundos (Art. 171, § 2º, VI) amolda-se à condição de "documento que pode dar causa a procedimento criminal".
+- ❓ **Crimes contra o Patrimônio · questão 21** (art. 157, 2, VII) · `sim_1783734802398_q21` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …tiva reflete a exata sistemática do Código Penal após as recentes alterações anticrime. O Art. 157, § 2º, inciso VII, prevê que a pena aumenta-se de 1/3 até a metade se a violência/ameaça é exercida com emp…
+- ❓ **Crimes contra o Patrimônio · questão 22** (art. 157, 2, IV) · `sim_1783734802398_q22` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …nos), no crime de roubo, o transporte de veículo automotor para outro Estado ou exterior (Art. 157, § 2º, inciso IV, do CP) é mera **causa de aumento de pena de 1/3 até a metade**, devendo concorrer na ter…
+- ❓ **Crimes contra o Patrimônio · questão 25** (art. 157, 4) · `sim_1783734802398_q25` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A assertiva erra ao generalizar as frações. Enquanto no Roubo (Art. 157, § 4º, do CP) e na Extorsão (Art. 158, § 4º, do CP) a pena aplica-se em **triplo**, o legislado…
+- ❓ **Crimes contra o Patrimônio · questão 26** (art. 171, 2, I) · `sim_1783734802398_q26` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A conduta descrita enquadra-se com precisão na fraude específica tipificada no Art. 171, § 2º, inciso I, do Código Penal (Disposição de coisa alheia como própria). O agente obtém vantagem ilíci…
+- ❓ **Crimes contra o Patrimônio · questão 28** (art. 180-A) · `sim_1783734802398_q28` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O legislador criou um tipo penal rigoroso para desarticular a cadeia do abigeato. O Art. 180-A do Código Penal pune (com reclusão de 3 a 8 anos) quem adquire ou recebe, com finalidade…
+- ❓ **Crimes contra o Patrimônio · questão 3** (art. 155, 4, IV) · `sim_1783734802398_q3` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …assertiva apresenta uma pegadinha clássica de alteração numérica. O Código Penal, em seu Art. 155, § 4º, inciso IV, estabelece que o furto é qualificado "mediante concurso de duas ou mais pessoas". Não se…
+- ❓ **Crimes contra o Patrimônio · questão 34** (art. 180, 3) · `sim_1783734802398_q34` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A conduta amolda-se à figura do Art. 180, § 3º, do Código Penal, que incrimina quem adquire ou recebe coisa que, "por sua natureza ou pe…
+- ❓ **Crimes contra o Patrimônio · questão 39** (art. 171) · `sim_1783734802398_q39` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …mento pela Lei nº 15.397/2026. O texto atualizado do Código Penal é categórico: o § 5º do Art. 171 (e seus respectivos incisos) está **(Revogado)**. Consequentemente, tal normatividade de…
+- ❓ **Crimes contra o Patrimônio · questão 4** (art. 155, 4-C, I) · `sim_1783734802398_q4` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O fato descrito amolda-se à causa de aumento de pena do Art. 155, § 4º-C, inciso I, do Código Penal. Contudo, a norma dispõe expressamente que, se o crime é praticado media…
+- ❓ **Crimes contra o Patrimônio · questão 40** (art. 180, 4) · `sim_1783734802398_q40` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O direito penal pátrio consagrou a autonomia da infração de receptação. O Art. 180, § 4º, do Código Penal estatui, de modo expresso e inconteste, que "A receptação é punível, ain…
+- ❓ **Crimes contra o Patrimônio · questão 41** (art. 155, 3) · `sim_1783734802398_q41` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Nos moldes do Art. 155, § 3º, do Código Penal, "equipara-se à coisa móvel a energia elétrica ou qualquer outra que ten…
+- ❓ **Crimes contra o Patrimônio · questão 42** (art. 155, 4-A; 157, 2-A, II) · `sim_1783734802398_q42` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …cunstância fática. No **furto**, o emprego de explosivo constitui modalidade qualificada (Art. 155, § 4º-A, do CP), cominando pena autônoma de reclusão de 4 a 10 anos e multa. No **roubo**, o empr…
+  > …dosimetria como causa de aumento de pena (majorante) de 2/3 (dois terços), nos termos do Art. 157, § 2º-A, inciso II, do CP.
+- ❓ **Crimes contra o Patrimônio · questão 45** (art. 171, 3) · `sim_1783734802398_q45` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O comando emana de disposição expressa do Código Penal. O Art. 171, § 3º, dispõe textualmente que "A pena aumenta-se de **um terço**, se o crime é cometido em det…
+- ❓ **Crimes contra o Patrimônio · questão 47** (art. 180, 6) · `sim_1783734802398_q47` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …etivo severo para bens da administração pública e entidades descentralizadas. Consoante o Art. 180, § 6º, do Código Penal, tratando-se de bens do patrimônio da União, Estado, Município... autarq…
+- ❓ **Crimes contra o Patrimônio · questão 48** (art. 157) · `sim_1783734802398_q48` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A arquitetura do Art. 157 do Código Penal consolida a incidência das causas de aumento (os parágrafos 2º, 2º-A e 2º…
+- ❓ **Crimes contra o Patrimônio · questão 5** (art. 155, 4, V) · `sim_1783734802398_q5` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A redação do Art. 155, § 4º, inciso V, do Código Penal tipifica como qualificado (pena de 2 a 8 anos) o furto cometido "contra…
+- ❓ **Crimes contra o Patrimônio · questão 6** (art. 155, 9) · `sim_1783734802398_q6` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …rita consonância com a inovação legislativa trazida para o combate ao crime organizado. O Art. 155, § 9º, do Código Penal prevê pena de reclusão de 4 a 10 anos se a subtração é cometida "por int…
+- ❓ **Crimes contra o Patrimônio · questão 7** (art. 155, 7) · `sim_1783734802398_q7` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O Art. 155, § 7º, do Código Penal aglutina ambas as condutas, prevendo que a pena é de reclusão de 4 a 10…
+- ❓ **Crimes contra o Patrimônio · questão 8** (art. 155, 6, I) · `sim_1783734802398_q8` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O fato narrado enquadra-se de forma exata no Art. 155, § 6º, inciso I, do Código Penal, que qualifica a subtração de "semovente domesticável de produção, ainda…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 23** (art. 157, 2-A, I; 157, 2-B) · `sim_1788654225381_q23` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …72/90 define explicitamente que o roubo circunstanciado pelo **emprego de arma de fogo** (artigo 157, § 2º-A, inciso I, CP) — o que abrange o armamento de uso permitido — ou pelo emprego de arma de fogo de us…
+  > …mento de uso permitido — ou pelo emprego de arma de fogo de uso **proibido ou restrito** (artigo 157, § 2º-B, CP) configuram crimes hediondos. Não há distinção excludente para o calibre permitido no…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 27** (art. 155, 4) · `sim_1788654225381_q27` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …rtiva emprega uma falsa abrangência. Dentre as várias qualificadoras aplicáveis ao furto (artigo 155, § 4º e seguintes do CP), a Lei nº 8.072/90 elegeu de forma exclusiva e isolada o **furto quali…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 28** (art. 157, 3) · `sim_1788654225381_q28` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > Em obediência à alínea c do inciso II do artigo 1º da Lei nº 8.072/90, o **roubo** (artigo 157, § 3º, do Código Penal) é classificado como crime hediondo quando de sua violência exsurgir o r…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 29** (art. 157, 2, V) · `sim_1788654225381_q29` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …e a conduta se amolda ao roubo circunstanciado pela **restrição de liberdade da vítima** (artigo 157, § 2º, inciso V, CP), ela atrai inexoravelmente a classificação de crime hediondo, nos termos da alínea a…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 30** (art. 155, 4, I) · `sim_1788654225381_q30` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …çaricos, ainda que sofisticados e perigosos ao patrimônio, caracteriza furto qualificado (artigo 155, § 4º, I, do CP), porém é desprovido da natureza hedionda, dado o império da **taxatividade**.
+- ❓ **Extinção da Punibilidade · questão 39** (art. 180) · `sim_1784907766722_q39` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
+  > …da coisa (pressuposto da receptação), viabilizando plenamente a denúncia por receptação (Art. 180, CP).
+- ❓ **Fato Típico · questão 8** (art. 157, 3, II) · `sim_1781884393597_q8` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
+  > …ubo + homicídio culposo"; a imputação preservada será a correspondente ao **latrocínio** (art. 157, § 3º, II, do CP).
+- ❓ **Pessoa e Patrimônio (Juris) · questão 27** (art. 155, 4-A) · `sim_1783735414572_q27` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …rimes de furto qualificado e explosão, impondo-se a aplicação retroativa do tipo penal do art. 155, § 4º-A, do CP, instituído pela Lei nº 13.654/2018.
+  > …curso de crimes (furto qualificado + delito autônomo de explosão, art. 251 do CP). O novo art. 155, § 4º-A, unificou a conduta num **tipo penal complexo de dupla objetividade jurídica**. Consoante…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 28** (art. 155, 4, II) · `sim_1783735414572_q28` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …rigor formal. A exigência de laudo pericial para atestar a qualificadora da **escalada** (art. 155, § 4º, II, do CP) é **dispensável excepcionalmente** quando a dinâmica e o esforço incomum do meio…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 29** (art. 155, 1) · `sim_1783735414572_q29` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …Tema 1144), a 3ª Seção do STJ (REsp 1.979.989-RS) fixou tese afirmando que a majorante do art. 155, § 1º, do CP possui matriz eminentemente objetiva. Os únicos requisitos necessários são o comet…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 30** (art. 155) · `sim_1783735414572_q30` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …irmou a tese vinculante de que a causa de aumento de pena do **repouso noturno** (§ 1º do art. 155 do CP) incide unicamente sobre o furto simples (*caput*), existindo **incompatibilidade s…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 31** (art. 155, 4, III) · `sim_1783735414572_q31` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …gRg no HC 876.671-SC), a ausência de vestígios na fechadura não afasta a qualificadora do art. 155, § 4º, III, do CP, pois é da essência do uso de chave falsa (micha) a abertura do compartimento sem…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 32** (art. 157, 1) · `sim_1783735414572_q32` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Para o STJ (AgRg no REsp 2.098.118-MG), a locução legal "logo depois" prevista no art. 157, § 1º, do CP (roubo impróprio) comporta elasticidade temporal, admitindo-se que a violência sej…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 36** (art. 157, 2, VII) · `sim_1783735414572_q36` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O conceito penal de arma branca previsto no art. 157, § 2º, VII, do CP engloba não apenas os instrumentos fabricados com o fim específico de ataque e def…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 38** (art. 157, 3, II) · `sim_1783735414572_q38` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …ente subtraído for singular, perfectibiliza-se a ocorrência de crime único de latrocínio (art. 157, § 3º, II, do CP), ainda que o desdobramento da violência atinja pluralidade de pessoas, devendo a…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 47** (art. 171, 3) · `sim_1783735414572_q47` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …za, per se, a elementar "vantagem ilícita ou indevida" exigida pelo crime de estelionato (art. 171, § 3º, do CP), tornando atípica a figura penal independentemente das conjeturas sobre a finalid…
+- ❓ **Pessoa e Patrimônio (Juris) · questão 49** (art. 171, 5) · `sim_1783735414572_q49` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Ao debater os efeitos de direito intertemporal da novel redação do art. 171, § 5º, do CP, o STF (HC 208.817 AgR) assentou que a modificação na condição de procedibilidade…
+
+## Lei 15.384/2026: Vicaricídio e violência vicária (3 + 19 só o artigo)
+
+Alterados: CP art. 121-B; L8072 art. 1 (I-C); L11340 art. 7 (VI)
+
+- 🧩 **Crimes Hediondos por Extensão (Legislação Extravagante e CPM)** (art. 1, pu) · `esq_1786571782166_prlnx6` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes Hediondos · Tipo: Rol · Ref.: art. 1º, parágrafo único, da Lei nº 8.072/90 Hipóteses Hediondas de Extensão na Legislação Especial e no Código Pe…
+- 🧩 **Feminicídio e Vicaricídio (Leis nº 14.994/24 e 15.384/26)** (art. 121-B) · `esq_1786594778866_pxs1in` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Alteração legislativa · Ref.: art. 121-A e art. 121-B do CP Regime de Crimes Autônomos de Gênero no Código Penal Delito de Gênero Conduta Típic…
+  > …rimento de MPUs; circunstâncias objetivas do art. 121, § 2º, III, IV e VIII. Vicaricídio (Art. 121-B do CP) Matar descendente, ascendente, dependente, enteado ou sob guarda da mulher, com o…
+- 🧩 **Lei nº 11.340/2006 - Bloco I (Arts. 1º a 7º)** (art. 7; 7, IV,VI) · `esq_1788045688231_0fcbcr` · dados/esquemas/esquemas-direito-penal.json
+  > …bjetivo de punir a mãe não é enquadrada na Lei Maria da Penha. Ambas as teses são falsas (Art. 7º, IV e VI). ⚠ A Lei Maria da Penha é aplicável a mulheres trans, e sua vulnerabilidade é presumida…
+
+<details><summary>Citam só o artigo (19)</summary>
+
+- 🧩 Espécies de Violência Doméstica (Lei Maria da Penha) e Novas Figuras · `esq_1786571326485_2k3bty`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
+- ❓ Lei Maria da Penha · questão 10 · `sim_1788215085553_q10`
+- ❓ Lei Maria da Penha · questão 41 · `sim_1788215085553_q41`
+
+</details>
+
+## Lei 15.383/2026: Maria da Penha: monitoração eletrônica do agressor (4 + 7 só o artigo)
+
+Alterados: L11340 art. 12-D; L11340 art. 22 (VIII; § 5; § 6; § 7; § 8; § 9); L11340 art. 24-A (§ 4)
+
+- 🧩 **Afastamento do Lar e Monitoração Eletrônica de Urgência (Lei 15.383/26)** (art. 12-D) · `esq_1786571326485_le3pbg` · dados/esquemas/esquemas-direito-penal.json
+  > …Subtema: Crimes contra Grupos Vulneráveis · Tipo: Requisitos e prazos · Ref.: art. 12-C e art. 12-D da Lei nº 11.340/06 (LMP); Lei nº 15.383/26 Ritos de Afastamento do Agressor e Monitoraçã…
+  > …azo sobre a manutenção (art. 12-C, § 1º, da Lei 11.340). Monitoração eletrônica imediata (Art. 12-D da Lei 11.340) ↳ Autoridade Judicial; ↳ Delegado de Polícia (quando o município não for s…
+- 🧩 **Lei nº 11.340/2006 - Bloco II (Arts. 8º a 24-A)** (art. 24-A; 12-D) · `esq_1788045809866_l1votg` · dados/esquemas/esquemas-direito-penal.json
+  > …nto do Lar pela Autoridade Policial (Art. 12-C da Lei 11.340) e Monitoramento Eletrônico (Art. 12-D da Lei 11.340) Subtema: Afastamento do Lar | Tipo: Competência Extraordinária | Referênci…
+  > …e urgência para estancar a iminência de feminicídio. DISPOSITIVO CHAVE (Art. 12-C, § 2º e Art. 12-D, da Lei 11.340): Verificado risco à integridade da vítima ou à eficácia da MPU, não será…
+- ❓ **Lei Maria da Penha · questão 33** (art. 24-A, 4) · `sim_1788215085553_q33` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > Trata-se da reprodução literal da causa de aumento inserida no artigo 24-A, parágrafo 4º, da Lei 11.340/06 pelas inovações legislativas da Lei 15.383/2026. A alteração, violação,…
+- ❓ **Lei Maria da Penha · questão 42** (art. 12-D) · `sim_1788215085553_q42` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > A assertiva contraria a inovação legal consolidada pelo artigo 12-D da Lei nº 11.340/06, inserido pela Lei nº 15.383/2026. A referida norma franqueia express…
+
+<details><summary>Citam só o artigo (7)</summary>
+
+- 🧩 Descumprimento de Medidas Protetivas de Urgência · `esq_1786594715358_fqi3th`
+- 🧩 Descumprimento de Medidas Protetivas e Consentimento da Vítima (Art. 24-A) · `esq_1786571326485_cdz9hp`
+- 🧩 Medidas Protetivas de Urgência: Natureza, Vigência e Revisão (STJ Repetitivo) · `esq_1786571326485_m8wirg`
+- 🧩 Vedações e Restrições na Lei Maria da Penha · `esq_1786571326485_ialia3`
+- ❓ Crimes contra a Pessoa · questão 32 · `sim_1783734731369_q32`
+- ❓ Lei Maria da Penha · questão 34 · `sim_1788215085553_q34`
+- ❓ Lei Maria da Penha · questão 38 · `sim_1788215085553_q38`
+
+</details>
+
+## Lei 15.380/2026: Maria da Penha: audiência do art. 16 só para a retratação (0 + 4 só o artigo)
+
+Alterados: L11340 art. 16 (p.ú.)
+
+
+<details><summary>Citam só o artigo (4)</summary>
+
+- 🧩 Audiência de Retratação e Desistência da Representação (Art. 16 da LMP) · `esq_1786571326485_pj4plz`
+- 🧩 Retratação da representação · `esq_1786501407107_5uc4kl`
+- ❓ Ação Penal · questão 4 · `sim_1788573246600_q4`
+- ❓ Lei Maria da Penha · questão 30 · `sim_1788215085553_q30`
+
+</details>
+
+## Lei 15.358/2026: Marco legal do combate ao crime organizado: facções ultraviolentas, hediondos e custódia por vídeo (17 + 51 só o artigo)
+
+Alterados: CP art. 121 (§ 2-D); CP art. 157 (§ 4; § 5); CP art. 158 (§ 4); L11343 art. 40-A; LEP art. 112 (V; VI; VI-A; VII; VIII); LEP art. 41-A; CPP art. 310; CPP art. 78 (I); CPP art. 313 (V); L8072 art. 1 (p.ú., VIII)
+
+- 🧩 **Antes e depois da Lei 15.358/26 - Art. 3º-B, § 1º** (art. 310) · `esq_1786498860358_347qjb` · dados/esquemas/esquemas-direito-processual-penal.json
+  > …mprego de videoconferência. Realizar-se-á, por videoconferência , a audiência na forma do art. 310 do CPP. Prazo legal No prazo de 24 horas. Mantido o prazo de 24 horas. Presenças obrigató…
+- 🧩 **Antes e depois da Lei 15.358/26 - Art. 78, I** (art. 78, I) · `esq_1786502113364_dws1jh` · dados/esquemas/esquemas-direito-processual-penal.json
+  > Subtema: Conexão e Continência · Tipo: Alteração legislativa · Ref.: art. 78, I, do CPP (redação da Lei 15.358/26) Critério Comparativo ANTES da Lei 15.358/26 DEPOIS da…
+- 🧩 **Audiência de Custódia e a Apresentação em 24 Horas** (art. 310) · `esq_1786595030588_e8ylxv` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Prisão e Medidas Cautelares · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 1º ao 4º do CPP (redação da Lei nº 13.964/19) Ritos Rígidos de Controle de Custódia F…
+  > …e de Custódia Física de Presos Prazo / Condição Regramento e Limites Rígidos de Custódia (Art. 310 do CPP) Prazo de Apresentação O preso será encaminhado à presença do juiz no prazo de 24…
+- 🧩 **Extorsão e Extorsão Mediante Sequestro (Regime Sancionatório)** (art. 158; 158, 4) · `esq_1786594751898_npk3k0` · dados/esquemas/esquemas-direito-penal.json
+  > …cado por integrante de organização criminosa ultraviolenta, grupo paramilitar ou milícia (art. 158, § 4º, do CP / art. 159, § 5º, do CP). &#8627; Extorsão simples/relâmpago: aplica-se a pena em…
+- 🧩 **Livramento Condicional: Requisitos e as Novas Vedações** (art. 112, VI, a) · `esq_1786594816717_bdqopw` · dados/esquemas/esquemas-direito-penal.json
+  > …ivramento e Efeitos da Condenação · Tipo: Requisitos e prazos · Ref.: art. 83 e §§ do CP; art. 112, VI, "a", da LEP; Súmula nº 617 do STJ; Temas Repetitivos nº 1.161 e 1.367 do STJ Limites Objetivo…
+  > …siderar todo o histórico prisional , não se limitando a 12 meses. Homicídio Hediondo LEP, art. 112, VI, "a" : O condenado por crime hediondo ou equiparado com resultado morte NÃO tem direito a livr…
+- 🧩 **Pacto Internacional sobre Direitos Civis e Políticos (PIDCP/1966): Direitos Protegidos, Cláusulas de Derrogação e Exceções** (art. 310) · `esq_1791918824304_094i2d` · dados/esquemas/esquemas-nocoes-gerais-de-direito-formacao-humanistica-e-direitos-humanos.json
+  > …quer pessoa presa à autoridade judicial. Incorporada integralmente no ordenamento pátrio (Art. 310 do CPP e Res. 213/CNJ). Trabalho Forçado Penal (Art. 8.3.b) Admite trabalho forçado impos…
+- 🧩 **Prisão em flagrante e Audiência de Custódia (Lei 13.964/19 e 15.358/26)** (art. 310) · `esq_1786533315176_nrxr9z` · dados/esquemas/esquemas-direito-processual-penal.json
+  > Subtema: Prisão em Flagrante · Tipo: Classificação · Ref.: art. 301 a 310 do CPP; Súmula Vinculante 11/STF; Súmula 676/STJ Modalidades de Prisão em Flagrante Espéc…
+- 🧩 **Progressão de regime do reincidente genérico em crime hediondo** (art. 112, V,VI; 112, V; 112, VI) · `esq_1789659571899_jrdr2y` · dados/esquemas/esquemas-direito-penal.json
+  > …Regimes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Jurisprudência esquematizada · Ref.: art. 112, V e VI, da LEP; STJ (Tema 1084 e Tema 1196); STF (Tema 1169) O Pacote Anticrime (Lei 13.964/19)…
+  > …ão da analogia in malam partem, aplica-se a fração do apenado primário em crime hediondo (art. 112, V da LEP). 40% da pena (STJ Tema 1084 / STF Tema 1169). Reincidente Genérico em Crime Hedio…
+- 🧩 **Standard probatório para conversão de flagrante (Lei 15.272/25)** (art. 310, 5,6; 310; 310, 5) · `esq_1786533315176_lozs96` · dados/esquemas/esquemas-direito-processual-penal.json
+  > …sões Provisórias (Flagrante, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedim…
+  > …prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedimental de Conversão (Lei 15.272/25) Prática reiterada Haver prov…
+- ❓ **Crimes contra o Patrimônio · questão 19** (art. 157, 4) · `sim_1783734802398_q19` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > Trata-se da rígida determinação do Art. 157, § 4º, do Código Penal (introduzido por reforma legislativa). O dispositivo impõe a aplicação d…
+- ❓ **Crimes contra o Patrimônio · questão 25** (art. 157, 4; 158, 4) · `sim_1783734802398_q25` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > A assertiva erra ao generalizar as frações. Enquanto no Roubo (Art. 157, § 4º, do CP) e na Extorsão (Art. 158, § 4º, do CP) a pena aplica-se em **triplo**, o legislado…
+  > …erra ao generalizar as frações. Enquanto no Roubo (Art. 157, § 4º, do CP) e na Extorsão (Art. 158, § 4º, do CP) a pena aplica-se em **triplo**, o legislador estipulou, no Art. 159, § 5º, do CP,…
+- ❓ **Júri · questão 6** (art. 78, I) · `sim_1787068094870_q6` · dados/bateriasvf/grupo-ce-lindbinterceptacaolicitacoesjuri.json
+  > …delito conexo é remetido automaticamente ao julgamento pelo Tribunal do Júri por força do art. 78, I, do Código de Processo Penal, preservando-se a competência constitucional e exclusiva do…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 49** (art. 112, VIII; 112, VI) · `sim_1789667188418_q49` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …ido a lacuna legislativa sobre o reincidente genérico ao restringir a nova fração de 85% (art. 112, VIII, da LEP) apenas aos reincidentes específicos em crime hediondo com resultado morte, major…
+  > …rte, majorou expressamente a fração aplicável ao agente primário nessas mesmas condições (art. 112, VI, 'a'), de modo que a construção jurisprudencial consolidada pelo STJ no Tema 1196 — funda…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 55** (art. 112, VI, d) · `sim_1789667188418_q55` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > A Lei nº 15.358/2026 alterou as frações de cumprimento de pena e incluiu o art. 112, VI, "d", na LEP, estabelecendo a fração gravosa de 75% (setenta e cinco por cento) para o condena…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 9** (art. 41-A) · `sim_1789667188418_q9` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > Conforme o art. 41-A, caput e § 1º, da LEP (introduzido pela Lei nº 15.358/2026), os encontros de presos ligados a or…
+- ❓ **Prisão · questão 40** (art. 310) · `sim_1781783375084_q40` · dados/bateriasvf/grupo-ce-prisao.json
+  > ….506/STF e HC 198.896 AgR/STF) que, embora o descumprimento do prazo exíguo estipulado no art. 310 configure grave irregularidade procedimental, a não realização da audiência de custódia n…
+- ❓ **Prisão · questão 45** (art. 310, 4) · `sim_1781783375084_q45` · dados/bateriasvf/grupo-ce-prisao.json
+  > A redação atual do **art. 310, § 4º, do CPP** (embora o dispositivo seja alvo de discussões no STF - ADI 6.305) determina que…
+
+<details><summary>Citam só o artigo (51)</summary>
+
+- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
+- 🧩 Confronto entre Roubo e Extorsão · `esq_1786594751898_zg53za`
+- 🧩 Consequências da Prática de Falta Grave · `esq_1786568035891_nlh065`
+- 🧩 Consumação e Espécies de Roubo (Próprio e Impróprio) · `esq_1786594751898_itosvi`
+- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
+- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
+- 🧩 Garantismo na Execução Penal, Falta Grave e Súmula Vinculante 56 · `esq_1791815770774_mtnln2`
+- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
+- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
+- 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
+- 🧩 Prisão Preventiva em Violência Doméstica (LMP vs. Contravenções) · `esq_1786571326485_y3ggxz`
+- 🧩 Progressão de Regime no Art. 112 da LEP: Quadro Comparativo de Frações, Percentuais e Retroatividade · `esq_1790182862846_hmzqi5`
+- 🧩 Progressão de Regime pós-Pacote Anticrime · `esq_1786595030588_ksxoh4`
+- 🧩 Progressão de Regime Prisional e Percentuais (Lei 13.964/19) · `esq_1786565097765_dzbpke`
+- 🧩 Regras dos Regimes Prisionais (Fechado, Semiaberto e Aberto) · `esq_1786594816717_512ys7`
+- 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
+- 🧩 Tabela geral de progressão de regime prisional · `esq_1789659571899_u87a8s`
+- 🧩 Tráfico Privilegiado (Art. 33, § 4º): Requisitos, Natureza e Afastamento · `esq_1786570744236_x7tb4w`
+- ❓ Crimes contra a Administração · questão 26 · `sim_1785726484167_q26`
+- ❓ Crimes contra a Administração · questão 38 · `sim_1785726484167_q38`
+- ❓ Crimes contra a Administração · questão 52 · `sim_1785726484167_q52`
+- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
+- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
+- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
+- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
+- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
+- ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 22 · `sim_1788654225381_q22`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 5 · `sim_1788654225381_q5`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 57 · `sim_1788654225381_q57`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 27 · `sim_1789667188418_q27`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 42 · `sim_1789667188418_q42`
+- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
+- ❓ Prisão · questão 10 · `sim_1781783375084_q10`
+- ❓ Prisão · questão 14 · `sim_1781783375084_q14`
+
+</details>
+
+## Lei 15.353/2026: Estupro de vulnerável: presunção absoluta na lei (2 + 9 só o artigo)
+
+Alterados: CP art. 217-A (§ 5; § 4-A)
+
+- 🧩 **Estupro de Vulnerável e Presunção Absoluta** (art. 217-A; 217-A, 4-A; 217-A, 5) · `esq_1786594732551_afrl11` · dados/esquemas/esquemas-direito-penal.json
+  > …idade, sendo inaplicável a teoria do consentimento de ofendido ou qualquer relativização (art. 217-A, § 4º-A, do CP). Consentimento ou Histórico É irrelevante para afastar o crime o eventual consent…
+  > …timento da vítima, sua experiência sexual anterior ou o relacionamento amoroso com o réu (art. 217-A, § 5º, do CP e Súmula nº 593/STJ). Enfermidade ou Deficiência Incorre na mesma pena quem pratic…
+- ❓ **Crimes contra a Dignidade Sexual · questão 21** (art. 217-A, 5) · `sim_1785940914255_q21` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …do no Informativo 21 (Edição Extraordinária) do STJ. Muito embora a Súmula 593 do STJ e o art. 217-A, § 5º, do CP consagrem a presunção absoluta de vulnerabilidade, a Corte Superior vem aplicando,…
+
+<details><summary>Citam só o artigo (9)</summary>
+
+- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
+- ❓ Crimes contra a Dignidade Sexual · questão 19 · `sim_1785940914255_q19`
+- ❓ Crimes contra a Dignidade Sexual · questão 22 · `sim_1785940914255_q22`
+- ❓ Crimes contra a Dignidade Sexual · questão 23 · `sim_1785940914255_q23`
+- ❓ Crimes contra a Dignidade Sexual · questão 31 · `sim_1785940914255_q31`
+- ❓ Crimes contra a Dignidade Sexual · questão 32 · `sim_1785940914255_q32`
+- ❓ Crimes contra a Dignidade Sexual · questão 33 · `sim_1785940914255_q33`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
+- ❓ Fato Típico · questão 41 · `sim_1781884393597_q41`
+
+</details>
+
+## Lei 15.352/2026: LGPD: ANPD vira agência reguladora (2 + 1 só o artigo)
+
+Alterados: L13709 art. 55-A; L13709 art. 55-C (V-A; V-B; VI); L13709 art. 5 (VIII; XIX)
+
+- 🧩 **Principais Conceitos da LGPD e os Agentes de Tratamento** (art. 5; 5, VIII) · `esq_1786651131950_rs4p6c` · dados/esquemas/esquemas-direito-civil.json
+  > …oa indicada pelo controlador para atuar como canal entre controlador, titulares e a ANPD (art. 5º, VIII, da Lei 13.709). ⚠ O encarregado (DPO) pode ser pessoa jurídica, ente despersonalizado ou…
+- 🧩 **Segurança, Comunicação de Incidentes (Data Breach), Sanções e a ANPD** (art. 55-A) · `esq_1789006530653_3z6hea` · dados/esquemas/esquemas-direito-civil.json
+  > …mo de R$ 50 milhões por infração ); bloqueio e eliminação. Natureza e Competência da ANPD Arts. 55-A e 55-K da Lei 13.709 Autarquia de natureza especial dotada de autonomia técnica e decisór…
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Conceitos Fundamentais: Dado Pessoal, Sensível, Anonimizado e Agentes de Tratamento · `esq_1789006530653_dh8t4d`
+
+</details>
+
+## EC 139/2026: Tribunais de Contas: instituições permanentes (5)
+
+Alterados: CF art. 75; CF art. 31 (§ 1)
+
+- 🧩 **Defensoria Pública Estadual (DPE-PE): Autonomia e Regras de Organização na CE-PE** (art. 75) · `esq_1790163932401_g99ko1` · dados/esquemas/esquemas-direito-constitucional.json
+  > …lo Governador a partir de lista tríplice. Fonte: Constituição de Pernambuco 4, arts. 72 a 75 da CE-PE · Curadoria: 23/09/26
+- 🧩 **Fiscalização dos Tribunais de Contas e Jurisprudência do TCU** (art. 75) · `esq_1786628156798_1dnxva` · dados/esquemas/esquemas-direito-constitucional.json
+  > Subtema: Tribunais de Contas e Fiscalização · Tipo: Comparativo · Ref.: arts. 70 a 75 da CF; Súmula nº 347 do STF; Súmula nº 653 do STF O controle externo da execução contábil…
+- 🧩 **Julgamento de Contas dos Prefeitos: Governo vs. Gestão** (art. 31, 1,2) · `esq_1786627617066_ff3mwk` · dados/esquemas/esquemas-direito-constitucional.json
+  > Subtema: Repartição de Competências e Entes Federados · Tipo: Comparativo · Ref.: art. 31, §§ 1º e 2º, e art. 71, II, da CF; Temas nº 157, 835 e 1287 do STF Regime de Competência e Efeitos Té…
+- 🧩 **Tribunal de Contas do Estado (TCE-PE): Composição, Escolha dos Conselheiros e Autonomia** (art. 75) · `esq_1790164014503_b1b4w2` · dados/esquemas/esquemas-direito-constitucional.json
+  > …ontrole Externo e TCE-PE · Tipo: Classificação · Ref.: arts. 29 a 31 da CE-PE; arts. 73 e 75 da CF/88 Órgão / Agente Quantitativo e Regra de Escolha / Provimento Garantias e Prerroga…
+- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 33** (art. 75) · `sim_1788654352739_q33` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
+  > …e ADI 5323/RN) já cristalizou que os Tribunais de Contas atraem, por simetria (arts. 73, 75 e 96, II, "d", da CF), a iniciativa reservada (competência privativa) para instaurar proc…
+
+## Lei Complementar 236/2026: CTN: processo administrativo fiscal nacional, limite de multas e precedentes (6 + 7 só o artigo)
+
+Alterados: CTN art. 113-A; CTN art. 138; CTN art. 142 (§ 1; § 2; § 3; § 4; § 5; § 5, I; § 5, II; § 5, III; § 5, IV; § 6; § 7; § 8; § 9; § 10; § 10, I; § 10, II; § 11); CTN art. 150 (§ 5; § 6); CTN art. 174 (§ 1; § 1, II; § 1, V; § 1, VI; § 1, VII; § 1, VIII; § 1, IX; § 2; § 3; § 4); CTN art. 171-A; CTN art. 194-A; CTN art. 208-A; CTN art. 208-G
+
+- 🧩 **Decadência e Prescrição Ordinária do Crédito Tributário** (art. 174; 174, pu, I) · `esq_1786648638165_njd7ka` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > …to a prescrição flui da constituição definitiva e interrompe-se pelo despacho de citação (art. 174, parágrafo único, I). Fonte: Fontes diversas · Curadoria: 13/08/26
+- 🧩 **Denúncia Espontânea: Requisitos, Exclusão da Multa e Inaplicabilidade ao Parcelamento** (art. 138) · `esq_1790390738173_2kpp0a` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > Subtema: Responsabilidade e Denúncia Espontânea · Tipo: Requisitos e prazos · Ref.: art. 138 do CTN; Súmulas 360 e 555 do STJ; Tema 385 do STJ Aspecto da Denúncia Espontânea Exigênci…
+- 🧩 **Lançamento, Procedimento e Moeda Estrangeira** (art. 142; 142, pu) · `esq_1786648638165_avhjb9` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > …2 do CTN). A atividade é vinculada e obrigatória, sob pena de responsabilidade funcional (art. 142, parágrafo único). Moeda Estrangeira Conversão em moeda nacional ao câmbio do dia da ocorrência do fato ge…
+- 🧩 **Prescrição do Crédito Tributário: Termo Inicial, Interrupção, Suspensão e Citação na Execução Fiscal** (art. 174; 174, pu, I) · `esq_1790391034024_3ffge3` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > …e interrupção da prescrição na Execução Fiscal é o despacho do juiz que ordena a citação (art. 174, parágrafo único, I, do CTN, na redação da LC 118/2005). Fonte: Caderno de Estudos (FGV) e CTN, art. 174 · Cu…
+- 🧩 **Responsabilidade por Infrações e Denúncia Espontânea (Arts. 136 a 138)** (art. 138) · `esq_1786648143298_82tyje` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > Subtema: Responsabilidade Tributária · Tipo: Classificação · Ref.: arts. 136, 137 e 138 do CTN; Súmulas 360 e 436 do STJ O Código de regência consagra o caráter estritamente obj…
+  > …tintiva de penalidade. Instituto / Regra Legal Conteúdo e Regra de Aplicação (Arts. 136 a 138 do CTN) Restrições e Limitações Sumuladas do STJ Responsabilidade Objetiva A responsabili…
+- ❓ **Normas de Direito Financeiro (Lei 4.320/1964) · questão 46** (art. 174, pu) · `sim_1788653330830_q46` · dados/bateriasvf/grupo-ce-financeiroppp.json
+  > …a interrupção ocorreria "apenas" com o despacho judicial ordenador da citação; a teor do art. 174, parágrafo único, do CTN (já com a modificação da LC nº 118/2005), a prescrição também é utilmente interro…
+
+<details><summary>Citam só o artigo (7)</summary>
+
+- 🧩 Conceito de Tributo e seus Elementos (Art. 3º do CTN) · `esq_1786647730342_gac9yk`
+- 🧩 Decadência Tributária: Regra Geral do Art. 173, I vs. Lançamento por Homologação (Art. 150, § 4º) · `esq_1790391034024_9fuolt`
+- 🧩 Diferenças entre Prescrição Ordinária e Intercorrente · `esq_1786649161291_4bl3du`
+- 🧩 Extinção do Crédito Tributário e Dação em Pagamento · `esq_1786648638165_a36em1`
+- 🧩 Lançamento Tributário: Natureza Jurídica, Efeitos Retroativos, Modalidades e Notificação do Carnê · `esq_1790391034024_ped6di`
+- 🧩 Modalidades de Lançamento e Participação do Contribuinte · `esq_1786648638165_ho2ofb`
+- ❓ Das Penas · questão 55 · `sim_1781785703088_q55`
+
+</details>
+
+## Lei Complementar 227/2026: ITBI no CTN, contribuição de iluminação e monitoramento, CGIBS (3)
+
+Alterados: CTN art. 35; CTN art. 38 (§ 1; § 2; § 2, I; § 2, II; § 2, III; § 2, IV; § 3; § 4); CTN art. 82-A; L1079 art. 79-A
+
+- 🧩 **Confronto das Transmissões de Bens: ITBI vs. ITCMD** (art. 35) · `esq_1786647730343_mu3cgt` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > Subtema: Impostos em Espécie · Tipo: Comparativo · Ref.: arts. 35 e 38 do CTN; arts. 155, I e 156, II da CF O ordenamento jurídico divide a transmissão de…
+- 🧩 **Imposto sobre Transmissão Causa Mortis e Doação (ITCMD)** (art. 35) · `esq_1786647730343_zfuvay` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > Subtema: Impostos em Espécie · Tipo: Classificação · Ref.: arts. 35, 38 a 42 do CTN; Súmulas do STF O ITCMD incide sobre transmissões gratuitas e não onerosa…
+- 🧩 **Imposto sobre Transmissão de Bens Imóveis (ITBI)** (art. 35) · `esq_1786647730343_d2pqsp` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > …Incidência Regramento do CTN e Reforma da LC 227/2026 Condições e Vedações Fato Gerador (Art. 35 do CTN) Transmissão inter vivos, por ato oneroso, de bens imóveis e direitos reais sobre…
+
+## Lei Complementar 225/2026: Devedor contumaz: sem extinção da punibilidade pelo pagamento (0 + 4 só o artigo)
+
+Alterados: CP art. 168-A (§ 5; § 6); CP art. 337-A (§ 5; § 6)
+
+
+<details><summary>Citam só o artigo (4)</summary>
+
+- 🧩 Apropriação Indébita Previdenciária e Sonegação de Contribuição · `esq_1786594751898_icb9m8`
+- 🧩 Extinção da Punibilidade do Artigo 107 e Causas Extralegais · `esq_1786594795420_gpyrwh`
+- 🧩 Sonegação de Contribuição Previdenciária · `esq_1786594715358_n0lkx9`
+- ❓ Concurso de Crimes e de Pessoas · questão 44 · `sim_1784685719839_q44`
+
+</details>
+
+## Lei 15.306/2025: Porte de arma para polícias legislativas (0 + 3 só o artigo)
+
+Alterados: L10826 art. 6 (VI)
+
+
+<details><summary>Citam só o artigo (3)</summary>
+
+- 🧩 Restrições de Porte ao Judiciário, MP e Guardas Municipais (ADI 5157) · `esq_1786571782166_eoy17z`
+- ❓ Estatuto do Desarmamento · questão 2 · `sim_1788291096921_q2`
+- ❓ Lei Maria da Penha · questão 40 · `sim_1788215085553_q40`
+
+</details>
+
+## Lei 15.295/2025: Identificação genética obrigatória no regime fechado (3)
+
+Alterados: LEP art. 9-A
+
+- 🧩 **Identificação do Perfil Genético (Art. 9º-A da LEP)** 🆗 (art. 9-A) · `esq_1786568035891_jf9tq8` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Identificação Criminal · Tipo: Requisitos e prazos · Ref.: art. 9º-A da LEP; Lei nº 15.295/25 1. Alteração de Escopo: Antes vs. Depois da Lei 15.295/25 Rito d…
+  > …gime inicial fechado . 2. Eixos de Regência, Direitos e Conseqüências do Perfil Genético (Art. 9º-A da LEP) Eixo de Análise Regramento Legal e Entendimento dos Tribunais (STF e STJ) Garanti…
+- 🧩 **Identificação do perfil genético na execução penal** 🆗 (art. 9-A; 9-A, 8; 9-A, 6) · `esq_1789659571899_zmbna5` · dados/esquemas/esquemas-direito-penal.json
+  > …nado: Classificação e Direitos (arts. 5º a 43 da LEP) · Tipo: Requisitos e prazos · Ref.: art. 9º-A da LEP (incluído pela Lei nº 12.654/12 e alterado pela Lei nº 15.295/25) A coleta de perf…
+  > …contra a integridade física, contra a liberdade sexual ou crime sexual contra vulnerável (art. 9º-A da LEP). Momento da Coleta Submetidos OBRIGATORIAMENTE à identificação do perfil genético…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 1** 🆗 (art. 9-A; 9-A, 8) · `sim_1789667188418_q1` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > …2) firmou entendimento de que a obrigatoriedade de fornecer o perfil genético, conforme o art. 9º-A da LEP, objetiva registrar e identificar o indivíduo, não se relacionando à produção de p…
+  > …violação à vedação à autoincriminação, sendo que a recusa configura falta grave expressa (art. 9º-A, § 8º e art. 50, VIII, LEP).
+
+## Lei 15.280/2025: Crimes sexuais: penas maiores, medidas protetivas e exame criminológico (28)
+
+Alterados: CP art. 217-A; CP art. 218; CP art. 218-A; CP art. 218-B; CP art. 218-C; CP art. 338-A; CPP art. 350-A; CPP art. 350-B; LEP art. 119-A; LEP art. 146-E
+
+- 🧩 **Corrupção de Menores e Satisfação de Lascívia** 🆗 (art. 218; 218-A) · `esq_1786594732551_zook7s` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Estupro, Assédio e Corrupção de Menores · Tipo: Comparativo · Ref.: art. 218 e 218-A do CP; art. 244-B do ECA; REsp nº 2.107.993/BA Critério de Diferenciação Corrupçã…
+  > Subtema: Estupro, Assédio e Corrupção de Menores · Tipo: Comparativo · Ref.: art. 218 e 218-A do CP; art. 244-B do ECA; REsp nº 2.107.993/BA Critério de Diferenciação Corrupção de Men…
+- 🧩 **Descumprimento de Medidas Protetivas de Urgência** 🆗 (art. 338-A) · `esq_1786594715358_fqi3th` · dados/esquemas/esquemas-direito-penal.json
+  > …mes de Particular e contra a Administração da Justiça · Tipo: Requisitos e prazos · Ref.: art. 338-A do CP; Lei nº 15.280/2025; art. 22 da Lei Maria da Penha Regime Jurídico do Novo Crime de…
+  > …ediência Protetiva no CP Parâmetro de Controle Regras de Aplicação e Limites Processuais (Art. 338-A do CP) Conduta Típica Descumprir decisão judicial que defere medidas protetivas de urgênc…
+- 🧩 **Estupro de Vulnerável e Presunção Absoluta** 🆗 (art. 217-A; 217-A, 4-A; 217-A, 5) · `esq_1786594732551_afrl11` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Estupro, Assédio e Corrupção de Menores · Tipo: Requisitos e prazos · Ref.: art. 217-A do CP; Lei nº 15.353/2026; Súmula nº 593 do STJ; HC nº 257.365 AgR/STF Elemento do Tipo R…
+  > …93 do STJ; HC nº 257.365 AgR/STF Elemento do Tipo Regramento Legal e Súmulas de Regência (Art. 217-A do CP) Menor de 14 anos Presunção absoluta de vulnerabilidade, sendo inaplicável a teoria…
+- 🧩 **Exploração Sexual e Favorecimento da Prostituição** 🆗 (art. 218-B) · `esq_1786594732551_cox6zy` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Favorecimento da Prostituição e Ultraje Público · Tipo: Classificação · Ref.: arts. 218-B, 228, 229 e 230 do CP; REsp nº 1.963.590/SP; AREsp nº 2.529.631/RJ Tipo Penal e Artigo El…
+  > …ras de Configuração Características de Consumação e Súmulas Favorecimento de Adolescente (Art. 218-B do CP) Submeter, induzir ou atrair à prostituição alguém menor de 18 anos ou vulnerável,…
+- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** 🆗 (art. 217-A; 218-B) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
+  > …les (caput) e em todas as suas formas qualificadas (§§ 1º, 2º e 3º). Estupro (Arts. 213 e 217-A do CP) Estupro comum e Estupro de vulnerável em todas as suas modalidades simples ou qual…
+  > …ou alteração de produtos destinados a fins terapêuticos ou medicinais. Exploração Sexual (Art. 218-B do CP) Favorecimento de prostituição ou outra forma de exploração sexual de criança, adol…
+- 🧩 **Monitoração eletrônica: hipóteses, deveres e descumprimento** 🆗 (art. 146-E) · `esq_1789666359187_jcrsha` · dados/esquemas/esquemas-direito-penal.json
+  > …mes e Trabalho (arts. 110 a 146 da LEP) · Tipo: Requisitos e prazos · Ref.: arts. 146-B a 146-E da LEP (alterado pelas Leis nº 14.843/24 e 15.280/25) O juiz poderá definir a fiscalizaçã…
+  > …PRD de limitação de frequência; 5) Conceder Livramento Condicional. Obrigatória por Lei (art. 146-E da LEP) MANDATÓRIA a monitoração eletrônica para condenados por crimes contra a mulher po…
+- 🧩 **Registro não Autorizado, Divulgação de Cena e Fraude Sexual** 🆗 (art. 218-C) · `esq_1786594732551_lcbzb5` · dados/esquemas/esquemas-direito-penal.json
+  > …Estupro, Assédio e Corrupção de Menores · Tipo: Classificação · Ref.: arts. 215, 216-B e 218-C do CP; RHC nº 175.947/SP Tipo de Conduta e Artigo Elementares do Delito Regime e Ação Pen…
+  > …no, e multa. Ação penal pública incondicionada (STJ, RHC 175.947/SP). Divulgação de Cena (Art. 218-C do CP) Oferecer, trocar, vender, publicar ou divulgar registro audiovisual de sexo, nudez…
+- 🧩 **Resolução CNMP nº 287/2024** 🆗 (art. 218-B; 218-C) · `esq_1788029912398_v4a57h` · dados/esquemas/esquemas-direito-institucional-magistratura-mp-e-defensoria.json
+  > …al Prática de crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual de crianças e adolescentes. Remessa de Ofício ao MPT Enc…
+  > …crimes tipificados nos arts. 240, 241, 241-A a 241-D e 244-A do ECA, ou nos arts. 218-B e 218-C do CP. Exploração sexual de crianças e adolescentes. Remessa de Ofício ao MPT Encaminhar…
+- ❓ **Crimes contra a Dignidade Sexual · questão 16** 🆗 (art. 218-C) · `sim_1785940914255_q16` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …u científica usufrui de presunção absoluta de licitude, restando afastada a tipicidade do artigo 218-C do Código Penal independentemente de prévia adoção de recursos para anonimização da vítim…
+  > O § 2º do art. 218-C do CP prevê exclusão de ilicitude, mas ela não é absoluta nem incondicionada. O dispositi…
+- ❓ **Crimes contra a Dignidade Sexual · questão 19** 🆗 (art. 217-A) · `sim_1785940914255_q19` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …8 a 12 anos). Além disso, não há equiparação penológica, vez que o estupro de vulnerável (art. 217-A do CP) comina pena in abstrato sensivelmente superior (10 a 18 anos).
+- ❓ **Crimes contra a Dignidade Sexual · questão 21** 🆗 (art. 217-A, 5) · `sim_1785940914255_q21` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …do no Informativo 21 (Edição Extraordinária) do STJ. Muito embora a Súmula 593 do STJ e o art. 217-A, § 5º, do CP consagrem a presunção absoluta de vulnerabilidade, a Corte Superior vem aplicando,…
+- ❓ **Crimes contra a Dignidade Sexual · questão 22** 🆗 (art. 217-A) · `sim_1785940914255_q22` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …ntido de que a contemplação lasciva configura materialmente o "ato libidinoso" inserto no artigo 217-A do Código Penal. É inteiramente prescindível o contato físico direto do agente com a ofen…
+- ❓ **Crimes contra a Dignidade Sexual · questão 23** 🆗 (art. 217-A) · `sim_1785940914255_q23` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …de 14 anos, por mais efêmero ou superficial que seja, amolda-se ao estupro de vulnerável (art. 217-A, CP), afastando a importunação sexual (art. 215-A, CP), visto que esta pressupõe a ausênc…
+- ❓ **Crimes contra a Dignidade Sexual · questão 24** 🆗 (art. 217-A, 1) · `sim_1785940914255_q24` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > O enunciado está de acordo com a Jurisprudência em Teses do STJ (Ed. 151, Tese 09). O artigo 217-A, § 1º, do Código Penal pune quem pratica atos libidinosos com alguém que, por enfermidade, defi…
+- ❓ **Crimes contra a Dignidade Sexual · questão 27** 🆗 (art. 218) · `sim_1785940914255_q27` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …maiores de catorze e menores de dezoito anos, outrora tipificado na redação originária do artigo 218 do Código Penal.
+  > …nsolidados da 5ª Turma do STJ (RHC 80.481/PR). A referida reforma legislativa redefiniu o artigo 218 do CP (Corrupção de Menores), restringindo o âmbito do sujeito passivo unicamente aos "me…
+- ❓ **Crimes contra a Dignidade Sexual · questão 28** 🆗 (art. 218-A) · `sim_1785940914255_q28` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > A assertiva espelha exatamente a redação do artigo 218-A do Código Penal. Para a configuração do delito, além de praticar (ou induzir o menor a pr…
+- ❓ **Crimes contra a Dignidade Sexual · questão 31** 🆗 (art. 217-A) · `sim_1785940914255_q31` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > A formulação legislativa do artigo 217-A do Código Penal consagra típica situação de interpretação analógica (permitida in bonam e…
+- ❓ **Crimes contra a Dignidade Sexual · questão 32** 🆗 (art. 217-A) · `sim_1785940914255_q32` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > O enunciado ofende flagrantemente a Súmula 593 do STJ e o parágrafo 5º do artigo 217-A do CP. O consentimento da ofendida, a existência de namoro anterior ou sua experiência se…
+- ❓ **Crimes contra a Dignidade Sexual · questão 33** 🆗 (art. 217-A) · `sim_1785940914255_q33` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …rado pela genitora não é a corrupção de menores, mas sim o próprio estupro de vulnerável (artigo 217-A do CP) em concurso com o preceito do artigo 13, § 2º, alínea "a", do CP (omissão penalmen…
+- ❓ **Crimes contra a Dignidade Sexual · questão 35** 🆗 (art. 218) · `sim_1785940914255_q35` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > A afirmativa delineia exatamente a atual redação do artigo 218 do CP, conferida pela Lei nº 12.015/09, e a Tese 07 (Jurisprudência em Teses – Ed. 153).…
+  > …a faixa etária entre 14 e 18 anos ensejou abolitio criminis especificamente em relação ao artigo 218 do Código Penal.
+- ❓ **Crimes contra a Dignidade Sexual · questão 36** 🆗 (art. 218-A) · `sim_1785940914255_q36` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …lo de Rogério Greco e Cleber Masson) e o STJ admitem pacificamente a consumação do crime (artigo 218-A do CP) no meio cibernético. A elementar "na presença de" amolda-se contemporaneamente ao…
+- ❓ **Crimes contra a Dignidade Sexual · questão 40** 🆗 (art. 217-A, 1) · `sim_1785940914255_q40` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > O cenário fático amolda-se de forma magistral ao tipo penal equiparado consubstanciado no artigo 217-A, § 1º, do Código Penal. A vulnerabilidade tratada pela norma não se limita às crianças e aos de…
+- ❓ **Crimes contra a Dignidade Sexual · questão 42** 🆗 (art. 218-B, 2, I) · `sim_1785940914255_q42` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …nte a tese da Terceira Seção do STJ (EREsp 1.530.637/SP). A configuração do tipo penal do art. 218-B, § 2°, inciso I, do Código Penal não pressupõe a existência de terceira pessoa (proxeneta ou cafetão), ba…
+- ❓ **Crimes contra a Dignidade Sexual · questão 47** 🆗 (art. 218-B) · `sim_1785940914255_q47` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …emente do rufianismo e do delito de casa de prostituição, a figura do inciso I do § 2º do art. 218-B do CP não exige conduta reiterada (habitualidade). Basta um único contato carnal ou libid…
+- ❓ **Crimes contra a Dignidade Sexual · questão 8** 🆗 (art. 218-C) · `sim_1785940914255_q8` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > A assertiva é correta e reflete com precisão o parágrafo 1º do artigo 218-C do Código Penal. A norma prevê duas circunstâncias alternativas para a majoração (de 1/3…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 38** 🆗 (art. 217-A) · `sim_1788654225381_q38` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …de forma plena e inequívoca o crime de estupro de vulnerável, englobando expressamente o artigo 217-A do Código Penal no caput e nos seus parágrafos 1º, 2º, 3º e 4º. O caput do artigo 1º prec…
+- ❓ **Fato Típico · questão 41** 🆗 (art. 217-A) · `sim_1781884393597_q41` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
+  > …banca. A falsa noção imbuída da idade perfaz engano sobre elementar do tipo normativo do Art. 217-A do CP (erro de tipo essencial). Estando escudado por dolo suprimido e frente à peremptóri…
+- ❓ **Lei de Execução Penal (Lei 7.210/84) · questão 54** 🆗 (art. 119-A) · `sim_1789667188418_q54` · dados/bateriasvf/grupo-ce-litigoestruturallep.json
+  > A regra protetiva foi introduzida pela recente Lei nº 15.280/2025, que acrescentou o art. 119-A à LEP. Tal dispositivo impõe que o condenado por crimes contra a dignidade sexual somente…
+
+## Lei 15.272/2025: Audiência de custódia: critérios para a preventiva (2 + 14 só o artigo)
+
+Alterados: CPP art. 310 (§ 5; § 5, I; § 5, II; § 5, III; § 5, IV; § 5, V; § 5, VI; § 6); CPP art. 310-A; CPP art. 312 (§ 3; § 3, I; § 3, II; § 3, III; § 3, IV; § 4)
+
+- 🧩 **Coleta compulsória de perfil genético (Lei 15.272/25 e 15.280/25)** 🆗 (art. 310-A) · `esq_1786533315176_0c0tr1` · dados/esquemas/esquemas-direito-processual-penal.json
+  > …as (Flagrante, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: arts. 300-A e 310-A do CPP (Leis 15.272/25 e 15.280/25) Critério / Eixo Coleta em Flagrante (art. 310-A / Lei…
+- 🧩 **Standard probatório para conversão de flagrante (Lei 15.272/25)** 🆗 (art. 310, 5,6; 312, 3; 310, 5) · `esq_1786533315176_lozs96` · dados/esquemas/esquemas-direito-processual-penal.json
+  > …sões Provisórias (Flagrante, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedim…
+  > …nte, Preventiva e Temporária) · Tipo: Requisitos e prazos · Ref.: art. 310, §§ 5º e 6º, e art. 312, § 3º, do CPP Circunstância Autoritativa (art. 310, &sect; 5º) Regra Procedimental de Conversão…
+
+<details><summary>Citam só o artigo (14)</summary>
+
+- 🧩 Antes e depois da Lei 15.358/26 - Art. 3º-B, § 1º · `esq_1786498860358_347qjb`
+- 🧩 Audiência de Custódia e a Apresentação em 24 Horas · `esq_1786595030588_e8ylxv`
+- 🧩 Citação com hora certa e por edital (Art. 362 e 366 do CPP) · `esq_1786535027506_u8vtw3`
+- 🧩 Jurisprudência e Súmulas sobre Prisão Preventiva · `esq_1786533315176_1an5e5`
+- 🧩 Pacto Internacional sobre Direitos Civis e Políticos (PIDCP/1966): Direitos Protegidos, Cláusulas de Derrogação e Exceções · `esq_1791918824304_094i2d`
+- 🧩 Prisão em flagrante e Audiência de Custódia (Lei 13.964/19 e 15.358/26) · `esq_1786533315176_nrxr9z`
+- 🧩 Prisão preventiva - Decretação, Pressupostos e Admissibilidade · `esq_1786533315176_5u2lpk`
+- 🧩 Prisão Preventiva: Reavaliação Quadrimestral e Vedação à Decretação de Ofício · `esq_1791815948180_vwfbd3`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 2 · `sim_1788654225381_q2`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 51 · `sim_1788654225381_q51`
+- ❓ Lei de Drogas · questão 98 · `sim_1786392721918_q98`
+- ❓ Prisão · questão 14 · `sim_1781783375084_q14`
+- ❓ Prisão · questão 40 · `sim_1781783375084_q40`
+- ❓ Prisão · questão 42 · `sim_1781783375084_q42`
+
+</details>
+
+## Lei 15.266/2025: Licitações: credenciamento por comércio eletrônico (Sicx) (2 + 1 só o artigo)
+
+Alterados: L14133 art. 79 (IV; § 1; § 1, VII; § 2); L14133 art. 87; L14133 art. 174 (§ 3, VII; § 3-A)
+
+- ❓ **Licitações · questão 63** 🆗 (art. 79, IV) · `sim_1784401276088_q63` · dados/bateriasvf/grupo-ce-licitacoes.json
+  > Consoante a redação dada pela recentíssima Lei nº 15.266/2025, o art. 79, inciso IV, da Lei nº 14.133/2021 autorizou o uso do credenciamento na hipótese de comércio eletrôni…
+- ❓ **Licitações · questão 67** 🆗 (art. 87) · `sim_1784401276088_q67` · dados/bateriasvf/grupo-ce-licitacoes.json
+  > Conforme a redação atualizada conferida pela Lei nº 15.266/2025 ao caput do art. 87 da Lei nº 14.133/2021, os órgãos e entidades devem utilizar o sistema de registro cadastr…
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Procedimentos Auxiliares: Credenciamento e Pré-Qualificação · `esq_1786674555411_3jpgg6`
+
+</details>
+
+## Lei 15.245/2025: Organizações criminosas: crimes contra agentes, testemunhas e jurados (3 + 4 só o artigo)
+
+Alterados: L12850 art. 21-A; L12850 art. 21-B; L12850 art. 2 (§ 1); CP art. 288 (§ 1; § 2); L12694 art. 9
+
+- ❓ **Organizações Criminosas (Lei 12.850/2013) · questão 3** 🆗 (art. 2, 1) · `sim_1788535586616_q3` · dados/bateriasvf/grupo-ce-respcivilestadoorcrimconcessoeslgpdlavagem.json
+  > O Superior Tribunal de Justiça firmou entendimento de que o delito do art. 2º, § 1º, da Lei 12.850/2013 é crime material, tanto no núcleo impedir quanto no núcleo embaraçar.…
+- ❓ **Organizações Criminosas (Lei 12.850/2013) · questão 5** 🆗 (art. 21-A) · `sim_1788535586616_q5` · dados/bateriasvf/grupo-ce-respcivilestadoorcrimconcessoeslgpdlavagem.json
+  > …ente ao novo tipo penal de obstrução de ações contra o crime organizado, introduzido pelo art. 21-A da Lei 12.850/2013 (incluído pela Lei 15.245/2025). Conforme os parágrafos 3º e 4º do ref…
+- ❓ **Organizações Criminosas (Lei 12.850/2013) · questão 7** 🆗 (art. 2, 1) · `sim_1788535586616_q7` · dados/bateriasvf/grupo-ce-respcivilestadoorcrimconcessoeslgpdlavagem.json
+  > O STJ consolidou entendimento de que a proteção contida no art. 2º, § 1º, da Lei 12.850/2013 engloba tanto o inquérito policial quanto a ação penal. Considerou-se…
+
+<details><summary>Citam só o artigo (4)</summary>
+
+- 🧩 Associação Criminosa, Milícias e Outras Formas de Bando · `esq_1786594672964_jxr2oz`
+- 🧩 Circunstâncias Incomunicáveis e Casos de Impunibilidade · `esq_1786594846368_hyu27n`
+- 🧩 Progressão especial para mulheres gestantes e mães · `esq_1789659571899_n7zm8y`
+- ❓ Lei de Execução Penal (Lei 7.210/84) · questão 43 · `sim_1789667188418_q43`
+
+</details>
+
+## Lei 15.240/2025: ECA: abandono afetivo como ilícito (6 + 1 só o artigo)
+
+Alterados: ECA art. 4 (§ 1; § 2; § 3; § 3, I; § 3, II; § 3, III); ECA art. 5 (p.ú.); ECA art. 22
+
+- 🧩 **Assistência Afetiva e Abandono Afetivo como Ilícito Civil (Lei 15.240/2025)** 🆗 (art. 4, 2,3; 4, 2; 4, 3, I) · `esq_1787449510069_eke86g` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Teoria Geral e Direitos Fundamentais · Tipo: Requisitos e prazos · Ref.: art. 4º, §§ 2º e 3º, e art. 5º, parágrafo único do ECA (Lei nº 15.240/2025) As inovações legislativas de 2025…
+  > …se Normativa (Lei nº 15.240/2025) Conteúdo e Alcance Técnico Dever de Assistência Afetiva Art. 4º, § 2º do ECA Dever dos pais de prestar assistência afetiva por meio de convívio ou de visitação…
+- 🧩 **Garantia de Prioridade Absoluta e suas Quatro Vertentes** 🆗 (art. 4, pu) · `esq_1787449510069_szyfdq` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > Subtema: Teoria Geral e Direitos Fundamentais · Tipo: Rol · Ref.: art. 4º, parágrafo único do ECA; art. 227, caput da CF/88 A prioridade absoluta assegurada à população infanto-juv…
+- 🧩 **Resolução CNMP nº 293/2024** 🆗 (art. 5, 4; 4, 2; 4, 4) · `esq_1788029525963_b4u51m` · dados/esquemas/esquemas-direito-institucional-magistratura-mp-e-defensoria.json
+  > …embro do MP é indispensável e insubstituível, sendo as equipes técnicas meras assessoras (Art. 5º, §4º). 3. Instauração de Procedimento de Fiscalização e Relação Procedimental Subtema: Convivê…
+  > …doria-Geral local, a quem cabe enviar à CIJE do CNMP nos prazos de 31/maio e 10/dezembro (Art. 4º, §2º), prorrogando-se os prazos vencidos em fins de semana para o primeiro dia útil (Art. 4º,…
+- ❓ **Convivência Familiar e Comunitária · questão 16** 🆗 (art. 22, pu) · `sim_1787099561712_q16` · dados/bateriasvf/grupo-ce-convivenciafamiliarecomunitaria.json
+  > Nos termos da Lei nº 8.069/90 (ECA, art. 22, parágrafo único), a mãe, o pai ou os responsáveis devem resguardar "o direito de transmissão familiar de…
+- ❓ **Convivência Familiar e Comunitária · questão 20** 🆗 (art. 22) · `sim_1787099561712_q20` · dados/bateriasvf/grupo-ce-convivenciafamiliarecomunitaria.json
+  > …ditório" (Art. 24, ECA) nos casos civis ou por descumprimento injustificado de deveres do art. 22. Ainda que fundamentada pelo Conselho Tutelar, é impossível suprimir a etapa garantista d…
+- ❓ **Entidades de Atendimento, Medidas dos Pais e Infrações Administrativas · questão 39** 🆗 (art. 22) · `sim_1787164985467_q39` · dados/bateriasvf/grupo-ce-ecasinaselicitacoes.json
+  > …gramento aplicável à perda das prerrogativas familiares por falha nos deveres protetivos (art. 22 do ECA). O art. 129 do ECA elenca nos incisos VIII (perda da guarda), IX (destituição da…
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Princípios Constitucionais do Direito de Família · `esq_1786642759573_lx7pyn`
+
+</details>
+
+## Lei 15.230/2025: Eleições: data de aferição da idade mínima (2 + 1 só o artigo)
+
+Alterados: L9504 art. 11 (§ 2; § 2, I; § 2, II; § 2, III); L9504 art. 38 (§ 5)
+
+- 🧩 **Idade Mínima como Condição de Elegibilidade** 🆗 (art. 11, 2) · `esq_1786722071041_7ujc2g` · dados/esquemas/esquemas-direito-eleitoral.json
+  > …idade Passiva · Tipo: Requisitos e prazos · Ref.: p. 143; art. 14, § 3º, VI, da CF/88 c/c art. 11, § 2º da Lei nº 9.504/97 (redação da Lei nº 15.230/25) A aferição da idade mínima constituciona…
+- ❓ **Lei das Eleições (Lei 9.504/1997) · questão 14** 🆗 (art. 11, 2) · `sim_1789299797199_q14` · dados/bateriasvf/grupo-ce-codigoeleitoralleidaseleicoes.json
+  > De acordo com o Art. 11, § 2º, da Lei nº 9.504/1997, com as alterações promovidas pela recém-editada Lei nº 15.230/2025…
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- ❓ Lei das Eleições (Lei 9.504/1997) · questão 65 · `sim_1789299797199_q65`
+
+</details>
+
+## Lei Complementar 219/2025: Inelegibilidades: dolo exigido, teto de 12 anos e aferição no registro (14 + 5 só o artigo)
+
+Alterados: LC64 art. 1 (I; II; IV; § 6; § 7; § 8; § 9; § 4-B; § 4-C; § 4-D; § 4-E; § 4-F); LC64 art. 26-D; L9504 art. 11 (§ 10; § 16)
+
+- 🧩 **A novel Inelegibilidade do art. 1º, I, "l" (Improbidade Administrativa)** 🆗 (art. 1, I, l) · `esq_1786724792928_tdu50a` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "l" e § 4º-B, da LC nº 64/90; com alterações da LC nº 219/25 A condenação por improbidade adm…
+- 🧩 **Inelegibilidade por Rejeição de Contas: Requisitos do art. 1º, I, "g"** 🆗 (art. 1, I, g) · `esq_1786724792928_xo84a3` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Requisitos e prazos · Ref.: art. 1º, I, "g", da LC nº 64/90; Súmulas nº 1 e 41 do TSE A inelegibilidade decorrente de contas públicas…
+- 🧩 **Inelegibilidade por Renúncia ao Mandato e Outros Atos** 🆗 (art. 1, I, k) · `esq_1786724792928_lwsxro` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "k" e "q", da LC nº 64/90; com alterações da LC nº 219/25 A renúncia ao mandato sob suspeita…
+- 🧩 **Inelegibilidades por Condenações Criminais e Óbices** 🆗 (art. 1, I, e) · `esq_1786724792928_2ls5fw` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "e" e § 4º, da LC nº 64/90; com alterações da LC nº 219/25 A condenação criminal por órgãos j…
+- 🧩 **Inelegibilidades por Perda de Mandato Legislativo e Executivo** 🆗 (art. 1, I, b) · `esq_1786724792928_nf0iyl` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, I, "b" e "c", da LC nº 64/90; com alterações da LC nº 219/25 A perda de mandato eletivo acarreta…
+- 🧩 **Julgamento de Contas dos Prefeitos: Governo vs. Gestão** 🆗 (art. 1, I) · `esq_1786627617066_ff3mwk` · dados/esquemas/esquemas-direito-constitucional.json
+  > …pela Câmara Municipal (Temas 157 e 835/STF). Para fins de inelegibilidade de Ficha Limpa (art. 1º, I, 'g' LC 64/90), as contas de gestão também dependem de julgamento da Câmara. ⚠ O Tribunal…
+- 🧩 **Julgamento de Contas e Órgãos Competentes** 🆗 (art. 1, I, g) · `esq_1786724792928_2nnj72` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Classificação · Ref.: art. 1º, I, "g" e § 4º-A, da LC nº 64/90; STF, Tema nº 1.304 A definição do órgão competente para julgame…
+- 🧩 **Regras de Desincompatibilização Municipais para Prefeito e Vereador** 🆗 (art. 1, IV) · `esq_1786724792928_yohaby` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, IV, da LC nº 64/90; com alterações da LC nº 219/25 As candidaturas no âmbito municipal subme…
+- 🧩 **Regras de Desincompatibilização para Cargos Nacionais e Estaduais** 🆗 (art. 1, II) · `esq_1786724792928_cyvi8m` · dados/esquemas/esquemas-direito-eleitoral.json
+  > Subtema: Inelegibilidades · Tipo: Alteração legislativa · Ref.: art. 1º, II e § 1º, da LC nº 64/90; com alterações da LC nº 219/25 Os detentores de cargos diretivos…
+- ❓ **Ações e Recursos Eleitorais · questão 42** 🆗 (art. 1, I, j) · `sim_1788259440496_q42` · dados/bateriasvf/grupo-ce-acoeseleitoraismariadapenhajecrims.json
+  > Conforme assentado pelo Supremo Tribunal Federal (ADI nº 3.592) e consolidado no Art. 1º, I, "j", da LC nº 64/90, a representação do Art. 41-A não implica a declaração direta de inelegib…
+- ❓ **Elegibilidade e Inelegibilidade · questão 46** 🆗 (art. 1, I) · `sim_1781884144689_q46` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
+  > O legislador traçou na LC nº 64/90, art. 1º, inciso I, alínea 'l' um feixe cumulativo extremamente gravoso de condições. Para afastar a capacid…
+- ❓ **Elegibilidade e Inelegibilidade · questão 51** 🆗 (art. 1, I, k) · `sim_1781884144689_q51` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
+  > A Lei Complementar nº 64/90 (Lei das Inelegibilidades), em seu art. 1º, I, "k", encerra uma blindagem contra a interrupção prematura do mandato visando fugir de puniçõe…
+- ❓ **Elegibilidade e Inelegibilidade · questão 54** 🆗 (art. 26-D) · `sim_1781884144689_q54` · dados/bateriasvf/grupo-ce-fatotipicoeelegibilidade.json
+  > …ndamental temporal, contudo, há espaço temporal dilatado em favor do candidato. O novel **art. 26-D da LC 64/90** positiva com clareza cristalina que eventuais fatos excludentes (ex: o trân…
+- ❓ **Lei das Eleições (Lei 9.504/1997) · questão 28** 🆗 (art. 11, 16) · `sim_1789299797199_q28` · dados/bateriasvf/grupo-ce-codigoeleitoralleidaseleicoes.json
+  > Trata-se da positivação do Art. 11, § 16, da Lei nº 9.504/1997 (incluído pela novel LC 219/2025). O dispositivo faculta ao pré-can…
+
+<details><summary>Citam só o artigo (5)</summary>
+
+- ❓ Elegibilidade e Inelegibilidade · questão 45 · `sim_1781884144689_q45`
+- ❓ Elegibilidade e Inelegibilidade · questão 50 · `sim_1781884144689_q50`
+- ❓ Elegibilidade e Inelegibilidade · questão 73 · `sim_1781884144689_q73`
+- ❓ Elegibilidade e Inelegibilidade · questão 74 · `sim_1781884144689_q74`
+- ❓ Elegibilidade e Inelegibilidade · questão 79 · `sim_1781884144689_q79`
+
+</details>
+
+## Lei Complementar 224/2025: LRF: regras para benefícios tributários (2)
+
+Alterados: LC101 art. 14-A; LC101 art. 14; L8137 art. 12 (IV)
+
+- ❓ **LRF · questão 21** 🆗 (art. 14, 3, I) · `sim_1781886753953_q21` · dados/bateriasvf/grupo-ce-lrf.json
+  > A banca exige o domínio das exceções. O **Art. 14, § 3º, inciso I, da LRF** excepciona a regra de compensação de renúncia *apenas* para as alterações de al…
+- ❓ **LRF · questão 22** 🆗 (art. 14-A, II) · `sim_1781886753953_q22` · dados/bateriasvf/grupo-ce-lrf.json
+  > A afirmativa peca pela absolutividade. O **Art. 14-A, inciso II, da LRF** (inserido pela LC nº 224/2025) fixou o prazo de até 5 anos como regra. Contudo,…
+
+## Lei Complementar 214/2025: Reforma tributária (IBS/CBS): reflexos no CTN, ISS e Simples (3)
+
+Alterados: LC116 art. 8-B; CTN art. 9 (IV); LC123 art. 2 (I; III; § 8; § 4-A; § 8-A)
+
+- 🧩 **Governança e Comitês das Microempresas (CGSN, CGSIM e Fórum)** 🆗 (art. 2; 2, I; 2, III; 2, 4-A,4-B) · `esq_1786713768041_mbgsju` · dados/esquemas/esquemas-direito-empresarial.json
+  > …s Principais CGSN (Comitê Gestor do Simples Nacional) Vinculado ao Ministério da Fazenda (art. 2º, I, da LC 123). Composto de 10 membros: 4 da União, 2 dos Estados/DF, 2 dos Municípios, 1 da…
+  > …6º, da LC 123). CGSIM (Comitê para Integração CGSIM) Vinculado ao Ministério da Fazenda (art. 2º, III, da LC 123). Composto por representantes de União, Estados, Municípios, DF e órgãos de ap…
+- 🧩 **Imposto sobre Serviços de Qualquer Natureza (ISSQN)** 🆗 (art. 8-B) · `esq_1786647730343_d0h68i` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
+  > …ubtema: Impostos em Espécie · Tipo: Classificação · Ref.: arts. 1º, 3º, 5º, 7º, 8º, 8º-A, 8º-B da LC 116/03; LC 214/25 O ISS municipal incide sobre serviços catalogados em rol legal de…
+  > …033 (art. 543, IV da LC 214/25). Redução linear de alíquotas e benefícios de 2029 a 2032 (art. 8º-B da LC 116): 10% (2029), 20% (2030), 30% (2031) e 40% (2032) . ⚠ A alíquota mínima do ISSQ…
+- 🧩 **Imunidades Tributárias: Recíproca, Religiosa, de Imprensa e Social** 🆗 (art. 9, IV) · `esq_1786647133235_06gckj` · dados/esquemas/esquemas-direito-constitucional.json
+  > Subtema: Limitações ao Poder de Tributar e Imunidades · Tipo: Classificação · Ref.: art. 9º, IV do CTN; art. 150, VI e §§ da CF (LC 214/25) As imunidades consistem em regras constitucio…
+
+## Lei 15.190/2025: Licenciamento ambiental: reflexos nos crimes ambientais (1 + 2 só o artigo)
+
+Alterados: L9605 art. 60; L9605 art. 67; L9985 art. 36 (§ 3)
+
+- ❓ **Unidades de Conservação (Lei 9.985/00) · questão 35** 🆗 (art. 36; 36, 3) · `sim_1789850530256_q35` · dados/bateriasvf/grupo-ce-uccrimesambientaispnrspcrh.json
+  > O caso prático exige o domínio da ressalva prevista no art. 36, §3º, da Lei nº 9.985/2000. O ordenamento assevera que, quando o empreendimento afetar unidade…
+
+<details><summary>Citam só o artigo (2)</summary>
+
+- 🧩 Compensação Ambiental do art. 36 do SNUC e Tese do STF · `esq_1786716866091_wnkpoy`
+- ❓ Unidades de Conservação (Lei 9.985/00) · questão 34 · `sim_1789850530256_q34`
+
+</details>
+
+## Lei 15.181/2025: Fios e cabos: roubo majorado e receptação qualificada (2 + 9 só o artigo)
+
+Alterados: CP art. 157 (§ 2, VIII); CP art. 180 (§ 7)
+
+- 🧩 **Receptação Qualificada e de Semoventes** 🆗 (art. 180; 180, 7) · `esq_1786594751898_josrai` · dados/esquemas/esquemas-direito-penal.json
+  > …15.181/25, § 7º). ⚠ A receptação de fios e cabos de transmissão de energia ou telefonia (art. 180, § 7º, do CP) dobra obrigatoriamente a pena básica, visando proteger a segurança dos serviços d…
+- 🧩 **Roubo com Emprego de Arma e Evolução Legislativa** 🆗 (art. 157, 2,2-A,2-B) · `esq_1786594751898_k1c8zh` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Roubo · Tipo: Alteração legislativa · Ref.: art. 157, §§ 2º, 2º-A e 2º-B, do CP (Lei nº 13.654/18 e Lei nº 13.964/19) Regime de Emprego de Armas e Exasperações de…
+
+<details><summary>Citam só o artigo (9)</summary>
+
+- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
+- 🧩 Confronto entre Roubo e Extorsão · `esq_1786594751898_zg53za`
+- 🧩 Confronto: Receptação vs. Lavagem de Dinheiro · `esq_1786594751898_47czaa`
+- 🧩 Consumação e Espécies de Roubo (Próprio e Impróprio) · `esq_1786594751898_itosvi`
+- 🧩 Matriz dos Crimes Hediondos em Espécie (Código Penal) · `esq_1786571782166_v927lp`
+- 🧩 Roubo com Emprego de Arma · `esq_1786595030588_huozjl`
+- ❓ Concurso de Crimes e de Pessoas (Juris) · questão 6 · `sim_1784685533034_q6`
+- ❓ Crimes contra o Patrimônio · questão 48 · `sim_1783734802398_q48`
+- ❓ Extinção da Punibilidade · questão 39 · `sim_1784907766722_q39`
+
+</details>
+
+## Lei 15.163/2025: Abandono e maus-tratos: reclusão e fim da Lei 9.099 para idosos (12 + 1 só o artigo)
+
+Alterados: CP art. 133; CP art. 136; L10741 art. 94; L10741 art. 99; L13146 art. 90; ECA art. 230 (§ 1; § 2)
+
+- 🧩 **Abandono de Incapaz e Maus-Tratos (Lei nº 15.163/25)** 🆗 (art. 133; 136) · `esq_1786594778866_yvrgbb` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 133 e art. 136 do CP Penas Básicas e Qualificadas do Abandono e Maus-Tratos no CP Tipo Penal…
+  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 133 e art. 136 do CP Penas Básicas e Qualificadas do Abandono e Maus-Tratos no CP Tipo Penal / Gravidade…
+- 🧩 **Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras** 🆗 (art. 136) · `esq_1786594883450_vqcbxz` · dados/esquemas/esquemas-direito-penal.json
+  > …orativa do magistrado (tipo aberto) ou normativa por outra regra (norma penal em branco). Art. 136 (Maus-tratos - exige juízo valorativo) ou crimes ambientais da Lei 9.605/98. ⚠ As normas…
+- 🧩 **Crime de Apreensão Ilegal e Descumprimento de Formalidades** 🆗 (art. 230; 230, 1; 230, 2) · `esq_1787449674336_kh88pt` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > …dem escrita judicial . Pena: detenção de 6 meses a 2 anos. Descumprimento de Formalidades Art. 230, § 1º, do ECA Incide na mesma pena quem procede à apreensão legítima, mas com inobservância das…
+  > …as com inobservância das formalidades legais (Lei nº 15.163/25). Exclusão da Lei 9.099/95 Art. 230, § 2º, do ECA Aos crimes previstos neste artigo não se aplica a suspensão condicional ou benefí…
+- 🧩 **Crimes contra a Pessoa com Deficiência** 🆗 (art. 90) · `esq_1786729430754_0rnpgb` · dados/esquemas/esquemas-direito-civil.json
+  > Subtema: Crimes em Espécie · Tipo: Alteração legislativa · Ref.: art. 88, 89 e 90 da Lei nº 13.146/2015; Lei nº 15.163/2025 O Estatuto tipifica condutas penais voltadas a…
+  > …pessoa com deficiência em hospitais, asilos ou ILPIs, ou não prover necessidades básicas (art. 90 da Lei 13.146). Nova dosimetria e agravantes de 2025 (Lei 15.163) : escala de penas e aum…
+- 🧩 **Crimes em Espécie contra a Pessoa Idosa** 🆗 (art. 99) · `esq_1786729430754_6pqwky` · dados/esquemas/esquemas-direito-civil.json
+  > Subtema: Crimes em Espécie · Tipo: Classificação · Ref.: art. 99, 102, 104 e 106 da Lei nº 10.741/2003 O Estatuto tipifica de forma autônoma delitos penai…
+  > …o. Tipo Penal do Estatuto Conduta Criminalizada Sanção Penal e Agravantes Expor a Perigo (Art. 99 da Lei 10.741) Expor a perigo a integridade física ou psíquica, sujeitando a condições de…
+- 🧩 **Medidas assecuratórias** 🆗 (art. 136) · `esq_1786502113364_f8tz2f` · dados/esquemas/esquemas-direito-processual-penal.json
+  > …CP Critério Comparativo SEQUESTRO (arts. 125–133) HIPOTECA LEGAL (arts. 134–135) ARRESTO (arts. 136–137) Bens Atingidos Móveis ou imóveis especificamente determinados . Apenas bens imóveis…
+- 🧩 **Não Aplicação da Lei 9.099/95 ao Estatuto do Idoso (Antes e Depois da Lei 15.163/25 — Art. 94)** 🆗 (art. 94) · `esq_1786572834465_prdxwt` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Rito Processual da Pessoa Idosa · Tipo: Alteração legislativa · Ref.: art. 94 do Estatuto da Pessoa Idosa (Lei nº 10.741/03); Lei nº 15.163/25 Afastamento Absoluto do…
+  > ….163/25 Aos crimes com pena máxima de até 4 anos aplicava-se o procedimento dos Juizados (art. 94 da Lei 10.741 anterior). O STF (ADI 3.096) chancelou a aplicação dos benefícios da Lei 9.…
+- ❓ **Crimes contra a Pessoa · questão 63** 🆗 (art. 133) · `sim_1783734731369_q63` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O abandono de incapaz (art. 133 do CP) não é crime de perigo abstrato. Para sua tipificação, exige-se a configuração de u…
+- ❓ **Crimes contra a Pessoa · questão 67** 🆗 (art. 136) · `sim_1783734731369_q67` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O art. 136 do CP tipifica um **crime próprio** e de forma vinculada. Só pode ser autor aquele que de…
+- ❓ **Estatuto da Pessoa com Deficiência · questão 69** 🆗 (art. 90) · `sim_1788899195910_q69` · dados/bateriasvf/grupo-ce-deficientejec.json
+  > A afirmativa colide frontalmente com a gravidade conferida pelo legislador penal. O **artigo 90 da Lei nº 13.146/2015** (com redação dada pela Lei nº 15.163/2025) tipifica o abandono de…
+- ❓ **Estatuto da Pessoa Idosa · questão 41** 🆗 (art. 94) · `sim_1788261849177_q41` · dados/bateriasvf/grupo-ce-desarmamentoidosodeficiente.json
+  > Com a superveniência da Lei nº 15.163/2025, inseriu-se o parágrafo único ao artigo 94 do Estatuto da Pessoa Idosa, que proíbe in totum a aplicação da Lei nº 9.099/1995 aos del…
+- ❓ **Estatuto da Pessoa Idosa · questão 47** 🆗 (art. 99) · `sim_1788261849177_q47` · dados/bateriasvf/grupo-ce-desarmamentoidosodeficiente.json
+  > A estrutura do artigo 99, parágrafos 1º e 2º, do Estatuto da Pessoa Idosa elenca as formas qualificadas pelo resul…
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Crimes de Apreensão e Custódia Ilegal de Criança e Adolescente (Arts. 230, 231, 234 e 235 do ECA) · `esq_1786572834465_khci23`
+
+</details>
+
+## Lei 15.160/2025: Idade: sem atenuante nem prescrição pela metade em violência sexual contra a mulher (8)
+
+Alterados: CP art. 65 (I); CP art. 115
+
+- 🧩 **Agravantes Genéricas e a Reincidência para Fins Penais** 🆗 (art. 65, I) · `esq_1786594816717_mfblzs` · dados/esquemas/esquemas-direito-penal.json
+  > …ulher , afasta-se obrigatoriamente qualquer redução de pena por menoridade ou senilidade (art. 65, I, do CP). ⚠ A prática de contravenção penal anterior seguida do cometimento de crime poste…
+- 🧩 **Prescrição da Pretensão Socioeducativa e Regras da Lei nº 12.594/2012** 🆗 (art. 115) · `esq_1791816207942_g0os3g` · dados/esquemas/esquemas-direito-da-crianca-e-do-adolescente.json
+  > …escricional reduz-se obrigatoriamente pela metade para todos os adolescentes. Aplica-se o art. 115 do CP (agente menor de 21 anos na data do fato/sentença). Prazo Abstrato/Concreto Prescri…
+- 🧩 **Redução dos Prazos Prescricionais (Art. 115) e Acórdãos Confirmatórios** 🆗 (art. 115) · `esq_1786594795420_gmoz6e` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Prescrição · Tipo: Jurisprudência esquematizada · Ref.: art. 115 do CP; Lei nº 15.160/25; STJ RHC nº 219.766/SP; STJ EDcl no AgRg no REsp nº 1.877.388/CE;…
+  > …olver violência sexual contra a mulher , afasta-se obrigatoriamente a redução de prazo do art. 115 do CP. Integração por Embargos STJ : Aplica-se a redução se o réu completa 70 anos entre…
+- 🧩 **Tutela Penal da Infância e Regras de Prescrição do ECA (Arts. 225 e 226)** 🆗 (art. 115) · `esq_1786572834465_qjvg5r` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Tutela Penal da Infância · Tipo: Classificação · Ref.: arts. 225 e 226 do ECA; art. 115 do CP Regras Gerais de Aplicação Penal e Prescrição no Estatuto da Infância Regra / Insti…
+  > …não conflitem com as regras protetivas especiais do ECA. Redução do Prazo Prescricional (Art. 115 do CP) São reduzidos de metade os prazos de prescrição penal quando o criminoso era, ao t…
+- ❓ **Extinção da Punibilidade · questão 12** 🆗 (art. 115) · `sim_1784907766722_q12` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
+  > Em conformidade com a redação conferida pela Lei nº 15.160/2025 ao artigo 115 do Código Penal, os prazos são reduzidos de metade nas hipóteses de menoridade relativa o…
+- ❓ **Extinção da Punibilidade · questão 19** 🆗 (art. 115) · `sim_1784907766722_q19` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
+  > …. 109, V, CP). Como Marcos tinha 19 anos ao tempo do crime (menor de 21), a incidência do Art. 115 do CP reduz o prazo pela **metade**, fixando-o em 2 anos. Entre o recebimento da denúncia…
+- ❓ **Extinção da Punibilidade · questão 20** 🆗 (art. 115) · `sim_1784907766722_q20` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
+  > De acordo com a jurisprudência pacificada do STJ e do STF, para incidir o art. 115 do CP, o condenado deve possuir mais de 70 anos no momento da **primeira decisão condenat…
+- ❓ **Extinção da Punibilidade · questão 38** 🆗 (art. 115) · `sim_1784907766722_q38` · dados/bateriasvf/grupo-ce-litisconsorcioextincaoremedios.json
+  > …zo prescricional de 8 anos. Tratando-se de agente **menor de 21 anos ao tempo do crime** (art. 115, CP), o prazo é **reduzido pela metade**, alcançando a marca fatal de **4 anos**.
+
+## Lei 15.159/2025: Crimes em instituições de ensino (24 + 33 só o artigo)
+
+Alterados: CP art. 121 (§ 2, X; § 2-C; § 2-C, I; § 2-C, II); CP art. 129 (§ 12; § 12, I; § 12, II); CP art. 61 (II); L8072 art. 1 (I; I-A)
+
+- 🧩 **Aumento de Pena nas Lesões Dolosas e Escolares (Lei nº 15.159/25)** 🆗 (art. 129, 12, I,II; 129, 12) · `esq_1786594778866_5l5qix` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 129, § 12, incisos I e II, do CP Regime de Exasperações do Tipo de Lesão Corporal Dolosa Patamar de Aumento Requisi…
+  > …e Lesão Corporal Dolosa Patamar de Aumento Requisitos Judiciais e Condições de Aplicação (Art. 129, § 12, do CP) Aumento de 1/3 a 2/3 (Inciso I) &#8627; Contra autoridade/agente de segurança púb…
+- 🧩 **Crimes Hediondos por Extensão (Legislação Extravagante e CPM)** 🆗 (art. 1, pu) · `esq_1786571782166_prlnx6` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes Hediondos · Tipo: Rol · Ref.: art. 1º, parágrafo único, da Lei nº 8.072/90 Hipóteses Hediondas de Extensão na Legislação Especial e no Código Pe…
+- 🧩 **Delito de Abandono Material: Penal e Civil** 🆗 (art. 61, II) · `esq_1786594732551_psmn66` · dados/esquemas/esquemas-direito-penal.json
+  > …REsp 1.087.561/RS). Agravamento Genérico Aplica-se a agravante de violência de gênero do art. 61, II, 'f' do CP se praticada em contexto doméstico (STJ, REsp 2.192.013/MS). Indenização cível…
+- 🧩 **Dosimetria, Majorantes e Concurso de Crimes** 🆗 (art. 61, II) · `esq_1786594732551_67khbo` · dados/esquemas/esquemas-direito-penal.json
+  > …agravantes e majorantes . Não configura bis in idem a incidência conjunta da agravante do art. 61, II, 'f' com a majorante do art. 226, II, do CP, exceto em idêntico pretexto de autoridade. ⚠…
+  > …êntico pretexto de autoridade. ⚠ O concurso da agravante genérica de violência de gênero (art. 61, II, 'f') e a majorante de parentesco (art. 226, II, do CP) não gera bis in idem, salvo se fu…
+- 🧩 **Embriaguez e seus Reflexos na Culpabilidade** 🆗 (art. 61, II, l) · `esq_1786594846368_0log5v` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Culpabilidade · Tipo: Classificação · Ref.: art. 28, II, §§ 1º e 2º, e art. 61, II, "l", do CP Reflexos e Dosimetria da Embriaguez na Culpabilidade Modalidade de Embriaguez Cons…
+  > …emi-imputabilidade). Preordenada (Beber para cometer o crime) Não exclui e agrava a pena (art. 61, II, "l", do CP). O dolo se projeta na fase de sobriedade, sendo punido com maior rigor como circu…
+- 🧩 **Homicídio e Dolo Eventual nos Tribunais** 🆗 (art. 121, 2) · `esq_1786594778866_iosaoj` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Comparativo · Ref.: art. 18, I, do CP; art. 121, § 2º, do CP; precedentes do STF e STJ Compatibilidade do Dolo Eventual nos Delitos contra a Vi…
+- 🧩 **Homicídio Qualificado Geral** 🆗 (art. 121, 2, I,II,III,IV,V,VII,VIII,IX,X; 121, 2) · `esq_1786594778866_kyh4bf` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Classificação · Ref.: art. 121, § 2º, I, II, III, IV, V, VII, VIII, IX, X, do CP Natureza e Divisão Temática das Qualificadoras de Homicídio Natureza das Qualifica…
+  > …Temática das Qualificadoras de Homicídio Natureza das Qualificadoras Eixo de Incidência (Art. 121, § 2º, do CP) Espécies de Qualificadoras e Exemplos no CP Subjetivas Ligadas diretamente aos mo…
+- 🧩 **Lesão Corporal de Gênero contra a Mulher (Lei nº 14.994/24)** 🆗 (art. 61, II, f) · `esq_1786594778866_qkr7co` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Lesões Corporais · Tipo: Alteração legislativa · Ref.: art. 129, § 13, do CP; art. 61, II, "f", do CP; precedentes do STJ Regime Sancionatório e de Concurso de Normas da Violência Físi…
+  > …Proibição de cumulação com agravante genérica : a aplicação concomitante da agravante do art. 61, II, "f", do CP (violência doméstica) com a qualificadora do § 13 configura bis in idem , pois a v…
+- 🧩 **Lesão Corporal Hedionda e Novas Hipóteses (Lei 15.159/25)** 🆗 (art. 1, I-A) · `esq_1786571782166_vrb9tm` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes Hediondos · Tipo: Alteração legislativa · Ref.: art. 1º, inciso I-A, da Lei nº 8.072/90; art. 129, §§ 2º e 3º, do Código Penal Evolução das Hipóteses de Lesã…
+- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** 🆗 (art. 1, I; 121, 2) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes Hediondos · Tipo: Classificação · Ref.: art. 1º, incisos I a XII, da Lei nº 8.072/90 Catálogo de Crimes Hediondos Tipificados no Código Penal Infraç…
+  > …o em atividade de grupo de extermínio (ainda que por um só agente) ou se for qualificado (art. 121, § 2º, do CP). Feminicídio (Art. 121-A do CP) Hediondo em todas as suas modalidades típicas e c…
+- ❓ **Crimes contra a Dignidade Sexual · questão 37** 🆗 (art. 61, II, f) · `sim_1785940914255_q37` · dados/bateriasvf/grupo-ce-acaoecrimescontraadignidadesexual.json
+  > …ivo (Tema 1.215, Info 834). Conforme o tribunal, a aplicação concomitante da agravante do art. 61, II, "f", do CP, e da majorante do art. 226, II, do CP, não gera bis in idem salvo quando houver a…
+- ❓ **Crimes contra a Pessoa · questão 22** 🆗 (art. 61, II, l) · `sim_1783734731369_q22` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …enada não exclui a imputabilidade penal, figurando como circunstância agravante genérica (art. 61, II, "l", do CP). Por sua vez, a asfixia, tratando-se de meio de execução, qualifica o homicídio d…
+- ❓ **Crimes contra a Pessoa · questão 47** 🆗 (art. 61, II, f) · `sim_1783734731369_q47` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …entre as partes (âmbito doméstico, coabitação), independentemente do sexo da vítima. Já o art. 61, II, "f", do CP, agrava o crime fundado exclusivamente no gênero feminino da vítima. Portanto, qua…
+- ❓ **Crimes contra a Pessoa · questão 53** 🆗 (art. 129, 12, I) · `sim_1783734731369_q53` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …unção, impõe-se a aplicação da causa de aumento de pena correspondente à lesão funcional (art. 129, § 12, I, 'a', do Código Penal), que exaspera a sanção de 1/3 a 2/3.
+- ❓ **Crimes contra a Pessoa · questão 57** 🆗 (art. 61, II, f) · `sim_1783734731369_q57` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …licação dessa majorante específica afasta a incidência da agravante genérica equivalente (art. 61, II, "f"), a fim de obstar o ne bis in idem.
+- ❓ **Crimes contra a Pessoa · questão 59** 🆗 (art. 129; 61, II, c) · `sim_1783734731369_q59` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > …). A referida qualificadora tutela a motivação de gênero. Já a dissimulação (agravante do art. 61, II, "c", do CP) sanciona o modo de execução furtivo e enganoso do crime (o falso pretexto da devo…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 11** 🆗 (art. 1, I) · `sim_1788654225381_q11` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > Conforme o artigo 1º, inciso I, da Lei 8.072/90, o homicídio simples apenas é considerado hediondo (homicídio condiciona…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 12** 🆗 (art. 1, I) · `sim_1788654225381_q12` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > Nos termos consolidados da Lei 8.072/90, o artigo 1º, inciso I, categoriza expressamente o homicídio qualificado (artigo 121, parágrafo 2º) como crime h…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 13** 🆗 (art. 1, I-A, c) · `sim_1788654225381_q13` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > O artigo 1º, inciso I-A, alínea c, da Lei 8.072/90, incluído por reforma legislativa recente, estabelece a hediondez nas de…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 18** 🆗 (art. 1, I-A, a) · `sim_1788654225381_q18` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > O artigo 1º, inciso I-A, alínea a, da Lei 8.072/90 prescreve incontinenti que a hipótese incide quando a agressão é perpetr…
+- ❓ **Crimes Hediondos (Lei 8.072/1990) · questão 20** 🆗 (art. 1, I-A, b) · `sim_1788654225381_q20` · dados/bateriasvf/grupo-ce-inqueritoacaohediondos.json
+  > …l gravíssima. A assertiva subverte a legislação ao excluir a vítima do bojo garantidor: o artigo 1º, inciso I-A, alínea b, da Lei 8.072/90 nomeia taxativa e indubitavelmente o Oficial de Justiça, no exercício da…
+- ❓ **Das Penas · questão 32** 🆗 (art. 61, II) · `sim_1781785703088_q32` · dados/bateriasvf/grupo-ce-daspenas.json
+  > …'d', do CP) com a agravante de ter sido o crime praticado com violência contra a mulher (Art. 61, II, 'f', do CP)". Ambas coexistem e se anulam na segunda fase da dosimetria.
+- ❓ **Das Penas · questão 33** 🆗 (art. 61, II) · `sim_1781785703088_q33` · dados/bateriasvf/grupo-ce-daspenas.json
+  > O **Art. 61, II, 'l', do Código Penal** prevê expressamente que a pena será agravada se o crime for comet…
+- ❓ **Das Penas · questão 38** 🆗 (art. 61, II) · `sim_1781785703088_q38` · dados/bateriasvf/grupo-ce-daspenas.json
+  > …dição 180)**, "A incidência da circunstância agravante da calamidade pública, prevista no art. 61, II, 'j', do Código Penal, **exige demonstração concreta de que o agente se valeu do contexto…
+
+<details><summary>Citam só o artigo (33)</summary>
+
+- 🧩 Agravantes Genéricas e a Reincidência para Fins Penais · `esq_1786594816717_mfblzs`
+- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
+- 🧩 Contravenções contra a Pessoa e Vias de Fato Qualificada · `esq_1786567987632_fae8se`
+- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
+- 🧩 Dano Emocional vs. Dano Psíquico nas Relações de Gênero · `esq_1786594778866_mmk2n8`
+- 🧩 Diferenciação de Ofensas Físicas e Humilhações · `esq_1786594778866_5cdp2n`
+- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
+- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
+- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
+- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
+- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
+- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
+- ❓ Crimes contra a Pessoa · questão 39 · `sim_1783734731369_q39`
+- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 14 · `sim_1788654225381_q14`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 15 · `sim_1788654225381_q15`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 16 · `sim_1788654225381_q16`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 17 · `sim_1788654225381_q17`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 23 · `sim_1788654225381_q23`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 28 · `sim_1788654225381_q28`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 29 · `sim_1788654225381_q29`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 30 · `sim_1788654225381_q30`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 36 · `sim_1788654225381_q36`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 37 · `sim_1788654225381_q37`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 38 · `sim_1788654225381_q38`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 40 · `sim_1788654225381_q40`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 47 · `sim_1788654225381_q47`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 50 · `sim_1788654225381_q50`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 60 · `sim_1788654225381_q60`
+- ❓ Crimes Hediondos (Lei 8.072/1990) · questão 9 · `sim_1788654225381_q9`
+- ❓ Das Penas · questão 37 · `sim_1781785703088_q37`
+- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
+- ❓ Pessoa e Patrimônio (Juris) · questão 19 · `sim_1783735414572_q19`
+
+</details>
+
+## Lei 15.134/2025: Homicídio qualificado contra juízes, MP, Defensoria e Advocacia Pública (5 + 10 só o artigo)
+
+Alterados: CP art. 121 (§ 2, VII); L12694 art. 9 (§ 1-A; § 1-A, I; § 1-A, II; § 1-A, III; § 1-A, IV; § 1-A, V; § 1-A, VI)
+
+- 🧩 **Homicídio e Dolo Eventual nos Tribunais** 🆗 (art. 121, 2) · `esq_1786594778866_iosaoj` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Comparativo · Ref.: art. 18, I, do CP; art. 121, § 2º, do CP; precedentes do STF e STJ Compatibilidade do Dolo Eventual nos Delitos contra a Vi…
+- 🧩 **Homicídio Funcional e de Autoridade (Lei nº 15.134/25)** 🆗 (art. 121, 2, VII, s) · `esq_1786594778866_kymaur` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Alteração legislativa · Ref.: art. 121, § 2º, VII, alíneas "a" e "b", do CP Regime de Tutela Qualificada do Homicídio Funcional Eixo de Análise Agen…
+- 🧩 **Homicídio Qualificado Geral** 🆗 (art. 121, 2, I,II,III,IV,V,VII,VIII,IX,X; 121, 2) · `esq_1786594778866_kyh4bf` · dados/esquemas/esquemas-direito-penal.json
+  > Subtema: Crimes contra a Vida · Tipo: Classificação · Ref.: art. 121, § 2º, I, II, III, IV, V, VII, VIII, IX, X, do CP Natureza e Divisão Temática das Qualificadoras de Homicídio Natureza das Qualifica…
+  > …Temática das Qualificadoras de Homicídio Natureza das Qualificadoras Eixo de Incidência (Art. 121, § 2º, do CP) Espécies de Qualificadoras e Exemplos no CP Subjetivas Ligadas diretamente aos mo…
+- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** 🆗 (art. 121; 121, 2) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
+  > …o em atividade de grupo de extermínio (ainda que por um só agente) ou se for qualificado (art. 121, § 2º, do CP). Feminicídio (Art. 121-A do CP) Hediondo em todas as suas modalidades típicas e c…
+- ❓ **Crimes contra a Pessoa · questão 21** 🆗 (art. 121, 2, VII) · `sim_1783734731369_q21` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
+  > O texto legal do homicídio funcional (art. 121, § 2º, VII, do Código Penal) menciona expressamente o cônjuge, companheiro ou parente consanguíneo a…
+
+<details><summary>Citam só o artigo (10)</summary>
+
+- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
+- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
+- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
+- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
+- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
+- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
+- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
+- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
+- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
+- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
+
+</details>
+
+## Lei 15.123/2025: Violência psicológica com inteligência artificial (0 + 6 só o artigo)
+
+Alterados: CP art. 147-B (p.ú.)
+
+
+<details><summary>Citam só o artigo (6)</summary>
+
+- 🧩 Ameaça de Gênero, Perseguição e Violência Psicológica · `esq_1786594778867_u4q6iz`
+- 🧩 Dano Emocional vs. Dano Psíquico nas Relações de Gênero · `esq_1786594778866_mmk2n8`
+- 🧩 Espécies de Violência Doméstica (Lei Maria da Penha) e Novas Figuras · `esq_1786571326485_2k3bty`
+- ❓ Crimes contra a Pessoa · questão 75 · `sim_1783734731369_q75`
+- ❓ Pessoa e Patrimônio (Juris) · questão 19 · `sim_1783735414572_q19`
+- ❓ Pessoa e Patrimônio (Juris) · questão 20 · `sim_1783735414572_q20`
+
+</details>
+
+## Lei 15.109/2025: Honorários: advogado não adianta custas na cobrança (0 + 1 só o artigo)
+
+Alterados: CPC art. 82 (§ 3)
+
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Despesas processuais e rateio · `esq_1786547792127_jmwzjq`
+
+</details>
+
+## Lei 15.139/2025: Registro civil: nome do natimorto (0 + 1 só o artigo)
+
+Alterados: L6015 art. 53 (§ 3; § 4)
+
+
+<details><summary>Citam só o artigo (1)</summary>
+
+- 🧩 Atribuição de Nome ao Natimorto (Lei nº 15.139/25) · `esq_1786650614483_6ol9l0`
+
+</details>
+
+## EC 137/2025: IPVA: exceções à incidência (2 + 2 só o artigo)
+
+Alterados: CF art. 155 (§ 6, III)
+
+- 🧩 **Agenda Verde e Economia Verde na Reforma Tributária** 🆗 (art. 155, 6) · `esq_1786638601138_b6n0y6` · dados/esquemas/esquemas-direito-constitucional.json
+  > …pios da Atividade Econômica · Tipo: Classificação · Ref.: art. 145, § 3º, art. 153, VIII, art. 155, § 6º, da CF A Reforma Tributária instituiu e integrou eixos transversais de proteção ecológica…
+- 🧩 **Regime Constitucional do ICMS e do IPVA** 🆗 (art. 155, 2,3,6) · `esq_1786638170006_19r8gn` · dados/esquemas/esquemas-direito-constitucional.json
+  > Subtema: Impostos dos Estados · Tipo: Alteração legislativa · Ref.: art. 155, §§ 2º, 3º e 6º, da CF; EC nº 132/23; EC nº 137/25 O ICMS e o IPVA sofreram expressivas modificações estr…
+
+<details><summary>Citam só o artigo (2)</summary>
+
+- 🧩 Divisão de Impostos Federais, Estaduais e Municipais · `esq_1786638170006_69s796`
+- 🧩 Divisão e Competência dos Impostos (União, Estados, Municípios e DF) · `esq_1786647730343_zw4013`
+
+</details>
+
+## EC 136/2025: Precatórios: limite de pagamento pela receita e correção pelo IPCA (3 + 17 só o artigo)
+
+Alterados: CF art. 100 (§ 1; § 5; § 23; § 23, I; § 23, II; § 23, III; § 23, IV; § 23, V; § 23, VI; § 23, VII; § 23, VIII; § 23, IX; § 24; § 25; § 26; § 27; § 27, I; § 27, II; § 27, III; § 27, IV; § 28; § 29; § 30; § 19-A); CF art. 165 (§ 18; § 19; § 20; § 21; § 22); ADCT art. 97 (§ 16; § 16-A); ADCT art. 76-B; ADCT art. 115
+
+- 🧩 **Regime Geral de Precatórios e Créditos Preferenciais** 🆗 (art. 100, 1,2) · `esq_1786631128045_ggspcx` · dados/esquemas/esquemas-direito-constitucional.json
+  > Subtema: Precatórios · Tipo: Requisitos e prazos · Ref.: art. 100, caput, §§ 1º e 2º, da CF; RE nº 1.515.163/RS Os pagamentos de condenações contra as Fazendas Públicas reali…
+- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 57** 🆗 (art. 100, 1) · `sim_1788654352739_q57` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
+  > …ário tem pleno direito a gozar da preferência constitucional atrelada à origem do débito (art. 100, § 1º, CF), mantida intacta a sua posição na ordem cronológica da expedição.
+- ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 60** 🆗 (art. 100, 5) · `sim_1788654352739_q60` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
+  > …firmado no Tema 1.335 do STF (RE 1515163/RS), durante o interregno do "período de graça" (art. 100, § 5º, CF - precatórios apresentados até 1º de julho/fevereiro a serem pagos no exercício segui…
+
+<details><summary>Citam só o artigo (17)</summary>
+
+- 🧩 23. Execução Contra a Fazenda Pública, Massa Falida e Empresa em Recuperação Judicial · `esq_1793051385937_ptru9f`
+- 🧩 Características dos bens públicos · `esq_1786473518359_zx8pia`
+- 🧩 Compensações, Cessão e Atualização de Precatórios · `esq_1786631128045_lymz5o`
+- 🧩 Execução contra a Fazenda Pública, Precatórios e RPV (Art. 910) · `esq_1786553359193_dg2s5j`
+- 🧩 Lei Complementar nº 35/1979 - Bloco III (Arts. 78 a 147) · `esq_1788175149135_6zhoha`
+- 🧩 Leis Orçamentárias em Confronto: PPA, LDO e LOA · `esq_1786638170006_schu4k`
+- 🧩 Remoção Ex Officio, Vedação Persecutória e Direito de Acompanhar Cônjuge · `esq_1790163864590_9wii2b`
+- ❓ Desapropriações · questão 10 · `sim_1789219611448_q10`
+- ❓ Funções Essenciais à Justiça (arts. 127 a 135, CF) · questão 18 · `sim_1788654560960_q18`
+- ❓ Funções Essenciais à Justiça (arts. 127 a 135, CF) · questão 19 · `sim_1788654560960_q19`
+- ❓ Normas de Direito Financeiro (Lei 4.320/1964) · questão 6 · `sim_1788653330830_q6`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 51 · `sim_1788654352739_q51`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 52 · `sim_1788654352739_q52`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 54 · `sim_1788654352739_q54`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 56 · `sim_1788654352739_q56`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 66 · `sim_1788654352739_q66`
+- ❓ Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 69 · `sim_1788654352739_q69`
+
+</details>

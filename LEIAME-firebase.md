@@ -276,6 +276,8 @@ Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança d
 - **Questão:** aparece só o sinal 🔄 ao lado do número; passar o mouse ou clicar mostra em que consistiu a mudança.
 - Questões já salvas em cadernos são cópias: só as cópias feitas depois da atualização carregam o sinal.
 
+**Onde procurar o que atualizar:** `NODE_PATH=$(npm root -g) node ferramentas/revisao_acervo.js` cruza as novidades de `dados/leiseca/novidades.json` com as citações das questões e dos esquemas e gera `relatorios/revisao-acervo.md`: primeiro os itens que citam o próprio dispositivo alterado (com o trecho), depois os que citam só o número do artigo. Item corrigido e marcado com `atualizacoes` (com `ref` igual à norma) sai da lista na execução seguinte. A ferramenta só acha citações explícitas; vale também uma busca pelo conteúdo (ex.: "44 horas").
+
 ## Jurisprudência: aba "🆕 Divergências e Mudanças"
 
 A aba reúne as fichas oficiais com o campo `mudanca`, mais recentes primeiro:
