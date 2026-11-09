@@ -35150,10 +35150,14 @@ window.ESQ_IA = {
     fechar: function() { let m = document.getElementById('esq-ia-modal'); if (m) m.style.display = 'none'; },
     _lerCota: function() {
         let self = this;
-        if (window.ehAdmin()) { this.estado.cota = null; return; }
+        let admin = window.ehAdmin();
+        if (admin) this.estado.cota = null;
+        // A administração não tem cota, mas consulta do mesmo jeito: a
+        // resposta também diz quais IAs o servidor tem ligadas (GPT).
         this._chamar({ acao: 'cota' }).then(function(r) {
             if (r && r.provedores) self.estado.provedores = r.provedores;
-            if (r && r.cota) { self.estado.cota = r.cota; self.render(); }
+            if (r && r.cota && !admin) self.estado.cota = r.cota;
+            self.render();
         }, function() {});
     },
     // IA Simples tem duas opções: Gemini e GPT. O servidor diz se o GPT já
