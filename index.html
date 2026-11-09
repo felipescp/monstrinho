@@ -1150,6 +1150,32 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .jur-ref-alerta { display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px; font-size:.78em; font-weight:800; line-height:1.5; vertical-align:baseline; cursor:pointer; white-space:nowrap; border:1px solid; }
 .jur-ref-alerta-superado { color:#92400e; background:#fef3c7; border-color:#fbbf24; }
 .jur-ref-alerta-viva { color:#6b21a8; background:#f3e8ff; border-color:#d8b4fe; }
+/* Esquemas: grifos, comentário pessoal e revisão ativa no Leitor */
+mark.esq-grifo { color:inherit; padding:0 1px; border-radius:2px; }
+.esq-grifo-amarelo { background:#fef08a; }
+.esq-grifo-verde { background:#bbf7d0; }
+.esq-grifo-rosa { background:#fbcfe8; }
+.esq-grifo-azul { background:#bfdbfe; }
+#esq-grifo-pop { position:fixed; z-index:100000; display:none; gap:6px; align-items:center; padding:6px 8px; background:#1f2937; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+#esq-grifo-pop button { cursor:pointer; }
+.esq-grifo-pop-cor { width:24px; height:24px; border-radius:50%; border:2px solid #fff; }
+.esq-grifo-pop-borracha { background:#374151; color:#fff; border:1px solid #6b7280; border-radius:6px; padding:2px 8px; font-size:14px; }
+.esq-coment { margin-top:14px; }
+.esq-coment-barra { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.esq-coment-btn { background:#f5f3ff; color:#5b21b6; border:1px solid #ddd6fe; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:13px; }
+.esq-coment-dica { font-size:12px; color:#6b7280; }
+.esq-coment-box { background:#faf5ff; border:1px solid #e9d5ff; border-left:4px solid #8b5cf6; border-radius:8px; padding:10px 12px; }
+.esq-coment-cab { display:flex; justify-content:space-between; align-items:center; font-weight:600; color:#5b21b6; font-size:13px; margin-bottom:6px; gap:8px; }
+.esq-coment-acoes-cab button, .esq-coment-acoes button { background:#fff; border:1px solid #d8b4fe; color:#5b21b6; border-radius:5px; padding:2px 8px; margin-left:6px; cursor:pointer; font-size:12px; font-weight:500; }
+.esq-coment-acoes { margin-top:8px; text-align:right; }
+.esq-coment-textarea { width:100%; box-sizing:border-box; border:1px solid #d8b4fe; border-radius:6px; padding:8px; font:inherit; font-size:14px; resize:vertical; }
+.esq-coment-texto { font-size:14px; color:#374151; line-height:1.5; }
+.esq-card-coment { font-size:.85em; }
+.esq-baralho-revisao-controle { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+#esq-baralho-btn-ocultar.ativo { background:#ede9fe; border-color:#8b5cf6; color:#5b21b6; }
+#esq-baralho-aviso-revisao { font-size:12px; color:#6b7280; }
+.esq-modo-revisao #esq-baralho-corpo .esq-estudo-texto td:not(:first-child):not(.esq-revelada) { filter:blur(6px); background:#f3f4f6; cursor:pointer; user-select:none; transition:filter .15s; }
+.esq-modo-revisao #esq-baralho-corpo .esq-estudo-texto td:not(:first-child):not(.esq-revelada):hover { filter:blur(4px); }
 .jur-ref-mud { margin:0 0 6px 0; padding:5px 7px; border-radius:5px; font-size:.95em; line-height:1.4; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); }
 .jur-ref-mud.jur-mud-superado { background:rgba(251,191,36,.16); border-color:#fbbf24; color:#fde68a; }
 .jur-ref-mud.jur-mud-viva { background:rgba(192,132,252,.16); border-color:#c084fc; color:#e9d5ff; }
@@ -4967,6 +4993,7 @@ window.SALINHA_BACKUP = {
                     // (html '' é lápide de comentário apagado, também sincroniza).
                     // (Mesma regra para prazos_runtime.comentarios e penas_runtime.comentarios.)
                     if (((chaveSemPrefixoMerge === 'jurisprudencia_runtime' && (subChave === 'comentariosPessoais' || subChave === 'grifos')) ||
+                         (chaveSemPrefixoMerge === 'esquemas_runtime' && (subChave === 'comentarios' || subChave === 'grifos')) ||
                          ((chaveSemPrefixoMerge === 'prazos_runtime' || chaveSemPrefixoMerge === 'penas_runtime') && subChave === 'comentarios')) &&
                         typeof objImportado[subChave] === 'object' && !Array.isArray(objImportado[subChave])) {
 
@@ -5626,6 +5653,8 @@ window.exigirAdmin = function() {
     const TRAVAS_NIVEL = [
         ['JURISPRUDENCIA_RUNTIME', ['abrirComentarioPessoal', 'alternarPainelComentarioBaralho', 'editarPainelComentario', 'selecionarCanetaGrifo'], 'Comentários e grifos'],
         ['ESQUEMAS_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
+        ['ESQUEMAS_RUNTIME', ['editarComentarioEsq', 'aplicarGrifoEsq'], 'Comentários e grifos'],
+        ['ESQUEMAS_RUNTIME', ['_aoSoltarSelecaoEsq'], null],
         ['JURISPRUDENCIA_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
         ['', ['comentarCaderno'], 'Comentários nas questões'],
         ['JURISPRUDENCIA_RUNTIME', ['_aoSoltarSelecaoLeitor'], null]
@@ -31276,6 +31305,11 @@ window.triggerFileUpload = function(callback) {
                 <span id="esq-baralho-escala-valor">1.5x</span>
                 <button class="esq-baralho-escala-btn" id="esq-baralho-escala-btn-aumentar" onclick="window.ESQUEMAS_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
             </div>
+            <div class="esq-baralho-revisao-controle">
+                <button class="esq-baralho-escala-btn" id="esq-baralho-btn-ocultar" onclick="window.ESQUEMAS_RUNTIME.alternarOcultarRespostas()" title="Revisão ativa: esconde as colunas de resposta das tabelas para você tentar lembrar; clique numa célula para revelar">🙈 Esconder respostas</button>
+                <button class="esq-baralho-escala-btn" id="esq-baralho-btn-revelar" onclick="window.ESQUEMAS_RUNTIME.revelarTudoBaralho()" style="display:none;">Revelar tudo</button>
+                <span id="esq-baralho-aviso-revisao" style="display:none;">Este esquema não tem tabela para esconder.</span>
+            </div>
         </div>
 
         <div class="esq-baralho-corpo-wrap">
@@ -31781,6 +31815,9 @@ window.ESQUEMAS_RUNTIME = {
         this.etiquetas = (bruto && typeof bruto.etiquetas === 'object' && !Array.isArray(bruto.etiquetas)) ? bruto.etiquetas : {};
         this.etiquetaPorEsquema = (bruto && typeof bruto.etiquetaPorEsquema === 'object' && !Array.isArray(bruto.etiquetaPorEsquema)) ? bruto.etiquetaPorEsquema : {};
         this.coresCustomizadas = (bruto && Array.isArray(bruto.coresCustomizadas)) ? bruto.coresCustomizadas : [];
+        // Grifos e comentário pessoal (acesso completo): {id → {faixas|texto, atualizadoEm}}.
+        this.grifos = (bruto && typeof bruto.grifos === 'object' && !Array.isArray(bruto.grifos)) ? bruto.grifos : {};
+        this.comentarios = (bruto && typeof bruto.comentarios === 'object' && !Array.isArray(bruto.comentarios)) ? bruto.comentarios : {};
         this._bootstrapped = true;
         // Ver window._PC_LEGISLACAO_ESPECIAL_MIGRACAO — protege esquemas
         // pessoais salvos nos 2 nós de Processual Civil desmembrados em 2026-09.
@@ -31821,7 +31858,7 @@ window.ESQUEMAS_RUNTIME = {
                 let apenasPessoais = (self.esquemas[chave] || []).filter(function(e) { return !e.origem_oficial; });
                 if (apenasPessoais.length > 0) esquemasPessoais[chave] = apenasPessoais;
             });
-            window.salvarEsquemasBruto(JSON.stringify({ esquemas: esquemasPessoais, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas }));
+            window.salvarEsquemasBruto(JSON.stringify({ esquemas: esquemasPessoais, ocultos: this.ocultos, excluidos: this.excluidos, revisaoEsquemas: this.revisaoEsquemas, visualizados: this.visualizados, etiquetas: this.etiquetas, etiquetaPorEsquema: this.etiquetaPorEsquema, coresCustomizadas: this.coresCustomizadas, grifos: this.grifos || {}, comentarios: this.comentarios || {} }));
             return true;
         } catch (e) {
             console.warn('[ESQUEMAS] Falha ao salvar:', e);
@@ -31838,6 +31875,14 @@ window.ESQUEMAS_RUNTIME = {
         this.carregar();
         this.render();
         this._atualizarContagensAbas();
+        if (!window._esqGrifoOuvinte) {
+            window._esqGrifoOuvinte = true;
+            document.addEventListener('mouseup', function(e) {
+                if (e.target && e.target.closest && e.target.closest('#esq-grifo-pop')) return;
+                setTimeout(function() { window.ESQUEMAS_RUNTIME._aoSoltarSelecaoEsq(); }, 0);
+            });
+            document.addEventListener('scroll', function() { window.ESQUEMAS_RUNTIME._fecharPopupGrifoEsq(); }, true);
+        }
         if (typeof window.carregarEsquemasOficiais === 'function') {
             window.carregarEsquemasOficiais().then(function() {
                 // render() (não só _renderGradeCards()) — os oficiais só chegam
@@ -32608,7 +32653,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
                     '<span class="esq-card-tags-dir">' + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
-                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
+                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + (self._comentarioEsq(item.id) ? ' <span class="esq-card-coment" title="Tem comentário seu">💭</span>' : '') + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
                 '<div class="esq-card-classificacao">' + btnVisualizado + classificarHtml + '</div>' +
             '</div>';
@@ -32735,8 +32780,234 @@ window.ESQUEMAS_RUNTIME = {
         return '<div class="esq-estudo-card">' +
             '<div class="esq-estudo-titulo">' + this._escapar(item.titulo) + '</div>' +
             window.VERSAO_ACERVO.faixaEsquema(item) +
-            '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id || '') + '">' + (item.conteudoHtml ? this._comReferencias(item.conteudoHtml, item.titulo) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
+            '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id || '') + '">' + (item.conteudoHtml ? this._htmlConteudoEstudo(item) : '<em>Sem conteúdo ainda.</em>') + '</div>' +
+            this._htmlComentarioEsq(item.id) +
         '</div>';
+    },
+
+    // ── GRIFOS E COMENTÁRIO PESSOAL (acesso completo) ──
+    // Mesma ideia da Jurisprudência: grifos são faixas [ini, fim) sobre o
+    // texto corrido do esquema (os nós de texto, sem os selos de alerta),
+    // então sobrevivem aos links de referência e às trocas de layout. Salvos
+    // em this.grifos {id → {faixas, atualizadoEm}} e o comentário em
+    // this.comentarios {id → {texto, atualizadoEm}}; na nuvem vence o mais
+    // recente (texto '' = comentário apagado, que também sincroniza).
+    CORES_GRIFO_ESQ: [
+        { chave: 'amarelo', rotulo: 'Amarelo' },
+        { chave: 'verde', rotulo: 'Verde' },
+        { chave: 'rosa', rotulo: 'Rosa' },
+        { chave: 'azul', rotulo: 'Azul' }
+    ],
+    _htmlConteudoEstudo: function(item) {
+        return this._aplicarGrifosHtml(this._comReferencias(item.conteudoHtml || '', item.titulo), item.id);
+    },
+    _nosGrifaveis: function(raiz) {
+        let nos = [], w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+            acceptNode: function(n) { return n.parentNode && n.parentNode.closest && n.parentNode.closest('.jur-ref-alerta, .acv-faixa, .esq-coment') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+        });
+        while (w.nextNode()) nos.push(w.currentNode);
+        return nos;
+    },
+    _aplicarGrifosHtml: function(html, id) {
+        let faixas = ((this.grifos || {})[id] || {}).faixas || [];
+        if (!faixas.length || !html) return html;
+        try {
+            let tpl = document.createElement('template');
+            tpl.innerHTML = html;
+            let pos = 0;
+            this._nosGrifaveis(tpl.content).forEach(function(no) {
+                let t = no.nodeValue, ini = pos, fim = pos + t.length;
+                pos = fim;
+                let toca = faixas.filter(function(f) { return f.ini < fim && f.fim > ini; });
+                if (!toca.length) return;
+                let cortes = [0, t.length];
+                toca.forEach(function(f) { cortes.push(Math.max(0, f.ini - ini), Math.min(t.length, f.fim - ini)); });
+                cortes = cortes.filter(function(c, i, a) { return a.indexOf(c) === i; }).sort(function(a, b) { return a - b; });
+                let frag = document.createDocumentFragment();
+                for (let i = 0; i < cortes.length - 1; i++) {
+                    let a = cortes[i], b = cortes[i + 1], pedaco = t.slice(a, b);
+                    if (!pedaco) continue;
+                    let f = toca.find(function(x) { return x.ini <= ini + a && x.fim >= ini + b; });
+                    if (f) {
+                        let mk = document.createElement('mark');
+                        mk.className = 'esq-grifo esq-grifo-' + f.cor;
+                        mk.textContent = pedaco;
+                        frag.appendChild(mk);
+                    } else frag.appendChild(document.createTextNode(pedaco));
+                }
+                no.parentNode.replaceChild(frag, no);
+            });
+            let div = document.createElement('div');
+            div.appendChild(tpl.content.cloneNode(true));
+            return div.innerHTML;
+        } catch (e) { console.warn('[ESQUEMAS] grifos:', e); return html; }
+    },
+    // Posição (no texto corrido) de um ponto da seleção dentro do esquema.
+    _offsetEsq: function(raiz, no, offset) {
+        let nos = this._nosGrifaveis(raiz), total = 0;
+        if (no.nodeType === 3) {
+            for (let i = 0; i < nos.length; i++) {
+                if (nos[i] === no) return total + offset;
+                total += nos[i].nodeValue.length;
+            }
+            return null;
+        }
+        let pre = document.createRange();
+        pre.setStart(raiz, 0);
+        pre.setEnd(no, offset);
+        nos.forEach(function(n) { if (pre.intersectsNode(n) && pre.comparePoint(n, n.nodeValue.length) <= 0) total += n.nodeValue.length; });
+        return total;
+    },
+    // Chamada no mouseup (silenciosa fora do acesso completo, ver TRAVAS_NIVEL).
+    _aoSoltarSelecaoEsq: function() {
+        let sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.rangeCount) { this._fecharPopupGrifoEsq(); return; }
+        let r = sel.getRangeAt(0);
+        let el = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentNode;
+        let raiz = el && el.closest && el.closest('.esq-estudo-texto[data-esq-id]');
+        if (!raiz || raiz.isContentEditable || raiz.closest('[contenteditable="true"]')) { this._fecharPopupGrifoEsq(); return; }
+        let ini = this._offsetEsq(raiz, r.startContainer, r.startOffset), fim = this._offsetEsq(raiz, r.endContainer, r.endOffset);
+        if (ini === null || fim === null || fim <= ini) { this._fecharPopupGrifoEsq(); return; }
+        this._grifoPendenteEsq = { id: raiz.getAttribute('data-esq-id'), ini: ini, fim: fim };
+        let pop = document.getElementById('esq-grifo-pop');
+        if (!pop) {
+            pop = document.createElement('div');
+            pop.id = 'esq-grifo-pop';
+            pop.addEventListener('mousedown', function(e) { e.preventDefault(); });
+            document.body.appendChild(pop);
+        }
+        pop.innerHTML = this.CORES_GRIFO_ESQ.map(function(c) { return '<button class="esq-grifo-pop-cor esq-grifo-' + c.chave + '" title="Grifar em ' + c.rotulo.toLowerCase() + '" onclick="window.ESQUEMAS_RUNTIME.aplicarGrifoEsq(\'' + c.chave + '\')"></button>'; }).join('') +
+            '<button class="esq-grifo-pop-borracha" title="Apagar grifo do trecho" onclick="window.ESQUEMAS_RUNTIME.aplicarGrifoEsq(null)">⌫</button>';
+        let rect = r.getBoundingClientRect();
+        pop.style.display = 'flex';
+        pop.style.top = Math.max(6, rect.top - 40) + 'px';
+        pop.style.left = Math.max(6, Math.min(window.innerWidth - 190, rect.left + rect.width / 2 - 90)) + 'px';
+    },
+    _fecharPopupGrifoEsq: function() {
+        let pop = document.getElementById('esq-grifo-pop');
+        if (pop) pop.style.display = 'none';
+    },
+    aplicarGrifoEsq: function(cor) {
+        let p = this._grifoPendenteEsq;
+        this._fecharPopupGrifoEsq();
+        if (!p) return;
+        if (!this.grifos) this.grifos = {};
+        let atuais = ((this.grifos[p.id] || {}).faixas || []).slice(), novas = [];
+        // O trecho novo substitui o que houver por baixo; vizinhos da mesma cor se juntam.
+        atuais.forEach(function(f) {
+            if (f.fim <= p.ini || f.ini >= p.fim) { novas.push(f); return; }
+            if (f.ini < p.ini) novas.push({ ini: f.ini, fim: p.ini, cor: f.cor });
+            if (f.fim > p.fim) novas.push({ ini: p.fim, fim: f.fim, cor: f.cor });
+        });
+        if (cor) novas.push({ ini: p.ini, fim: p.fim, cor: cor });
+        novas.sort(function(a, b) { return a.ini - b.ini; });
+        let juntas = [];
+        novas.forEach(function(f) {
+            let u = juntas[juntas.length - 1];
+            if (u && u.cor === f.cor && u.fim >= f.ini) u.fim = Math.max(u.fim, f.fim); else juntas.push({ ini: f.ini, fim: f.fim, cor: f.cor });
+        });
+        this.grifos[p.id] = { faixas: juntas, atualizadoEm: Date.now() };
+        this._grifoPendenteEsq = null;
+        let sel = window.getSelection(); if (sel) sel.removeAllRanges();
+        this.salvar();
+        this._rerenderTextoEsq(p.id);
+    },
+    _itemPorId: function(id) {
+        let ch = this._localizarChavePorId(id), achado = ch ? (this.esquemas[ch] || []).find(function(e) { return e.id === id; }) : null;
+        // Leitor aberto guarda o próprio baralho — cobre o item mesmo se a lista mudar por baixo.
+        if (!achado && this._baralhoState) achado = (this._baralhoState.cardsBase || []).find(function(e) { return e.id === id; }) || null;
+        return achado;
+    },
+    _rerenderTextoEsq: function(id) {
+        let item = this._itemPorId(id), self = this;
+        if (!item) return;
+        document.querySelectorAll('.esq-estudo-texto[data-esq-id]').forEach(function(el) {
+            if (el.getAttribute('data-esq-id') === id && item.conteudoHtml) el.innerHTML = self._htmlConteudoEstudo(item);
+        });
+    },
+    _comentarioEsq: function(id) {
+        let c = (this.comentarios || {})[id];
+        return c && c.texto ? c.texto : '';
+    },
+    _htmlComentarioEsq: function(id, editando) {
+        if (!id) return '';
+        let idEsc = this._escapar(id).replace(/'/g, "\\'"), texto = this._comentarioEsq(id), corpo;
+        if (editando) {
+            corpo = '<div class="esq-coment-box"><div class="esq-coment-cab">💭 Meu comentário</div>' +
+                '<textarea class="esq-coment-textarea" rows="4" placeholder="Anotações pessoais sobre este esquema: dúvidas, ligações com outros temas, o que mais cai…">' + this._escapar(texto) + '</textarea>' +
+                '<div class="esq-coment-acoes"><button onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.salvarComentarioEsq(\'' + idEsc + '\', this)">Salvar</button><button onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._renderComentarioEsq(\'' + idEsc + '\')">Cancelar</button></div></div>';
+        } else if (texto) {
+            corpo = '<div class="esq-coment-box"><div class="esq-coment-cab">💭 Meu comentário' +
+                '<span class="esq-coment-acoes-cab"><button onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.editarComentarioEsq(\'' + idEsc + '\')">Editar</button><button onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.apagarComentarioEsq(\'' + idEsc + '\')">Apagar</button></span></div>' +
+                '<div class="esq-coment-texto">' + this._escapar(texto).replace(/\n/g, '<br>') + '</div></div>';
+        } else {
+            let completo = window.temNivel && window.temNivel('completo');
+            corpo = '<div class="esq-coment-barra"><button class="esq-coment-btn"' + window.travaNivel('completo', 'Comentários e grifos') + ' onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.editarComentarioEsq(\'' + idEsc + '\')">💭 Comentar</button>' +
+                '<span class="esq-coment-dica">' + (completo ? 'Selecione um trecho para grifar.' : 'Grifos e comentários: acesso completo.') + '</span></div>';
+        }
+        return '<div class="esq-coment" data-esq-coment="' + this._escapar(id) + '">' + corpo + '</div>';
+    },
+    _renderComentarioEsq: function(id, editando) {
+        let self = this;
+        document.querySelectorAll('.esq-coment[data-esq-coment]').forEach(function(el) {
+            if (el.getAttribute('data-esq-coment') !== id) return;
+            let tmp = document.createElement('div');
+            tmp.innerHTML = self._htmlComentarioEsq(id, editando);
+            el.replaceWith(tmp.firstChild);
+        });
+        if (editando) {
+            let ta = document.querySelector('.esq-coment[data-esq-coment="' + id.replace(/"/g, '\\"') + '"] textarea');
+            if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        }
+    },
+    editarComentarioEsq: function(id) { this._renderComentarioEsq(id, true); },
+    salvarComentarioEsq: function(id, botao) {
+        let box = botao && botao.closest('.esq-coment'), ta = box && box.querySelector('textarea');
+        if (!ta) return;
+        if (!this.comentarios) this.comentarios = {};
+        this.comentarios[id] = { texto: ta.value.trim(), atualizadoEm: Date.now() };
+        this.salvar();
+        this._renderComentarioEsq(id);
+        this._renderGradeCards();
+    },
+    apagarComentarioEsq: function(id) {
+        if (!confirm('Apagar o seu comentário deste esquema?')) return;
+        if (!this.comentarios) this.comentarios = {};
+        this.comentarios[id] = { texto: '', atualizadoEm: Date.now() };
+        this.salvar();
+        this._renderComentarioEsq(id);
+        this._renderGradeCards();
+    },
+
+    // ── REVISÃO ATIVA NO LEITOR ──
+    // Esconde (desfoca) as colunas de resposta das tabelas — tudo menos a
+    // primeira coluna — para o aluno tentar lembrar antes de revelar. Clicar
+    // numa célula revela só ela; "Revelar tudo" mostra o cartão inteiro.
+    alternarOcultarRespostas: function() {
+        this._ocultarRespostas = !this._ocultarRespostas;
+        this._aplicarModoRevisaoBaralho();
+    },
+    revelarTudoBaralho: function() {
+        document.querySelectorAll('#esq-baralho-corpo .esq-estudo-texto td').forEach(function(td) { td.classList.add('esq-revelada'); });
+    },
+    _aplicarModoRevisaoBaralho: function() {
+        let modal = document.getElementById('modal-esquemas-baralho');
+        if (modal) modal.classList.toggle('esq-modo-revisao', !!this._ocultarRespostas);
+        let b = document.getElementById('esq-baralho-btn-ocultar'), rv = document.getElementById('esq-baralho-btn-revelar');
+        if (b) { b.textContent = this._ocultarRespostas ? '👁 Mostrar respostas' : '🙈 Esconder respostas'; b.classList.toggle('ativo', !!this._ocultarRespostas); }
+        if (rv) rv.style.display = this._ocultarRespostas ? '' : 'none';
+        let corpo = document.getElementById('esq-baralho-corpo'), aviso = document.getElementById('esq-baralho-aviso-revisao');
+        if (aviso) aviso.style.display = (this._ocultarRespostas && corpo && !corpo.querySelector('.esq-estudo-texto td:not(:first-child)')) ? '' : 'none';
+        if (corpo && !corpo._cliqueRevisao) {
+            corpo._cliqueRevisao = true;
+            corpo.addEventListener('click', function(e) {
+                if (!modal || !modal.classList.contains('esq-modo-revisao')) return;
+                let td = e.target.closest && e.target.closest('.esq-estudo-texto td');
+                if (!td || td.classList.contains('esq-revelada') || !td.previousElementSibling) return;
+                e.preventDefault(); e.stopPropagation();
+                td.classList.add('esq-revelada');
+            }, true);
+        }
     },
 
     // Referências nos Esquemas (pedido explícito do usuário), como nas
@@ -32755,13 +33026,8 @@ window.ESQUEMAS_RUNTIME = {
             document.querySelectorAll('.esq-estudo-texto[data-esq-id]').forEach(function(el) {
                 let id = el.getAttribute('data-esq-id'), ch = id && self._localizarChavePorId(id);
                 let item = ch && (self.esquemas[ch] || []).find(function(e) { return e.id === id; });
-                if (item && item.conteudoHtml) el.innerHTML = self._comReferencias(item.conteudoHtml, item.titulo);
+                if (item && item.conteudoHtml) el.innerHTML = self._htmlConteudoEstudo(item);
             });
-            let corpo = document.getElementById('esq-editor-corpo');
-            if (corpo && corpo.contentEditable === 'false' && self._editandoChave && self._editandoId) {
-                let item = (self.esquemas[self._editandoChave] || []).find(function(e) { return e.id === self._editandoId; });
-                if (item && item.conteudoHtml) corpo.innerHTML = window.VERSAO_ACERVO.faixaEsquema(item) + self._comReferencias(item.conteudoHtml, item.titulo);
-            }
         }, 150);
     },
     _comReferencias: function(html, titulo) {
@@ -33566,6 +33832,7 @@ window.ESQUEMAS_RUNTIME = {
         // Fechar), discretos, pra não invadir o espaço de leitura do
         // conteúdo (pedido explícito, depois de invadirem antes).
         corpo.innerHTML = htmlOrigem + this._htmlCartaoEsquemaEstudo(card);
+        this._aplicarModoRevisaoBaralho();
         if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoEsqHtml(card.id, null);
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
@@ -33609,7 +33876,7 @@ window.ESQUEMAS_RUNTIME = {
         document.getElementById('esq-form-titulo').readOnly = somenteLeitura;
         let corpo = document.getElementById('esq-editor-corpo');
         // Só leitura (oficial): com as referências ligadas; editável: HTML cru (seria salvo junto).
-        corpo.innerHTML = somenteLeitura ? window.VERSAO_ACERVO.faixaEsquema(item) + this._comReferencias(item.conteudoHtml || '', item.titulo) : (item.conteudoHtml || '');
+        corpo.innerHTML = somenteLeitura ? window.VERSAO_ACERVO.faixaEsquema(item) + '<div class="esq-estudo-texto" data-esq-id="' + this._escapar(item.id) + '">' + this._htmlConteudoEstudo(item) + '</div>' + this._htmlComentarioEsq(item.id) : (item.conteudoHtml || '');
         corpo.contentEditable = somenteLeitura ? 'false' : 'true';
         document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';

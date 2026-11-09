@@ -278,6 +278,12 @@ Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança d
 
 **Onde procurar o que atualizar:** `NODE_PATH=$(npm root -g) node ferramentas/revisao_acervo.js` cruza as novidades de `dados/leiseca/novidades.json` com as citações das questões e dos esquemas e gera `relatorios/revisao-acervo.md`: primeiro os itens que citam o próprio dispositivo alterado (com o trecho), depois os que citam só o número do artigo. Item corrigido e marcado com `atualizacoes` (com `ref` igual à norma) sai da lista na execução seguinte; item conferido e já correto vai para `ferramentas/revisao_acervo_conferidos.json`, para não voltar. A ferramenta só acha citações explícitas; vale também uma busca pelo conteúdo (ex.: "44 horas").
 
+## Esquemas: grifos, comentário pessoal e revisão ativa
+
+**Grifos e 💭 comentário (acesso completo).** Nos esquemas oficiais (Leitor, abas de estudo e janela só-leitura), selecionar um trecho abre a paleta de grifo (amarelo, verde, rosa, azul e ⌫ borracha). Embaixo de cada esquema fica o "💭 Comentar". Os dados ficam na camada `esquemas_runtime`: `grifos {id → {faixas:[{ini,fim,cor}], atualizadoEm}}` e `comentarios {id → {texto, atualizadoEm}}`. As faixas contam posições no texto corrido do esquema (sem os selos de alerta), então sobrevivem aos links de referência. Na nuvem, cada esquema vence pelo `atualizadoEm` mais recente, igual à Jurisprudência; comentário apagado vira `texto: ''` para a exclusão também sincronizar. No nível intermediário o botão aparece com 🔒 e a seleção não abre a paleta (travas em `TRAVAS_NIVEL`). O cartão da grade mostra 💭 quando há comentário. Esquemas pessoais não têm grifos: o próprio aluno edita o texto.
+
+**Revisão ativa no Leitor (todos os níveis com acesso a Esquemas).** O botão "🙈 Esconder respostas" desfoca todas as colunas das tabelas menos a primeira. Clicar numa célula revela só ela; "Revelar tudo" mostra o cartão inteiro. O modo continua ligado ao trocar de cartão, e cada cartão novo começa escondido.
+
 ## Jurisprudência: aba "🆕 Divergências e Mudanças"
 
 A aba reúne as fichas oficiais com o campo `mudanca`, mais recentes primeiro:
