@@ -19,6 +19,9 @@ const { chromium } = require('playwright');
 
 const RAIZ = path.resolve(__dirname, '..');
 const SAIDA = path.join(RAIZ, 'relatorios', 'revisao-acervo.md');
+// Itens já conferidos que NÃO precisaram de mudança: { "norma": ["id", ...] }.
+// (Os corrigidos saem sozinhos, pelo campo "atualizacoes".)
+const CONFERIDOS = path.join(RAIZ, 'ferramentas', 'revisao_acervo_conferidos.json');
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.txt': 'text/plain; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
 function servidor() {
@@ -139,6 +142,9 @@ function alcance(cit, lista, art) {
     const alvo = {}; // "CF|7" -> [novidade]
     for (const n of novidades) for (const [id, art] of n.arts || []) (alvo[id + '|' + art] = alvo[id + '|' + art] || []).push(n);
     const itens = coletarItens();
+    const conferidos = fs.existsSync(CONFERIDOS) ? JSON.parse(fs.readFileSync(CONFERIDOS, 'utf8')) : {};
+    const jaConferido = (n, id) => (conferidos[n.norma] || []).indexOf(id) >= 0;
+    let nConferidos = 0;
 
     const srv = await servidor();
     const navegador = await chromium.launch();
@@ -173,6 +179,7 @@ function alcance(cit, lista, art) {
         for (const n of alvo[a.k]) {
             // Já marcado como atualizado por essa norma: sai da lista.
             if ((it.atualizacoes || []).some((u) => u && u.ref && u.ref.replace(/\s/g, '') === n.norma.replace(/\s/g, ''))) continue;
+            if (jaConferido(n, it.id)) { nConferidos++; continue; }
             const p = a.chave.split('|');
             const nivel = alcance([p[2] || '', p[3] || '', p[4] || ''], mudou[n.id + '|' + a.k], artigoDe(p[0], p[1]) || {});
             if (!nivel) continue;
@@ -202,7 +209,7 @@ function alcance(cit, lista, art) {
     linhas.push('');
     linhas.push('Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` igual à norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.');
     linhas.push('');
-    linhas.push('**' + total + '** itens citam o próprio dispositivo alterado (' + itens.length + ' analisados). Outros **' + genericos + '** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).');
+    linhas.push('**' + total + '** itens citam o próprio dispositivo alterado (' + itens.length + ' analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **' + genericos + '** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).');
     linhas.push('');
     for (const n of ordem) {
         const g = porNovidade.get(n.id);
