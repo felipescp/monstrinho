@@ -35332,7 +35332,7 @@ window.ESQ_IA = {
         let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px" title="Estimativa pelo preço de tabela e câmbio de R$ ' + self._CAMBIO.toLocaleString('pt-BR') + '; a entrada lida do cache sai pelo preço de cache do modelo; a cobrança real vem das contas da Anthropic, do Google e da OpenAI.">Custo estimado nesta janela: ' + porIA + ult + ' · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada' + (e.uso.cache || e.uso.escrita ? ' (' + e.uso.cache.toLocaleString('pt-BR') + ' lidos do cache, ' + e.uso.escrita.toLocaleString('pt-BR') + ' gravados no cache)' : '') + ', ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída' + (e.uso.raciocinio ? ' (' + e.uso.raciocinio.toLocaleString('pt-BR') + ' de raciocínio)' : '') + '.</div>' : '';
         // Administração: comparar a ordem do pedido (cache × antiga) com o mesmo material.
         if (window.ehAdmin()) uso += '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px">Teste de custo (administração) — ordem do pedido: <select onchange="window.ESQ_IA.estado.ordemTeste = this.value" style="font-size:10.5px"' + dis + '>' +
-            [['', 'padrão do servidor'], ['cache', 'material antes da tarefa (cache)'], ['cache2', 'lotes em dois blocos, plano na ordem antiga (teste do cache)'], ['antiga', 'antiga (tarefa antes do material)']].map(function(o) { return '<option value="' + o[0] + '"' + (e.ordemTeste === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+            [['', 'padrão do servidor'], ['cache', 'material antes da tarefa (cache)'], ['explicito', 'lotes com cache explícito, plano na ordem antiga (teste)'], ['cache2', 'lotes em dois blocos, plano na ordem antiga (teste do cache)'], ['antiga', 'antiga (tarefa antes do material)']].map(function(o) { return '<option value="' + o[0] + '"' + (e.ordemTeste === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
         h += '<div style="border-top:1px solid var(--border-color)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 20px">' + rodape + '</div>' + uso + '</div>';
         h += '</div>';
         let rolagem = animar ? 0 : ((document.getElementById('esq-ia-corpo') || {}).scrollTop || 0);
@@ -35499,7 +35499,8 @@ window.ESQ_IA = {
                 let lote = lista.slice(i, i + 5);
                 e.status = 'Gerando fichas ' + (i + 1) + ' a ' + (i + lote.length) + ' de ' + lista.length + '…'; self.render();
                 // Administração: o lote compara o cache com o anterior (diagnóstico da OpenAI).
-                let extra = { fichas: lote, lote: i / 5 + 1 };
+                // multiLote: só com mais de um lote há reaproveitamento do cache.
+                let extra = { fichas: lote, lote: i / 5 + 1, multiLote: lista.length > 5 };
                 if (anterior && window.ehAdmin()) extra.comparacao = anterior;
                 let r = await self._chamar(Object.assign(self._base('gerar'), extra));
                 anterior = (r.uso && r.uso.respostaId) || '';

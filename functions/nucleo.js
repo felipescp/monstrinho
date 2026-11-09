@@ -178,17 +178,30 @@ function mensagemUsuario(p) {
     const x = partesMensagem(p);
     return x.cache ? x.cab + x.mat + '\n\n' + x.tarefa : x.cab + x.tarefa + '\n\n' + x.mat;
 }
-// Entrada enviada à IA. Padrão: um texto só (mensagemUsuario). Teste da
-// administração (p.blocos, só na ordem 'cache'): duas mensagens — a parte
-// estável (taxonomia, fonte, material) e a tarefa —, para verificar se o
-// cache reaproveita até o fim de um bloco.
+// Entrada enviada à IA. Padrão: um texto só (mensagemUsuario). Testes da
+// administração, só na ordem 'cache': duas mensagens — a parte estável
+// (taxonomia, fonte, material) e a tarefa variável. Com p.cacheExplicito, a
+// parte estável leva o ponto de corte explícito do cache
+// (prompt_cache_breakpoint, Responses API): o prefixo gravado termina ali,
+// e a tarefa, depois dele, não é gravada.
 function entradaGPT(p) {
-    if (!(p.blocos && p.ordem === 'cache')) return mensagemUsuario(p);
+    if (!((p.blocos || p.cacheExplicito) && p.ordem === 'cache')) return mensagemUsuario(p);
     const x = partesMensagem(p);
+    const estavel = { type: 'input_text', text: x.cab + x.mat };
+    if (p.cacheExplicito) estavel.prompt_cache_breakpoint = { mode: 'explicit' };
     return [
-        { role: 'user', content: [{ type: 'input_text', text: x.cab + x.mat }] },
+        { role: 'user', content: [estavel] },
         { role: 'user', content: [{ type: 'input_text', text: x.tarefa }] }
     ];
+}
+// Opções de cache do pedido: modo explícito só quando há ponto de corte
+// (sem ponto de corte, o modo explícito não usa cache); comparação
+// diagnóstica com a resposta anterior da mesma execução.
+function opcoesCache(p) {
+    const o = {};
+    if (p.cacheExplicito && p.ordem === 'cache') { o.mode = 'explicit'; o.ttl = '30m'; }
+    if (p.comparacao) o.comparison_response_id = p.comparacao;
+    return Object.keys(o).length ? o : null;
 }
 // Impressões digitais (SHA-256, 16 caracteres) de cada parte do pedido:
 // mostram em usoIA o que mudou entre dois pedidos da mesma execução.
@@ -297,10 +310,11 @@ async function chamarGPT(fetchFn, cfg, p) {
         max_output_tokens: 32000,
         text: { format: { type: 'json_schema', name: p.acao === 'planejar' ? 'plano' : 'fichas', schema: p.acao === 'planejar' ? esquemaPlano() : esquemaFichas(), strict: false } }
     };
-    // Diagnóstico oficial de cache (p.comparacao = id da resposta anterior da
-    // mesma execução). Se a API recusar o parâmetro (400, nada cobrado),
-    // repete o pedido sem ele e anota que o diagnóstico não está disponível.
-    if (p.comparacao) corpo.prompt_cache_options = { comparison_response_id: p.comparacao };
+    // Opções de cache (modo explícito e/ou diagnóstico). Se a API recusar
+    // (400, nada cobrado), repete o pedido sem elas e sem o ponto de corte
+    // — o mesmo pedido de antes — e anota a recusa.
+    const opc = opcoesCache(p);
+    if (opc) corpo.prompt_cache_options = opc;
     const enviar = () => fetchFn('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + cfg.chave },
@@ -312,6 +326,7 @@ async function chamarGPT(fetchFn, cfg, p) {
     if (!r.ok && r.status === 400 && corpo.prompt_cache_options) {
         diagnosticoRecusado = String((j.error && j.error.message) || 'recusado').slice(0, 200);
         delete corpo.prompt_cache_options;
+        if (Array.isArray(corpo.input)) corpo.input.forEach(m => (m.content || []).forEach(c => { delete c.prompt_cache_breakpoint; }));
         r = await enviar();
         j = await r.json().catch(() => ({}));
     }
@@ -323,7 +338,8 @@ async function chamarGPT(fetchFn, cfg, p) {
     // cached_tokens (lidos), cache_write_tokens (gravados) e o restante são
     // partes separadas de input_tokens (conferido nos registros reais).
     const uso = { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0, cache: ue.cached_tokens || 0, cacheEscrita: ue.cache_write_tokens || 0, raciocinio: us.reasoning_tokens || 0, detalhes: { entrada: soNumeros(ue), saida: soNumeros(us) }, respostaId: j.id || '' };
-    if (p.comparacao) uso.diagnostico = diagnosticoRecusado ? { indisponivel: diagnosticoRecusado } : (j.prompt_cache_diagnostics != null ? j.prompt_cache_diagnostics : { ausente: true });
+    uso.cacheModo = diagnosticoRecusado ? 'recusado' : (opc && opc.mode) || 'implicito';
+    if (opc) uso.diagnostico = diagnosticoRecusado ? { indisponivel: diagnosticoRecusado } : (j.prompt_cache_diagnostics != null ? j.prompt_cache_diagnostics : { ausente: true });
     try {
     if (j.status === 'incomplete') {
         const motivo = j.incomplete_details && j.incomplete_details.reason;
@@ -338,4 +354,4 @@ async function chamarGPT(fetchFn, cfg, p) {
     } catch (e) { throw erroComUso(e, uso); }
 }
 
-module.exports = { partesMensagem, entradaGPT, impressoes, TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };
+module.exports = { partesMensagem, entradaGPT, opcoesCache, impressoes, TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };

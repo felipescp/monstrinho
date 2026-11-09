@@ -98,10 +98,16 @@ exports.criarEsquemaIA = onCall({
     // não divide cache com os lotes (o formato de saída é outro). Só a
     // administração força outra ordem, para testar. 'cache2' = ordem cache
     // com a entrada em dois blocos (teste do cache; ver entradaGPT).
+    // 'explicito' (teste da administração): ponto de corte explícito do cache
+    // só nos lotes de uma execução com mais de um lote (req.data.multiLote);
+    // plano, ficha individual e execução de lote único seguem o padrão.
+    const loteDeVarios = pedido.acao === 'gerar' && pedido.fichas.length > 0 && req.data && req.data.multiLote === true;
+    pedido.cacheExplicito = pedido.provedor === 'gpt' && admin && ordemPedida === 'explicito' && loteDeVarios;
     const ordemValida = ordemPedida === 'antiga' || ordemPedida === 'cache' || ordemPedida === 'cache2';
     // 'cache2' testa só os lotes; o plano continua na ordem original.
     const testeLotes = ordemPedida === 'cache2' && pedido.acao === 'planejar';
     pedido.ordem = pedido.provedor !== 'gpt' ? 'antiga'
+        : pedido.cacheExplicito ? 'cache'
         : admin && ordemValida && !testeLotes ? (ordemPedida === 'cache2' ? 'cache' : ordemPedida)
         : pedido.acao === 'planejar' ? 'antiga'
         : (ORDEM_PROMPT.value() === 'antiga' ? 'antiga' : 'cache');
@@ -123,7 +129,7 @@ exports.criarEsquemaIA = onCall({
                 uid: req.auth.uid, email, acao: pedido.acao, provedor: pedido.provedor, modelo: uso.modelo || '',
                 entrada: uso.entrada || 0, saida: uso.saida || 0, cacheEntrada: uso.cache || 0, cacheEscrita: uso.cacheEscrita || 0, raciocinio: uso.raciocinio || 0,
                 detalhesUso: uso.detalhes || {}, respostaId: uso.respostaId || '',
-                execucao, lote, ordemPrompt: pedido.ordem, formatoEntrada: pedido.blocos ? 'dois-blocos' : 'texto', fichasPedidas, caracteresMaterial: pedido.material.length,
+                execucao, lote, ordemPrompt: pedido.ordem, formatoEntrada: pedido.cacheExplicito ? 'explicito' : pedido.blocos ? 'dois-blocos' : 'texto', cacheModo: uso.cacheModo || '', fichasPedidas, caracteresMaterial: pedido.material.length,
                 comparacao: pedido.comparacao || '', diagnosticoCache: uso.diagnostico ? JSON.stringify(uso.diagnostico).slice(0, 3000) : '',
                 impressoes: pedido.provedor === 'gpt' ? nucleo.impressoes(pedido) : {},
                 em: FieldValue.serverTimestamp()

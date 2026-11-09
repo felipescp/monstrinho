@@ -274,6 +274,8 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 
 **Diagnóstico do cache (administração).** Nos lotes 2 em diante, o app envia o id da resposta do lote anterior (`prompt_cache_options.comparison_response_id`), e o servidor grava em `diagnosticoCache` o `prompt_cache_diagnostics` devolvido pela OpenAI. Se a API recusar o parâmetro (erro 400, nada cobrado), o pedido é repetido sem ele e `diagnosticoCache` registra `indisponivel` com a mensagem da API. O teste "lotes em dois blocos" (seletor do rodapé) manda a parte estável (taxonomia, fonte, material) e a tarefa como duas mensagens, para verificar se o cache passa a ser lido; o plano continua na ordem original.
 
+**Cache explícito (teste da administração, opção "lotes com cache explícito" no rodapé).** Só nos lotes de uma execução com mais de um lote: a entrada vai em duas mensagens, e a parte estável (taxonomia, fonte, material) leva `prompt_cache_breakpoint: { mode: "explicit" }`; o pedido leva `prompt_cache_options: { mode: "explicit", ttl: "30m" }` (mais `comparison_response_id` do lote anterior). O lote 1 grava o prefixo (instruções, formato, taxonomia, fonte, material); os seguintes o leem; a tarefa, depois do ponto de corte, não é gravada. Plano, ficha individual e execução de lote único ficam sem ponto de corte e sem modo explícito. Se a API recusar, o pedido é repetido sem as opções e sem o ponto de corte (`cacheModo: "recusado"`). Em `usoIA`: `formatoEntrada: "explicito"` e `cacheModo`.
+
 **Custo estimado na tela** (agora com a gravação no cache a US$ 0,125/milhão): a entrada lida do cache sai pelo preço de cache; o rodapé mostra quantos tokens vieram do cache e quantos foram de raciocínio.
 
 ## Atualização de fichas (versionamento do acervo)
