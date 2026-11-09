@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**65** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **188** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**60** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **178** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -554,37 +554,6 @@ Alterados: CP art. 121 (§ 2, X; § 2-C; § 2-C, I; § 2-C, II); CP art. 129 (§
 
 - 🧩 Matriz de Crimes de Pornografia Infantil I: Produção, Venda e Simulacro (Arts. 240, 241 e 241-C do ECA) · `esq_1786572834465_6c0if3`
 - 🧩 Matriz de Crimes de Pornografia Infantil II: Compartilhamento, Armazenamento e Aliciamento (Arts. 241-A, 241-B e 241-D do ECA) · `esq_1786572834465_qx07dj`
-
-</details>
-
-## Lei 15.134/2025: Homicídio qualificado contra juízes, MP, Defensoria e Advocacia Pública (5 + 10 só o artigo)
-
-Alterados: CP art. 121 (§ 2, VII); L12694 art. 9 (§ 1-A; § 1-A, I; § 1-A, II; § 1-A, III; § 1-A, IV; § 1-A, V; § 1-A, VI)
-
-- 🧩 **Homicídio e Dolo Eventual nos Tribunais** 🆗 (art. 121, 2) · `esq_1786594778866_iosaoj` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Comparativo · Ref.: art. 18, I, do CP; art. 121, § 2º, do CP; precedentes do STF e STJ Compatibilidade do Dolo Eventual nos Delitos contra a Vi…
-- 🧩 **Homicídio Funcional e de Autoridade (Lei nº 15.134/25)** 🆗 (art. 121, 2, VII, s) · `esq_1786594778866_kymaur` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Alteração legislativa · Ref.: art. 121, § 2º, VII, alíneas "a" e "b", do CP Regime de Tutela Qualificada do Homicídio Funcional Eixo de Análise Agen…
-- 🧩 **Homicídio Qualificado Geral** 🆗 (art. 121, 2, I,II,III,IV,V,VII,VIII,IX,X; 121, 2) · `esq_1786594778866_kyh4bf` · dados/esquemas/esquemas-direito-penal.json
-  > Subtema: Crimes contra a Vida · Tipo: Classificação · Ref.: art. 121, § 2º, I, II, III, IV, V, VII, VIII, IX, X, do CP Natureza e Divisão Temática das Qualificadoras de Homicídio Natureza das Qualifica…
-  > …Temática das Qualificadoras de Homicídio Natureza das Qualificadoras Eixo de Incidência (Art. 121, § 2º, do CP) Espécies de Qualificadoras e Exemplos no CP Subjetivas Ligadas diretamente aos mo…
-- 🧩 **Matriz dos Crimes Hediondos em Espécie (Código Penal)** 🆗 (art. 121; 121, 2) · `esq_1786571782166_v927lp` · dados/esquemas/esquemas-direito-penal.json
-  > …o em atividade de grupo de extermínio (ainda que por um só agente) ou se for qualificado (art. 121, § 2º, do CP). Feminicídio (Art. 121-A do CP) Hediondo em todas as suas modalidades típicas e c…
-- ❓ **Crimes contra a Pessoa · questão 21** 🆗 (art. 121, 2, VII) · `sim_1783734731369_q21` · dados/bateriasvf/grupo-ce-crimescontraapessoaepatrimonio.json
-  > O texto legal do homicídio funcional (art. 121, § 2º, VII, do Código Penal) menciona expressamente o cônjuge, companheiro ou parente consanguíneo a…
-
-<details><summary>Citam só o artigo (10)</summary>
-
-- 🧩 Classificação das Normas Penais e a Teoria das Normas Não Incriminadoras · `esq_1786594883450_vqcbxz`
-- 🧩 Crimes Hediondos por Autonomia e Relação Qualificadora (Lei 14.994/24) · `esq_1786571782166_gmf9sk`
-- 🧩 Exercício Ilegal da Medicina e Outras Infrações à Saúde · `esq_1786594672964_oegxyh`
-- 🧩 Induzimento, Instigação ou Auxílio ao Suicídio e Automutilação · `esq_1786594778866_fxserq`
-- ❓ Crimes contra a Pessoa · questão 1 · `sim_1783734731369_q1`
-- ❓ Crimes contra a Pessoa · questão 12 · `sim_1783734731369_q12`
-- ❓ Crimes contra a Pessoa · questão 13 · `sim_1783734731369_q13`
-- ❓ Crimes contra a Pessoa · questão 29 · `sim_1783734731369_q29`
-- ❓ Crimes contra a Pessoa · questão 45 · `sim_1783734731369_q45`
-- ❓ Pessoa e Patrimônio (Juris) · questão 07 · `sim_1783735414572_q07`
 
 </details>
 
