@@ -4,7 +4,7 @@ Gerado por `ferramentas/revisao_acervo.js` em 2026-11-09. Lista de trabalho só 
 
 Para cada novidade de `dados/leiseca/novidades.json`, as questões e esquemas que citam explicitamente o artigo alterado. Confira se o conteúdo ainda está certo; se precisar corrigir, corrija e acrescente `atualizacoes` ao item (com `ref` contendo a norma, ex. "EC 141/2026"), e ele sai desta lista na próxima execução.
 
-**77** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **196** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
+**71** itens citam o próprio dispositivo alterado (10196 analisados; ocorrências já conferidas e corretas, listadas em ferramentas/revisao_acervo_conferidos.json, ficam de fora). Outros **189** citam só o número do artigo e ficam no fim de cada seção, sem trecho. Itens criados depois do ano da norma vêm com 🆗 (provavelmente já a refletem).
 
 ## EC 141/2026: Jornada de 40 horas semanais e 2 dias de repouso (0 + 8 só o artigo)
 
@@ -354,36 +354,6 @@ Alterados: CF art. 75; CF art. 31 (§ 1)
   > …ontrole Externo e TCE-PE · Tipo: Classificação · Ref.: arts. 29 a 31 da CE-PE; arts. 73 e 75 da CF/88 Órgão / Agente Quantitativo e Regra de Escolha / Provimento Garantias e Prerroga…
 - ❓ **Poder Judiciário - Disposições Gerais (art. 93 a 100, CF) · questão 33** (art. 75) · `sim_1788654352739_q33` · dados/bateriasvf/grupo-ce-poderjudiciariofuncoesgeraisorgaos.json
   > …e ADI 5323/RN) já cristalizou que os Tribunais de Contas atraem, por simetria (arts. 73, 75 e 96, II, "d", da CF), a iniciativa reservada (competência privativa) para instaurar proc…
-
-## Lei Complementar 236/2026: CTN: processo administrativo fiscal nacional, limite de multas e precedentes (6 + 7 só o artigo)
-
-Alterados: CTN art. 113-A; CTN art. 138; CTN art. 142 (§ 1; § 2; § 3; § 4; § 5; § 5, I; § 5, II; § 5, III; § 5, IV; § 6; § 7; § 8; § 9; § 10; § 10, I; § 10, II; § 11); CTN art. 150 (§ 5; § 6); CTN art. 174 (§ 1; § 1, II; § 1, V; § 1, VI; § 1, VII; § 1, VIII; § 1, IX; § 2; § 3; § 4); CTN art. 171-A; CTN art. 194-A; CTN art. 208-A; CTN art. 208-G
-
-- 🧩 **Decadência e Prescrição Ordinária do Crédito Tributário** (art. 174; 174, pu, I) · `esq_1786648638165_njd7ka` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
-  > …to a prescrição flui da constituição definitiva e interrompe-se pelo despacho de citação (art. 174, parágrafo único, I). Fonte: Fontes diversas · Curadoria: 13/08/26
-- 🧩 **Denúncia Espontânea: Requisitos, Exclusão da Multa e Inaplicabilidade ao Parcelamento** (art. 138) · `esq_1790390738173_2kpp0a` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
-  > Subtema: Responsabilidade e Denúncia Espontânea · Tipo: Requisitos e prazos · Ref.: art. 138 do CTN; Súmulas 360 e 555 do STJ; Tema 385 do STJ Aspecto da Denúncia Espontânea Exigênci…
-- 🧩 **Lançamento, Procedimento e Moeda Estrangeira** (art. 142; 142, pu) · `esq_1786648638165_avhjb9` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
-  > …2 do CTN). A atividade é vinculada e obrigatória, sob pena de responsabilidade funcional (art. 142, parágrafo único). Moeda Estrangeira Conversão em moeda nacional ao câmbio do dia da ocorrência do fato ge…
-- 🧩 **Prescrição do Crédito Tributário: Termo Inicial, Interrupção, Suspensão e Citação na Execução Fiscal** (art. 174; 174, pu, I) · `esq_1790391034024_3ffge3` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
-  > …e interrupção da prescrição na Execução Fiscal é o despacho do juiz que ordena a citação (art. 174, parágrafo único, I, do CTN, na redação da LC 118/2005). Fonte: Caderno de Estudos (FGV) e CTN, art. 174 · Cu…
-- 🧩 **Responsabilidade por Infrações e Denúncia Espontânea (Arts. 136 a 138)** (art. 138) · `esq_1786648143298_82tyje` · dados/esquemas/esquemas-direito-financeiro-e-tributario.json
-  > Subtema: Responsabilidade Tributária · Tipo: Classificação · Ref.: arts. 136, 137 e 138 do CTN; Súmulas 360 e 436 do STJ O Código de regência consagra o caráter estritamente obj…
-  > …tintiva de penalidade. Instituto / Regra Legal Conteúdo e Regra de Aplicação (Arts. 136 a 138 do CTN) Restrições e Limitações Sumuladas do STJ Responsabilidade Objetiva A responsabili…
-- ❓ **Normas de Direito Financeiro (Lei 4.320/1964) · questão 46** (art. 174, pu) · `sim_1788653330830_q46` · dados/bateriasvf/grupo-ce-financeiroppp.json
-  > …a interrupção ocorreria "apenas" com o despacho judicial ordenador da citação; a teor do art. 174, parágrafo único, do CTN (já com a modificação da LC nº 118/2005), a prescrição também é utilmente interro…
-
-<details><summary>Citam só o artigo (7)</summary>
-
-- 🧩 Conceito de Tributo e seus Elementos (Art. 3º do CTN) · `esq_1786647730342_gac9yk`
-- 🧩 Decadência Tributária: Regra Geral do Art. 173, I vs. Lançamento por Homologação (Art. 150, § 4º) · `esq_1790391034024_9fuolt`
-- 🧩 Diferenças entre Prescrição Ordinária e Intercorrente · `esq_1786649161291_4bl3du`
-- 🧩 Extinção do Crédito Tributário e Dação em Pagamento · `esq_1786648638165_a36em1`
-- 🧩 Lançamento Tributário: Natureza Jurídica, Efeitos Retroativos, Modalidades e Notificação do Carnê · `esq_1790391034024_ped6di`
-- 🧩 Modalidades de Lançamento e Participação do Contribuinte · `esq_1786648638165_ho2ofb`
-- ❓ Das Penas · questão 55 · `sim_1781785703088_q55`
-
-</details>
 
 ## Lei Complementar 227/2026: ITBI no CTN, contribuição de iluminação e monitoramento, CGIBS (3)
 
