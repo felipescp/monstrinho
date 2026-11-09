@@ -35124,7 +35124,7 @@ window.carregarEsquemasOficiais = async function() {
 // Arquivos: .md e .txt direto; .pdf (pdf.js) e .docx (mammoth) convertidos
 // para texto aqui no navegador, com as bibliotecas em vendor/.
 window.ESQ_IA = {
-    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', etapa: 'material', uso: { entrada: 0, saida: 0, chamadas: 0, porIA: {} }, observacoes: [], ocupado: false, status: '' },
+    estado: { modo: 'individual', provedor: 'gemini', tema: '', material: '', fonte: '', arquivo: '', plano: null, selecionadas: {}, fichas: [], editando: -1, materia: '', etapa: 'material', uso: { entrada: 0, saida: 0, cache: 0, raciocinio: 0, chamadas: 0, porIA: {} }, observacoes: [], ocupado: false, status: '', ordemTeste: '' },
     _esc: function(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); },
     _listaMaterias: function() { return (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(m) { return m.nivel_1; }) : []; },
 
@@ -35329,7 +35329,10 @@ window.ESQ_IA = {
         h += '<div id="esq-ia-corpo" style="flex:1;overflow:auto;padding:14px 20px"><div' + (animar ? ' style="animation:' + animar + ' .22s ease-out"' : '') + '>' + corpo + '</div></div>';
         let porIA = Object.keys(e.uso.porIA || {}).map(function(k) { let p = e.uso.porIA[k]; return k + ' ' + p.chamadas + ' pedido(s) ≈ ' + self._reais(p.custo) + (p.semPreco ? ' (sem preço p/ algum modelo)' : ''); }).join(' · ');
         let ult = e.uso.ultimo ? ' · Último pedido (' + e.uso.ultimo.ia + ') ≈ <b>' + self._reais(e.uso.ultimo.custo) + '</b>' : '';
-        let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px" title="Estimativa pelo preço de tabela e câmbio de R$ ' + self._CAMBIO.toLocaleString('pt-BR') + '; a cobrança real vem das contas da Anthropic e do Google.">Custo estimado nesta janela: ' + porIA + ult + ' · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada, ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída.</div>' : '';
+        let uso = e.uso.chamadas ? '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px" title="Estimativa pelo preço de tabela e câmbio de R$ ' + self._CAMBIO.toLocaleString('pt-BR') + '; a entrada lida do cache sai pelo preço de cache do modelo; a cobrança real vem das contas da Anthropic, do Google e da OpenAI.">Custo estimado nesta janela: ' + porIA + ult + ' · ' + e.uso.entrada.toLocaleString('pt-BR') + ' tokens de entrada' + (e.uso.cache ? ' (' + e.uso.cache.toLocaleString('pt-BR') + ' do cache)' : '') + ', ' + e.uso.saida.toLocaleString('pt-BR') + ' de saída' + (e.uso.raciocinio ? ' (' + e.uso.raciocinio.toLocaleString('pt-BR') + ' de raciocínio)' : '') + '.</div>' : '';
+        // Administração: comparar a ordem do pedido (cache × antiga) com o mesmo material.
+        if (window.ehAdmin()) uso += '<div style="font-size:10.5px;color:var(--text-muted);padding:0 20px 8px">Teste de custo (administração) — ordem do pedido: <select onchange="window.ESQ_IA.estado.ordemTeste = this.value" style="font-size:10.5px"' + dis + '>' +
+            [['', 'padrão do servidor'], ['cache', 'material antes da tarefa (cache)'], ['antiga', 'antiga (tarefa antes do material)']].map(function(o) { return '<option value="' + o[0] + '"' + (e.ordemTeste === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
         h += '<div style="border-top:1px solid var(--border-color)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 20px">' + rodape + '</div>' + uso + '</div>';
         h += '</div>';
         let rolagem = animar ? 0 : ((document.getElementById('esq-ia-corpo') || {}).scrollTop || 0);
@@ -35402,8 +35405,13 @@ window.ESQ_IA = {
     _base: function(acao) {
         let e = this.estado;
         let taxonomia = this._listaMaterias().map(function(m) { return { materia: m, divisoes: Array.from(glosDivisoesValidas(m)) }; });
-        return { acao: acao, provedor: e.provedor === 'claude' || e.provedor === 'gpt' ? e.provedor : 'gemini', taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
+        let b = { acao: acao, provedor: e.provedor === 'claude' || e.provedor === 'gpt' ? e.provedor : 'gemini', taxonomia: taxonomia, tema: e.tema.trim(), material: e.material, fonte: e.fonte.trim() };
+        // Auditoria de custo: a mesma execução liga o plano (lote 0) aos lotes.
+        if (e.execucao) b.execucao = e.execucao;
+        if (window.ehAdmin() && e.ordemTeste) b.ordemPrompt = e.ordemTeste;
+        return b;
     },
+    _novaExecucao: function() { this.estado.execucao = 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); },
     // Custo estimado (preço de tabela, US$ por milhão de tokens) convertido a
     // R$ pelo câmbio abaixo. Só referência: a cobrança real vem das contas
     // da Anthropic, do Google e da OpenAI. Revisar ao trocar de modelo ou de preço.
@@ -35413,24 +35421,29 @@ window.ESQ_IA = {
         if (m.indexOf('claude-opus') === 0) return { ent: 4, sai: 20 };
         if (m.indexOf('claude-sonnet') === 0) return { ent: 2, sai: 10 };
         if (m.indexOf('claude-haiku') === 0) return { ent: 0.10, sai: 0.50 };
-        if (m.indexOf('gpt-6-luna') === 0) return { ent: 0.10, sai: 0.50 };
+        // Entrada lida do cache: US$ 0,01/milhão (tabela da OpenAI).
+        if (m.indexOf('gpt-6-luna') === 0) return { ent: 0.10, sai: 0.50, cache: 0.01 };
         if (m.indexOf('gemini') === 0 && m.indexOf('flash') >= 0) return new Date() < new Date('2027-01-01T00:00:00-03:00') ? { ent: 0.75, sai: 3.75 } : { ent: 1.50, sai: 7.50 };
         return null;
     },
-    _custoReais: function(modelo, entrada, saida) {
+    // entrada inclui os tokens lidos do cache; eles saem pelo preço de cache
+    // quando o modelo tem um (senão, pelo preço normal).
+    _custoReais: function(modelo, entrada, saida, cache) {
         let p = this._precos(modelo);
-        return p ? ((entrada || 0) * p.ent + (saida || 0) * p.sai) / 1e6 * this._CAMBIO : null;
+        if (!p) return null;
+        let c = p.cache != null ? Math.min(cache || 0, entrada || 0) : 0;
+        return (((entrada || 0) - c) * p.ent + c * (p.cache || 0) + (saida || 0) * p.sai) / 1e6 * this._CAMBIO;
     },
     _reais: function(v) { return v == null ? '?' : 'R$ ' + (v < 0.01 ? v.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); },
     _somarUso: function(r) {
         if (r && r.cota) this.estado.cota = r.cota;
         let u = this.estado.uso, x = r.uso || {};
         let ia = /^claude/i.test(x.modelo || '') ? 'IA Plus' : /^gpt/i.test(x.modelo || '') ? 'IA Simples (GPT)' : 'IA Simples (Gemini)';
-        let c = this._custoReais(x.modelo, x.entrada, x.saida);
+        let c = this._custoReais(x.modelo, x.entrada, x.saida, x.cache);
         let p = u.porIA[ia] = u.porIA[ia] || { chamadas: 0, custo: 0, semPreco: false };
         p.chamadas++; if (c == null) p.semPreco = true; else p.custo += c;
         u.ultimo = { ia: ia, custo: c };
-        u.chamadas++; u.entrada += x.entrada || 0; u.saida += x.saida || 0; if (r.observacoes) this.estado.observacoes.push(r.observacoes); },
+        u.chamadas++; u.entrada += x.entrada || 0; u.saida += x.saida || 0; u.cache += x.cache || 0; u.raciocinio += x.raciocinio || 0; if (r.observacoes) this.estado.observacoes.push(r.observacoes); },
     _rodar: async function(fn) {
         this._guardarCampos();
         let e = this.estado;
@@ -35447,7 +35460,8 @@ window.ESQ_IA = {
         e.fichas = []; e.editando = -1; e.observacoes = []; e.etapa = 'fichas';
         return this._rodar(async function() {
             e.status = 'Gerando… (pode levar até 1 minuto)'; self.render();
-            let r = await self._chamar(Object.assign(self._base('gerar'), { fichas: [] }));
+            self._novaExecucao();
+            let r = await self._chamar(Object.assign(self._base('gerar'), { fichas: [], lote: 1 }));
             self._somarUso(r);
             r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
             e.status = r.descartadas ? r.descartadas + ' ficha(s) descartada(s) por formato inválido.' : '';
@@ -35460,7 +35474,8 @@ window.ESQ_IA = {
         e.observacoes = []; e.etapa = 'plano';
         return this._rodar(async function() {
             e.status = 'Planejando… (pode levar alguns minutos em material longo)'; self.render();
-            let r = await self._chamar(self._base('planejar'));
+            self._novaExecucao();
+            let r = await self._chamar(Object.assign(self._base('planejar'), { lote: 0 }));
             self._somarUso(r);
             e.plano = r.fichas; e.selecionadas = {};
             r.fichas.forEach(function(f, i) { e.selecionadas[i] = true; });
@@ -35477,7 +35492,7 @@ window.ESQ_IA = {
             for (let i = 0; i < lista.length; i += 5) {
                 let lote = lista.slice(i, i + 5);
                 e.status = 'Gerando fichas ' + (i + 1) + ' a ' + (i + lote.length) + ' de ' + lista.length + '…'; self.render();
-                let r = await self._chamar(Object.assign(self._base('gerar'), { fichas: lote }));
+                let r = await self._chamar(Object.assign(self._base('gerar'), { fichas: lote, lote: i / 5 + 1 }));
                 self._somarUso(r);
                 r.fichas.forEach(function(f) { f.corpo_html = self._sanitizar(f.corpo_html); e.fichas.push(f); });
                 self.render();

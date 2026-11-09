@@ -262,6 +262,16 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 
 **Teste sem gastar:** `cd functions && npm ci && node teste-nucleo.js` testa o prompt, a validação e o formato da requisição com respostas simuladas.
 
+### Custo da IA: cache de entrada e registro de uso
+
+**Ordem do pedido (GPT).** Com `ORDEM_PROMPT=cache` (padrão, em `functions/.env`), o pedido ao GPT vai na ordem: instruções, formato, taxonomia, fonte, **material**, tarefa. O que se repete entre o plano e os lotes fica no começo, e a OpenAI cobra a parte repetida pelo preço de cache (US$ 0,01/milhão no gpt-6-luna, contra US$ 0,10). O conteúdo do pedido é o mesmo da ordem antiga; só a posição muda (e a tarefa diz "material acima"). Gemini e Claude seguem na ordem original.
+- **Desligar:** `ORDEM_PROMPT=antiga` em `functions/.env` e publicar. O pedido volta a ser idêntico ao anterior, caractere por caractere.
+- **Comparar sem republicar (administração):** no rodapé do "Criar Esquema com IA", "Teste de custo — ordem do pedido" força uma das duas ordens nos próximos pedidos.
+
+**Registro em `usoIA`** (um documento por chamada cobrada). Campos novos, somados aos antigos: `cacheEntrada` (tokens de entrada lidos do cache; já incluídos em `entrada`), `raciocinio` (tokens de raciocínio; já incluídos em `saida`), `detalhesUso` (os detalhes de uso devolvidos pelo provedor), `respostaId`, `execucao` (liga o plano aos lotes dele, ou identifica a ficha individual), `lote` (0 = plano), `ordemPrompt`, `fichasPedidas`, `status` (`ok` ou `erro`) e `erro`. Chamadas que a IA respondeu, mas falharam depois (resposta cortada, recusa, JSON inválido), agora também são registradas, com `status: erro`. Recusas antes da resposta (chave inválida, sem crédito) não são cobradas e não são registradas. Os documentos antigos continuam como estão.
+
+**Custo estimado na tela:** a entrada lida do cache sai pelo preço de cache; o rodapé mostra quantos tokens vieram do cache e quantos foram de raciocínio.
+
 ## Atualização de fichas (versionamento do acervo)
 
 Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança de lei ou de entendimento, acrescente ao objeto (no JSON de `dados/esquemas/` ou de `dados/bateriasvf/`) o campo `atualizacoes`, da mais recente para a mais antiga:

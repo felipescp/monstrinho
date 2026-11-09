@@ -141,9 +141,19 @@ function validarPedido(d) {
     return { acao, provedor, taxonomia, tema, material, fonte, fichas };
 }
 
+// Ordem das partes (p.ordem, decidida em index.js):
+//   'antiga': taxonomia, fonte, TAREFA, material — o comportamento original;
+//   'cache':  taxonomia, fonte, material, TAREFA — o que se repete entre o
+//             plano e os lotes fica no começo (prefixo idêntico), e o cache
+//             de entrada do provedor reaproveita o material nos lotes
+//             seguintes. Conteúdo igual; só muda a posição, e por isso a
+//             tarefa diz "material acima" em vez de "material abaixo".
 function mensagemUsuario(p) {
-    let t = 'Matérias e divisões válidas (L1 e, abaixo de cada uma, as L2; use exatamente estes nomes):\n' + p.taxonomia.map(m => '## ' + m.materia + '\n' + m.divisoes.map(x => '- ' + x).join('\n')).join('\n') + '\n\n';
-    if (p.fonte) t += 'Fonte do material (para o campo "fonte"): ' + p.fonte + '\n\n';
+    const cache = p.ordem === 'cache';
+    let cab = 'Matérias e divisões válidas (L1 e, abaixo de cada uma, as L2; use exatamente estes nomes):\n' + p.taxonomia.map(m => '## ' + m.materia + '\n' + m.divisoes.map(x => '- ' + x).join('\n')).join('\n') + '\n\n';
+    if (p.fonte) cab += 'Fonte do material (para o campo "fonte"): ' + p.fonte + '\n\n';
+    const onde = cache ? 'acima' : 'abaixo';
+    let t = '';
     if (p.acao === 'planejar') {
         t += 'TAREFA: planejar. Leia o material e proponha a lista de fichas extraíveis (sem gerar o corpo), na ordem do material. Para cada uma: titulo, materia, divisao, subtema, tipo e um resumo de uma linha do que a tabela vai conter. Em "observacoes", lacunas, divergências ou trechos sem L2 correspondente (ou "" se nada).';
         if (p.tema) t += '\nOrientação/delimitação do usuário (siga-a: planeje só o que ela abrange): ' + p.tema;
@@ -153,14 +163,14 @@ function mensagemUsuario(p) {
             t += 'TAREFA: gerar estas fichas, uma para cada item, nesta ordem:\n' + p.fichas.map((f, i) => (i + 1) + '. ' + f.titulo + ' | matéria: ' + f.materia + ' | divisão: ' + f.divisao + ' | subtema: ' + f.subtema + ' | tipo: ' + f.tipo + (f.resumo ? ' | conteúdo: ' + f.resumo : '')).join('\n');
             if (p.tema) t += '\nOrientação/delimitação do usuário (siga-a): ' + p.tema;
         } else {
-            t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) a partir do material abaixo, seguindo esta orientação/delimitação do usuário — restrinja o conteúdo ao que ela pede, adote o formato que ela indicar e dê à ficha um título curto e descritivo: ' + p.tema
-                : 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) que esquematize o material abaixo. Dê à ficha um título curto e descritivo do conteúdo.';
+            t += p.tema ? 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) a partir do material ' + onde + ', seguindo esta orientação/delimitação do usuário — restrinja o conteúdo ao que ela pede, adote o formato que ela indicar e dê à ficha um título curto e descritivo: ' + p.tema
+                : 'TAREFA: gerar UMA ficha (ou duas, se o conteúdo tiver dois eixos que não cabem numa só) que esquematize o material ' + onde + '. Dê à ficha um título curto e descritivo do conteúdo.';
         }
         t += '\nCampos de cada ficha: materia, divisao, titulo, subtema, tipo, referencia (dispositivos e julgados de base, no padrão de citação; ou "(ref. não indicada no material)"), corpo_html, alerta, fonte (a fonte do material, com página se houver). Em "observacoes", o que faltou no material (ou "").';
         t += '\nResponda no formato JSON: {"fichas":[{"materia","divisao","titulo","subtema","tipo","referencia","corpo_html","alerta","fonte"}],"observacoes"}.';
     }
-    t += p.material.trim() ? '\n\n<material>\n' + p.material + '\n</material>' : '\n\n(Sem material anexado: use apenas conhecimento jurídico consolidado e seguro; na dúvida, omita.)';
-    return t;
+    const mat = p.material.trim() ? '<material>\n' + p.material + '\n</material>' : '(Sem material anexado: use apenas conhecimento jurídico consolidado e seguro; na dúvida, omita.)';
+    return cache ? cab + mat + '\n\n' + t : cab + t + '\n\n' + mat;
 }
 
 // Extrai o JSON do texto da IA (tolera cercas ```json).
@@ -191,6 +201,17 @@ function validarSaida(acao, j) {
     return out;
 }
 
+// ── Uso (tokens) ──
+// Só números, para gravar em usoIA sem lixo: {campo: inteiro}.
+function soNumeros(o) {
+    const r = {};
+    Object.keys(o || {}).forEach(k => { const v = o[k]; if (typeof v === 'number' && isFinite(v)) r[k] = v; });
+    return r;
+}
+// Erro depois de a IA responder (resposta cortada, recusa, JSON inválido):
+// o provedor já cobrou, então o uso vai junto no erro para ser registrado.
+function erroComUso(e, uso) { if (e && typeof e === 'object') e.uso = uso; return e; }
+
 // ── Chamadas às IAs ──
 // Claude: SDK oficial, streaming (respostas longas), saída estruturada por
 // JSON schema, fallback do servidor em caso de recusa.
@@ -205,13 +226,14 @@ async function chamarClaude(cliente, cfg, p) {
         messages: [{ role: 'user', content: mensagemUsuario(p) }]
     });
     const msg = await stream.finalMessage();
+    const usoC = msg.usage || {};
+    const uso = { modelo: msg.model, entrada: usoC.input_tokens || 0, saida: usoC.output_tokens || 0, cache: usoC.cache_read_input_tokens || 0, raciocinio: 0, detalhes: { entrada: soNumeros(usoC) }, respostaId: msg.id || '' };
+    try {
     if (msg.stop_reason === 'refusal') throw new Error('A IA recusou o pedido' + (msg.stop_details && msg.stop_details.explanation ? ': ' + msg.stop_details.explanation : '.'));
     if (msg.stop_reason === 'max_tokens') throw new Error('A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.');
     const texto = msg.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    return {
-        json: lerJson(texto),
-        uso: { modelo: msg.model, entrada: msg.usage.input_tokens || 0, saida: msg.usage.output_tokens || 0 }
-    };
+    return { json: lerJson(texto), uso };
+    } catch (e) { throw erroComUso(e, uso); }
 }
 
 // Gemini: API REST (generativelanguage), resposta em JSON.
@@ -228,15 +250,15 @@ async function chamarGemini(fetchFn, cfg, p) {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error('Gemini respondeu ' + r.status + ': ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
+    const u = j.usageMetadata || {};
+    const uso = { modelo: cfg.modelo, entrada: u.promptTokenCount || 0, saida: (u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0), cache: u.cachedContentTokenCount || 0, raciocinio: u.thoughtsTokenCount || 0, detalhes: { entrada: soNumeros(u) }, respostaId: j.responseId || '' };
+    try {
     const cand = (j.candidates || [])[0] || {};
     if (cand.finishReason === 'MAX_TOKENS') throw new Error('A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.');
     if (cand.finishReason && cand.finishReason !== 'STOP') throw new Error('O Gemini interrompeu a resposta (' + cand.finishReason + ').');
     const texto = ((cand.content && cand.content.parts) || []).map(x => x.text || '').join('');
-    const u = j.usageMetadata || {};
-    return {
-        json: lerJson(texto),
-        uso: { modelo: cfg.modelo, entrada: u.promptTokenCount || 0, saida: (u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0) }
-    };
+    return { json: lerJson(texto), uso };
+    } catch (e) { throw erroComUso(e, uso); }
 }
 
 // GPT (OpenAI): API REST de respostas (Responses), saída em JSON pelo mesmo
@@ -255,6 +277,12 @@ async function chamarGPT(fetchFn, cfg, p) {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error('GPT respondeu ' + r.status + ' (' + String((j.error && (j.error.code || j.error.type)) || '') + '): ' + String((j.error && j.error.message) || '').slice(0, 200)); e.status = r.status; throw e; }
+    // Uso devolvido pela OpenAI: input_tokens inclui os lidos do cache
+    // (input_tokens_details.cached_tokens); output_tokens inclui o
+    // raciocínio (output_tokens_details.reasoning_tokens).
+    const u = j.usage || {}, ue = u.input_tokens_details || {}, us = u.output_tokens_details || {};
+    const uso = { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0, cache: ue.cached_tokens || 0, raciocinio: us.reasoning_tokens || 0, detalhes: { entrada: soNumeros(ue), saida: soNumeros(us) }, respostaId: j.id || '' };
+    try {
     if (j.status === 'incomplete') {
         const motivo = j.incomplete_details && j.incomplete_details.reason;
         throw new Error(motivo === 'max_output_tokens' ? 'A resposta ficou longa demais e foi cortada. Peça menos fichas por vez.' : 'O GPT interrompeu a resposta (' + (motivo || 'incompleta') + ').');
@@ -264,11 +292,8 @@ async function chamarGPT(fetchFn, cfg, p) {
         if (c.type === 'refusal') throw new Error('A IA recusou o pedido' + (c.refusal ? ': ' + c.refusal : '.'));
         if (c.type === 'output_text' && c.text) partes.push(c.text);
     }));
-    const u = j.usage || {};
-    return {
-        json: lerJson(partes.join('')),
-        uso: { modelo: j.model || cfg.modelo, entrada: u.input_tokens || 0, saida: u.output_tokens || 0 }
-    };
+    return { json: lerJson(partes.join('')), uso };
+    } catch (e) { throw erroComUso(e, uso); }
 }
 
 module.exports = { TIPOS, SISTEMA, LIMITE_MATERIAL, LIMITE_FICHAS_POR_PEDIDO, esquemaPlano, esquemaFichas, validarPedido, mensagemUsuario, lerJson, validarSaida, chamarClaude, chamarGemini, chamarGPT };

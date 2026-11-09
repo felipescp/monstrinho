@@ -34,6 +34,13 @@ const GEMINI_MODELO = defineString('GEMINI_MODELO', { default: 'gemini-3.8-flash
 const GPT_LIGADO = true;
 const CHAVE_GPT = defineSecret('OPENAI_API_KEY');
 const GPT_MODELO = defineString('GPT_MODELO', { default: 'gpt-6-luna' });
+// Ordem das partes do pedido (ver mensagemUsuario em nucleo.js). "cache":
+// material antes da tarefa, para o provedor reaproveitar o material entre
+// o plano e os lotes (cache de entrada). "antiga": o comportamento original.
+// Para voltar ao original: ORDEM_PROMPT=antiga em functions/.env e publicar.
+// A administração pode forçar uma das duas num pedido (ordemPrompt), para
+// comparar as duas com o mesmo material sem republicar.
+const ORDEM_PROMPT = defineString('ORDEM_PROMPT', { default: 'cache' });
 
 // Esquemas por semana (segunda a domingo, horário de Brasília).
 const COTA_SEMANAL = { intermediario: 1, completo: 10 };
@@ -84,6 +91,31 @@ exports.criarEsquemaIA = onCall({
     catch (e) { throw new HttpsError('invalid-argument', e.message); }
 
     if (pedido.provedor === 'claude' && !CLAUDE_LIGADO) throw new HttpsError('failed-precondition', 'O Claude ainda não foi configurado (falta a chave ANTHROPIC_API_KEY). Use o Gemini.');
+    const ordemPedida = req.data && req.data.ordemPrompt;
+    // Por ora só no GPT (o Gemini e o Claude seguem com a ordem original).
+    pedido.ordem = pedido.provedor !== 'gpt' ? 'antiga'
+        : admin && (ordemPedida === 'antiga' || ordemPedida === 'cache') ? ordemPedida
+        : (ORDEM_PROMPT.value() === 'antiga' ? 'antiga' : 'cache');
+    // Identificação para a auditoria de custo: execução (um plano e os seus
+    // lotes, ou uma ficha individual) e número do lote (0 = plano).
+    const execucao = String((req.data && req.data.execucao) || '').replace(/[^\w-]/g, '').slice(0, 40);
+    const lote = Number.isInteger(req.data && req.data.lote) && req.data.lote >= 0 && req.data.lote < 1000 ? req.data.lote : null;
+    const fichasPedidas = pedido.acao === 'gerar' ? pedido.fichas.length : 0;
+    // Grava cada chamada que o provedor cobrou — também as que falharam
+    // depois da resposta (cortada, recusa, JSON inválido, formato errado).
+    const registrarUso = async (uso, extra) => {
+        if (!uso) return;
+        try {
+            await db.collection('usoIA').add(Object.assign({
+                uid: req.auth.uid, email, acao: pedido.acao, provedor: pedido.provedor, modelo: uso.modelo || '',
+                entrada: uso.entrada || 0, saida: uso.saida || 0, cacheEntrada: uso.cache || 0, raciocinio: uso.raciocinio || 0,
+                detalhesUso: uso.detalhes || {}, respostaId: uso.respostaId || '',
+                execucao, lote, ordemPrompt: pedido.ordem, fichasPedidas, caracteresMaterial: pedido.material.length,
+                em: FieldValue.serverTimestamp()
+            }, extra));
+        } catch (e) { console.warn('[criarEsquemaIA] não registrou o uso:', e.message); }
+    };
+
     if (pedido.provedor === 'gpt' && !GPT_LIGADO) throw new HttpsError('failed-precondition', 'O GPT ainda está em configuração. Use o Gemini.');
     if (pedido.provedor === 'claude' && IA_PLUS_SO_ADMIN && !admin) throw new HttpsError('permission-denied', 'A IA Plus ainda não está disponível.');
 
@@ -128,6 +160,7 @@ exports.criarEsquemaIA = onCall({
     } catch (e) {
         console.error('[criarEsquemaIA] falha:', pedido.provedor, e && e.status, e && e.message);
         await devolver(reserva);
+        await registrarUso(e && e.uso, { status: 'erro', erro: String((e && e.message) || '').slice(0, 300), fichas: 0 });
         const status = e && e.status;
         const msg = status === 401 ? 'A chave da IA foi recusada (confira o segredo no Secret Manager).'
             // 429 da OpenAI/Gemini também vem quando a conta está sem crédito
@@ -140,19 +173,17 @@ exports.criarEsquemaIA = onCall({
 
     let saida;
     try { saida = nucleo.validarSaida(pedido.acao, r.json); }
-    catch (e) { await devolver(reserva); throw new HttpsError('internal', 'Resposta da IA fora do formato: ' + e.message); }
+    catch (e) {
+        await devolver(reserva);
+        await registrarUso(r.uso, { status: 'erro', erro: 'Resposta fora do formato: ' + String(e.message).slice(0, 250), fichas: 0 });
+        throw new HttpsError('internal', 'Resposta da IA fora do formato: ' + e.message);
+    }
     if (reserva) {
         if (saida.fichas.length > reserva) saida.fichas = saida.fichas.slice(0, reserva);
         await devolver(reserva - saida.fichas.length);
     }
 
-    try {
-        await db.collection('usoIA').add({
-            uid: req.auth.uid, email, acao: pedido.acao, provedor: pedido.provedor, modelo: r.uso.modelo,
-            entrada: r.uso.entrada, saida: r.uso.saida, fichas: saida.fichas.length, caracteresMaterial: pedido.material.length,
-            em: FieldValue.serverTimestamp()
-        });
-    } catch (e) { console.warn('[criarEsquemaIA] não registrou o uso:', e.message); }
+    await registrarUso(r.uso, { status: 'ok', fichas: saida.fichas.length, descartadas: saida.descartadas || 0 });
 
     return { acao: pedido.acao, fichas: saida.fichas, descartadas: saida.descartadas, observacoes: saida.observacoes, uso: r.uso, cota: await lerCota() };
 });
