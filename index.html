@@ -188,7 +188,7 @@
         var rel = String(caminho).replace(/^dados\//, '');
         // Amostra da Lei Seca (diplomas citados na bateria): manifesto e
         // mapas de incidência; os comentários do sistema ficam no completo.
-        if (rel === 'leiseca/manifesto.json' || rel.indexOf('leiseca/incidencia/') === 0) return true;
+        if (rel === 'leiseca/manifesto.json' || rel === 'leiseca/novidades.json' || rel.indexOf('leiseca/incidencia/') === 0) return true;
         if (ITENS_SIMPLES.indexOf(rel.split('/')[0]) !== -1) return true;
         if (FB.nivel !== 'intermediario') return false;
         if (ITENS_INTERMEDIARIO.indexOf(rel.split('/')[0]) !== -1) return true;
@@ -16541,6 +16541,29 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-com-acoes button { padding:5px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:11px; font-weight:700; cursor:pointer; }
     #leiseca-modal .ls-com-acoes .primario { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
     #leiseca-modal .ls-com-acoes .excluir { color:#dc2626; border-color:#fca5a5; margin-right:auto; }
+    /* 🆕 Novidades (dados/leiseca/novidades.json): painel por cima do mapa. */
+    #leiseca-modal .analytics-modal-content { position:relative; }
+    #leiseca-modal .ls-nov-btn { border:1px solid var(--app-primary); background:var(--bg-accent-soft, #eef2ff); color:var(--app-primary); border-radius:8px; padding:5px 10px; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; }
+    #leiseca-modal .ls-nov-btn.ativo { background:var(--app-primary); color:#fff; }
+    #leiseca-modal .ls-nov { flex:1; overflow-y:auto; padding:14px 18px 24px; background:var(--bg-soft); }
+    #leiseca-modal .ls-nov-topo { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    #leiseca-modal .ls-nov-topo h3 { margin:0 auto 0 0; font-size:15px; color:var(--text-main); }
+    #leiseca-modal .ls-nov-filtros { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; align-items:center; }
+    #leiseca-modal .ls-nov-chip { border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); border-radius:99px; padding:3px 10px; font-size:11px; font-weight:700; cursor:pointer; }
+    #leiseca-modal .ls-nov-chip.ativo { background:var(--app-primary); border-color:var(--app-primary); color:#fff; }
+    #leiseca-modal .ls-nov-filtros label { font-size:11px; font-weight:700; color:var(--text-main); display:inline-flex; gap:4px; align-items:center; margin-left:6px; cursor:pointer; }
+    #leiseca-modal .ls-nov-card { background:var(--bg-white); border:1px solid var(--border-color); border-left:4px solid var(--border-color); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+    #leiseca-modal .ls-nov-card.destaque { border-left-color:var(--app-primary); }
+    #leiseca-modal .ls-nov-card.foco { box-shadow:0 0 0 3px var(--app-primary); }
+    #leiseca-modal .ls-nov-norma { font-size:10.5px; font-weight:800; color:var(--app-primary); text-transform:uppercase; letter-spacing:.03em; }
+    #leiseca-modal .ls-nov-tit { font-size:14px; font-weight:800; color:var(--text-main); margin:2px 0 6px; line-height:1.3; }
+    #leiseca-modal .ls-nov-res { font-size:12.5px; line-height:1.55; color:var(--text-main); }
+    #leiseca-modal .ls-nov-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; align-items:center; }
+    #leiseca-modal .ls-nov-disc { font-size:10px; font-weight:700; color:var(--text-muted); background:var(--bg-soft); border-radius:6px; padding:1px 6px; }
+    #leiseca-modal .ls-nov-art { font-size:10.5px; font-weight:700; color:var(--app-primary); background:none; border:1px dashed var(--app-primary); border-radius:6px; padding:1px 6px; cursor:pointer; }
+    #leiseca-modal .ls-nov-art:hover { background:var(--bg-accent-soft, #eef2ff); }
+    #leiseca-modal .ls-nov-bloq { font-size:11.5px; color:var(--text-muted); font-style:italic; }
+    #leiseca-modal .ls-nov-ver { font-size:10px; font-weight:800; color:var(--app-primary); margin-left:4px; cursor:pointer; text-decoration:underline; }
     @media (max-width: 900px) {
         #leiseca-modal .fc-grid { grid-template-columns:1fr; overflow-y:auto; }
         #leiseca-modal .fc-col { max-height:none; }
@@ -16551,11 +16574,13 @@ window.carregarPenasOficiais = async function() {
         <div class="analytics-modal-header">
             <div class="analytics-modal-title">📜 Lei Seca</div>
             <div class="ls-cab-acoes">
+                <button type="button" class="ls-nov-btn" id="ls-nov-btn" onclick="window.LEISECA_RUNTIME.abrirNovidades()" title="Alterações legislativas recentes (curadoria)">🆕 Novidades</button>
                 <span class="ls-legenda"><span><i class="ls-n3"></i>Crítico</span><span><i class="ls-n2"></i>Importante</span><span><i class="ls-n1"></i>Regular</span><span><i class="ls-n0"></i>Não cobrado</span></span>
                 <button class="analytics-close-btn" id="ls-modal-btn-maximizar" onclick="window.alternarMaximizarLeiSecaModal()" title="Minimizar">🗗</button>
                 <button class="analytics-close-btn" onclick="window.fecharLeiSecaModal()">&#x2715;</button>
             </div>
         </div>
+        <div id="ls-novidades" class="ls-nov" style="display:none"></div>
         <div class="fc-grid">
             <div class="fc-col" id="ls-col-diplomas"></div>
             <div class="fc-col" id="ls-col-divisoes"></div>
@@ -16647,6 +16672,7 @@ window.LEISECA_RUNTIME = {
             }
         }
         this._aplicarNivel();
+        await this._carregarNovidades(); // link "ver novidade" nos dispositivos alterados
         if (!this._diploma) {
             let ultimo = null;
             try { ultimo = localStorage.getItem(this.CHAVE_ULTIMO_DIPLOMA); } catch (e) {}
@@ -16900,6 +16926,105 @@ window.LEISECA_RUNTIME = {
     _anoLei: function(t) { return window.ESTRUTURA_MIXIN._anoLei.call(this, t); },
     _leiRecente: function(t) { return window.ESTRUTURA_MIXIN._leiRecente.call(this, t); },
     _htmlNovo: function(lei, oQue) { return window.ESTRUTURA_MIXIN._htmlNovo.call(this, lei, oQue); },
+
+    // ── 🆕 NOVIDADES (pedido explícito do usuário): alterações legislativas
+    // recentes com curadoria (dados/leiseca/novidades.json). Cada novidade é
+    // uma norma ("norma" = o "alt" dos dispositivos que ela alterou), com
+    // título, resumo, disciplinas e os artigos principais. O dispositivo
+    // alterado por uma norma da lista ganha o link "ver novidade" ao lado do
+    // selo Novo. Nível: manchetes para todos; resumo e atalhos no completo.
+    _novidades: null,
+    _novFiltro: { disc: '', destaques: false, conjunto: false },
+    _carregarNovidades: function() {
+        let self = this;
+        if (!this._novProm) this._novProm = fetch('dados/leiseca/novidades.json?v=' + Date.now())
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(j) {
+                self._novidades = j && Array.isArray(j.novidades) ? j.novidades : [];
+                self._novPorNorma = {};
+                self._novidades.forEach(function(n) { self._novPorNorma[n.norma] = n; });
+                return self._novidades;
+            }, function() { self._novProm = null; self._novidades = []; return []; });
+        return this._novProm;
+    },
+    _htmlLinkNovidade: function(alt) {
+        let n = this._novPorNorma && this._novPorNorma[alt];
+        if (!n) return '';
+        return '<span class="ls-nov-ver" title="' + this._esc(n.titulo) + '" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.abrirNovidades(\'' + this._escJs(n.id) + '\')">ver novidade</span>';
+    },
+    abrirNovidades: async function(foco) {
+        let el = document.getElementById('ls-novidades'), grid = document.querySelector('#leiseca-modal .fc-grid');
+        if (!el) return;
+        if (!foco && el.style.display !== 'none') { this.fecharNovidades(); return; }
+        el.style.display = 'block'; if (grid) grid.style.display = 'none';
+        let btn = document.getElementById('ls-nov-btn'); if (btn) btn.classList.add('ativo');
+        this._novFoco = foco || null;
+        if (foco) this._novFiltro.disc = '';
+        el.innerHTML = '<div class="fc-vazio-col">Carregando…</div>';
+        await this._carregarNovidades();
+        this._renderNovidades();
+    },
+    fecharNovidades: function() {
+        let el = document.getElementById('ls-novidades'), grid = document.querySelector('#leiseca-modal .fc-grid');
+        if (el) el.style.display = 'none';
+        if (grid) grid.style.display = '';
+        let btn = document.getElementById('ls-nov-btn'); if (btn) btn.classList.remove('ativo');
+    },
+    filtrarNovidades: function(campo, valor) {
+        this._novFiltro[campo] = campo === 'disc' ? (this._novFiltro.disc === valor ? '' : valor) : !!valor;
+        this._novFoco = null;
+        this._renderNovidades();
+    },
+    irParaArtigoNovidade: async function(dip, art) {
+        if (!window.temNivel('completo')) { window.mostrarNiveis('Novidades legislativas', 'completo'); return; }
+        if (this._infoDiploma(dip)) {
+            this.fecharNovidades();
+            await this.selecionarDiploma(dip);
+            if (this._diploma === dip) this.abrirArtigo(art);
+        } else if (window.LEGISLACAO && window.LEGISLACAO.abrirNoPlanalto) window.LEGISLACAO.abrirNoPlanalto(dip + '|' + art + '|||');
+    },
+    _renderNovidades: function() {
+        let el = document.getElementById('ls-novidades');
+        if (!el) return;
+        let self = this, f = this._novFiltro, completo = window.temNivel('completo'), lista = this._novidades || [];
+        let conj = f.conjunto && this._conjuntoAtivo ? this._conjuntoAtivo() : null;
+        let nomeDip = function(id) { let L = window.LEGISLACAO, d = L && L.DIPLOMAS && L.DIPLOMAS[id]; return d ? String(d.nome).split(' (')[0] : id; };
+        let discs = [];
+        lista.forEach(function(n) { (n.disciplinas || []).forEach(function(d) { if (discs.indexOf(d) < 0) discs.push(d); }); });
+        let ordem = (typeof TAXONOMIA_DADOS !== 'undefined' && TAXONOMIA_DADOS.taxonomia_concursos) ? TAXONOMIA_DADOS.taxonomia_concursos.map(function(t) { return t.nivel_1; }) : [];
+        discs.sort(function(a, b) { let ia = ordem.indexOf(a), ib = ordem.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+        let vis = lista.filter(function(n) {
+            if (self._novFoco) return n.id === self._novFoco;
+            if (f.disc && (n.disciplinas || []).indexOf(f.disc) < 0) return false;
+            if (f.destaques && !n.destaque) return false;
+            if (conj && !(n.arts || []).some(function(a) { return conj.diplomas.indexOf(a[0]) >= 0; })) return false;
+            return true;
+        }).sort(function(a, b) { return (b.ano - a.ano) || ((b.destaque ? 1 : 0) - (a.destaque ? 1 : 0)); });
+        let h = '<div class="ls-nov-topo"><h3>🆕 Novidades legislativas</h3>' +
+            (this._novFoco ? '<button type="button" class="ls-nov-chip" onclick="window.LEISECA_RUNTIME.filtrarNovidades(\'disc\', \'\')">Ver todas</button>' : '') +
+            '<button type="button" class="ls-nov-chip" onclick="window.LEISECA_RUNTIME.fecharNovidades()">‹ Voltar à Lei Seca</button></div>';
+        if (!this._novFoco) {
+            h += '<div class="ls-nov-filtros">' + discs.map(function(d) {
+                return '<button type="button" class="ls-nov-chip' + (f.disc === d ? ' ativo' : '') + '" onclick="window.LEISECA_RUNTIME.filtrarNovidades(\'disc\', \'' + self._escJs(d) + '\')">' + self._esc(d.replace(/^Direito (d[aoe]s? )?/, '')) + '</button>';
+            }).join('') +
+            '<label><input type="checkbox"' + (f.destaques ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.filtrarNovidades(\'destaques\', this.checked)">Só destaques</label>' +
+            (this._conjuntoAtivo && this._conjuntoAtivo() ? '<label title="Só as que alteram leis do seu conjunto de Lei Seca"><input type="checkbox"' + (f.conjunto ? ' checked' : '') + ' onchange="window.LEISECA_RUNTIME.filtrarNovidades(\'conjunto\', this.checked)">Só do meu conjunto</label>' : '') +
+            '</div>';
+        }
+        h += vis.length ? vis.map(function(n) {
+            let arts = (n.arts || []).map(function(a) {
+                return '<button type="button" class="ls-nov-art"' + window.travaNivel('completo', 'Novidades legislativas') + ' onclick="window.LEISECA_RUNTIME.irParaArtigoNovidade(\'' + self._escJs(a[0]) + '\', \'' + self._escJs(a[1]) + '\')" title="Abrir ' + self._esc(nomeDip(a[0])) + ', art. ' + self._esc(a[1]) + '">' + self._esc(nomeDip(a[0])) + ', art. ' + self._esc(a[1]) + '</button>';
+            }).join('');
+            return '<div class="ls-nov-card' + (n.destaque ? ' destaque' : '') + (self._novFoco === n.id ? ' foco' : '') + '">' +
+                '<div class="ls-nov-norma">' + self._esc(n.norma) + (n.destaque ? ' · destaque' : '') + '</div>' +
+                '<div class="ls-nov-tit">' + self._esc(n.titulo) + '</div>' +
+                (completo ? '<div class="ls-nov-res">' + self._esc(n.resumo) + '</div>'
+                    : '<div class="ls-nov-bloq"' + window.travaNivel('completo', 'Novidades legislativas') + '>O resumo e os atalhos para os artigos fazem parte do acesso completo.</div>') +
+                '<div class="ls-nov-tags">' + (n.disciplinas || []).map(function(d) { return '<span class="ls-nov-disc">' + self._esc(d) + '</span>'; }).join('') + arts + '</div></div>';
+        }).join('') : '<div class="fc-vazio-col">Nenhuma novidade com esses filtros.</div>';
+        el.innerHTML = h;
+        el.scrollTop = 0;
+    },
     _artNovo: function(art) {
         let self = this, j = this._textos[this._diploma], a = j && j.artigos[art];
         if (!a) return false;
@@ -17621,7 +17746,7 @@ window.LEISECA_RUNTIME = {
             let marca = no.revogado ? '' : '<button class="ls-chk' + (lido ? ' on' : '') + '" title="' + (lido ? 'Lido — tocar para desmarcar' : 'Marcar este dispositivo como lido') + '" onclick="event.stopPropagation(); window.LEISECA_RUNTIME.alternarLidoDisp(\'' + self._escJs(a) + '\', \'' + self._escJs(chave) + '\')">✓</button>';
             return '<div class="ls-d ls-n' + nv + (cls ? ' ' + cls : '') + (lido ? ' lido' : '') + (cb ? ' ls-com-on' : '') + '">' + marca + cb + '<span class="ls-rot">' + rot + '</span> ' + txt +
                 (n ? '<span class="ls-qt" title="Cobrado ' + n + ' vez(es) em provas">' + n + '×</span>' : '') +
-                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') : '') + '</div>' +
+                (no.alt ? '<span class="ls-alt">(' + self._esc(no.alt) + ')</span>' + self._htmlNovo(no.alt, no.revogado ? 'Revogado' : 'Incluído ou alterado') + self._htmlLinkNovidade(no.alt) : '') + '</div>' +
                 (semCom ? '' : self._htmlComentarios(a, chave, cls));
         };
         this._grifosPerdidos = 0;
@@ -17752,6 +17877,7 @@ window.alternarMaximizarLeiSecaModal = function() {
     if (btn) { btn.textContent = max ? '🗗' : '⛶'; btn.title = max ? 'Minimizar' : 'Maximizar'; }
 };
 window.fecharLeiSecaModal = function() {
+    if (window.LEISECA_RUNTIME && window.LEISECA_RUNTIME.fecharNovidades) window.LEISECA_RUNTIME.fecharNovidades();
     const modal = document.getElementById('leiseca-modal');
     if (!modal) return;
     modal.classList.remove('active');
