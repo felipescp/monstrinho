@@ -10364,6 +10364,99 @@ window.ClassificacaoCards = {
     }
 };
 
+// Gera e baixa um arquivo .zip padrão (Store + CRC32 + UTF-8) em JS puro a partir
+// de uma lista de [{ nome: 'arquivo.json', conteudo: '...' }], sem dependências externas.
+window.downloadZipArquivos = function(arquivos, nomeZip) {
+    if (!arquivos || !arquivos.length) return;
+    let enc = new TextEncoder();
+    let tabCrc = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        tabCrc[n] = c >>> 0;
+    }
+    let d = new Date();
+    let dosTime = ((d.getHours() & 0x1F) << 11) | ((d.getMinutes() & 0x3F) << 5) | ((d.getSeconds() >> 1) & 0x1F);
+    let dosDate = (((d.getFullYear() - 1980) & 0x7F) << 9) | (((d.getMonth() + 1) & 0x0F) << 5) | (d.getDate() & 0x1F);
+
+    let partesLocais = [];
+    let partesCentrais = [];
+    let offsetLocal = 0;
+    let tamanhoCentral = 0;
+
+    arquivos.forEach(function(arq) {
+        let nomeBytes = enc.encode(arq.nome);
+        let dadosBytes = enc.encode(arq.conteudo);
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < dadosBytes.length; i++) {
+            crc = (crc >>> 8) ^ tabCrc[(crc ^ dadosBytes[i]) & 0xFF];
+        }
+        crc = (crc ^ 0xFFFFFFFF) >>> 0;
+
+        let localHdr = new Uint8Array(30 + nomeBytes.length);
+        let lv = new DataView(localHdr.buffer);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0x0800, true);
+        lv.setUint16(8, 0, true);
+        lv.setUint16(10, dosTime, true);
+        lv.setUint16(12, dosDate, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, dadosBytes.length, true);
+        lv.setUint32(22, dadosBytes.length, true);
+        lv.setUint16(26, nomeBytes.length, true);
+        lv.setUint16(28, 0, true);
+        localHdr.set(nomeBytes, 30);
+
+        let centralHdr = new Uint8Array(46 + nomeBytes.length);
+        let cv = new DataView(centralHdr.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, dosTime, true);
+        cv.setUint16(14, dosDate, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, dadosBytes.length, true);
+        cv.setUint32(24, dadosBytes.length, true);
+        cv.setUint16(28, nomeBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offsetLocal, true);
+        centralHdr.set(nomeBytes, 46);
+
+        partesLocais.push(localHdr, dadosBytes);
+        partesCentrais.push(centralHdr);
+        offsetLocal += localHdr.length + dadosBytes.length;
+        tamanhoCentral += centralHdr.length;
+    });
+
+    let eocd = new Uint8Array(22);
+    let ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, arquivos.length, true);
+    ev.setUint16(10, arquivos.length, true);
+    ev.setUint32(12, tamanhoCentral, true);
+    ev.setUint32(16, offsetLocal, true);
+    ev.setUint16(20, 0, true);
+
+    let blob = new Blob(partesLocais.concat(partesCentrais, [eocd]), { type: 'application/zip' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = nomeZip;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+};
+
 // =========================================================================
 // MIGRAÇÃO (2026-09): Direito Processual Civil > "Legislação Processual
 // Civil Especial" e "Microssistema de Tutela Coletiva e Ações
@@ -31231,7 +31324,7 @@ window.triggerFileUpload = function(callback) {
             <div class="esq-cabecalho-acoes">
                 <button class="esq-cabecalho-btn" onclick="window.ESQ_IA.abrir()" title="Gerar fichas com IA a partir de um tema ou material">&#x2728; Criar com IA</button>
                 <button class="req-completo esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.abrirModalImportar()" title="Importar esquemas próprios a partir de texto (acesso completo)">&#x1F4E5; Importar Esquemas</button>
-                <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoPorDisciplinaZip()">Exportar por disciplina (.zip)</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="so-admin esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
@@ -34791,6 +34884,49 @@ window.ESQUEMAS_RUNTIME = {
         downloadArquivo(JSON.stringify(resultado, null, 2), 'esquemas-tudo.json', 'application/json');
     },
 
+    // Exporta TODAS as disciplinas de uma só vez num único arquivo .zip,
+    // contendo um esquemas-<slug>.json por disciplina (nomes idênticos ao
+    // dados/manifesto-esquemas.txt) e já com classificacaoOficial embutida.
+    exportarTudoPorDisciplinaZip: async function() {
+        if (!window.exigirAdmin()) return;
+        this._garantirCarregado();
+        let self = this;
+        let temOficial = Object.keys(this.esquemas).some(function(ch) {
+            return (self.esquemas[ch] || []).some(function(e) { return e && e.origem_oficial; });
+        });
+        if (!temOficial && typeof window.carregarEsquemasOficiais === 'function') {
+            await window.carregarEsquemasOficiais();
+        }
+        let porMateria = {};
+        let total = 0;
+
+        Object.keys(this.esquemas).sort().forEach(function(chave) {
+            let materia = chave.split(' > ')[0] || '';
+            if (!materia) return;
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; }).map(function(e) { return self._itemExportado(e); });
+            if (visiveis.length > 0) {
+                if (!porMateria[materia]) porMateria[materia] = {};
+                porMateria[materia][chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        let materias = Object.keys(porMateria).sort();
+        if (materias.length === 0 || total === 0) {
+            alert('Nenhum esquema pra exportar (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
+            return;
+        }
+
+        let arquivos = materias.map(function(mat) {
+            return {
+                nome: 'esquemas-' + self._slugTexto(mat) + '.json',
+                conteudo: JSON.stringify(porMateria[mat], null, 2)
+            };
+        });
+
+        window.downloadZipArquivos(arquivos, 'esquemas-por-disciplina.zip');
+    },
+
     // Exporta os esquemas VISÍVEIS (pessoais + oficiais, só não os ocultos)
     // da DISCIPLINA (matéria/L1) selecionada na barra lateral — mesmo
     // padrão de JURISPRUDENCIA_RUNTIME.exportarDisciplina().
@@ -36189,7 +36325,7 @@ window.ESQ_IA = {
             <div class="analytics-modal-title">⚖️ Jurisprudência</div>
             <div style="display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:10px;">
                 <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.abrirModalImportar()" title="Importar fichas em massa" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📥 Importar em Massa</button>
-                <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
+                <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Tudo &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoPorDisciplinaZip()">Exportar por disciplina (.zip)</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudo()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTudoHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
@@ -39298,6 +39434,57 @@ window.JURISPRUDENCIA_RUNTIME = {
         downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-tudo.json', 'application/json');
     },
 
+    // Retorna o nome de arquivo oficial esperado em dados/manifesto-jurisprudencia.txt
+    // para uma disciplina (incluindo os 2 nomes históricos específicos).
+    _nomeArquivoDisciplina: function(materia) {
+        if (materia === 'Direito Administrativo') return 'jurisprudencia-administrativo.json';
+        if (materia === 'Noções Gerais de Direito, Formação Humanística e Direitos Humanos') return 'jurisprudencia-corte-idh.json';
+        return 'jurisprudencia-' + this._slugTexto(materia) + '.json';
+    },
+
+    // Exporta TODAS as disciplinas de uma só vez num único arquivo .zip,
+    // contendo um jurisprudencia-<slug>.json por disciplina (nomes idênticos ao
+    // dados/manifesto-jurisprudencia.txt) e já com classificacaoOficial embutida.
+    exportarTudoPorDisciplinaZip: async function() {
+        if (!window.exigirAdmin()) return;
+        this._garantirCarregado();
+        let self = this;
+        let temOficial = Object.keys(this.fichas).some(function(ch) {
+            return (self.fichas[ch] || []).some(function(f) { return f && f.origem_oficial; });
+        });
+        if (!temOficial && typeof window.carregarJurisprudenciaOficial === 'function') {
+            await window.carregarJurisprudenciaOficial();
+        }
+        let porMateria = {};
+        let total = 0;
+
+        Object.keys(this.fichas).sort().forEach(function(chave) {
+            let materia = chave.split(' > ')[0] || '';
+            if (!materia) return;
+            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; }).map(function(f) { return self._itemExportado(f); });
+            if (visiveis.length > 0) {
+                if (!porMateria[materia]) porMateria[materia] = {};
+                porMateria[materia][chave] = visiveis;
+                total += visiveis.length;
+            }
+        });
+
+        let materias = Object.keys(porMateria).sort();
+        if (materias.length === 0 || total === 0) {
+            alert('Nenhuma ficha pra exportar (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
+            return;
+        }
+
+        let arquivos = materias.map(function(mat) {
+            return {
+                nome: self._nomeArquivoDisciplina(mat),
+                conteudo: JSON.stringify(porMateria[mat], null, 2)
+            };
+        });
+
+        window.downloadZipArquivos(arquivos, 'jurisprudencia-por-disciplina.zip');
+    },
+
     // Mesmo escopo de exportarTudo() (JSON) — só troca o formato de saída.
     exportarTudoMarkdown: function() {
         this._garantirCarregado();
@@ -39364,7 +39551,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             return;
         }
 
-        downloadArquivo(JSON.stringify(resultado, null, 2), 'jurisprudencia-' + this._slugTexto(this._materiaSelecionada) + '.json', 'application/json');
+        downloadArquivo(JSON.stringify(resultado, null, 2), this._nomeArquivoDisciplina(this._materiaSelecionada), 'application/json');
     },
 
     // Mesmo escopo de exportarDisciplina() (disciplina selecionada, pessoais +
