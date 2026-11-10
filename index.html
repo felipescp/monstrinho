@@ -1154,14 +1154,24 @@ input[type=number]:focus, input[type=text]:focus { outline: none; border-color: 
 .jur-ref-alerta-viva { color:#6b21a8; background:#f3e8ff; border-color:#d8b4fe; }
 /* Esquemas: grifos, comentário pessoal e revisão ativa no Leitor */
 mark.esq-grifo { color:inherit; padding:0 1px; border-radius:2px; }
-.esq-grifo-amarelo { background:#fef08a; }
-.esq-grifo-verde { background:#bbf7d0; }
-.esq-grifo-rosa { background:#fbcfe8; }
+.esq-grifo-amarelo { background:#fde047; }
+.esq-grifo-verde { background:#86efac; }
+.esq-grifo-rosa { background:#f9a8d4; }
 .esq-grifo-azul { background:#bfdbfe; }
-#esq-grifo-pop { position:fixed; z-index:100000; display:none; gap:6px; align-items:center; padding:6px 8px; background:#1f2937; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
-#esq-grifo-pop button { cursor:pointer; }
-.esq-grifo-pop-cor { width:24px; height:24px; border-radius:50%; border:2px solid #fff; }
-.esq-grifo-pop-borracha { background:#374151; color:#fff; border:1px solid #6b7280; border-radius:6px; padding:2px 8px; font-size:14px; }
+/* Canetas de grifo dos Esquemas (as mesmas da Jurisprudência) */
+.esq-grifo-canetas { display:flex; align-items:center; gap:6px; padding:3px 10px; border:1px solid var(--border-color); border-radius:99px; background:var(--bg-white); }
+.esq-grifo-canetas:empty { display:none; }
+.esq-grifo-canetas-rotulo { font-size:11px; font-weight:700; color:var(--text-muted); }
+.esq-grifo-caneta { width:22px; height:22px; border-radius:50%; border:2px solid rgba(0,0,0,0.12); cursor:pointer; padding:0; font-size:12px; line-height:1; }
+.esq-grifo-caneta.borracha { width:auto; border-radius:99px; padding:0 8px; background:var(--bg-white); color:var(--text-main); border-color:var(--border-color); }
+.esq-grifo-caneta.ativa { border-color:var(--text-main); box-shadow:0 0 0 2px var(--bg-white), 0 0 0 4px var(--app-primary); }
+#esq-editor-toolbar.esq-toolbar-leitura > :not(#esq-editor-canetas) { display:none !important; }
+.esq-caneta-ativa .esq-estudo-texto, .esq-caneta-ativa #esq-editor-corpo { cursor:text; }
+.esq-caneta-amarelo .esq-estudo-texto ::selection, .esq-caneta-amarelo #esq-editor-corpo ::selection { background:#fde047; }
+.esq-caneta-verde .esq-estudo-texto ::selection, .esq-caneta-verde #esq-editor-corpo ::selection { background:#86efac; }
+.esq-caneta-rosa .esq-estudo-texto ::selection, .esq-caneta-rosa #esq-editor-corpo ::selection { background:#f9a8d4; }
+/* 💭 do card: só com comentário, igual ao indicador dos cards da Jurisprudência */
+.esq-card-comentario-ind { font-size:13px; line-height:1; padding:2px 5px; border-radius:6px; border:1px solid #fb923c; background:#fff7ed; cursor:pointer; }
 .esq-coment { margin-top:14px; }
 .esq-coment-barra { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .esq-coment-btn { background:#f5f3ff; color:#5b21b6; border:1px solid #ddd6fe; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:13px; }
@@ -1176,8 +1186,6 @@ mark.esq-grifo { color:inherit; padding:0 1px; border-radius:2px; }
 .esq-classif-grupo { display:inline-flex; align-items:center; gap:4px; }
 .esq-sinal-atualizado { cursor:help; font-size:13px; }
 .esq-baralho-lista-item-etiqueta .esq-sinal-atualizado, .esq-baralho-lista-item-etiqueta .esq-card-coment { font-size:12px; margin-left:4px; }
-#esquemas-modal .esq-btn-coment { background:none; border:none; cursor:pointer; font-size:13px; padding:0 2px; opacity:.75; }
-#esquemas-modal .esq-btn-coment:hover { opacity:1; }
 #esq-editor-coment:empty { display:none; }
 #esq-editor-coment .esq-coment { margin-top:0; }
 .esq-baralho-revisao-controle { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
@@ -5663,7 +5671,6 @@ window.exigirAdmin = function() {
         ['JURISPRUDENCIA_RUNTIME', ['abrirComentarioPessoal', 'alternarPainelComentarioBaralho', 'editarPainelComentario', 'selecionarCanetaGrifo'], 'Comentários e grifos'],
         ['ESQUEMAS_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
         ['ESQUEMAS_RUNTIME', ['editarComentarioEsq', 'aplicarGrifoEsq'], 'Comentários e grifos'],
-        ['ESQUEMAS_RUNTIME', ['_aoSoltarSelecaoEsq'], null],
         ['JURISPRUDENCIA_RUNTIME', ['exportarSelecionadosMarkdown', 'exportarSelecionadosHtml'], 'Exportar selecionados'],
         ['', ['comentarCaderno'], 'Comentários nas questões'],
         ['JURISPRUDENCIA_RUNTIME', ['_aoSoltarSelecaoLeitor'], null]
@@ -31410,6 +31417,7 @@ window.triggerFileUpload = function(callback) {
                 <span id="esq-baralho-escala-valor">1.5x</span>
                 <button class="esq-baralho-escala-btn" id="esq-baralho-escala-btn-aumentar" onclick="window.ESQUEMAS_RUNTIME.ajustarEscalaBaralho(0.25)" title="Aumentar lista e cartão">Aumentar ›</button>
             </div>
+            <div id="esq-baralho-canetas" class="esq-grifo-canetas"></div>
             <div class="esq-baralho-revisao-controle">
                 <button class="esq-baralho-escala-btn" id="esq-baralho-btn-ocultar" onclick="window.ESQUEMAS_RUNTIME.alternarOcultarRespostas()" title="Revisão ativa: esconde as colunas de resposta das tabelas para você tentar lembrar; clique numa célula para revelar">🙈 Esconder respostas</button>
                 <button class="esq-baralho-escala-btn" id="esq-baralho-btn-revelar" onclick="window.ESQUEMAS_RUNTIME.revelarTudoBaralho()" style="display:none;">Revelar tudo</button>
@@ -31518,14 +31526,13 @@ window.triggerFileUpload = function(callback) {
                 <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-fonte-dd')" title="Cor da fonte">A</button>
                 <div id="esq-cor-fonte-dd" class="esq-cor-dropdown"></div>
             </div>
-            <div class="esq-cor-picker">
-                <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-marca-dd')" title="Marca-texto">🖍️</button>
-                <div id="esq-cor-marca-dd" class="esq-cor-dropdown"></div>
-            </div>
+            
             <div class="esq-cor-picker">
                 <button type="button" class="esq-cor-trigger" onmousedown="window.ESQUEMAS_RUNTIME._salvarSelecao()" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME._toggleCorDropdown('esq-cor-celula-dd')" title="Cor de fundo da célula — clique dentro de uma célula de uma tabela colada antes de escolher a cor">▦</button>
                 <div id="esq-cor-celula-dd" class="esq-cor-dropdown"></div>
             </div>
+            <!-- Canetas de grifo, como na Jurisprudência: escolhe a cor e depois seleciona o texto. -->
+            <div id="esq-editor-canetas" class="esq-grifo-canetas"></div>
         </div>
         <div id="esq-editor-corpo" contenteditable="true" onmouseup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onkeyup="window.ESQUEMAS_RUNTIME._salvarSelecao()" onpaste="window.ESQUEMAS_RUNTIME._colarComMarkdown(event)" style="flex:1; overflow-y:auto; min-height:260px; border:1px solid var(--border-color); border-radius:6px; padding:12px; font-size:13px; line-height:1.6; color:var(--text-main); background:var(--bg-white);"></div>
         <div id="esq-editor-coment"></div>
@@ -31984,10 +31991,8 @@ window.ESQUEMAS_RUNTIME = {
         if (!window._esqGrifoOuvinte) {
             window._esqGrifoOuvinte = true;
             document.addEventListener('mouseup', function(e) {
-                if (e.target && e.target.closest && e.target.closest('#esq-grifo-pop')) return;
                 setTimeout(function() { window.ESQUEMAS_RUNTIME._aoSoltarSelecaoEsq(); }, 0);
             });
-            document.addEventListener('scroll', function() { window.ESQUEMAS_RUNTIME._fecharPopupGrifoEsq(); }, true);
         }
         if (typeof window.carregarEsquemasOficiais === 'function') {
             window.carregarEsquemasOficiais().then(function() {
@@ -32757,9 +32762,9 @@ window.ESQUEMAS_RUNTIME = {
                 origemHtml +
                 '<div class="esq-card-tags">' +
                     '<span class="esq-card-tags-esq">' + checkboxHtml + etiquetaHtml + seloOficial + seloOculto + '</span>' +
-                    '<span class="esq-card-tags-dir">' + (self._modoSelecao ? '' : '<button class="esq-btn-coment" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.abrirComentarioDoCard(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + idEsc + '\')" title="Meu comentário">💭</button>') + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
+                    '<span class="esq-card-tags-dir">' + (self._modoSelecao || !self._comentarioEsq(item.id) ? '' : '<button class="esq-card-comentario-ind" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.abrirComentarioDoCard(\'' + par.chave.replace(/'/g, "\\'") + '\', \'' + idEsc + '\')" title="Ver/editar meu comentário">💭</button>') + btnOcultarHtml + btnExportarHtml + btnExcluirHtml + '</span>' +
                 '</div>' +
-                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + self._sinalAnotadoEsqHtml(item.id) + '</div>' +
+                '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
                 '<div class="esq-card-classificacao">' + btnVisualizado + '<span class="esq-classif-grupo">' + self._sinalAtualizadoEsqHtml(item) + classificarHtml + '</span></div>' +
             '</div>';
@@ -32898,12 +32903,6 @@ window.ESQUEMAS_RUNTIME = {
     // em this.grifos {id → {faixas, atualizadoEm}} e o comentário em
     // this.comentarios {id → {texto, atualizadoEm}}; na nuvem vence o mais
     // recente (texto '' = comentário apagado, que também sincroniza).
-    CORES_GRIFO_ESQ: [
-        { chave: 'amarelo', rotulo: 'Amarelo' },
-        { chave: 'verde', rotulo: 'Verde' },
-        { chave: 'rosa', rotulo: 'Rosa' },
-        { chave: 'azul', rotulo: 'Azul' }
-    ],
     _htmlConteudoEstudo: function(item) {
         return this._aplicarGrifosHtml(this._comReferencias(item.conteudoHtml || '', item.titulo), item.id);
     },
@@ -32964,38 +32963,73 @@ window.ESQUEMAS_RUNTIME = {
         nos.forEach(function(n) { if (pre.intersectsNode(n) && pre.comparePoint(n, n.nodeValue.length) <= 0) total += n.nodeValue.length; });
         return total;
     },
-    // Chamada no mouseup (silenciosa fora do acesso completo, ver TRAVAS_NIVEL).
+    // ── Canetas de grifo (as mesmas da Jurisprudência) ──
+    // Escolhe a cor primeiro e depois seleciona o texto. Esquema somente
+    // leitura (oficial, Leitor, abas): grifo pessoal guardado em this.grifos
+    // (acesso completo). Esquema próprio no editor: marca o próprio texto,
+    // como o antigo marca-texto (o aluno edita o conteúdo dele).
+    CORES_GRIFO_ESQ: [
+        { chave: 'amarelo', rotulo: 'Amarelo', hex: '#fde047' },
+        { chave: 'verde', rotulo: 'Verde', hex: '#86efac' },
+        { chave: 'rosa', rotulo: 'Rosa', hex: '#f9a8d4' }
+    ],
+    _canetaEsq: null,
+    selecionarCanetaEsq: function(cor) {
+        this._canetaEsq = (this._canetaEsq === cor) ? null : cor;
+        this._renderCanetasEsq();
+        if (this._canetaEsq) this._aoSoltarSelecaoEsq();
+    },
+    _renderCanetasEsq: function() {
+        let self = this, cor = this._canetaEsq;
+        let corpo = document.getElementById('esq-editor-corpo');
+        let editavel = !!(corpo && corpo.isContentEditable);
+        ['modal-esquemas-baralho', 'modal-esquema-editor'].forEach(function(id) {
+            let m = document.getElementById(id);
+            if (!m) return;
+            m.classList.toggle('esq-caneta-ativa', !!cor);
+            ['amarelo', 'verde', 'rosa', 'borracha'].forEach(function(c) { m.classList.toggle('esq-caneta-' + c, cor === c); });
+        });
+        // No editor de esquema próprio, sem trava (é formatação do próprio texto).
+        let html = function(comTrava) {
+            let trava = comTrava ? window.travaNivel('completo', 'Grifos') : '';
+            return '<span class="esq-grifo-canetas-rotulo"' + trava + '>🖍 Grifar:</span>' +
+                self.CORES_GRIFO_ESQ.map(function(c) {
+                    return '<button type="button" class="esq-grifo-caneta esq-grifo-' + c.chave + (cor === c.chave ? ' ativa' : '') + '"' + trava + ' onmousedown="event.preventDefault()" onclick="window.ESQUEMAS_RUNTIME.selecionarCanetaEsq(\'' + c.chave + '\')" title="' + (cor === c.chave ? 'Desligar caneta' : 'Caneta ' + c.rotulo.toLowerCase()) + '"></button>';
+                }).join('') +
+                '<button type="button" class="esq-grifo-caneta borracha' + (cor === 'borracha' ? ' ativa' : '') + '"' + trava + ' onmousedown="event.preventDefault()" onclick="window.ESQUEMAS_RUNTIME.selecionarCanetaEsq(\'borracha\')" title="' + (cor === 'borracha' ? 'Desligar borracha' : 'Borracha: apaga o grifo do trecho selecionado') + '">⌫</button>';
+        };
+        let ed = document.getElementById('esq-editor-canetas'), lt = document.getElementById('esq-baralho-canetas');
+        if (ed) ed.innerHTML = html(!editavel);
+        if (lt) lt.innerHTML = html(true);
+    },
+    // Mouseup no documento: com uma caneta escolhida, grifa (ou apaga) o
+    // trecho selecionado. Sem caneta, não faz nada.
     _aoSoltarSelecaoEsq: function() {
+        let cor = this._canetaEsq;
+        if (!cor) return;
         let sel = window.getSelection();
-        if (!sel || sel.isCollapsed || !sel.rangeCount) { this._fecharPopupGrifoEsq(); return; }
+        if (!sel || sel.isCollapsed || !sel.rangeCount) return;
         let r = sel.getRangeAt(0);
+        let corpo = document.getElementById('esq-editor-corpo');
+        if (corpo && corpo.isContentEditable && corpo.contains(r.commonAncestorContainer)) {
+            let c = this.CORES_GRIFO_ESQ.find(function(x) { return x.chave === cor; });
+            this._ultimaSelecao = r;
+            this.aplicarMarcaTexto(c ? c.hex : 'transparent');
+            sel.removeAllRanges();
+            return;
+        }
         let el = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentNode;
         let raiz = el && el.closest && el.closest('.esq-estudo-texto[data-esq-id]');
-        if (!raiz || raiz.isContentEditable || raiz.closest('[contenteditable="true"]')) { this._fecharPopupGrifoEsq(); return; }
+        if (!raiz || raiz.isContentEditable || raiz.closest('[contenteditable="true"]')) return;
+        if (!window.temNivel('completo')) return;
         let ini = this._offsetEsq(raiz, r.startContainer, r.startOffset), fim = this._offsetEsq(raiz, r.endContainer, r.endOffset);
-        if (ini === null || fim === null || fim <= ini) { this._fecharPopupGrifoEsq(); return; }
+        if (ini === null || fim === null || fim <= ini) return;
         this._grifoPendenteEsq = { id: raiz.getAttribute('data-esq-id'), ini: ini, fim: fim };
-        let pop = document.getElementById('esq-grifo-pop');
-        if (!pop) {
-            pop = document.createElement('div');
-            pop.id = 'esq-grifo-pop';
-            pop.addEventListener('mousedown', function(e) { e.preventDefault(); });
-            document.body.appendChild(pop);
-        }
-        pop.innerHTML = this.CORES_GRIFO_ESQ.map(function(c) { return '<button class="esq-grifo-pop-cor esq-grifo-' + c.chave + '" title="Grifar em ' + c.rotulo.toLowerCase() + '" onclick="window.ESQUEMAS_RUNTIME.aplicarGrifoEsq(\'' + c.chave + '\')"></button>'; }).join('') +
-            '<button class="esq-grifo-pop-borracha" title="Apagar grifo do trecho" onclick="window.ESQUEMAS_RUNTIME.aplicarGrifoEsq(null)">⌫</button>';
-        let rect = r.getBoundingClientRect();
-        pop.style.display = 'flex';
-        pop.style.top = Math.max(6, rect.top - 40) + 'px';
-        pop.style.left = Math.max(6, Math.min(window.innerWidth - 190, rect.left + rect.width / 2 - 90)) + 'px';
+        this.aplicarGrifoEsq(cor === 'borracha' ? null : cor);
     },
-    _fecharPopupGrifoEsq: function() {
-        let pop = document.getElementById('esq-grifo-pop');
-        if (pop) pop.style.display = 'none';
-    },
+    _fecharPopupGrifoEsq: function() {},
     aplicarGrifoEsq: function(cor) {
         let p = this._grifoPendenteEsq;
-        this._fecharPopupGrifoEsq();
         if (!p) return;
         if (!this.grifos) this.grifos = {};
         let atuais = ((this.grifos[p.id] || {}).faixas || []).slice(), novas = [];
@@ -33073,7 +33107,7 @@ window.ESQUEMAS_RUNTIME = {
         } else {
             let completo = window.temNivel && window.temNivel('completo');
             corpo = '<div class="esq-coment-barra"><button class="esq-coment-btn"' + window.travaNivel('completo', 'Comentários e grifos') + ' onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.editarComentarioEsq(\'' + idEsc + '\')">💭 Comentar</button>' +
-                '<span class="esq-coment-dica">' + (completo ? 'Selecione um trecho para grifar.' : 'Grifos e comentários: acesso completo.') + '</span></div>';
+                '<span class="esq-coment-dica">' + (completo ? 'Para grifar: escolha a cor em 🖍 Grifar e selecione o trecho.' : 'Grifos e comentários: acesso completo.') + '</span></div>';
         }
         return '<div class="esq-coment" data-esq-coment="' + this._escapar(id) + '">' + corpo + '</div>';
     },
@@ -33121,6 +33155,7 @@ window.ESQUEMAS_RUNTIME = {
         document.querySelectorAll('#esq-baralho-corpo .esq-estudo-texto td').forEach(function(td) { td.classList.add('esq-revelada'); });
     },
     _aplicarModoRevisaoBaralho: function() {
+        this._renderCanetasEsq();
         let modal = document.getElementById('modal-esquemas-baralho');
         if (modal) modal.classList.toggle('esq-modo-revisao', !!this._ocultarRespostas);
         let b = document.getElementById('esq-baralho-btn-ocultar'), rv = document.getElementById('esq-baralho-btn-revelar');
@@ -33986,6 +34021,8 @@ window.ESQUEMAS_RUNTIME = {
         corpo.innerHTML = '';
         corpo.contentEditable = 'true';
         document.getElementById('esq-editor-toolbar').style.display = 'flex';
+        document.getElementById('esq-editor-toolbar').classList.remove('esq-toolbar-leitura');
+        this._renderCanetasEsq();
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = 'none';
         document.getElementById('esq-editor-btn-salvar').style.display = 'inline-block';
         document.getElementById('esq-editor-btn-clonar').style.display = 'none';
@@ -34012,7 +34049,11 @@ window.ESQUEMAS_RUNTIME = {
         let comentEl = document.getElementById('esq-editor-coment');
         if (comentEl) comentEl.innerHTML = this._htmlComentarioEsq(item.id);
         corpo.contentEditable = somenteLeitura ? 'false' : 'true';
-        document.getElementById('esq-editor-toolbar').style.display = somenteLeitura ? 'none' : 'flex';
+        // Somente leitura: a barra mostra só as canetas de grifo (grifo pessoal).
+        let barraEd = document.getElementById('esq-editor-toolbar');
+        barraEd.style.display = 'flex';
+        barraEd.classList.toggle('esq-toolbar-leitura', somenteLeitura);
+        this._renderCanetasEsq();
         document.getElementById('esq-editor-somente-leitura-aviso').style.display = somenteLeitura ? 'block' : 'none';
         document.getElementById('esq-editor-btn-salvar').style.display = somenteLeitura ? 'none' : 'inline-block';
         // "Clonar Ficha" só faz sentido pra quem NÃO pode editar direto —
