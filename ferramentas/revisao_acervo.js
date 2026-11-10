@@ -42,7 +42,7 @@ const semTags = (html) => String(html || '').replace(/<[^>]+>/g, ' ').replace(/&
 
 function coletarItens() {
     const itens = [];
-    for (const arq of fs.readdirSync(path.join(RAIZ, 'dados/bateriasvf')).filter((f) => f.endsWith('.json') && !/^indice/.test(f)).sort()) {
+    for (const arq of fs.readdirSync(path.join(RAIZ, 'dados/bateriasvf')).filter((f) => f.endsWith('.json') && !/^(indice|atualizacoes)/.test(f)).sort()) {
         for (const bat of lerJson('dados/bateriasvf/' + arq)) {
             for (const bloco of (bat.dados && bat.dados.blocos) || []) {
                 for (const q of bloco.questoes || []) {
