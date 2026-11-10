@@ -87,6 +87,14 @@ def mapear_questoes_bateria(bat: dict) -> dict:
     return mapa
 
 
+RE_CITE = re.compile(r"\s*\[cite:\s*[\d,\s]+\]", re.IGNORECASE)
+
+
+def limpar_explicacao(exp: str) -> str:
+    """Remove resíduos de citação do Gemini (ex.: [cite: 2]) e espaços finais por linha."""
+    return RE_CITE.sub("", exp).strip()
+
+
 def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list[str]]:
     """
     Extrai { id_questao: nova_explicacao } de qualquer um dos formatos suportados
@@ -100,9 +108,9 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
     if isinstance(dados_entrada, dict) and "dados" not in dados_entrada and "id" not in dados_entrada:
         for k, v in dados_entrada.items():
             if isinstance(v, str):
-                novas[str(k)] = v
+                novas[str(k)] = limpar_explicacao(v)
             elif isinstance(v, dict) and isinstance(v.get("explicacao"), str):
-                novas[str(k)] = v["explicacao"]
+                novas[str(k)] = limpar_explicacao(v["explicacao"])
         return novas, avisos
 
     lista = dados_entrada if isinstance(dados_entrada, list) else [dados_entrada]
@@ -114,16 +122,16 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
     # Caso 2: Lista enxuta [ { "id": "sim_..._q1", "explicacao": "..." }, ... ]
     # ou por número [ { "numOrig": 1, "explicacao": "..." } ]
     if isinstance(primeiro, dict) and "dados" not in primeiro and ("explicacao" in primeiro or "id" in primeiro):
-        por_num = {q.get("numOrig"): qid for qid, q in mapa_orig.items() if q.get("numOrig") is not None}
+        por_num = {str(q.get("numOrig")): qid for qid, q in mapa_orig.items() if q.get("numOrig") is not None}
         for item in lista:
             if not isinstance(item, dict):
                 continue
             qid = item.get("id")
-            if not qid and item.get("numOrig") in por_num:
-                qid = por_num[item.get("numOrig")]
+            if not qid and item.get("numOrig") is not None and str(item.get("numOrig")) in por_num:
+                qid = por_num[str(item.get("numOrig"))]
             exp = item.get("explicacao")
             if qid and isinstance(exp, str):
-                novas[str(qid)] = exp
+                novas[str(qid)] = limpar_explicacao(exp)
         return novas, avisos
 
     # Caso 3: Bateria completa [ { "id": "sim_...", "dados": { "blocos": [...] } } ]
@@ -143,12 +151,24 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
                     )
             exp = q_in.get("explicacao")
             if isinstance(exp, str):
-                novas[qid] = exp
+                novas[qid] = limpar_explicacao(exp)
 
     return novas, avisos
 
 
-def auditar_markdown(qid: str, exp: str) -> list[str]:
+def _palavras_chave(texto: str) -> set[str]:
+    stop = {
+        "a", "o", "as", "os", "de", "da", "do", "das", "dos", "em", "na", "no", "nas", "nos",
+        "por", "para", "com", "sem", "sob", "sobre", "que", "se", "ou", "e", "ao", "aos", "um",
+        "uma", "não", "nao", "é", "são", "ser", "está", "estão", "pelo", "pela", "pelos", "pelas",
+        "como", "mais", "mas", "sua", "seu", "suas", "seus", "apenas", "ainda", "mesmo", "quando",
+        "qualquer", "toda", "todo", "todas", "todos", "contra", "entre", "até", "ate",
+    }
+    tokens = re.findall(r"[a-zà-ú0-9]{3,}", (texto or "").lower())
+    return {t for t in tokens if t not in stop}
+
+
+def auditar_markdown(qid: str, exp: str, axioma_orig: str = "") -> list[str]:
     """Verifica problemas comuns de formatação Markdown para o renderizador mdExplicacao."""
     alertas = []
     if not exp.strip():
@@ -171,6 +191,20 @@ def auditar_markdown(qid: str, exp: str) -> list[str]:
             if em_tabela and not tem_separador:
                 alertas.append(f"[{qid}] Possível tabela Markdown sem linha separadora (|---|---|).")
             em_tabela = False
+        # Verifica uso do rótulo 'Axioma' em blockquotes dentro da explicação
+        if s.startswith(">") and re.search(r"\baxioma\b", s, flags=re.IGNORECASE):
+            alertas.append(f"[{qid}] Blockquote usa a nomenclatura 'Axioma' (já existe o card nativo 📌 AXIOMA).")
+        elif s.startswith(">") and axioma_orig:
+            kw_ax = _palavras_chave(axioma_orig)
+            # Remove o rótulo inicial (ex.: > **Regra de Ouro:**) antes de comparar
+            corpo_bq = re.sub(r"^>\s*(?:\*\*[^*]+\*\*\s*:?\s*)?", "", s)
+            kw_bq = _palavras_chave(corpo_bq)
+            if len(kw_ax) >= 4 and kw_bq:
+                inter = len(kw_ax & kw_bq) / min(len(kw_ax), len(kw_bq))
+                if inter >= 0.55:
+                    alertas.append(
+                        f"[{qid}] Blockquote na explicação parece parafrasear o Axioma já existente ({inter:.0%} de sobreposição)."
+                    )
     if em_tabela and not tem_separador:
         alertas.append(f"[{qid}] Possível tabela Markdown no fim do texto sem linha separadora (|---|---|).")
 
@@ -225,7 +259,7 @@ def main():
     for qid, exp in novas_exp.items():
         if qid not in mapa_orig:
             continue
-        alertas_md.extend(auditar_markdown(qid, exp))
+        alertas_md.extend(auditar_markdown(qid, exp, mapa_orig[qid].get("axioma") or ""))
         if (mapa_orig[qid].get("explicacao") or "") != exp:
             alteradas += 1
 
