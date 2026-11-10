@@ -31033,6 +31033,8 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-leitor-menu summary:hover { border-color:var(--app-primary); color:var(--app-primary); }
     /* Mesmo botão/tamanho/borda do "Leitor" (esq-leitor-menu summary) —
        ver #jurisprudencia-modal .jur-aplicar-sistema-btn (mesmo pedido). */
+    #esquemas-modal .esq-ocultar-oficiais-global { display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; color:var(--text-main); white-space:nowrap; cursor:pointer; align-self:center; padding:0 4px; }
+    #esquemas-modal .esq-ocultar-oficiais-global input { margin:0; cursor:pointer; }
     #esquemas-modal .esq-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; align-self:center; }
     #esquemas-modal .esq-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
     #esquemas-modal .esq-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:130px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
@@ -31212,6 +31214,7 @@ window.triggerFileUpload = function(callback) {
                 <button class="so-admin fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas Regular">🎨</button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
                 <button class="esq-aplicar-sistema-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
+                <label class="esq-ocultar-oficiais-global" title="Esconde todos os esquemas oficiais da seção: grade, contagens, abas e Leitor. Fica gravado neste aparelho."><input type="checkbox" id="esq-ocultar-todas-oficiais" onchange="window.ESQUEMAS_RUNTIME.alternarOcultarTodasOficiais(this.checked)"> Ocultar Todas as Oficiais</label>
             </div>
             <div class="esq-tabs-baralho">
                 <details class="esq-leitor-menu leitor-dropdown">
@@ -32030,7 +32033,7 @@ window.ESQUEMAS_RUNTIME = {
     esquemasDoL2: function(materia, divisao) {
         this._garantirCarregado();
         let self = this;
-        return (this.esquemas[this._chaveL2(materia, divisao)] || []).filter(function(e) { return !self.ocultos[e.id]; });
+        return (this.esquemas[this._chaveL2(materia, divisao)] || []).filter(function(e) { return !self.ocultos[e.id] && self._naVista(e); });
     },
 
     _escapar: function(str) {
@@ -32058,23 +32061,48 @@ window.ESQUEMAS_RUNTIME = {
     // Contagem bruta (ignora ocultos — é só indicação de volume, mesmo
     // espírito de contarCardsDaMateria/contarCardsDoL2 do Flashcards) pros
     // badges de quantidade no L1/L2.
+    // "Ocultar Todas as Oficiais" (pedido explícito do usuário): tira os
+    // esquemas oficiais de toda a seção — grade, contagens da barra lateral,
+    // abas de prioridade e Leitor. Preferência de visualização, gravada só
+    // neste aparelho. As exportações não mudam.
+    CHAVE_OCULTAR_OFICIAIS: 'tjpe_v1__esq_ocultar_todas_oficiais',
+    _ocultarTodasOficiais: function() {
+        if (this._ocultarTodasOficiaisCache === undefined) {
+            try { this._ocultarTodasOficiaisCache = localStorage.getItem(this.CHAVE_OCULTAR_OFICIAIS) === '1'; } catch (e) { this._ocultarTodasOficiaisCache = false; }
+        }
+        return this._ocultarTodasOficiaisCache;
+    },
+    _naVista: function(e) { return !(e && e.origem_oficial && this._ocultarTodasOficiais()); },
+    alternarOcultarTodasOficiais: function(sim) {
+        this._ocultarTodasOficiaisCache = !!sim;
+        try { if (sim) localStorage.setItem(this.CHAVE_OCULTAR_OFICIAIS, '1'); else localStorage.removeItem(this.CHAVE_OCULTAR_OFICIAIS); } catch (e) {}
+        this.render();
+        this._atualizarContagensAbas();
+        if (this._abaAtiva === '1' || this._abaAtiva === '2' || this._abaAtiva === '3') this.renderAbaRevisao(this._abaAtiva);
+    },
+    _sincronizarCaixaOficiais: function() {
+        let cx = document.getElementById('esq-ocultar-todas-oficiais');
+        if (cx) cx.checked = this._ocultarTodasOficiais();
+    },
     _contarEsquemasDaMateria: function(materia) {
         let self = this;
         let total = 0;
         let prefixo = materia + ' > ';
         Object.keys(this.esquemas).forEach(function(chave) {
-            if (chave.indexOf(prefixo) === 0) total += (self.esquemas[chave] || []).length;
+            if (chave.indexOf(prefixo) === 0) total += (self.esquemas[chave] || []).filter(function(e) { return self._naVista(e); }).length;
         });
         return total;
     },
     _contarEsquemasDoL2: function(materia, divisao) {
-        return (this.esquemas[this._chaveL2(materia, divisao)] || []).length;
+        let self = this;
+        return (this.esquemas[this._chaveL2(materia, divisao)] || []).filter(function(e) { return self._naVista(e); }).length;
     },
 
     render: function() {
         let colMaterias = document.getElementById('esq-col-materias');
         if (!colMaterias) return;
         let self = this;
+        this._sincronizarCaixaOficiais();
 
         if (typeof TAXONOMIA_DADOS === 'undefined' || !TAXONOMIA_DADOS.taxonomia_concursos) {
             colMaterias.innerHTML = '<div class="fc-vazio-col">Falha ao carregar taxonomia.</div>';
@@ -32184,7 +32212,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._mostrarOcultos) {
             lista = lista.filter(function(par) { return !self.ocultos[par.item.id]; });
         }
-        if (this._ocultarOficiais) {
+        if (this._ocultarOficiais || this._ocultarTodasOficiais()) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
         if (this._filtroBusca && this._filtroBusca.trim()) {
@@ -33304,7 +33332,7 @@ window.ESQUEMAS_RUNTIME = {
                 if (chave.indexOf(prefixo) !== 0) return;
                 (self.esquemas[chave] || []).forEach(function(e) {
                     let r = self.revisaoEsquemas[e.id];
-                    if (r && r.ultimaClassificacao === classificacaoAlvo) resultado.push(e);
+                    if (r && r.ultimaClassificacao === classificacaoAlvo && self._naVista(e)) resultado.push(e);
                 });
             });
         });
@@ -33331,7 +33359,7 @@ window.ESQUEMAS_RUNTIME = {
             let divisao = chave.slice(prefixo.length);
             let n = (self.esquemas[chave] || []).filter(function(e) {
                 let r = self.revisaoEsquemas[e.id];
-                return r && r.ultimaClassificacao === classificacaoAlvo;
+                return r && r.ultimaClassificacao === classificacaoAlvo && self._naVista(e);
             }).length;
             if (n > 0) mapa[divisao] = n;
         });
@@ -33582,7 +33610,7 @@ window.ESQUEMAS_RUNTIME = {
         let itens = [];
         Object.keys(this.esquemas).forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            (self.esquemas[chave] || []).forEach(function(e) { if (!self.ocultos[e.id]) itens.push(e); });
+            (self.esquemas[chave] || []).forEach(function(e) { if (!self.ocultos[e.id] && self._naVista(e)) itens.push(e); });
         });
         this._abrirBaralho('materia', this._materiaSelecionada, itens);
     },
@@ -33592,7 +33620,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione uma divisão específica na barra lateral antes de abrir o leitor da divisão/tópico.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let itens = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+        let itens = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id] && self._naVista(e); });
         this._abrirBaralho('divisao', this._materiaSelecionada + ' > ' + this._divisaoSelecionada, itens);
     },
 
