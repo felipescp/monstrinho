@@ -36,12 +36,44 @@ RAIZ = Path(__file__).resolve().parent.parent
 
 
 def extrair_json_limpo(texto: str):
-    """Permite ler arquivos que contenham blocos ```json ... ``` copiados direto do Gem."""
+    """
+    Permite ler arquivos que contenham um ou VÁRIOS blocos ```json ... ```
+    ou múltiplos arrays JSON colados em sequência (ex.: lotes de 5 a 10 questões do Gem).
+    """
     t = texto.strip()
-    m = re.search(r"```(?:json)?\s*([\s\S]*?)```", t)
-    if m:
-        t = m.group(1).strip()
-    return json.loads(t)
+    blocos_md = re.findall(r"```(?:json)?\s*([\s\S]*?)```", t)
+    if blocos_md:
+        acumulado = []
+        for b in blocos_md:
+            obj = json.loads(b.strip())
+            if isinstance(obj, list):
+                acumulado.extend(obj)
+            else:
+                acumulado.append(obj)
+        return acumulado
+
+    try:
+        return json.loads(t)
+    except json.JSONDecodeError:
+        # Tenta decodificar múltiplos arrays/objetos JSON colados um após o outro
+        dec = json.JSONDecoder()
+        pos = 0
+        n = len(t)
+        acumulado = []
+        while pos < n:
+            while pos < n and t[pos].isspace():
+                pos += 1
+            if pos >= n:
+                break
+            obj, fim = dec.raw_decode(t, pos)
+            if isinstance(obj, list):
+                acumulado.extend(obj)
+            else:
+                acumulado.append(obj)
+            pos = fim
+        if acumulado:
+            return acumulado
+        raise
 
 
 def mapear_questoes_bateria(bat: dict) -> dict:
