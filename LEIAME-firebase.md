@@ -95,8 +95,8 @@ Há três níveis, no campo `nivel` do documento `acessos/{e-mail}` (a lista com
 | Nível | Como chega | O que libera |
 |---|---|---|
 | `simples` | Só o login | Todas as baterias, com os **materiais associados** na barra lateral e todas as estatísticas; as seções **Flashcards** e **Glossário**; uma **amostra da Lei Seca** (os diplomas citados na bateria, sem os comentários do sistema). Não salva questões. |
-| `intermediario` | Permissão da administração | Tudo do simples, mais as seções **Esquemas**, **Jurisprudência**, **Prazos** e **Penas** (sem o Treinar); **Lei Seca** comentada só com o diploma mais cobrado de cada disciplina; **criar 1 esquema com IA por semana** (IA Simples); salvar **5 questões por simulado**; refazer erradas e caderno de questões salvas. |
-| `completo` | Em breve (será a assinatura) | Tudo: Lei Seca inteira, Treinar em Prazos e Penas, comentários e grifos (Jurisprudência e questões), exportar selecionados, clonar esquemas, **10 esquemas com IA por semana**, questões salvas sem limite. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
+| `intermediario` | Permissão da administração | Tudo do simples, mais as seções **Esquemas**, **Jurisprudência**, **Prazos** e **Penas** (sem o Treinar); **Lei Seca** comentada só com o diploma mais cobrado de cada disciplina; **criar 1 esquema com IA por semana** (IA Simples); salvar **questões sem limite**; refazer erradas e caderno de questões salvas. |
+| `completo` | Em breve (será a assinatura) | Tudo: Lei Seca inteira, Treinar em Prazos e Penas, comentários e grifos (Jurisprudência e questões), exportar selecionados, clonar esquemas, **10 esquemas com IA por semana**. Contas ativas **sem** o campo `nivel` (liberadas antes dos níveis) também são completas. |
 
 O que não é do nível aparece **visível, mas desabilitado** (esmaecido, com 🔒); ao clicar, abre a explicação dos níveis.
 

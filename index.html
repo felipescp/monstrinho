@@ -5715,8 +5715,8 @@ window.exigirLoginParaSecao = function() {
 //                   Flashcards e Glossário
 //   intermediario . + Esquemas, Jurisprudência, Prazos, Penas; Lei Seca com
 //                   o diploma mais cobrado de cada disciplina (comentado);
-//                   criar 1 esquema com IA por semana; salvar 5 questões por
-//                   simulado; refazer erradas e caderno de questões salvas
+//                   criar 1 esquema com IA por semana; salvar questões sem
+//                   limite; refazer erradas e caderno de questões salvas
 //   completo ...... tudo: Lei Seca inteira, Treinar (Prazos/Penas),
 //                   comentários e grifos, exportar selecionados, clonar
 //                   esquemas, 10 esquemas
@@ -5777,8 +5777,8 @@ window.mostrarNiveis = function(recurso, min) {
         '<b style="font-size:16px;display:block;margin-bottom:12px">' + titulo + '</b>' +
         '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
             col('simples', ['Todas as baterias, com os materiais associados e as estatísticas', 'Flashcards e Glossário', 'Amostra da Lei Seca citada na bateria']) +
-            col('intermediario', ['Tudo do Simples', 'Esquemas, Jurisprudência, Prazos e Penas', 'Lei Seca comentada: o diploma mais cobrado de cada disciplina', 'Criar 1 esquema com IA por semana', 'Salvar 5 questões por simulado', 'Refazer erradas e caderno de questões salvas']) +
-            col('completo', ['Tudo do Intermediário', 'Lei Seca comentada completa', 'Treinar em Prazos e Penas', 'Comentários e grifos', 'Exportar selecionados', 'Clonar esquemas', 'Criar 10 esquemas com IA por semana', 'Questões salvas sem limite']) +
+            col('intermediario', ['Tudo do Simples', 'Esquemas, Jurisprudência, Prazos e Penas', 'Lei Seca comentada: o diploma mais cobrado de cada disciplina', 'Criar 1 esquema com IA por semana', 'Salvar questões sem limite', 'Refazer erradas e caderno de questões salvas']) +
+            col('completo', ['Tudo do Intermediário', 'Lei Seca comentada completa', 'Treinar em Prazos e Penas', 'Comentários e grifos', 'Exportar selecionados', 'Clonar esquemas', 'Criar 10 esquemas com IA por semana']) +
         '</div>' +
         '<div id="nivel-simples-acao" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' + acao +
         '<button type="button" onclick="document.getElementById(\'nivel-simples-aviso\').remove()" style="margin-left:auto;border:1px solid var(--border-color,#ccc);background:none;border-radius:8px;padding:8px 14px;cursor:pointer;color:inherit">Fechar</button>' +
@@ -25963,7 +25963,7 @@ function mkQ(q, modoRevisao){
   var bca=document.createElement('button'); bca.className='bcad'+(noCad?' ativo':'');bca.id='bcad-'+q.id;
   bca.textContent=noCad?'− Caderno':'+ Caderno';bca.setAttribute('data-qid',q.id);
   bca.onclick=function(e){e.stopPropagation();toggleCaderno(this.getAttribute('data-qid'));};
-  // Salvar questões: só a partir do intermediário (5 por simulado); completo sem limite.
+  // Salvar questões: a partir do intermediário, sem limite por simulado.
   if(!window.temNivel('intermediario')){ bca.setAttribute('data-trava-nivel','intermediario'); bca.setAttribute('data-trava-recurso','Salvar questões'); }
 
   // Botão de comentário — só aparece depois que a questão entra no Caderno
@@ -27385,7 +27385,7 @@ function formatarMateriaExibicao(materiaUpper) {
 }
 
 // Limite de questões salvas por simulado, por nível (pedido explícito do usuário).
-window.LIMITE_SALVAS_SIMULADO = { simples: 0, intermediario: 5, completo: Infinity };
+window.LIMITE_SALVAS_SIMULADO = { simples: 0, intermediario: Infinity, completo: Infinity };
 function toggleCaderno(qId){
   if(!D.caderno)D.caderno=[];
   var idx=D.caderno.indexOf(qId);
