@@ -10352,6 +10352,15 @@ window.ClassificacaoCards = {
             });
         });
         return aplicados;
+    },
+    contarComSugestaoSistema: function(dict, mapaNivel) {
+        let comOficial = 0;
+        Object.keys(dict || {}).forEach(function(chave) {
+            (dict[chave] || []).forEach(function(item) {
+                if (item && mapaNivel[item.classificacaoOficial]) comOficial++;
+            });
+        });
+        return comOficial;
     }
 };
 
@@ -19950,6 +19959,11 @@ window.GLOSSARIO_RUNTIME = {
     _baralhoEscala: 1.5,
 
     carregar: function() {
+        let oficiais = {};
+        Object.keys(this.glossario || {}).forEach(function(ch) {
+            let of = (this.glossario[ch] || []).filter(function(t) { return t && t.origem_oficial; });
+            if (of.length) oficiais[ch] = of;
+        }, this);
         let bruto = null;
         try { bruto = JSON.parse(window.lerGlossarioBruto() || 'null'); } catch (e) { bruto = null; }
         this.glossario = (bruto && typeof bruto.glossario === 'object' && !Array.isArray(bruto.glossario)) ? bruto.glossario : {};
@@ -19966,6 +19980,12 @@ window.GLOSSARIO_RUNTIME = {
         if (window._PC_LEGISLACAO_ESPECIAL_MIGRACAO.migrarDict(this.glossario, function(it) { return (it && it.expressao) || ''; })) {
             this.salvar();
         }
+        Object.keys(oficiais).forEach(function(ch) {
+            if (!Array.isArray(this.glossario[ch])) this.glossario[ch] = [];
+            let arr = this.glossario[ch], ids = {};
+            arr.forEach(function(x) { if (x) ids[x.id] = true; });
+            oficiais[ch].forEach(function(o) { if (!ids[o.id]) arr.push(o); });
+        }, this);
     },
 
     _garantirCarregado: function() {
@@ -31935,6 +31955,11 @@ window.ESQUEMAS_RUNTIME = {
     _baralhoEscala: 1.5,
 
     carregar: function() {
+        let oficiais = {};
+        Object.keys(this.esquemas || {}).forEach(function(ch) {
+            let of = (this.esquemas[ch] || []).filter(function(e) { return e && e.origem_oficial; });
+            if (of.length) oficiais[ch] = of;
+        }, this);
         let bruto = null;
         try { bruto = JSON.parse(window.lerEsquemasBruto() || 'null'); } catch (e) { bruto = null; }
         this.esquemas = (bruto && typeof bruto.esquemas === 'object' && !Array.isArray(bruto.esquemas)) ? bruto.esquemas : {};
@@ -31959,6 +31984,12 @@ window.ESQUEMAS_RUNTIME = {
         if (window._PC_LEGISLACAO_ESPECIAL_MIGRACAO.migrarDict(this.esquemas, function(it) { return (it && it.titulo) || ''; })) {
             this.salvar();
         }
+        Object.keys(oficiais).forEach(function(ch) {
+            if (!Array.isArray(this.esquemas[ch])) this.esquemas[ch] = [];
+            let arr = this.esquemas[ch], ids = {};
+            arr.forEach(function(x) { if (x) ids[x.id] = true; });
+            oficiais[ch].forEach(function(o) { if (!ids[o.id]) arr.push(o); });
+        }, this);
     },
 
     _garantirCarregado: function() {
@@ -32860,16 +32891,37 @@ window.ESQUEMAS_RUNTIME = {
     // editorial dos JSONs oficiais) -> chave de nível própria desta seção
     // (Esquemas usa '3'/'2'/'1', diferente de Jurisprudência).
     MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': '3', 'importante': '2', 'regular': '1' },
+    MAPA_NIVEL_PARA_OFICIAL: { '3': 'crítico', '2': 'importante', '1': 'regular' },
+
+    _itemExportado: function(e) {
+        let rev = this.revisaoEsquemas && this.revisaoEsquemas[e.id];
+        let cls = (rev && this.MAPA_NIVEL_PARA_OFICIAL[rev.ultimaClassificacao]) || e.classificacaoOficial || '';
+        let copia = Object.assign({}, e);
+        if (cls) copia.classificacaoOficial = cls;
+        else delete copia.classificacaoOficial;
+        return copia;
+    },
 
     // Botão "Aplicar Classificação de Prioridade do Sistema" — ver
     // window.ClassificacaoCards.aplicarSugestaoSistema para a regra completa
     // (nunca sobrescreve classificação pessoal já dada pelo usuário).
-    aplicarClassificacaoSistema: function() {
+    aplicarClassificacaoSistema: async function() {
+        let temOficial = Object.keys(this.esquemas || {}).some(function(ch) {
+            return (this.esquemas[ch] || []).some(function(e) { return e && e.origem_oficial; });
+        }, this);
+        if (!temOficial && typeof window.carregarEsquemasOficiais === 'function') {
+            await window.carregarEsquemasOficiais();
+        }
+        let comOficial = window.ClassificacaoCards.contarComSugestaoSistema(this.esquemas, this.MAPA_CLASSIFICACAO_OFICIAL);
         let n = window.ClassificacaoCards.aplicarSugestaoSistema(this.esquemas, this.revisaoEsquemas, this.MAPA_CLASSIFICACAO_OFICIAL);
         this.salvar();
         this._renderGradeCards();
         this._atualizarContagensAbas();
-        alert(n > 0 ? n + ' esquema(s) receberam a classificação sugerida pelo sistema.' : 'Nenhum esquema novo para classificar: todos os esquemas com classificação oficial já têm uma classificação sua.');
+        alert(!comOficial
+            ? 'Ainda não há classificação de prioridade do sistema publicada nos esquemas oficiais.'
+            : n > 0
+                ? n + ' esquema(s) receberam a classificação sugerida pelo sistema.'
+                : 'Nenhum esquema novo para classificar: todos os esquemas com classificação oficial já têm uma classificação sua.');
     },
 
     // Clique direto numa estrela do CARD na grade normal: sempre define
@@ -34724,7 +34776,7 @@ window.ESQUEMAS_RUNTIME = {
         let total = 0;
 
         Object.keys(this.esquemas).sort().forEach(function(chave) {
-            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; }).map(function(e) { return self._itemExportado(e); });
             if (visiveis.length > 0) {
                 resultado[chave] = visiveis;
                 total += visiveis.length;
@@ -34753,7 +34805,7 @@ window.ESQUEMAS_RUNTIME = {
 
         Object.keys(this.esquemas).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+            let visiveis = (self.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; }).map(function(e) { return self._itemExportado(e); });
             if (visiveis.length > 0) {
                 resultado[chave] = visiveis;
                 total += visiveis.length;
@@ -34778,7 +34830,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; });
+        let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; }).map(function(e) { return self._itemExportado(e); });
 
         if (visiveis.length === 0) {
             alert('Nenhum esquema pra exportar em "' + chave + '" (só existem esquemas ocultos aqui, ou nenhum esquema ainda).');
@@ -37210,6 +37262,11 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     carregar: function() {
+        let oficiais = {};
+        Object.keys(this.fichas || {}).forEach(function(ch) {
+            let of = (this.fichas[ch] || []).filter(function(f) { return f && f.origem_oficial; });
+            if (of.length) oficiais[ch] = of;
+        }, this);
         let bruto = null;
         try { bruto = JSON.parse(window.lerJurisprudenciaBruto() || 'null'); } catch (e) { bruto = null; }
         this.fichas = (bruto && typeof bruto.fichas === 'object' && !Array.isArray(bruto.fichas)) ? bruto.fichas : {};
@@ -37239,6 +37296,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         })) {
             this.salvar();
         }
+        Object.keys(oficiais).forEach(function(ch) {
+            if (!Array.isArray(this.fichas[ch])) this.fichas[ch] = [];
+            let arr = this.fichas[ch], ids = {};
+            arr.forEach(function(x) { if (x) ids[x.id] = true; });
+            oficiais[ch].forEach(function(o) { if (!ids[o.id]) arr.push(o); });
+        }, this);
     },
 
     _garantirCarregado: function() {
@@ -39220,7 +39283,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let total = 0;
 
         Object.keys(this.fichas).sort().forEach(function(chave) {
-            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; }).map(function(f) { return self._itemExportado(f); });
             if (visiveis.length > 0) {
                 resultado[chave] = visiveis;
                 total += visiveis.length;
@@ -39289,7 +39352,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         Object.keys(this.fichas).sort().forEach(function(chave) {
             if (chave.indexOf(prefixo) !== 0) return;
-            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+            let visiveis = (self.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; }).map(function(f) { return self._itemExportado(f); });
             if (visiveis.length > 0) {
                 resultado[chave] = visiveis;
                 total += visiveis.length;
@@ -39353,7 +39416,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
-        let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; });
+        let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; }).map(function(f) { return self._itemExportado(f); });
 
         if (visiveis.length === 0) {
             alert('Nenhuma ficha pra exportar em "' + chave + '" (só existem fichas ocultas aqui, ou nenhuma ficha ainda).');
@@ -39792,16 +39855,37 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Mapa classificacaoOficial ('crítico'/'importante'/'regular', campo
     // editorial dos JSONs oficiais) -> chave de nível própria desta seção.
     MAPA_CLASSIFICACAO_OFICIAL: { 'crítico': 'dificil', 'importante': 'medio', 'regular': 'facil' },
+    MAPA_NIVEL_PARA_OFICIAL: { 'dificil': 'crítico', 'medio': 'importante', 'facil': 'regular' },
+
+    _itemExportado: function(f) {
+        let rev = this.revisaoJurisprudencia && this.revisaoJurisprudencia[f.id];
+        let cls = (rev && this.MAPA_NIVEL_PARA_OFICIAL[rev.ultimaClassificacao]) || f.classificacaoOficial || '';
+        let copia = Object.assign({}, f);
+        if (cls) copia.classificacaoOficial = cls;
+        else delete copia.classificacaoOficial;
+        return copia;
+    },
 
     // Botão "Aplicar Classificação de Prioridade do Sistema" — ver
     // window.ClassificacaoCards.aplicarSugestaoSistema para a regra completa
     // (nunca sobrescreve classificação pessoal já dada pelo usuário).
-    aplicarClassificacaoSistema: function() {
+    aplicarClassificacaoSistema: async function() {
+        let temOficial = Object.keys(this.fichas || {}).some(function(ch) {
+            return (this.fichas[ch] || []).some(function(f) { return f && f.origem_oficial; });
+        }, this);
+        if (!temOficial && typeof window.carregarJurisprudenciaOficial === 'function') {
+            await window.carregarJurisprudenciaOficial();
+        }
+        let comOficial = window.ClassificacaoCards.contarComSugestaoSistema(this.fichas, this.MAPA_CLASSIFICACAO_OFICIAL);
         let n = window.ClassificacaoCards.aplicarSugestaoSistema(this.fichas, this.revisaoJurisprudencia, this.MAPA_CLASSIFICACAO_OFICIAL);
         this.salvar();
         this._renderGradeCards();
         this._atualizarContagensAbas();
-        alert(n > 0 ? n + ' ficha(s) receberam a classificação sugerida pelo sistema.' : 'Nenhuma ficha nova para classificar: todas as fichas com classificação oficial já têm uma classificação sua.');
+        alert(!comOficial
+            ? 'Ainda não há classificação de prioridade do sistema publicada nas fichas oficiais.'
+            : n > 0
+                ? n + ' ficha(s) receberam a classificação sugerida pelo sistema.'
+                : 'Nenhuma ficha nova para classificar: todas as fichas com classificação oficial já têm uma classificação sua.');
     },
 
     // Clique direto num círculo (🔴🟡🟢) do CARD na grade normal: sempre
