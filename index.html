@@ -35981,12 +35981,59 @@ window.ESQ_IA = {
        isso um botão de texto (tracejado) em vez de uma bolinha. */
     #jurisprudencia-modal .jur-etq-filtro-sem { font-size:10px; font-weight:700; padding:2px 8px; border-radius:99px; border:1px dashed var(--text-muted); color:var(--text-muted); cursor:pointer; white-space:nowrap; }
     #jurisprudencia-modal .jur-etq-filtro-sem.selecionada { border-style:solid; border-color:var(--app-primary); color:var(--app-primary); background:var(--bg-accent-soft); font-weight:800; }
-    /* 2ª linha da toolbar — os 3 filtros adicionais (Tribunal/Sistemática/
-       Ano), compactos, populados dinamicamente com os valores distintos já
-       presentes no escopo atual (matéria/divisão selecionada). */
-    #jurisprudencia-modal .jur-toolbar-linha2 { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-top:4px; border-top:1px dashed var(--border-color); }
+    /* 2ª linha da toolbar — os filtros adicionais (Tribunal/Sistemática/
+       Ano/Informativo), compactos com multi-seleção em dropdown suspenso. */
+    #jurisprudencia-modal .jur-toolbar-linha2 { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding-top:4px; border-top:1px dashed var(--border-color); }
     #jurisprudencia-modal .jur-filtro-mini { display:flex; align-items:center; gap:5px; font-size:9.5px; font-weight:700; text-transform:uppercase; color:var(--text-muted); }
     #jurisprudencia-modal .jur-filtro-mini select { font-size:10.5px; font-weight:600; text-transform:none; color:var(--text-main); padding:3px 6px; border-radius:5px; border:1px solid var(--border-color); background:var(--bg-white); max-width:160px; }
+
+    /* Multi-select Dropdowns compactos (Tribunal, Sistemática, Ano, Informativo e Etiquetas) */
+    #jurisprudencia-modal .jur-multi-dd,
+    #modal-jurisprudencia-baralho .jur-multi-dd { position:relative; display:inline-flex; align-items:center; }
+    #jurisprudencia-modal .jur-multi-dd-trigger,
+    #modal-jurisprudencia-baralho .jur-multi-dd-trigger { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); font-size:10px; font-weight:600; color:var(--text-main); cursor:pointer; user-select:none; white-space:nowrap; max-width:210px; }
+    #jurisprudencia-modal .jur-multi-dd-trigger:hover,
+    #modal-jurisprudencia-baralho .jur-multi-dd-trigger:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-multi-dd-trigger.ativo,
+    #modal-jurisprudencia-baralho .jur-multi-dd-trigger.ativo { background:var(--bg-accent-soft); border-color:var(--app-primary); color:var(--app-primary); font-weight:700; }
+    #jurisprudencia-modal .jur-multi-dd-seta,
+    #modal-jurisprudencia-baralho .jur-multi-dd-seta { font-size:8px; opacity:0.65; transition:transform 0.15s ease; margin-left:2px; }
+    #jurisprudencia-modal .jur-multi-dd.aberto .jur-multi-dd-seta,
+    #modal-jurisprudencia-baralho .jur-multi-dd.aberto .jur-multi-dd-seta { transform:rotate(180deg); }
+    #jurisprudencia-modal .jur-multi-dd-menu,
+    #modal-jurisprudencia-baralho .jur-multi-dd-menu { position:absolute; top:calc(100% + 4px); left:0; z-index:1000; min-width:200px; max-width:320px; background:var(--bg-white); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.14); padding:8px; display:none; flex-direction:column; gap:6px; font-size:11px; }
+    #jurisprudencia-modal .jur-multi-dd.aberto .jur-multi-dd-menu,
+    #modal-jurisprudencia-baralho .jur-multi-dd.aberto .jur-multi-dd-menu { display:flex; }
+    #jurisprudencia-modal .jur-multi-dd-menu-topo,
+    #modal-jurisprudencia-baralho .jur-multi-dd-menu-topo { display:flex; justify-content:space-between; align-items:center; gap:8px; padding-bottom:5px; border-bottom:1px dashed var(--border-color); }
+    #jurisprudencia-modal .jur-multi-dd-btn-acao,
+    #modal-jurisprudencia-baralho .jur-multi-dd-btn-acao { background:none; border:none; padding:2px 4px; font-size:10px; font-weight:700; color:var(--app-primary); cursor:pointer; }
+    #jurisprudencia-modal .jur-multi-dd-btn-acao:hover,
+    #modal-jurisprudencia-baralho .jur-multi-dd-btn-acao:hover { text-decoration:underline; }
+    #jurisprudencia-modal .jur-multi-dd-busca,
+    #modal-jurisprudencia-baralho .jur-multi-dd-busca { width:100%; box-sizing:border-box; padding:4px 8px; border:1px solid var(--border-color); border-radius:5px; font-size:10.5px; font-family:var(--font-body); }
+    #jurisprudencia-modal .jur-multi-dd-busca:focus,
+    #modal-jurisprudencia-baralho .jur-multi-dd-busca:focus { outline:none; border-color:var(--app-primary); }
+    #jurisprudencia-modal .jur-multi-dd-lista,
+    #modal-jurisprudencia-baralho .jur-multi-dd-lista { max-height:210px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding:2px 0; }
+    #jurisprudencia-modal .jur-multi-dd-item,
+    #modal-jurisprudencia-baralho .jur-multi-dd-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:5px; cursor:pointer; user-select:none; font-size:11px; color:var(--text-main); }
+    #jurisprudencia-modal .jur-multi-dd-item:hover,
+    #modal-jurisprudencia-baralho .jur-multi-dd-item:hover { background:var(--bg-soft); }
+    #jurisprudencia-modal .jur-multi-dd-item input[type="checkbox"],
+    #modal-jurisprudencia-baralho .jur-multi-dd-item input[type="checkbox"] { margin:0; cursor:pointer; }
+    #jurisprudencia-modal .jur-multi-dd-item-txt,
+    #modal-jurisprudencia-baralho .jur-multi-dd-item-txt { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #jurisprudencia-modal .jur-multi-dd-item-count,
+    #modal-jurisprudencia-baralho .jur-multi-dd-item-count { font-size:9.5px; color:var(--text-muted); font-weight:600; flex-shrink:0; }
+    #jurisprudencia-modal .jur-multi-dd-limpar-rapido,
+    #modal-jurisprudencia-baralho .jur-multi-dd-limpar-rapido { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:0 2px; line-height:1; }
+    #jurisprudencia-modal .jur-multi-dd-limpar-rapido:hover,
+    #modal-jurisprudencia-baralho .jur-multi-dd-limpar-rapido:hover { color:var(--danger); }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas-bar { position:relative; z-index:100; flex-shrink:0; padding:0 10px 8px 10px; display:flex; align-items:center; gap:6px; }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas-bar .jur-multi-dd { width:100%; }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas-bar .jur-multi-dd-trigger { width:100%; justify-content:space-between; box-sizing:border-box; padding:5px 8px; font-size:10.5px; }
+    #modal-jurisprudencia-baralho .jur-baralho-etiquetas-bar .jur-multi-dd-menu { width:100%; max-width:100%; box-sizing:border-box; }
 
     #jurisprudencia-modal .jur-grade-scroll { flex:1; overflow-y:auto; padding:10px; }
     #jurisprudencia-modal .jur-cards-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px; align-content:start; padding:2px; }
@@ -37255,6 +37302,17 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Filtro "Informativo" da navegação normal (2ª linha da toolbar) —
     // mesma chave "TRIBUNAL|número"; vazio = todos.
     _filtroInformativo: '',
+    _filtroTribunal: '',
+    _filtroSistematica: '',
+    _filtroAno: '',
+    // Filtros secundários multi-seleção da navegação normal (2ª linha da toolbar)
+    _filtrosMulti: { tribunais: [], sistematicas: [], anos: [], informativos: [] },
+    _dropdownAberto: null,
+    _buscaDropdown: { informativos: '', sistematicas: '', tribunais: '', anos: '' },
+    _filtroInformativos: [],
+    _filtroTribunais: [],
+    _filtroSistematicas: [],
+    _filtroAnos: [],
     // Pedido explícito do usuário: seleção CUMULADA — cada eixo é um toggle
     // independente (não mais radio single-select), combinados numa chave
     // composta. Ordem de PRIORIDADE (externo -> interno) é sempre fixa
@@ -37479,6 +37537,27 @@ window.JURISPRUDENCIA_RUNTIME = {
                 // outra ficha manualmente e disparar um recálculo.
                 window.JURISPRUDENCIA_RUNTIME.render();
                 window.JURISPRUDENCIA_RUNTIME._atualizarContagensAbas();
+            });
+        }
+        if (!window._jurMultiDropdownListener) {
+            window._jurMultiDropdownListener = true;
+            document.addEventListener('click', function(e) {
+                // Toolbar dropdowns
+                if (window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME._dropdownAberto) {
+                    let container = e.target.closest && e.target.closest('.jur-multi-dd');
+                    if (!container) {
+                        window.JURISPRUDENCIA_RUNTIME._dropdownAberto = null;
+                        window.JURISPRUDENCIA_RUNTIME._renderGradeCards();
+                    }
+                }
+                // Leitor dropdown de etiquetas
+                if (window.JURISPRUDENCIA_RUNTIME && window.JURISPRUDENCIA_RUNTIME._baralhoState && window.JURISPRUDENCIA_RUNTIME._baralhoState._dropdownEtiquetasAberto) {
+                    let containerEtq = e.target.closest && e.target.closest('.jur-baralho-etq-dd');
+                    if (!containerEtq) {
+                        window.JURISPRUDENCIA_RUNTIME._baralhoState._dropdownEtiquetasAberto = false;
+                        window.JURISPRUDENCIA_RUNTIME._renderListaBaralho();
+                    }
+                }
             });
         }
     },
@@ -37730,13 +37809,15 @@ window.JURISPRUDENCIA_RUNTIME = {
         // dos panos nos outros atalhos, sem nenhum seletor visível ali pra
         // explicar ou desfazer.
         this._filtroTribunal = '';
-        // Idem pro filtro secundário "Sistemática" (dropdown da navegação
-        // normal, ver filtrarSistematica) — não tem controle visível dentro
-        // do atalho, mas _listaFiltrada() já ignora este filtro quando
-        // _modoSistematica está ativo (ver comentário lá); resetado aqui só
-        // por higiene, pra o dropdown não reaparecer com um valor antigo
-        // "grudado" ao voltar pra navegação normal por matéria.
         this._filtroSistematica = '';
+        this._filtroAno = '';
+        this._filtroInformativo = '';
+        this._filtrosMulti = { tribunais: [], sistematicas: [], anos: [], informativos: [] };
+        this._filtroTribunais = [];
+        this._filtroSistematicas = [];
+        this._filtroAnos = [];
+        this._filtroInformativos = [];
+        this._dropdownAberto = null;
         this.render();
     },
 
@@ -37942,7 +38023,12 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (this._ocultarOficiais) {
             lista = lista.filter(function(par) { return !par.item.origem_oficial; });
         }
-        if (this._filtroTribunal) {
+        let fm = this._filtrosMulti || {};
+        if (fm.tribunais && fm.tribunais.length > 0) {
+            lista = lista.filter(function(par) { return fm.tribunais.indexOf(par.item.tribunal) !== -1; });
+        } else if (this._filtroTribunais && this._filtroTribunais.length > 0) {
+            lista = lista.filter(function(par) { return self._filtroTribunais.indexOf(par.item.tribunal) !== -1; });
+        } else if (this._filtroTribunal) {
             lista = lista.filter(function(par) { return par.item.tribunal === self._filtroTribunal; });
         }
         // Só se aplica na navegação normal por Matéria/Divisão — dentro de
@@ -37952,13 +38038,25 @@ window.JURISPRUDENCIA_RUNTIME = {
         // zerava silenciosamente a lista sempre que o valor preso aqui não
         // batia com o do atalho aberto (bug relatado: só o atalho cujo
         // valor coincidia com este resíduo mostrava cards).
-        if (this._filtroSistematica && !this._modoSistematica) {
+        if (fm.sistematicas && fm.sistematicas.length > 0 && !this._modoSistematica) {
+            lista = lista.filter(function(par) { return fm.sistematicas.indexOf(par.item.sistematica) !== -1; });
+        } else if (this._filtroSistematicas && this._filtroSistematicas.length > 0 && !this._modoSistematica) {
+            lista = lista.filter(function(par) { return self._filtroSistematicas.indexOf(par.item.sistematica) !== -1; });
+        } else if (this._filtroSistematica && !this._modoSistematica) {
             lista = lista.filter(function(par) { return par.item.sistematica === self._filtroSistematica; });
         }
-        if (this._filtroAno) {
+        if (fm.anos && fm.anos.length > 0) {
+            lista = lista.filter(function(par) { return fm.anos.indexOf((par.item.dataJulgado || '').slice(0, 4)) !== -1; });
+        } else if (this._filtroAnos && this._filtroAnos.length > 0) {
+            lista = lista.filter(function(par) { return self._filtroAnos.indexOf((par.item.dataJulgado || '').slice(0, 4)) !== -1; });
+        } else if (this._filtroAno) {
             lista = lista.filter(function(par) { return (par.item.dataJulgado || '').slice(0, 4) === self._filtroAno; });
         }
-        if (this._filtroInformativo && !this._modoSistematica) {
+        if (fm.informativos && fm.informativos.length > 0 && !this._modoSistematica) {
+            lista = lista.filter(function(par) { return fm.informativos.indexOf(self._chaveInformativo(par.item)) !== -1; });
+        } else if (this._filtroInformativos && this._filtroInformativos.length > 0 && !this._modoSistematica) {
+            lista = lista.filter(function(par) { return self._filtroInformativos.indexOf(self._chaveInformativo(par.item)) !== -1; });
+        } else if (this._filtroInformativo && !this._modoSistematica) {
             lista = lista.filter(function(par) { return self._chaveInformativo(par.item) === self._filtroInformativo; });
         }
         if (this._filtroBusca && this._filtroBusca.trim()) {
@@ -38031,6 +38129,144 @@ window.JURISPRUDENCIA_RUNTIME = {
         let self = this;
         let informativos = Array.from(new Set(base.map(function(p) { return self._chaveInformativo(p.item); }).filter(Boolean))).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
         return { tribunais: tribunais, sistematicas: sistematicas, anos: anos, informativos: informativos };
+    },
+
+    _contarValoresParaFiltros: function() {
+        let base = this._fichasParaExibir();
+        let contagens = { tribunais: {}, sistematicas: {}, anos: {}, informativos: {} };
+        let self = this;
+        base.forEach(function(par) {
+            let it = par.item;
+            if (it.tribunal) contagens.tribunais[it.tribunal] = (contagens.tribunais[it.tribunal] || 0) + 1;
+            if (it.sistematica) contagens.sistematicas[it.sistematica] = (contagens.sistematicas[it.sistematica] || 0) + 1;
+            let ano = (it.dataJulgado || '').slice(0, 4);
+            if (ano) contagens.anos[ano] = (contagens.anos[ano] || 0) + 1;
+            let inf = self._chaveInformativo(it);
+            if (inf) contagens.informativos[inf] = (contagens.informativos[inf] || 0) + 1;
+        });
+        return contagens;
+    },
+
+    toggleDropdownMulti: function(tipo, event) {
+        if (event && event.stopPropagation) event.stopPropagation();
+        this._dropdownAberto = (this._dropdownAberto === tipo) ? null : tipo;
+        this._renderGradeCards();
+    },
+
+    toggleFiltroMulti: function(tipo, valor) {
+        if (!this._filtrosMulti) this._filtrosMulti = { tribunais: [], sistematicas: [], anos: [], informativos: [] };
+        let arr = this._filtrosMulti[tipo] || [];
+        let idx = arr.indexOf(valor);
+        if (idx === -1) arr.push(valor);
+        else arr.splice(idx, 1);
+        this._filtrosMulti[tipo] = arr;
+        this._sincronizarFiltrosLegados();
+        this._renderGradeCards();
+    },
+
+    marcarTodosFiltroMulti: function(tipo, todosValores) {
+        if (!this._filtrosMulti) this._filtrosMulti = { tribunais: [], sistematicas: [], anos: [], informativos: [] };
+        this._filtrosMulti[tipo] = (todosValores || []).slice();
+        this._sincronizarFiltrosLegados();
+        this._renderGradeCards();
+    },
+
+    limparFiltroMulti: function(tipo) {
+        if (!this._filtrosMulti) this._filtrosMulti = { tribunais: [], sistematicas: [], anos: [], informativos: [] };
+        this._filtrosMulti[tipo] = [];
+        this._sincronizarFiltrosLegados();
+        this._renderGradeCards();
+    },
+
+    limparTodosFiltrosSecundarios: function() {
+        this._filtrosMulti = { tribunais: [], sistematicas: [], anos: [], informativos: [] };
+        this._sincronizarFiltrosLegados();
+        this._renderGradeCards();
+    },
+
+    filtrarBuscaDropdownMulti: function(tipo, val) {
+        if (!this._buscaDropdown) this._buscaDropdown = {};
+        this._buscaDropdown[tipo] = val || '';
+        this._renderGradeCards();
+    },
+
+    _sincronizarFiltrosLegados: function() {
+        let fm = this._filtrosMulti || {};
+        this._filtroTribunais = fm.tribunais || [];
+        this._filtroTribunal = this._filtroTribunais.length === 1 ? this._filtroTribunais[0] : '';
+        this._filtroSistematicas = fm.sistematicas || [];
+        this._filtroSistematica = this._filtroSistematicas.length === 1 ? this._filtroSistematicas[0] : '';
+        this._filtroAnos = fm.anos || [];
+        this._filtroAno = this._filtroAnos.length === 1 ? this._filtroAnos[0] : '';
+        this._filtroInformativos = fm.informativos || [];
+        this._filtroInformativo = this._filtroInformativos.length === 1 ? this._filtroInformativos[0] : '';
+    },
+
+    _renderDropdownMultiToolbar: function(tipo, rotuloSingular, valores, contagens, formatarRotuloItem) {
+        if (!valores || valores.length === 0) return '';
+        let self = this;
+        let fm = this._filtrosMulti || {};
+        let selecionados = fm[tipo] || [];
+        let aberto = this._dropdownAberto === tipo;
+        let temFiltroAtivo = selecionados.length > 0;
+
+        let rotuloTrigger;
+        if (selecionados.length === 0) {
+            rotuloTrigger = rotuloSingular + ': Todos';
+        } else if (selecionados.length === 1) {
+            let rot = formatarRotuloItem ? formatarRotuloItem(selecionados[0]) : selecionados[0];
+            rotuloTrigger = rotuloSingular + ': ' + rot;
+        } else if (selecionados.length === 2) {
+            let rot1 = formatarRotuloItem ? formatarRotuloItem(selecionados[0]) : selecionados[0];
+            let rot2 = formatarRotuloItem ? formatarRotuloItem(selecionados[1]) : selecionados[1];
+            rotuloTrigger = rotuloSingular + ': ' + rot1 + ', ' + rot2;
+        } else {
+            rotuloTrigger = rotuloSingular + ': (' + selecionados.length + ')';
+        }
+
+        let buscaVal = (this._buscaDropdown && this._buscaDropdown[tipo] || '').toLowerCase().trim();
+        let itensFiltrados = valores.filter(function(v) {
+            if (!buscaVal) return true;
+            let texto = (formatarRotuloItem ? formatarRotuloItem(v) : v).toLowerCase();
+            return texto.indexOf(buscaVal) !== -1;
+        });
+
+        let htmlItens = itensFiltrados.map(function(v) {
+            let checado = selecionados.indexOf(v) !== -1;
+            let c = (contagens && contagens[tipo] && contagens[tipo][v]) || 0;
+            let texto = formatarRotuloItem ? formatarRotuloItem(v) : v;
+            return '<label class="jur-multi-dd-item">' +
+                '<input type="checkbox" ' + (checado ? 'checked' : '') + ' onchange="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleFiltroMulti(\'' + tipo + '\', \'' + v.replace(/'/g, "\\'") + '\')">' +
+                '<span class="jur-multi-dd-item-txt" title="' + self._escapar(texto) + '">' + self._escapar(texto) + '</span>' +
+                '<span class="jur-multi-dd-item-count">(' + c + ')</span>' +
+            '</label>';
+        }).join('');
+
+        let htmlBusca = (valores.length > 7)
+            ? '<input type="text" id="jur-multi-dd-busca-' + tipo + '" class="jur-multi-dd-busca" placeholder="🔎 Filtrar..." value="' + self._escapar(this._buscaDropdown && this._buscaDropdown[tipo] || '') + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarBuscaDropdownMulti(\'' + tipo + '\', this.value)">'
+            : '';
+
+        let btnLimparRapido = temFiltroAtivo
+            ? '<button class="jur-multi-dd-limpar-rapido" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.limparFiltroMulti(\'' + tipo + '\')" title="Limpar ' + rotuloSingular + '">✖</button>'
+            : '';
+
+        let jsonValores = JSON.stringify(valores).replace(/"/g, '&quot;');
+
+        return '<div class="jur-multi-dd' + (aberto ? ' aberto' : '') + '" data-tipo="' + tipo + '">' +
+            '<div class="jur-multi-dd-trigger' + (temFiltroAtivo ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleDropdownMulti(\'' + tipo + '\', event)">' +
+                '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + self._escapar(rotuloTrigger) + '</span>' +
+                btnLimparRapido +
+                '<span class="jur-multi-dd-seta">▾</span>' +
+            '</div>' +
+            '<div class="jur-multi-dd-menu" onclick="event.stopPropagation()">' +
+                '<div class="jur-multi-dd-menu-topo">' +
+                    '<button class="jur-multi-dd-btn-acao" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodosFiltroMulti(\'' + tipo + '\', ' + jsonValores + ')">Marcar todos</button>' +
+                    '<button class="jur-multi-dd-btn-acao" onclick="window.JURISPRUDENCIA_RUNTIME.limparFiltroMulti(\'' + tipo + '\')">Limpar</button>' +
+                '</div>' +
+                htmlBusca +
+                '<div class="jur-multi-dd-lista">' + (htmlItens || '<div style="padding:6px; font-size:10.5px; color:var(--text-muted); text-align:center;">Nenhum item</div>') + '</div>' +
+            '</div>' +
+        '</div>';
     },
 
     filtrarTribunal: function(valor) { this._filtroTribunal = valor; this._renderGradeCards(); },
@@ -38534,21 +38770,29 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let self = this;
         let distintos = this._valoresDistintosParaFiltros();
-        function opcoes(valores, valorAtual) {
-            return '<option value="">Todos</option>' + valores.map(function(v) {
-                return '<option value="' + self._escapar(v) + '"' + (v === valorAtual ? ' selected' : '') + '>' + self._escapar(v) + '</option>';
-            }).join('');
-        }
+        let contagens = this._contarValoresParaFiltros();
+
+        let ddTribunais = this._renderDropdownMultiToolbar('tribunais', 'Tribunal', distintos.tribunais, contagens);
+        let ddSistematicas = this._renderDropdownMultiToolbar('sistematicas', 'Sistemática', distintos.sistematicas, contagens);
+        let ddAnos = this._renderDropdownMultiToolbar('anos', 'Ano', distintos.anos, contagens);
+        let ddInformativos = this._renderDropdownMultiToolbar('informativos', 'Informativo', distintos.informativos, contagens, function(k) { return self._rotuloChaveInformativo(k); });
+
+        let fm = this._filtrosMulti || {};
+        let temAlgumFiltro = (fm.tribunais && fm.tribunais.length > 0) ||
+                             (fm.sistematicas && fm.sistematicas.length > 0) ||
+                             (fm.anos && fm.anos.length > 0) ||
+                             (fm.informativos && fm.informativos.length > 0);
+        let btnLimparTodos = temAlgumFiltro
+            ? '<button class="jur-tb-btn" style="color:var(--text-muted); font-size:9.5px; padding:2px 8px; border-style:dashed;" onclick="window.JURISPRUDENCIA_RUNTIME.limparTodosFiltrosSecundarios()" title="Limpar todos os filtros de Tribunal, Sistemática, Ano e Informativo">Limpar filtros</button>'
+            : '';
+
         let htmlFiltrosSecundarios =
             '<div class="jur-toolbar-linha2">' +
-                '<label class="jur-filtro-mini">Tribunal <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarTribunal(this.value)">' + opcoes(distintos.tribunais, this._filtroTribunal) + '</select></label>' +
-                '<label class="jur-filtro-mini">Sistemática <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarSistematica(this.value)">' + opcoes(distintos.sistematicas, this._filtroSistematica) + '</select></label>' +
-                '<label class="jur-filtro-mini">Ano <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarAno(this.value)">' + opcoes(distintos.anos, this._filtroAno) + '</select></label>' +
-                '<label class="jur-filtro-mini">Informativo <select onchange="window.JURISPRUDENCIA_RUNTIME.filtrarInformativo(this.value)">' +
-                    '<option value="">Todos</option>' + (distintos.informativos || []).map(function(k) {
-                        return '<option value="' + self._escapar(k) + '"' + (k === self._filtroInformativo ? ' selected' : '') + '>' + self._escapar(self._rotuloChaveInformativo(k)) + '</option>';
-                    }).join('') +
-                '</select></label>' +
+                ddTribunais +
+                ddSistematicas +
+                ddAnos +
+                ddInformativos +
+                btnLimparTodos +
             '</div>';
 
         return '<div class="jur-toolbar"><div class="jur-toolbar-linha1">' + htmlAcoes + '</div>' + htmlFiltrosSecundarios + '</div>';
@@ -38680,6 +38924,10 @@ window.JURISPRUDENCIA_RUNTIME = {
         let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
         let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
+        let inputBuscaDdAnterior = this._dropdownAberto ? document.getElementById('jur-multi-dd-busca-' + this._dropdownAberto) : null;
+        let buscaDdTinhaFoco = inputBuscaDdAnterior && document.activeElement === inputBuscaDdAnterior;
+        let buscaDdCursor = buscaDdTinhaFoco ? inputBuscaDdAnterior.selectionStart : null;
+
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
             this._atualizarMenuLeitor();
@@ -38708,6 +38956,13 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (novoInputBusca) {
                 novoInputBusca.focus();
                 novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+        if (buscaDdTinhaFoco && this._dropdownAberto) {
+            let novoInputDd = document.getElementById('jur-multi-dd-busca-' + this._dropdownAberto);
+            if (novoInputDd) {
+                novoInputDd.focus();
+                novoInputDd.setSelectionRange(buscaDdCursor, buscaDdCursor);
             }
         }
         this._atualizarMenuLeitor();
@@ -40842,10 +41097,23 @@ window.JURISPRUDENCIA_RUNTIME = {
         } else if (this._materiaSelecionada) {
             // Checa se há filtros ativos na barra de ferramentas
             let filtrosAtivos = [];
-            if (this._filtroSistematica) filtrosAtivos.push(this._filtroSistematica);
-            if (this._filtroTribunal) filtrosAtivos.push(this._filtroTribunal);
-            if (this._filtroAno) filtrosAtivos.push(this._filtroAno);
-            if (this._filtroInformativo) filtrosAtivos.push(this._rotuloChaveInformativo(this._filtroInformativo));
+            let fm = this._filtrosMulti || {};
+            if (fm.sistematicas && fm.sistematicas.length > 0) filtrosAtivos.push(fm.sistematicas.join(', '));
+            else if (this._filtroSistematica) filtrosAtivos.push(this._filtroSistematica);
+
+            if (fm.tribunais && fm.tribunais.length > 0) filtrosAtivos.push(fm.tribunais.join(', '));
+            else if (this._filtroTribunal) filtrosAtivos.push(this._filtroTribunal);
+
+            if (fm.anos && fm.anos.length > 0) filtrosAtivos.push(fm.anos.join(', '));
+            else if (this._filtroAno) filtrosAtivos.push(this._filtroAno);
+
+            if (fm.informativos && fm.informativos.length > 0) {
+                let rotulosInf = fm.informativos.map(function(k) { return self._rotuloChaveInformativo(k); });
+                filtrosAtivos.push(rotulosInf.length <= 2 ? rotulosInf.join(', ') : (rotulosInf.length + ' informativos'));
+            } else if (this._filtroInformativo) {
+                filtrosAtivos.push(this._rotuloChaveInformativo(this._filtroInformativo));
+            }
+
             if (this._filtroCor) filtrosAtivos.push(this._filtroCor === this._SEM_ETIQUETA_SENTINELA ? 'Sem Etiqueta' : 'Por Cor');
             if (this._filtroImportancia) {
                 let rImp = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
@@ -40937,10 +41205,22 @@ window.JURISPRUDENCIA_RUNTIME = {
             partesTitulo.push(this._materiaSelecionada);
             if (this._divisaoSelecionada) partesTitulo.push(this._divisaoSelecionada);
         }
-        if (this._filtroSistematica && !this._modoSistematica) partesTitulo.push(this._filtroSistematica);
-        if (this._filtroTribunal) partesTitulo.push(this._filtroTribunal);
-        if (this._filtroAno) partesTitulo.push(this._filtroAno);
-        if (this._filtroInformativo && !this._modoSistematica) partesTitulo.push(this._rotuloChaveInformativo(this._filtroInformativo));
+        let fm = this._filtrosMulti || {};
+        if (fm.sistematicas && fm.sistematicas.length > 0 && !this._modoSistematica) partesTitulo.push(fm.sistematicas.join(', '));
+        else if (this._filtroSistematica && !this._modoSistematica) partesTitulo.push(this._filtroSistematica);
+
+        if (fm.tribunais && fm.tribunais.length > 0) partesTitulo.push(fm.tribunais.join(', '));
+        else if (this._filtroTribunal) partesTitulo.push(this._filtroTribunal);
+
+        if (fm.anos && fm.anos.length > 0) partesTitulo.push(fm.anos.join(', '));
+        else if (this._filtroAno) partesTitulo.push(this._filtroAno);
+
+        if (fm.informativos && fm.informativos.length > 0 && !this._modoSistematica) {
+            let rotulosInf = fm.informativos.map(function(k) { return self._rotuloChaveInformativo(k); });
+            partesTitulo.push(rotulosInf.length <= 2 ? rotulosInf.join(', ') : (rotulosInf.length + ' informativos'));
+        } else if (this._filtroInformativo && !this._modoSistematica) {
+            partesTitulo.push(this._rotuloChaveInformativo(this._filtroInformativo));
+        }
         if (this._filtroCor) {
             partesTitulo.push(this._filtroCor === this._SEM_ETIQUETA_SENTINELA ? 'Sem Etiqueta' : 'Por Cor');
         }
@@ -41098,6 +41378,9 @@ window.JURISPRUDENCIA_RUNTIME = {
             ordemChaves: fichas.map(function(f) { return f.id; }),
             indiceAtual: 0,
             filtroEtiqueta: null,
+            filtrosEtiquetas: [],
+            _dropdownEtiquetasAberto: false,
+            _buscaEtiquetas: '',
             filtroBusca: '',
             // "Mostrar: Todos | Visualizados | Não visualizados" (ver
             // _renderListaBaralho) — null = todos.
@@ -41214,34 +41497,74 @@ window.JURISPRUDENCIA_RUNTIME = {
             .filter(Boolean);
     },
 
-    // Etiquetas distintas presentes no baralho — popula a barra de pills no
-    // topo da lista. Dedup por ID, não por nome (this.etiquetas é escopado
-    // por tópico — ver ESQUEMAS_RUNTIME._etiquetasBaralho pro raciocínio
-    // completo).
+    // Etiquetas distintas presentes no baralho com contagem de ocorrências
     _etiquetasBaralho: function() {
         let s = this._baralhoState;
         if (!s) return [];
         let self = this;
-        let vistas = {};
-        let etiquetas = [];
+        let mapa = {};
+        let semEtiquetaCount = 0;
         s.cardsBase.forEach(function(f) {
             let et = self._etiquetaDaFicha(f);
-            if (!et || vistas[et.id]) return;
-            vistas[et.id] = true;
-            etiquetas.push(et);
+            if (!et) {
+                semEtiquetaCount++;
+                return;
+            }
+            if (!mapa[et.id]) {
+                mapa[et.id] = { id: et.id, nome: et.nome, cor: et.cor, count: 0 };
+            }
+            mapa[et.id].count++;
         });
+        let etiquetas = Object.keys(mapa).map(function(k) { return mapa[k]; });
         etiquetas.sort(function(a, b) { return a.nome.toLowerCase().localeCompare(b.nome.toLowerCase()); });
+        if (semEtiquetaCount > 0) {
+            etiquetas.push({ id: '__sem_etiqueta__', nome: 'Sem Etiqueta', cor: '#94a3b8', count: semEtiquetaCount, isSemEtiqueta: true });
+        }
         return etiquetas;
     },
 
-    // Clique numa etiqueta: ISOLA ela SÓ NA LISTAGEM lateral; clicar de
-    // novo na mesma já ativa LIMPA o filtro. Não mexe em indiceAtual nem
-    // chama renderBaralho() inteiro — a ficha exibida à direita e a
-    // posição "X/Y" continuam intocadas, só a lista muda.
+    toggleDropdownEtiquetasBaralho: function(e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        let s = this._baralhoState;
+        if (!s) return;
+        s._dropdownEtiquetasAberto = !s._dropdownEtiquetasAberto;
+        this._renderListaBaralho();
+    },
+
+    // Multi-seleção de etiquetas na listagem lateral do Leitor
     toggleFiltroEtiquetaBaralho: function(idEtiqueta) {
         let s = this._baralhoState;
         if (!s) return;
-        s.filtroEtiqueta = (s.filtroEtiqueta === idEtiqueta) ? null : idEtiqueta;
+        if (!s.filtrosEtiquetas) s.filtrosEtiquetas = s.filtroEtiqueta ? [s.filtroEtiqueta] : [];
+        let arr = s.filtrosEtiquetas.slice();
+        let idx = arr.indexOf(idEtiqueta);
+        if (idx === -1) arr.push(idEtiqueta);
+        else arr.splice(idx, 1);
+        s.filtrosEtiquetas = arr;
+        s.filtroEtiqueta = arr.length === 1 ? arr[0] : null;
+        this._renderListaBaralho();
+    },
+
+    marcarTodasEtiquetasBaralho: function(todas) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtrosEtiquetas = (todas || []).slice();
+        s.filtroEtiqueta = null;
+        this._renderListaBaralho();
+    },
+
+    limparFiltroEtiquetasBaralho: function() {
+        let s = this._baralhoState;
+        if (!s) return;
+        s.filtrosEtiquetas = [];
+        s.filtroEtiqueta = null;
+        this._renderListaBaralho();
+    },
+
+    filtrarBuscaEtiquetasBaralho: function(texto) {
+        let s = this._baralhoState;
+        if (!s) return;
+        s._buscaEtiquetas = texto || '';
         this._renderListaBaralho();
     },
 
@@ -41308,24 +41631,90 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!s) { listaEl.innerHTML = ''; return; }
         let self = this;
 
-        // Preserva foco/cursor do campo de busca entre re-renders — mesmo
-        // padrão de _renderGradeCards (o input é reconstruído do zero a
-        // cada tecla, sem isto o foco cairia a cada caractere digitado).
+        // Preserva foco/cursor dos campos de busca entre re-renders
         let inputBuscaAnterior = document.getElementById('jur-baralho-busca');
         let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
         let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
+        let inputBuscaEtqAnterior = document.getElementById('jur-baralho-etq-busca');
+        let buscaEtqTinhaFoco = inputBuscaEtqAnterior && document.activeElement === inputBuscaEtqAnterior;
+        let buscaEtqCursor = buscaEtqTinhaFoco ? inputBuscaEtqAnterior.selectionStart : null;
+
         let htmlBusca = '<div class="jur-baralho-busca-wrap"><input type="text" id="jur-baralho-busca" class="jur-baralho-busca" placeholder="🔎 Buscar por título..." value="' + self._escapar(s.filtroBusca || '') + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarBuscaBaralho(this.value)"></div>';
 
         let etiquetas = this._etiquetasBaralho();
-        let htmlEtiquetas = etiquetas.length === 0 ? '' :
-            '<div class="jur-baralho-etiquetas' + (s.filtroEtiqueta ? ' tem-filtro' : '') + '">' +
-            etiquetas.map(function(et) {
-                return '<span class="esq-etq-pill' + (et.id === s.filtroEtiqueta ? ' ativa' : '') + '" style="background:' + et.cor + ';" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroEtiquetaBaralho(\'' + et.id + '\')" title="' + self._escapar(et.nome) + '">' + self._escapar(et.nome) + '</span>';
-            }).join('') +
+        let htmlEtiquetas = '';
+        if (etiquetas.length > 0) {
+            let selecionadas = s.filtrosEtiquetas || [];
+            let temFiltroAtivo = selecionadas.length > 0;
+            let aberto = !!s._dropdownEtiquetasAberto;
+
+            let rotuloTrigger;
+            if (selecionadas.length === 0) {
+                rotuloTrigger = '🏷️ Todas as Etiquetas';
+            } else if (selecionadas.length === 1) {
+                let etSel = etiquetas.find(function(e) { return e.id === selecionadas[0]; });
+                rotuloTrigger = '🏷️ ' + (etSel ? etSel.nome : '1 etiqueta');
+            } else if (selecionadas.length === 2) {
+                let et1 = etiquetas.find(function(e) { return e.id === selecionadas[0]; });
+                let et2 = etiquetas.find(function(e) { return e.id === selecionadas[1]; });
+                let n1 = et1 ? et1.nome : 'Etiqueta';
+                let n2 = et2 ? et2.nome : 'Etiqueta';
+                rotuloTrigger = '🏷️ ' + n1 + ', ' + n2;
+            } else {
+                rotuloTrigger = '🏷️ Etiquetas (' + selecionadas.length + ')';
+            }
+
+            let buscaEtq = (s._buscaEtiquetas || '').toLowerCase().trim();
+            let itensFiltrados = etiquetas.filter(function(et) {
+                if (!buscaEtq) return true;
+                return et.nome.toLowerCase().indexOf(buscaEtq) !== -1;
+            });
+
+            let htmlItensEtq = itensFiltrados.map(function(et) {
+                let checado = selecionadas.indexOf(et.id) !== -1;
+                let swatch = et.cor ? '<span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:' + et.cor + '; flex-shrink:0;"></span>' : '';
+                return '<label class="jur-multi-dd-item">' +
+                    '<input type="checkbox" ' + (checado ? 'checked' : '') + ' onchange="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.toggleFiltroEtiquetaBaralho(\'' + et.id.replace(/'/g, "\\'") + '\')">' +
+                    swatch +
+                    '<span class="jur-multi-dd-item-txt" title="' + self._escapar(et.nome) + '">' + self._escapar(et.nome) + '</span>' +
+                    '<span class="jur-multi-dd-item-count">(' + et.count + ')</span>' +
+                '</label>';
+            }).join('');
+
+            let htmlMiniBusca = (etiquetas.length > 6)
+                ? '<input type="text" id="jur-baralho-etq-busca" class="jur-multi-dd-busca" placeholder="🔎 Filtrar etiquetas..." value="' + self._escapar(s._buscaEtiquetas || '') + '" oninput="window.JURISPRUDENCIA_RUNTIME.filtrarBuscaEtiquetasBaralho(this.value)">'
+                : '';
+
+            let btnLimparRapido = temFiltroAtivo
+                ? '<button class="jur-multi-dd-limpar-rapido" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.limparFiltroEtiquetasBaralho()" title="Limpar filtro de etiquetas">✖</button>'
+                : '';
+
+            let todosIds = JSON.stringify(etiquetas.map(function(e) { return e.id; })).replace(/"/g, '&quot;');
+
+            htmlEtiquetas = '<div class="jur-baralho-etiquetas-bar">' +
+                '<div class="jur-multi-dd jur-baralho-etq-dd' + (aberto ? ' aberto' : '') + '">' +
+                    '<div class="jur-multi-dd-trigger' + (temFiltroAtivo ? ' ativo' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleDropdownEtiquetasBaralho(event)">' +
+                        '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + self._escapar(rotuloTrigger) + '</span>' +
+                        btnLimparRapido +
+                        '<span class="jur-multi-dd-seta">▾</span>' +
+                    '</div>' +
+                    '<div class="jur-multi-dd-menu" onclick="event.stopPropagation()">' +
+                        '<div class="jur-multi-dd-menu-topo">' +
+                            '<button class="jur-multi-dd-btn-acao" onclick="window.JURISPRUDENCIA_RUNTIME.marcarTodasEtiquetasBaralho(' + todosIds + ')">Marcar todas</button>' +
+                            '<button class="jur-multi-dd-btn-acao" onclick="window.JURISPRUDENCIA_RUNTIME.limparFiltroEtiquetasBaralho()">Limpar</button>' +
+                        '</div>' +
+                        htmlMiniBusca +
+                        '<div class="jur-multi-dd-lista">' + (htmlItensEtq || '<div style="padding:6px; font-size:10.5px; color:var(--text-muted); text-align:center;">Nenhuma etiqueta</div>') + '</div>' +
+                    '</div>' +
+                '</div>' +
             '</div>';
+        }
 
         let buscaNormalizada = self._normalizarBusca(s.filtroBusca || '');
+
+        let temFiltroEtq = s.filtrosEtiquetas && s.filtrosEtiquetas.length > 0;
+        let querSemEtiqueta = temFiltroEtq && s.filtrosEtiquetas.indexOf('__sem_etiqueta__') !== -1;
 
         // deck é SEMPRE o completo — ver _deckBaralhoAtual. O índice "idx"
         // do onclick é a posição real no baralho (a mesma que ‹›/
@@ -41333,7 +41722,13 @@ window.JURISPRUDENCIA_RUNTIME = {
         let deck = this._deckBaralhoAtual();
         let htmlItens = deck.map(function(item, idx) {
             let etiquetaDoItem = self._etiquetaDaFicha(item);
-            if (s.filtroEtiqueta && (!etiquetaDoItem || etiquetaDoItem.id !== s.filtroEtiqueta)) return '';
+            if (temFiltroEtq) {
+                if (etiquetaDoItem) {
+                    if (s.filtrosEtiquetas.indexOf(etiquetaDoItem.id) === -1) return '';
+                } else {
+                    if (!querSemEtiqueta) return '';
+                }
+            }
             // Corte IDH, CIDH, OCs e Comentários Gerais: o nome do caso
             // (processo) é o título na lista; a síntese (titulo) também é buscável.
             let idh = self._ehCorteIDH(item);
@@ -41409,6 +41804,13 @@ window.JURISPRUDENCIA_RUNTIME = {
             if (novoInputBusca) {
                 novoInputBusca.focus();
                 novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
+            }
+        }
+        if (buscaEtqTinhaFoco) {
+            let novoInputBuscaEtq = document.getElementById('jur-baralho-etq-busca');
+            if (novoInputBuscaEtq) {
+                novoInputBuscaEtq.focus();
+                novoInputBuscaEtq.setSelectionRange(buscaEtqCursor, buscaEtqCursor);
             }
         }
     },
