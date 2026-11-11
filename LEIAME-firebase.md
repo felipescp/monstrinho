@@ -369,8 +369,13 @@ carrossel em PNG, desenhado em `<canvas>` sem bibliotecas:
   prévia sugere encurtar;
 - markdown das explicações nas mesmas regras de `mdExplicacao`: negrito,
   itálico, listas (- e 1.), citação (> ), tabela e título (#);
-- formatos 4:5 (1080×1350), 9:16 (1080×1920) e 16:9 (1600×900); tema claro
-  ou escuro (lembrados no aparelho em `tjpe_v1__divulgar_prefs`);
+- sempre gera as duas versões (pedido explícito do usuário): Instagram
+  (carrossel 4:5, dica "Arraste →") e X (fio, um post por imagem, dica
+  "no próximo post ↓"; 4:5 por padrão ou 16:9); Stories (9:16) opcional.
+  Abas na prévia para ver cada versão; "Baixar tudo" gera um .zip com
+  `instagram/` (imagens + legenda.txt) e `x/` (imagens + fio.txt, um texto
+  de até 280 caracteres por post); tema claro ou escuro. Formato do X, tema
+  e Stories ficam lembrados no aparelho (`tjpe_v1__divulgar_prefs`);
 - o texto pode ser editado na prévia sem mudar o acervo; baixa cada PNG ou
   todos num .zip (`downloadZipArquivos` aceita bytes); legenda sugerida
   para copiar.

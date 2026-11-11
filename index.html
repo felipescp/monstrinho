@@ -503,6 +503,12 @@
 #modal-divulgar .dvg-lado select, #modal-divulgar .dvg-lado input, #modal-divulgar .dvg-lado textarea { font:inherit; font-weight:400; padding:6px 8px; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; background:var(--bg-white, #fff); color:inherit; resize:vertical; }
 #modal-divulgar .dvg-aviso { color:#dc2626; font-weight:700; }
 #modal-divulgar .dvg-lado label.dvg-check { flex-direction:row; align-items:center; gap:6px; }
+#modal-divulgar .dvg-esq { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:10px; }
+#modal-divulgar .dvg-abas { display:flex; gap:6px; flex-wrap:wrap; }
+#modal-divulgar .dvg-abas button { padding:6px 12px; border-radius:999px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; font-weight:700; font-size:11px; cursor:pointer; }
+#modal-divulgar .dvg-abas button.ativa { background:var(--app-primary, #4f46e5); color:#fff; border-color:transparent; }
+#modal-divulgar .dvg-tudo { padding:9px 12px; border-radius:6px; border:none; background:var(--app-primary, #4f46e5); color:#fff; font-weight:800; cursor:pointer; font-size:11.5px; }
+#modal-divulgar .dvg-bot-rot { font-weight:700; align-self:center; }
 #modal-divulgar .dvg-aviso:empty { display:none; }
 #modal-divulgar .dvg-nota { color:var(--text-muted, #64748b); font-size:10.5px; }
 #modal-divulgar .dvg-botoes { display:flex; gap:6px; flex-wrap:wrap; }
@@ -10923,6 +10929,7 @@ window.DIVULGAR = {
         }
     },
     _dica: function(ctx, a, T, texto, y) {
+        if (this._estado && this._estado.destino === 'x') texto = texto.replace(/→/g, '↓');
         ctx.fillStyle = T.suave; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.font = '700 ' + Math.round(26 * a.esc) + 'px "DM Sans", sans-serif';
         ctx.fillText(texto, a.x + a.w / 2, y); ctx.textAlign = 'left';
@@ -10934,7 +10941,7 @@ window.DIVULGAR = {
         let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
         let ctx = document.createElement('canvas').getContext('2d');
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
-        let paxDica = function(fmt) { return fmt === 'x' ? 'Gabarito na próxima imagem →' : 'Arraste para ver o gabarito →'; };
+        let paxDica = function() { return d.destino === 'x' ? 'Gabarito no próximo post ↓' : 'Arraste para ver o gabarito →'; };
         // Enunciado: a última página da questão leva as opções V/F.
         let capUltima = a.h - hOpc - hDica - gap * 2, capCheia = a.h - hDica - gap;
         let ajE = this._ajustarPaginas(ctx, d.enunciado, a.w, [capUltima], Math.round(54 * esc * a.alto), Math.round(38 * esc), T);
@@ -11130,7 +11137,7 @@ window.DIVULGAR = {
                     rotTese(ctx, y, 'TESE'); y += hRotTese;
                 } else { rotTese(ctx, y, 'TESE (CONTINUAÇÃO)'); y += hRotTese; }
                 desenharTese(ctx, uns, y);
-                let dica = !ultimaTese ? 'A tese continua →' : (n < total ? (d.formato === 'x' ? 'Entenda o caso na próxima imagem →' : 'Arraste para entender o caso →') : '');
+                let dica = !ultimaTese ? 'A tese continua →' : (n < total ? (d.destino === 'x' ? 'Entenda o caso no próximo post ↓' : 'Arraste para entender o caso →') : '');
                 if (dica) self._dica(ctx, a, T, dica, a.y + a.h - hDica / 2);
             } });
         });
@@ -11226,10 +11233,10 @@ window.DIVULGAR = {
                 { chave: 'mudou', rotulo: 'O que mudou (vazio = sem caixa)', linhas: 3 },
                 { chave: 'resumo', rotulo: 'Resumo', linhas: 5 }
             ],
-            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            formatoX: lembrado.formatoX === 'x' ? 'x' : 'feed', stories: !!lembrado.stories, formato: 'feed', destino: 'instagram',
             tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
         };
-        this._legendaEditada = false;
+        this._legendaEditada = false; this._fioEditado = false; this._abaAtual = 'instagram';
         this._montarModal();
         let self = this;
         this._carregarRecursos().then(function() { self._render(); });
@@ -11377,10 +11384,10 @@ window.DIVULGAR = {
                 { chave: 'tabelaEmBlocos', rotulo: 'Tabelas de 3+ colunas em blocos (melhor no celular)', tipo: 'check' },
                 { chave: 'conteudo', rotulo: 'Conteúdo (markdown)', linhas: 12 }
             ],
-            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            formatoX: lembrado.formatoX === 'x' ? 'x' : 'feed', stories: !!lembrado.stories, formato: 'feed', destino: 'instagram',
             tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
         };
-        this._legendaEditada = false;
+        this._legendaEditada = false; this._fioEditado = false; this._abaAtual = 'instagram';
         this._montarModal();
         let self = this;
         this._carregarRecursos().then(function() { self._render(); });
@@ -11421,10 +11428,10 @@ window.DIVULGAR = {
                 { chave: 'explicacao', rotulo: 'Explicação', linhas: 8 },
                 { chave: 'axioma', rotulo: 'Para não esquecer (vazio = sem caixa)', linhas: 2 }
             ],
-            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            formatoX: lembrado.formatoX === 'x' ? 'x' : 'feed', stories: !!lembrado.stories, formato: 'feed', destino: 'instagram',
             tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
         };
-        this._legendaEditada = false;
+        this._legendaEditada = false; this._fioEditado = false; this._abaAtual = 'instagram';
         this._montarModal();
         let self = this;
         this._carregarRecursos().then(function() { self._render(); });
@@ -11438,7 +11445,6 @@ window.DIVULGAR = {
             m.id = 'modal-divulgar';
             document.body.appendChild(m);
         }
-        let opcFmt = Object.keys(this.FORMATOS).map(function(k) { return '<option value="' + k + '"' + (k === d.formato ? ' selected' : '') + '>' + self.FORMATOS[k].rotulo + '</option>'; }).join('');
         let esc = function(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
         let campos = (d.campos || []).map(function(c) {
             let on = 'window.DIVULGAR._mudar(\'' + c.chave + '\', ';
@@ -11450,16 +11456,21 @@ window.DIVULGAR = {
             '<div class="dvg-caixa" onclick="event.stopPropagation()">' +
                 '<div class="dvg-topo"><strong>📤 ' + esc(d.tituloModal || 'Divulgar') + '</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fechar()">✕</button></div>' +
                 '<div class="dvg-corpo">' +
-                    '<div class="dvg-previas" id="dvg-previas"></div>' +
+                    '<div class="dvg-esq"><div class="dvg-abas" id="dvg-abas"></div><div class="dvg-previas" id="dvg-previas"></div></div>' +
                     '<div class="dvg-lado">' +
-                        '<label>Formato<select id="dvg-formato" onchange="window.DIVULGAR._mudar(\'formato\', this.value)">' + opcFmt + '</select></label>' +
+                        '<div class="dvg-nota"><strong>Sempre sai nas duas versões:</strong> Instagram (carrossel 4:5) e X (fio, um post por imagem).</div>' +
+                        '<label>Formato no X<select onchange="window.DIVULGAR._mudar(\'formatoX\', this.value)"><option value="feed"' + (d.formatoX === 'feed' ? ' selected' : '') + '>4:5 (1080×1350) — ocupa mais a tela, recomendado</option><option value="x"' + (d.formatoX === 'x' ? ' selected' : '') + '>16:9 (1600×900) — para várias imagens num só post</option></select></label>' +
+                        '<label class="dvg-check"><input type="checkbox"' + (d.stories ? ' checked' : '') + ' onchange="window.DIVULGAR._mudar(\'stories\', this.checked)"> Também gerar Stories (9:16)</label>' +
                         '<label>Tema<select id="dvg-tema" onchange="window.DIVULGAR._mudar(\'tema\', this.value)"><option value="claro"' + (d.tema === 'claro' ? ' selected' : '') + '>Claro</option><option value="escuro"' + (d.tema === 'escuro' ? ' selected' : '') + '>Escuro</option></select></label>' +
                         campos +
                         '<div id="dvg-aviso" class="dvg-aviso"></div>' +
                         '<div class="dvg-nota">As mudanças valem só para as imagens; o acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
+                        '<button type="button" class="dvg-prim dvg-tudo" onclick="window.DIVULGAR.baixarZip()">⬇️ Baixar tudo (.zip: Instagram + X + textos)</button>' +
                         '<div class="dvg-botoes" id="dvg-botoes"></div>' +
-                        '<label>Legenda sugerida<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
-                        '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this)">📋 Copiar legenda</button>' +
+                        '<label>Legenda do Instagram<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
+                        '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this, \'dvg-legenda\')">📋 Copiar legenda do Instagram</button>' +
+                        '<label>Fio do X (um bloco por post, separados por ---)<textarea id="dvg-fio" rows="8" oninput="window.DIVULGAR._fioEditado = true"></textarea></label>' +
+                        '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this, \'dvg-fio\')">📋 Copiar fio do X</button>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -11470,66 +11481,115 @@ window.DIVULGAR = {
         let d = this._estado;
         if (!d) return;
         d[campo] = valor;
-        if (campo === 'formato' || campo === 'tema') {
-            try { localStorage.setItem('tjpe_v1__divulgar_prefs', JSON.stringify({ formato: d.formato, tema: d.tema })); } catch (e) {}
+        if (campo === 'formatoX' || campo === 'tema' || campo === 'stories') {
+            try { localStorage.setItem('tjpe_v1__divulgar_prefs', JSON.stringify({ formatoX: d.formatoX, tema: d.tema, stories: d.stories })); } catch (e) {}
         }
         clearTimeout(this._tmr);
         let self = this;
         this._tmr = setTimeout(function() { self._render(); }, 150);
     },
-    _render: function() {
+    // Gera as imagens de cada versão: Instagram (4:5), X (4:5 ou 16:9) e,
+    // se marcado, Stories (9:16). O desenho muda só a dica do rodapé.
+    _gerarConjunto: function(destino, formato) {
         let d = this._estado;
-        let dir = document.getElementById('dvg-previas');
-        if (!d || !dir) return;
-        let r = d.tipo === 'julgado' ? this._paginasJulgado(d) : d.tipo === 'esquema' ? this._paginasEsquema(d) : this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
-        this._canvases = r.paginas.map(function(p, i) {
+        let antes = { formato: d.formato, destino: d.destino };
+        d.formato = formato; d.destino = destino;
+        let r = d.tipo === 'julgado' ? this._paginasJulgado(d) : d.tipo === 'esquema' ? this._paginasEsquema(d) : this._paginasQuestao(d);
+        let F = this.FORMATOS[formato], total = r.paginas.length;
+        let canvases = r.paginas.map(function(p, i) {
             let c = document.createElement('canvas'); c.width = F.w; c.height = F.h;
             p.desenhar(c, i + 1, total);
             return c;
         });
-        dir.innerHTML = '';
-        dir.classList.toggle('paisagem', d.formato === 'x');
-        this._canvases.forEach(function(c) { dir.appendChild(c); });
-        let bot = document.getElementById('dvg-botoes');
-        if (bot) {
-            bot.innerHTML = this._canvases.map(function(c, i) { return '<button type="button" onclick="window.DIVULGAR.baixar(' + (i + 1) + ')">⬇️ ' + (i + 1) + '</button>'; }).join('') +
-                '<button type="button" class="dvg-prim" onclick="window.DIVULGAR.baixarZip()">⬇️ Todas (.zip)</button>';
-        }
+        d.formato = antes.formato; d.destino = antes.destino;
+        return { destino: destino, formato: formato, canvases: canvases, nQuestao: r.nQuestao };
+    },
+    _ROTULOS_DESTINO: { instagram: 'Instagram', x: 'X', stories: 'Stories' },
+    _render: function() {
+        let d = this._estado;
+        if (!d || !document.getElementById('dvg-previas')) return;
+        this._conjuntos = [this._gerarConjunto('instagram', 'feed'), this._gerarConjunto('x', d.formatoX || 'feed')];
+        if (d.stories) this._conjuntos.push(this._gerarConjunto('stories', 'stories'));
+        if (!this._conjuntos.some(function(c) { return c.destino === this._abaAtual; }, this)) this._abaAtual = 'instagram';
+        this._mostrarAba(this._abaAtual);
+        let ig = this._conjuntos[0], total = ig.canvases.length;
         let av = document.getElementById('dvg-aviso');
         if (av) av.textContent = total > this.IMAGENS_SUGERIDAS ? ('⚠️ Ficaram ' + total + ' imagens. Dá para publicar, mas vale encurtar o texto.') : '';
         let leg = document.getElementById('dvg-legenda');
-        if (leg && !this._legendaEditada) leg.value = d.tipo === 'julgado' ? this._legendaJulgado(d) : d.tipo === 'esquema' ? this._legendaEsquema(d) : this._legendaQuestao(d, r.nQuestao);
+        if (leg && !this._legendaEditada) leg.value = d.tipo === 'julgado' ? this._legendaJulgado(d) : d.tipo === 'esquema' ? this._legendaEsquema(d) : this._legendaQuestao(d, ig.nQuestao);
+        let fio = document.getElementById('dvg-fio');
+        if (fio && !this._fioEditado) fio.value = this._fioX(d, this._conjuntos[1]).join('\n---\n');
     },
-    _nomeArquivo: function(n) {
-        let d = this._estado;
-        return 'salinha-' + String(d.id || 'questao').replace(/[^\w-]+/g, '') + '-' + d.formato + '-' + n + '.png';
+    _mostrarAba: function(destino) {
+        this._abaAtual = destino;
+        let self = this, conj = (this._conjuntos || []).find(function(c) { return c.destino === destino; });
+        if (!conj) return;
+        let abas = document.getElementById('dvg-abas');
+        if (abas) abas.innerHTML = this._conjuntos.map(function(c) {
+            return '<button type="button" class="' + (c.destino === destino ? 'ativa' : '') + '" onclick="window.DIVULGAR._mostrarAba(\'' + c.destino + '\')">' +
+                self._ROTULOS_DESTINO[c.destino] + ' (' + c.canvases.length + ')</button>';
+        }).join('');
+        let dir = document.getElementById('dvg-previas');
+        dir.innerHTML = '';
+        dir.classList.toggle('paisagem', conj.formato === 'x');
+        conj.canvases.forEach(function(c) { dir.appendChild(c); });
+        let bot = document.getElementById('dvg-botoes');
+        if (bot) bot.innerHTML = '<span class="dvg-bot-rot">' + this._ROTULOS_DESTINO[destino] + ':</span>' +
+            conj.canvases.map(function(c, i) { return '<button type="button" onclick="window.DIVULGAR.baixar(\'' + destino + '\', ' + (i + 1) + ')">⬇️ ' + (i + 1) + '</button>'; }).join('');
     },
-    _blob: function(n) {
-        let c = this._canvases[n - 1];
-        return new Promise(function(ok) { c.toBlob(function(b) { ok(b); }, 'image/png'); });
+    // Fio do X: um texto por imagem (até 280 caracteres cada).
+    _fioX: function(d, conj) {
+        let n = conj ? conj.canvases.length : 1;
+        let corta = function(s, lim) { s = String(s || '').trim(); return s.length > lim ? s.slice(0, lim - 1).replace(/\s+\S*$/, '') + '…' : s; };
+        let tagMat = d.materia ? ' ' + this._hashtag(d.materia) : '';
+        let posts = [];
+        if (d.tipo === 'questao') {
+            let nq = (conj && conj.nQuestao) || 1;
+            posts.push(corta('Verdadeiro ou falso? 🤔\n\n' + (d.contexto ? d.contexto + '\n\n' : '') + 'Responda antes de abrir o fio 👇' + tagMat + ' #Concursos', 280));
+            for (let i = 2; i <= nq; i++) posts.push('A questão continua 👇');
+            posts.push('Gabarito: ' + (d.gabarito === 'V' ? 'VERDADEIRO ✅' : 'FALSO ❌'));
+            while (posts.length < n) posts.push('A explicação continua 👇');
+        } else if (d.tipo === 'julgado') {
+            posts.push(corta((d.selo ? '🔄 ' + d.selo + '!\n\n' : '') + '⚖️ ' + d.rotulo + ': ' + d.titulo, 230) + '\n\n🧵👇' + tagMat);
+            while (posts.length < n - (d.incluirResumo ? 1 : 0)) posts.push('A tese continua 👇');
+            while (posts.length < n) posts.push(corta('Entenda o caso 👇\n\n📌 ' + d.meta, 280));
+        } else {
+            posts.push(corta('🧠 Esquema: ' + d.titulo, 230) + '\n\n🧵👇' + tagMat);
+            while (posts.length < n) posts.push(posts.length + 1 + '/' + n);
+        }
+        posts = posts.slice(0, n).map(function(p) { return corta(p, 280); });
+        let cta = '\n\nMais na Salinha: asalinha.com.br';
+        posts[posts.length - 1] = corta(posts[posts.length - 1], 280 - cta.length) + cta;
+        return posts;
     },
-    baixar: function(n) {
-        let self = this;
-        this._blob(n).then(function(b) {
+    _base: function() { return 'salinha-' + String((this._estado && this._estado.id) || 'item').replace(/[^\w-]+/g, ''); },
+    _blobDe: function(c) { return new Promise(function(ok) { c.toBlob(function(b) { ok(b); }, 'image/png'); }); },
+    baixar: function(destino, n) {
+        let self = this, conj = (this._conjuntos || []).find(function(c) { return c.destino === destino; });
+        if (!conj || !conj.canvases[n - 1]) return;
+        this._blobDe(conj.canvases[n - 1]).then(function(b) {
             let url = URL.createObjectURL(b), a = document.createElement('a');
-            a.href = url; a.download = self._nomeArquivo(n);
+            a.href = url; a.download = self._base() + '-' + destino + '-' + n + '.png';
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
             setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
         });
     },
+    // Um .zip com as pastas instagram/, x/ (e stories/) e os textos.
     baixarZip: function() {
-        let self = this;
-        Promise.all(this._canvases.map(function(c, i) { return self._blob(i + 1); })).then(function(bs) {
-            return Promise.all(bs.map(function(b) { return b.arrayBuffer(); }));
-        }).then(function(bufs) {
-            window.downloadZipArquivos(bufs.map(function(buf, i) { return { nome: self._nomeArquivo(i + 1), conteudo: new Uint8Array(buf) }; }),
-                'salinha-' + String(self._estado.id || 'questao').replace(/[^\w-]+/g, '') + '-' + self._estado.formato + '.zip');
+        let self = this, base = this._base(), itens = [];
+        (this._conjuntos || []).forEach(function(c) { c.canvases.forEach(function(cv, i) { itens.push({ nome: c.destino + '/' + base + '-' + c.destino + '-' + (i + 1) + '.png', cv: cv }); }); });
+        Promise.all(itens.map(function(it) { return self._blobDe(it.cv).then(function(b) { return b.arrayBuffer(); }); })).then(function(bufs) {
+            let arquivos = itens.map(function(it, i) { return { nome: it.nome, conteudo: new Uint8Array(bufs[i]) }; });
+            let leg = document.getElementById('dvg-legenda'), fio = document.getElementById('dvg-fio');
+            if (leg) arquivos.push({ nome: 'instagram/legenda.txt', conteudo: leg.value });
+            if (fio) arquivos.push({ nome: 'x/fio.txt', conteudo: fio.value });
+            window.downloadZipArquivos(arquivos, base + '.zip');
         });
     },
-    copiarLegenda: function(btn) {
-        let ta = document.getElementById('dvg-legenda');
+    copiarLegenda: function(btn, id) {
+        let ta = document.getElementById(id || 'dvg-legenda');
         if (!ta) return;
-        let feito = function() { if (btn) { let t = btn.textContent; btn.textContent = '✅ Copiada'; setTimeout(function() { btn.textContent = t; }, 1500); } };
+        let feito = function() { if (btn) { let t = btn.textContent; btn.textContent = '✅ Copiado'; setTimeout(function() { btn.textContent = t; }, 1500); } };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(feito, function() { ta.select(); document.execCommand('copy'); feito(); });
         else { ta.select(); document.execCommand('copy'); feito(); }
     },
@@ -11537,7 +11597,7 @@ window.DIVULGAR = {
         let m = document.getElementById('modal-divulgar');
         if (m) m.classList.remove('open');
         this._estado = null;
-        this._canvases = [];
+        this._conjuntos = [];
     }
 };
 
