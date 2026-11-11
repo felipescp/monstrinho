@@ -36173,8 +36173,8 @@ window.ESQ_IA = {
        mesmo problema/solução já usada em .fc-tab-export-btn, abaixo. */
     #jurisprudencia-modal .jur-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; align-self:center; }
     #jurisprudencia-modal .jur-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
-    #jurisprudencia-modal .jur-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:150px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
-    #jurisprudencia-modal .jur-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
+    #jurisprudencia-modal .jur-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); right:0; min-width:240px; max-width:360px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+    #jurisprudencia-modal .jur-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:normal; line-height:1.35; }
     #jurisprudencia-modal .jur-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
     /* "Leitor de Precedentes ▾" — os atalhos por sistemática (Repercussão
        Geral/Repetitivos/Controle Concentrado), num menu à parte com cor
@@ -36351,24 +36351,10 @@ window.ESQ_IA = {
                 <button class="jur-aplicar-sistema-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
             </div>
             <div class="jur-tabs-baralho">
-                <details class="jur-leitor-menu leitor-dropdown" name="jur-leitor-grupo">
-                    <summary title="Leitor navegável — escolha entre a disciplina, a divisão/tópico ou o informativo selecionado">📖 Leitor ▾</summary>
-                    <div class="jur-leitor-opcoes">
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Leitor navegável só com as fichas da disciplina selecionada na barra lateral">Disciplina</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Leitor navegável só com as fichas da divisão/tópico (L2) selecionada na barra lateral — útil quando a disciplina tem centenas de fichas">Divisão/Tópico</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoInformativo()" title="Leitor navegável só com as fichas do informativo selecionado (atalho 📰 Informativos ou filtro Informativo da barra de ferramentas)">Informativo</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSelecionados()" title="Leitor navegável só com as fichas marcadas no modo seleção">Selecionados</button>
-                    </div>
-                </details>
-                <details class="jur-leitor-mais-menu leitor-dropdown" name="jur-leitor-grupo">
-                    <summary title="Leitor navegável cruzando TODAS as disciplinas, filtrado pela sistemática mais relevante">📖 Leitor de Precedentes ▾</summary>
-                    <div class="jur-leitor-mais-opcoes">
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Súmula Vinculante')">📌 Súmulas Vinculantes</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Súmula')">📌 Súmulas</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Repercussão Geral')">📌 Repercussão Geral</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Recurso Repetitivo')">📌 Repetitivos</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Controle Concentrado')">📌 Controle Concentrado</button>
-                        <button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSistematica('Caso Contencioso (Corte IDH)')">🌎 Casos da Corte IDH</button>
+                <details class="jur-leitor-menu leitor-dropdown" id="jur-leitor-dropdown" name="jur-leitor-grupo">
+                    <summary id="jur-leitor-summary" title="Leitor navegável inteligente — atualiza a contagem e as opções conforme os filtros ativos na tela">📖 Leitor ▾</summary>
+                    <div class="jur-leitor-opcoes" id="jur-leitor-opcoes">
+                        <div style="padding:6px 8px; color:var(--text-muted); font-size:10px;">Carregando opções...</div>
                     </div>
                 </details>
             </div>
@@ -37709,6 +37695,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // as colunas 2/3.
         if (this._modoSistematica) { this._renderColunaDivisoesSistematica(); this._renderGradeCards(); }
         else if (this._materiaSelecionada) { this._renderColunaDivisoes(this._materiaSelecionada); this._renderGradeCards(); }
+        this._atualizarMenuLeitor();
     },
 
     // Julgados mais importantes cruzando TODAS as disciplinas (Repetitivos/
@@ -38695,6 +38682,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         if (!this._materiaSelecionada) {
             col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+            this._atualizarMenuLeitor();
             return;
         }
 
@@ -38722,6 +38710,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
             }
         }
+        this._atualizarMenuLeitor();
     },
 
     // Corpo dos atalhos por sistemática (Repetitivos/Repercussão Geral/
@@ -38959,6 +38948,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 novoInputBusca.setSelectionRange(buscaCursor, buscaCursor);
             }
         }
+        this._atualizarMenuLeitor();
     },
 
     // "📁 Exibir Todas / 📂 Recolher Todas" (ao lado do Buscar) — alterna o
@@ -40790,6 +40780,181 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Todos" foi removido (pedido explícito): volume total de jurisprudência
     // tornou o Leitor sem filtro nenhum insustentável de navegar 1-a-1.
 
+    // Atualiza o menu e o contador do botão "📖 Leitor (N)" em tempo real
+    // conforme o que está ativo na tela (matéria, divisão, informativos,
+    // precedentes, filtros de busca, ano, tribunal, cor, importância ou seleção).
+    _atualizarMenuLeitor: function() {
+        let summaryEl = document.getElementById('jur-leitor-summary');
+        let opcoesEl = document.getElementById('jur-leitor-opcoes');
+        if (!summaryEl || !opcoesEl) return;
+        let self = this;
+
+        let lista = this._listaFiltrada();
+        let total = lista.length;
+        let sel = this._selecionados || {};
+        let qtdSel = Object.keys(sel).length;
+
+        // Atualiza a contagem no botão do topo
+        if (qtdSel > 0) {
+            summaryEl.textContent = '📖 Leitor (' + qtdSel + ' sel.) ▾';
+            summaryEl.title = 'Leitor navegável — ' + qtdSel + ' ficha(s) marcada(s) na seleção';
+        } else if (total > 0) {
+            summaryEl.textContent = '📖 Leitor (' + total + ') ▾';
+            summaryEl.title = 'Leitor navegável — ' + total + ' julgado(s) visível(is) no recorte ativo';
+        } else {
+            summaryEl.textContent = '📖 Leitor ▾';
+            summaryEl.title = 'Leitor navegável — escolha uma disciplina ou atalho para ler';
+        }
+
+        let botoesHtml = [];
+
+        // 1. Fichas marcadas manualmente com ☑️ no modo seleção
+        if (qtdSel > 0) {
+            botoesHtml.push(
+                '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoSelecionados()" style="color:var(--app-primary); font-weight:800;" title="Abre o leitor exclusivamente com as fichas marcadas no modo seleção">' +
+                    '☑️ Ler selecionados (' + qtdSel + ')' +
+                '</button>'
+            );
+        }
+
+        // 2. Opções inteligentes conforme a visualização ativa na tela
+        if (this._modoSistematica === this._MODO_INFORMATIVO) {
+            let rotuloInf = this._infSelecionado ? this._rotuloChaveInformativo(this._infSelecionado) : 'Informativos';
+            botoesHtml.push(
+                '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoRecorteAtual()" style="color:var(--app-primary); font-weight:800;" title="Abre as fichas de informativo visíveis na tela">' +
+                    '📰 Ler informativo: ' + self._escapar(rotuloInf) + ' (' + total + ')' +
+                '</button>'
+            );
+        } else if (this._modoSistematica) {
+            let rObj = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
+            let rotulo = rObj ? rObj.rotulo : self._modoSistematica;
+            botoesHtml.push(
+                '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoRecorteAtual()" style="color:var(--app-primary); font-weight:800;" title="Abre as fichas de precedentes visíveis na tela">' +
+                    '📌 Ler na tela: ' + self._escapar(rotulo) + ' (' + total + ')' +
+                '</button>'
+            );
+        } else if (this._buscaTodoAcervo) {
+            botoesHtml.push(
+                '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoRecorteAtual()" style="color:var(--app-primary); font-weight:800;" title="Abre os resultados da busca cruzando todo o acervo">' +
+                    '🌐 Ler resultados do acervo (' + total + ')' +
+                '</button>'
+            );
+        } else if (this._materiaSelecionada) {
+            // Checa se há filtros ativos na barra de ferramentas
+            let filtrosAtivos = [];
+            if (this._filtroSistematica) filtrosAtivos.push(this._filtroSistematica);
+            if (this._filtroTribunal) filtrosAtivos.push(this._filtroTribunal);
+            if (this._filtroAno) filtrosAtivos.push(this._filtroAno);
+            if (this._filtroInformativo) filtrosAtivos.push(this._rotuloChaveInformativo(this._filtroInformativo));
+            if (this._filtroCor) filtrosAtivos.push(this._filtroCor === this._SEM_ETIQUETA_SENTINELA ? 'Sem Etiqueta' : 'Por Cor');
+            if (this._filtroImportancia) {
+                let rImp = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
+                filtrosAtivos.push(rImp[this._filtroImportancia] || this._filtroImportancia);
+            }
+            if (this._filtroBusca && this._filtroBusca.trim()) filtrosAtivos.push('"' + this._filtroBusca.trim() + '"');
+            if (this._ocultarOficiais) filtrosAtivos.push('Sem Oficiais');
+            if (this._mostrarOcultos) filtrosAtivos.push('Com Ocultos');
+
+            let temFiltroSecundario = filtrosAtivos.length > 0;
+
+            if (temFiltroSecundario) {
+                let rotuloFiltros = filtrosAtivos.join(' · ');
+                botoesHtml.push(
+                    '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoRecorteAtual()" style="color:var(--app-primary); font-weight:800;" title="Abre o leitor exatamente com as fichas filtradas">' +
+                        '🔍 Ler filtro atual na tela (' + total + ')' +
+                        '<div style="font-size:9.5px; color:var(--text-muted); font-weight:normal; margin-top:2px; line-height:1.2;">' + self._escapar(rotuloFiltros) + '</div>' +
+                    '</button>'
+                );
+                if (this._divisaoSelecionada) {
+                    let totalTopico = this.fichasDoL2(this._materiaSelecionada, this._divisaoSelecionada).length;
+                    botoesHtml.push(
+                        '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" title="Ignora os filtros da barra e abre todas as fichas deste tópico">' +
+                            '📂 Ler tópico inteiro: ' + self._escapar(this._divisaoSelecionada) + ' (' + totalTopico + ')' +
+                        '</button>'
+                    );
+                }
+                let totalMateria = this._contarFichasDaMateria(this._materiaSelecionada);
+                botoesHtml.push(
+                    '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Ignora os filtros da barra e abre todas as fichas desta disciplina">' +
+                        '📚 Ler disciplina inteira: ' + self._escapar(this._materiaSelecionada) + ' (' + totalMateria + ')' +
+                    '</button>'
+                );
+            } else {
+                if (this._divisaoSelecionada) {
+                    let totalMateria = this._contarFichasDaMateria(this._materiaSelecionada);
+                    botoesHtml.push(
+                        '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoDivisao()" style="color:var(--app-primary); font-weight:800;" title="Abre as fichas deste tópico">' +
+                            '📂 Ler tópico: ' + self._escapar(this._divisaoSelecionada) + ' (' + total + ')' +
+                        '</button>'
+                    );
+                    botoesHtml.push(
+                        '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" title="Abre todas as fichas desta disciplina">' +
+                            '📚 Ler disciplina inteira: ' + self._escapar(this._materiaSelecionada) + ' (' + totalMateria + ')' +
+                        '</button>'
+                    );
+                } else {
+                    botoesHtml.push(
+                        '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoMateria()" style="color:var(--app-primary); font-weight:800;" title="Abre todas as fichas desta disciplina">' +
+                            '📚 Ler disciplina: ' + self._escapar(this._materiaSelecionada) + ' (' + total + ')' +
+                        '</button>'
+                    );
+                }
+            }
+        }
+
+        if (botoesHtml.length === 0) {
+            opcoesEl.innerHTML = '<div style="padding:8px 10px; color:var(--text-muted); font-size:10px; line-height:1.4;">Selecione uma matéria ou atalho de precedentes na barra lateral para iniciar o leitor.</div>';
+        } else {
+            opcoesEl.innerHTML = botoesHtml.join('');
+        }
+    },
+
+    // Leitor restrito ao recorte exato visível na tela (respeita todos os
+    // filtros ativos: disciplina, divisão, sistemática, tribunal, ano,
+    // busca, cor, importância, oficiais, ocultos).
+    abrirBaralhoRecorteAtual: function() {
+        this._garantirCarregado();
+        let drop = document.getElementById('jur-leitor-dropdown');
+        if (drop) drop.removeAttribute('open');
+
+        let lista = this._listaFiltrada();
+        if (!lista.length) {
+            alert('Nenhuma ficha visível com os filtros atuais.');
+            return;
+        }
+        let self = this;
+        let fichas = lista.map(function(p) { return p.item; });
+
+        let partesTitulo = [];
+        if (this._modoSistematica === this._MODO_INFORMATIVO) {
+            partesTitulo.push(this._infSelecionado ? this._rotuloChaveInformativo(this._infSelecionado) : 'Informativos');
+        } else if (this._modoSistematica) {
+            let rObj = this._SISTEMATICAS_DESTAQUE.find(function(p) { return p.valor === self._modoSistematica; });
+            partesTitulo.push(rObj ? rObj.rotulo.replace(/^[^\w\s]+/, '').trim() : this._modoSistematica);
+        } else if (this._buscaTodoAcervo) {
+            partesTitulo.push('Todo o Acervo');
+        } else if (this._materiaSelecionada) {
+            partesTitulo.push(this._materiaSelecionada);
+            if (this._divisaoSelecionada) partesTitulo.push(this._divisaoSelecionada);
+        }
+        if (this._filtroSistematica && !this._modoSistematica) partesTitulo.push(this._filtroSistematica);
+        if (this._filtroTribunal) partesTitulo.push(this._filtroTribunal);
+        if (this._filtroAno) partesTitulo.push(this._filtroAno);
+        if (this._filtroInformativo && !this._modoSistematica) partesTitulo.push(this._rotuloChaveInformativo(this._filtroInformativo));
+        if (this._filtroCor) {
+            partesTitulo.push(this._filtroCor === this._SEM_ETIQUETA_SENTINELA ? 'Sem Etiqueta' : 'Por Cor');
+        }
+        if (this._filtroImportancia) {
+            let rotulosImp = { dificil: 'Crítico', medio: 'Importante', facil: 'Regular' };
+            partesTitulo.push(rotulosImp[this._filtroImportancia] || this._filtroImportancia);
+        }
+        if (this._filtroBusca && this._filtroBusca.trim()) partesTitulo.push('"' + this._filtroBusca.trim() + '"');
+
+        let titulo = (partesTitulo.filter(Boolean).join(' · ') || 'Fichas Filtradas') + ' (' + fichas.length + ')';
+        let escopo = (this._divisaoSelecionada && !this._modoSistematica && !this._buscaTodoAcervo) ? 'divisao' : 'recorte';
+        this._abrirBaralho(escopo, titulo, fichas);
+    },
+
     abrirBaralhoMateria: function() {
         this._garantirCarregado();
         if (!this._materiaSelecionada) { alert('Selecione uma matéria na barra lateral antes de abrir o leitor da disciplina.'); return; }
@@ -40906,6 +41071,8 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     _abrirBaralho: function(escopo, titulo, fichas) {
+        let drop = document.getElementById('jur-leitor-dropdown');
+        if (drop) drop.removeAttribute('open');
         let self = this;
         // Ordem padrão = por etiqueta primeiro (agrupa todo mundo da mesma
         // etiqueta junto; sem etiqueta vai pro final) — dentro de cada
