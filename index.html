@@ -10701,13 +10701,44 @@ window.DIVULGAR = {
                     self._quebrar(ctx, self._inline(l), tam, largura - recuo * 2, opc.negrito).forEach(function(itens) { linhaTexto(itens, recuo, T.texto, fundo); });
                 });
                 uns.push({ h: pad, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
+            } else if (bl.tipo === 'tab' && opc.tabelaEmBlocos && bl.cab.length >= 3) {
+                // Tabela larga vira um bloco por linha (melhor no celular):
+                // 1ª célula como título; as demais como "Coluna: texto".
+                let pad = Math.round(tam * 0.55), recuo = Math.round(tam * 0.9), wIn = largura - recuo * 2;
+                let fundo = { fundo: T.caixa, barra: T.primaria };
+                let faixa = function(h, cartao) { uns.push({ h: h, cartao: cartao, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, h); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), h); } }); };
+                bl.linhas.forEach(function(r, ir) {
+                    if (ir > 0) espaco(Math.round(tam * 0.5));
+                    grupo++;
+                    let cartao = 'c' + ib + '_' + ir;
+                    faixa(pad, cartao);
+                    self._quebrar(ctx, self._inline(r[0] || ''), tam, wIn, true).forEach(function(itens) {
+                        uns.push({ h: lh, g: grupo, cartao: cartao, desenhar: function(ctx, x, y, W) {
+                            ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, lh); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), lh);
+                            self._escreverLinha(ctx, itens, x + recuo, y, tam, T.primaria);
+                        } });
+                    });
+                    for (let c = 1; c < bl.cab.length; c++) {
+                        if (!(r[c] || '').trim()) continue;
+                        faixa(Math.round(tam * 0.3), cartao);
+                        let rot = (bl.cab[c] || '').replace(/\*+/g, '').trim();
+                        let trechos = (rot ? [{ t: rot + ': ', b: true }] : []).concat(self._inline(r[c]));
+                        self._quebrar(ctx, trechos, tam, wIn, false).forEach(function(itens) {
+                            uns.push({ h: lh, cartao: cartao, desenhar: function(ctx, x, y, W) {
+                                ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, lh); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), lh);
+                                self._escreverLinha(ctx, itens, x + recuo, y, tam, T.texto);
+                            } });
+                        });
+                    }
+                    faixa(pad, cartao);
+                });
             } else if (bl.tipo === 'tab') {
-                self._unidadesTabela(ctx, bl, Math.round(tam * 0.86), largura, T).forEach(function(u) { uns.push(u); });
+                self._unidadesTabela(ctx, bl, Math.round(tam * 0.86), largura, T, opc.alturaMaxLinha).forEach(function(u) { uns.push(u); });
             }
         });
         return uns;
     },
-    _unidadesTabela: function(ctx, bl, tam, largura, T) {
+    _unidadesTabela: function(ctx, bl, tam, largura, T, alturaMax) {
         let self = this, ncol = bl.cab.length, pad = Math.round(tam * 0.5), lh = Math.round(tam * 1.32);
         let linhas = [bl.cab].concat(bl.linhas.map(function(r) { return bl.cab.map(function(x, i) { return r[i] || ''; }); }));
         // largura natural (tudo numa linha) e mínima (maior palavra) de cada coluna
@@ -10748,11 +10779,36 @@ window.DIVULGAR = {
                 for (let c = 0; c < ncol - 1; c++) { xx += larg[c]; ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); ctx.stroke(); }
             } };
         };
+        // Linha alta demais para uma imagem: parte em pedaços de N linhas.
+        let partirLinha = function(r, ir) {
+            let celLinhas = r.map(function(txt, c) { return self._quebrar(ctx, self._inline(txt), tam, larg[c] - pad * 2, ir === 0); });
+            let n = Math.max.apply(null, celLinhas.map(function(l) { return Math.max(1, l.length); }));
+            let porPedaco = Math.max(1, Math.floor(((alturaMax || 1e9) - pad * 2) / lh));
+            if (n <= porPedaco) return null;
+            let pedacos = [];
+            for (let ini = 0; ini < n; ini += porPedaco) {
+                let fatia = celLinhas.map(function(ls) { return ls.slice(ini, ini + porPedaco); });
+                let h = Math.max.apply(null, fatia.map(function(l) { return Math.max(1, l.length); })) * lh + pad * 2;
+                pedacos.push({ h: h, desenhar: function(ctx, x, y) {
+                    let xx = x;
+                    fatia.forEach(function(ls, c) {
+                        ls.forEach(function(itens, il) { self._escreverLinha(ctx, itens, xx + pad, y + pad + il * lh, tam, T.texto); });
+                        xx += larg[c];
+                    });
+                    ctx.strokeStyle = T.borda; ctx.lineWidth = 2; ctx.strokeRect(x, y, largura, h);
+                    xx = x;
+                    for (let c = 0; c < ncol - 1; c++) { xx += larg[c]; ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); ctx.stroke(); }
+                } });
+            }
+            return pedacos;
+        };
         let cab = unidadeLinha(linhas[0], 0);
-        return linhas.map(function(r, ir) {
-            if (ir === 0) return cab;
-            let u = unidadeLinha(r, ir); u.cab = cab; return u;
+        let saida = [cab];
+        linhas.slice(1).forEach(function(r, i) {
+            let ps = partirLinha(r, i + 1);
+            (ps || [unidadeLinha(r, i + 1)]).forEach(function(u) { u.cab = cab; saida.push(u); });
         });
+        return saida;
     },
     _alturaUnidades: function(uns) { return uns.reduce(function(s, u) { return s + u.h; }, 0); },
     // Distribui as unidades em páginas; capacidades[i] = altura livre da
@@ -10771,6 +10827,15 @@ window.DIVULGAR = {
                 let levar = [];
                 let k = pag.length;
                 if (u.g && k && pag[k - 1].g === u.g && !(k >= 2 && pag[k - 2].g === u.g)) levar = pag.slice(k - 1);
+                // Bloco de tabela (cartão) não se parte, se couber numa imagem.
+                if (u.cartao) {
+                    let ini = k;
+                    while (ini > 0 && pag[ini - 1].cartao === u.cartao) ini--;
+                    let hCartao = 0;
+                    uns.forEach(function(x) { if (x.cartao === u.cartao) hCartao += x.h; });
+                    let sobra = cap(paginas.length - 1) - usado + self._alturaUnidades(pag.slice(ini));
+                    if (ini < k && hCartao <= cap(paginas.length) && sobra < 0.3 * cap(paginas.length - 1)) levar = pag.slice(ini);
+                }
                 let resto = pag.slice(0, pag.length - levar.length);
                 while (resto.length && resto[resto.length - 1].gap) resto.pop();
                 if (resto.length && resto[resto.length - 1].tit) { levar = resto.slice(-1).concat(levar); resto = resto.slice(0, -1); }
@@ -10799,7 +10864,7 @@ window.DIVULGAR = {
             if (this._alturaUnidades(uns) <= capacidades[0]) return { tam: tam, paginas: [uns] };
         }
         let uns = this._unidades(ctx, texto, conforto, largura, T, opc);
-        return { tam: conforto, paginas: this._paginar(uns, capacidades) };
+        return { tam: conforto, paginas: this._paginar(uns, capacidades.length > 1 ? capacidades : capacidades.concat(opc && opc.capN ? [opc.capN] : [])) };
     },
 
     // ── MOLDURA ──
@@ -11170,6 +11235,157 @@ window.DIVULGAR = {
         this._carregarRecursos().then(function() { self._render(); });
     },
 
+    // ── ESQUEMA ──
+    // HTML do esquema → markdown (o mesmo que a prévia deixa editar):
+    // tabelas viram | a | b |, citações "> ", listas e títulos. A linha de
+    // referência (Subtema/Tipo/Ref., no topo) sai à parte.
+    _htmlParaMd: function(html) {
+        let doc = new DOMParser().parseFromString('<div id="r">' + (html || '') + '</div>', 'text/html');
+        let raiz = doc.getElementById('r');
+        let ref = '';
+        let inline = function(no) {
+            let s = '';
+            no.childNodes.forEach(function(n) {
+                if (n.nodeType === 3) { s += n.nodeValue.replace(/\s+/g, ' '); return; }
+                if (n.nodeType !== 1) return;
+                let tg = n.tagName.toLowerCase();
+                if (tg === 'br') { s += '\n'; return; }
+                let dentro = inline(n);
+                if (!dentro.trim()) { s += dentro; return; }
+                let m = /^(\s*)([\s\S]*?)(\s*)$/.exec(dentro);
+                if (tg === 'strong' || tg === 'b') s += m[1] + '**' + m[2].replace(/\*\*/g, '') + '**' + m[3];
+                else if (tg === 'em' || tg === 'i') s += m[1] + '*' + m[2].replace(/\*/g, '') + '*' + m[3];
+                else s += dentro;
+            });
+            return s;
+        };
+        let linhaUnica = function(no) { return inline(no).replace(/\s*\n\s*/g, ' ').replace(/\|/g, '/').trim(); };
+        let blocos = [];
+        let bloco = function(no) {
+            no.childNodes.forEach(function(n) {
+                if (n.nodeType === 3) { if (n.nodeValue.trim()) blocos.push(n.nodeValue.trim()); return; }
+                if (n.nodeType !== 1) return;
+                let tg = n.tagName.toLowerCase();
+                let st = (n.getAttribute('style') || '');
+                if (tg === 'table') {
+                    let linhas = [], cab = null;
+                    n.querySelectorAll('tr').forEach(function(tr) {
+                        let cel = [];
+                        tr.querySelectorAll('th, td').forEach(function(c) {
+                            cel.push(linhaUnica(c) || ' ');
+                            let span = parseInt(c.getAttribute('colspan') || '1', 10);
+                            for (let k = 1; k < span; k++) cel.push(' ');
+                        });
+                        if (!cab && tr.querySelector('th')) cab = cel; else linhas.push(cel);
+                    });
+                    if (!cab && linhas.length) cab = linhas.shift();
+                    if (!cab) return;
+                    let md = ['| ' + cab.join(' | ') + ' |', '|' + cab.map(function() { return '---'; }).join('|') + '|'];
+                    linhas.forEach(function(r) { md.push('| ' + cab.map(function(x, i) { return r[i] || ' '; }).join(' | ') + ' |'); });
+                    blocos.push(md.join('\n'));
+                } else if (tg === 'blockquote') {
+                    blocos.push(inline(n).trim().split(/\n+/).map(function(l) { return '> ' + l.trim(); }).join('\n'));
+                } else if (tg === 'ul' || tg === 'ol') {
+                    let i = 0;
+                    blocos.push(Array.prototype.filter.call(n.children, function(li) { return li.tagName.toLowerCase() === 'li'; }).map(function(li) {
+                        i++; return (tg === 'ol' ? i + '. ' : '- ') + linhaUnica(li);
+                    }).join('\n'));
+                } else if (/^h[1-6]$/.test(tg)) {
+                    blocos.push('## ' + linhaUnica(n).replace(/\*\*/g, ''));
+                } else if (n.querySelector('table, blockquote, ul, ol, p, div, h3, h4, h5')) {
+                    bloco(n);
+                } else {
+                    let txt = inline(n).trim();
+                    if (!txt) return;
+                    if (!ref && !blocos.length && /font-size:\s*1[01]px|text-muted/.test(st)) { ref = txt.replace(/\*\*/g, '').replace(/\s*\n\s*/g, ' '); return; }
+                    // parágrafo só em negrito = título
+                    let semNeg = txt.replace(/^\*\*([\s\S]*)\*\*$/, '$1');
+                    if (semNeg !== txt && semNeg.indexOf('**') === -1 && semNeg.length < 140) blocos.push('## ' + semNeg.trim());
+                    else blocos.push(txt.split(/\n/).map(function(l) { return l.trim(); }).filter(Boolean).join('\n'));
+                }
+            });
+        };
+        bloco(raiz);
+        return { md: blocos.join('\n\n'), ref: ref };
+    },
+    _paginasEsquema: function(d) {
+        let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
+        let ctx = document.createElement('canvas').getContext('2d');
+        let gap = Math.round(30 * esc), hDica = Math.round(50 * esc);
+        let tamTit = Math.round(44 * esc), linhasTit;
+        for (; tamTit > Math.round(32 * esc); tamTit--) {
+            linhasTit = this._linhasFonte(ctx, d.titulo, '800 ' + tamTit + 'px Outfit, sans-serif', a.w);
+            if (linhasTit.length <= 4) break;
+        }
+        linhasTit = this._linhasFonte(ctx, d.titulo, '800 ' + tamTit + 'px Outfit, sans-serif', a.w);
+        let lhTit = Math.round(tamTit * 1.22);
+        let fonteRef = '400 ' + Math.round(22 * esc) + 'px "DM Sans", sans-serif', lhRef = Math.round(22 * esc * 1.4);
+        let linhasRef = d.ref ? this._linhasFonte(ctx, d.ref, fonteRef, a.w) : [];
+        let hCab = linhasTit.length * lhTit + (linhasRef.length ? Math.round(10 * esc) + linhasRef.length * lhRef : 0) + gap;
+        let opc = { tabelaEmBlocos: d.tabelaEmBlocos, alturaMaxLinha: a.h - hDica - gap - Math.round(80 * esc) };
+        let cap1 = a.h - hCab, capN = a.h - hDica - gap;
+        let aj = this._ajustarPaginas(ctx, d.conteudo, a.w, [cap1], Math.round(36 * esc * a.alto), Math.round(28 * esc), T, opc);
+        if (aj.paginas.length > 1) aj.paginas = this._paginar(this._unidades(ctx, d.conteudo, aj.tam, a.w, T, opc), [cap1 - hDica - gap, capN]);
+        let total0 = aj.paginas.length;
+        return { paginas: aj.paginas.map(function(uns, i) {
+            return { desenhar: function(c, n, total) {
+                let ctx = c.getContext('2d');
+                self._moldura(ctx, a, T, i === 0 ? 'Esquema' : 'Esquema (continuação)', d.contexto, n + '/' + total);
+                let y = a.y;
+                if (i === 0) {
+                    if (total0 === 1) y = a.y + Math.max(0, (a.h - hCab - self._alturaUnidades(uns)) * 0.4);
+                    ctx.fillStyle = T.texto; ctx.textBaseline = 'alphabetic'; ctx.font = '800 ' + tamTit + 'px Outfit, sans-serif';
+                    linhasTit.forEach(function(l) { ctx.fillText(l, a.x, y + tamTit); y += lhTit; });
+                    if (linhasRef.length) {
+                        y += Math.round(10 * esc);
+                        ctx.fillStyle = T.suave; ctx.font = fonteRef;
+                        linhasRef.forEach(function(l) { ctx.fillText(l, a.x, y + Math.round(22 * esc * 1.05)); y += lhRef; });
+                    }
+                    y += gap;
+                }
+                self._desenharUnidades(ctx, uns, a.x, y, a.w);
+                if (i < total0 - 1) self._dica(ctx, a, T, 'O esquema continua →', a.y + a.h - hDica / 2);
+            } };
+        }) };
+    },
+    _legendaEsquema: function(d) {
+        let tags = ['#Esquemas', '#Resumo'];
+        if (d.materia) tags.push(this._hashtag(d.materia));
+        tags = tags.concat(['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB']);
+        return '🧠 Esquema: ' + d.titulo + '\n\n' + (d.contexto ? d.contexto + '\n\n' : '') +
+            'Salve para revisar antes da prova 📌 Mais esquemas como este na Salinha: asalinha.com.br\n\n' + tags.join(' ');
+    },
+    abrirEsquema: function(item, chave) {
+        if (!window.ehAdmin || !window.ehAdmin()) return;
+        if (!item) return;
+        if (!item.origem_oficial) { alert('A divulgação vale só para esquemas do acervo oficial da Salinha.'); return; }
+        let partes = String(chave || '').split(' > ');
+        let mat = partes[0] || '';
+        try { if (typeof formatarMateriaExibicao === 'function' && mat) mat = formatarMateriaExibicao(mat); } catch (e) {}
+        mat = mat.replace(/ (E|De|Da|Do|Das|Dos|Em|Na|No) /g, function(m) { return m.toLowerCase(); });
+        let conv = this._htmlParaMd(item.conteudoHtml || '');
+        let lembrado = {};
+        try { lembrado = JSON.parse(localStorage.getItem('tjpe_v1__divulgar_prefs') || '{}') || {}; } catch (e) {}
+        this._estado = {
+            id: item.id, tipo: 'esquema', tituloModal: 'Divulgar esquema',
+            materia: mat, contexto: [mat, partes.slice(1).join(' > ')].filter(Boolean).join(' · '),
+            titulo: item.titulo || '', ref: conv.ref, conteudo: conv.md, tabelaEmBlocos: true,
+            campos: [
+                { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
+                { chave: 'titulo', rotulo: 'Título', linhas: 2 },
+                { chave: 'ref', rotulo: 'Linha de referência (vazio = sem)', linhas: 2 },
+                { chave: 'tabelaEmBlocos', rotulo: 'Tabelas de 3+ colunas em blocos (melhor no celular)', tipo: 'check' },
+                { chave: 'conteudo', rotulo: 'Conteúdo (markdown)', linhas: 12 }
+            ],
+            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
+        };
+        this._legendaEditada = false;
+        this._montarModal();
+        let self = this;
+        this._carregarRecursos().then(function() { self._render(); });
+    },
+
     _hashtag: function(txt) {
         return '#' + String(txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).map(function(p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('');
     },
@@ -11265,7 +11481,7 @@ window.DIVULGAR = {
         let d = this._estado;
         let dir = document.getElementById('dvg-previas');
         if (!d || !dir) return;
-        let r = d.tipo === 'julgado' ? this._paginasJulgado(d) : this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
+        let r = d.tipo === 'julgado' ? this._paginasJulgado(d) : d.tipo === 'esquema' ? this._paginasEsquema(d) : this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
         this._canvases = r.paginas.map(function(p, i) {
             let c = document.createElement('canvas'); c.width = F.w; c.height = F.h;
             p.desenhar(c, i + 1, total);
@@ -11282,7 +11498,7 @@ window.DIVULGAR = {
         let av = document.getElementById('dvg-aviso');
         if (av) av.textContent = total > this.IMAGENS_SUGERIDAS ? ('⚠️ Ficaram ' + total + ' imagens. Dá para publicar, mas vale encurtar o texto.') : '';
         let leg = document.getElementById('dvg-legenda');
-        if (leg && !this._legendaEditada) leg.value = d.tipo === 'julgado' ? this._legendaJulgado(d) : this._legendaQuestao(d, r.nQuestao);
+        if (leg && !this._legendaEditada) leg.value = d.tipo === 'julgado' ? this._legendaJulgado(d) : d.tipo === 'esquema' ? this._legendaEsquema(d) : this._legendaQuestao(d, r.nQuestao);
     },
     _nomeArquivo: function(n) {
         let d = this._estado;
@@ -35064,7 +35280,10 @@ window.ESQUEMAS_RUNTIME = {
         // conteúdo (pedido explícito, depois de invadirem antes).
         corpo.innerHTML = htmlOrigem + this._htmlCartaoEsquemaEstudo(card);
         this._aplicarModoRevisaoBaralho();
-        if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoEsqHtml(card.id, null);
+        let btnDivulgar = (window.ehAdmin && window.ehAdmin() && window.DIVULGAR && card.origem_oficial)
+            ? '<button class="esq-btn-visualizado" title="Gerar imagens para Instagram e X" onclick="window.DIVULGAR.abrirEsquema(window.ESQUEMAS_RUNTIME._itemBaralhoAtual(), window.ESQUEMAS_RUNTIME._localizarChavePorId(window.ESQUEMAS_RUNTIME._itemBaralhoAtual().id))">📤 Divulgar</button>'
+            : '';
+        if (acoesEl) acoesEl.innerHTML = btnVisualizado + this._botoesRevisaoEsqHtml(card.id, null) + btnDivulgar;
 
         if (posEl) posEl.textContent = (s.indiceAtual + 1) + ' / ' + deck.length;
     },

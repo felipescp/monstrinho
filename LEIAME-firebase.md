@@ -382,6 +382,15 @@ mudança de entendimento, título, processo · órgão · relator · data e a te
 depois, opcional, "Entenda o caso" com a caixa do que mudou (`mudanca`) e o
 resumo. Tese ou resumo longos continuam na imagem seguinte.
 
+Esquemas (`DIVULGAR.abrirEsquema`): botão "📤 Divulgar" no rodapé do Leitor
+de Esquemas (administração, só oficiais). O HTML do esquema vira markdown
+editável na prévia (`_htmlParaMd`: tabelas, citações, listas, títulos; a
+linha "Subtema/Tipo/Ref." sai à parte, abaixo do título). Tabelas de 3 ou
+mais colunas viram, por padrão, um bloco por linha (1ª célula como título,
+demais como "Coluna: texto"), mais legível no celular; dá para voltar à
+tabela na prévia. Um bloco só se parte entre imagens se a sobra for grande;
+linha de tabela mais alta que a imagem é partida em pedaços.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
