@@ -35510,19 +35510,22 @@ window.ESQUEMAS_RUNTIME = {
         this._editandoChave = null;
     },
 
-    // "⛶ Maximizar" do editor (card individual) — mesmo padrão de
-    // alternarMaximizarBaralho/alternarMaximizarPdf: sempre abre reduzido
-    // (reset em abrirEditorNovo/abrirEditorExistente), maximizar é escolha
-    // da sessão de leitura, não preferência persistida.
+    // "⛶ Maximizar" do editor (card individual). Pedido explícito do
+    // usuário: a escolha (reduzido/maximizado) persiste — ao navegar ‹ › e
+    // ao abrir outro esquema — e fica lembrada no aparelho. Padrão: reduzido.
+    _CHAVE_EDITOR_MAXIMIZADO: 'tjpe_v1__esq_editor_maximizado',
     _editorMaximizado: false,
     _resetarMaximizarEditor: function() {
-        this._editorMaximizado = true; // abre maximizado por padrão
-        document.getElementById('modal-esquema-editor').classList.add('esq-editor-maximizado');
+        let salvo = null;
+        try { salvo = localStorage.getItem(this._CHAVE_EDITOR_MAXIMIZADO); } catch (e) {}
+        this._editorMaximizado = salvo === '1';
+        document.getElementById('modal-esquema-editor').classList.toggle('esq-editor-maximizado', this._editorMaximizado);
         this._atualizarBotaoMaximizarEditor();
     },
     alternarMaximizarEditor: function() {
         this._editorMaximizado = !this._editorMaximizado;
         document.getElementById('modal-esquema-editor').classList.toggle('esq-editor-maximizado', this._editorMaximizado);
+        try { localStorage.setItem(this._CHAVE_EDITOR_MAXIMIZADO, this._editorMaximizado ? '1' : '0'); } catch (e) {}
         this._atualizarBotaoMaximizarEditor();
     },
     _atualizarBotaoMaximizarEditor: function() {
