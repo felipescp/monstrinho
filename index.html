@@ -1216,6 +1216,8 @@ mark.esq-grifo { color:inherit; padding:0 1px; border-radius:2px; }
 .esq-caneta-verde .esq-estudo-texto ::selection, .esq-caneta-verde #esq-editor-corpo ::selection { background:#86efac; }
 .esq-caneta-rosa .esq-estudo-texto ::selection, .esq-caneta-rosa #esq-editor-corpo ::selection { background:#f9a8d4; }
 /* 💭 do card: só com comentário, igual ao indicador dos cards da Jurisprudência */
+.card-divulgar-btn { font-size:12px; line-height:1; padding:2px 5px; margin-left:4px; border-radius:6px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); cursor:pointer; opacity:.75; }
+.card-divulgar-btn:hover { opacity:1; border-color:var(--app-primary, #4f46e5); }
 .esq-card-comentario-ind { font-size:13px; line-height:1; padding:2px 5px; border-radius:6px; border:1px solid #fb923c; background:#fff7ed; cursor:pointer; }
 .esq-coment { margin-top:14px; }
 .esq-coment-barra { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -11192,6 +11194,16 @@ window.DIVULGAR = {
         partes.push('Salve para revisar e estude mais julgados como este na Salinha: asalinha.com.br');
         partes.push(tags.join(' '));
         return partes.join('\n\n');
+    },
+    abrirJulgadoPorId: function(id) {
+        let J = window.JURISPRUDENCIA_RUNTIME, achado = null;
+        Object.keys(J.fichas || {}).some(function(k) { achado = (J.fichas[k] || []).find(function(f) { return f.id === id; }); return !!achado; });
+        this.abrirJulgado(achado);
+    },
+    abrirEsquemaPorId: function(id) {
+        let E = window.ESQUEMAS_RUNTIME, chave = null, achado = null;
+        Object.keys(E.esquemas || {}).some(function(k) { achado = (E.esquemas[k] || []).find(function(x) { return x.id === id; }); if (achado) chave = k; return !!achado; });
+        this.abrirEsquema(achado, chave);
     },
     abrirJulgado: function(item) {
         if (!window.ehAdmin || !window.ehAdmin()) return;
@@ -34087,7 +34099,9 @@ window.ESQUEMAS_RUNTIME = {
                 '</div>' +
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
-                '<div class="esq-card-classificacao">' + btnVisualizado + '<span class="esq-classif-grupo">' + self._sinalAtualizadoEsqHtml(item) + classificarHtml + '</span></div>' +
+                '<div class="esq-card-classificacao">' + btnVisualizado + '<span class="esq-classif-grupo">' + self._sinalAtualizadoEsqHtml(item) + classificarHtml +
+                    ((item.origem_oficial && !self._modoSelecao && window.ehAdmin && window.ehAdmin() && window.DIVULGAR) ? '<button class="card-divulgar-btn" onclick="event.stopPropagation(); window.DIVULGAR.abrirEsquemaPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
+                '</span></div>' +
             '</div>';
         }).join('');
 
@@ -40123,6 +40137,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         }).join('') +
         // 💭 só aparece quando há comentário pessoal — clique abre o comentário.
         (self._comentarioPessoal(item.id) ? '<button class="jur-card-comentario-ind" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirVerComComentario(\'' + chave.replace(/'/g, "\\'") + '\', \'' + idEsc + '\');" title="Ver/editar meu comentário">💭</button>' : '') +
+        // 📤 Divulgar (imagens para Instagram/X) — só administração, só oficiais.
+        ((item.origem_oficial && window.ehAdmin && window.ehAdmin() && window.DIVULGAR) ? '<button class="card-divulgar-btn" onclick="event.stopPropagation(); window.DIVULGAR.abrirJulgadoPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
         '</span>';
 
         return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + (superado ? ' jur-card-superado' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +

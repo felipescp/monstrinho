@@ -380,6 +380,9 @@ carrossel em PNG, desenhado em `<canvas>` sem bibliotecas:
   todos num .zip (`downloadZipArquivos` aceita bytes); legenda sugerida
   para copiar.
 
+Botão 📤 também nos cards da grade de Jurisprudência e de Esquemas (ao lado da
+classificação), via `abrirJulgadoPorId`/`abrirEsquemaPorId`.
+
 Julgados (`DIVULGAR.abrirJulgado`): botão "📤 Divulgar" no Leitor da
 Jurisprudência, só para a administração e só em fichas oficiais. Primeira
 imagem: faixa com tribunal e informativo, selos de sistemática/tema e de
