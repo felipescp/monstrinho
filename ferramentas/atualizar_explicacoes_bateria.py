@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 """
-Valida e/ou injeta novas explicações em Markdown em um arquivo de bateria JSON
-de dados/bateriasvf/, garantindo que:
+Valida, audita (modo cirúrgico) e/ou injeta novas explicações em Markdown em um
+arquivo de bateria JSON de dados/bateriasvf/, garantindo que:
 1. O arquivo de saída continue no formato de lista `[bateria]`.
 2. Nenhum ID de bateria, metadado, enunciado, gabarito, axioma ou tópico seja alterado ou perdido.
-3. Todas as questões recebam a explicação enriquecida e sem erros de sintaxe JSON.
+3. Antes da gravação, seja feita auditoria automática questão por questão:
+   - Correspondência temática com o enunciado original (detecta questão trocada pelo Gem);
+   - Coerência com o gabarito oficial ('V' ou 'F') e ausência de menção a '(alternativa A..E)';
+   - Preservação cirúrgica do parágrafo original vs. reescrita/prolixidade ("floreio");
+   - Ausência de rótulo 'Axioma' ou paráfrase do Axioma já existente no card nativo;
+   - Detecção de duplicação interna (ex.: frase final do parágrafo repetida na lista/blockquote logo abaixo);
+   - Limpeza automática de tags `[cite: ...]` e de crases (`code`) ao redor de julgados/artigos/súmulas.
 4. Ao gravar (`--gravar`), regere automaticamente:
    - dados/bateriasvf/indice.json e indice-versao.json
    - dados/bateriasvf/atualizacoes.json
    - vitrine-publica.js
 
-Formatos aceitos para o arquivo de entrada (`<entrada>`):
-- Formato 1 (Recomendado - Mapa enxuto de explicações gerado pelo Gem):
-  `[ { "id": "sim_..._q1", "explicacao": "..." }, ... ]`
-  ou `{ "sim_..._q1": "...", "sim_..._q2": "..." }`
-- Formato 2 (Bateria JSON completa devolvida pelo Gem):
-  `[ { "id": "sim_...", "dados": { "blocos": [ ... ] } } ]`
-
 Uso:
-  # Apenas validar e ver relatório (sem sobrescrever a bateria original):
-  python ferramentas/atualizar_explicacoes_bateria.py dados/bateriasvf/dcivil-responsabilidade-civil.json caminho/saida_gem.json
+  # 1º passo (SEMPRE): Auditar e conferir relatório detalhado antes de incorporar:
+  python ferramentas/atualizar_explicacoes_bateria.py dados/bateriasvf/dcivil-direito-das-coisas.json caminho/saida_gem.json
 
-  # Validar, injetar na bateria original e atualizar índices:
-  python ferramentas/atualizar_explicacoes_bateria.py dados/bateriasvf/dcivil-responsabilidade-civil.json caminho/saida_gem.json --gravar
+  # 2º passo: Gravar na bateria original e atualizar índices após conferência:
+  python ferramentas/atualizar_explicacoes_bateria.py dados/bateriasvf/dcivil-direito-das-coisas.json caminho/saida_gem.json --gravar
 """
 
 import argparse
@@ -34,11 +33,26 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 
+RE_CITE = re.compile(r"\s*\[cite:\s*[\d,\s]+\]", re.IGNORECASE)
+# Remove crases indevidas ao redor de referências jurídicas (REsp, Tema, Súmula, Art., ADI, ADPF, HC, etc.)
+RE_CODE_JUR = re.compile(
+    r"`((?:AgRg|EDcl|AREsp|REsp|RE|ADI|ADC|ADPF|HC|RHC|MS|RMS|CC|EREsp|Tema|S[úu]mula|Info(?:rmativo)?|Art\.?| Lei\b)[^`\n]{2,80})`",
+    re.IGNORECASE,
+)
+
+
+def limpar_explicacao(exp: str) -> str:
+    """Remove resíduos de citação do Gemini (ex.: [cite: 2]) e crases em referências jurídicas."""
+    limpo = RE_CITE.sub("", exp)
+    limpo = RE_CODE_JUR.sub(r"\1", limpo)
+    return limpo.strip()
+
 
 def extrair_json_limpo(texto: str):
     """
     Permite ler arquivos que contenham um ou VÁRIOS blocos ```json ... ```
-    ou múltiplos arrays JSON colados em sequência (ex.: lotes de 5 a 10 questões do Gem).
+    ou múltiplos arrays JSON colados em sequência (ex.: lotes de 5 a 10 questões do Gem),
+    ignorando ruídos de interface do chat entre os blocos.
     """
     t = texto.strip()
     blocos_md = re.findall(r"```(?:json)?\s*([\s\S]*?)```", t)
@@ -55,22 +69,25 @@ def extrair_json_limpo(texto: str):
     try:
         return json.loads(t)
     except json.JSONDecodeError:
-        # Tenta decodificar múltiplos arrays/objetos JSON colados um após o outro
+        # Varre o texto procurando arrays '[' ou objetos '{' JSON válidos (ignora texto solto do chat)
         dec = json.JSONDecoder()
         pos = 0
         n = len(t)
         acumulado = []
         while pos < n:
-            while pos < n and t[pos].isspace():
-                pos += 1
-            if pos >= n:
+            m = re.search(r"[\[{]", t[pos:])
+            if not m:
                 break
-            obj, fim = dec.raw_decode(t, pos)
-            if isinstance(obj, list):
-                acumulado.extend(obj)
-            else:
-                acumulado.append(obj)
-            pos = fim
+            inicio = pos + m.start()
+            try:
+                obj, fim = dec.raw_decode(t, inicio)
+                if isinstance(obj, list):
+                    acumulado.extend(obj)
+                elif isinstance(obj, dict):
+                    acumulado.append(obj)
+                pos = fim
+            except json.JSONDecodeError:
+                pos = inicio + 1
         if acumulado:
             return acumulado
         raise
@@ -87,14 +104,6 @@ def mapear_questoes_bateria(bat: dict) -> dict:
     return mapa
 
 
-RE_CITE = re.compile(r"\s*\[cite:\s*[\d,\s]+\]", re.IGNORECASE)
-
-
-def limpar_explicacao(exp: str) -> str:
-    """Remove resíduos de citação do Gemini (ex.: [cite: 2]) e espaços finais por linha."""
-    return RE_CITE.sub("", exp).strip()
-
-
 def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list[str]]:
     """
     Extrai { id_questao: nova_explicacao } de qualquer um dos formatos suportados
@@ -104,7 +113,6 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
     avisos = []
     novas = {}
 
-    # Caso 1: Dicionário direto { "sim_..._q1": "markdown..." }
     if isinstance(dados_entrada, dict) and "dados" not in dados_entrada and "id" not in dados_entrada:
         for k, v in dados_entrada.items():
             if isinstance(v, str):
@@ -119,8 +127,6 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
 
     primeiro = lista[0]
 
-    # Caso 2: Lista enxuta [ { "id": "sim_..._q1", "explicacao": "..." }, ... ]
-    # ou por número [ { "numOrig": 1, "explicacao": "..." } ]
     if isinstance(primeiro, dict) and "dados" not in primeiro and ("explicacao" in primeiro or "id" in primeiro):
         por_num = {str(q.get("numOrig")): qid for qid, q in mapa_orig.items() if q.get("numOrig") is not None}
         for item in lista:
@@ -134,7 +140,6 @@ def extrair_mapa_explicacoes(dados_entrada, mapa_orig: dict) -> tuple[dict, list
                 novas[str(qid)] = limpar_explicacao(exp)
         return novas, avisos
 
-    # Caso 3: Bateria completa [ { "id": "sim_...", "dados": { "blocos": [...] } } ]
     for bat_in in lista:
         if not isinstance(bat_in, dict):
             continue
@@ -162,23 +167,72 @@ def _palavras_chave(texto: str) -> set[str]:
         "por", "para", "com", "sem", "sob", "sobre", "que", "se", "ou", "e", "ao", "aos", "um",
         "uma", "não", "nao", "é", "são", "ser", "está", "estão", "pelo", "pela", "pelos", "pelas",
         "como", "mais", "mas", "sua", "seu", "suas", "seus", "apenas", "ainda", "mesmo", "quando",
-        "qualquer", "toda", "todo", "todas", "todos", "contra", "entre", "até", "ate",
+        "qualquer", "toda", "todo", "todas", "todos", "contra", "entre", "até", "ate", "art",
+        "código", "codigo", "civil", "lei", "assertiva", "porque", "pois", "nos", "termos",
     }
     tokens = re.findall(r"[a-zà-ú0-9]{3,}", (texto or "").lower())
     return {t for t in tokens if t not in stop}
 
 
-def auditar_markdown(qid: str, exp: str, axioma_orig: str = "") -> list[str]:
-    """Verifica problemas comuns de formatação Markdown para o renderizador mdExplicacao."""
+def classificar_intervencao(exp_orig: str, exp_nova: str) -> str:
+    """Classifica se a alteração manteve o texto original (CIRÚRGICA) ou reescreveu o texto."""
+    if not exp_orig.strip():
+        return "NOVA"
+    kw_orig = _palavras_chave(exp_orig)
+    kw_nova = _palavras_chave(exp_nova)
+    if not kw_orig:
+        return "CIRÚRGICA"
+    preservacao = len(kw_orig & kw_nova) / len(kw_orig)
+    if preservacao >= 0.72:
+        return f"CIRÚRGICA ({preservacao:.0%} do texto base preservado)"
+    return f"REESCRITA ({preservacao:.0%} do texto base preservado)"
+
+
+def auditar_markdown(qid: str, exp: str, q_orig: dict | None = None) -> tuple[list[str], list[str]]:
+    """
+    Verifica problemas de formatação Markdown, correspondência com a questão original,
+    redundância com o Axioma, duplicação interna e prolixidade.
+    Retorna (erros_criticos, alertas_md).
+    """
+    erros = []
     alertas = []
     if not exp.strip():
-        alertas.append(f"[{qid}] Explicação está vazia.")
-        return alertas
+        erros.append(f"[{qid}] Explicação está vazia.")
+        return erros, alertas
 
-    # Verifica se há tabelas com número inconsistente de colunas ou sem separador
+    q_orig = q_orig or {}
+    gab = (q_orig.get("gabarito") or "").strip().upper()
+    axioma_orig = q_orig.get("axioma") or ""
+    enunciado_orig = q_orig.get("enunciado") or ""
+    exp_orig = q_orig.get("explicacao") or ""
+
+    # 1. Contradição frontal com o gabarito V/F nos primeiros 140 caracteres
+    inicio = exp.strip()[:140].lower()
+    if gab == "F" and re.search(r"assertiva\s+(?:est[áa]\s+|é\s+)?(?:\*\*)?(?:correta|verdadeira|certa)", inicio):
+        erros.append(f"[{qid}] CONTRADIÇÃO DE GABARITO: questão é 'F', mas a explicação inicia afirmando que está Correta/Verdadeira.")
+    elif gab == "V" and re.search(r"assertiva\s+(?:est[áa]\s+|é\s+)?(?:\*\*)?(?:errada|falsa|incorreta)", inicio):
+        erros.append(f"[{qid}] CONTRADIÇÃO DE GABARITO: questão é 'V', mas a explicação inicia afirmando que está Errada/Falsa.")
+
+    # 2. Menção a "(alternativa A/B/C/D/E)" em questão Certo/Errado
+    if gab in ("V", "F") and re.search(r"\(\s*alternativa\s+[a-e]\b", exp, flags=re.IGNORECASE):
+        erros.append(f"[{qid}] QUESTÃO TROCADA: explicação menciona '(alternativa A..E)' em bateria Certo/Errado.")
+
+    # 3. Aderência temática mínima com o enunciado + axioma + explicação da questão original
+    kw_ref = _palavras_chave(enunciado_orig + " " + axioma_orig + " " + exp_orig)
+    kw_exp = _palavras_chave(exp)
+    if len(kw_ref) >= 5 and kw_exp:
+        comuns = kw_ref & kw_exp
+        taxa = len(comuns) / len(kw_ref)
+        if len(comuns) <= 2 or taxa < 0.08:
+            erros.append(
+                f"[{qid}] POSSÍVEL QUESTÃO TROCADA: baixíssima aderência à questão original ({len(comuns)}/{len(kw_ref)} termos-chave em comum)."
+            )
+
+    # 4. Verificação de tabelas, blockquotes (Axioma / paráfrase do Axioma)
     linhas = exp.splitlines()
     em_tabela = False
     tem_separador = False
+    tem_tabela_valida = False
     for ln in linhas:
         s = ln.strip()
         if s.startswith("|") and s.endswith("|"):
@@ -187,36 +241,100 @@ def auditar_markdown(qid: str, exp: str, axioma_orig: str = "") -> list[str]:
                 tem_separador = False
             elif re.match(r"^\|[\s:|-]+\|$", s):
                 tem_separador = True
+                tem_tabela_valida = True
         else:
             if em_tabela and not tem_separador:
                 alertas.append(f"[{qid}] Possível tabela Markdown sem linha separadora (|---|---|).")
             em_tabela = False
-        # Verifica uso do rótulo 'Axioma' em blockquotes dentro da explicação
+
         if s.startswith(">") and re.search(r"\baxioma\b", s, flags=re.IGNORECASE):
-            alertas.append(f"[{qid}] Blockquote usa a nomenclatura 'Axioma' (já existe o card nativo 📌 AXIOMA).")
+            erros.append(f"[{qid}] RÓTULO PROIBIDO: Blockquote usa a nomenclatura 'Axioma' (já existe o card nativo 📌 AXIOMA).")
         elif s.startswith(">") and axioma_orig:
             kw_ax = _palavras_chave(axioma_orig)
-            # Remove o rótulo inicial (ex.: > **Regra de Ouro:**) antes de comparar
             corpo_bq = re.sub(r"^>\s*(?:\*\*[^*]+\*\*\s*:?\s*)?", "", s)
             kw_bq = _palavras_chave(corpo_bq)
             if len(kw_ax) >= 4 and kw_bq:
                 inter = len(kw_ax & kw_bq) / min(len(kw_ax), len(kw_bq))
-                if inter >= 0.55:
+                if inter >= 0.50:
                     alertas.append(
-                        f"[{qid}] Blockquote na explicação parece parafrasear o Axioma já existente ({inter:.0%} de sobreposição)."
+                        f"[{qid}] PARÁFRASE DO AXIOMA: Blockquote tem {inter:.0%} de sobreposição com o Axioma original da questão."
                     )
     if em_tabela and not tem_separador:
         alertas.append(f"[{qid}] Possível tabela Markdown no fim do texto sem linha separadora (|---|---|).")
 
-    return alertas
+    # 5. Verificação de duplicação interna (última frase do 1º parágrafo repetida na lista ou blockquote seguinte)
+    blocos = [b.strip() for b in re.split(r"\n\s*\n", exp.strip()) if b.strip()]
+    if len(blocos) >= 2:
+        par_inicial = blocos[0]
+        sentencas = [s.strip() for s in re.split(r"[.!?]+", par_inicial) if len(s.strip()) > 20]
+        ult_sentenca = sentencas[-1] if sentencas else par_inicial
+        kw_ult = _palavras_chave(ult_sentenca)
+        for bl_extra in blocos[1:]:
+            if bl_extra.startswith("|"):
+                continue  # Tabelas comparativas naturalmente retomam os termos do parágrafo
+            corpo_extra = re.sub(r"^>\s*(?:\*\*[^*]+\*\*\s*:?\s*)?", "", bl_extra)
+            kw_extra = _palavras_chave(corpo_extra)
+            if len(kw_ult) >= 4 and len(kw_extra) >= 4:
+                inter_int = len(kw_ult & kw_extra) / min(len(kw_ult), len(kw_extra))
+                if inter_int >= 0.55:
+                    alertas.append(
+                        f"[{qid}] DUPLICAÇÃO INTERNA ({inter_int:.0%}): o bloco adicional repete a frase final do parágrafo ('{ult_sentenca[:70]}...')."
+                    )
+
+    # 6. Verificação de prolixidade / reescrita desnecessária do texto original
+    if exp_orig.strip():
+        modo = classificar_intervencao(exp_orig, exp)
+        if modo.startswith("REESCRITA"):
+            alertas.append(f"[{qid}] {modo}: verifique se o Gem não 'floreou' o que já estava bom.")
+        razao_tam = len(exp) / max(len(exp_orig), 1)
+        if razao_tam > 2.2 and not tem_tabela_valida:
+            alertas.append(
+                f"[{qid}] PROLIXIDADE: explicação cresceu {razao_tam:.1f}x ({len(exp_orig)} -> {len(exp)} chars) sem tabela comparativa."
+            )
+
+    return erros, alertas
+
+
+def imprimir_relatorio_questoes(novas_exp: dict, mapa_orig: dict):
+    """Imprime o comparativo questão por questão para conferência humana antes da gravação."""
+    print("\n" + "=" * 65)
+    print("RELATÓRIO DE CONFERÊNCIA PRÉ-INCORPORAÇÃO (QUESTÕES ALTERADAS)")
+    print("=" * 65)
+    for qid, exp_nova in novas_exp.items():
+        q_or = mapa_orig.get(qid)
+        if not q_or:
+            continue
+        exp_orig = (q_or.get("explicacao") or "").strip()
+        if exp_orig == exp_nova.strip():
+            continue
+        num = q_or.get("numOrig") or qid
+        gab = q_or.get("gabarito") or "?"
+        axioma = q_or.get("axioma") or "(sem axioma)"
+        modo = classificar_intervencao(exp_orig, exp_nova)
+        erros_q, alertas_q = auditar_markdown(qid, exp_nova, q_or)
+
+        print(f"\n--- Q{num} ({qid}) | Gabarito: {gab} | {modo} ---")
+        print(f"  Enunciado : {(q_or.get('enunciado') or '')[:130]}...")
+        print(f"  📌 Axioma : {axioma}")
+        print(f"  [ANTES] ({len(exp_orig)} chars):\n    " + exp_orig.replace("\n", "\n    "))
+        print(f"  [DEPOIS] ({len(exp_nova)} chars):\n    " + exp_nova.replace("\n", "\n    "))
+        if erros_q or alertas_q:
+            for e in erros_q:
+                print(f"  ❌ {e}")
+            for a in alertas_q:
+                print(f"  ⚠️  {a}")
+        else:
+            print("  ✅ Sem alertas de redundância, duplicação ou prolixidade.")
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Valida e injeta explicações Markdown em uma bateria oficial.")
-    ap.add_argument("bateria", help="Caminho da bateria original (ex.: dados/bateriasvf/dcivil-responsabilidade-civil.json)")
+    ap = argparse.ArgumentParser(description="Valida, audita e injeta explicações Markdown em uma bateria oficial.")
+    ap.add_argument("bateria", help="Caminho da bateria original (ex.: dados/bateriasvf/dcivil-direito-das-coisas.json)")
     ap.add_argument("entrada", help="Caminho do JSON/texto gerado pelo Gem com as novas explicações")
     ap.add_argument("--gravar", action="store_true", help="Grava as alterações na bateria e atualiza os índices")
-    ap.add_argument("--parcial", action="store_true", help="Permite atualizar apenas um lote parcial de questões da bateria")
+    ap.add_argument("--parcial", action="store_true", help="Permite atualizar apenas um lote parcial/cirúrgico de questões")
+    ap.add_argument("--exigir-todas", action="store_true", help="Exige que 100%% das questões da bateria estejam no arquivo de entrada")
+    ap.add_argument("--forcar", action="store_true", help="Permite gravar mesmo se houver alertas críticos (não recomendado)")
     args = ap.parse_args()
 
     arq_bat = Path(args.bateria)
@@ -254,12 +372,15 @@ def main():
     ids_desconhecidos = ids_novos - ids_orig
     ids_faltantes = [qid for qid in mapa_orig.keys() if qid not in novas_exp]
 
+    erros_criticos = []
     alertas_md = []
     alteradas = 0
     for qid, exp in novas_exp.items():
         if qid not in mapa_orig:
             continue
-        alertas_md.extend(auditar_markdown(qid, exp, mapa_orig[qid].get("axioma") or ""))
+        erros_q, alertas_q = auditar_markdown(qid, exp, mapa_orig[qid])
+        erros_criticos.extend(erros_q)
+        alertas_md.extend(alertas_q)
         if (mapa_orig[qid].get("explicacao") or "") != exp:
             alteradas += 1
 
@@ -280,23 +401,33 @@ def main():
             print("  -", x)
         sys.exit(1)
 
-    if ids_faltantes and not args.parcial:
-        print(f"\n[!] Faltam {len(ids_faltantes)} questão(ões) na entrada (use --parcial se for um lote parcial):")
+    if not args.gravar:
+        imprimir_relatorio_questoes(novas_exp, mapa_orig)
+
+    if erros_criticos and not args.forcar:
+        print(f"\n[X] ERROS CRÍTICOS DE CORRESPONDÊNCIA / GABARITO / AXIOMA ({len(erros_criticos)}):")
+        for er in erros_criticos[:25]:
+            print("  -", er)
+        if len(erros_criticos) > 25:
+            print(f"  ... e mais {len(erros_criticos) - 25} erro(s).")
+        print("\nIncorporação bloqueada para proteger a integridade da bateria.")
+        sys.exit(1)
+
+    if ids_faltantes and args.exigir_todas:
+        print(f"\n[!] Faltam {len(ids_faltantes)} questão(ões) na entrada (--exigir-todas ativo):")
         for x in ids_faltantes[:15]:
             print("  -", x)
-        if len(ids_faltantes) > 15:
-            print(f"  ... e mais {len(ids_faltantes) - 15}.")
         sys.exit(1)
-    elif ids_faltantes and args.parcial:
-        print(f"\n[i] Modo parcial: {len(ids_faltantes)} questão(ões) mantidas como estavam.")
+    elif ids_faltantes:
+        print(f"\n[i] Modo cirúrgico/parcial: {len(ids_faltantes)} questão(ões) mantidas intactas como estavam.")
 
     if alertas_md:
-        print(f"\n[!] Avisos de formatação Markdown ({len(alertas_md)}):")
-        for al in alertas_md[:15]:
+        print(f"\n[!] Alertas de curadoria para revisão ({len(alertas_md)}):")
+        for al in alertas_md[:20]:
             print("  -", al)
 
     if not args.gravar:
-        print("\nValidação concluída com sucesso! (Simulação — use --gravar para salvar no arquivo e atualizar índices).")
+        print("\n[CONFERÊNCIA CONCLUÍDA] Nenhuma alteração foi gravada ainda. Após revisar os alertas acima, rode com --gravar.")
         return
 
     # Injeta apenas o campo explicacao nas questões correspondentes
