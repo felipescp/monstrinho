@@ -10714,7 +10714,7 @@ window.DIVULGAR = {
                 // 1ª célula como título; as demais como "Coluna: texto".
                 let pad = Math.round(tam * 0.55), recuo = Math.round(tam * 0.9), wIn = largura - recuo * 2;
                 let fundo = { fundo: T.caixa, barra: T.primaria };
-                let faixa = function(h, cartao) { uns.push({ h: h, cartao: cartao, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, h); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), h); } }); };
+                let faixa = function(h, cartao) { uns.push({ h: h, cartao: cartao, enchimento: true, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, h); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), h); } }); };
                 bl.linhas.forEach(function(r, ir) {
                     if (ir > 0) espaco(Math.round(tam * 0.5));
                     grupo++;
@@ -10822,12 +10822,25 @@ window.DIVULGAR = {
     // Distribui as unidades em páginas; capacidades[i] = altura livre da
     // página i (a última se repete). Espaços no topo de página somem; o
     // cabeçalho de tabela que continua é repetido.
+    // Pagina mantendo blocos inteiros; se partir os blocos economizar uma
+    // imagem, parte (pedido explícito do usuário: aproveitar o espaço).
     _paginar: function(uns, capacidades) {
+        let inteiro = this._paginarBruto(uns, capacidades, false);
+        if (inteiro.length < 2) return inteiro;
+        let partido = this._paginarBruto(uns, capacidades, true);
+        return partido.length < inteiro.length ? partido : inteiro;
+    },
+    _paginarBruto: function(uns, capacidades, partirBlocos) {
         let self = this, paginas = [[]], usado = 0;
         let cap = function(i) { return capacidades[Math.min(i, capacidades.length - 1)]; };
         uns.forEach(function(u) {
             let pag = paginas[paginas.length - 1];
             if (u.gap && pag.length === 0) return;
+            // fundo de fechamento de um bloco que terminou na imagem anterior
+            if (u.enchimento && pag.length === 0 && paginas.length > 1) {
+                let ant = paginas[paginas.length - 2];
+                if (ant.length && ant[ant.length - 1].cartao === u.cartao) return;
+            }
             if (usado + u.h > cap(paginas.length - 1) && pag.length) {
                 while (pag.length && pag[pag.length - 1].gap) { usado -= pag.pop().h; }
                 // Sem linha órfã: 1 linha só de um parágrafo que continua, ou
@@ -10836,7 +10849,7 @@ window.DIVULGAR = {
                 let k = pag.length;
                 if (u.g && k && pag[k - 1].g === u.g && !(k >= 2 && pag[k - 2].g === u.g)) levar = pag.slice(k - 1);
                 // Bloco de tabela (cartão) não se parte, se couber numa imagem.
-                if (u.cartao) {
+                if (u.cartao && !partirBlocos) {
                     let ini = k;
                     while (ini > 0 && pag[ini - 1].cartao === u.cartao) ini--;
                     let hCartao = 0;
@@ -10893,7 +10906,7 @@ window.DIVULGAR = {
         if (W > H) { esc = H / 900 * 0.92; pad = Math.round(H * 0.075); }
         let hFaixa = Math.round(150 * esc), hRod = Math.round(110 * esc);
         return { W: W, H: H, pad: pad, esc: esc, hFaixa: hFaixa, hRod: hRod,
-            x: pad, y: hFaixa + Math.round(pad * 0.8), w: W - pad * 2, h: H - hRod - hFaixa - Math.round(pad * 1.5),
+            x: pad, y: hFaixa + Math.round(pad * 0.6), w: W - pad * 2, h: H - hRod - hFaixa - Math.round(pad * 1.3),
             alto: H / W > 1.5 ? 1.2 : 1 };
     },
     // Faixa do topo (rótulo + disciplina) e rodapé (logo, site, numeração).
@@ -10930,7 +10943,10 @@ window.DIVULGAR = {
             ctx.fillText(pagina, W - pad, yRod + hRod / 2); ctx.textAlign = 'left';
         }
     },
+    // y null = aviso de continuação no vão entre o texto e o rodapé (não
+    // ocupa espaço do conteúdo; pedido explícito do usuário).
     _dica: function(ctx, a, T, texto, y) {
+        if (y == null) y = Math.round((a.y + a.h + a.H - a.hRod) / 2);
         if (this._estado && this._estado.destino === 'x') texto = texto.replace(/→/g, '↓');
         ctx.fillStyle = T.suave; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.font = '700 ' + Math.round(26 * a.esc) + 'px "DM Sans", sans-serif';
@@ -10945,7 +10961,7 @@ window.DIVULGAR = {
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
         let paxDica = function() { return d.destino === 'x' ? 'Gabarito no próximo post ↓' : 'Arraste para ver o gabarito →'; };
         // Enunciado: a última página da questão leva as opções V/F.
-        let capUltima = a.h - hOpc - hDica - gap * 2, capCheia = a.h - hDica - gap;
+        let capUltima = a.h - hOpc - hDica - gap * 2, capCheia = a.h;
         let ajE = this._ajustarPaginas(ctx, d.enunciado, a.w, [capUltima], Math.round(54 * esc * a.alto), Math.round(38 * esc), T);
         if (ajE.paginas.length > 1) {
             let uns = this._unidades(ctx, d.enunciado, ajE.tam, a.w, T);
@@ -10985,7 +11001,7 @@ window.DIVULGAR = {
                     self._dica(ctx, a, T, paxDica(d.formato), yOpc + hOpc + gap * 0.5 + hDica / 2);
                 } else {
                     self._desenharUnidades(ctx, uns, a.x, a.y, a.w);
-                    self._dica(ctx, a, T, 'A questão continua →', a.y + a.h - hDica / 2);
+                    self._dica(ctx, a, T, 'A questão continua →', null);
                 }
             } });
         });
@@ -11000,14 +11016,14 @@ window.DIVULGAR = {
             while (this._alturaUnidades(unsAx) > a.h * 0.3 && tamAx > Math.round(22 * esc)) { tamAx--; unsAx = this._unidades(ctx, d.axioma, tamAx, a.w - padCx * 2, T, { negrito: true }); }
             hAx = this._alturaUnidades(unsAx) + padCx * 2 + hRotAx;
         }
-        let cap1 = a.h - hSelo - gapG, capN = a.h - hDica - gap;
+        let cap1 = a.h - hSelo - gapG, capN = a.h;
         let cap1Unica = cap1 - (hAx ? hAx + gapG : 0);
         let ajX = this._ajustarPaginas(ctx, d.explicacao, a.w, [cap1Unica], Math.round(42 * esc * a.alto), Math.round(30 * esc), T);
         let pagsX;
         if (ajX.paginas.length === 1) pagsX = [{ uns: ajX.paginas[0], ax: !!hAx }];
         else {
             let uns = this._unidades(ctx, d.explicacao, ajX.tam, a.w, T);
-            let ps = this._paginar(uns, [cap1 - hDica - gap, capN]);
+            let ps = this._paginar(uns, [cap1, capN]);
             pagsX = ps.map(function(u) { return { uns: u, ax: false }; });
             if (hAx) {
                 let ult = pagsX[pagsX.length - 1];
@@ -11041,7 +11057,7 @@ window.DIVULGAR = {
                     ctx.fillText('PARA NÃO ESQUECER', a.x + padCx, yCx + padCx + Math.round(18 * esc));
                     self._desenharUnidades(ctx, unsAx, a.x + padCx, yCx + padCx + hRotAx, a.w - padCx * 2);
                 }
-                if (!ultima) self._dica(ctx, a, T, 'A explicação continua →', a.y + a.h - hDica / 2);
+                if (!ultima) self._dica(ctx, a, T, 'A explicação continua →', null);
             } });
         });
         return { paginas: paginas, nQuestao: ajE.paginas.length };
@@ -11103,10 +11119,10 @@ window.DIVULGAR = {
         let recuo = Math.round(28 * esc), wTese = a.w - recuo;
         let cap1 = a.h - hCab;
         let temResumo = d.incluirResumo && ((d.resumo && d.resumo.trim()) || (d.mudou && d.mudou.trim()));
-        let ajT = this._ajustarPaginas(ctx, d.tese, wTese, [temResumo ? cap1 - hDica - gap : cap1], Math.round(40 * esc * a.alto), Math.round(30 * esc), T);
+        let ajT = this._ajustarPaginas(ctx, d.tese, wTese, [temResumo ? cap1 : cap1], Math.round(40 * esc * a.alto), Math.round(30 * esc), T);
         if (ajT.paginas.length > 1) {
             let uns = this._unidades(ctx, d.tese, ajT.tam, wTese, T);
-            ajT.paginas = this._paginar(uns, [cap1 - hDica - gap, a.h - hRotTese - hDica - gap]);
+            ajT.paginas = this._paginar(uns, [cap1, a.h - hRotTese]);
         }
         let paginas = [];
         let desenharTese = function(ctx, uns, y) {
@@ -11140,7 +11156,7 @@ window.DIVULGAR = {
                 } else { rotTese(ctx, y, 'TESE (CONTINUAÇÃO)'); y += hRotTese; }
                 desenharTese(ctx, uns, y);
                 let dica = !ultimaTese ? 'A tese continua →' : (n < total ? (d.destino === 'x' ? 'Entenda o caso no próximo post ↓' : 'Arraste para entender o caso →') : '');
-                if (dica) self._dica(ctx, a, T, dica, a.y + a.h - hDica / 2);
+                if (dica) self._dica(ctx, a, T, dica, null);
             } });
         });
         // "Entenda o caso": o que mudou (se houver) + resumo
@@ -11156,7 +11172,7 @@ window.DIVULGAR = {
                 let capR1 = a.h - (hMud ? hMud + gap : 0);
                 let ajR = this._ajustarPaginas(ctx, d.resumo, a.w, [capR1], Math.round(40 * esc * a.alto), Math.round(30 * esc), T);
                 pagsR = ajR.paginas;
-                if (pagsR.length > 1) pagsR = this._paginar(this._unidades(ctx, d.resumo, ajR.tam, a.w, T), [capR1 - hDica - gap, a.h - hDica - gap]);
+                if (pagsR.length > 1) pagsR = this._paginar(this._unidades(ctx, d.resumo, ajR.tam, a.w, T), [capR1, a.h]);
             }
             pagsR.forEach(function(uns, i) {
                 let ultima = i === pagsR.length - 1;
@@ -11175,7 +11191,7 @@ window.DIVULGAR = {
                         y += hMud + (hTxt ? gap : 0);
                     }
                     self._desenharUnidades(ctx, uns, a.x, y, a.w);
-                    if (!ultima) self._dica(ctx, a, T, 'Continua →', a.y + a.h - hDica / 2);
+                    if (!ultima) self._dica(ctx, a, T, 'Continua →', null);
                 } });
             });
         }
@@ -11348,10 +11364,17 @@ window.DIVULGAR = {
         let fonteRef = '400 ' + Math.round(22 * esc) + 'px "DM Sans", sans-serif', lhRef = Math.round(22 * esc * 1.4);
         let linhasRef = d.ref ? this._linhasFonte(ctx, d.ref, fonteRef, a.w) : [];
         let hCab = linhasTit.length * lhTit + (linhasRef.length ? Math.round(10 * esc) + linhasRef.length * lhRef : 0) + gap;
-        let opc = { tabelaEmBlocos: d.tabelaEmBlocos, alturaMaxLinha: a.h - hDica - gap - Math.round(80 * esc) };
-        let cap1 = a.h - hCab, capN = a.h - hDica - gap;
+        let opc = { tabelaEmBlocos: d.tabelaEmBlocos, alturaMaxLinha: a.h - Math.round(80 * esc) };
+        let cap1 = a.h - hCab, capN = a.h;
         let aj = this._ajustarPaginas(ctx, d.conteudo, a.w, [cap1], Math.round(36 * esc * a.alto), Math.round(28 * esc), T, opc);
-        if (aj.paginas.length > 1) aj.paginas = this._paginar(this._unidades(ctx, d.conteudo, aj.tam, a.w, T, opc), [cap1 - hDica - gap, capN]);
+        if (aj.paginas.length > 1) {
+            aj.paginas = this._paginar(this._unidades(ctx, d.conteudo, aj.tam, a.w, T, opc), [cap1, capN]);
+            // letra um pouco menor (até 24) se isso poupar uma imagem
+            for (let tam = aj.tam - 1; tam >= Math.round(24 * esc); tam--) {
+                let ps = this._paginar(this._unidades(ctx, d.conteudo, tam, a.w, T, opc), [cap1, capN]);
+                if (ps.length < aj.paginas.length) { aj.paginas = ps; aj.tam = tam; break; }
+            }
+        }
         let total0 = aj.paginas.length;
         return { paginas: aj.paginas.map(function(uns, i) {
             return { desenhar: function(c, n, total) {
@@ -11370,7 +11393,7 @@ window.DIVULGAR = {
                     y += gap;
                 }
                 self._desenharUnidades(ctx, uns, a.x, y, a.w);
-                if (i < total0 - 1) self._dica(ctx, a, T, 'O esquema continua →', a.y + a.h - hDica / 2);
+                if (i < total0 - 1) self._dica(ctx, a, T, 'O esquema continua →', null);
             } };
         }) };
     },
