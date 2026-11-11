@@ -282,6 +282,18 @@ Aceita texto colado ou arquivo `.md`, `.txt`, `.pdf` (com texto selecionável) o
 
 **Custo estimado na tela** (agora com a gravação no cache a US$ 0,125/milhão): a entrada lida do cache sai pelo preço de cache; o rodapé mostra quantos tokens vieram do cache e quantos foram de raciocínio.
 
+## Proteção do acervo na publicação
+
+**Checagem automática** (`ferramentas/checar_acervo.py`, primeiro passo de `.github/workflows/firebase.yml`): antes de enviar qualquer coisa ao Firebase, compara Jurisprudência, Esquemas, Glossário e Flashcards com a versão anterior ao envio e **para a publicação** quando:
+- um arquivo do manifesto não existe ou não está no formato `{"Disciplina > Divisão": [itens com id]}`;
+- um arquivo traz itens de mais de uma disciplina, ou de outra disciplina que não a de antes (ex.: o arquivo de Direito Penal com as fichas de Processo Penal, como em 9/11/2026);
+- ids passam a se repetir (cópia de itens ou de um arquivo sobre outro); repetidos que já existiam só geram aviso;
+- uma disciplina perde mais de 10 itens **e** mais de 10% do que tinha, ou um arquivo sai do manifesto.
+
+O relatório aparece no resumo da execução no GitHub (Actions → "Publicar no Firebase"). Redução intencional (ex.: limpeza de repetidos): escrever `[reducao-intencional]` na mensagem do commit; a perda vira aviso, as outras regras continuam valendo. Testar à mão: `python3 -I ferramentas/checar_acervo.py --base HEAD`.
+
+**Aviso de ocultos na exportação:** nas exportações em JSON de Jurisprudência e Esquemas (Tudo, Tudo por disciplina, Disciplina, Tópico), se houver itens ocultos no recorte, o app avisa que eles não entram no arquivo e seriam apagados do acervo se o arquivo for usado para atualizá-lo.
+
 ## Atualização de fichas (versionamento do acervo)
 
 Quando uma ficha de **esquema** ou uma **questão** for corrigida por mudança de lei ou de entendimento, acrescente ao objeto (no JSON de `dados/esquemas/` ou de `dados/bateriasvf/`) o campo `atualizacoes`, da mais recente para a mais antiga:

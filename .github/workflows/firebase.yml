@@ -16,6 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Checagem do acervo (ferramentas/checar_acervo.py): compara com a versão
+      # anterior ao envio e PARA a publicação se uma disciplina perder muitos
+      # itens de uma vez, se um arquivo trouxer itens de outra disciplina ou
+      # se ids passarem a se repetir. Redução intencional: "[reducao-intencional]"
+      # na mensagem do commit.
+      - name: Checagem do acervo (bloqueia a publicação se houver perda ou mistura)
+        env:
+          BASE: ${{ github.event.before }}
+          MENSAGEM_COMMIT: ${{ github.event.head_commit.message }}
+        run: |
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
+            git fetch -q --depth=1 origin "$BASE" || echo "Versão anterior indisponível; só as checagens de formato."
+          fi
+          python3 -I ferramentas/checar_acervo.py --base "$BASE"
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

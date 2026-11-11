@@ -34861,10 +34861,24 @@ window.ESQUEMAS_RUNTIME = {
     // pra usar o exportado como insumo externo (gerar questões, editar em
     // massa) — não é mais só o fluxo de "publicar no repositório", que é o
     // único caso em que reexportar oficiais seria redundante.
+    // Aviso (pedido explícito do usuário): itens OCULTOS não entram nas
+    // exportações. Se o arquivo exportado for usado para atualizar o acervo
+    // oficial, eles seriam apagados de lá. prefixo = disciplina ("X > "),
+    // exata = tópico; sem nada = tudo.
+    _confirmarOcultosExportacao: function(prefixo, exata) {
+        let self = this, n = 0, col = this.esquemas || {};
+        Object.keys(col).forEach(function(ch) {
+            if (exata ? ch !== exata : (prefixo && ch.indexOf(prefixo) !== 0)) return;
+            (col[ch] || []).forEach(function(e) { if (e && self.ocultos[e.id]) n++; });
+        });
+        if (!n) return true;
+        return confirm('Atenção: há ' + n + ' esquema(s) oculto(s) neste recorte. Itens ocultos NÃO entram na exportação: se este arquivo for usado para atualizar o acervo oficial, eles serão apagados de lá.\n\nPara incluí-los, cancele, marque "Mostrar ocultos" e reexiba-os antes de exportar.\n\nExportar mesmo assim?');
+    },
     exportarTudo: function() {
         if (!window.exigirAdmin()) return; // só a administração (usuário exporta via Selecionar)
         this._garantirCarregado();
         let self = this;
+        if (!this._confirmarOcultosExportacao()) return;
         let resultado = {};
         let total = 0;
 
@@ -34897,6 +34911,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!temOficial && typeof window.carregarEsquemasOficiais === 'function') {
             await window.carregarEsquemasOficiais();
         }
+        if (!this._confirmarOcultosExportacao()) return;
         let porMateria = {};
         let total = 0;
 
@@ -34936,6 +34951,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
         let self = this;
         let prefixo = this._materiaSelecionada + ' > ';
+        if (!this._confirmarOcultosExportacao(prefixo)) return;
         let resultado = {};
         let total = 0;
 
@@ -34966,6 +34982,7 @@ window.ESQUEMAS_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        if (!this._confirmarOcultosExportacao(null, chave)) return;
         let visiveis = (this.esquemas[chave] || []).filter(function(e) { return !self.ocultos[e.id]; }).map(function(e) { return self._itemExportado(e); });
 
         if (visiveis.length === 0) {
@@ -39758,9 +39775,23 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Exporta as fichas VISÍVEIS (de TODAS as matérias/divisões, não só a
     // selecionada) num único JSON — pessoais E oficiais juntos, só de fora
     // as OCULTAS. Mesmo padrão de ESQUEMAS_RUNTIME.exportarTudo().
+    // Aviso (pedido explícito do usuário): itens OCULTOS não entram nas
+    // exportações. Se o arquivo exportado for usado para atualizar o acervo
+    // oficial, eles seriam apagados de lá. prefixo = disciplina ("X > "),
+    // exata = tópico; sem nada = tudo.
+    _confirmarOcultosExportacao: function(prefixo, exata) {
+        let self = this, n = 0, col = this.fichas || {};
+        Object.keys(col).forEach(function(ch) {
+            if (exata ? ch !== exata : (prefixo && ch.indexOf(prefixo) !== 0)) return;
+            (col[ch] || []).forEach(function(e) { if (e && self.ocultos[e.id]) n++; });
+        });
+        if (!n) return true;
+        return confirm('Atenção: há ' + n + ' ficha(s) oculta(s) neste recorte. Itens ocultos NÃO entram na exportação: se este arquivo for usado para atualizar o acervo oficial, eles serão apagados de lá.\n\nPara incluí-los, cancele, marque "Mostrar ocultos" e reexiba-os antes de exportar.\n\nExportar mesmo assim?');
+    },
     exportarTudo: function() {
         this._garantirCarregado();
         let self = this;
+        if (!this._confirmarOcultosExportacao()) return;
         let resultado = {};
         let total = 0;
 
@@ -39801,6 +39832,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!temOficial && typeof window.carregarJurisprudenciaOficial === 'function') {
             await window.carregarJurisprudenciaOficial();
         }
+        if (!this._confirmarOcultosExportacao()) return;
         let porMateria = {};
         let total = 0;
 
@@ -39880,6 +39912,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._materiaSelecionada) { alert('Selecione uma disciplina na barra lateral antes de exportar.'); return; }
         let self = this;
         let prefixo = this._materiaSelecionada + ' > ';
+        if (!this._confirmarOcultosExportacao(prefixo)) return;
         let resultado = {};
         let total = 0;
 
@@ -39949,6 +39982,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (!this._materiaSelecionada || !this._divisaoSelecionada) { alert('Selecione um tópico (divisão) específico na barra lateral antes de exportar.'); return; }
         let self = this;
         let chave = this._chaveL2(this._materiaSelecionada, this._divisaoSelecionada);
+        if (!this._confirmarOcultosExportacao(null, chave)) return;
         let visiveis = (this.fichas[chave] || []).filter(function(f) { return !self.ocultos[f.id]; }).map(function(f) { return self._itemExportado(f); });
 
         if (visiveis.length === 0) {
