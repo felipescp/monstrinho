@@ -11325,7 +11325,14 @@ window.DIVULGAR = {
             });
         };
         bloco(raiz);
-        return { md: blocos.join('\n\n'), ref: ref };
+        // "Curadoria: dd/mm/aa" (rodapé dos esquemas) não vai para as imagens
+        // (pedido explícito do usuário); a linha some se ficar vazia.
+        let semCuradoria = function(s) {
+            return s.replace(/\s*(·\s*)?\*{0,2}Curadoria:?\*{0,2}\s*\d{1,2}\/\d{1,2}\/\d{2,4}/gi, '')
+                .replace(/^\s*·\s*|\s*·\s*$/g, '').trim();
+        };
+        blocos = blocos.map(semCuradoria).filter(function(b) { return b && !/^[·\s*]*$/.test(b); });
+        return { md: blocos.join('\n\n'), ref: semCuradoria(ref) };
     },
     _paginasEsquema: function(d) {
         let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
