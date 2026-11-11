@@ -355,6 +355,26 @@ por filtros".
   Leitor autônomo já começa com ele. Se não sobrar ficha, abre vazio com os
   filtros preenchidos.
 
+## Divulgar: imagens para Instagram e X (administração)
+
+`window.DIVULGAR` (index.html). Nas baterias, cada questão de Verdadeiro ou
+Falso tem o botão 📤, visível só para a administração. Ele gera um
+carrossel em PNG, desenhado em `<canvas>` sem bibliotecas:
+
+- primeiro a questão, com as opções V/F; depois o gabarito (selo verde ou
+  vermelho), a explicação e a caixa "Para não esquecer" (axioma);
+- texto longo continua na imagem seguinte ("A questão continua →", "A
+  explicação continua →"), com a numeração 1/N; sem linha órfã nem título
+  sozinho no pé; o cabeçalho da tabela se repete; acima de 4 imagens a
+  prévia sugere encurtar;
+- markdown das explicações nas mesmas regras de `mdExplicacao`: negrito,
+  itálico, listas (- e 1.), citação (> ), tabela e título (#);
+- formatos 4:5 (1080×1350), 9:16 (1080×1920) e 16:9 (1600×900); tema claro
+  ou escuro (lembrados no aparelho em `tjpe_v1__divulgar_prefs`);
+- o texto pode ser editado na prévia sem mudar o acervo; baixa cada PNG ou
+  todos num .zip (`downloadZipArquivos` aceita bytes); legenda sugerida
+  para copiar.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

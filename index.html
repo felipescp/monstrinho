@@ -495,10 +495,9 @@
 #modal-divulgar .dvg-topo { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border-color, #e2e8f0); font-family:var(--font-display); font-size:15px; }
 #modal-divulgar .dvg-fechar { border:none; background:none; font-size:18px; cursor:pointer; color:inherit; }
 #modal-divulgar .dvg-corpo { display:flex; gap:16px; padding:16px; overflow:auto; }
-#modal-divulgar .dvg-previas { display:flex; gap:12px; flex:1 1 auto; align-items:flex-start; min-width:0; }
-#modal-divulgar .dvg-previas canvas { width:calc(50% - 6px); height:auto; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.15); }
-#modal-divulgar .dvg-previas.paisagem { flex-direction:column; }
-#modal-divulgar .dvg-previas.paisagem canvas { width:100%; }
+#modal-divulgar .dvg-previas { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; flex:1 1 auto; align-content:start; min-width:0; }
+#modal-divulgar .dvg-previas canvas { width:100%; height:auto; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.15); }
+#modal-divulgar .dvg-previas.paisagem { grid-template-columns:minmax(0, 1fr); }
 #modal-divulgar .dvg-lado { flex:0 0 330px; display:flex; flex-direction:column; gap:8px; font-size:11.5px; }
 #modal-divulgar .dvg-lado label { display:flex; flex-direction:column; gap:3px; font-weight:700; }
 #modal-divulgar .dvg-lado select, #modal-divulgar .dvg-lado input, #modal-divulgar .dvg-lado textarea { font:inherit; font-weight:400; padding:6px 8px; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; background:var(--bg-white, #fff); color:inherit; resize:vertical; }
@@ -10479,11 +10478,14 @@ window.downloadZipArquivos = function(arquivos, nomeZip) {
 
 // =========================================================================
 // DIVULGAR — imagens para Instagram e X (só a administração).
-// Pedido explícito do usuário: questão de bateria vira 2 imagens —
-// 1) a questão com as opções V/F; 2) o gabarito e a explicação. Desenho
-// em <canvas> (sem bibliotecas), com as fontes do app (Outfit/DM Sans),
-// logo e asalinha.com.br no rodapé. O texto pode ser encurtado na prévia
-// sem mexer no acervo; baixa cada PNG ou as duas num .zip.
+// Pedido explícito do usuário: questão de bateria vira um carrossel —
+// primeiro a questão com as opções V/F, depois o gabarito e a explicação.
+// Texto longo continua na imagem seguinte (3, 4… imagens), e o markdown
+// das explicações (negrito, itálico, listas, citações "> ", tabelas e
+// títulos) é desenhado como no app (mesmas regras de mdExplicacao).
+// Desenho em <canvas> (sem bibliotecas), com as fontes do app
+// (Outfit/DM Sans), logo e asalinha.com.br no rodapé. O texto pode ser
+// encurtado na prévia sem mexer no acervo; baixa cada PNG ou todas num .zip.
 // =========================================================================
 window.DIVULGAR = {
     FORMATOS: {
@@ -10492,15 +10494,17 @@ window.DIVULGAR = {
         x: { rotulo: 'X paisagem 16:9 (1600×900)', w: 1600, h: 900 }
     },
     TEMAS: {
-        claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null },
-        escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff' }
+        claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null, cabTabela: '#e0e7ff', citacao: '#fff7ed', barraCitacao: '#f59e0b' },
+        escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff', cabTabela: '#312e81', citacao: '#292524', barraCitacao: '#f59e0b' }
     },
+    // Acima disso a prévia sugere encurtar (o Instagram aceita até 20).
+    IMAGENS_SUGERIDAS: 4,
     _estado: null,
     _logo: null,
 
     _carregarRecursos: function() {
         let self = this;
-        let fontes = ['800 40px Outfit', '700 40px Outfit', '400 30px "DM Sans"', '700 30px "DM Sans"', 'italic 400 30px "DM Sans"'];
+        let fontes = ['800 40px Outfit', '700 40px Outfit', '400 30px "DM Sans"', '700 30px "DM Sans"', 'italic 400 30px "DM Sans"', 'italic 700 30px "DM Sans"'];
         let pFontes = (document.fonts && document.fonts.load)
             ? Promise.all(fontes.map(function(f) { return document.fonts.load(f).catch(function() {}); }))
             : Promise.resolve();
@@ -10513,77 +10517,291 @@ window.DIVULGAR = {
         return Promise.all([pFontes, pLogo]);
     },
 
-    // Texto com **negrito** e *itálico* → parágrafos de trechos {t, b, i}.
-    _paragrafos: function(texto) {
-        return String(texto || '').replace(/\r/g, '').split(/\n+/).map(function(par) {
-            let trechos = [];
-            let re = /\*\*([\s\S]+?)\*\*|\*([^*\n]+?)\*/g, m, ult = 0;
-            while ((m = re.exec(par))) {
-                if (m.index > ult) trechos.push({ t: par.slice(ult, m.index) });
-                if (m[1] !== undefined) trechos.push({ t: m[1], b: true });
-                else trechos.push({ t: m[2], i: true });
-                ult = re.lastIndex;
-            }
-            if (ult < par.length) trechos.push({ t: par.slice(ult) });
-            return trechos;
-        }).filter(function(p) { return p.some(function(t) { return t.t.trim(); }); });
-    },
-    _fonte: function(tr, tam, base) {
-        return (tr.i ? 'italic ' : '') + ((tr.b || base === 'negrito') ? '700 ' : '400 ') + tam + 'px "DM Sans", sans-serif';
-    },
-    // Quebra em linhas: [[{t, fonte, w}...]] por linha, com marcação de fim de parágrafo.
-    _linhas: function(ctx, paragrafos, tam, largura, base) {
-        let self = this, linhas = [];
-        paragrafos.forEach(function(trechos, ip) {
-            let linha = [], wLinha = 0;
-            trechos.forEach(function(tr) {
-                let fonte = self._fonte(tr, tam, base);
-                ctx.font = fonte;
-                tr.t.split(/(\s+)/).forEach(function(pal) {
-                    if (!pal) return;
-                    let espaco = /^\s+$/.test(pal);
-                    if (espaco && linha.length === 0) return;
-                    let w = ctx.measureText(espaco ? ' ' : pal).width;
-                    if (!espaco && wLinha + w > largura && linha.length) {
-                        while (linha.length && /^\s+$/.test(linha[linha.length - 1].t)) { wLinha -= linha.pop().w; }
-                        linhas.push({ itens: linha, fimPar: false });
-                        linha = []; wLinha = 0;
-                    }
-                    linha.push({ t: espaco ? ' ' : pal, fonte: fonte, w: w });
-                    wLinha += w;
+    // ── TEXTO ──
+    // Trechos {t, b, i} de uma linha com **negrito**/__negrito__, *itálico*,
+    // <b>/<strong>/<i>/<em>, `código` e [texto](link) (fica só o texto).
+    _inline: function(s) {
+        s = String(s || '')
+            .replace(/<\s*(b|strong)\s*>([\s\S]*?)<\s*\/\s*\1\s*>/gi, '**$2**')
+            .replace(/<\s*(i|em)\s*>([\s\S]*?)<\s*\/\s*\1\s*>/gi, '*$2*')
+            .replace(/<br\s*\/?>/gi, ' ').replace(/<\/?(u|sub|sup|span|code)[^>]*>/gi, '')
+            .replace(/`([^`]+)`/g, '$1').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$1')
+            .replace(/__([^_]+?)__/g, '**$1**');
+        let trechos = [];
+        let re = /\*\*([\s\S]+?)\*\*|(^|[^*\w])\*([^*\s](?:[^*]*?[^*\s])?)\*(?![*\w])/g, m, ult = 0;
+        while ((m = re.exec(s))) {
+            let ini = m.index + (m[2] ? m[2].length : 0);
+            if (ini > ult) trechos.push({ t: s.slice(ult, ini) });
+            if (m[1] !== undefined) trechos.push({ t: m[1], b: true });
+            else trechos.push({ t: m[3], i: true });
+            ult = re.lastIndex;
+        }
+        if (ult < s.length) trechos.push({ t: s.slice(ult) });
+        // negrito com itálico dentro (**a *b* c**)
+        let saida = [];
+        trechos.forEach(function(tr) {
+            if (tr.b && /\*[^*]+\*/.test(tr.t)) {
+                tr.t.split(/(\*[^*]+\*)/).forEach(function(p) {
+                    if (!p) return;
+                    if (/^\*[^*]+\*$/.test(p)) saida.push({ t: p.slice(1, -1), b: true, i: true });
+                    else saida.push({ t: p, b: true });
                 });
-            });
-            if (linha.length) linhas.push({ itens: linha, fimPar: ip < paragrafos.length - 1 });
+            } else saida.push(tr);
         });
+        return saida;
+    },
+    _fonte: function(tr, tam, negrito) {
+        return (tr.i ? 'italic ' : '') + ((tr.b || negrito) ? '700 ' : '400 ') + tam + 'px "DM Sans", sans-serif';
+    },
+    // Quebra trechos em linhas de largura máxima: [[{t, fonte, w}]].
+    _quebrar: function(ctx, trechos, tam, largura, negrito) {
+        let self = this;
+        // Palavras = sequências sem espaço, mesmo que misturem estilos
+        // (ex.: "(**usucapião**)" não quebra entre o parêntese e o negrito).
+        let palavras = [], atual = null;
+        trechos.forEach(function(tr) {
+            let fonte = self._fonte(tr, tam, negrito);
+            ctx.font = fonte;
+            tr.t.split(/(\s+)/).forEach(function(p) {
+                if (!p) return;
+                if (/^\s+$/.test(p)) { atual = null; palavras.push({ espaco: true, partes: [{ t: ' ', fonte: fonte, w: ctx.measureText(' ').width }] }); return; }
+                if (!atual) { atual = { partes: [] }; palavras.push(atual); }
+                atual.partes.push({ t: p, fonte: fonte, w: ctx.measureText(p).width });
+            });
+        });
+        let largPal = function(pw) { return pw.partes.reduce(function(s, x) { return s + x.w; }, 0); };
+        let linhas = [], linha = [], wLinha = 0;
+        let fechar = function() {
+            while (linha.length && linha[linha.length - 1].t === ' ') wLinha -= linha.pop().w;
+            if (linha.length) linhas.push(linha);
+            linha = []; wLinha = 0;
+        };
+        palavras.forEach(function(pw) {
+            if (pw.espaco) { if (linha.length) { linha.push(pw.partes[0]); wLinha += pw.partes[0].w; } return; }
+            let w = largPal(pw);
+            if (wLinha + w > largura && linha.length) fechar();
+            if (w > largura) {
+                // palavra maior que a linha inteira: corta por caractere
+                pw.partes.forEach(function(pt) {
+                    ctx.font = pt.fonte;
+                    let resto = pt.t;
+                    while (resto) {
+                        let n = resto.length;
+                        while (n > 1 && wLinha + ctx.measureText(resto.slice(0, n)).width > largura) n--;
+                        if (n === 1 && wLinha > 0 && wLinha + ctx.measureText(resto.slice(0, 1)).width > largura) { fechar(); continue; }
+                        let pedaco = resto.slice(0, n), wp = ctx.measureText(pedaco).width;
+                        linha.push({ t: pedaco, fonte: pt.fonte, w: wp }); wLinha += wp;
+                        resto = resto.slice(n);
+                        if (resto) fechar();
+                    }
+                });
+                return;
+            }
+            pw.partes.forEach(function(pt) { linha.push(pt); wLinha += pt.w; });
+        });
+        fechar();
         return linhas;
     },
-    _alturaTexto: function(linhas, tam) {
-        let h = 0;
-        linhas.forEach(function(l) { h += tam * 1.38 + (l.fimPar ? tam * 0.55 : 0); });
-        return h;
+    _escreverLinha: function(ctx, itens, x, y, tam, cor) {
+        ctx.fillStyle = cor; ctx.textBaseline = 'alphabetic';
+        itens.forEach(function(it) { ctx.font = it.fonte; ctx.fillText(it.t, x, y + tam * 1.05); x += it.w; });
     },
-    // Maior fonte (entre min e max) em que o texto cabe na caixa.
-    _ajustar: function(ctx, texto, largura, altura, min, max, base) {
-        let pars = this._paragrafos(texto);
-        for (let tam = max; tam >= min; tam -= 1) {
-            let linhas = this._linhas(ctx, pars, tam, largura, base);
-            let h = this._alturaTexto(linhas, tam);
-            if (h <= altura) return { tam: tam, linhas: linhas, h: h, cabe: true };
+
+    // Blocos do markdown, nas mesmas regras de mdExplicacao: parágrafo
+    // (linhas mantidas), lista (- * • ou 1.), citação (> ), título (#) e
+    // tabela (| a | b | com a linha |---|).
+    _blocos: function(texto) {
+        let blocos = [], par = [], lista = null, cit = [], tab = null;
+        let celulas = function(l) { return l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function(c) { return c.trim(); }); };
+        let fecharPar = function() { if (par.length) { blocos.push({ tipo: 'par', linhas: par }); par = []; } };
+        let fecharLista = function() { if (lista) { blocos.push(lista); lista = null; } };
+        let fecharCit = function() { if (cit.length) { blocos.push({ tipo: 'cit', linhas: cit }); cit = []; } };
+        let fecharTab = function() {
+            if (!tab) return;
+            if (!tab.sep) { par = par.concat(tab.brutas); tab = null; fecharPar(); return; }
+            blocos.push({ tipo: 'tab', cab: tab.linhas[0], linhas: tab.linhas.slice(1) });
+            tab = null;
+        };
+        String(texto || '').replace(/\r/g, '').split('\n').forEach(function(l) {
+            let m;
+            if (/^\s*\|.*\|\s*$/.test(l)) {
+                fecharPar(); fecharLista(); fecharCit();
+                if (!tab) tab = { linhas: [], brutas: [], sep: false };
+                tab.brutas.push(l);
+                if (tab.linhas.length === 1 && !tab.sep && /^\s*\|?(\s*:?-{2,}:?\s*\|)+\s*:?-*:?\s*\|?\s*$/.test(l)) tab.sep = true;
+                else tab.linhas.push(celulas(l));
+                return;
+            }
+            fecharTab();
+            if ((m = /^\s*[-*•]\s+(.*)$/.exec(l)) || (m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) {
+                let num = /^\s*\d/.test(l);
+                fecharPar(); fecharCit();
+                if (lista && lista.num !== num) fecharLista();
+                if (!lista) lista = { tipo: 'lista', num: num, itens: [] };
+                lista.itens.push(m[1]);
+            } else if ((m = /^\s*>\s?(.*)$/.exec(l))) { fecharPar(); fecharLista(); cit.push(m[1]); }
+            else if ((m = /^\s*#{1,6}\s+(.*)$/.exec(l))) { fecharPar(); fecharLista(); fecharCit(); blocos.push({ tipo: 'tit', texto: m[1] }); }
+            else if (!l.trim()) { fecharPar(); fecharLista(); fecharCit(); }
+            else { fecharLista(); fecharCit(); par.push(l); }
+        });
+        fecharTab(); fecharPar(); fecharLista(); fecharCit();
+        return blocos;
+    },
+
+    // Blocos → unidades de altura fixa, cada uma com seu desenho. A
+    // paginação corta entre unidades (linha de texto ou linha de tabela);
+    // o cabeçalho da tabela se repete quando ela continua em outra imagem.
+    _unidades: function(ctx, texto, tam, largura, T, opc) {
+        opc = opc || {};
+        let self = this, uns = [], grupo = 0;
+        let lh = Math.round(tam * 1.38), gapPar = Math.round(tam * 0.6);
+        let espaco = function(h) { uns.push({ h: h, gap: true }); };
+        let linhaTexto = function(itens, recuo, cor, extra) {
+            uns.push({ h: lh, g: grupo, desenhar: function(ctx, x, y, W) {
+                if (extra && extra.fundo) {
+                    ctx.fillStyle = extra.fundo; ctx.fillRect(x, y, W, lh);
+                    ctx.fillStyle = extra.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), lh);
+                }
+                if (extra && extra.marcador) {
+                    ctx.font = extra.marcador.fonte; ctx.fillStyle = extra.marcador.cor; ctx.textBaseline = 'alphabetic';
+                    ctx.fillText(extra.marcador.t, x + extra.marcador.x, y + tam * 1.05);
+                }
+                self._escreverLinha(ctx, itens, x + recuo, y, tam, cor);
+            } });
+        };
+        let blocos = this._blocos(texto);
+        blocos.forEach(function(bl, ib) {
+            if (ib > 0) espaco(gapPar);
+            grupo++;
+            if (bl.tipo === 'par') {
+                bl.linhas.forEach(function(l) {
+                    self._quebrar(ctx, self._inline(l), tam, largura, opc.negrito).forEach(function(itens) { linhaTexto(itens, 0, opc.cor || T.texto); });
+                });
+            } else if (bl.tipo === 'tit') {
+                let tt = Math.round(tam * 1.08);
+                self._quebrar(ctx, self._inline(bl.texto), tt, largura, true).forEach(function(itens) {
+                    uns.push({ h: Math.round(tt * 1.38), tit: true, desenhar: function(ctx, x, y) { self._escreverLinha(ctx, itens, x, y, tt, T.primaria); } });
+                });
+            } else if (bl.tipo === 'lista') {
+                let recuo = Math.round(tam * (bl.num ? 1.6 : 1.2));
+                bl.itens.forEach(function(item, ii) {
+                    if (ii > 0) espaco(Math.round(tam * 0.25));
+                    grupo++;
+                    let linhas = self._quebrar(ctx, self._inline(item), tam, largura - recuo, opc.negrito);
+                    linhas.forEach(function(itens, il) {
+                        linhaTexto(itens, recuo, T.texto, il === 0 ? { marcador: { t: bl.num ? (ii + 1) + '.' : '•', x: Math.round(tam * 0.2), fonte: '700 ' + tam + 'px "DM Sans", sans-serif', cor: T.primaria } } : null);
+                    });
+                });
+            } else if (bl.tipo === 'cit') {
+                let pad = Math.round(tam * 0.55), recuo = Math.round(tam * 0.9);
+                let fundo = { fundo: T.citacao, barra: T.barraCitacao };
+                uns.push({ h: pad, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
+                bl.linhas.forEach(function(l) {
+                    self._quebrar(ctx, self._inline(l), tam, largura - recuo * 2, opc.negrito).forEach(function(itens) { linhaTexto(itens, recuo, T.texto, fundo); });
+                });
+                uns.push({ h: pad, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
+            } else if (bl.tipo === 'tab') {
+                self._unidadesTabela(ctx, bl, Math.round(tam * 0.86), largura, T).forEach(function(u) { uns.push(u); });
+            }
+        });
+        return uns;
+    },
+    _unidadesTabela: function(ctx, bl, tam, largura, T) {
+        let self = this, ncol = bl.cab.length, pad = Math.round(tam * 0.5), lh = Math.round(tam * 1.32);
+        let linhas = [bl.cab].concat(bl.linhas.map(function(r) { return bl.cab.map(function(x, i) { return r[i] || ''; }); }));
+        // largura natural (tudo numa linha) e mínima (maior palavra) de cada coluna
+        let nat = [], min = [];
+        for (let c = 0; c < ncol; c++) {
+            nat[c] = 0; min[c] = 0;
+            linhas.forEach(function(r, ir) {
+                let total = 0;
+                self._inline(r[c]).forEach(function(tr) {
+                    ctx.font = self._fonte(tr, tam, ir === 0);
+                    total += ctx.measureText(tr.t).width;
+                    tr.t.split(/\s+/).forEach(function(p) { min[c] = Math.max(min[c], ctx.measureText(p).width + pad * 2); });
+                });
+                nat[c] = Math.max(nat[c], total + pad * 2);
+            });
         }
-        let linhas = this._linhas(ctx, pars, min, largura, base);
-        return { tam: min, linhas: linhas, h: this._alturaTexto(linhas, min), cabe: false };
-    },
-    _desenharTexto: function(ctx, aj, x, y, cor, alturaMax) {
-        let tam = aj.tam, yy = y;
-        ctx.fillStyle = cor;
-        ctx.textBaseline = 'alphabetic';
-        for (let i = 0; i < aj.linhas.length; i++) {
-            if (alturaMax && yy + tam * 1.38 > y + alturaMax + 1) break;
-            let xx = x;
-            aj.linhas[i].itens.forEach(function(it) { ctx.font = it.fonte; ctx.fillText(it.t, xx, yy + tam * 1.05); xx += it.w; });
-            yy += tam * 1.38 + (aj.linhas[i].fimPar ? tam * 0.55 : 0);
+        let soma = function(a) { return a.reduce(function(s, v) { return s + v; }, 0); };
+        let larg;
+        if (soma(nat) <= largura) larg = nat.map(function(v) { return v * largura / soma(nat); });
+        else if (soma(min) >= largura) larg = min.map(function(v) { return v * largura / soma(min); });
+        else {
+            let folga = largura - soma(min), extra = soma(nat) - soma(min);
+            larg = min.map(function(v, i) { return v + folga * (nat[i] - min[i]) / extra; });
         }
+        let unidadeLinha = function(r, ir) {
+            let celLinhas = r.map(function(txt, c) { return self._quebrar(ctx, self._inline(txt), tam, larg[c] - pad * 2, ir === 0); });
+            let h = Math.max.apply(null, celLinhas.map(function(l) { return Math.max(1, l.length); })) * lh + pad * 2;
+            return { h: h, desenhar: function(ctx, x, y) {
+                if (ir === 0) { ctx.fillStyle = T.cabTabela; ctx.fillRect(x, y, largura, h); }
+                let xx = x;
+                celLinhas.forEach(function(ls, c) {
+                    ls.forEach(function(itens, il) { self._escreverLinha(ctx, itens, xx + pad, y + pad + il * lh, tam, T.texto); });
+                    xx += larg[c];
+                });
+                ctx.strokeStyle = T.borda; ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, largura, h);
+                xx = x;
+                for (let c = 0; c < ncol - 1; c++) { xx += larg[c]; ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); ctx.stroke(); }
+            } };
+        };
+        let cab = unidadeLinha(linhas[0], 0);
+        return linhas.map(function(r, ir) {
+            if (ir === 0) return cab;
+            let u = unidadeLinha(r, ir); u.cab = cab; return u;
+        });
     },
+    _alturaUnidades: function(uns) { return uns.reduce(function(s, u) { return s + u.h; }, 0); },
+    // Distribui as unidades em páginas; capacidades[i] = altura livre da
+    // página i (a última se repete). Espaços no topo de página somem; o
+    // cabeçalho de tabela que continua é repetido.
+    _paginar: function(uns, capacidades) {
+        let self = this, paginas = [[]], usado = 0;
+        let cap = function(i) { return capacidades[Math.min(i, capacidades.length - 1)]; };
+        uns.forEach(function(u) {
+            let pag = paginas[paginas.length - 1];
+            if (u.gap && pag.length === 0) return;
+            if (usado + u.h > cap(paginas.length - 1) && pag.length) {
+                while (pag.length && pag[pag.length - 1].gap) { usado -= pag.pop().h; }
+                // Sem linha órfã: 1 linha só de um parágrafo que continua, ou
+                // um título no pé da página, passam para a próxima.
+                let levar = [];
+                let k = pag.length;
+                if (u.g && k && pag[k - 1].g === u.g && !(k >= 2 && pag[k - 2].g === u.g)) levar = pag.slice(k - 1);
+                let resto = pag.slice(0, pag.length - levar.length);
+                while (resto.length && resto[resto.length - 1].gap) resto.pop();
+                if (resto.length && resto[resto.length - 1].tit) { levar = resto.slice(-1).concat(levar); resto = resto.slice(0, -1); }
+                while (resto.length && resto[resto.length - 1].gap) resto.pop();
+                if (levar.length && resto.length) { paginas[paginas.length - 1] = resto; } else levar = [];
+                paginas.push(levar.slice()); pag = paginas[paginas.length - 1]; usado = self._alturaUnidades(levar);
+                if (u.gap) return;
+                if (u.cab) { pag.push(u.cab); usado += u.cab.h; }
+            }
+            pag.push(u); usado += u.h;
+        });
+        let ult = paginas[paginas.length - 1];
+        while (ult.length && ult[ult.length - 1].gap) ult.pop();
+        return paginas;
+    },
+    _desenharUnidades: function(ctx, uns, x, y, w) {
+        y = Math.round(y);
+        uns.forEach(function(u) { if (u.desenhar) u.desenhar(ctx, x, y, w); y += u.h; });
+        return y;
+    },
+    // Maior fonte (de max até conforto) em que o texto cabe em 1 página;
+    // se não couber nem no conforto, pagina no tamanho de conforto.
+    _ajustarPaginas: function(ctx, texto, largura, capacidades, max, conforto, T, opc) {
+        for (let tam = max; tam >= conforto; tam -= 1) {
+            let uns = this._unidades(ctx, texto, tam, largura, T, opc);
+            if (this._alturaUnidades(uns) <= capacidades[0]) return { tam: tam, paginas: [uns] };
+        }
+        let uns = this._unidades(ctx, texto, conforto, largura, T, opc);
+        return { tam: conforto, paginas: this._paginar(uns, capacidades) };
+    },
+
+    // ── MOLDURA ──
     _retArred: function(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
@@ -10594,14 +10812,20 @@ window.DIVULGAR = {
         while (txt.length > 1 && ctx.measureText(txt + '…').width > largura) txt = txt.slice(0, -1);
         return txt + '…';
     },
-    // Moldura comum: faixa do topo (rótulo + disciplina) e rodapé (logo,
-    // site, numeração). Devolve a área livre do miolo.
-    _moldura: function(ctx, W, H, tema, rotulo, contexto, pagina) {
-        let T = this.TEMAS[tema];
+    // Medidas da área livre (sem desenhar) para um formato.
+    _area: function(formato) {
+        let F = this.FORMATOS[formato], W = F.w, H = F.h;
         let pad = Math.round(W * 0.074), esc = W / 1080;
         if (W > H) { esc = H / 900 * 0.92; pad = Math.round(H * 0.075); }
+        let hFaixa = Math.round(150 * esc), hRod = Math.round(110 * esc);
+        return { W: W, H: H, pad: pad, esc: esc, hFaixa: hFaixa, hRod: hRod,
+            x: pad, y: hFaixa + Math.round(pad * 0.8), w: W - pad * 2, h: H - hRod - hFaixa - Math.round(pad * 1.5),
+            alto: H / W > 1.5 ? 1.2 : 1 };
+    },
+    // Faixa do topo (rótulo + disciplina) e rodapé (logo, site, numeração).
+    _moldura: function(ctx, a, T, rotulo, contexto, pagina) {
+        let W = a.W, H = a.H, pad = a.pad, esc = a.esc, hFaixa = a.hFaixa, hRod = a.hRod;
         ctx.fillStyle = T.fundo; ctx.fillRect(0, 0, W, H);
-        let hFaixa = Math.round(150 * esc);
         ctx.fillStyle = T.faixa; ctx.fillRect(0, 0, W, hFaixa);
         ctx.fillStyle = T.faixaTexto; ctx.textBaseline = 'middle';
         ctx.font = '800 ' + Math.round(46 * esc) + 'px Outfit, sans-serif';
@@ -10610,7 +10834,7 @@ window.DIVULGAR = {
         ctx.font = '400 ' + Math.round(25 * esc) + 'px "DM Sans", sans-serif';
         ctx.fillText(this._cortarTexto(ctx, contexto || '', W - pad * 2), pad, hFaixa * 0.73);
         ctx.globalAlpha = 1;
-        let hRod = Math.round(110 * esc), yRod = H - hRod;
+        let yRod = H - hRod;
         ctx.strokeStyle = T.borda; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pad, yRod); ctx.lineTo(W - pad, yRod); ctx.stroke();
         let hLogo = Math.round(56 * esc), xTxt = pad;
         if (this._logo) {
@@ -10631,91 +10855,132 @@ window.DIVULGAR = {
             ctx.textAlign = 'right'; ctx.fillStyle = T.suave; ctx.font = '700 ' + Math.round(26 * esc) + 'px Outfit, sans-serif';
             ctx.fillText(pagina, W - pad, yRod + hRod / 2); ctx.textAlign = 'left';
         }
-        return { x: pad, y: hFaixa + Math.round(pad * 0.8), w: W - pad * 2, h: yRod - hFaixa - Math.round(pad * 1.5), esc: esc, T: T, alto: H / W > 1.5 ? 1.2 : 1 };
+    },
+    _dica: function(ctx, a, T, texto, y) {
+        ctx.fillStyle = T.suave; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '700 ' + Math.round(26 * a.esc) + 'px "DM Sans", sans-serif';
+        ctx.fillText(texto, a.x + a.w / 2, y); ctx.textAlign = 'left';
     },
 
     // ── QUESTÃO (Certo/Errado) ──
-    _desenharQuestao1: function(canvas, d) {
-        let F = this.FORMATOS[d.formato], W = F.w, H = F.h;
-        canvas.width = W; canvas.height = H;
-        let ctx = canvas.getContext('2d');
-        let a = this._moldura(ctx, W, H, d.tema, 'Verdadeiro ou falso?', d.contexto, '1/2');
-        let T = a.T, esc = a.esc;
+    // Monta a lista de páginas: [{desenhar(canvas, n, total)}].
+    _paginasQuestao: function(d) {
+        let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
+        let ctx = document.createElement('canvas').getContext('2d');
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
-        let altTexto = a.h - hOpc - hDica - gap * 2;
-        let aj = this._ajustar(ctx, d.enunciado, a.w, altTexto, Math.round(26 * esc), Math.round(54 * esc * a.alto), 'normal');
-        // texto centrado na vertical no espaço disponível
-        let yTxt = a.y + Math.max(0, (altTexto - aj.h) / 2);
-        this._desenharTexto(ctx, aj, a.x, yTxt, T.texto, altTexto);
-        // opções V / F
-        let yOpc = a.y + altTexto + gap, wOpc = (a.w - Math.round(30 * esc)) / 2;
-        [['V', 'Verdadeiro'], ['F', 'Falso']].forEach(function(o, i) {
-            let x = a.x + i * (wOpc + Math.round(30 * esc));
-            ctx.fillStyle = T.caixa; this._retArred(ctx, x, yOpc, wOpc, hOpc, Math.round(22 * esc)); ctx.fill();
-            ctx.strokeStyle = T.borda; ctx.lineWidth = 3; ctx.stroke();
-            let r = hOpc * 0.3, cx = x + Math.round(30 * esc) + r, cy = yOpc + hOpc / 2;
-            ctx.fillStyle = T.primaria; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = T.fundo; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.font = '800 ' + Math.round(r * 1.1) + 'px Outfit, sans-serif'; ctx.fillText(o[0], cx, cy + 1);
-            ctx.textAlign = 'left'; ctx.fillStyle = T.texto; ctx.font = '700 ' + Math.round(36 * esc) + 'px Outfit, sans-serif';
-            ctx.fillText(o[1], cx + r + Math.round(22 * esc), cy + 1);
-        }, this);
-        ctx.fillStyle = T.suave; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.font = '700 ' + Math.round(26 * esc) + 'px "DM Sans", sans-serif';
-        ctx.fillText(d.formato === 'x' ? 'Gabarito na próxima imagem →' : 'Arraste para ver o gabarito →', a.x + a.w / 2, yOpc + hOpc + gap * 0.5 + hDica / 2);
-        ctx.textAlign = 'left';
-        return aj.cabe;
-    },
-    _desenharQuestao2: function(canvas, d) {
-        let F = this.FORMATOS[d.formato], W = F.w, H = F.h;
-        canvas.width = W; canvas.height = H;
-        let ctx = canvas.getContext('2d');
-        let a = this._moldura(ctx, W, H, d.tema, 'Gabarito', d.contexto, '2/2');
-        let T = a.T, esc = a.esc;
-        let verdadeiro = d.gabarito === 'V';
-        let cor = verdadeiro ? T.certo : T.errado;
-        let hSelo = Math.round(96 * esc), gap = Math.round(36 * esc), padCx = Math.round(28 * esc);
-        let disp = a.h - hSelo - gap;
-        // "Para não esquecer" (axioma) logo abaixo da explicação, se houver
-        let ajAx = null, hAxCaixa = 0;
+        let paxDica = function(fmt) { return fmt === 'x' ? 'Gabarito na próxima imagem →' : 'Arraste para ver o gabarito →'; };
+        // Enunciado: a última página da questão leva as opções V/F.
+        let capUltima = a.h - hOpc - hDica - gap * 2, capCheia = a.h - hDica - gap;
+        let ajE = this._ajustarPaginas(ctx, d.enunciado, a.w, [capUltima], Math.round(54 * esc * a.alto), Math.round(38 * esc), T);
+        if (ajE.paginas.length > 1) {
+            let uns = this._unidades(ctx, d.enunciado, ajE.tam, a.w, T);
+            let pags = this._paginar(uns, [capCheia]);
+            // se a última página não comporta as opções, abre mais uma
+            let ult = pags[pags.length - 1];
+            if (this._alturaUnidades(ult) > capUltima) {
+                let ultimas = this._paginar(ult, [capCheia, capUltima]);
+                pags = pags.slice(0, -1).concat(ultimas.length > 1 ? ultimas : [ult.slice(0, -1), ult.slice(-1)]);
+            }
+            ajE.paginas = pags;
+        }
+        let paginas = [];
+        ajE.paginas.forEach(function(uns, i) {
+            let ultima = i === ajE.paginas.length - 1;
+            paginas.push({ desenhar: function(c, n, total) {
+                let ctx = c.getContext('2d');
+                self._moldura(ctx, a, T, 'Verdadeiro ou falso?', d.contexto, n + '/' + total);
+                let hTxt = self._alturaUnidades(uns);
+                if (ultima) {
+                    let livre = capUltima;
+                    let y = a.y + Math.max(0, (livre - hTxt) / 2);
+                    if (ajE.paginas.length > 1) y = a.y;
+                    self._desenharUnidades(ctx, uns, a.x, y, a.w);
+                    let yOpc = a.y + capUltima + gap, wOpc = (a.w - Math.round(30 * esc)) / 2;
+                    [['V', 'Verdadeiro'], ['F', 'Falso']].forEach(function(o, k) {
+                        let x = a.x + k * (wOpc + Math.round(30 * esc));
+                        ctx.fillStyle = T.caixa; self._retArred(ctx, x, yOpc, wOpc, hOpc, Math.round(22 * esc)); ctx.fill();
+                        ctx.strokeStyle = T.borda; ctx.lineWidth = 3; ctx.stroke();
+                        let r = hOpc * 0.3, cx = x + Math.round(30 * esc) + r, cy = yOpc + hOpc / 2;
+                        ctx.fillStyle = T.primaria; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = T.fundo; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.font = '800 ' + Math.round(r * 1.1) + 'px Outfit, sans-serif'; ctx.fillText(o[0], cx, cy + 1);
+                        ctx.textAlign = 'left'; ctx.fillStyle = T.texto; ctx.font = '700 ' + Math.round(36 * esc) + 'px Outfit, sans-serif';
+                        ctx.fillText(o[1], cx + r + Math.round(22 * esc), cy + 1);
+                    });
+                    self._dica(ctx, a, T, paxDica(d.formato), yOpc + hOpc + gap * 0.5 + hDica / 2);
+                } else {
+                    self._desenharUnidades(ctx, uns, a.x, a.y, a.w);
+                    self._dica(ctx, a, T, 'A questão continua →', a.y + a.h - hDica / 2);
+                }
+            } });
+        });
+        // Gabarito: selo na 1ª página; explicação; "Para não esquecer" no fim.
+        let verdadeiro = d.gabarito === 'V', cor = verdadeiro ? T.certo : T.errado;
+        let hSelo = Math.round(96 * esc), gapG = Math.round(36 * esc), padCx = Math.round(28 * esc);
+        let hRotAx = Math.round(34 * esc);
+        let unsAx = null, hAx = 0;
         if (d.axioma && d.axioma.trim()) {
-            ajAx = this._ajustar(ctx, d.axioma, a.w - padCx * 2, disp * 0.3, Math.round(22 * esc), Math.round(32 * esc * a.alto), 'negrito');
-            hAxCaixa = ajAx.h + padCx * 2 + Math.round(34 * esc);
+            let tamAx = Math.round(30 * esc * a.alto);
+            unsAx = this._unidades(ctx, d.axioma, tamAx, a.w - padCx * 2, T, { negrito: true });
+            while (this._alturaUnidades(unsAx) > a.h * 0.3 && tamAx > Math.round(22 * esc)) { tamAx--; unsAx = this._unidades(ctx, d.axioma, tamAx, a.w - padCx * 2, T, { negrito: true }); }
+            hAx = this._alturaUnidades(unsAx) + padCx * 2 + hRotAx;
         }
-        let altExp = disp - (hAxCaixa ? hAxCaixa + gap : 0);
-        let aj = this._ajustar(ctx, d.explicacao, a.w, altExp, Math.round(22 * esc), Math.round(42 * esc * a.alto), 'normal');
-        let hExp = Math.min(aj.h, altExp);
-        // bloco inteiro (selo + explicação + caixa) centrado na vertical,
-        // um pouco acima do meio
-        let total = hSelo + gap + hExp + (hAxCaixa ? gap + hAxCaixa : 0);
-        let y0 = a.y + Math.max(0, (a.h - total) * 0.4);
-        ctx.fillStyle = cor; this._retArred(ctx, a.x, y0, a.w, hSelo, Math.round(22 * esc)); ctx.fill();
-        ctx.fillStyle = T.seloTexto; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.font = '800 ' + Math.round(48 * esc) + 'px Outfit, sans-serif';
-        ctx.fillText(verdadeiro ? 'VERDADEIRO' : 'FALSO', a.x + a.w / 2, y0 + hSelo / 2 + 2);
-        ctx.textAlign = 'left';
-        let y = y0 + hSelo + gap;
-        this._desenharTexto(ctx, aj, a.x, y, T.texto, altExp);
-        if (ajAx) {
-            let yCx = y + hExp + gap;
-            ctx.fillStyle = T.caixa; this._retArred(ctx, a.x, yCx, a.w, hAxCaixa, Math.round(20 * esc)); ctx.fill();
-            ctx.fillStyle = T.primaria; ctx.fillRect(a.x, yCx + Math.round(16 * esc), Math.round(8 * esc), hAxCaixa - Math.round(32 * esc));
-            ctx.fillStyle = T.primaria; ctx.textBaseline = 'alphabetic';
-            ctx.font = '800 ' + Math.round(22 * esc) + 'px Outfit, sans-serif';
-            ctx.fillText('PARA NÃO ESQUECER', a.x + padCx, yCx + padCx + Math.round(18 * esc));
-            this._desenharTexto(ctx, ajAx, a.x + padCx, yCx + padCx + Math.round(34 * esc), T.texto);
+        let cap1 = a.h - hSelo - gapG, capN = a.h - hDica - gap;
+        let cap1Unica = cap1 - (hAx ? hAx + gapG : 0);
+        let ajX = this._ajustarPaginas(ctx, d.explicacao, a.w, [cap1Unica], Math.round(42 * esc * a.alto), Math.round(30 * esc), T);
+        let pagsX;
+        if (ajX.paginas.length === 1) pagsX = [{ uns: ajX.paginas[0], ax: !!hAx }];
+        else {
+            let uns = this._unidades(ctx, d.explicacao, ajX.tam, a.w, T);
+            let ps = this._paginar(uns, [cap1 - hDica - gap, capN]);
+            pagsX = ps.map(function(u) { return { uns: u, ax: false }; });
+            if (hAx) {
+                let ult = pagsX[pagsX.length - 1];
+                let capUlt = (pagsX.length === 1 ? cap1 : a.h);
+                if (self._alturaUnidades(ult.uns) + gapG + hAx <= capUlt) ult.ax = true;
+                else pagsX.push({ uns: [], ax: true });
+            }
         }
-        return aj.cabe && (!ajAx || ajAx.cabe);
+        pagsX.forEach(function(p, i) {
+            let primeira = i === 0, ultima = i === pagsX.length - 1;
+            paginas.push({ desenhar: function(c, n, total) {
+                let ctx = c.getContext('2d');
+                self._moldura(ctx, a, T, primeira ? 'Gabarito' : 'Gabarito (continuação)', d.contexto, n + '/' + total);
+                let hTxt = self._alturaUnidades(p.uns);
+                let total0 = (primeira ? hSelo + gapG : 0) + hTxt + (p.ax ? (hTxt ? gapG : 0) + hAx : 0);
+                let y = (pagsX.length === 1) ? a.y + Math.max(0, (a.h - total0) * 0.4) : a.y;
+                if (primeira) {
+                    ctx.fillStyle = cor; self._retArred(ctx, a.x, y, a.w, hSelo, Math.round(22 * esc)); ctx.fill();
+                    ctx.fillStyle = T.seloTexto; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.font = '800 ' + Math.round(48 * esc) + 'px Outfit, sans-serif';
+                    ctx.fillText(verdadeiro ? 'VERDADEIRO' : 'FALSO', a.x + a.w / 2, y + hSelo / 2 + 2);
+                    ctx.textAlign = 'left';
+                    y += hSelo + gapG;
+                }
+                y = self._desenharUnidades(ctx, p.uns, a.x, y, a.w);
+                if (p.ax) {
+                    let yCx = y + (hTxt ? gapG : 0);
+                    ctx.fillStyle = T.caixa; self._retArred(ctx, a.x, yCx, a.w, hAx, Math.round(20 * esc)); ctx.fill();
+                    ctx.fillStyle = T.primaria; ctx.fillRect(a.x, yCx + Math.round(16 * esc), Math.round(8 * esc), hAx - Math.round(32 * esc));
+                    ctx.textBaseline = 'alphabetic'; ctx.font = '800 ' + Math.round(22 * esc) + 'px Outfit, sans-serif';
+                    ctx.fillText('PARA NÃO ESQUECER', a.x + padCx, yCx + padCx + Math.round(18 * esc));
+                    self._desenharUnidades(ctx, unsAx, a.x + padCx, yCx + padCx + hRotAx, a.w - padCx * 2);
+                }
+                if (!ultima) self._dica(ctx, a, T, 'A explicação continua →', a.y + a.h - hDica / 2);
+            } });
+        });
+        return { paginas: paginas, nQuestao: ajE.paginas.length };
     },
 
     _hashtag: function(txt) {
         return '#' + String(txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).map(function(p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('');
     },
-    _legendaQuestao: function(d) {
+    _legendaQuestao: function(d, nQuestao) {
         let tags = ['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB'];
         if (d.materia) tags.splice(1, 0, this._hashtag(d.materia));
+        let onde = (nQuestao || 1) + 1;
         return 'Verdadeiro ou falso? 🤔\n\n' + (d.contexto ? d.contexto + '\n\n' : '') +
-            'Responde aqui nos comentários antes de arrastar pro lado — o gabarito comentado está na 2ª imagem.\n\n' +
+            'Responde aqui nos comentários antes de arrastar pro lado — o gabarito comentado começa na ' + onde + 'ª imagem.\n\n' +
             'Treine mais questões assim na Salinha: asalinha.com.br\n\n' + tags.join(' ');
     },
 
@@ -10738,6 +11003,7 @@ window.DIVULGAR = {
             formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
             tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
         };
+        this._legendaEditada = false;
         this._montarModal();
         let self = this;
         this._carregarRecursos().then(function() { self._render(); });
@@ -10757,22 +11023,18 @@ window.DIVULGAR = {
             '<div class="dvg-caixa" onclick="event.stopPropagation()">' +
                 '<div class="dvg-topo"><strong>📤 Divulgar questão</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fechar()">✕</button></div>' +
                 '<div class="dvg-corpo">' +
-                    '<div class="dvg-previas"><canvas id="dvg-c1"></canvas><canvas id="dvg-c2"></canvas></div>' +
+                    '<div class="dvg-previas" id="dvg-previas"></div>' +
                     '<div class="dvg-lado">' +
                         '<label>Formato<select id="dvg-formato" onchange="window.DIVULGAR._mudar(\'formato\', this.value)">' + opcFmt + '</select></label>' +
                         '<label>Tema<select id="dvg-tema" onchange="window.DIVULGAR._mudar(\'tema\', this.value)"><option value="claro"' + (d.tema === 'claro' ? ' selected' : '') + '>Claro</option><option value="escuro"' + (d.tema === 'escuro' ? ' selected' : '') + '>Escuro</option></select></label>' +
                         '<label>Disciplina · tópico<input type="text" value="' + esc(d.contexto).replace(/"/g, '&quot;') + '" oninput="window.DIVULGAR._mudar(\'contexto\', this.value)"></label>' +
-                        '<label>Enunciado (imagem 1)<textarea rows="5" oninput="window.DIVULGAR._mudar(\'enunciado\', this.value)">' + esc(d.enunciado) + '</textarea></label>' +
-                        '<label>Explicação (imagem 2)<textarea rows="7" oninput="window.DIVULGAR._mudar(\'explicacao\', this.value)">' + esc(d.explicacao) + '</textarea></label>' +
+                        '<label>Enunciado<textarea rows="5" oninput="window.DIVULGAR._mudar(\'enunciado\', this.value)">' + esc(d.enunciado) + '</textarea></label>' +
+                        '<label>Explicação<textarea rows="8" oninput="window.DIVULGAR._mudar(\'explicacao\', this.value)">' + esc(d.explicacao) + '</textarea></label>' +
                         '<label>Para não esquecer (vazio = sem caixa)<textarea rows="2" oninput="window.DIVULGAR._mudar(\'axioma\', this.value)">' + esc(d.axioma) + '</textarea></label>' +
                         '<div id="dvg-aviso" class="dvg-aviso"></div>' +
-                        '<div class="dvg-nota">As mudanças valem só para as imagens; a questão no acervo não muda. **negrito** e *itálico* funcionam.</div>' +
-                        '<div class="dvg-botoes">' +
-                            '<button type="button" onclick="window.DIVULGAR.baixar(1)">⬇️ Imagem 1</button>' +
-                            '<button type="button" onclick="window.DIVULGAR.baixar(2)">⬇️ Imagem 2</button>' +
-                            '<button type="button" class="dvg-prim" onclick="window.DIVULGAR.baixarZip()">⬇️ As duas (.zip)</button>' +
-                        '</div>' +
-                        '<label>Legenda sugerida<textarea id="dvg-legenda" rows="6">' + esc(this._legendaQuestao(d)) + '</textarea></label>' +
+                        '<div class="dvg-nota">As mudanças valem só para as imagens; a questão no acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
+                        '<div class="dvg-botoes" id="dvg-botoes"></div>' +
+                        '<label>Legenda sugerida<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
                         '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this)">📋 Copiar legenda</button>' +
                     '</div>' +
                 '</div>' +
@@ -10789,28 +11051,37 @@ window.DIVULGAR = {
         }
         clearTimeout(this._tmr);
         let self = this;
-        this._tmr = setTimeout(function() { self._render(); }, 120);
+        this._tmr = setTimeout(function() { self._render(); }, 150);
     },
     _render: function() {
         let d = this._estado;
-        let c1 = document.getElementById('dvg-c1'), c2 = document.getElementById('dvg-c2');
-        if (!d || !c1 || !c2) return;
-        let ok1 = this._desenharQuestao1(c1, d);
-        let ok2 = this._desenharQuestao2(c2, d);
+        let dir = document.getElementById('dvg-previas');
+        if (!d || !dir) return;
+        let r = this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
+        this._canvases = r.paginas.map(function(p, i) {
+            let c = document.createElement('canvas'); c.width = F.w; c.height = F.h;
+            p.desenhar(c, i + 1, total);
+            return c;
+        });
+        dir.innerHTML = '';
+        dir.classList.toggle('paisagem', d.formato === 'x');
+        this._canvases.forEach(function(c) { dir.appendChild(c); });
+        let bot = document.getElementById('dvg-botoes');
+        if (bot) {
+            bot.innerHTML = this._canvases.map(function(c, i) { return '<button type="button" onclick="window.DIVULGAR.baixar(' + (i + 1) + ')">⬇️ ' + (i + 1) + '</button>'; }).join('') +
+                '<button type="button" class="dvg-prim" onclick="window.DIVULGAR.baixarZip()">⬇️ Todas (.zip)</button>';
+        }
         let av = document.getElementById('dvg-aviso');
-        let partes = [];
-        if (!ok1) partes.push('o enunciado não coube inteiro na imagem 1');
-        if (!ok2) partes.push('a explicação não coube inteira na imagem 2');
-        if (av) av.textContent = partes.length ? ('⚠️ Encurte o texto: ' + partes.join(' e ') + '.') : '';
-        let dir = document.querySelector('#modal-divulgar .dvg-previas');
-        if (dir) dir.classList.toggle('paisagem', d.formato === 'x');
+        if (av) av.textContent = total > this.IMAGENS_SUGERIDAS ? ('⚠️ Ficaram ' + total + ' imagens. Dá para publicar, mas vale encurtar o texto.') : '';
+        let leg = document.getElementById('dvg-legenda');
+        if (leg && !this._legendaEditada) leg.value = this._legendaQuestao(d, r.nQuestao);
     },
     _nomeArquivo: function(n) {
         let d = this._estado;
         return 'salinha-' + String(d.id || 'questao').replace(/[^\w-]+/g, '') + '-' + d.formato + '-' + n + '.png';
     },
     _blob: function(n) {
-        let c = document.getElementById('dvg-c' + n);
+        let c = this._canvases[n - 1];
         return new Promise(function(ok) { c.toBlob(function(b) { ok(b); }, 'image/png'); });
     },
     baixar: function(n) {
@@ -10824,7 +11095,7 @@ window.DIVULGAR = {
     },
     baixarZip: function() {
         let self = this;
-        Promise.all([this._blob(1), this._blob(2)]).then(function(bs) {
+        Promise.all(this._canvases.map(function(c, i) { return self._blob(i + 1); })).then(function(bs) {
             return Promise.all(bs.map(function(b) { return b.arrayBuffer(); }));
         }).then(function(bufs) {
             window.downloadZipArquivos(bufs.map(function(buf, i) { return { nome: self._nomeArquivo(i + 1), conteudo: new Uint8Array(buf) }; }),
@@ -10842,6 +11113,7 @@ window.DIVULGAR = {
         let m = document.getElementById('modal-divulgar');
         if (m) m.classList.remove('open');
         this._estado = null;
+        this._canvases = [];
     }
 };
 
