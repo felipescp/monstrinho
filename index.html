@@ -10704,11 +10704,11 @@ window.DIVULGAR = {
             } else if (bl.tipo === 'cit') {
                 let pad = Math.round(tam * 0.55), recuo = Math.round(tam * 0.9);
                 let fundo = { fundo: T.citacao, barra: T.barraCitacao };
-                uns.push({ h: pad, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
+                uns.push({ h: pad, cartao: 'cit' + ib, enchimento: true, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
                 bl.linhas.forEach(function(l) {
                     self._quebrar(ctx, self._inline(l), tam, largura - recuo * 2, opc.negrito).forEach(function(itens) { linhaTexto(itens, recuo, T.texto, fundo); });
                 });
-                uns.push({ h: pad, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
+                uns.push({ h: pad, cartao: 'cit' + ib, enchimento: true, desenhar: function(ctx, x, y, W) { ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, pad); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), pad); } });
             } else if (bl.tipo === 'tab' && opc.tabelaEmBlocos && bl.cab.length >= 3) {
                 // Tabela larga vira um bloco por linha (melhor no celular):
                 // 1ª célula como título; as demais como "Coluna: texto".
@@ -10721,7 +10721,7 @@ window.DIVULGAR = {
                     let cartao = 'c' + ib + '_' + ir;
                     faixa(pad, cartao);
                     self._quebrar(ctx, self._inline(r[0] || ''), tam, wIn, true).forEach(function(itens) {
-                        uns.push({ h: lh, g: grupo, cartao: cartao, desenhar: function(ctx, x, y, W) {
+                        uns.push({ h: lh, g: grupo, cartao: cartao, tituloCartao: true, desenhar: function(ctx, x, y, W) {
                             ctx.fillStyle = fundo.fundo; ctx.fillRect(x, y, W, lh); ctx.fillStyle = fundo.barra; ctx.fillRect(x, y, Math.round(tam * 0.22), lh);
                             self._escreverLinha(ctx, itens, x + recuo, y, tam, T.primaria);
                         } });
@@ -10856,6 +10856,13 @@ window.DIVULGAR = {
                     uns.forEach(function(x) { if (x.cartao === u.cartao) hCartao += x.h; });
                     let sobra = cap(paginas.length - 1) - usado + self._alturaUnidades(pag.slice(ini));
                     if (ini < k && hCartao <= cap(paginas.length) && sobra < 0.3 * cap(paginas.length - 1)) levar = pag.slice(ini);
+                }
+                // Fundo de abertura de um bloco (com ou sem o título dele, mas
+                // sem o conteúdo) não fica sozinho no pé da imagem: vai junto.
+                if (!levar.length && u.cartao) {
+                    let j = k;
+                    while (j > 0 && pag[j - 1].cartao === u.cartao && (pag[j - 1].enchimento || pag[j - 1].tituloCartao)) j--;
+                    if (j < k) levar = pag.slice(j);
                 }
                 let resto = pag.slice(0, pag.length - levar.length);
                 while (resto.length && resto[resto.length - 1].gap) resto.pop();
