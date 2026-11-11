@@ -375,6 +375,13 @@ carrossel em PNG, desenhado em `<canvas>` sem bibliotecas:
   todos num .zip (`downloadZipArquivos` aceita bytes); legenda sugerida
   para copiar.
 
+Julgados (`DIVULGAR.abrirJulgado`): botão "📤 Divulgar" no Leitor da
+Jurisprudência, só para a administração e só em fichas oficiais. Primeira
+imagem: faixa com tribunal e informativo, selos de sistemática/tema e de
+mudança de entendimento, título, processo · órgão · relator · data e a tese;
+depois, opcional, "Entenda o caso" com a caixa do que mudou (`mudanca`) e o
+resumo. Tese ou resumo longos continuam na imagem seguinte.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

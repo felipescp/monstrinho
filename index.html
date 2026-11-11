@@ -502,6 +502,7 @@
 #modal-divulgar .dvg-lado label { display:flex; flex-direction:column; gap:3px; font-weight:700; }
 #modal-divulgar .dvg-lado select, #modal-divulgar .dvg-lado input, #modal-divulgar .dvg-lado textarea { font:inherit; font-weight:400; padding:6px 8px; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; background:var(--bg-white, #fff); color:inherit; resize:vertical; }
 #modal-divulgar .dvg-aviso { color:#dc2626; font-weight:700; }
+#modal-divulgar .dvg-lado label.dvg-check { flex-direction:row; align-items:center; gap:6px; }
 #modal-divulgar .dvg-aviso:empty { display:none; }
 #modal-divulgar .dvg-nota { color:var(--text-muted, #64748b); font-size:10.5px; }
 #modal-divulgar .dvg-botoes { display:flex; gap:6px; flex-wrap:wrap; }
@@ -10972,6 +10973,203 @@ window.DIVULGAR = {
         return { paginas: paginas, nQuestao: ajE.paginas.length };
     },
 
+    // ── JULGADO ──
+    // Quebra simples (sem markdown) numa fonte qualquer — para o título.
+    _linhasFonte: function(ctx, texto, fonte, largura) {
+        ctx.font = fonte;
+        let linhas = [], atual = '';
+        String(texto || '').split(/\s+/).filter(Boolean).forEach(function(p) {
+            let teste = atual ? atual + ' ' + p : p;
+            if (ctx.measureText(teste).width > largura && atual) { linhas.push(atual); atual = p; }
+            else atual = teste;
+        });
+        if (atual) linhas.push(atual);
+        return linhas;
+    },
+    // Selos em linha (quebram se não couberem). Devolve a altura usada.
+    _selos: function(ctx, selos, x, y, largura, esc, desenhar) {
+        let h = Math.round(46 * esc), gap = Math.round(12 * esc), padX = Math.round(18 * esc);
+        let xx = x, yy = y;
+        ctx.font = '700 ' + Math.round(22 * esc) + 'px "DM Sans", sans-serif';
+        selos.forEach(function(s) {
+            let w = ctx.measureText(s.t).width + padX * 2;
+            if (xx > x && xx + w > x + largura) { xx = x; yy += h + gap; }
+            if (desenhar) {
+                ctx.fillStyle = s.fundo; this._retArred(ctx, xx, yy, w, h, h / 2); ctx.fill();
+                ctx.fillStyle = s.cor; ctx.textBaseline = 'middle';
+                ctx.font = '700 ' + Math.round(22 * esc) + 'px "DM Sans", sans-serif';
+                ctx.fillText(s.t, xx + padX, yy + h / 2 + 1);
+            }
+            xx += w + gap;
+        }, this);
+        return selos.length ? (yy - y) + h : 0;
+    },
+    _paginasJulgado: function(d) {
+        let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
+        let ctx = document.createElement('canvas').getContext('2d');
+        let gap = Math.round(30 * esc), hDica = Math.round(50 * esc);
+        let corMud = '#ea580c';
+        let selos = [];
+        if (d.sistematica) selos.push({ t: d.sistematica, fundo: T.caixa, cor: T.primaria });
+        if (d.selo) selos.push({ t: d.selo, fundo: corMud, cor: '#ffffff' });
+        // título: até 4 linhas, na maior fonte que couber
+        let tamTit = Math.round(46 * esc), linhasTit;
+        for (; tamTit > Math.round(32 * esc); tamTit--) {
+            linhasTit = this._linhasFonte(ctx, d.titulo, '800 ' + tamTit + 'px Outfit, sans-serif', a.w);
+            if (linhasTit.length <= 4) break;
+        }
+        linhasTit = this._linhasFonte(ctx, d.titulo, '800 ' + tamTit + 'px Outfit, sans-serif', a.w);
+        let lhTit = Math.round(tamTit * 1.22);
+        let fonteMeta = '400 ' + Math.round(23 * esc) + 'px "DM Sans", sans-serif', lhMeta = Math.round(23 * esc * 1.4);
+        let linhasMeta = this._linhasFonte(ctx, d.meta, fonteMeta, a.w);
+        let hSelos = this._selos(ctx, selos, 0, 0, a.w, esc, false);
+        let hRotTese = Math.round(40 * esc);
+        let hCab = (hSelos ? hSelos + Math.round(24 * esc) : 0) + linhasTit.length * lhTit + Math.round(12 * esc) + linhasMeta.length * lhMeta + gap + hRotTese;
+        // tese com faixa à esquerda
+        let recuo = Math.round(28 * esc), wTese = a.w - recuo;
+        let cap1 = a.h - hCab;
+        let temResumo = d.incluirResumo && ((d.resumo && d.resumo.trim()) || (d.mudou && d.mudou.trim()));
+        let ajT = this._ajustarPaginas(ctx, d.tese, wTese, [temResumo ? cap1 - hDica - gap : cap1], Math.round(40 * esc * a.alto), Math.round(30 * esc), T);
+        if (ajT.paginas.length > 1) {
+            let uns = this._unidades(ctx, d.tese, ajT.tam, wTese, T);
+            ajT.paginas = this._paginar(uns, [cap1 - hDica - gap, a.h - hRotTese - hDica - gap]);
+        }
+        let paginas = [];
+        let desenharTese = function(ctx, uns, y) {
+            let h = self._alturaUnidades(uns);
+            ctx.fillStyle = T.primaria; ctx.fillRect(a.x, y, Math.round(7 * esc), h);
+            self._desenharUnidades(ctx, uns, a.x + recuo, y, wTese);
+            return y + h;
+        };
+        let rotTese = function(ctx, y, txt) {
+            ctx.fillStyle = T.primaria; ctx.textBaseline = 'alphabetic';
+            ctx.font = '800 ' + Math.round(24 * esc) + 'px Outfit, sans-serif';
+            ctx.fillText(txt, a.x, y + Math.round(26 * esc));
+        };
+        ajT.paginas.forEach(function(uns, i) {
+            let ultimaTese = i === ajT.paginas.length - 1;
+            paginas.push({ desenhar: function(c, n, total) {
+                let ctx = c.getContext('2d');
+                self._moldura(ctx, a, T, i === 0 ? d.rotulo : 'Tese (continuação)', d.contexto, n + '/' + total);
+                let y = a.y;
+                if (i === 0) {
+                    let totalH = hCab + self._alturaUnidades(uns);
+                    if (total === 1 || (ajT.paginas.length === 1 && !temResumo)) y = a.y + Math.max(0, (a.h - totalH) * 0.4);
+                    if (hSelos) { self._selos(ctx, selos, a.x, y, a.w, esc, true); y += hSelos + Math.round(24 * esc); }
+                    ctx.fillStyle = T.texto; ctx.textBaseline = 'alphabetic'; ctx.font = '800 ' + tamTit + 'px Outfit, sans-serif';
+                    linhasTit.forEach(function(l) { ctx.fillText(l, a.x, y + tamTit); y += lhTit; });
+                    y += Math.round(12 * esc);
+                    ctx.fillStyle = T.suave; ctx.font = fonteMeta;
+                    linhasMeta.forEach(function(l) { ctx.fillText(l, a.x, y + Math.round(23 * esc * 1.05)); y += lhMeta; });
+                    y += gap;
+                    rotTese(ctx, y, 'TESE'); y += hRotTese;
+                } else { rotTese(ctx, y, 'TESE (CONTINUAÇÃO)'); y += hRotTese; }
+                desenharTese(ctx, uns, y);
+                let dica = !ultimaTese ? 'A tese continua →' : (n < total ? (d.formato === 'x' ? 'Entenda o caso na próxima imagem →' : 'Arraste para entender o caso →') : '');
+                if (dica) self._dica(ctx, a, T, dica, a.y + a.h - hDica / 2);
+            } });
+        });
+        // "Entenda o caso": o que mudou (se houver) + resumo
+        if (temResumo) {
+            let padCx = Math.round(28 * esc), hRotCx = Math.round(34 * esc);
+            let unsMud = null, hMud = 0;
+            if (d.mudou && d.mudou.trim()) {
+                unsMud = this._unidades(ctx, d.mudou, Math.round(30 * esc * a.alto), a.w - padCx * 2, T);
+                hMud = this._alturaUnidades(unsMud) + padCx * 2 + hRotCx;
+            }
+            let pagsR = [[]];
+            if (d.resumo && d.resumo.trim()) {
+                let capR1 = a.h - (hMud ? hMud + gap : 0);
+                let ajR = this._ajustarPaginas(ctx, d.resumo, a.w, [capR1], Math.round(40 * esc * a.alto), Math.round(30 * esc), T);
+                pagsR = ajR.paginas;
+                if (pagsR.length > 1) pagsR = this._paginar(this._unidades(ctx, d.resumo, ajR.tam, a.w, T), [capR1 - hDica - gap, a.h - hDica - gap]);
+            }
+            pagsR.forEach(function(uns, i) {
+                let ultima = i === pagsR.length - 1;
+                paginas.push({ desenhar: function(c, n, total) {
+                    let ctx = c.getContext('2d');
+                    self._moldura(ctx, a, T, i === 0 ? 'Entenda o caso' : 'Entenda o caso (continuação)', d.contexto, n + '/' + total);
+                    let hTxt = self._alturaUnidades(uns);
+                    let y = a.y;
+                    if (pagsR.length === 1) y = a.y + Math.max(0, (a.h - hTxt - (hMud ? hMud + (hTxt ? gap : 0) : 0)) * 0.4);
+                    if (i === 0 && unsMud) {
+                        ctx.fillStyle = T.citacao; self._retArred(ctx, a.x, y, a.w, hMud, Math.round(20 * esc)); ctx.fill();
+                        ctx.fillStyle = corMud; ctx.fillRect(a.x, y + Math.round(16 * esc), Math.round(8 * esc), hMud - Math.round(32 * esc));
+                        ctx.textBaseline = 'alphabetic'; ctx.font = '800 ' + Math.round(22 * esc) + 'px Outfit, sans-serif';
+                        ctx.fillText((d.selo || 'O que mudou').toUpperCase(), a.x + padCx, y + padCx + Math.round(18 * esc));
+                        self._desenharUnidades(ctx, unsMud, a.x + padCx, y + padCx + hRotCx, a.w - padCx * 2);
+                        y += hMud + (hTxt ? gap : 0);
+                    }
+                    self._desenharUnidades(ctx, uns, a.x, y, a.w);
+                    if (!ultima) self._dica(ctx, a, T, 'Continua →', a.y + a.h - hDica / 2);
+                } });
+            });
+        }
+        return { paginas: paginas };
+    },
+    _legendaJulgado: function(d) {
+        let tags = ['#Jurisprudencia'];
+        if (d.tribunal) tags.push('#' + d.tribunal.replace(/[^A-Za-z0-9]/g, ''));
+        if (d.materia) tags.push(this._hashtag(d.materia));
+        tags = tags.concat(['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB']);
+        let partes = [];
+        if (d.selo) partes.push('🔄 ' + d.selo + '!');
+        partes.push('⚖️ ' + d.rotulo + ': ' + d.titulo);
+        partes.push('📌 ' + d.meta);
+        if (d.contexto) partes.push(d.contexto);
+        partes.push('Salve para revisar e estude mais julgados como este na Salinha: asalinha.com.br');
+        partes.push(tags.join(' '));
+        return partes.join('\n\n');
+    },
+    abrirJulgado: function(item) {
+        if (!window.ehAdmin || !window.ehAdmin()) return;
+        if (!item) return;
+        if (!item.origem_oficial) { alert('A divulgação vale só para julgados do acervo oficial da Salinha.'); return; }
+        let J = window.JURISPRUDENCIA_RUNTIME;
+        let rotulo = item.tribunal || 'Jurisprudência';
+        try {
+            let k = J._chaveInformativo(item);
+            if (k) rotulo = J._rotuloChaveInformativo(k);
+            else if (item.orgao) rotulo = (item.tribunal || '') + ' · ' + item.orgao;
+        } catch (e) {}
+        let sist = item.sistematica || '';
+        if (/^Caso isolado/i.test(sist)) sist = '';
+        if (item.tema && String(item.tema).trim()) sist = (sist ? sist + ' · ' : '') + 'Tema ' + String(item.tema).trim();
+        let selo = '';
+        try { selo = (J._seloMudancaTexto ? J._seloMudancaTexto(item) : '') || ''; } catch (e) {}
+        selo = selo.replace(/^[^A-Za-zÀ-ú]+/, '').trim();
+        let data = item.dataJulgado && /^\d{4}-\d{2}-\d{2}$/.test(item.dataJulgado) ? item.dataJulgado.split('-').reverse().join('/') : (item.dataJulgado || '');
+        let meta = [item.processo, item.orgao, item.relator, data ? 'julgado em ' + data : ''].filter(Boolean).join(' · ');
+        let lembrado = {};
+        try { lembrado = JSON.parse(localStorage.getItem('tjpe_v1__divulgar_prefs') || '{}') || {}; } catch (e) {}
+        this._estado = {
+            id: item.id, tipo: 'julgado', tituloModal: 'Divulgar julgado',
+            materia: item.materiaL1 || '', tribunal: item.tribunal || '',
+            contexto: [item.materiaL1, item.divisaoL2].filter(Boolean).join(' · '),
+            rotulo: rotulo, sistematica: sist, selo: selo,
+            titulo: item.titulo || '', meta: meta, tese: item.tese || '',
+            mudou: (item.mudanca && item.mudanca.resumo) || '', resumo: item.resumo || '',
+            incluirResumo: true,
+            campos: [
+                { chave: 'rotulo', rotulo: 'Faixa do topo', tipo: 'linha' },
+                { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
+                { chave: 'sistematica', rotulo: 'Selo (sistemática/tema)', tipo: 'linha' },
+                { chave: 'titulo', rotulo: 'Título', linhas: 2 },
+                { chave: 'meta', rotulo: 'Processo · órgão · relator · data', linhas: 2 },
+                { chave: 'tese', rotulo: 'Tese', linhas: 6 },
+                { chave: 'incluirResumo', rotulo: 'Incluir "Entenda o caso" (imagem extra)', tipo: 'check' },
+                { chave: 'mudou', rotulo: 'O que mudou (vazio = sem caixa)', linhas: 3 },
+                { chave: 'resumo', rotulo: 'Resumo', linhas: 5 }
+            ],
+            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
+        };
+        this._legendaEditada = false;
+        this._montarModal();
+        let self = this;
+        this._carregarRecursos().then(function() { self._render(); });
+    },
+
     _hashtag: function(txt) {
         return '#' + String(txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).map(function(p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('');
     },
@@ -11000,6 +11198,13 @@ window.DIVULGAR = {
             contexto: [mat, top].filter(Boolean).join(' · '),
             enunciado: q.enunciado || '', explicacao: q.explicacao || '', axioma: q.axioma || '',
             gabarito: q.gabarito,
+            tipo: 'questao', tituloModal: 'Divulgar questão',
+            campos: [
+                { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
+                { chave: 'enunciado', rotulo: 'Enunciado', linhas: 5 },
+                { chave: 'explicacao', rotulo: 'Explicação', linhas: 8 },
+                { chave: 'axioma', rotulo: 'Para não esquecer (vazio = sem caixa)', linhas: 2 }
+            ],
             formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
             tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
         };
@@ -11018,21 +11223,24 @@ window.DIVULGAR = {
             document.body.appendChild(m);
         }
         let opcFmt = Object.keys(this.FORMATOS).map(function(k) { return '<option value="' + k + '"' + (k === d.formato ? ' selected' : '') + '>' + self.FORMATOS[k].rotulo + '</option>'; }).join('');
-        let esc = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+        let esc = function(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); };
+        let campos = (d.campos || []).map(function(c) {
+            let on = 'window.DIVULGAR._mudar(\'' + c.chave + '\', ';
+            if (c.tipo === 'check') return '<label class="dvg-check"><input type="checkbox"' + (d[c.chave] ? ' checked' : '') + ' onchange="' + on + 'this.checked)"> ' + esc(c.rotulo) + '</label>';
+            if (c.tipo === 'linha') return '<label>' + esc(c.rotulo) + '<input type="text" value="' + esc(d[c.chave]) + '" oninput="' + on + 'this.value)"></label>';
+            return '<label>' + esc(c.rotulo) + '<textarea rows="' + (c.linhas || 4) + '" oninput="' + on + 'this.value)">' + esc(d[c.chave]) + '</textarea></label>';
+        }).join('');
         m.innerHTML =
             '<div class="dvg-caixa" onclick="event.stopPropagation()">' +
-                '<div class="dvg-topo"><strong>📤 Divulgar questão</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fechar()">✕</button></div>' +
+                '<div class="dvg-topo"><strong>📤 ' + esc(d.tituloModal || 'Divulgar') + '</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fechar()">✕</button></div>' +
                 '<div class="dvg-corpo">' +
                     '<div class="dvg-previas" id="dvg-previas"></div>' +
                     '<div class="dvg-lado">' +
                         '<label>Formato<select id="dvg-formato" onchange="window.DIVULGAR._mudar(\'formato\', this.value)">' + opcFmt + '</select></label>' +
                         '<label>Tema<select id="dvg-tema" onchange="window.DIVULGAR._mudar(\'tema\', this.value)"><option value="claro"' + (d.tema === 'claro' ? ' selected' : '') + '>Claro</option><option value="escuro"' + (d.tema === 'escuro' ? ' selected' : '') + '>Escuro</option></select></label>' +
-                        '<label>Disciplina · tópico<input type="text" value="' + esc(d.contexto).replace(/"/g, '&quot;') + '" oninput="window.DIVULGAR._mudar(\'contexto\', this.value)"></label>' +
-                        '<label>Enunciado<textarea rows="5" oninput="window.DIVULGAR._mudar(\'enunciado\', this.value)">' + esc(d.enunciado) + '</textarea></label>' +
-                        '<label>Explicação<textarea rows="8" oninput="window.DIVULGAR._mudar(\'explicacao\', this.value)">' + esc(d.explicacao) + '</textarea></label>' +
-                        '<label>Para não esquecer (vazio = sem caixa)<textarea rows="2" oninput="window.DIVULGAR._mudar(\'axioma\', this.value)">' + esc(d.axioma) + '</textarea></label>' +
+                        campos +
                         '<div id="dvg-aviso" class="dvg-aviso"></div>' +
-                        '<div class="dvg-nota">As mudanças valem só para as imagens; a questão no acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
+                        '<div class="dvg-nota">As mudanças valem só para as imagens; o acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
                         '<div class="dvg-botoes" id="dvg-botoes"></div>' +
                         '<label>Legenda sugerida<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
                         '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this)">📋 Copiar legenda</button>' +
@@ -11057,7 +11265,7 @@ window.DIVULGAR = {
         let d = this._estado;
         let dir = document.getElementById('dvg-previas');
         if (!d || !dir) return;
-        let r = this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
+        let r = d.tipo === 'julgado' ? this._paginasJulgado(d) : this._paginasQuestao(d), F = this.FORMATOS[d.formato], total = r.paginas.length;
         this._canvases = r.paginas.map(function(p, i) {
             let c = document.createElement('canvas'); c.width = F.w; c.height = F.h;
             p.desenhar(c, i + 1, total);
@@ -11074,7 +11282,7 @@ window.DIVULGAR = {
         let av = document.getElementById('dvg-aviso');
         if (av) av.textContent = total > this.IMAGENS_SUGERIDAS ? ('⚠️ Ficaram ' + total + ' imagens. Dá para publicar, mas vale encurtar o texto.') : '';
         let leg = document.getElementById('dvg-legenda');
-        if (leg && !this._legendaEditada) leg.value = this._legendaQuestao(d, r.nQuestao);
+        if (leg && !this._legendaEditada) leg.value = d.tipo === 'julgado' ? this._legendaJulgado(d) : this._legendaQuestao(d, r.nQuestao);
     },
     _nomeArquivo: function(n) {
         let d = this._estado;
@@ -43462,6 +43670,9 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<span class="fc-card-revisao-acoes">' + this._botoesRevisaoJurHtml(card.id, null) + '</span>' +
                 '<span class="jur-baralho-sep"></span>' +
                 this._btnComentarioPessoalHtml(card.id, "window.JURISPRUDENCIA_RUNTIME.alternarPainelComentarioBaralho()") +
+                ((window.ehAdmin && window.ehAdmin() && window.DIVULGAR && card.origem_oficial)
+                    ? '<span class="jur-baralho-sep"></span><button class="esq-btn-visualizado" title="Gerar imagens para Instagram e X" onclick="window.DIVULGAR.abrirJulgado(window.JURISPRUDENCIA_RUNTIME._fichaBaralhoAtual())">📤 Divulgar</button>'
+                    : '') +
             '</div>';
         if (this._painelCtx === 'leitor') this._renderPainelComentario(card);
         if (acoesEl) acoesEl.innerHTML = '';
