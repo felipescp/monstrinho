@@ -489,6 +489,26 @@
 .main-nav { display: flex; width: 100%; flex-shrink: 0; }
 .nav-ram-zone { display: flex; gap: 20px; padding: 0 25px; flex: 1; background: var(--app-primary); transition: background 0.4s ease; }
 .nav-hd-zone { display: flex; gap: 20px; padding: 0 25px; background: #334155; border-left: 2px solid #1e293b; box-shadow: inset 10px 0 10px -10px rgba(0,0,0,0.3); }
+#modal-divulgar { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:200000; align-items:center; justify-content:center; padding:16px; }
+#modal-divulgar.open { display:flex; }
+#modal-divulgar .dvg-caixa { background:var(--bg-white, #fff); color:var(--text-main, #1e1b4b); border-radius:14px; width:min(1200px, 100%); max-height:calc(100vh - 32px); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+#modal-divulgar .dvg-topo { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border-color, #e2e8f0); font-family:var(--font-display); font-size:15px; }
+#modal-divulgar .dvg-fechar { border:none; background:none; font-size:18px; cursor:pointer; color:inherit; }
+#modal-divulgar .dvg-corpo { display:flex; gap:16px; padding:16px; overflow:auto; }
+#modal-divulgar .dvg-previas { display:flex; gap:12px; flex:1 1 auto; align-items:flex-start; min-width:0; }
+#modal-divulgar .dvg-previas canvas { width:calc(50% - 6px); height:auto; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.15); }
+#modal-divulgar .dvg-previas.paisagem { flex-direction:column; }
+#modal-divulgar .dvg-previas.paisagem canvas { width:100%; }
+#modal-divulgar .dvg-lado { flex:0 0 330px; display:flex; flex-direction:column; gap:8px; font-size:11.5px; }
+#modal-divulgar .dvg-lado label { display:flex; flex-direction:column; gap:3px; font-weight:700; }
+#modal-divulgar .dvg-lado select, #modal-divulgar .dvg-lado input, #modal-divulgar .dvg-lado textarea { font:inherit; font-weight:400; padding:6px 8px; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; background:var(--bg-white, #fff); color:inherit; resize:vertical; }
+#modal-divulgar .dvg-aviso { color:#dc2626; font-weight:700; }
+#modal-divulgar .dvg-aviso:empty { display:none; }
+#modal-divulgar .dvg-nota { color:var(--text-muted, #64748b); font-size:10.5px; }
+#modal-divulgar .dvg-botoes { display:flex; gap:6px; flex-wrap:wrap; }
+#modal-divulgar .dvg-botoes button, #modal-divulgar .dvg-copiar { padding:7px 10px; border-radius:6px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; font-weight:700; cursor:pointer; font-size:11px; }
+#modal-divulgar .dvg-botoes .dvg-prim { background:var(--app-primary, #4f46e5); color:#fff; border-color:transparent; }
+@media (max-width: 800px) { #modal-divulgar .dvg-corpo { flex-direction:column; } #modal-divulgar .dvg-lado { flex-basis:auto; } }
 .nav-item { padding: 14px 0; font-family: var(--font-display); font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: 0; }
 .nav-item.ram-item { color: rgba(255,255,255,0.7); }
 .nav-item.ram-item:hover { color: #ffffff; }
@@ -10386,7 +10406,7 @@ window.downloadZipArquivos = function(arquivos, nomeZip) {
 
     arquivos.forEach(function(arq) {
         let nomeBytes = enc.encode(arq.nome);
-        let dadosBytes = enc.encode(arq.conteudo);
+        let dadosBytes = (arq.conteudo instanceof Uint8Array) ? arq.conteudo : enc.encode(arq.conteudo);
         let crc = 0xFFFFFFFF;
         for (let i = 0; i < dadosBytes.length; i++) {
             crc = (crc >>> 8) ^ tabCrc[(crc ^ dadosBytes[i]) & 0xFF];
@@ -10455,6 +10475,374 @@ window.downloadZipArquivos = function(arquivos, nomeZip) {
     a.click();
     document.body.removeChild(a);
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+};
+
+// =========================================================================
+// DIVULGAR — imagens para Instagram e X (só a administração).
+// Pedido explícito do usuário: questão de bateria vira 2 imagens —
+// 1) a questão com as opções V/F; 2) o gabarito e a explicação. Desenho
+// em <canvas> (sem bibliotecas), com as fontes do app (Outfit/DM Sans),
+// logo e asalinha.com.br no rodapé. O texto pode ser encurtado na prévia
+// sem mexer no acervo; baixa cada PNG ou as duas num .zip.
+// =========================================================================
+window.DIVULGAR = {
+    FORMATOS: {
+        feed: { rotulo: 'Instagram feed 4:5 (1080×1350)', w: 1080, h: 1350 },
+        stories: { rotulo: 'Stories 9:16 (1080×1920)', w: 1080, h: 1920 },
+        x: { rotulo: 'X paisagem 16:9 (1600×900)', w: 1600, h: 900 }
+    },
+    TEMAS: {
+        claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null },
+        escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff' }
+    },
+    _estado: null,
+    _logo: null,
+
+    _carregarRecursos: function() {
+        let self = this;
+        let fontes = ['800 40px Outfit', '700 40px Outfit', '400 30px "DM Sans"', '700 30px "DM Sans"', 'italic 400 30px "DM Sans"'];
+        let pFontes = (document.fonts && document.fonts.load)
+            ? Promise.all(fontes.map(function(f) { return document.fonts.load(f).catch(function() {}); }))
+            : Promise.resolve();
+        let pLogo = this._logo ? Promise.resolve() : new Promise(function(ok) {
+            let img = new Image();
+            img.onload = function() { self._logo = img; ok(); };
+            img.onerror = function() { ok(); };
+            img.src = 'asalinha-icone.png';
+        });
+        return Promise.all([pFontes, pLogo]);
+    },
+
+    // Texto com **negrito** e *itálico* → parágrafos de trechos {t, b, i}.
+    _paragrafos: function(texto) {
+        return String(texto || '').replace(/\r/g, '').split(/\n+/).map(function(par) {
+            let trechos = [];
+            let re = /\*\*([\s\S]+?)\*\*|\*([^*\n]+?)\*/g, m, ult = 0;
+            while ((m = re.exec(par))) {
+                if (m.index > ult) trechos.push({ t: par.slice(ult, m.index) });
+                if (m[1] !== undefined) trechos.push({ t: m[1], b: true });
+                else trechos.push({ t: m[2], i: true });
+                ult = re.lastIndex;
+            }
+            if (ult < par.length) trechos.push({ t: par.slice(ult) });
+            return trechos;
+        }).filter(function(p) { return p.some(function(t) { return t.t.trim(); }); });
+    },
+    _fonte: function(tr, tam, base) {
+        return (tr.i ? 'italic ' : '') + ((tr.b || base === 'negrito') ? '700 ' : '400 ') + tam + 'px "DM Sans", sans-serif';
+    },
+    // Quebra em linhas: [[{t, fonte, w}...]] por linha, com marcação de fim de parágrafo.
+    _linhas: function(ctx, paragrafos, tam, largura, base) {
+        let self = this, linhas = [];
+        paragrafos.forEach(function(trechos, ip) {
+            let linha = [], wLinha = 0;
+            trechos.forEach(function(tr) {
+                let fonte = self._fonte(tr, tam, base);
+                ctx.font = fonte;
+                tr.t.split(/(\s+)/).forEach(function(pal) {
+                    if (!pal) return;
+                    let espaco = /^\s+$/.test(pal);
+                    if (espaco && linha.length === 0) return;
+                    let w = ctx.measureText(espaco ? ' ' : pal).width;
+                    if (!espaco && wLinha + w > largura && linha.length) {
+                        while (linha.length && /^\s+$/.test(linha[linha.length - 1].t)) { wLinha -= linha.pop().w; }
+                        linhas.push({ itens: linha, fimPar: false });
+                        linha = []; wLinha = 0;
+                    }
+                    linha.push({ t: espaco ? ' ' : pal, fonte: fonte, w: w });
+                    wLinha += w;
+                });
+            });
+            if (linha.length) linhas.push({ itens: linha, fimPar: ip < paragrafos.length - 1 });
+        });
+        return linhas;
+    },
+    _alturaTexto: function(linhas, tam) {
+        let h = 0;
+        linhas.forEach(function(l) { h += tam * 1.38 + (l.fimPar ? tam * 0.55 : 0); });
+        return h;
+    },
+    // Maior fonte (entre min e max) em que o texto cabe na caixa.
+    _ajustar: function(ctx, texto, largura, altura, min, max, base) {
+        let pars = this._paragrafos(texto);
+        for (let tam = max; tam >= min; tam -= 1) {
+            let linhas = this._linhas(ctx, pars, tam, largura, base);
+            let h = this._alturaTexto(linhas, tam);
+            if (h <= altura) return { tam: tam, linhas: linhas, h: h, cabe: true };
+        }
+        let linhas = this._linhas(ctx, pars, min, largura, base);
+        return { tam: min, linhas: linhas, h: this._alturaTexto(linhas, min), cabe: false };
+    },
+    _desenharTexto: function(ctx, aj, x, y, cor, alturaMax) {
+        let tam = aj.tam, yy = y;
+        ctx.fillStyle = cor;
+        ctx.textBaseline = 'alphabetic';
+        for (let i = 0; i < aj.linhas.length; i++) {
+            if (alturaMax && yy + tam * 1.38 > y + alturaMax + 1) break;
+            let xx = x;
+            aj.linhas[i].itens.forEach(function(it) { ctx.font = it.fonte; ctx.fillText(it.t, xx, yy + tam * 1.05); xx += it.w; });
+            yy += tam * 1.38 + (aj.linhas[i].fimPar ? tam * 0.55 : 0);
+        }
+    },
+    _retArred: function(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    },
+    _cortarTexto: function(ctx, txt, largura) {
+        if (ctx.measureText(txt).width <= largura) return txt;
+        while (txt.length > 1 && ctx.measureText(txt + '…').width > largura) txt = txt.slice(0, -1);
+        return txt + '…';
+    },
+    // Moldura comum: faixa do topo (rótulo + disciplina) e rodapé (logo,
+    // site, numeração). Devolve a área livre do miolo.
+    _moldura: function(ctx, W, H, tema, rotulo, contexto, pagina) {
+        let T = this.TEMAS[tema];
+        let pad = Math.round(W * 0.074), esc = W / 1080;
+        if (W > H) { esc = H / 900 * 0.92; pad = Math.round(H * 0.075); }
+        ctx.fillStyle = T.fundo; ctx.fillRect(0, 0, W, H);
+        let hFaixa = Math.round(150 * esc);
+        ctx.fillStyle = T.faixa; ctx.fillRect(0, 0, W, hFaixa);
+        ctx.fillStyle = T.faixaTexto; ctx.textBaseline = 'middle';
+        ctx.font = '800 ' + Math.round(46 * esc) + 'px Outfit, sans-serif';
+        ctx.fillText(rotulo, pad, hFaixa * 0.38);
+        ctx.globalAlpha = 0.85;
+        ctx.font = '400 ' + Math.round(25 * esc) + 'px "DM Sans", sans-serif';
+        ctx.fillText(this._cortarTexto(ctx, contexto || '', W - pad * 2), pad, hFaixa * 0.73);
+        ctx.globalAlpha = 1;
+        let hRod = Math.round(110 * esc), yRod = H - hRod;
+        ctx.strokeStyle = T.borda; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pad, yRod); ctx.lineTo(W - pad, yRod); ctx.stroke();
+        let hLogo = Math.round(56 * esc), xTxt = pad;
+        if (this._logo) {
+            let wLogo = hLogo * this._logo.width / this._logo.height;
+            if (T.fundoLogo) {
+                let m = Math.round(8 * esc);
+                ctx.fillStyle = T.fundoLogo; this._retArred(ctx, pad - m, yRod + (hRod - hLogo) / 2 - m, wLogo + m * 2, hLogo + m * 2, Math.round(12 * esc)); ctx.fill();
+            }
+            ctx.drawImage(this._logo, pad, yRod + (hRod - hLogo) / 2, wLogo, hLogo);
+            xTxt = pad + wLogo + Math.round(16 * esc);
+        }
+        ctx.fillStyle = T.texto; ctx.textBaseline = 'middle';
+        ctx.font = '800 ' + Math.round(30 * esc) + 'px Outfit, sans-serif';
+        ctx.fillText('A Salinha', xTxt, yRod + hRod * 0.38);
+        ctx.fillStyle = T.suave; ctx.font = '400 ' + Math.round(22 * esc) + 'px "DM Sans", sans-serif';
+        ctx.fillText('asalinha.com.br', xTxt, yRod + hRod * 0.68);
+        if (pagina) {
+            ctx.textAlign = 'right'; ctx.fillStyle = T.suave; ctx.font = '700 ' + Math.round(26 * esc) + 'px Outfit, sans-serif';
+            ctx.fillText(pagina, W - pad, yRod + hRod / 2); ctx.textAlign = 'left';
+        }
+        return { x: pad, y: hFaixa + Math.round(pad * 0.8), w: W - pad * 2, h: yRod - hFaixa - Math.round(pad * 1.5), esc: esc, T: T, alto: H / W > 1.5 ? 1.2 : 1 };
+    },
+
+    // ── QUESTÃO (Certo/Errado) ──
+    _desenharQuestao1: function(canvas, d) {
+        let F = this.FORMATOS[d.formato], W = F.w, H = F.h;
+        canvas.width = W; canvas.height = H;
+        let ctx = canvas.getContext('2d');
+        let a = this._moldura(ctx, W, H, d.tema, 'Verdadeiro ou falso?', d.contexto, '1/2');
+        let T = a.T, esc = a.esc;
+        let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
+        let altTexto = a.h - hOpc - hDica - gap * 2;
+        let aj = this._ajustar(ctx, d.enunciado, a.w, altTexto, Math.round(26 * esc), Math.round(54 * esc * a.alto), 'normal');
+        // texto centrado na vertical no espaço disponível
+        let yTxt = a.y + Math.max(0, (altTexto - aj.h) / 2);
+        this._desenharTexto(ctx, aj, a.x, yTxt, T.texto, altTexto);
+        // opções V / F
+        let yOpc = a.y + altTexto + gap, wOpc = (a.w - Math.round(30 * esc)) / 2;
+        [['V', 'Verdadeiro'], ['F', 'Falso']].forEach(function(o, i) {
+            let x = a.x + i * (wOpc + Math.round(30 * esc));
+            ctx.fillStyle = T.caixa; this._retArred(ctx, x, yOpc, wOpc, hOpc, Math.round(22 * esc)); ctx.fill();
+            ctx.strokeStyle = T.borda; ctx.lineWidth = 3; ctx.stroke();
+            let r = hOpc * 0.3, cx = x + Math.round(30 * esc) + r, cy = yOpc + hOpc / 2;
+            ctx.fillStyle = T.primaria; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = T.fundo; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.font = '800 ' + Math.round(r * 1.1) + 'px Outfit, sans-serif'; ctx.fillText(o[0], cx, cy + 1);
+            ctx.textAlign = 'left'; ctx.fillStyle = T.texto; ctx.font = '700 ' + Math.round(36 * esc) + 'px Outfit, sans-serif';
+            ctx.fillText(o[1], cx + r + Math.round(22 * esc), cy + 1);
+        }, this);
+        ctx.fillStyle = T.suave; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '700 ' + Math.round(26 * esc) + 'px "DM Sans", sans-serif';
+        ctx.fillText(d.formato === 'x' ? 'Gabarito na próxima imagem →' : 'Arraste para ver o gabarito →', a.x + a.w / 2, yOpc + hOpc + gap * 0.5 + hDica / 2);
+        ctx.textAlign = 'left';
+        return aj.cabe;
+    },
+    _desenharQuestao2: function(canvas, d) {
+        let F = this.FORMATOS[d.formato], W = F.w, H = F.h;
+        canvas.width = W; canvas.height = H;
+        let ctx = canvas.getContext('2d');
+        let a = this._moldura(ctx, W, H, d.tema, 'Gabarito', d.contexto, '2/2');
+        let T = a.T, esc = a.esc;
+        let verdadeiro = d.gabarito === 'V';
+        let cor = verdadeiro ? T.certo : T.errado;
+        let hSelo = Math.round(96 * esc), gap = Math.round(36 * esc), padCx = Math.round(28 * esc);
+        let disp = a.h - hSelo - gap;
+        // "Para não esquecer" (axioma) logo abaixo da explicação, se houver
+        let ajAx = null, hAxCaixa = 0;
+        if (d.axioma && d.axioma.trim()) {
+            ajAx = this._ajustar(ctx, d.axioma, a.w - padCx * 2, disp * 0.3, Math.round(22 * esc), Math.round(32 * esc * a.alto), 'negrito');
+            hAxCaixa = ajAx.h + padCx * 2 + Math.round(34 * esc);
+        }
+        let altExp = disp - (hAxCaixa ? hAxCaixa + gap : 0);
+        let aj = this._ajustar(ctx, d.explicacao, a.w, altExp, Math.round(22 * esc), Math.round(42 * esc * a.alto), 'normal');
+        let hExp = Math.min(aj.h, altExp);
+        // bloco inteiro (selo + explicação + caixa) centrado na vertical,
+        // um pouco acima do meio
+        let total = hSelo + gap + hExp + (hAxCaixa ? gap + hAxCaixa : 0);
+        let y0 = a.y + Math.max(0, (a.h - total) * 0.4);
+        ctx.fillStyle = cor; this._retArred(ctx, a.x, y0, a.w, hSelo, Math.round(22 * esc)); ctx.fill();
+        ctx.fillStyle = T.seloTexto; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '800 ' + Math.round(48 * esc) + 'px Outfit, sans-serif';
+        ctx.fillText(verdadeiro ? 'VERDADEIRO' : 'FALSO', a.x + a.w / 2, y0 + hSelo / 2 + 2);
+        ctx.textAlign = 'left';
+        let y = y0 + hSelo + gap;
+        this._desenharTexto(ctx, aj, a.x, y, T.texto, altExp);
+        if (ajAx) {
+            let yCx = y + hExp + gap;
+            ctx.fillStyle = T.caixa; this._retArred(ctx, a.x, yCx, a.w, hAxCaixa, Math.round(20 * esc)); ctx.fill();
+            ctx.fillStyle = T.primaria; ctx.fillRect(a.x, yCx + Math.round(16 * esc), Math.round(8 * esc), hAxCaixa - Math.round(32 * esc));
+            ctx.fillStyle = T.primaria; ctx.textBaseline = 'alphabetic';
+            ctx.font = '800 ' + Math.round(22 * esc) + 'px Outfit, sans-serif';
+            ctx.fillText('PARA NÃO ESQUECER', a.x + padCx, yCx + padCx + Math.round(18 * esc));
+            this._desenharTexto(ctx, ajAx, a.x + padCx, yCx + padCx + Math.round(34 * esc), T.texto);
+        }
+        return aj.cabe && (!ajAx || ajAx.cabe);
+    },
+
+    _hashtag: function(txt) {
+        return '#' + String(txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).map(function(p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join('');
+    },
+    _legendaQuestao: function(d) {
+        let tags = ['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB'];
+        if (d.materia) tags.splice(1, 0, this._hashtag(d.materia));
+        return 'Verdadeiro ou falso? 🤔\n\n' + (d.contexto ? d.contexto + '\n\n' : '') +
+            'Responde aqui nos comentários antes de arrastar pro lado — o gabarito comentado está na 2ª imagem.\n\n' +
+            'Treine mais questões assim na Salinha: asalinha.com.br\n\n' + tags.join(' ');
+    },
+
+    abrirQuestao: function(q, cfg) {
+        if (!window.ehAdmin || !window.ehAdmin()) return;
+        if (!q || (q.gabarito !== 'V' && q.gabarito !== 'F')) { alert('Por enquanto a divulgação funciona com questões de Verdadeiro ou Falso com gabarito.'); return; }
+        let mat = '', top = '';
+        try {
+            let r = (typeof resolverMatTopicoQuestao === 'function') ? resolverMatTopicoQuestao(q, cfg || {}, q.bn) : null;
+            if (r) { mat = (typeof formatarMateriaExibicao === 'function') ? formatarMateriaExibicao(r.materia) : r.materia; top = r.topico || ''; }
+        } catch (e) {}
+        if (!mat && cfg && cfg.materia) mat = cfg.materia;
+        let lembrado = {};
+        try { lembrado = JSON.parse(localStorage.getItem('tjpe_v1__divulgar_prefs') || '{}') || {}; } catch (e) {}
+        this._estado = {
+            id: q.id, materia: mat || '',
+            contexto: [mat, top].filter(Boolean).join(' · '),
+            enunciado: q.enunciado || '', explicacao: q.explicacao || '', axioma: q.axioma || '',
+            gabarito: q.gabarito,
+            formato: this.FORMATOS[lembrado.formato] ? lembrado.formato : 'feed',
+            tema: this.TEMAS[lembrado.tema] ? lembrado.tema : 'claro'
+        };
+        this._montarModal();
+        let self = this;
+        this._carregarRecursos().then(function() { self._render(); });
+    },
+
+    _montarModal: function() {
+        let d = this._estado, self = this;
+        let m = document.getElementById('modal-divulgar');
+        if (!m) {
+            m = document.createElement('div');
+            m.id = 'modal-divulgar';
+            document.body.appendChild(m);
+        }
+        let opcFmt = Object.keys(this.FORMATOS).map(function(k) { return '<option value="' + k + '"' + (k === d.formato ? ' selected' : '') + '>' + self.FORMATOS[k].rotulo + '</option>'; }).join('');
+        let esc = function(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+        m.innerHTML =
+            '<div class="dvg-caixa" onclick="event.stopPropagation()">' +
+                '<div class="dvg-topo"><strong>📤 Divulgar questão</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fechar()">✕</button></div>' +
+                '<div class="dvg-corpo">' +
+                    '<div class="dvg-previas"><canvas id="dvg-c1"></canvas><canvas id="dvg-c2"></canvas></div>' +
+                    '<div class="dvg-lado">' +
+                        '<label>Formato<select id="dvg-formato" onchange="window.DIVULGAR._mudar(\'formato\', this.value)">' + opcFmt + '</select></label>' +
+                        '<label>Tema<select id="dvg-tema" onchange="window.DIVULGAR._mudar(\'tema\', this.value)"><option value="claro"' + (d.tema === 'claro' ? ' selected' : '') + '>Claro</option><option value="escuro"' + (d.tema === 'escuro' ? ' selected' : '') + '>Escuro</option></select></label>' +
+                        '<label>Disciplina · tópico<input type="text" value="' + esc(d.contexto).replace(/"/g, '&quot;') + '" oninput="window.DIVULGAR._mudar(\'contexto\', this.value)"></label>' +
+                        '<label>Enunciado (imagem 1)<textarea rows="5" oninput="window.DIVULGAR._mudar(\'enunciado\', this.value)">' + esc(d.enunciado) + '</textarea></label>' +
+                        '<label>Explicação (imagem 2)<textarea rows="7" oninput="window.DIVULGAR._mudar(\'explicacao\', this.value)">' + esc(d.explicacao) + '</textarea></label>' +
+                        '<label>Para não esquecer (vazio = sem caixa)<textarea rows="2" oninput="window.DIVULGAR._mudar(\'axioma\', this.value)">' + esc(d.axioma) + '</textarea></label>' +
+                        '<div id="dvg-aviso" class="dvg-aviso"></div>' +
+                        '<div class="dvg-nota">As mudanças valem só para as imagens; a questão no acervo não muda. **negrito** e *itálico* funcionam.</div>' +
+                        '<div class="dvg-botoes">' +
+                            '<button type="button" onclick="window.DIVULGAR.baixar(1)">⬇️ Imagem 1</button>' +
+                            '<button type="button" onclick="window.DIVULGAR.baixar(2)">⬇️ Imagem 2</button>' +
+                            '<button type="button" class="dvg-prim" onclick="window.DIVULGAR.baixarZip()">⬇️ As duas (.zip)</button>' +
+                        '</div>' +
+                        '<label>Legenda sugerida<textarea id="dvg-legenda" rows="6">' + esc(this._legendaQuestao(d)) + '</textarea></label>' +
+                        '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this)">📋 Copiar legenda</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        m.onclick = function() { self.fechar(); };
+        m.classList.add('open');
+    },
+    _mudar: function(campo, valor) {
+        let d = this._estado;
+        if (!d) return;
+        d[campo] = valor;
+        if (campo === 'formato' || campo === 'tema') {
+            try { localStorage.setItem('tjpe_v1__divulgar_prefs', JSON.stringify({ formato: d.formato, tema: d.tema })); } catch (e) {}
+        }
+        clearTimeout(this._tmr);
+        let self = this;
+        this._tmr = setTimeout(function() { self._render(); }, 120);
+    },
+    _render: function() {
+        let d = this._estado;
+        let c1 = document.getElementById('dvg-c1'), c2 = document.getElementById('dvg-c2');
+        if (!d || !c1 || !c2) return;
+        let ok1 = this._desenharQuestao1(c1, d);
+        let ok2 = this._desenharQuestao2(c2, d);
+        let av = document.getElementById('dvg-aviso');
+        let partes = [];
+        if (!ok1) partes.push('o enunciado não coube inteiro na imagem 1');
+        if (!ok2) partes.push('a explicação não coube inteira na imagem 2');
+        if (av) av.textContent = partes.length ? ('⚠️ Encurte o texto: ' + partes.join(' e ') + '.') : '';
+        let dir = document.querySelector('#modal-divulgar .dvg-previas');
+        if (dir) dir.classList.toggle('paisagem', d.formato === 'x');
+    },
+    _nomeArquivo: function(n) {
+        let d = this._estado;
+        return 'salinha-' + String(d.id || 'questao').replace(/[^\w-]+/g, '') + '-' + d.formato + '-' + n + '.png';
+    },
+    _blob: function(n) {
+        let c = document.getElementById('dvg-c' + n);
+        return new Promise(function(ok) { c.toBlob(function(b) { ok(b); }, 'image/png'); });
+    },
+    baixar: function(n) {
+        let self = this;
+        this._blob(n).then(function(b) {
+            let url = URL.createObjectURL(b), a = document.createElement('a');
+            a.href = url; a.download = self._nomeArquivo(n);
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        });
+    },
+    baixarZip: function() {
+        let self = this;
+        Promise.all([this._blob(1), this._blob(2)]).then(function(bs) {
+            return Promise.all(bs.map(function(b) { return b.arrayBuffer(); }));
+        }).then(function(bufs) {
+            window.downloadZipArquivos(bufs.map(function(buf, i) { return { nome: self._nomeArquivo(i + 1), conteudo: new Uint8Array(buf) }; }),
+                'salinha-' + String(self._estado.id || 'questao').replace(/[^\w-]+/g, '') + '-' + self._estado.formato + '.zip');
+        });
+    },
+    copiarLegenda: function(btn) {
+        let ta = document.getElementById('dvg-legenda');
+        if (!ta) return;
+        let feito = function() { if (btn) { let t = btn.textContent; btn.textContent = '✅ Copiada'; setTimeout(function() { btn.textContent = t; }, 1500); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(feito, function() { ta.select(); document.execCommand('copy'); feito(); });
+        else { ta.select(); document.execCommand('copy'); feito(); }
+    },
+    fechar: function() {
+        let m = document.getElementById('modal-divulgar');
+        if (m) m.classList.remove('open');
+        this._estado = null;
+    }
 };
 
 // =========================================================================
@@ -26130,6 +26518,12 @@ function mkQ(q, modoRevisao){
   }
 
   ac.appendChild(bc);ac.appendChild(bca);ac.appendChild(bcm);
+  // Divulgar (imagens para Instagram/X) — só a administração.
+  if(window.ehAdmin&&window.ehAdmin()&&window.DIVULGAR&&(q.gabarito==='V'||q.gabarito==='F')){
+    var bdv=document.createElement('button'); bdv.className='bcad bdivulgar'; bdv.textContent='📤'; bdv.title='Divulgar: gerar imagens para Instagram e X';
+    bdv.onclick=function(e){e.stopPropagation(); window.DIVULGAR.abrirQuestao(q, C);};
+    ac.appendChild(bdv);
+  }
   div.appendChild(num);div.appendChild(en);div.appendChild(vg);div.appendChild(ac);div.appendChild(cadDestino);
 
   // Motivo do erro — sempre criado (ao contrário do bloco de explicação
