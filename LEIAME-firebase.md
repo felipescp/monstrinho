@@ -336,6 +336,25 @@ A curadoria fica em `ferramentas/curadoria_mudancas_jur.py` (id da ficha, tipo, 
 
 A mesma curadoria alimenta os **Esquemas**: quando um esquema cita uma súmula ou tese marcada como superada, cancelada ou em divergência viva, aparece um selo logo depois da citação (⛔ Cancelada, ⛔ Superado por lei, ⚖️ Divergência…), e o tooltip da citação mostra o motivo. Só vale quando o tribunal está identificado na citação (ex.: "Súmula 212/STJ"); "Súmula 212" solta não ganha selo, porque pode ser de outro tribunal.
 
+## Jurisprudência: Leitor autônomo
+
+Sem matéria, atalho ou seleção na barra lateral, o botão "📖 Leitor" abre o
+Leitor direto (`abrirLeitorAutonomo`), com o painel de filtros aberto e o
+baralho vazio ("Escolha os filtros para montar a sua leitura"). Com matéria
+aberta, o menu do Leitor continua igual e ganha a opção "🧭 Montar leitura
+por filtros".
+
+- Filtro "Tópico" no modo Tribunal: aparece depois de escolher a(s)
+  disciplina(s) e lista só os tópicos delas; tirar a disciplina tira os
+  tópicos dela. "Ler tópico" pela barra lateral já abre com o tópico marcado.
+- Atalhos (no painel e no estado inicial): 📰 Informativos mais recentes (o
+  mais recente de cada tribunal, sem edições extraordinárias), 🔴 Críticas não
+  visualizadas e 🆕 Divergências e Mudanças (fichas com `mudanca`).
+- O último filtro aplicado (ou atalho usado no Leitor autônomo) fica salvo no
+  aparelho (`tjpe_v1__jur_leitor_ultimo_filtro`) e a próxima abertura do
+  Leitor autônomo já começa com ele. Se não sobrar ficha, abre vazio com os
+  filtros preenchidos.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**

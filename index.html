@@ -36416,7 +36416,7 @@ window.ESQ_IA = {
             </div>
             <div class="jur-tabs-baralho">
                 <details class="jur-leitor-menu leitor-dropdown" id="jur-leitor-dropdown" name="jur-leitor-grupo">
-                    <summary id="jur-leitor-summary" title="Leitor navegável inteligente — atualiza a contagem e as opções conforme os filtros ativos na tela">📖 Leitor ▾</summary>
+                    <summary id="jur-leitor-summary" onclick="return window.JURISPRUDENCIA_RUNTIME._cliqueSummaryLeitor(event)" title="Leitor navegável inteligente — atualiza a contagem e as opções conforme os filtros ativos na tela">📖 Leitor ▾</summary>
                     <div class="jur-leitor-opcoes" id="jur-leitor-opcoes">
                         <div style="padding:6px 8px; color:var(--text-muted); font-size:10px;">Carregando opções...</div>
                     </div>
@@ -36921,6 +36921,17 @@ window.ESQ_IA = {
     #modal-jurisprudencia-baralho .jur-bf-acoes { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; padding-top:8px; border-top:1px dashed var(--border-color); }
     #modal-jurisprudencia-baralho .jur-bf-btn-aplicar { flex:1; min-width:120px; padding:6px 12px; border-radius:6px; border:1px solid var(--app-primary); background:var(--app-primary); color:#fff; font-size:11px; font-weight:800; cursor:pointer; }
     #modal-jurisprudencia-baralho .jur-bf-btn-aplicar:hover { opacity:0.9; }
+    #modal-jurisprudencia-baralho .jur-leitor-atalhos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
+    #modal-jurisprudencia-baralho .jur-leitor-atalho { padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:10.5px; font-weight:700; cursor:pointer; text-align:left; }
+    #modal-jurisprudencia-baralho .jur-leitor-atalho:hover:not([disabled]) { border-color:var(--app-primary); color:var(--app-primary); }
+    #modal-jurisprudencia-baralho .jur-leitor-atalho[disabled] { opacity:0.5; cursor:not-allowed; }
+    #modal-jurisprudencia-baralho .jur-leitor-atalho-n { font-weight:400; color:var(--text-muted); }
+    #modal-jurisprudencia-baralho .jur-leitor-atalhos-rotulo { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:2px; }
+    #modal-jurisprudencia-baralho .jur-leitor-inicio { padding:40px 16px; text-align:center; }
+    #modal-jurisprudencia-baralho .jur-leitor-inicio-titulo { font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:6px; }
+    #modal-jurisprudencia-baralho .jur-leitor-inicio-sub { font-size:11.5px; color:var(--text-muted); margin-bottom:14px; }
+    #modal-jurisprudencia-baralho .jur-leitor-inicio .jur-leitor-atalhos { justify-content:center; }
+    #modal-jurisprudencia-baralho .jur-leitor-inicio .jur-leitor-atalho { font-size:12px; padding:9px 14px; }
     #modal-jurisprudencia-baralho .jur-bf-btn-sec { padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); font-size:10.5px; font-weight:700; cursor:pointer; }
     #modal-jurisprudencia-baralho .jur-bf-btn-sec:hover { border-color:var(--text-muted); }
     /* Corpo do baralho preenche toda a altura que sobrar no popup (mesmo
@@ -41331,11 +41342,160 @@ window.JURISPRUDENCIA_RUNTIME = {
             }
         }
 
-        if (botoesHtml.length === 0) {
-            opcoesEl.innerHTML = '<div style="padding:8px 10px; color:var(--text-muted); font-size:10px; line-height:1.4;">Selecione uma matéria ou atalho de precedentes na barra lateral para iniciar o leitor.</div>';
-        } else {
-            opcoesEl.innerHTML = botoesHtml.join('');
+        // Sem matéria/atalho/seleção: o botão "Leitor" abre direto o Leitor
+        // autônomo (ver _cliqueSummaryLeitor). Com opções, o Leitor autônomo
+        // continua disponível como última opção do menu.
+        this._leitorSemOpcoes = botoesHtml.length === 0;
+        if (this._leitorSemOpcoes) {
+            summaryEl.title = 'Leitor de Jurisprudência — monte a leitura por filtros (disciplina, tópico, tribunal, informativo...)';
         }
+        botoesHtml.push(
+            '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirLeitorAutonomo()" title="Abre o Leitor com o painel de filtros, sem depender da barra lateral">' +
+                '🧭 Montar leitura por filtros' +
+            '</button>'
+        );
+        opcoesEl.innerHTML = botoesHtml.join('');
+    },
+
+    // ── LEITOR AUTÔNOMO ──
+    // Pedido explícito do usuário: sem matéria ou atalho escolhido na barra
+    // lateral, o botão "Leitor" abre o Leitor direto, com o painel de filtros
+    // aberto e o baralho vazio ("Escolha os filtros para montar a sua
+    // leitura"), atalhos rápidos e o último filtro usado restaurado.
+    _CHAVE_ULTIMO_FILTRO_LEITOR: 'tjpe_v1__jur_leitor_ultimo_filtro',
+    _cliqueSummaryLeitor: function(e) {
+        this._atualizarMenuLeitor();
+        if (!this._leitorSemOpcoes) return true;
+        if (e && e.preventDefault) e.preventDefault();
+        this.abrirLeitorAutonomo();
+        return false;
+    },
+    _salvarUltimoFiltroLeitor: function(obj) {
+        try { localStorage.setItem(this._CHAVE_ULTIMO_FILTRO_LEITOR, JSON.stringify(obj)); } catch (e) {}
+    },
+    _lerUltimoFiltroLeitor: function() {
+        try {
+            let v = JSON.parse(localStorage.getItem(this._CHAVE_ULTIMO_FILTRO_LEITOR) || 'null');
+            return (v && typeof v === 'object') ? v : null;
+        } catch (e) { return null; }
+    },
+    abrirLeitorAutonomo: function() {
+        this._garantirCarregado();
+        this._abrirBaralho('autonomo', 'Nova leitura', []);
+        let s = this._baralhoState;
+        s._filtroAcordeonAberto = true;
+        s._filtroModo = 'tribunal';
+        let ult = this._lerUltimoFiltroLeitor();
+        if (ult && ult.atalho) {
+            if (this.aplicarAtalhoLeitor(ult.atalho, true)) return;
+        } else if (ult && (ult.tribunal || ult.precedentes)) {
+            let arr = function(o, c) { return (o && Array.isArray(o[c])) ? o[c].slice() : []; };
+            s._filtroModo = ult.modo === 'precedentes' ? 'precedentes' : 'tribunal';
+            s._filtroPrecedentes = { sistematicas: arr(ult.precedentes, 'sistematicas'), anos: arr(ult.precedentes, 'anos'), importancias: arr(ult.precedentes, 'importancias'), temasIDH: arr(ult.precedentes, 'temasIDH') };
+            s._filtroTribunal = { tribunais: arr(ult.tribunal, 'tribunais'), disciplinas: arr(ult.tribunal, 'disciplinas'), divisoes: arr(ult.tribunal, 'divisoes'), sistematicas: arr(ult.tribunal, 'sistematicas'), anos: arr(ult.tribunal, 'anos'), informativos: arr(ult.tribunal, 'informativos') };
+            this._podarDivisoesFiltroBaralho();
+            if (this._calcularPreviewFiltroBaralho().length > 0) {
+                this.aplicarFiltroAcordeonBaralho(true);
+                return;
+            }
+        }
+        this.renderBaralho();
+    },
+
+    // Atalhos rápidos do Leitor autônomo (mostrados no painel de filtros e
+    // no estado inicial vazio).
+    _ATALHOS_LEITOR: [
+        { chave: 'informativos', rotulo: '📰 Informativos mais recentes', dica: 'O informativo mais recente de cada tribunal' },
+        { chave: 'criticas', rotulo: '🔴 Críticas não visualizadas', dica: 'Fichas classificadas como Crítico que você ainda não marcou como visualizadas' },
+        { chave: 'mudancas', rotulo: '🆕 Divergências e Mudanças', dica: 'Mudanças de entendimento, divergências e teses superadas' }
+    ],
+    _fichasAtalhoLeitor: function(chave) {
+        let self = this;
+        let todas = [];
+        Object.keys(this.fichas).sort().forEach(function(ch) {
+            (self.fichas[ch] || []).forEach(function(f) { if (!self.ocultos[f.id]) todas.push(f); });
+        });
+        if (chave === 'informativos') {
+            let maisRecente = {};
+            todas.forEach(function(f) {
+                let k = self._chaveInformativo(f);
+                if (!k || /\|EE/i.test(k)) return;
+                let trib = k.split('|')[0];
+                if (!maisRecente[trib] || self._compararChavesInformativo(k, maisRecente[trib]) < 0) maisRecente[trib] = k;
+            });
+            let chaves = Object.keys(maisRecente).map(function(t) { return maisRecente[t]; });
+            return todas.filter(function(f) { return chaves.indexOf(self._chaveInformativo(f)) !== -1; });
+        }
+        if (chave === 'criticas') {
+            return todas.filter(function(f) {
+                let r = self.revisaoJurisprudencia[f.id];
+                return r && r.ultimaClassificacao === 'dificil' && !self.visualizados[f.id];
+            });
+        }
+        if (chave === 'mudancas') {
+            return todas.filter(function(f) { return !!self._tipoMudanca(f); });
+        }
+        return [];
+    },
+    _htmlAtalhosLeitor: function() {
+        let self = this;
+        return '<div class="jur-leitor-atalhos">' + this._ATALHOS_LEITOR.map(function(a) {
+            let n = self._fichasAtalhoLeitor(a.chave).length;
+            return '<button type="button" class="jur-leitor-atalho"' + (n ? '' : ' disabled') + ' title="' + self._escapar(a.dica) + '" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarAtalhoLeitor(\'' + a.chave + '\')">' +
+                self._escapar(a.rotulo) + ' <span class="jur-leitor-atalho-n">(' + n + ')</span></button>';
+        }).join('') + '</div>';
+    },
+    aplicarAtalhoLeitor: function(chave, silencioso) {
+        let s = this._baralhoState;
+        if (!s) return false;
+        let a = this._ATALHOS_LEITOR.find(function(x) { return x.chave === chave; });
+        if (!a) return false;
+        let fichas = this._fichasAtalhoLeitor(chave);
+        if (!fichas.length) {
+            if (!silencioso) alert('Nenhuma ficha neste atalho agora.');
+            return false;
+        }
+        let self = this;
+        if (chave === 'informativos') {
+            fichas.sort(function(x, y) { return self._compararChavesInformativo(self._chaveInformativo(x), self._chaveInformativo(y)); });
+        } else {
+            fichas = this._ordenarFichasLeitor(fichas);
+        }
+        s.cardsBase = fichas;
+        s.ordemChaves = fichas.map(function(f) { return f.id; });
+        s.indiceAtual = 0;
+        s.tituloFiltroAtivo = a.rotulo.replace(/^[^\w\s]+/, '').trim() + ' (' + fichas.length + ')';
+        let titEl = document.getElementById('jur-baralho-titulo');
+        if (titEl) titEl.textContent = s.tituloFiltroAtivo;
+        s._filtroAcordeonAberto = false;
+        s._baralhoFiltroDropdownAberto = null;
+        if (s.escopo === 'autonomo') this._salvarUltimoFiltroLeitor({ atalho: chave });
+        this.renderBaralho();
+        return true;
+    },
+    // Ordem padrão do Leitor: etiqueta, depois classificação (ver _abrirBaralho).
+    _ordenarFichasLeitor: function(fichas) {
+        let self = this;
+        return fichas.slice().sort(function(a, b) {
+            let ea = self._etiquetaDaFicha(a);
+            let eb = self._etiquetaDaFicha(b);
+            let ta = ea ? ea.nome.toLowerCase() : '';
+            let tb = eb ? eb.nome.toLowerCase() : '';
+            if (!ta && tb) return 1;
+            if (ta && !tb) return -1;
+            if (ta < tb) return -1;
+            if (ta > tb) return 1;
+            return self._rankClassificacaoJur(a) - self._rankClassificacaoJur(b);
+        });
+    },
+    // O filtro de Tópico depende das disciplinas: tópico de disciplina que
+    // saiu da seleção sai também (e sem disciplina não há tópico).
+    _podarDivisoesFiltroBaralho: function() {
+        let s = this._baralhoState;
+        let ft = s && s._filtroTribunal;
+        if (!ft) return;
+        let discs = ft.disciplinas || [];
+        ft.divisoes = (ft.divisoes || []).filter(function(ch) { return discs.indexOf(ch.split(' > ')[0]) !== -1; });
     },
 
     // Leitor restrito ao recorte exato visível na tela (respeita todos os
@@ -41547,6 +41707,8 @@ window.JURISPRUDENCIA_RUNTIME = {
         let sistInicial = (escopo === 'sistematica') ? [titulo.replace(/^[^\w\s]+/, '').trim()] : [];
         let matInicial = (escopo === 'materia' || escopo === 'divisao') ? (self._materiaSelecionada ? [self._materiaSelecionada] : []) : [];
         let infInicial = (escopo === 'informativo' && self._infSelecionado) ? [self._infSelecionado] : [];
+        let chaveDivInicial = (escopo === 'divisao' && self._materiaSelecionada && self._divisaoSelecionada) ? (self._materiaSelecionada + ' > ' + self._divisaoSelecionada) : null;
+        let divInicial = (chaveDivInicial && self.fichas[chaveDivInicial]) ? [chaveDivInicial] : [];
         this._baralhoState = {
             escopo: escopo,
             cardsBase: fichas,
@@ -41574,6 +41736,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             _filtroTribunal: {
                 tribunais: [],
                 disciplinas: matInicial,
+                divisoes: divInicial,
                 sistematicas: [],
                 anos: [],
                 informativos: infInicial
@@ -41807,6 +41970,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (idx === -1) arr.push(valor);
         else arr.splice(idx, 1);
         alvoObj[campo] = arr;
+        if (campo === 'disciplinas') this._podarDivisoesFiltroBaralho();
         this._renderListaBaralho();
     },
 
@@ -41816,6 +41980,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let alvoObj = (modo === 'precedentes') ? s._filtroPrecedentes : s._filtroTribunal;
         if (!alvoObj) return;
         alvoObj[campo] = (todosValores || []).slice();
+        if (campo === 'disciplinas') this._podarDivisoesFiltroBaralho();
         this._renderListaBaralho();
     },
 
@@ -41825,6 +41990,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let alvoObj = (modo === 'precedentes') ? s._filtroPrecedentes : s._filtroTribunal;
         if (!alvoObj) return;
         alvoObj[campo] = [];
+        if (campo === 'disciplinas') this._podarDivisoesFiltroBaralho();
         this._renderListaBaralho();
     },
 
@@ -41835,7 +42001,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         if (modo === 'precedentes') {
             s._filtroPrecedentes = { sistematicas: [], anos: [], importancias: [], temasIDH: [] };
         } else {
-            s._filtroTribunal = { tribunais: [], disciplinas: [], sistematicas: [], anos: [], informativos: [] };
+            s._filtroTribunal = { tribunais: [], disciplinas: [], divisoes: [], sistematicas: [], anos: [], informativos: [] };
         }
         s._baralhoFiltroDropdownAberto = null;
         this._renderListaBaralho();
@@ -41865,6 +42031,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             temasIDH: {},
             tribunais: {},
             disciplinas: {},
+            divisoes: {},
             informativos: {}
         };
 
@@ -41882,6 +42049,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 setDisciplinas[disc] = true;
                 contagens.disciplinas[disc] = (contagens.disciplinas[disc] || 0) + 1;
             }
+            if (par.chave && par.chave.indexOf(' > ') !== -1) contagens.divisoes[par.chave] = (contagens.divisoes[par.chave] || 0) + 1;
             if (it.tribunal) {
                 setTribunais[it.tribunal] = true;
                 contagens.tribunais[it.tribunal] = (contagens.tribunais[it.tribunal] || 0) + 1;
@@ -41936,8 +42104,10 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         let disciplinas = Object.keys(setDisciplinas).sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
         let informativos = Object.keys(setInformativos).sort(function(a, b) { return self._compararChavesInformativo(a, b); });
+        let divisoes = Object.keys(contagens.divisoes).sort(function(a, b) { return a.localeCompare(b, 'pt-BR'); });
 
         return {
+            divisoes: divisoes,
             sistematicas: sistematicas,
             anos: anos,
             importancias: importancias,
@@ -41997,6 +42167,9 @@ window.JURISPRUDENCIA_RUNTIME = {
                     let disc = par.chave ? par.chave.split(' > ')[0] : (it.materiaL1 || '');
                     if (ft.disciplinas.indexOf(disc) === -1) return false;
                 }
+                if (ft.divisoes && ft.divisoes.length > 0) {
+                    if (ft.divisoes.indexOf(par.chave) === -1) return false;
+                }
                 if (ft.sistematicas && ft.sistematicas.length > 0) {
                     let bate = ft.sistematicas.some(function(v) { return self._bateSistematica(it.sistematica, v); });
                     if (!bate) return false;
@@ -42014,7 +42187,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         }
     },
 
-    aplicarFiltroAcordeonBaralho: function() {
+    aplicarFiltroAcordeonBaralho: function(restaurando) {
         let s = this._baralhoState;
         if (!s) return;
         let self = this;
@@ -42040,6 +42213,10 @@ window.JURISPRUDENCIA_RUNTIME = {
             let ft = s._filtroTribunal || {};
             if (ft.tribunais && ft.tribunais.length > 0) rotuloPartes.push(ft.tribunais.join(', '));
             if (ft.disciplinas && ft.disciplinas.length > 0) rotuloPartes.push(ft.disciplinas.length <= 2 ? ft.disciplinas.join(', ') : (ft.disciplinas.length + ' disciplinas'));
+            if (ft.divisoes && ft.divisoes.length > 0) {
+                let rotDiv = ft.divisoes.map(function(ch) { return ch.split(' > ').slice(1).join(' > '); });
+                rotuloPartes.push(rotDiv.length <= 2 ? rotDiv.join(', ') : (rotDiv.length + ' tópicos'));
+            }
             if (ft.sistematicas && ft.sistematicas.length > 0) rotuloPartes.push(ft.sistematicas.join(', '));
             if (ft.anos && ft.anos.length > 0) rotuloPartes.push(ft.anos.join(', '));
             if (ft.informativos && ft.informativos.length > 0) {
@@ -42078,6 +42255,11 @@ window.JURISPRUDENCIA_RUNTIME = {
 
         s._filtroAcordeonAberto = false;
         s._baralhoFiltroDropdownAberto = null;
+        // Lembra o último filtro aplicado: a próxima abertura do Leitor
+        // autônomo começa com ele (pedido explícito do usuário).
+        if (!restaurando) {
+            this._salvarUltimoFiltroLeitor({ modo: modo, precedentes: s._filtroPrecedentes, tribunal: s._filtroTribunal });
+        }
 
         this.renderBaralho();
         this._renderListaBaralho();
@@ -42090,7 +42272,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         s.ordemChaves = s.cardsOriginais.map(function(f) { return f.id; });
         s.indiceAtual = 0;
         s._filtroPrecedentes = { sistematicas: [], anos: [], importancias: [], temasIDH: [] };
-        s._filtroTribunal = { tribunais: [], disciplinas: [], sistematicas: [], anos: [], informativos: [] };
+        s._filtroTribunal = { tribunais: [], disciplinas: [], divisoes: [], sistematicas: [], anos: [], informativos: [] };
         s.tituloFiltroAtivo = null;
         let titEl = document.getElementById('jur-baralho-titulo');
         if (titEl) titEl.textContent = s.tituloOriginal || 'Leitor de Jurisprudência';
@@ -42199,6 +42381,7 @@ window.JURISPRUDENCIA_RUNTIME = {
             '</div>';
 
         let htmlCampos = '';
+        this._podarDivisoesFiltroBaralho();
         let dados = this._dadosDisponiveisParaFiltroBaralho(modo);
         if (modo === 'precedentes') {
             let fp = s._filtroPrecedentes || {};
@@ -42225,6 +42408,17 @@ window.JURISPRUDENCIA_RUNTIME = {
             let ft = s._filtroTribunal || {};
             let ddTrib = this._renderDropdownFiltroBaralho('tribunal', 'tribunais', 'Tribunal', dados.tribunais, dados.contagens.tribunais, ft.tribunais || []);
             let ddDisc = this._renderDropdownFiltroBaralho('tribunal', 'disciplinas', 'Disciplina', dados.disciplinas, dados.contagens.disciplinas, ft.disciplinas || []);
+            // Tópico: só aparece com disciplina escolhida, e lista só os
+            // tópicos dela(s).
+            let discsSel = ft.disciplinas || [];
+            let ddDiv = '';
+            if (discsSel.length > 0) {
+                let divsDisp = dados.divisoes.filter(function(ch) { return discsSel.indexOf(ch.split(' > ')[0]) !== -1; });
+                ddDiv = this._renderDropdownFiltroBaralho('tribunal', 'divisoes', 'Tópico', divsDisp, dados.contagens.divisoes, ft.divisoes || [], function(ch) {
+                    let p = ch.split(' > ');
+                    return discsSel.length > 1 ? (p[0] + ' › ' + p.slice(1).join(' > ')) : p.slice(1).join(' > ');
+                });
+            }
             let ddSist = this._renderDropdownFiltroBaralho('tribunal', 'sistematicas', 'Sistemática', dados.sistematicas, dados.contagens.sistematicas, ft.sistematicas || []);
             let ddAno = this._renderDropdownFiltroBaralho('tribunal', 'anos', 'Ano', dados.anos, dados.contagens.anos, ft.anos || []);
             let ddInf = (dados.informativos && dados.informativos.length > 0)
@@ -42235,6 +42429,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                 '<div class="jur-bf-campos">' +
                     '<div class="jur-bf-campo"><span class="jur-bf-campo-label">Tribunal</span>' + ddTrib + '</div>' +
                     '<div class="jur-bf-campo"><span class="jur-bf-campo-label">Disciplina</span>' + ddDisc + '</div>' +
+                    (ddDiv ? ('<div class="jur-bf-campo"><span class="jur-bf-campo-label">Tópico</span>' + ddDiv + '</div>') : '') +
                     '<div class="jur-bf-campo"><span class="jur-bf-campo-label">Sistemática</span>' + ddSist + '</div>' +
                     '<div class="jur-bf-campo"><span class="jur-bf-campo-label">Ano</span>' + ddAno + '</div>' +
                     (ddInf ? ('<div class="jur-bf-campo"><span class="jur-bf-campo-label">Informativo</span>' + ddInf + '</div>') : '') +
@@ -42257,6 +42452,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         return '<div class="jur-baralho-filtro-box aberto">' +
             htmlHeader +
             '<div class="jur-baralho-filtro-painel" id="jur-baralho-filtro-painel">' +
+                (s.escopo === 'autonomo' ? ('<div class="jur-leitor-atalhos-rotulo">Atalhos</div>' + this._htmlAtalhosLeitor()) : '') +
                 htmlModos +
                 htmlCampos +
                 htmlAcoes +
@@ -42563,7 +42759,11 @@ window.JURISPRUDENCIA_RUNTIME = {
         this._renderListaBaralho();
 
         if (deck.length === 0) {
-            corpo.innerHTML = '<div class="fc-vazio">Nenhuma ficha aqui ainda.</div>';
+            corpo.innerHTML = (s.escopo === 'autonomo' && s.cardsBase.length === 0)
+                ? '<div class="jur-leitor-inicio"><div class="jur-leitor-inicio-titulo">🧭 Escolha os filtros para montar a sua leitura</div>' +
+                    '<div class="jur-leitor-inicio-sub">Use o painel ao lado (disciplina, tópico, tribunal, informativo...) ou comece por um atalho:</div>' +
+                    this._htmlAtalhosLeitor() + '</div>'
+                : '<div class="fc-vazio">Nenhuma ficha aqui ainda.</div>';
             if (acoesEl) acoesEl.innerHTML = '';
             if (posEl) posEl.textContent = '0 / 0';
             return;
