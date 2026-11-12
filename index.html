@@ -37566,6 +37566,10 @@ window.ESQ_IA = {
        mesmo problema/solução já usada em .fc-tab-export-btn, abaixo. */
     #jurisprudencia-modal .jur-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; align-self:center; }
     #jurisprudencia-modal .jur-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #jurisprudencia-modal .jur-busca-topo-grupo { display:inline-flex; align-items:center; gap:8px; align-self:center; flex:1 1 220px; min-width:200px; max-width:420px; }
+    #jurisprudencia-modal .jur-busca-topo { flex:1; min-width:0; padding:6px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); color:var(--text-main); font-size:12px; }
+    #jurisprudencia-modal .jur-busca-topo:focus { outline:none; border-color:var(--app-primary); }
+    #jurisprudencia-modal .jur-busca-topo-todo { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); white-space:nowrap; cursor:pointer; }
     #jurisprudencia-modal .jur-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); right:0; min-width:240px; max-width:360px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
     #jurisprudencia-modal .jur-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:normal; line-height:1.35; }
     #jurisprudencia-modal .jur-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
@@ -37723,6 +37727,7 @@ window.ESQ_IA = {
                 <details class="so-admin esq-export-menu" name="jur-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.JURISPRUDENCIA_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.exportarMarkdown()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em Markdown — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">📄 Exportar Visíveis (.md)</button>
                 <button class="so-admin" onclick="window.JURISPRUDENCIA_RUNTIME.exportarHtml()" title="Exportar as fichas ATUALMENTE VISÍVEIS na tela (respeitando os filtros de tribunal/sistemática/ano ativos agora) em HTML estilizado — pra levar só um recorte específico, não a disciplina inteira" style="background:none; border:1px solid var(--border-color); border-radius:6px; padding:6px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer;">🎨 Exportar Visíveis (.html)</button>
+                <button class="jur-aplicar-sistema-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
                 <button class="analytics-close-btn" id="jur-modal-btn-maximizar" onclick="window.alternarMaximizarJurisprudenciaModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharJurisprudenciaModal()">✕</button>
             </div>
@@ -37741,7 +37746,7 @@ window.ESQ_IA = {
                 <button class="so-admin fc-tab-export-btn" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.exportarHtmlAba('facil')" title="Exportar HTML estilizado: fichas Regular">🎨</button>
                 <button class="fc-tab" id="jur-tab-mudancas" onclick="window.JURISPRUDENCIA_RUNTIME.trocarAba('mudancas')" title="Mudanças de entendimento, divergências entre Turmas e Tribunais e súmulas superadas ou canceladas">🆕 Divergências e Mudanças <span class="fc-tab-count" id="jur-tab-mudancas-count"></span></button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
-                <button class="jur-aplicar-sistema-btn" onclick="window.JURISPRUDENCIA_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular das fichas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">🏷️ Aplicar Classificação de Prioridade do Sistema</button>
+                <span class="jur-busca-topo-grupo"><input type="text" id="jur-busca-topo" class="jur-busca-topo" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" autocomplete="off" oninput="window.JURISPRUDENCIA_RUNTIME.buscarTopo(this.value)"><label class="jur-busca-topo-todo" title="Marcado: busca em todas as disciplinas. Ao entrar numa disciplina ou tópico, desmarca e a busca fica restrita a ele."><input type="checkbox" id="jur-busca-topo-todo" checked onchange="window.JURISPRUDENCIA_RUNTIME.toggleBuscaTodoAcervo()"> Todo acervo</label></span>
             </div>
             <div class="jur-tabs-baralho">
                 <details class="jur-leitor-menu leitor-dropdown" id="jur-leitor-dropdown" name="jur-leitor-grupo">
@@ -37755,7 +37760,7 @@ window.ESQ_IA = {
         <div class="fc-grid" id="jur-grid">
             <div class="fc-col" id="jur-col-materias"></div>
             <div class="fc-col" id="jur-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
-            <div class="fc-col" id="jur-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="jur-col-cards"><div class="fc-vazio-col">Selecione uma matéria ou busque no alto, em todo o acervo.</div></div>
         </div>
 
         <div class="fc-aba-revisao" id="jur-aba-mudancas" style="display:none;">
@@ -38824,17 +38829,42 @@ window.JURISPRUDENCIA_RUNTIME = {
     // Matéria/Divisão selecionadas e cruza TODAS as disciplinas (ver
     // _fichasParaExibir), pra achar um card em qualquer lugar do acervo
     // sem precisar navegar até a divisão certa primeiro.
-    _buscaTodoAcervo: false,
+    // Pedido explícito do usuário: a busca fica no alto (linha das abas) e
+    // começa em "Todo acervo"; entrar numa disciplina ou tópico desmarca e
+    // restringe a busca ao local atual (ver selecionarMateria/Divisao).
+    _buscaTodoAcervo: true,
     _normalizarBusca: function(texto) {
         return (texto || '').toString().toLowerCase().normalize('NFD').replace(REGEX_DIACRITICOS, '');
     },
     toggleBuscaTodoAcervo: function() {
-        this._buscaTodoAcervo = !this._buscaTodoAcervo;
+        let el = document.getElementById('jur-busca-topo-todo');
+        this._buscaTodoAcervo = el ? !!el.checked : !this._buscaTodoAcervo;
+        if (this._buscaTodoAcervo && this._modoSistematica) {
+            // sai do atalho (Repetitivos etc.) para cruzar o acervo inteiro
+            this._modoSistematica = null;
+            document.querySelectorAll('#jur-col-materias .jur-sistematica-pill').forEach(function(x) { x.classList.remove('ativa'); });
+            let colDiv = document.getElementById('jur-col-divisoes');
+            if (colDiv && !this._materiaSelecionada) colDiv.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+        }
         this._renderGradeCards();
     },
     filtrarJurisprudenciaGrade: function(texto) {
         this._filtroBusca = texto || '';
         this._renderGradeCards();
+    },
+    buscarTopo: function(texto) {
+        let self = this;
+        clearTimeout(this._tmrBuscaTopo);
+        this._tmrBuscaTopo = setTimeout(function() {
+            if (self._abaAtiva && self._abaAtiva !== 'grade') self.trocarAba('grade');
+            self.filtrarJurisprudenciaGrade(texto);
+        }, 180);
+    },
+    _sincronizarBuscaTopo: function() {
+        let inp = document.getElementById('jur-busca-topo');
+        if (inp && document.activeElement !== inp && inp.value !== (this._filtroBusca || '')) inp.value = this._filtroBusca || '';
+        let chk = document.getElementById('jur-busca-topo-todo');
+        if (chk) chk.checked = !!this._buscaTodoAcervo && !this._modoSistematica;
     },
 
     carregar: function() {
@@ -39180,6 +39210,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     // sozinhas ao serem chamadas (navegação normal tem prioridade).
     toggleModoSistematica: function(valor) {
         this._modoSistematica = (this._modoSistematica === valor) ? null : valor;
+        this._buscaTodoAcervo = !this._modoSistematica;
         this._materiaSelecionada = null;
         this._divisaoSelecionada = null;
         this._filtroBusca = '';
@@ -39294,6 +39325,7 @@ window.JURISPRUDENCIA_RUNTIME = {
 
     selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
         this._modoSistematica = null;
+        this._buscaTodoAcervo = false;
         this._materiaSelecionada = nivel1;
         this._divisaoSelecionada = null;
         if (this._filtrosMulti) this._filtrosMulti.disciplinas = [];
@@ -39341,6 +39373,7 @@ window.JURISPRUDENCIA_RUNTIME = {
     },
 
     selecionarDivisao: function(materia, divisao) {
+        this._buscaTodoAcervo = false;
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
         this._renderColunaDivisoes(materia);
@@ -40168,7 +40201,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="so-admin jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+                '<div class="jur-tb-busca-grupo"><button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             // Pedido explícito do usuário: o "Mostrar ocultos" só faz
             // sentido — e só deve OCUPAR ESPAÇO — quando existe pelo menos
@@ -40189,7 +40222,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     this._renderFiltroCores() +
                     this._renderFiltroImportancia() +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+                '<div class="jur-tb-busca-grupo"><button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
 
         let self = this;
@@ -40335,6 +40368,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let col = document.getElementById('jur-col-cards');
         if (!col) return;
 
+        this._sincronizarBuscaTopo();
         if (this._modoSistematica) { this._renderGradeCardsSistematica(); return; }
 
         let self = this;
@@ -40354,8 +40388,9 @@ window.JURISPRUDENCIA_RUNTIME = {
         let buscaDdTinhaFoco = inputBuscaDdAnterior && document.activeElement === inputBuscaDdAnterior;
         let buscaDdCursor = buscaDdTinhaFoco ? inputBuscaDdAnterior.selectionStart : null;
 
-        if (!this._materiaSelecionada) {
-            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+        let buscandoTudo = this._buscaTodoAcervo && (this._filtroBusca || '').trim();
+        if (!this._materiaSelecionada && !buscandoTudo) {
+            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria' + (this._buscaTodoAcervo ? ' ou busque no alto, em todo o acervo' : '') + '.</div>';
             this._atualizarMenuLeitor();
             return;
         }
@@ -40366,7 +40401,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         let corpoHtml;
         if (htmlCards) {
             corpoHtml = '<div class="jur-cards-grid">' + htmlCards + '</div>';
-        } else if (this._ocultarOficiais || this._mostrarOcultos || Object.keys(this.ocultos).length > 0) {
+        } else if ((this._filtroBusca || '').trim() || this._ocultarOficiais || this._mostrarOcultos || Object.keys(this.ocultos).length > 0) {
             corpoHtml = '<div class="fc-vazio-col">Nenhuma ficha com esse filtro.</div>';
         } else {
             corpoHtml = '<div class="fc-vazio-col">Nenhuma ficha aqui ainda — use "📥 Importar em Massa".</div>';
@@ -40575,7 +40610,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="so-admin jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.JURISPRUDENCIA_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="jur-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.JURISPRUDENCIA_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlExibirTodas + htmlBuscaAtalho + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+                '<div class="jur-tb-busca-grupo">' + htmlExibirTodas + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             let htmlMostrarOcultos = this._temAlgumOcultoNoEscopoAtual()
                 ? '<label class="jur-toggle-ocultos"><input type="checkbox" ' + (this._mostrarOcultos ? 'checked' : '') + ' onchange="window.JURISPRUDENCIA_RUNTIME.toggleMostrarOcultos()"> Mostrar ocultos</label>'
@@ -40588,7 +40623,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     '<button class="jur-tb-btn' + (self._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.JURISPRUDENCIA_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     self._renderFiltroCores() +
                 '</div>' +
-                '<div class="jur-tb-busca-grupo">' + htmlExibirTodas + htmlBuscaAtalho + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+                '<div class="jur-tb-busca-grupo">' + htmlExibirTodas + '<button class="jur-tb-btn" onclick="window.JURISPRUDENCIA_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
 
         let distintos = this._valoresDistintosParaFiltros();
@@ -42591,7 +42626,7 @@ window.JURISPRUDENCIA_RUNTIME = {
                     rotuloFiltros +
                 '</button>'
             );
-        } else if (this._buscaTodoAcervo) {
+        } else if (this._buscaTodoAcervo && ((this._filtroBusca || '').trim() || this._materiaSelecionada)) {
             botoesHtml.push(
                 '<button onclick="window.JURISPRUDENCIA_RUNTIME.abrirBaralhoRecorteAtual()" style="color:var(--app-primary); font-weight:800;" title="Abre os resultados da busca cruzando todo o acervo">' +
                     '🌐 Ler resultados do acervo (' + total + ')' +
