@@ -491,6 +491,26 @@
 .nav-hd-zone { display: flex; gap: 20px; padding: 0 25px; background: #334155; border-left: 2px solid #1e293b; box-shadow: inset 10px 0 10px -10px rgba(0,0,0,0.3); }
 #modal-divulgar { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:200000; align-items:center; justify-content:center; padding:16px; }
 #modal-divulgar.open { display:flex; }
+#modal-divulgar .dvg-lote-linha { display:flex; gap:8px; margin:-4px 0 10px; }
+#modal-divulgar .dvg-lote-linha .dvg-copiar { flex:1; }
+#modal-divulgar-lote { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:200001; align-items:center; justify-content:center; padding:16px; }
+#modal-divulgar-lote.open { display:flex; }
+#modal-divulgar-lote .dvl-caixa { background:var(--bg-white, #fff); color:var(--text-main, #1e1b4b); border-radius:14px; width:min(640px, 100%); max-height:calc(100vh - 32px); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+#modal-divulgar-lote .dvg-topo { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border-color, #e2e8f0); font-family:var(--font-display); font-size:15px; }
+#modal-divulgar-lote .dvg-fechar { border:none; background:none; font-size:18px; cursor:pointer; color:inherit; }
+#modal-divulgar-lote .dvl-nota { font-size:11px; color:var(--text-muted, #64748b); padding:10px 16px 0; line-height:1.45; }
+#modal-divulgar-lote .dvl-lista { overflow:auto; padding:10px 16px; display:flex; flex-direction:column; gap:6px; }
+#modal-divulgar-lote .dvl-item { display:flex; align-items:center; gap:8px; border:1px solid var(--border-color, #e2e8f0); border-radius:8px; padding:7px 8px; font-size:12px; }
+#modal-divulgar-lote .dvl-n { font-weight:800; color:var(--app-primary, #4f46e5); min-width:22px; }
+#modal-divulgar-lote .dvl-rot { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#modal-divulgar-lote .dvl-item button { border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:700; }
+#modal-divulgar-lote .dvl-item button:disabled { opacity:.35; cursor:default; }
+#modal-divulgar-lote .dvl-vazio { font-size:12px; color:var(--text-muted, #64748b); padding:12px 0; }
+#modal-divulgar-lote .dvl-acoes { display:flex; gap:8px; padding:0 16px 8px; }
+#modal-divulgar-lote .dvl-acoes button { padding:9px 12px; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; font-weight:700; cursor:pointer; font-size:12px; }
+#modal-divulgar-lote .dvl-acoes .dvg-prim { flex:1; background:var(--app-primary, #4f46e5); color:#fff; border-color:transparent; }
+#modal-divulgar-lote .dvl-acoes button:disabled { opacity:.5; cursor:default; }
+#modal-divulgar-lote .dvl-status { font-size:11px; padding:0 16px 14px; color:var(--text-muted, #64748b); }
 #modal-divulgar .dvg-caixa { background:var(--bg-white, #fff); color:var(--text-main, #1e1b4b); border-radius:14px; width:min(1200px, 100%); max-height:calc(100vh - 32px); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.3); }
 #modal-divulgar .dvg-topo { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border-color, #e2e8f0); font-family:var(--font-display); font-size:15px; }
 #modal-divulgar .dvg-fechar { border:none; background:none; font-size:18px; cursor:pointer; color:inherit; }
@@ -11733,6 +11753,7 @@ window.DIVULGAR = {
                         '<div id="dvg-aviso" class="dvg-aviso"></div>' +
                         '<div class="dvg-nota">As mudanças valem só para as imagens; o acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, ==marca-texto laranja==, ++marca-texto azul++, %%marca-texto rosa%%, !!vermelho!!, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
                         '<button type="button" class="dvg-prim dvg-tudo" onclick="window.DIVULGAR.baixarZip()">⬇️ Baixar tudo (.zip: Instagram + X + textos)</button>' +
+                        '<div class="dvg-lote-linha"><button type="button" class="dvg-copiar" onclick="window.DIVULGAR.adicionarAoLote(this)">➕ Adicionar ao lote</button><button type="button" class="dvg-copiar" id="dvg-lote-btn" onclick="window.DIVULGAR.abrirLote()">📦 Lote (' + this._lote().length + ')</button></div>' +
                         '<div class="dvg-botoes" id="dvg-botoes"></div>' +
                         '<label>Legenda do Instagram<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
                         '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.copiarLegenda(this, \'dvg-legenda\')">📋 Copiar legenda do Instagram</button>' +
@@ -11865,6 +11886,116 @@ window.DIVULGAR = {
         if (m) m.classList.remove('open');
         this._estado = null;
         this._conjuntos = [];
+    },
+
+    // ── LOTE ──
+    // Fila de posts prontos (com as edições feitas na prévia: textos,
+    // palavras-chave, tema, legenda e fio), guardada no aparelho. "Baixar
+    // lote" gera um .zip com uma pasta numerada por post, na ordem da fila
+    // (01 = o primeiro a publicar), cada uma com instagram/ e x/.
+    _CHAVE_LOTE: 'tjpe_v1__divulgar_lote',
+    _lote: function() {
+        try { let l = JSON.parse(localStorage.getItem(this._CHAVE_LOTE) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+    },
+    _salvarLote: function(l) {
+        try { localStorage.setItem(this._CHAVE_LOTE, JSON.stringify(l)); } catch (e) { alert('Não foi possível guardar o lote neste aparelho.'); }
+        let b = document.getElementById('dvg-lote-btn');
+        if (b) b.textContent = '📦 Lote (' + l.length + ')';
+    },
+    _rotuloItemLote: function(d) {
+        let tipo = { julgado: '⚖️ Julgado', esquema: '🧠 Esquema', questao: '✅ Questão' }[d.tipo] || d.tipo;
+        let txt = d.tipo === 'questao' ? (d.origem || d.enunciado || '') : (d.titulo || '');
+        txt = String(txt).replace(/\s+/g, ' ').trim();
+        return tipo + ' · ' + (txt.length > 90 ? txt.slice(0, 89) + '…' : txt);
+    },
+    adicionarAoLote: function(btn) {
+        let d = this._estado;
+        if (!d) return;
+        let est = JSON.parse(JSON.stringify(d));
+        delete est.campos;
+        let leg = document.getElementById('dvg-legenda'), fio = document.getElementById('dvg-fio');
+        let l = this._lote();
+        l.push({ estado: est, legenda: leg ? leg.value : '', fio: fio ? fio.value : '', rotulo: this._rotuloItemLote(d), em: new Date().toISOString() });
+        this._salvarLote(l);
+        if (btn) { let t = btn.textContent; btn.textContent = '✅ No lote (' + l.length + ')'; setTimeout(function() { btn.textContent = t; }, 1500); }
+    },
+    abrirLote: function() {
+        let m = document.getElementById('modal-divulgar-lote');
+        if (!m) { m = document.createElement('div'); m.id = 'modal-divulgar-lote'; document.body.appendChild(m); }
+        let esc = function(x) { return String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+        let l = this._lote();
+        let linhas = l.length ? l.map(function(it, i) {
+            let n = String(i + 1).padStart(2, '0');
+            return '<div class="dvl-item"><span class="dvl-n">' + n + '</span><span class="dvl-rot">' + esc(it.rotulo) + '</span>' +
+                '<button type="button" title="Subir" onclick="window.DIVULGAR.moverLote(' + i + ', -1)"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+                '<button type="button" title="Descer" onclick="window.DIVULGAR.moverLote(' + i + ', 1)"' + (i === l.length - 1 ? ' disabled' : '') + '>↓</button>' +
+                '<button type="button" title="Tirar do lote" onclick="window.DIVULGAR.removerLote(' + i + ')">✕</button></div>';
+        }).join('') : '<div class="dvl-vazio">O lote está vazio. Na prévia de um post (📤), use "➕ Adicionar ao lote".</div>';
+        m.innerHTML = '<div class="dvl-caixa" onclick="event.stopPropagation()">' +
+            '<div class="dvg-topo"><strong>📦 Lote de publicações (' + l.length + ')</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fecharLote()">✕</button></div>' +
+            '<div class="dvl-nota">Ordem de publicação: <b>01 é o primeiro a publicar</b>. No Instagram o último publicado fica no topo da grade — para uma linha ler da esquerda para a direita, publique da direita para a esquerda.</div>' +
+            '<div class="dvl-lista">' + linhas + '</div>' +
+            '<div class="dvl-acoes"><button type="button" class="dvg-prim" id="dvl-baixar" onclick="window.DIVULGAR.baixarLote()"' + (l.length ? '' : ' disabled') + '>⬇️ Baixar lote (.zip)</button>' +
+            '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.esvaziarLote()"' + (l.length ? '' : ' disabled') + '>🗑️ Esvaziar</button></div>' +
+            '<div class="dvl-status" id="dvl-status"></div>' +
+        '</div>';
+        let self = this;
+        m.onclick = function() { self.fecharLote(); };
+        m.classList.add('open');
+    },
+    fecharLote: function() { let m = document.getElementById('modal-divulgar-lote'); if (m) m.classList.remove('open'); },
+    moverLote: function(i, dir) {
+        let l = this._lote(), j = i + dir;
+        if (j < 0 || j >= l.length) return;
+        let t = l[i]; l[i] = l[j]; l[j] = t;
+        this._salvarLote(l); this.abrirLote();
+    },
+    removerLote: function(i) { let l = this._lote(); l.splice(i, 1); this._salvarLote(l); this.abrirLote(); },
+    esvaziarLote: function() {
+        if (!confirm('Tirar todos os posts do lote?')) return;
+        this._salvarLote([]); this.abrirLote();
+    },
+    baixarLote: function() {
+        let self = this, l = this._lote();
+        if (!l.length) return;
+        let st = document.getElementById('dvl-status'), bt = document.getElementById('dvl-baixar');
+        if (bt) bt.disabled = true;
+        let salvo = { estado: this._estado, conjuntos: this._conjuntos };
+        let arquivos = [], roteiro = ['Lote de publicações da Salinha — ' + new Date().toLocaleString('pt-BR'), 'Ordem de publicação: 01 primeiro.', ''];
+        let slug = function(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'post'; };
+        this._carregarRecursos().then(function() {
+            let cadeia = Promise.resolve();
+            l.forEach(function(it, i) {
+                cadeia = cadeia.then(function() {
+                    if (st) st.textContent = 'Gerando ' + (i + 1) + ' de ' + l.length + '…';
+                    self._estado = JSON.parse(JSON.stringify(it.estado));
+                    let d = self._estado;
+                    let conjs = [self._gerarConjunto('instagram', 'feed'), self._gerarConjunto('x', d.formatoX || 'feed')];
+                    if (d.stories) conjs.push(self._gerarConjunto('stories', 'stories'));
+                    let pasta = String(i + 1).padStart(2, '0') + '-' + d.tipo + '-' + slug(d.tipo === 'questao' ? (d.origem || d.id) : d.titulo);
+                    roteiro.push(String(i + 1).padStart(2, '0') + '. ' + it.rotulo + '  →  ' + pasta + '/');
+                    let lista = [];
+                    conjs.forEach(function(c) { c.canvases.forEach(function(cv, k) { lista.push({ nome: pasta + '/' + c.destino + '/' + String(k + 1).padStart(2, '0') + '.png', cv: cv }); }); });
+                    return Promise.all(lista.map(function(x) { return self._blobDe(x.cv).then(function(b) { return b.arrayBuffer(); }); })).then(function(bufs) {
+                        lista.forEach(function(x, k) { arquivos.push({ nome: x.nome, conteudo: new Uint8Array(bufs[k]) }); });
+                        let leg = it.legenda || (d.tipo === 'julgado' ? self._legendaJulgado(d) : d.tipo === 'esquema' ? self._legendaEsquema(d) : self._legendaQuestao(d, conjs[0].nQuestao));
+                        let fio = it.fio || self._fioX(d, conjs[1]).join('\n---\n');
+                        arquivos.push({ nome: pasta + '/instagram/legenda.txt', conteudo: leg });
+                        arquivos.push({ nome: pasta + '/x/fio.txt', conteudo: fio });
+                    });
+                });
+            });
+            return cadeia;
+        }).then(function() {
+            arquivos.unshift({ nome: '00-roteiro.txt', conteudo: roteiro.join('\n') });
+            window.downloadZipArquivos(arquivos, 'salinha-lote-' + new Date().toISOString().slice(0, 10) + '.zip');
+            if (st) st.textContent = '✅ Lote gerado: ' + l.length + ' posts.';
+        }).catch(function(e) {
+            if (st) st.textContent = '⚠️ Não foi possível gerar o lote: ' + (e && e.message || e);
+        }).then(function() {
+            self._estado = salvo.estado; self._conjuntos = salvo.conjuntos;
+            if (bt) bt.disabled = false;
+        });
     }
 };
 

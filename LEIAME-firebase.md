@@ -411,6 +411,14 @@ resumo, no "o que mudou", na explicação das questões (o enunciado nunca,
 para não entregar a resposta) e no conteúdo dos esquemas. À mão:
 `==laranja==`, `++azul++`, `%%rosa%%`, `!!vermelho!!`.
 
+Lote (`DIVULGAR.adicionarAoLote`, `abrirLote`, `baixarLote`): na prévia,
+"➕ Adicionar ao lote" guarda o post com as edições feitas (textos,
+palavras-chave, tema, legenda e fio) em `tjpe_v1__divulgar_lote`; "📦 Lote"
+lista a fila (subir, descer, tirar, esvaziar) e "Baixar lote" gera um .zip
+com `00-roteiro.txt` e uma pasta numerada por post (01 = o primeiro a
+publicar), cada uma com `instagram/` (imagens + legenda.txt) e `x/`
+(imagens + fio.txt) — pronto para subir num agendador.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
