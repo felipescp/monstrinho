@@ -12,15 +12,15 @@
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Código Civil | X | X | X (485 notas) |
-| Registros Públicos (Lei 6.015) | X | X | - |
 | LINDB | X | X | - |
 | Lei do Inquilinato (Lei 8.245) | X | X | - |
+| Registros Públicos (Lei 6.015) | X | X | - |
 | Lei Geral de Proteção de Dados – LGPD (Lei 13.709) | X | X | - |
-| Condomínio e Incorporações Imobiliárias (Lei 4.591) | X | X | - |
 | Estatuto da OAB (Lei 8.906) | X | X | - |
 | Marco Civil da Internet (Lei 12.965) | X | X | - |
-| Investigação de Paternidade (Lei 8.560) | X | X | - |
 | Alienação Fiduciária (Decreto-Lei 911/1969) | X | X | - |
+| Investigação de Paternidade (Lei 8.560) | X | X | - |
+| Condomínio e Incorporações Imobiliárias (Lei 4.591) | X | X | - |
 | Transplante de Órgãos e Tecidos (Lei 9.434) | X | X | - |
 
 ### Direito Processual Civil
@@ -32,16 +32,16 @@
 | Juizados Especiais (Lei 9.099) | X | X | X (114 notas) |
 | Mandado de Segurança (Lei 12.016) | X | X | X (58 notas) |
 | Habeas Data (Lei 9.507) | X | X | - |
+| Bem de Família (Lei 8.009) | X | X | - |
 | Arbitragem (Lei 9.307) | X | X | - |
 | Mediação (Lei 13.140) | X | X | - |
-| Bem de Família (Lei 8.009) | X | X | - |
 | Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | - |
 | Juizados Especiais Federais (Lei 10.259) | X | X | X (30 notas) |
 | Processo Eletrônico (Lei 11.419) | X | X | - |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Cautelares contra o Poder Público (Lei 8.437) | X | X | - |
-| Alimentos Gravídicos (Lei 11.804) | X | X | - |
 | Ação de Alimentos (Lei 5.478) | X | X | - |
+| Alimentos Gravídicos (Lei 11.804) | X | X | - |
 | Tutela contra a Fazenda (Lei 9.494) | X | X | - |
 
 ### Direito do Consumidor
@@ -74,16 +74,16 @@
 | Maria da Penha (Lei 11.340) | X | X | - |
 | Organização Criminosa (Lei 12.850) | X | X | - |
 | Código de Trânsito Brasileiro | X | X | - |
-| Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Estatuto do Desarmamento (Lei 10.826) | X | X | - |
-| Lavagem de Dinheiro (Lei 9.613) | X | X | - |
+| Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Código Penal Militar | X | X | - |
+| Lavagem de Dinheiro (Lei 9.613) | X | X | - |
 | Crimes Hediondos (Lei 8.072) | X | X | - |
 | Abuso de Autoridade (Lei 13.869) | X | X | - |
 | Tortura (Lei 9.455) | X | X | - |
 | Crimes Raciais (Lei 7.716) | X | X | - |
-| Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
 | Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | X | - |
+| Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
 | Crimes contra o Sistema Financeiro (Lei 7.492) | X | X | - |
 | Crimes contra a Economia Popular (Lei 1.521) | X | X | - |
 | Lei Antiterrorismo (Lei 13.260) | X | X | - |
@@ -131,10 +131,10 @@
 |---|:---:|:---:|:---:|
 | Recuperação e Falência (Lei 11.101) | X | X | - |
 | Sociedades por Ações (Lei 6.404) | X | X | - |
-| Protesto de Títulos (Lei 9.492) | X | X | - |
-| Lei Uniforme de Genebra – letra de câmbio e nota promissória (Decreto 57.663/1966) | X | X | - |
-| Lei das Duplicatas (Lei 5.474) | X | X | - |
 | Lei do Cheque (Lei 7.357) | X | X | - |
+| Lei das Duplicatas (Lei 5.474) | X | X | - |
+| Lei Uniforme de Genebra – letra de câmbio e nota promissória (Decreto 57.663/1966) | X | X | - |
+| Protesto de Títulos (Lei 9.492) | X | X | - |
 
 ### Direito Financeiro e Tributário
 
@@ -176,26 +176,26 @@
 | Servidores Federais (Lei 8.112) | X | X | - |
 | Ação Popular (Lei 4.717) | X | X | X (34 notas) |
 | Desapropriação por Utilidade Pública (Decreto-Lei 3.365/1941) | X | X | - |
-| Parcelamento do Solo Urbano (Lei 6.766) | X | X | - |
 | Parcerias Público-Privadas (Lei 11.079) | X | X | - |
 | Lei Anticorrupção (Lei 12.846) | X | X | - |
+| Parcelamento do Solo Urbano (Lei 6.766) | X | X | - |
 | Lei de Acesso à Informação (Lei 12.527) | X | X | - |
 | Consórcios Públicos (Lei 11.107) | X | X | - |
 | Marco Regulatório das Organizações da Sociedade Civil – MROSC (Lei 13.019) | X | X | - |
 | Lei das Estatais (Lei 13.303) | X | X | - |
-| Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | OSCIPs (Lei 9.790) | X | X | - |
-| Organização da Administração Federal (Decreto-Lei 200/1967) | X | X | - |
+| Regularização Fundiária – Reurb (Lei 13.465) | X | X | - |
 | Saneamento Básico (Lei 11.445) | X | X | - |
+| Organização da Administração Federal (Decreto-Lei 200/1967) | X | X | - |
 | Organizações Sociais (Lei 9.637) | X | X | - |
 | Política Nacional de Mobilidade Urbana (Lei 12.587) | X | X | - |
 | Prescrição contra a Fazenda (Decreto 20.910/1932) | X | X | - |
-| Estatuto da Metrópole (Lei 13.089) | X | X | - |
 | Defesa do Usuário do Serviço Público (Lei 13.460) | X | X | - |
+| Estatuto da Metrópole (Lei 13.089) | X | X | - |
 | Liberdade Econômica (Lei 13.874) | X | X | - |
 | Prescrição da Ação Punitiva da Administração Federal (Lei 9.873) | X | X | - |
-| Desapropriação por Interesse Social (Lei 4.132) | X | X | - |
 | Governo Digital (Lei 14.129) | X | X | - |
+| Desapropriação por Interesse Social (Lei 4.132) | X | X | - |
 | Estatuto Geral das Guardas Municipais (Lei 13.022) | X | - | - |
 
 ### Direito Institucional (Magistratura, MP e Defensoria)
@@ -228,8 +228,8 @@
 | Pacto Internacional sobre Direitos Civis e Políticos (Decreto 592/1992) | X | X | - |
 | Declaração Universal dos Direitos Humanos (1948) | X | X | - |
 | Convenção sobre os Direitos da Criança (Decreto 99.710/1990) | X | X | - |
-| Lei de Migração (Lei 13.445) | X | X | - |
 | Convenção sobre os Direitos das Pessoas com Deficiência (Decreto 6.949/2009) | X | X | - |
+| Lei de Migração (Lei 13.445) | X | X | - |
 | Convenção 169 da OIT – Povos Indígenas e Tribais | X | X | - |
 | Pacto Internacional sobre Direitos Econômicos, Sociais e Culturais (Decreto 591/1992) | X | X | - |
 | CEDAW – Discriminação contra a Mulher (Decreto 4.377/2002) | X | X | - |
