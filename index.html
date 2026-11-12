@@ -19386,6 +19386,8 @@ window.LEISECA_RUNTIME = {
             s = self._esc(s);
             s = s.replace(/`([^`]+)`/g, function(m, c) { guard.push('<code>' + c + '</code>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
             s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function(m, txt, url) { guard.push('<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>'); return '\u0000' + (guard.length - 1) + '\u0000'; });
+            s = s.replace(/\*\*\*([^*]+?)\*\*\*/g, '<b><i>$1</i></b>');
+            for (let k = 0; k < 2; k++) s = s.replace(/\*\*([^*]*?)\*([^*\s](?:[^*]*?[^*\s])?)\*([^*]*?)\*\*/g, '**$1<i>$2</i>$3**');
             s = s.replace(/\*\*([^*]+?)\*\*/g, '<b>$1</b>').replace(/__([^_]+?)__/g, '<b>$1</b>');
             s = s.replace(/(^|[^*\w])\*([^*\s](?:[^*]*[^*\s])?)\*(?![*\w])/g, '$1<i>$2</i>').replace(/(^|[^_\w])_([^_\s](?:[^_]*[^_\s])?)_(?![_\w])/g, '$1<i>$2</i>');
             // Repete: um marcador pode conter outro (citação dentro do texto de um [link]).
@@ -27424,6 +27426,10 @@ function mdExplicacao(texto, materia, opcoes) {
         t = t.replace(/<\/?[a-z]+>|<br>/gi, function(m) { return prot(m); });
         t = destacarTermosGlossario(t, materia);
         t = t.replace(/<span class="glos-termo-sim"[^>]*>|<\/span>/g, function(m) { return prot(m); });
+        // Itálico dentro de negrito ("**Durante a *vacatio legis***", "***sursis***"):
+        // resolvido antes, senão o negrito (que não aceita "*" dentro) não fecha.
+        t = t.replace(/\*\*\*([^*]+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+        for (var k = 0; k < 2; k++) t = t.replace(/\*\*([^*]*?)\*([^*\s](?:[^*]*?[^*\s])?)\*([^*]*?)\*\*/g, '**$1<em>$2</em>$3**');
         t = t.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+?)__/g, '<strong>$1</strong>');
         t = t.replace(/(^|[^*\w])\*([^*\s](?:[^*]*?[^*\s])?)\*(?![*\w])/g, '$1<em>$2</em>');
         for (var n = 0; n < 3 && /\u0000\d+\u0000/.test(t); n++) t = t.replace(/\u0000(\d+)\u0000/g, function(m, i) { return guard[+i]; });
