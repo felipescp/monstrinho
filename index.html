@@ -18338,6 +18338,8 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-rev { color:var(--text-muted); font-style:italic; }
     #leiseca-modal .ls-alt { font-size:10px; color:var(--text-muted); margin-left:4px; }
     #leiseca-modal .ls-fonte { margin-top:12px; font-size:10px; color:var(--text-muted); line-height:1.5; }
+    #leiseca-modal .ls-credito { margin-top:8px; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; border-left:3px solid #f97316; background:rgba(249,115,22,.08); color:var(--text-main); }
+    #leiseca-modal .ls-cred-curto { white-space:nowrap; cursor:help; }
     #leiseca-modal .ls-legenda { display:flex; gap:10px; flex-wrap:wrap; font-size:10px; font-weight:700; color:var(--text-muted); }
     #leiseca-modal .ls-legenda i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:3px; }
     /* Ferramentas de estudo (pedido explícito do usuário): Modo comentado,
@@ -19029,7 +19031,7 @@ window.LEISECA_RUNTIME = {
                     '<span class="fc-materia-nome">' + self._esc(d.nome) + (bloq ? ' 🔒' : '') + '</span>' +
                     // 📝 = diploma com notas do sistema (Modo comentado), pedido explícito do usuário.
                     (d.incidencia ? (inc && inc.estimada ? '<span class="fc-materia-count" title="Lei nova, sem questões: prioridade estimada pelo tipo de dispositivo' + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🧭' + (d.comentarios ? ' 📝' : '') + '</span>'
-                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? ' 📝' : '') + '</span>') : '') +
+                        : '<span class="fc-materia-count" title="' + (total ? total + ' cobranças em provas (levantamento de Eduardo Belisário)' : 'Com mapa de incidência') + (d.comentarios ? ' · com notas do 📝 Modo comentado' : '') + '">🔥' + (total || '') + (d.comentarios ? ' 📝' : '') + '</span>') : '') +
                     (function(r) { return r ? '<span class="ls-leitura-selo" title="Leitura iniciada' + (r.total ? ': ' + r.lidos + ' de ' + r.total + ' artigos críticos e importantes lidos' : '') + '">👁' + (r.pct ? ' ' + r.pct + '%' : '') + '</span>' : ''; })(self._resumoLeitura(d.id)) + '</div>';
             }).join('') + '</div></div>';
         }).join('');
@@ -19118,7 +19120,7 @@ window.LEISECA_RUNTIME = {
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
             (this._divisao !== null ? '<button class="ls-btn ls-mob-ler" onclick="window.LEISECA_RUNTIME.lerRecorteMobile()" title="Ler em sequência os artigos deste recorte">📖 Ler em sequência</button>' : '') +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
-            '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : '') + '</span></div>' +
+            '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : this._ehIncBelisario(inc) ? ' · <span class="ls-cred-curto" title="Mapa de incidência levantado por Eduardo Belisário (E. B. S. Teixeira), a partir das questões de concurso que ele compila e disponibiliza publicamente. Crédito completo ao final do texto.">🔥 incidência: Eduardo Belisário</span>' : '') + '</span></div>' +
             this._htmlFerramentas() +
             '<div class="ls-corpo"><div class="ls-mapa"><div class="ls-diploma-tit">' + this._esc((this._infoDiploma(this._diploma) || {}).nome || this._diploma) + '</div>' + mapa + '</div><div class="ls-texto" id="ls-texto">' + this._htmlPainel() + '</div></div>';
         this._aplicarClassesModal();
@@ -19147,10 +19149,18 @@ window.LEISECA_RUNTIME = {
     _htmlBlocoArt: function(a) {
         return '<div class="ls-art' + (a === this._art ? ' sel' : '') + '" id="ls-art-' + this._esc(a) + '">' + this._htmlArtigo(a) + '</div>';
     },
+    // Crédito ao autor da compilação de incidência (pedido explícito do
+    // usuário: citar e reconhecer o trabalho de Eduardo Belisário).
+    _ehIncBelisario: function(inc) { return !!(inc && !inc.estimada && /Teixeira|Belis/i.test(inc.fonte || '')); },
+    _htmlCreditoIncidencia: function(inc) {
+        if (!this._ehIncBelisario(inc)) return '';
+        let m = /até (\d{2}\/\d{2}\/\d{4})/.exec(inc.fonte || '');
+        return '<div class="ls-credito">🔥 <b>Incidência em provas: levantamento de Eduardo Belisário</b> (E. B. S. Teixeira), que reúne e classifica as questões de concurso dispositivo por dispositivo e disponibiliza esse trabalho gigante publicamente à comunidade concurseira' + (m ? ' (questões até ' + m[1] + ')' : '') + '. É a base da prioridade dos artigos e da escolha dos dispositivos comentados nas notas da Salinha. Todo o crédito a ele.</div>';
+    },
     _htmlFonte: function() {
         let j = this._textos[this._diploma], inc = this._incidencias[this._diploma];
         let d = ((window.LEGISLACAO || {}).DIPLOMAS || {})[this._diploma] || {};
-        return '<div class="ls-fonte">' + (d.fonteNome ? 'Texto obtido ' + this._esc(d.fonteNo || 'no ' + d.fonteNome) : 'Texto compilado do Planalto') + (j.dataTexto ? ' em ' + j.dataTexto.split('-').reverse().join('/') : '') + '.' + (inc && inc.fonte ? ' Incidência: ' + this._esc(inc.fonte) + '.' : '') + '</div>';
+        return '<div class="ls-fonte">' + (d.fonteNome ? 'Texto obtido ' + this._esc(d.fonteNo || 'no ' + d.fonteNome) : 'Texto compilado do Planalto') + (j.dataTexto ? ' em ' + j.dataTexto.split('-').reverse().join('/') : '') + '.' + (inc && inc.fonte && !this._ehIncBelisario(inc) ? ' Incidência: ' + this._esc(inc.fonte) + '.' : '') + '</div>' + this._htmlCreditoIncidencia(inc);
     },
     _rolarParaArt: function() {
         if (!this._art) return;
@@ -19413,7 +19423,7 @@ window.LEISECA_RUNTIME = {
         let h = '';
         if (v.comentado && tipos !== 'pessoais') this._notasDe(chave).forEach(function(n) {
             if (!n || !n.texto) return;
-            h += '<div class="ls-com-sis"><div class="ls-com-rot">📘 Nota' + (n.prova ? ' <span class="ls-com-prova">cai em prova</span>' : '') + '</div>' + self._md(n.texto) +
+            h += '<div class="ls-com-sis"><div class="ls-com-rot">📘 Nota da Salinha' + (n.prova ? ' <span class="ls-com-prova" title="Dispositivo muito cobrado, segundo o levantamento de incidência de Eduardo Belisário">cai em prova</span>' : '') + '</div>' + self._md(n.texto) +
                 (n.fonte ? '<div class="ls-com-fonte">Fonte: ' + self._esc(n.fonte) + '</div>' : '') + '</div>';
         });
         if (ed) {
