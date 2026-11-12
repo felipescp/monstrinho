@@ -18340,6 +18340,9 @@ window.carregarPenasOficiais = async function() {
     #leiseca-modal .ls-fonte { margin-top:12px; font-size:10px; color:var(--text-muted); line-height:1.5; }
     #leiseca-modal .ls-credito { margin-top:8px; font-size:11px; line-height:1.5; padding:8px 10px; border-radius:8px; border-left:3px solid #f97316; background:rgba(249,115,22,.08); color:var(--text-main); }
     #leiseca-modal .ls-cred-curto { white-space:nowrap; cursor:help; }
+    #leiseca-modal .ls-carreira { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; }
+    #leiseca-modal .ls-carreira select { font-size:12px; padding:3px 6px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-white); color:var(--text-main); }
+    #leiseca-modal .ls-carreira-aviso { font-weight:400; font-size:11px; color:var(--text-muted); }
     #leiseca-modal .ls-legenda { display:flex; gap:10px; flex-wrap:wrap; font-size:10px; font-weight:700; color:var(--text-muted); }
     #leiseca-modal .ls-legenda i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:3px; }
     /* Ferramentas de estudo (pedido explícito do usuário): Modo comentado,
@@ -18551,7 +18554,7 @@ window.LEISECA_RUNTIME = {
         if (!this._incPromessas[id]) {
             this._incPromessas[id] = fetch(info.incidencia + '?v=' + Date.now())
                 .then(function(r) { return r.ok ? r.json() : null; })
-                .then(function(j) { if (j) self._incidencias[id] = self._prepararIncidencia(j); })
+                .then(function(j) { if (j) { self._incBrutas[id] = j; self._incidencias[id] = self._prepararIncidencia(self._visaoCarreira(j)); } })
                 .catch(function() {})
                 .then(function() { delete self._incPromessas[id]; });
         }
@@ -18751,6 +18754,36 @@ window.LEISECA_RUNTIME = {
         let v = valores.filter(function(x) { return x > 0; }).sort(function(a, b) { return b - a; });
         if (!v.length) return { critico: Infinity, importante: Infinity };
         return { critico: v[Math.floor(v.length * 0.25)], importante: v[Math.floor(v.length * 0.5)] };
+    },
+    // ── Recorrência por carreira (pedido explícito do usuário): o mapa traz,
+    // além do total, "carreiras" {magistratura|defensoria|mp: {chave: n}}
+    // (ferramentas/incidencia_questoes.py, pela sigla do órgão do concurso).
+    // Escolhida uma carreira, prioridade e contagens passam a usar só ela;
+    // diploma sem esse recorte continua no total (aviso na barra).
+    CARREIRAS: [['', 'Todas as carreiras'], ['magistratura', '⚖️ Magistratura'], ['defensoria', '🛡️ Defensoria'], ['mp', '🏛️ Ministério Público']],
+    _incBrutas: {},
+    _carreira: function() { return (this.estado && this.estado.carreira) || ''; },
+    _visaoCarreira: function(j) {
+        let c = this._carreira();
+        if (!c || !j || j.estimada || !j.carreiras) return j;
+        return Object.assign({}, j, { dispositivos: j.carreiras[c] || {}, carreiraAtiva: c });
+    },
+    _temCarreiras: function() { let b = this._incBrutas; return Object.keys(b).some(function(k) { return b[k] && b[k].carreiras; }); },
+    escolherCarreira: function(c) {
+        let self = this;
+        this.estado.carreira = c || '';
+        this._salvar();
+        Object.keys(this._incBrutas).forEach(function(id) { self._incidencias[id] = self._prepararIncidencia(self._visaoCarreira(self._incBrutas[id])); });
+        this._renderDiplomas();
+        if (this._diploma) { this._renderDivisoes(); this._renderMantendoPosicao(); }
+    },
+    _htmlCarreira: function(inc) {
+        if (!this._temCarreiras()) return '';
+        let self = this, c = this._carreira(), bruta = this._incBrutas[this._diploma];
+        let sem = c && bruta && !bruta.estimada && !bruta.carreiras;
+        return '<label class="ls-carreira" title="Recorrência por carreira: a prioridade e as cobranças passam a contar só as provas da carreira escolhida (sigla do órgão que promoveu o concurso)">🎯 <select onchange="window.LEISECA_RUNTIME.escolherCarreira(this.value)">' +
+            this.CARREIRAS.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === c ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+            '</select>' + (sem ? ' <span class="ls-carreira-aviso">sem recorte por carreira nesta lei (mostrando todas)</span>' : '') + '</label>';
     },
     _prepararIncidencia: function(inc) {
         // Lei nova, sem questões (ferramentas/prioridade_estimada.py): o nível vem
@@ -19119,6 +19152,7 @@ window.LEISECA_RUNTIME = {
         col.innerHTML = '<div class="ls-toolbar">' +
             '<input class="ls-busca" id="ls-busca" placeholder="Nº do artigo ou palavra…" value="' + this._esc(this._busca) + '" oninput="window.LEISECA_RUNTIME.buscar(this.value)">' +
             (this._divisao !== null ? '<button class="ls-btn ls-mob-ler" onclick="window.LEISECA_RUNTIME.lerRecorteMobile()" title="Ler em sequência os artigos deste recorte">📖 Ler em sequência</button>' : '') +
+            this._htmlCarreira(inc) +
             '<span class="ls-filtro">Apenas: ' + chk('critico', 'Crítico') + chk('importante', 'Importante') + chk('regular', 'Regular') + chk('nenhum', 'Não cobrado') + '</span>' +
             '<span class="ls-info"><span id="ls-progresso">' + this._textoProgresso(this._artsRecorte, visiveis) + '</span>' + (!inc ? ' · sem mapa de incidência' : inc.estimada ? ' · <span title="' + this._esc(inc.fonte || '') + '">prioridade estimada (lei nova, sem questões)</span>' : this._ehIncBelisario(inc) ? ' · <span class="ls-cred-curto" title="Mapa de incidência levantado por Eduardo Belisário (E. B. S. Teixeira), a partir das questões de concurso que ele compila e disponibiliza publicamente. Crédito completo ao final do texto.">🔥 incidência: Eduardo Belisário</span>' : '') + '</span></div>' +
             this._htmlFerramentas() +

@@ -12,6 +12,15 @@ Uso:
     python3 ferramentas/incidencia_questoes.py MATERIAL.md dados/legislacao/lei-11343.json \
         dados/leiseca/incidencia/lei-11343.json --fonte "Material de questões (Eduardo B. S. Teixeira), até 01/07/2026"
 
+Carreiras (pedido explícito do usuário): a sigla da marca é a do órgão que
+promoveu o concurso ("TJDFT-2016", "DPESP-2006", "MPMG-2010"). Além do total,
+o arquivo traz "carreiras": {"magistratura": {...}, "defensoria": {...},
+"mp": {...}} com a contagem por dispositivo de cada carreira (ver
+carreira_da_sigla). Cartórios, servidores, PGE/PGM, polícias etc. contam só no
+total. Siglas não reconhecidas são listadas no fim, para conferência.
+Só acrescentar as carreiras num mapa já gerado, sem mexer no resto:
+--so-carreiras (lê o arquivo de saída existente e grava só o campo novo).
+
 Chaves dos dispositivos: "33" (caput), "33§4", "33§pu", "28.II", "33§1.I".
 Tratados com itens numerados (base com "numeracao": "itens", ex.: CADH): o
 cabeçalho é "Artigo 4." e a chave do item é "4.1"; a estrutura é Parte > Capítulo.
@@ -51,6 +60,26 @@ def limpar(t):
     return re.sub(r'[*\\_]|~~|\[|\]\([^)]*\)', '', t).strip()
 
 
+CARREIRAS = ('magistratura', 'defensoria', 'mp')
+_NAO_CARREIRA = re.compile(r'CART[ÓO]RIO|SERVENTIA|NOTARI|REGISTRO|ESCREVENTE|ANALISTA|T[ÉE]CNICO|OFICIAL|ASSESSOR|SERVIDOR|ESTAGI', re.I)
+
+
+def carreira_da_sigla(tag):
+    """'MPSP-2008/2010' -> 'mp'; 'TJDFT-2016' -> 'magistratura'; 'DPESP-2006' ->
+    'defensoria'; 'Cartórios/TJPI-2013', 'PGEMS-2021' -> None."""
+    org = re.sub(r'-(?:19|20)\d{2}.*$', '', tag).strip()
+    if _NAO_CARREIRA.search(org):
+        return None
+    o = re.sub(r'[\s.]', '', org).upper()
+    if re.match(r'(DPE|DPU|DPDF|DP[A-Z]{2}$|DEFENSOR)', o):
+        return 'defensoria'
+    if re.match(r'(MP|PGJ|PGR|MINIST[ÉE]RIOP|PROMOTOR|PROCURADORDAREP)', o):
+        return 'mp'
+    if re.match(r'(TJ|TRF|TRT|TJM|STM|ENAM|JUIZ|MAGISTR|JF)', o):
+        return 'magistratura'
+    return None
+
+
 def romano(r):
     v = {'I': 1, 'V': 5, 'X': 10, 'L': 50}
     return sum(-v[c] if v[c] < v.get(r[i + 1:i + 2], 0) else v[c] for i, c in enumerate(r))
@@ -76,6 +105,8 @@ def main():
     ap.add_argument('--ate', help='linha do material (exata, sem formatação) onde o diploma termina')
     ap.add_argument('--capitulo', action='append', default=[],
                     help='capítulo que falta no material, a partir de um artigo: "10=Cap. IV — Nome"')
+    ap.add_argument('--so-carreiras', action='store_true',
+                    help='só acrescenta "carreiras" ao arquivo de saída existente (estrutura e total intactos)')
     ap.add_argument('--titulo', action='append', default=[],
                     help='título que falta no material, a partir de um artigo: "209=Disposições finais"')
     a = ap.parse_args()
@@ -138,6 +169,8 @@ def main():
     JANELA = 25  # artigos adiante aceitos como próximo cabeçalho (revogados/omitidos no meio)
     cont = collections.Counter()
     fora = collections.Counter()
+    por_carreira = {c: collections.Counter() for c in CARREIRAS}
+    siglas_outras = collections.Counter()
     estrutura, vistos = [], set()
     titulo = capitulo = None
     parte = livro = livro_nome = ''
@@ -320,6 +353,14 @@ def main():
             continue
         # Cada ano é uma cobrança; a barra de "Cartórios/TJPI-2013" ou "ENAM/2º-2024" não.
         n = sum(1 + len(re.findall(r'/(?:19|20)\d{2}', g)) for g in tags)
+        n_car = collections.Counter()
+        for g in tags:
+            c = carreira_da_sigla(g)
+            k = 1 + len(re.findall(r'/(?:19|20)\d{2}', g))
+            if c:
+                n_car[c] += k
+            else:
+                siglas_outras[re.sub(r'-(?:19|20)\d{2}.*$', '', g).strip()] += k
         chave = art + ('§' + par if par else '') + ('.' + inc if inc else '')
         chave = alias.get(chave, chave)
         if chave != art + ('§' + par if par else '') + ('.' + inc if inc else ''):
@@ -337,6 +378,8 @@ def main():
             chave, ok = art + '.' + inc, True
         if ok:
             cont[chave] += n
+            for c, k in n_car.items():
+                por_carreira[c][chave] += k
         else:
             fora[chave] += n
 
@@ -365,17 +408,36 @@ def main():
         vistos.add(k)
         anterior = k
 
+    carreiras = {c: dict(sorted(v.items(), key=lambda kv: -kv[1])) for c, v in por_carreira.items() if v}
+    if a.so_carreiras:
+        saida = json.load(open(a.saida, encoding='utf-8'))
+        if sum(cont.values()) != sum((saida.get('dispositivos') or {}).values()):
+            print('ATENÇÃO: o total relido (%d) difere do mapa existente (%d) — confira os parâmetros (--alias, --desde…)'
+                  % (sum(cont.values()), sum((saida.get('dispositivos') or {}).values())), file=sys.stderr)
+        saida['carreiras'] = carreiras
+        with open(a.saida, 'w', encoding='utf-8') as f:
+            json.dump(saida, f, ensure_ascii=False, indent=1)
+            f.write('\n')
+        print('carreiras:', {c: sum(v.values()) for c, v in carreiras.items()}, '· total', sum(cont.values()))
+        if siglas_outras:
+            print('fora das 3 carreiras:', dict(siglas_outras.most_common()), file=sys.stderr)
+        return
     saida = {
         'id': base.get('id'),
         'fonte': a.fonte,
         'estrutura': estrutura,
         'dispositivos': dict(sorted(cont.items(), key=lambda kv: -kv[1])),
     }
+    if carreiras:
+        saida['carreiras'] = carreiras
     with open(a.saida, 'w', encoding='utf-8') as f:
         json.dump(saida, f, ensure_ascii=False, indent=1)
         f.write('\n')
     print('dispositivos', len(cont), '· cobranças', sum(cont.values()),
           '· artigos na estrutura', sum(len(g['arts']) for g in estrutura), 'de', len(B))
+    print('carreiras:', {c: sum(v.values()) for c, v in carreiras.items()})
+    if siglas_outras:
+        print('fora das 3 carreiras:', dict(siglas_outras.most_common()), file=sys.stderr)
     if fora:
         print('não localizados na base:', dict(fora), file=sys.stderr)
 
