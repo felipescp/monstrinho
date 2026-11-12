@@ -70,6 +70,12 @@ _CARTORIO = re.compile(r'CART[ÓO]RIO|SERVENTIA|NOTARI|REGISTRO|OUTORGA|DELEGA[�
 _NAO_CARREIRA = re.compile(r'ESCREVENTE|ANALISTA|T[ÉE]CNICO|OFICIAL|ASSESSOR|SERVIDOR|ESTAGI', re.I)
 
 
+def anos_da_marca(tag):
+    """'MPSP-2008/2010/2017' -> ['2008', '2010', '2017']; 'ENAM/2º-2024' -> ['2024']."""
+    m = re.search(r'-(?:19|20)\d{2}', tag)
+    return re.findall(r'(?<!\d)((?:19|20)\d{2})(?!\d)', tag[m.start():]) if m else []
+
+
 def eh_cartorio(tag):
     return bool(_CARTORIO.search(re.sub(r'-(?:19|20)\d{2}.*$', '', tag)))
 
@@ -189,6 +195,9 @@ def main():
     cartorios = 0
     fora = collections.Counter()
     por_carreira = {c: collections.Counter() for c in CARREIRAS}
+    # Recorte por período (pedido explícito do usuário): grupo (carreira ou
+    # "outras") -> chave -> ano -> cobranças. Soma de todos = total.
+    por_ano = collections.defaultdict(lambda: collections.defaultdict(collections.Counter))
     siglas_outras = collections.Counter()
     estrutura, vistos = [], set()
     titulo = capitulo = None
@@ -374,9 +383,12 @@ def main():
         n_com = sum(1 + len(re.findall(r'/(?:19|20)\d{2}', g)) for g in tags)
         n = sum(1 + len(re.findall(r'/(?:19|20)\d{2}', g)) for g in tags if not eh_cartorio(g))
         n_car = collections.Counter()
+        n_ano = collections.Counter()
         for g in tags:
             if eh_cartorio(g):
                 continue
+            for ano in anos_da_marca(g):
+                n_ano[(carreira_da_sigla(g) or 'outras', ano)] += 1
             c = carreira_da_sigla(g)
             k = 1 + len(re.findall(r'/(?:19|20)\d{2}', g))
             if c:
@@ -405,6 +417,8 @@ def main():
                 cont[chave] += n
             for c, k in n_car.items():
                 por_carreira[c][chave] += k
+            for (grupo, ano), k in n_ano.items():
+                por_ano[grupo][chave][ano] += k
         else:
             fora[chave] += n_com
 
@@ -434,10 +448,11 @@ def main():
         anterior = k
 
     carreiras = {c: dict(sorted(v.items(), key=lambda kv: -kv[1])) for c, v in por_carreira.items() if v}
+    anos = {g: {k: dict(sorted(v.items())) for k, v in sorted(d.items())} for g, d in sorted(por_ano.items())}
     if a.recontar:
         saida = json.load(open(a.saida, encoding='utf-8'))
         antigo = saida.get('dispositivos') or {}
-        if saida.get('semCartorios'):
+        if saida.get('semCartorios') and saida.get('anos'):
             print('JÁ RECONTADO (semCartorios): nada a fazer em', a.saida)
             return
         dif = {k: (antigo.get(k, 0), cont_com.get(k, 0)) for k in set(antigo) | set(cont_com) if antigo.get(k, 0) != cont_com.get(k, 0)}
@@ -447,6 +462,7 @@ def main():
             sys.exit(2)
         saida['dispositivos'] = dict(sorted(cont.items(), key=lambda kv: -kv[1]))
         saida['carreiras'] = carreiras
+        saida['anos'] = anos
         saida['semCartorios'] = True
         with open(a.saida, 'w', encoding='utf-8') as f:
             json.dump(saida, f, ensure_ascii=False, indent=1)
@@ -464,6 +480,8 @@ def main():
     }
     if carreiras:
         saida['carreiras'] = carreiras
+    if anos:
+        saida['anos'] = anos
     saida['semCartorios'] = True
     with open(a.saida, 'w', encoding='utf-8') as f:
         json.dump(saida, f, ensure_ascii=False, indent=1)

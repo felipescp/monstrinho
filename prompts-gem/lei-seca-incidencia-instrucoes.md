@@ -65,6 +65,7 @@ Um **material de questões** em Markdown, exportado do Word. Exemplo: Eduardo B.
    - **Delegado:** PC + UF (PCSP, PCDF…), PF.
    - **Só no total:** tribunais superiores (STF, STJ, STM, TST, TSE) e TREs, que não fazem concurso para membros (as provas são de servidor), além de servidores (escrevente, analista, técnico) e PGE/PGM.
    - **Fora de tudo, inclusive do total:** concursos de **cartório** (`Cartórios/TJPI`). O volume desproporcional dessas questões distorcia a prioridade (a Lei de Registros Públicos aparecia como a 2ª mais cobrada do Direito Civil). O arquivo marca `"semCartorios": true`.
+   - **Anos:** o campo `"anos"` guarda cada cobrança por grupo (carreira ou `outras`), dispositivo e ano da prova (`MPSP-2008/2010` = 2008 e 2010). A soma de tudo é o total. Ele alimenta o seletor de período da Lei Seca ("últimos 5 anos", "últimos 10 anos"), combinado ou não com a carreira.
    - O script lista no fim as siglas **fora das carreiras**. Confira se nenhuma de carreira ficou de fora; se ficou, ajuste `carreira_da_sigla` em `ferramentas/incidencia_questoes.py`.
    - **Mapas que já existem — recontar todos de uma vez:** ponha os materiais (`.md`) numa pasta e rode
      ```

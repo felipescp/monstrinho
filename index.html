@@ -18763,12 +18763,31 @@ window.LEISECA_RUNTIME = {
     CARREIRAS: [['', 'Todas as carreiras'], ['magistratura', '⚖️ Magistratura'], ['defensoria', '🛡️ Defensoria'], ['mp', '🏛️ Ministério Público'], ['delegado', '🔎 Delegado']],
     _incBrutas: {},
     _carreira: function() { return (this.estado && this.estado.carreira) || ''; },
+    // Período (pedido explícito do usuário): "anos" = {grupo: {chave: {ano: n}}},
+    // grupo = carreira ou "outras"; soma de tudo = total. Últimos N anos
+    // contados a partir do ano corrente.
+    PERIODOS: [['', 'Todo o período'], ['5', 'Últimos 5 anos'], ['10', 'Últimos 10 anos']],
+    _periodo: function() { return (this.estado && this.estado.periodo) || ''; },
     _visaoCarreira: function(j) {
-        let c = this._carreira();
-        if (!c || !j || j.estimada || !j.carreiras) return j;
+        let c = this._carreira(), per = this._periodo();
+        if (!j || j.estimada) return j;
+        if (per && j.anos) {
+            let desde = new Date().getFullYear() - Number(per) + 1, disp = {};
+            Object.keys(j.anos).forEach(function(g) {
+                if (c && g !== c) return;
+                let porChave = j.anos[g];
+                Object.keys(porChave).forEach(function(k) {
+                    Object.keys(porChave[k]).forEach(function(a) { if (Number(a) >= desde) disp[k] = (disp[k] || 0) + porChave[k][a]; });
+                });
+            });
+            return Object.assign({}, j, { dispositivos: disp, carreiraAtiva: c || null, periodoAtivo: per });
+        }
+        if (!c || !j.carreiras) return j;
         return Object.assign({}, j, { dispositivos: j.carreiras[c] || {}, carreiraAtiva: c });
     },
+    escolherPeriodo: function(p) { this.estado.periodo = p || ''; this.escolherCarreira(this._carreira()); },
     _temCarreiras: function() { let b = this._incBrutas; return Object.keys(b).some(function(k) { return b[k] && b[k].carreiras; }); },
+    _temAnos: function() { let b = this._incBrutas; return Object.keys(b).some(function(k) { return b[k] && b[k].anos; }); },
     escolherCarreira: function(c) {
         let self = this;
         this.estado.carreira = c || '';
@@ -18780,10 +18799,13 @@ window.LEISECA_RUNTIME = {
     _htmlCarreira: function(inc) {
         if (!this._temCarreiras()) return '';
         let self = this, c = this._carreira(), bruta = this._incBrutas[this._diploma];
-        let sem = c && bruta && !bruta.estimada && !bruta.carreiras;
+        let per = this._periodo();
+        let sem = (c && bruta && !bruta.estimada && !bruta.carreiras) || (per && bruta && !bruta.estimada && !bruta.anos);
+        let selPer = this._temAnos() ? ' <select title="Período das provas" onchange="window.LEISECA_RUNTIME.escolherPeriodo(this.value)">' +
+            this.PERIODOS.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === per ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' : '';
         return '<label class="ls-carreira" title="Recorrência por carreira: a prioridade e as cobranças passam a contar só as provas da carreira escolhida (sigla do órgão que promoveu o concurso)">🎯 <select onchange="window.LEISECA_RUNTIME.escolherCarreira(this.value)">' +
             this.CARREIRAS.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === c ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
-            '</select>' + (sem ? ' <span class="ls-carreira-aviso">sem recorte por carreira nesta lei (mostrando todas)</span>' : '') + '</label>';
+            '</select>' + selPer + (sem ? ' <span class="ls-carreira-aviso">sem esse recorte nesta lei (mostrando o total)</span>' : '') + '</label>';
     },
     _prepararIncidencia: function(inc) {
         // Lei nova, sem questões (ferramentas/prioridade_estimada.py): o nível vem

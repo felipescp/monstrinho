@@ -107,7 +107,7 @@ def main():
         if not arq.endswith('.json'):
             continue
         j = json.load(open(os.path.join(INC, arq), encoding='utf-8'))
-        if not j.get('estimada') and not j.get('semCartorios'):
+        if not j.get('estimada') and not (j.get('semCartorios') and j.get('anos')):
             pendentes.append(arq)
     materiais = sorted(glob.glob(os.path.join(a.pasta, '**', '*.md'), recursive=True))
     print('%d materiais · %d mapas a recontar' % (len(materiais), len(pendentes)))
