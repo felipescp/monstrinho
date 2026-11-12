@@ -11095,13 +11095,19 @@ window.DIVULGAR = {
         let self = this, a = this._area(d.formato), T = Object.assign({}, this.TEMAS[d.tema], (this.ACENTOS.questao || {})[d.tema]), esc = a.esc;
         this._T = T;
         let ctx = document.createElement('canvas').getContext('2d');
+        // Selo de origem ("Bateria: LINDB · Questão 25/60") no alto das
+        // imagens da questão: mostra que ela vem do acervo da Salinha.
+        let seloOrig = d.origem && d.origem.trim() ? [{ t: d.origem.trim(), fundo: T.caixa, cor: T.primaria }] : [];
+        let hOrig = seloOrig.length ? this._selos(ctx, seloOrig, 0, 0, a.w, esc, false) + Math.round(26 * esc) : 0;
+        let aG = a;
+        let aQ = Object.assign({}, a, { y: a.y + hOrig, h: a.h - hOrig });
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
         let paxDica = function() { return d.destino === 'x' ? 'Gabarito no próximo post ↓' : 'Arraste para ver o gabarito →'; };
         // Enunciado: a última página da questão leva as opções V/F.
-        let capUltima = a.h - hOpc - hDica - gap * 2, capCheia = a.h;
-        let ajE = this._ajustarPaginas(ctx, d.enunciado, a.w, [capUltima], Math.round(54 * esc * a.alto), Math.round(38 * esc), T);
+        let capUltima = aQ.h - hOpc - hDica - gap * 2, capCheia = aQ.h;
+        let ajE = this._ajustarPaginas(ctx, d.enunciado, aQ.w, [capUltima], Math.round(54 * esc * aQ.alto), Math.round(38 * esc), T);
         if (ajE.paginas.length > 1) {
-            let uns = this._unidades(ctx, d.enunciado, ajE.tam, a.w, T);
+            let uns = this._unidades(ctx, d.enunciado, ajE.tam, aQ.w, T);
             let pags = this._paginar(uns, [capCheia]);
             // se a última página não comporta as opções, abre mais uma
             let ult = pags[pags.length - 1];
@@ -11116,16 +11122,17 @@ window.DIVULGAR = {
             let ultima = i === ajE.paginas.length - 1;
             paginas.push({ desenhar: function(c, n, total) {
                 let ctx = c.getContext('2d');
-                self._moldura(ctx, a, T, 'Verdadeiro ou falso?', d.contexto, n + '/' + total);
+                self._moldura(ctx, aG, T, 'Verdadeiro ou falso?', d.contexto, n + '/' + total);
+                if (hOrig) self._selos(ctx, seloOrig, aG.x, aG.y, aG.w, esc, true);
                 let hTxt = self._alturaUnidades(uns);
                 if (ultima) {
                     let livre = capUltima;
-                    let y = a.y + Math.max(0, (livre - hTxt) / 2);
-                    if (ajE.paginas.length > 1) y = a.y;
-                    self._desenharUnidades(ctx, uns, a.x, y, a.w);
-                    let yOpc = a.y + capUltima + gap, wOpc = (a.w - Math.round(30 * esc)) / 2;
+                    let y = aQ.y + Math.max(0, (livre - hTxt) / 2);
+                    if (ajE.paginas.length > 1) y = aQ.y;
+                    self._desenharUnidades(ctx, uns, aQ.x, y, aQ.w);
+                    let yOpc = aQ.y + capUltima + gap, wOpc = (aQ.w - Math.round(30 * esc)) / 2;
                     [['V', 'Verdadeiro'], ['F', 'Falso']].forEach(function(o, k) {
-                        let x = a.x + k * (wOpc + Math.round(30 * esc));
+                        let x = aQ.x + k * (wOpc + Math.round(30 * esc));
                         ctx.fillStyle = T.caixa; self._retArred(ctx, x, yOpc, wOpc, hOpc, Math.round(22 * esc)); ctx.fill();
                         ctx.strokeStyle = T.borda; ctx.lineWidth = 3; ctx.stroke();
                         let r = hOpc * 0.3, cx = x + Math.round(30 * esc) + r, cy = yOpc + hOpc / 2;
@@ -11135,10 +11142,10 @@ window.DIVULGAR = {
                         ctx.textAlign = 'left'; ctx.fillStyle = T.texto; ctx.font = '700 ' + Math.round(36 * esc) + 'px Outfit, sans-serif';
                         ctx.fillText(o[1], cx + r + Math.round(22 * esc), cy + 1);
                     });
-                    self._dica(ctx, a, T, paxDica(d.formato), yOpc + hOpc + gap * 0.5 + hDica / 2);
+                    self._dica(ctx, aG, T, paxDica(d.formato), yOpc + hOpc + gap * 0.5 + hDica / 2);
                 } else {
-                    self._desenharUnidades(ctx, uns, a.x, a.y, a.w);
-                    self._dica(ctx, a, T, 'A questão continua →', null);
+                    self._desenharUnidades(ctx, uns, aQ.x, aQ.y, aQ.w);
+                    self._dica(ctx, aG, T, 'A questão continua →', null);
                 }
             } });
         });
@@ -11630,11 +11637,25 @@ window.DIVULGAR = {
         let tags = ['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB'];
         if (d.materia) tags.splice(1, 0, this._hashtag(d.materia));
         let onde = (nQuestao || 1) + 1;
-        return 'Verdadeiro ou falso? 🤔\n\n' + (d.contexto ? d.contexto + '\n\n' : '') +
+        return 'Verdadeiro ou falso? 🤔\n\n' + (d.contexto ? d.contexto + '\n' : '') + (d.origem ? '📚 ' + d.origem + ', direto do acervo da Salinha\n' : '') + ((d.contexto || d.origem) ? '\n' : '') +
             'Responde aqui nos comentários antes de arrastar pro lado — o gabarito comentado começa na ' + onde + 'ª imagem.\n\n' +
             'Treine mais questões assim na Salinha: asalinha.com.br\n\n' + tags.join(' ');
     },
 
+    // "Bateria: LINDB · Questão 25/60" — nome da bateria aberta (C.nome) e a
+    // posição da questão nela (número original ou ordem), sobre o total.
+    _origemQuestao: function(q, cfg) {
+        try {
+            let blocos = (window.D && Array.isArray(window.D.blocos)) ? window.D.blocos : [];
+            let todas = [];
+            blocos.forEach(function(b) { (b.questoes || []).forEach(function(x) { todas.push(x); }); });
+            let pos = todas.findIndex(function(x) { return x && x.id === q.id; }) + 1;
+            let num = /^\d+$/.test(String(q.numOrig || '')) ? Number(q.numOrig) : pos;
+            let nome = (cfg && cfg.nome) || '';
+            if (!nome || !num) return '';
+            return 'Bateria: ' + nome + ' · Questão ' + num + (todas.length ? '/' + todas.length : '');
+        } catch (e) { return ''; }
+    },
     abrirQuestao: function(q, cfg) {
         if (!window.ehAdmin || !window.ehAdmin()) return;
         if (!q || (q.gabarito !== 'V' && q.gabarito !== 'F')) { alert('Por enquanto a divulgação funciona com questões de Verdadeiro ou Falso com gabarito.'); return; }
@@ -11650,9 +11671,10 @@ window.DIVULGAR = {
             id: q.id, materia: mat || '',
             contexto: [mat, top].filter(Boolean).join(' · '),
             enunciado: q.enunciado || '', explicacao: q.explicacao || '', axioma: q.axioma || '',
-            gabarito: q.gabarito, chaves: '',
+            gabarito: q.gabarito, chaves: '', origem: this._origemQuestao(q, cfg),
             tipo: 'questao', tituloModal: 'Divulgar questão',
             campos: [
+                { chave: 'origem', rotulo: 'Origem no alto da questão (vazio = sem)', tipo: 'linha' },
                 { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja, na explicação (separe por vírgula)', tipo: 'linha' },
                 { chave: 'chaves2', rotulo: 'Palavras-chave em marca-texto azul, na explicação (separe por vírgula)', tipo: 'linha' },
                 { chave: 'chaves3', rotulo: 'Marca-texto rosa — só excepcionalmente (separe por vírgula)', tipo: 'linha' },
