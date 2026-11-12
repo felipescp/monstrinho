@@ -11563,9 +11563,18 @@ window.DIVULGAR = {
                 .replace(/^\s*·\s*|\s*·\s*$/g, '').trim();
         };
         blocos = blocos.map(semCuradoria).filter(function(b) { return b && !/^[·\s*]*$/.test(b); });
-        return { md: blocos.join('\n\n'), ref: semCuradoria(ref) };
+        // "Fonte: …" sai do conteúdo e vira campo à parte, fora das imagens
+        // por padrão (pedido explícito do usuário: incluir só quando for
+        // preciso citar, p. ex. esquema de colega com autorização).
+        let fontes = [];
+        blocos = blocos.filter(function(b) {
+            if (/^[\s*_]*Fontes?\s*:/i.test(b)) { fontes.push(b.replace(/[*_]+/g, '').replace(/\s+/g, ' ').trim()); return false; }
+            return true;
+        });
+        return { md: blocos.join('\n\n'), ref: semCuradoria(ref), fonte: fontes.join(' · ') };
     },
     _paginasEsquema: function(d) {
+        if (d.incluirFonte && d.fonte && d.fonte.trim()) d = Object.assign({}, d, { conteudo: (d.conteudo || '') + '\n\n*' + d.fonte.trim().replace(/\*/g, '') + '*' });
         d = this._comDestaques(d, ['conteudo']);
         let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
         this._T = T;
@@ -11619,6 +11628,7 @@ window.DIVULGAR = {
         if (d.materia) tags.push(this._hashtag(d.materia));
         tags = tags.concat(['#Concursos', '#Defensoria', '#DPESP', '#DPU', '#TJPB']);
         return '🧠 Esquema: ' + d.titulo + '\n\n' + (d.contexto ? d.contexto + '\n\n' : '') +
+            ((d.incluirFonte && d.fonte && d.fonte.trim()) ? '📎 ' + d.fonte.trim().replace(/\*/g, '') + '\n\n' : '') +
             'Salve para revisar antes da prova 📌 Mais esquemas como este na Salinha: asalinha.com.br\n\n' + tags.join(' ');
     },
     abrirEsquema: function(item, chave) {
@@ -11636,6 +11646,7 @@ window.DIVULGAR = {
             id: item.id, tipo: 'esquema', tituloModal: 'Divulgar esquema',
             materia: mat, contexto: [mat, partes.slice(1).join(' > ')].filter(Boolean).join(' · '),
             titulo: item.titulo || '', ref: conv.ref, conteudo: conv.md, tabelaEmBlocos: true,
+            fonte: conv.fonte || '', incluirFonte: false,
             chaves: this._sugerirChaves(item.titulo, conv.md),
             campos: [
                 { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja (separe por vírgula)', tipo: 'linha' },
@@ -11645,6 +11656,8 @@ window.DIVULGAR = {
                 { chave: 'titulo', rotulo: 'Título', linhas: 2 },
                 { chave: 'ref', rotulo: 'Linha de referência (vazio = sem)', linhas: 2 },
                 { chave: 'tabelaEmBlocos', rotulo: 'Tabelas de 3+ colunas em blocos (melhor no celular)', tipo: 'check' },
+                { chave: 'incluirFonte', rotulo: 'Incluir a fonte nas imagens (ex.: esquema de colega, com autorização)', tipo: 'check' },
+                { chave: 'fonte', rotulo: 'Fonte (só aparece se a caixa acima estiver marcada)', tipo: 'linha' },
                 { chave: 'conteudo', rotulo: 'Conteúdo (markdown)', linhas: 12 }
             ],
             formatoX: lembrado.formatoX === 'x' ? 'x' : 'feed', stories: !!lembrado.stories, formato: 'feed', destino: 'instagram',
@@ -11769,6 +11782,10 @@ window.DIVULGAR = {
         let d = this._estado;
         if (!d) return;
         d[campo] = valor;
+        if ((campo === 'incluirFonte' || campo === 'fonte') && !this._legendaEditada) {
+            let leg = document.getElementById('dvg-legenda');
+            if (leg && d.tipo === 'esquema') leg.value = this._legendaEsquema(d);
+        }
         if (campo === 'formatoX' || campo === 'tema' || campo === 'stories' || campo === 'destaques') {
             try { localStorage.setItem('tjpe_v1__divulgar_prefs', JSON.stringify({ formatoX: d.formatoX, tema: d.tema, stories: d.stories, destaques: d.destaques })); } catch (e) {}
         }
