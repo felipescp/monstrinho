@@ -11097,8 +11097,11 @@ window.DIVULGAR = {
         let ctx = document.createElement('canvas').getContext('2d');
         // Selo de origem ("Bateria: LINDB · Questão 25/60") no alto das
         // imagens da questão: mostra que ela vem do acervo da Salinha.
-        let seloOrig = d.origem && d.origem.trim() ? [{ t: d.origem.trim(), fundo: T.caixa, cor: T.primaria }] : [];
-        let hOrig = seloOrig.length ? this._selos(ctx, seloOrig, 0, 0, a.w, esc, false) + Math.round(26 * esc) : 0;
+        // Linha de origem em destaque (pedido explícito do usuário): "Bateria:
+        // LINDB · Questão 25/60", fonte maior, na cor das questões.
+        let tamOrig = Math.round(36 * esc), lhOrig = Math.round(tamOrig * 1.25), fonteOrig = '800 ' + tamOrig + 'px Outfit, sans-serif';
+        let linhasOrig = d.origem && d.origem.trim() ? this._linhasFonte(ctx, d.origem.trim(), fonteOrig, a.w) : [];
+        let hOrig = linhasOrig.length ? linhasOrig.length * lhOrig + Math.round(28 * esc) : 0;
         let aG = a;
         let aQ = Object.assign({}, a, { y: a.y + hOrig, h: a.h - hOrig });
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
@@ -11122,8 +11125,11 @@ window.DIVULGAR = {
             let ultima = i === ajE.paginas.length - 1;
             paginas.push({ desenhar: function(c, n, total) {
                 let ctx = c.getContext('2d');
-                self._moldura(ctx, aG, T, 'Verdadeiro ou falso?', d.contexto, n + '/' + total);
-                if (hOrig) self._selos(ctx, seloOrig, aG.x, aG.y, aG.w, esc, true);
+                self._moldura(ctx, aG, T, 'Bateria de questões', d.contexto, n + '/' + total);
+                if (hOrig) {
+                    ctx.fillStyle = T.primaria; ctx.font = fonteOrig; ctx.textBaseline = 'alphabetic';
+                    linhasOrig.forEach(function(l, k) { ctx.fillText(l, aG.x, aG.y + k * lhOrig + tamOrig); });
+                }
                 let hTxt = self._alturaUnidades(uns);
                 if (ultima) {
                     let livre = capUltima;
@@ -11653,7 +11659,7 @@ window.DIVULGAR = {
             let num = /^\d+$/.test(String(q.numOrig || '')) ? Number(q.numOrig) : pos;
             let nome = (cfg && cfg.nome) || '';
             if (!nome || !num) return '';
-            return 'Bateria: ' + nome + ' · Questão ' + num + (todas.length ? '/' + todas.length : '');
+            return 'Bateria: ' + nome.toLocaleUpperCase('pt-BR') + ' · Questão ' + num + (todas.length ? '/' + todas.length : '');
         } catch (e) { return ''; }
     },
     abrirQuestao: function(q, cfg) {
