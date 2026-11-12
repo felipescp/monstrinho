@@ -399,6 +399,18 @@ demais como "Coluna: texto"), mais legível no celular; dá para voltar à
 tabela na prévia. Um bloco só se parte entre imagens se a sobra for grande;
 linha de tabela mais alta que a imagem é partida em pedaços.
 
+Destaques nas imagens (`_destacarAuto`, `_sugerirChaves`): campo
+"Palavras-chave em marca-texto", já preenchido com as expressões do título
+que se repetem no texto (ex.: "racismo estrutural"); cada uma ganha fundo
+amarelo na primeira vez que aparece em cada campo. Com "Destaques
+automáticos" (lembrado no aparelho), prazos, frações, percentuais, artigos,
+leis, súmulas/temas, o resultado ("é cabível", "é inconstitucional") e
+termos de pegadinha ("independentemente", "ainda que") saem em amarelo, e
+negações/vedações ("não", "vedado", "nulo") em vermelho. Valem na tese, no
+resumo, no "o que mudou", na explicação das questões (o enunciado nunca,
+para não entregar a resposta) e no conteúdo dos esquemas. À mão:
+`==marca-texto==`, `!!vermelho!!`.
+
 ## Domínio próprio (www.asalinha.com.br)
 
 1. **Firebase → Hosting → Adicionar domínio personalizado:**
