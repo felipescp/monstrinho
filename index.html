@@ -10502,9 +10502,13 @@ window.DIVULGAR = {
         stories: { rotulo: 'Stories 9:16 (1080×1920)', w: 1080, h: 1920 },
         x: { rotulo: 'X paisagem 16:9 (1600×900)', w: 1600, h: 900 }
     },
-    // Cor própria por tipo de post (pedido explícito do usuário): questões
-    // (e esquemas) no índigo da marca; julgados em verde-petróleo.
+    // Cor própria por tipo de post (pedido explícito do usuário): esquemas
+    // no índigo da marca, julgados em verde-petróleo e questões em magenta.
     ACENTOS: {
+        questao: {
+            claro: { faixa: '#a21caf', primaria: '#a21caf', caixa: '#fbeefd', borda: '#efc2f5', cabTabela: '#f5d0fe' },
+            escuro: { faixa: '#a21caf', primaria: '#f0abfc', caixa: '#2e1530', borda: '#5b2160', cabTabela: '#701a75' }
+        },
         julgado: {
             claro: { faixa: '#0f766e', primaria: '#0f766e', caixa: '#e6f6f3', borda: '#a7ddd3', cabTabela: '#ccefe8' },
             escuro: { faixa: '#0f766e', primaria: '#5eead4', caixa: '#13302e', borda: '#1f4f4a', cabTabela: '#134e4a' }
@@ -11078,7 +11082,7 @@ window.DIVULGAR = {
     // Monta a lista de páginas: [{desenhar(canvas, n, total)}].
     _paginasQuestao: function(d) {
         d = this._comDestaques(d, ['explicacao']);
-        let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
+        let self = this, a = this._area(d.formato), T = Object.assign({}, this.TEMAS[d.tema], (this.ACENTOS.questao || {})[d.tema]), esc = a.esc;
         this._T = T;
         let ctx = document.createElement('canvas').getContext('2d');
         let hOpc = Math.round(110 * esc), hDica = Math.round(50 * esc), gap = Math.round(40 * esc);
