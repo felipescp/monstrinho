@@ -10515,8 +10515,8 @@ window.DIVULGAR = {
         }
     },
     TEMAS: {
-        claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null, cabTabela: '#e0e7ff', citacao: '#fff7ed', barraCitacao: '#f59e0b', marca: '#fde68a', marcaTexto: '#1e1b4b', destaque: '#b45309' },
-        escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff', cabTabela: '#312e81', citacao: '#292524', barraCitacao: '#f59e0b', marca: '#facc15', marcaTexto: '#0f172a', destaque: '#fbbf24' }
+        claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null, cabTabela: '#e0e7ff', citacao: '#fff7ed', barraCitacao: '#f59e0b', marca: '#fdba74', marca2: '#bae6fd', marcaTexto: '#1e1b4b', destaque: '#b45309' },
+        escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff', cabTabela: '#312e81', citacao: '#292524', barraCitacao: '#f59e0b', marca: '#fb923c', marca2: '#7dd3fc', marcaTexto: '#0f172a', destaque: '#fbbf24' }
     },
     // Acima disso a prévia sugere encurtar (o Instagram aceita até 20).
     IMAGENS_SUGERIDAS: 4,
@@ -10546,12 +10546,12 @@ window.DIVULGAR = {
         // negrito/itálico, depois os destaques dentro de cada trecho.
         s = String(s || '');
         let base = this._inlineBase(s);
-        if (!/==[^=]+==|!![^!]+!!|\^\^[^^]+\^\^/.test(s)) return base;
+        if (!/==[^=]+==|\+\+[^+]+\+\+|!![^!]+!!|\^\^[^^]+\^\^/.test(s)) return base;
         let out = [];
         base.forEach(function(tr) {
-            tr.t.split(/(==[^=\n]+?==|!![^!\n]+?!!|\^\^[^^\n]+?\^\^)/).forEach(function(p) {
+            tr.t.split(/(==[^=\n]+?==|\+\+[^+\n]+?\+\+|!![^!\n]+?!!|\^\^[^^\n]+?\^\^)/).forEach(function(p) {
                 if (!p) return;
-                let mk = /^==[\s\S]+==$/.test(p) ? 'am' : /^!![\s\S]+!!$/.test(p) ? 'vm' : /^\^\^[\s\S]+\^\^$/.test(p) ? 'ay' : '';
+                let mk = /^==[\s\S]+==$/.test(p) ? 'am' : /^\+\+[\s\S]+\+\+$/.test(p) ? 'az' : /^!![\s\S]+!!$/.test(p) ? 'vm' : /^\^\^[\s\S]+\^\^$/.test(p) ? 'ay' : '';
                 out.push(Object.assign({}, tr, { t: mk ? p.slice(2, -2) : p }, mk ? { mk: mk } : {}));
             });
         });
@@ -10643,28 +10643,33 @@ window.DIVULGAR = {
         let T = this._T || this.TEMAS.claro;
         ctx.textBaseline = 'alphabetic';
         // fundo do marca-texto, contínuo entre as palavras do mesmo destaque
-        let xm = x, ini = null, fim = 0, r = Math.round(tam * 0.12);
+        // (laranja: ==…==; azul: ++…++)
+        let xm = x, ini = null, fim = 0, tipo = null, r = Math.round(tam * 0.12);
         let fechar = function() {
             if (ini === null) return;
-            ctx.fillStyle = T.marca; ctx.fillRect(Math.floor(ini - r), Math.round(y + tam * 0.16), Math.ceil(fim - ini + r * 2), Math.round(tam * 1.14));
-            ini = null;
+            ctx.fillStyle = tipo === 'az' ? T.marca2 : T.marca; ctx.fillRect(Math.floor(ini - r), Math.round(y + tam * 0.16), Math.ceil(fim - ini + r * 2), Math.round(tam * 1.14));
+            ini = null; tipo = null;
         };
         itens.forEach(function(it) {
-            if (it.mk === 'am' && it.t !== ' ') { if (ini === null) ini = xm; fim = xm + it.w; }
-            else if (!(it.mk === 'am' && it.t === ' ')) fechar();
+            let marca = it.mk === 'am' || it.mk === 'az';
+            if (marca && it.t !== ' ') {
+                if (ini !== null && tipo !== it.mk) fechar();
+                if (ini === null) { ini = xm; tipo = it.mk; }
+                fim = xm + it.w;
+            } else if (!(marca && it.t === ' ' && it.mk === tipo)) fechar();
             xm += it.w;
         });
         fechar();
         itens.forEach(function(it) {
             ctx.font = it.fonte;
-            ctx.fillStyle = it.mk === 'am' ? T.marcaTexto : it.mk === 'vm' ? T.errado : it.mk === 'ay' ? T.destaque : cor;
+            ctx.fillStyle = (it.mk === 'am' || it.mk === 'az') ? T.marcaTexto : it.mk === 'vm' ? T.errado : it.mk === 'ay' ? T.destaque : cor;
             ctx.fillText(it.t, x, y + tam * 1.05); x += it.w;
         });
     },
     // Destaques automáticos (fora de **negrito** e de destaques já feitos):
     // amarelo em prazos, frações, percentuais, artigos, súmulas/temas e
     // palavras de "pegadinha"; vermelho em negações e vedações.
-    _destacarAuto: function(texto, chaves, auto) {
+    _destacarAuto: function(texto, chaves, auto, chaves2) {
         if (!texto) return texto;
         let L = 'A-Za-zÀ-ÖØ-öø-ÿ0-9';
         let amarelo = new RegExp('(?<![' + L + '/])(?:' + [
@@ -10681,20 +10686,24 @@ window.DIVULGAR = {
         let vermelho = new RegExp('(?<![' + L + '])(?:não|nunca|vedad[oa]s?|vedação|proibid[oa]s?|nul[oa]s?|nulidade|inconstitucional|inconstitucionalidade|ilícit[oa]s?|inadmissíve(?:l|is)|incabíve(?:l|is)|descabid[oa]s?|impossibilidade)(?![' + L + '])', 'gi');
         let vistas = {};
         let fora = function(t, re, ab, fe, uma) {
-            return t.split(/(==[^=\n]+?==|!![^!\n]+?!!|\^\^[^^\n]+?\^\^|\[[^\]]*\]\([^)]*\))/).map(function(p, i) {
+            return t.split(/(==[^=\n]+?==|\+\+[^+\n]+?\+\+|!![^!\n]+?!!|\^\^[^^\n]+?\^\^|\[[^\]]*\]\([^)]*\))/).map(function(p, i) {
                 return i % 2 ? p : p.replace(re, function(m) {
                     if (uma) { let k = m.toLowerCase().replace(/\s+/g, ' '); if (uma[k]) return m; uma[k] = 1; }
                     return ab + m + fe;
                 });
             }).join('');
         };
-        let lista = String(chaves || '').split(/[,;\n]/).map(function(c) { return c.trim(); }).filter(function(c) { return c.length >= 3; })
-            .sort(function(x, y) { return y.length - x.length; });
-        let reChaves = lista.length ? new RegExp('(?<![' + L + '])(?:' + lista.map(function(c) { return c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'); }).join('|') + ')(?![' + L + '])', 'gi') : null;
+        let reDe = function(chs) {
+            let lista = String(chs || '').split(/[,;\n]/).map(function(c) { return c.trim(); }).filter(function(c) { return c.length >= 3; })
+                .sort(function(x, y) { return y.length - x.length; });
+            return lista.length ? new RegExp('(?<![' + L + '])(?:' + lista.map(function(c) { return c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'); }).join('|') + ')(?![' + L + '])', 'gi') : null;
+        };
+        let reChaves = reDe(chaves), reChaves2 = reDe(chaves2);
         return String(texto).split('\n').map(function(l) {
             if (/^\s*#/.test(l) || /^\s*\|?\s*:?-{2,}/.test(l)) return l;
             // dentro de **negrito** o marca-texto vale também
             if (reChaves) l = fora(l, reChaves, '==', '==', vistas);
+            if (reChaves2) l = fora(l, reChaves2, '++', '++', vistas);
             if (auto) l = fora(fora(l, amarelo, '^^', '^^'), vermelho, '!!', '!!');
             return l;
         }).join('\n');
@@ -10728,9 +10737,9 @@ window.DIVULGAR = {
         return cands.slice(0, 4).join(', ');
     },
     _comDestaques: function(d, campos) {
-        if (!d.destaques && !(d.chaves && d.chaves.trim())) return d;
+        if (!d.destaques && !(d.chaves && d.chaves.trim()) && !(d.chaves2 && d.chaves2.trim())) return d;
         let c = Object.assign({}, d), self = this;
-        campos.forEach(function(k) { if (c[k]) c[k] = self._destacarAuto(c[k], d.chaves, d.destaques); });
+        campos.forEach(function(k) { if (c[k]) c[k] = self._destacarAuto(c[k], d.chaves, d.destaques, d.chaves2); });
         return c;
     },
 
@@ -10847,7 +10856,7 @@ window.DIVULGAR = {
                     for (let c = 1; c < bl.cab.length; c++) {
                         if (!(r[c] || '').trim()) continue;
                         faixa(Math.round(tam * 0.3), cartao);
-                        let rot = (bl.cab[c] || '').replace(/\*+|==|!!|\^\^/g, '').trim();
+                        let rot = (bl.cab[c] || '').replace(/\*+|==|\+\+|!!|\^\^/g, '').trim();
                         let trechos = (rot ? [{ t: rot + ': ', b: true }] : []).concat(self._inline(r[c]));
                         self._quebrar(ctx, trechos, tam, wIn, false).forEach(function(itens) {
                             uns.push({ h: lh, cartao: cartao, desenhar: function(ctx, x, y, W) {
@@ -11380,7 +11389,8 @@ window.DIVULGAR = {
             mudou: (item.mudanca && item.mudanca.resumo) || '', resumo: item.resumo || '',
             incluirResumo: true, chaves: this._sugerirChaves(item.titulo, (item.tese || '') + ' ' + (item.resumo || '')),
             campos: [
-                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves2', rotulo: 'Palavras-chave em marca-texto azul (separe por vírgula)', tipo: 'linha' },
                 { chave: 'rotulo', rotulo: 'Faixa do topo', tipo: 'linha' },
                 { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
                 { chave: 'sistematica', rotulo: 'Selo (sistemática/tema)', tipo: 'linha' },
@@ -11553,7 +11563,8 @@ window.DIVULGAR = {
             titulo: item.titulo || '', ref: conv.ref, conteudo: conv.md, tabelaEmBlocos: true,
             chaves: this._sugerirChaves(item.titulo, conv.md),
             campos: [
-                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves2', rotulo: 'Palavras-chave em marca-texto azul (separe por vírgula)', tipo: 'linha' },
                 { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
                 { chave: 'titulo', rotulo: 'Título', linhas: 2 },
                 { chave: 'ref', rotulo: 'Linha de referência (vazio = sem)', linhas: 2 },
@@ -11599,7 +11610,8 @@ window.DIVULGAR = {
             gabarito: q.gabarito, chaves: '',
             tipo: 'questao', tituloModal: 'Divulgar questão',
             campos: [
-                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto na explicação (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja, na explicação (separe por vírgula)', tipo: 'linha' },
+                { chave: 'chaves2', rotulo: 'Palavras-chave em marca-texto azul, na explicação (separe por vírgula)', tipo: 'linha' },
                 { chave: 'contexto', rotulo: 'Disciplina · tópico', tipo: 'linha' },
                 { chave: 'enunciado', rotulo: 'Enunciado', linhas: 5 },
                 { chave: 'explicacao', rotulo: 'Explicação', linhas: 8 },
@@ -11647,7 +11659,7 @@ window.DIVULGAR = {
                         '<label class="dvg-check"><input type="checkbox"' + (d.destaques ? ' checked' : '') + ' onchange="window.DIVULGAR._mudar(\'destaques\', this.checked)"> Destaques automáticos (amarelo: prazos, artigos, súmulas e termos de pegadinha; vermelho: negações e vedações)</label>' +
                         campos +
                         '<div id="dvg-aviso" class="dvg-aviso"></div>' +
-                        '<div class="dvg-nota">As mudanças valem só para as imagens; o acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, ==marca-texto==, !!vermelho!!, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
+                        '<div class="dvg-nota">As mudanças valem só para as imagens; o acervo não muda. Texto longo continua na imagem seguinte. Markdown: **negrito**, *itálico*, ==marca-texto laranja==, ++marca-texto azul++, !!vermelho!!, listas (- ou 1.), citação (&gt; ), tabela e título (#).</div>' +
                         '<button type="button" class="dvg-prim dvg-tudo" onclick="window.DIVULGAR.baixarZip()">⬇️ Baixar tudo (.zip: Instagram + X + textos)</button>' +
                         '<div class="dvg-botoes" id="dvg-botoes"></div>' +
                         '<label>Legenda do Instagram<textarea id="dvg-legenda" rows="6" oninput="window.DIVULGAR._legendaEditada = true"></textarea></label>' +
