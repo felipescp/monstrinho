@@ -11262,6 +11262,13 @@ window.DIVULGAR = {
         if (ajT.paginas.length > 1) {
             let uns = this._unidades(ctx, d.tese, ajT.tam, wTese, T);
             ajT.paginas = this._paginar(uns, [cap1, a.h - hRotTese]);
+            // a letra desce um pouco (até 24px) quando isso evita uma imagem
+            // a mais só para o fim da tese
+            for (let tam = ajT.tam - 1; tam >= Math.round(24 * esc); tam--) {
+                let u2 = this._unidades(ctx, d.tese, tam, wTese, T);
+                let p2 = this._paginar(u2, [cap1, a.h - hRotTese]);
+                if (p2.length < ajT.paginas.length) { ajT = { tam: tam, paginas: p2 }; break; }
+            }
         }
         let paginas = [];
         let desenharTese = function(ctx, uns, y) {
