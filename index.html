@@ -11932,9 +11932,17 @@ window.DIVULGAR = {
         delete est.campos;
         let leg = document.getElementById('dvg-legenda'), fio = document.getElementById('dvg-fio');
         let l = this._lote();
-        l.push({ estado: est, legenda: leg ? leg.value : '', fio: fio ? fio.value : '', rotulo: this._rotuloItemLote(d), em: new Date().toISOString() });
+        let novo = { estado: est, legenda: leg ? leg.value : '', fio: fio ? fio.value : '', rotulo: this._rotuloItemLote(d), em: new Date().toISOString() };
+        // O mesmo card/questão não entra duas vezes (pedido explícito do
+        // usuário); se já estiver, dá para trocar pela versão atual.
+        let pos = l.findIndex(function(it) { return it.estado && it.estado.id === d.id && it.estado.tipo === d.tipo; });
+        let msg = '✅ No lote (' + (l.length + 1) + ')';
+        if (pos >= 0) {
+            if (!confirm('Este item já está no lote (posição ' + String(pos + 1).padStart(2, '0') + ').\n\nTrocar pela versão atual da prévia, mantendo a posição?')) return;
+            l[pos] = novo; msg = '🔄 Atualizado (posição ' + String(pos + 1).padStart(2, '0') + ')';
+        } else l.push(novo);
         this._salvarLote(l);
-        if (btn) { let t = btn.textContent; btn.textContent = '✅ No lote (' + l.length + ')'; setTimeout(function() { btn.textContent = t; }, 1500); }
+        if (btn) { let t = btn.textContent; btn.textContent = msg; setTimeout(function() { btn.textContent = t; }, 1800); }
     },
     abrirLote: function() {
         let m = document.getElementById('modal-divulgar-lote');
@@ -12007,6 +12015,10 @@ window.DIVULGAR = {
             arquivos.unshift({ nome: '00-roteiro.txt', conteudo: roteiro.join('\n') });
             window.downloadZipArquivos(arquivos, 'salinha-lote-' + new Date().toISOString().slice(0, 10) + '.zip');
             if (st) st.textContent = '✅ Lote gerado: ' + l.length + ' posts.';
+            // Depois de baixar, oferece esvaziar o lote (pedido explícito do usuário).
+            setTimeout(function() {
+                if (confirm('Lote baixado (' + l.length + ' posts). Confira o .zip.\n\nEsvaziar o lote agora?')) { self._salvarLote([]); self.abrirLote(); }
+            }, 600);
         }).catch(function(e) {
             if (st) st.textContent = '⚠️ Não foi possível gerar o lote: ' + (e && e.message || e);
         }).then(function() {

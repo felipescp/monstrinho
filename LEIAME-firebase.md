@@ -418,6 +418,9 @@ lista a fila (subir, descer, tirar, esvaziar) e "Baixar lote" gera um .zip
 com `00-roteiro.txt` e uma pasta numerada por post (01 = o primeiro a
 publicar), cada uma com `instagram/` (imagens + legenda.txt) e `x/`
 (imagens + fio.txt) — pronto para subir num agendador.
+O mesmo card/questão não entra duas vezes: se já estiver no lote, pergunta
+se troca pela versão atual (mantendo a posição). Depois de baixar, pergunta
+se esvazia o lote.
 
 ## Domínio próprio (www.asalinha.com.br)
 
