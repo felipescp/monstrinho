@@ -10502,6 +10502,14 @@ window.DIVULGAR = {
         stories: { rotulo: 'Stories 9:16 (1080×1920)', w: 1080, h: 1920 },
         x: { rotulo: 'X paisagem 16:9 (1600×900)', w: 1600, h: 900 }
     },
+    // Cor própria por tipo de post (pedido explícito do usuário): questões
+    // (e esquemas) no índigo da marca; julgados em verde-petróleo.
+    ACENTOS: {
+        julgado: {
+            claro: { faixa: '#0f766e', primaria: '#0f766e', caixa: '#e6f6f3', borda: '#a7ddd3', cabTabela: '#ccefe8' },
+            escuro: { faixa: '#0f766e', primaria: '#5eead4', caixa: '#13302e', borda: '#1f4f4a', cabTabela: '#134e4a' }
+        }
+    },
     TEMAS: {
         claro: { fundo: '#ffffff', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#1e1b4b', suave: '#64748b', caixa: '#f1f0ff', borda: '#c7d2fe', primaria: '#4f46e5', certo: '#16a34a', errado: '#dc2626', seloTexto: '#ffffff', fundoLogo: null, cabTabela: '#e0e7ff', citacao: '#fff7ed', barraCitacao: '#f59e0b', marca: '#fde68a', marcaTexto: '#1e1b4b', destaque: '#b45309' },
         escuro: { fundo: '#0f172a', faixa: '#4f46e5', faixaTexto: '#ffffff', texto: '#e2e8f0', suave: '#94a3b8', caixa: '#1e293b', borda: '#334155', primaria: '#a5b4fc', certo: '#4ade80', errado: '#f87171', seloTexto: '#0f172a', fundoLogo: '#ffffff', cabTabela: '#312e81', citacao: '#292524', barraCitacao: '#f59e0b', marca: '#facc15', marcaTexto: '#0f172a', destaque: '#fbbf24' }
@@ -11211,7 +11219,7 @@ window.DIVULGAR = {
     },
     _paginasJulgado: function(d) {
         d = this._comDestaques(d, ['tese', 'resumo', 'mudou']);
-        let self = this, a = this._area(d.formato), T = this.TEMAS[d.tema], esc = a.esc;
+        let self = this, a = this._area(d.formato), T = Object.assign({}, this.TEMAS[d.tema], (this.ACENTOS.julgado || {})[d.tema]), esc = a.esc;
         this._T = T;
         let ctx = document.createElement('canvas').getContext('2d');
         let gap = Math.round(30 * esc), hDica = Math.round(50 * esc);
