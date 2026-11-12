@@ -27673,8 +27673,11 @@ function mkQ(q, modoRevisao){
 
   ac.appendChild(bc);ac.appendChild(bca);ac.appendChild(bcm);
   // Divulgar (imagens para Instagram/X) — só a administração.
-  if(window.ehAdmin&&window.ehAdmin()&&window.DIVULGAR&&(q.gabarito==='V'||q.gabarito==='F')){
-    var bdv=document.createElement('button'); bdv.className='bcad bdivulgar'; bdv.textContent='📤'; bdv.title='Divulgar: gerar imagens para Instagram e X';
+  // Criado sempre e escondido pela classe .so-admin (body.salinha-admin):
+  // a bateria pode ser desenhada antes de o login confirmar o papel de
+  // administração (sessão restaurada no F5), e o botão sumia de vez.
+  if(window.DIVULGAR&&(q.gabarito==='V'||q.gabarito==='F')){
+    var bdv=document.createElement('button'); bdv.className='bcad bdivulgar so-admin'; bdv.textContent='📤'; bdv.title='Divulgar: gerar imagens para Instagram e X';
     bdv.onclick=function(e){e.stopPropagation(); window.DIVULGAR.abrirQuestao(q, C);};
     ac.appendChild(bdv);
   }
@@ -34486,7 +34489,7 @@ window.ESQUEMAS_RUNTIME = {
                 '<div class="esq-card-titulo">' + self._escapar(item.titulo) + '</div>' +
                 '<div class="esq-card-preview">' + self._escapar(previewTxt || 'Sem conteúdo ainda.') + '</div>' +
                 '<div class="esq-card-classificacao">' + btnVisualizado + '<span class="esq-classif-grupo">' + self._sinalAtualizadoEsqHtml(item) + classificarHtml +
-                    ((item.origem_oficial && !self._modoSelecao && window.ehAdmin && window.ehAdmin() && window.DIVULGAR) ? '<button class="card-divulgar-btn" onclick="event.stopPropagation(); window.DIVULGAR.abrirEsquemaPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
+                    ((item.origem_oficial && !self._modoSelecao && window.DIVULGAR) ? '<button class="card-divulgar-btn so-admin" onclick="event.stopPropagation(); window.DIVULGAR.abrirEsquemaPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
                 '</span></div>' +
             '</div>';
         }).join('');
@@ -40560,7 +40563,7 @@ window.JURISPRUDENCIA_RUNTIME = {
         // 💭 só aparece quando há comentário pessoal — clique abre o comentário.
         (self._comentarioPessoal(item.id) ? '<button class="jur-card-comentario-ind" onclick="event.stopPropagation(); window.JURISPRUDENCIA_RUNTIME.abrirVerComComentario(\'' + chave.replace(/'/g, "\\'") + '\', \'' + idEsc + '\');" title="Ver/editar meu comentário">💭</button>' : '') +
         // 📤 Divulgar (imagens para Instagram/X) — só administração, só oficiais.
-        ((item.origem_oficial && window.ehAdmin && window.ehAdmin() && window.DIVULGAR) ? '<button class="card-divulgar-btn" onclick="event.stopPropagation(); window.DIVULGAR.abrirJulgadoPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
+        ((item.origem_oficial && window.DIVULGAR) ? '<button class="card-divulgar-btn so-admin" onclick="event.stopPropagation(); window.DIVULGAR.abrirJulgadoPorId(\'' + idEsc + '\');" title="Divulgar: gerar imagens para Instagram e X">📤</button>' : '') +
         '</span>';
 
         return '<div class="jur-card' + (oculto ? ' jur-card-oculto' : '') + (superado ? ' jur-card-superado' : '') + '" data-id="' + item.id + '"' + onclickCard + '>' +
