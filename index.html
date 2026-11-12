@@ -11202,6 +11202,33 @@ window.DIVULGAR = {
 
     // ── JULGADO ──
     // Quebra simples (sem markdown) numa fonte qualquer — para o título.
+    // Linha já quebrada (título) com o marca-texto laranja nas palavras-chave
+    // (só a primeira ocorrência de cada uma; a fonte atual do ctx é mantida).
+    _linhaComMarca: function(ctx, linha, x, y, tam, chaves, T, marcados) {
+        let L = 'A-Za-zÀ-ÖØ-öø-ÿ0-9';
+        let lista = String(chaves || '').split(/[,;\n]/).map(function(c) { return c.trim(); }).filter(function(c) { return c.length >= 3; })
+            .sort(function(p, q) { return q.length - p.length; });
+        let trechos = [];
+        if (lista.length) {
+            let re = new RegExp('(?<![' + L + '])(?:' + lista.map(function(c) { return c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'); }).join('|') + ')(?![' + L + '])', 'gi'), m;
+            while ((m = re.exec(linha))) {
+                let k = m[0].toLowerCase().replace(/\s+/g, ' ');
+                if (marcados[k]) continue;
+                marcados[k] = 1; trechos.push([m.index, m.index + m[0].length]);
+            }
+        }
+        let r = Math.round(tam * 0.1), ult = 0, xx = x;
+        trechos.forEach(function(t) {
+            let x0 = x + ctx.measureText(linha.slice(0, t[0])).width, w = ctx.measureText(linha.slice(t[0], t[1])).width;
+            ctx.fillStyle = T.marca; ctx.fillRect(Math.floor(x0 - r), Math.round(y + tam * 0.1), Math.ceil(w + r * 2), Math.round(tam * 1.12));
+        });
+        trechos.forEach(function(t) {
+            ctx.fillStyle = T.texto; ctx.fillText(linha.slice(ult, t[0]), xx, y + tam); xx += ctx.measureText(linha.slice(ult, t[0])).width;
+            ctx.fillStyle = T.marcaTexto; ctx.fillText(linha.slice(t[0], t[1]), xx, y + tam); xx += ctx.measureText(linha.slice(t[0], t[1])).width;
+            ult = t[1];
+        });
+        ctx.fillStyle = T.texto; ctx.fillText(linha.slice(ult), xx, y + tam);
+    },
     _linhasFonte: function(ctx, texto, fonte, largura) {
         ctx.font = fonte;
         let linhas = [], atual = '';
@@ -11293,7 +11320,12 @@ window.DIVULGAR = {
                     if (total === 1 || (ajT.paginas.length === 1 && !temResumo)) y = a.y + Math.max(0, (a.h - totalH) * 0.4);
                     if (hSelos) { self._selos(ctx, selos, a.x, y, a.w, esc, true); y += hSelos + Math.round(24 * esc); }
                     ctx.fillStyle = T.texto; ctx.textBaseline = 'alphabetic'; ctx.font = '800 ' + tamTit + 'px Outfit, sans-serif';
-                    linhasTit.forEach(function(l) { ctx.fillText(l, a.x, y + tamTit); y += lhTit; });
+                    let marcados = {};
+                    linhasTit.forEach(function(l) {
+                        if (d.marcaTitulo && d.chaves) self._linhaComMarca(ctx, l, a.x, y, tamTit, d.chaves, T, marcados);
+                        else ctx.fillText(l, a.x, y + tamTit);
+                        y += lhTit;
+                    });
                     y += Math.round(12 * esc);
                     ctx.fillStyle = T.suave; ctx.font = fonteMeta;
                     linhasMeta.forEach(function(l) { ctx.fillText(l, a.x, y + Math.round(23 * esc * 1.05)); y += lhMeta; });
@@ -11398,6 +11430,7 @@ window.DIVULGAR = {
             incluirResumo: true, chaves: this._sugerirChaves(item.titulo, (item.tese || '') + ' ' + (item.resumo || '')),
             campos: [
                 { chave: 'chaves', rotulo: 'Palavras-chave em marca-texto laranja (separe por vírgula)', tipo: 'linha' },
+                { chave: 'marcaTitulo', rotulo: 'Marca-texto laranja também no título', tipo: 'check' },
                 { chave: 'chaves2', rotulo: 'Palavras-chave em marca-texto azul (separe por vírgula)', tipo: 'linha' },
                 { chave: 'chaves3', rotulo: 'Marca-texto rosa — só excepcionalmente (separe por vírgula)', tipo: 'linha' },
                 { chave: 'rotulo', rotulo: 'Faixa do topo', tipo: 'linha' },
