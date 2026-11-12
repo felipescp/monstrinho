@@ -421,6 +421,10 @@ publicar), cada uma com `instagram/` (imagens + legenda.txt) e `x/`
 O mesmo card/questão não entra duas vezes: se já estiver no lote, pergunta
 se troca pela versão atual (mantendo a posição). Depois de baixar, pergunta
 se esvazia o lote.
+No painel, cada item mostra ☀️/🌙 (clique para trocar) e a lista vem
+agrupada em linhas de 3. "🎨 Alternar claro/escuro a cada 3" aplica o
+tema por linha: a 1ª linha publicada (itens 01–03) com o tema escolhido, a
+2ª com o oposto, e assim por diante (ex.: 3Q, 3J, 3E alternando).
 
 ## Domínio próprio (www.asalinha.com.br)
 

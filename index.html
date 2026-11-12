@@ -505,6 +505,9 @@
 #modal-divulgar-lote .dvl-rot { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 #modal-divulgar-lote .dvl-item button { border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; border-radius:6px; padding:3px 8px; cursor:pointer; font-weight:700; }
 #modal-divulgar-lote .dvl-item button:disabled { opacity:.35; cursor:default; }
+#modal-divulgar-lote .dvl-linha { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted, #64748b); margin-top:4px; }
+#modal-divulgar-lote .dvl-alternar { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12px; padding:0 16px 10px; }
+#modal-divulgar-lote .dvl-alternar button { border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; border-radius:6px; padding:4px 9px; cursor:pointer; font-weight:700; font-size:12px; }
 #modal-divulgar-lote .dvl-vazio { font-size:12px; color:var(--text-muted, #64748b); padding:12px 0; }
 #modal-divulgar-lote .dvl-acoes { display:flex; gap:8px; padding:0 16px 8px; }
 #modal-divulgar-lote .dvl-acoes button { padding:9px 12px; border-radius:8px; border:1px solid var(--border-color, #cbd5e1); background:var(--bg-white, #fff); color:inherit; font-weight:700; cursor:pointer; font-size:12px; }
@@ -11951,7 +11954,10 @@ window.DIVULGAR = {
         let l = this._lote();
         let linhas = l.length ? l.map(function(it, i) {
             let n = String(i + 1).padStart(2, '0');
-            return '<div class="dvl-item"><span class="dvl-n">' + n + '</span><span class="dvl-rot">' + esc(it.rotulo) + '</span>' +
+            let tm = (it.estado && it.estado.tema) === 'claro';
+            return (i % 3 === 0 ? '<div class="dvl-linha">Linha ' + (i / 3 + 1) + '</div>' : '') +
+                '<div class="dvl-item"><span class="dvl-n">' + n + '</span><span class="dvl-rot">' + esc(it.rotulo) + '</span>' +
+                '<button type="button" title="Trocar claro/escuro" onclick="window.DIVULGAR.temaItemLote(' + i + ')">' + (tm ? '☀️' : '🌙') + '</button>' +
                 '<button type="button" title="Subir" onclick="window.DIVULGAR.moverLote(' + i + ', -1)"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
                 '<button type="button" title="Descer" onclick="window.DIVULGAR.moverLote(' + i + ', 1)"' + (i === l.length - 1 ? ' disabled' : '') + '>↓</button>' +
                 '<button type="button" title="Tirar do lote" onclick="window.DIVULGAR.removerLote(' + i + ')">✕</button></div>';
@@ -11960,6 +11966,7 @@ window.DIVULGAR = {
             '<div class="dvg-topo"><strong>📦 Lote de publicações (' + l.length + ')</strong><button type="button" class="dvg-fechar" onclick="window.DIVULGAR.fecharLote()">✕</button></div>' +
             '<div class="dvl-nota">Ordem de publicação: <b>01 é o primeiro a publicar</b>. No Instagram o último publicado fica no topo da grade — para uma linha ler da esquerda para a direita, publique da direita para a esquerda.</div>' +
             '<div class="dvl-lista">' + linhas + '</div>' +
+            (l.length ? '<div class="dvl-alternar">🎨 Alternar claro/escuro a cada 3, 1ª linha publicada: <button type="button" onclick="window.DIVULGAR.alternarTemasLote(\'claro\')">☀️ clara</button><button type="button" onclick="window.DIVULGAR.alternarTemasLote(\'escuro\')">🌙 escura</button></div>' : '') +
             '<div class="dvl-acoes"><button type="button" class="dvg-prim" id="dvl-baixar" onclick="window.DIVULGAR.baixarLote()"' + (l.length ? '' : ' disabled') + '>⬇️ Baixar lote (.zip)</button>' +
             '<button type="button" class="dvg-copiar" onclick="window.DIVULGAR.esvaziarLote()"' + (l.length ? '' : ' disabled') + '>🗑️ Esvaziar</button></div>' +
             '<div class="dvl-status" id="dvl-status"></div>' +
@@ -11974,6 +11981,20 @@ window.DIVULGAR = {
         if (j < 0 || j >= l.length) return;
         let t = l[i]; l[i] = l[j]; l[j] = t;
         this._salvarLote(l); this.abrirLote();
+    },
+    // Tema por item e alternância por linha de 3 (descanso visual na grade):
+    // linha 1 (itens 01-03) com o tema escolhido, linha 2 com o oposto etc.
+    temaItemLote: function(i) {
+        let l = this._lote(); if (!l[i] || !l[i].estado) return;
+        l[i].estado.tema = l[i].estado.tema === 'claro' ? 'escuro' : 'claro';
+        this._salvarLote(l); this.abrirLote();
+    },
+    alternarTemasLote: function(primeiro) {
+        let outro = primeiro === 'claro' ? 'escuro' : 'claro', l = this._lote();
+        l.forEach(function(it, i) { if (it.estado) it.estado.tema = Math.floor(i / 3) % 2 === 0 ? primeiro : outro; });
+        this._salvarLote(l); this.abrirLote();
+        let st = document.getElementById('dvl-status');
+        if (st) st.textContent = '🎨 Temas alternados a cada 3 (linha 1 ' + (primeiro === 'claro' ? '☀️' : '🌙') + ').' + (l.length % 3 ? ' Atenção: ' + l.length + ' itens — a última linha está incompleta.' : '');
     },
     removerLote: function(i) { let l = this._lote(); l.splice(i, 1); this._salvarLote(l); this.abrirLote(); },
     esvaziarLote: function() {
