@@ -32737,6 +32737,10 @@ window.triggerFileUpload = function(callback) {
     #esquemas-modal .esq-ocultar-oficiais-global input { margin:0; cursor:pointer; }
     #esquemas-modal .esq-aplicar-sistema-btn { background:var(--bg-white); border:1px solid var(--border-color); border-radius:6px; padding:5px 10px; font-size:10px; font-weight:700; color:var(--text-main); cursor:pointer; white-space:nowrap; align-self:center; }
     #esquemas-modal .esq-aplicar-sistema-btn:hover { border-color:var(--app-primary); color:var(--app-primary); }
+    #esquemas-modal .esq-busca-topo-grupo { display:inline-flex; align-items:center; gap:8px; align-self:center; flex:1 1 220px; min-width:200px; max-width:420px; }
+    #esquemas-modal .esq-busca-topo { flex:1; min-width:0; padding:6px 10px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); color:var(--text-main); font-size:12px; }
+    #esquemas-modal .esq-busca-topo:focus { outline:none; border-color:var(--app-primary); }
+    #esquemas-modal .esq-busca-topo-todo { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); white-space:nowrap; cursor:pointer; }
     #esquemas-modal .esq-leitor-opcoes { position:absolute; z-index:2; top:calc(100% + 4px); left:0; min-width:130px; padding:4px; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-white); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
     #esquemas-modal .esq-leitor-opcoes button { display:block; width:100%; padding:6px 8px; border:0; border-radius:4px; background:transparent; color:var(--text-main); font-size:10px; font-weight:700; text-align:left; cursor:pointer; white-space:nowrap; }
     #esquemas-modal .esq-leitor-opcoes button:hover { background:#f1f5f9; color:var(--app-primary); }
@@ -32896,6 +32900,7 @@ window.triggerFileUpload = function(callback) {
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar Disciplina &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplina()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarDisciplinaHtml()">Exportar .html</button></div></details>
                 <details class="so-admin esq-export-menu" name="esq-export-grupo"><summary>&#x1F4E4; Exportar T&oacute;pico &#x25BE;</summary><div class="esq-export-opcoes"><button onclick="window.ESQUEMAS_RUNTIME.exportarTopico()">Exportar .json</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoMarkdown()">Exportar .md</button><button onclick="window.ESQUEMAS_RUNTIME.exportarTopicoHtml()">Exportar .html</button></div></details>
                 <button class="so-admin esq-cabecalho-btn" onclick="window.ESQUEMAS_RUNTIME.importarArquivoJson()">&#x1F4E5; Importar .json</button>
+                <button class="esq-aplicar-sistema-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
                 <button class="analytics-close-btn" id="esq-modal-btn-maximizar" onclick="window.alternarMaximizarEsquemasModal()" title="Maximizar">⛶</button>
                 <button class="analytics-close-btn" onclick="window.fecharEsquemasModal()">&#x2715;</button>
             </div>
@@ -32913,7 +32918,7 @@ window.triggerFileUpload = function(callback) {
                 <button class="so-admin fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarMarkdownAba('1')" title="Exportar MD: esquemas Regular">📤</button>
                 <button class="so-admin fc-tab-export-btn" onclick="event.stopPropagation(); window.ESQUEMAS_RUNTIME.exportarHtmlAba('1')" title="Exportar HTML estilizado: esquemas Regular">🎨</button>
                 <span style="width:1px; align-self:stretch; background:var(--border-color); margin:0 2px;"></span>
-                <button class="esq-aplicar-sistema-btn" onclick="window.ESQUEMAS_RUNTIME.aplicarClassificacaoSistema()" title="Preenche a classificação Crítico/Importante/Regular dos esquemas que você AINDA NÃO classificou, usando a sugestão oficial do sistema — nunca sobrescreve uma classificação que você já deu">&#x1F3F7;&#xFE0F; Aplicar Classificação de Prioridade do Sistema</button>
+                <span class="esq-busca-topo-grupo"><input type="text" id="esq-busca-topo" class="esq-busca-topo" placeholder="🔎 Buscar..." title="Busca por título e conteúdo" autocomplete="off" oninput="window.ESQUEMAS_RUNTIME.buscarTopo(this.value)"><label class="esq-busca-topo-todo" title="Marcado: busca em todas as disciplinas. Ao entrar numa disciplina ou tópico, desmarca e a busca fica restrita a ele."><input type="checkbox" id="esq-busca-topo-todo" checked onchange="window.ESQUEMAS_RUNTIME.toggleBuscaTodoAcervo()"> Todo acervo</label></span>
                 <label class="esq-ocultar-oficiais-global" title="Esconde todos os esquemas oficiais da seção: grade, contagens, abas e Leitor. Fica gravado neste aparelho."><input type="checkbox" id="esq-ocultar-todas-oficiais" onchange="window.ESQUEMAS_RUNTIME.alternarOcultarTodasOficiais(this.checked)"> Ocultar Todas as Oficiais</label>
             </div>
             <div class="esq-tabs-baralho">
@@ -32930,7 +32935,7 @@ window.triggerFileUpload = function(callback) {
         <div class="fc-grid" id="esq-grid">
             <div class="fc-col" id="esq-col-materias"></div>
             <div class="fc-col" id="esq-col-divisoes"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
-            <div class="fc-col" id="esq-col-cards"><div class="fc-vazio-col">Selecione uma matéria.</div></div>
+            <div class="fc-col" id="esq-col-cards"><div class="fc-vazio-col">Selecione uma matéria ou busque no alto, em todo o acervo.</div></div>
         </div>
 
         <div class="fc-aba-revisao" id="esq-aba-1" style="display:none;">
@@ -33584,7 +33589,9 @@ window.ESQUEMAS_RUNTIME = {
     // selecionadas e cruza TODAS as disciplinas (ver _esquemasParaExibir),
     // pra achar um esquema em qualquer lugar do acervo sem precisar navegar
     // até a divisão certa primeiro.
-    _buscaTodoAcervo: false,
+    // Agora no alto e marcado por padrão (pedido explícito do usuário);
+    // entrar numa disciplina ou tópico desmarca e restringe.
+    _buscaTodoAcervo: true,
     _modalEtiquetasModoAplicar: false, // true = clicar numa etiqueta APLICA aos selecionados, em vez de só gerenciar
 
     // Abas do topo do modal: 'grade' (navegação L1/L2 já existente) |
@@ -33765,8 +33772,23 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     toggleBuscaTodoAcervo: function() {
-        this._buscaTodoAcervo = !this._buscaTodoAcervo;
+        let el = document.getElementById('esq-busca-topo-todo');
+        this._buscaTodoAcervo = el ? !!el.checked : !this._buscaTodoAcervo;
         this._renderGradeCards();
+    },
+    buscarTopo: function(texto) {
+        let self = this;
+        clearTimeout(this._tmrBuscaTopo);
+        this._tmrBuscaTopo = setTimeout(function() {
+            if (self._abaAtiva && self._abaAtiva !== 'grade') self.trocarAba('grade');
+            self.filtrarEsquemasGrade(texto);
+        }, 180);
+    },
+    _sincronizarBuscaTopo: function() {
+        let inp = document.getElementById('esq-busca-topo');
+        if (inp && document.activeElement !== inp && inp.value !== (this._filtroBusca || '')) inp.value = this._filtroBusca || '';
+        let chk = document.getElementById('esq-busca-topo-todo');
+        if (chk) chk.checked = !!this._buscaTodoAcervo;
     },
 
     // Contagem bruta (ignora ocultos — é só indicação de volume, mesmo
@@ -33844,6 +33866,7 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     selecionarMateria: function(nivel1, semRerenderSidebarMaterias) {
+        this._buscaTodoAcervo = false;
         this._materiaSelecionada = nivel1;
         this._divisaoSelecionada = null;
         if (!semRerenderSidebarMaterias) {
@@ -33882,6 +33905,7 @@ window.ESQUEMAS_RUNTIME = {
     },
 
     selecionarDivisao: function(materia, divisao) {
+        this._buscaTodoAcervo = false;
         this._materiaSelecionada = materia;
         this._divisaoSelecionada = divisao;
         this._renderColunaDivisoes(materia);
@@ -34378,7 +34402,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="so-admin esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' onclick="window.ESQUEMAS_RUNTIME.exportarSelecionadosHtml()">🎨 Exportar Selecionados (.html)' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                     '<button class="esq-tb-btn" ' + (qtdSel === 0 ? 'disabled' : '') + ' style="color:var(--danger); border-color:rgba(239,68,68,0.35);" onclick="window.ESQUEMAS_RUNTIME.excluirSelecionados()">🗑️ Excluir Selecionados' + (qtdSel ? ' (' + qtdSel + ')' : '') + '</button>' +
                 '</div>' +
-                '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
+                '<div class="esq-tb-busca-grupo"><button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Cancelar</button></div>';
         } else {
             htmlAcoes =
                 '<div class="esq-tb-acoes-grupo">' +
@@ -34388,7 +34412,7 @@ window.ESQUEMAS_RUNTIME = {
                     '<button class="esq-tb-btn' + (this._mostrarFiltroCor ? ' ativa' : '') + '" onclick="window.ESQUEMAS_RUNTIME.toggleFiltroCor()">🎨 Classificar por Cor</button>' +
                     this._renderFiltroCores() +
                 '</div>' +
-                '<div class="esq-tb-busca-grupo">' + htmlBusca + htmlTodoAcervo + '<button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
+                '<div class="esq-tb-busca-grupo"><button class="esq-tb-btn" onclick="window.ESQUEMAS_RUNTIME.toggleModoSelecao()">Selecionar</button></div>';
         }
         return '<div class="esq-toolbar">' + htmlAcoes + '</div>';
     },
@@ -34397,6 +34421,7 @@ window.ESQUEMAS_RUNTIME = {
         let col = document.getElementById('esq-col-cards');
         if (!col) return;
         let self = this;
+        this._sincronizarBuscaTopo();
 
         // Preserva a posição de rolagem entre re-renders — sem isso, cada
         // clique num checkbox durante a seleção múltipla substitui o
@@ -34416,8 +34441,9 @@ window.ESQUEMAS_RUNTIME = {
         let buscaTinhaFoco = inputBuscaAnterior && document.activeElement === inputBuscaAnterior;
         let buscaCursor = buscaTinhaFoco ? inputBuscaAnterior.selectionStart : null;
 
-        if (!this._materiaSelecionada) {
-            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria.</div>';
+        let buscandoTudo = this._buscaTodoAcervo && (this._filtroBusca || '').trim();
+        if (!this._materiaSelecionada && !buscandoTudo) {
+            col.innerHTML = '<div class="fc-vazio-col">Selecione uma matéria' + (this._buscaTodoAcervo ? ' ou busque no alto, em todo o acervo' : '') + '.</div>';
             return;
         }
 
