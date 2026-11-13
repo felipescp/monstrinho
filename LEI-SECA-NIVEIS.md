@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 29 (4066 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 30 (4094 notas).
 
 ### Direito Civil
 
@@ -40,7 +40,7 @@
 | Processo Eletrônico (Lei 11.419) | X | X | X (39 notas) |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Cautelares contra o Poder Público (Lei 8.437) | X | X | - |
-| Ação de Alimentos (Lei 5.478) | X | X | - |
+| Ação de Alimentos (Lei 5.478) | X | X | X (28 notas) |
 | Alimentos Gravídicos (Lei 11.804) | X | X | - |
 | Tutela contra a Fazenda (Lei 9.494) | X | X | X (14 notas) |
 
