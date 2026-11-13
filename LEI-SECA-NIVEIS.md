@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 34 (4239 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 38 (4630 notas).
 
 ### Direito Civil
 
@@ -71,15 +71,15 @@
 |---|:---:|:---:|:---:|
 | Código Penal | X | X | X (221 notas) |
 | Lei de Drogas (Lei 11.343) | X | X | X (114 notas) |
-| Maria da Penha (Lei 11.340) | X | X | - |
-| Organização Criminosa (Lei 12.850) | X | X | - |
+| Maria da Penha (Lei 11.340) | X | X | X (142 notas) |
+| Organização Criminosa (Lei 12.850) | X | X | X (123 notas) |
 | Código de Trânsito Brasileiro | X | X | - |
-| Estatuto do Desarmamento (Lei 10.826) | X | X | - |
+| Estatuto do Desarmamento (Lei 10.826) | X | X | X (49 notas) |
 | Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Código Penal Militar | X | X | - |
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
 | Crimes Hediondos (Lei 8.072) | X | X | - |
-| Abuso de Autoridade (Lei 13.869) | X | X | - |
+| Abuso de Autoridade (Lei 13.869) | X | X | X (77 notas) |
 | Tortura (Lei 9.455) | X | X | - |
 | Crimes Raciais (Lei 7.716) | X | X | - |
 | Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | X | - |
