@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 20 (3656 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 21 (3765 notas).
 
 ### Direito Civil
 
@@ -15,7 +15,7 @@
 | LINDB | X | X | X (65 notas) |
 | Lei do Inquilinato (Lei 8.245) | X | X | X (106 notas) |
 | Registros Públicos (Lei 6.015) | X | X | X (98 notas) |
-| Lei Geral de Proteção de Dados – LGPD (Lei 13.709) | X | X | - |
+| Lei Geral de Proteção de Dados – LGPD (Lei 13.709) | X | X | X (109 notas) |
 | Estatuto da OAB (Lei 8.906) | X | X | - |
 | Marco Civil da Internet (Lei 12.965) | X | X | - |
 | Alienação Fiduciária (Decreto-Lei 911/1969) | X | X | - |
