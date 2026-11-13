@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 39 (4682 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 40 (4703 notas).
 
 ### Direito Civil
 
@@ -87,7 +87,7 @@
 | Crimes contra o Sistema Financeiro (Lei 7.492) | X | X | - |
 | Crimes contra a Economia Popular (Lei 1.521) | X | X | - |
 | Lei Antiterrorismo (Lei 13.260) | X | X | - |
-| Crimes contra a Ordem Econômica – Combustíveis (Lei 8.176) | X | X | - |
+| Crimes contra a Ordem Econômica – Combustíveis (Lei 8.176) | X | X | X (21 notas) |
 | Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358) | X | X | - |
 
 ### Direito Processual Penal
