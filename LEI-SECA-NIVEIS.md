@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 22 (3813 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 23 (3838 notas).
 
 ### Direito Civil
 
@@ -19,7 +19,7 @@
 | Estatuto da OAB (Lei 8.906) | X | X | - |
 | Marco Civil da Internet (Lei 12.965) | X | X | X (48 notas) |
 | Alienação Fiduciária (Decreto-Lei 911/1969) | X | X | - |
-| Investigação de Paternidade (Lei 8.560) | X | X | - |
+| Investigação de Paternidade (Lei 8.560) | X | X | X (25 notas) |
 | Condomínio e Incorporações Imobiliárias (Lei 4.591) | X | X | - |
 | Transplante de Órgãos e Tecidos (Lei 9.434) | X | X | - |
 
