@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 42 (4788 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 43 (4810 notas).
 
 ### Direito Civil
 
@@ -80,7 +80,7 @@
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
 | Crimes Hediondos (Lei 8.072) | X | X | X (52 notas) |
 | Abuso de Autoridade (Lei 13.869) | X | X | X (77 notas) |
-| Tortura (Lei 9.455) | X | X | - |
+| Tortura (Lei 9.455) | X | X | X (22 notas) |
 | Crimes Raciais (Lei 7.716) | X | X | - |
 | Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | X | - |
 | Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
