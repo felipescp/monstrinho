@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 36 (4504 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 37 (4553 notas).
 
 ### Direito Civil
 
@@ -74,7 +74,7 @@
 | Maria da Penha (Lei 11.340) | X | X | X (142 notas) |
 | Organização Criminosa (Lei 12.850) | X | X | X (123 notas) |
 | Código de Trânsito Brasileiro | X | X | - |
-| Estatuto do Desarmamento (Lei 10.826) | X | X | - |
+| Estatuto do Desarmamento (Lei 10.826) | X | X | X (49 notas) |
 | Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Código Penal Militar | X | X | - |
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
