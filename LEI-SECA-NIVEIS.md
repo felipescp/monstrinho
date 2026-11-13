@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 43 (4810 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 44 (5097 notas).
 
 ### Direito Civil
 
@@ -107,7 +107,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Constituição Federal | X | X | - |
+| Constituição Federal | X | X | X (287 notas) |
 | ADI e ADC (Lei 9.868) | X | X | - |
 | ADCT | X | X | - |
 | ADPF (Lei 9.882) | X | X | X (14 notas) |
