@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 16 (3261 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 17 (3387 notas).
 
 ### Direito Civil
 
@@ -169,7 +169,7 @@
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Licitações e Contratos Administrativos (Lei 14.133) | X | X | X (72 notas) |
-| Processo Administrativo (Lei 9.784) | X | X | - |
+| Processo Administrativo (Lei 9.784) | X | X | X (126 notas) |
 | Estatuto da Cidade (Lei 10.257) | X | X | - |
 | Improbidade Administrativa (Lei 8.429) | X | X | - |
 | Concessões e Permissões de Serviços Públicos (Lei 8.987) | X | X | X (66 notas) |
