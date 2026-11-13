@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 25 (3902 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 32 (4146 notas).
 
 ### Direito Civil
 
@@ -33,23 +33,23 @@
 | Mandado de Segurança (Lei 12.016) | X | X | X (58 notas) |
 | Habeas Data (Lei 9.507) | X | X | - |
 | Bem de Família (Lei 8.009) | X | X | - |
-| Arbitragem (Lei 9.307) | X | X | - |
+| Arbitragem (Lei 9.307) | X | X | X (72 notas) |
 | Mediação (Lei 13.140) | X | X | - |
-| Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | - |
+| Juizados Especiais da Fazenda Pública (Lei 12.153) | X | X | X (39 notas) |
 | Juizados Especiais Federais (Lei 10.259) | X | X | X (30 notas) |
-| Processo Eletrônico (Lei 11.419) | X | X | - |
+| Processo Eletrônico (Lei 11.419) | X | X | X (39 notas) |
 | Mandado de Injunção (Lei 13.300) | X | X | - |
 | Cautelares contra o Poder Público (Lei 8.437) | X | X | - |
-| Ação de Alimentos (Lei 5.478) | X | X | - |
-| Alimentos Gravídicos (Lei 11.804) | X | X | - |
-| Tutela contra a Fazenda (Lei 9.494) | X | X | - |
+| Ação de Alimentos (Lei 5.478) | X | X | X (28 notas) |
+| Alimentos Gravídicos (Lei 11.804) | X | X | X (7 notas) |
+| Tutela contra a Fazenda (Lei 9.494) | X | X | X (14 notas) |
 
 ### Direito do Consumidor
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Código de Defesa do Consumidor | X | X | X (244 notas) |
-| Planos de Saúde (Lei 9.656) | X | X | - |
+| Planos de Saúde (Lei 9.656) | X | X | X (45 notas) |
 
 ### Direito da Criança e do Adolescente
 
