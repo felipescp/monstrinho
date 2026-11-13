@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 32 (4146 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 33 (4199 notas).
 
 ### Direito Civil
 
@@ -57,7 +57,7 @@
 |---|:---:|:---:|:---:|
 | Estatuto da Criança e do Adolescente | X | X | X (392 notas) |
 | Sinase (Lei 12.594) | X | X | X (143 notas) |
-| Escuta Protegida – vítima ou testemunha de violência (Lei 13.431) | X | X | - |
+| Escuta Protegida – vítima ou testemunha de violência (Lei 13.431) | X | X | X (53 notas) |
 | Alienação Parental (Lei 12.318) | X | X | - |
 | Lei Henry Borel (Lei 14.344) | X | X | - |
 | Marco Legal da Primeira Infância (Lei 13.257) | X | X | - |
