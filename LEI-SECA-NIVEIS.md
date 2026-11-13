@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 38 (4630 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 41 (4736 notas).
 
 ### Direito Civil
 
@@ -78,16 +78,16 @@
 | Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
 | Código Penal Militar | X | X | - |
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
-| Crimes Hediondos (Lei 8.072) | X | X | - |
+| Crimes Hediondos (Lei 8.072) | X | X | X (52 notas) |
 | Abuso de Autoridade (Lei 13.869) | X | X | X (77 notas) |
 | Tortura (Lei 9.455) | X | X | - |
 | Crimes Raciais (Lei 7.716) | X | X | - |
 | Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | X | - |
 | Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
-| Crimes contra o Sistema Financeiro (Lei 7.492) | X | X | - |
+| Crimes contra o Sistema Financeiro (Lei 7.492) | X | X | X (33 notas) |
 | Crimes contra a Economia Popular (Lei 1.521) | X | X | - |
 | Lei Antiterrorismo (Lei 13.260) | X | X | - |
-| Crimes contra a Ordem Econômica – Combustíveis (Lei 8.176) | X | X | - |
+| Crimes contra a Ordem Econômica – Combustíveis (Lei 8.176) | X | X | X (21 notas) |
 | Marco Legal do Combate ao Crime Organizado – Lei Raul Jungmann (Lei 15.358) | X | X | - |
 
 ### Direito Processual Penal
