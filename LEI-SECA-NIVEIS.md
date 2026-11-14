@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 55 (5967 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 56 (6131 notas).
 
 ### Direito Civil
 
@@ -140,7 +140,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código Tributário Nacional | X | X | - |
+| Código Tributário Nacional | X | X | X (164 notas) |
 | Lei de Responsabilidade Fiscal (LC 101) | X | X | - |
 | Execução Fiscal (Lei 6.830) | X | X | - |
 | Estatuto da Microempresa e Simples Nacional (LC 123) | X | X | - |
