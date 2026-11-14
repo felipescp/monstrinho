@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 52 (5648 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 53 (5800 notas).
 
 ### Direito Civil
 
@@ -129,7 +129,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Recuperação e Falência (Lei 11.101) | X | X | - |
+| Recuperação e Falência (Lei 11.101) | X | X | X (152 notas) |
 | Sociedades por Ações (Lei 6.404) | X | X | - |
 | Lei do Cheque (Lei 7.357) | X | X | - |
 | Lei das Duplicatas (Lei 5.474) | X | X | - |
