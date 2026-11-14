@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 54 (5932 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 55 (5967 notas).
 
 ### Direito Civil
 
@@ -134,7 +134,7 @@
 | Lei do Cheque (Lei 7.357) | X | X | - |
 | Lei das Duplicatas (Lei 5.474) | X | X | - |
 | Lei Uniforme de Genebra – letra de câmbio e nota promissória (Decreto 57.663/1966) | X | X | - |
-| Protesto de Títulos (Lei 9.492) | X | X | - |
+| Protesto de Títulos (Lei 9.492) | X | X | X (35 notas) |
 
 ### Direito Financeiro e Tributário
 
