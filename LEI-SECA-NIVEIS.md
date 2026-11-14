@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 46 (5300 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 47 (5319 notas).
 
 ### Direito Civil
 
@@ -98,7 +98,7 @@
 | Execução Penal (Lei 7.210) | X | X | X (177 notas) |
 | Interceptação Telefônica (Lei 9.296) | X | X | X (26 notas) |
 | Código de Processo Penal Militar | X | X | - |
-| Prisão Temporária (Lei 7.960) | X | X | - |
+| Prisão Temporária (Lei 7.960) | X | X | X (19 notas) |
 | Proteção a Vítimas e Testemunhas (Lei 9.807) | X | X | - |
 | Investigação pelo Delegado de Polícia (Lei 12.830) | X | X | - |
 | Julgamento Colegiado em Primeiro Grau – organizações criminosas (Lei 12.694) | X | X | - |
