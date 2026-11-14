@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 41 (4736 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 56 (6131 notas).
 
 ### Direito Civil
 
@@ -75,12 +75,12 @@
 | Organização Criminosa (Lei 12.850) | X | X | X (123 notas) |
 | Código de Trânsito Brasileiro | X | X | - |
 | Estatuto do Desarmamento (Lei 10.826) | X | X | X (49 notas) |
-| Crimes contra a Ordem Tributária (Lei 8.137) | X | X | - |
+| Crimes contra a Ordem Tributária (Lei 8.137) | X | X | X (52 notas) |
 | Código Penal Militar | X | X | - |
 | Lavagem de Dinheiro (Lei 9.613) | X | X | - |
 | Crimes Hediondos (Lei 8.072) | X | X | X (52 notas) |
 | Abuso de Autoridade (Lei 13.869) | X | X | X (77 notas) |
-| Tortura (Lei 9.455) | X | X | - |
+| Tortura (Lei 9.455) | X | X | X (22 notas) |
 | Crimes Raciais (Lei 7.716) | X | X | - |
 | Crimes de Responsabilidade dos Prefeitos (Decreto-Lei 201/1967) | X | X | - |
 | Lei das Contravenções Penais (Decreto-Lei 3.688) | X | X | - |
@@ -95,11 +95,11 @@
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
 | Código de Processo Penal | X | X | X (209 notas) |
-| Execução Penal (Lei 7.210) | X | X | - |
-| Interceptação Telefônica (Lei 9.296) | X | X | - |
+| Execução Penal (Lei 7.210) | X | X | X (177 notas) |
+| Interceptação Telefônica (Lei 9.296) | X | X | X (26 notas) |
 | Código de Processo Penal Militar | X | X | - |
-| Prisão Temporária (Lei 7.960) | X | X | - |
-| Proteção a Vítimas e Testemunhas (Lei 9.807) | X | X | - |
+| Prisão Temporária (Lei 7.960) | X | X | X (19 notas) |
+| Proteção a Vítimas e Testemunhas (Lei 9.807) | X | X | X (34 notas) |
 | Investigação pelo Delegado de Polícia (Lei 12.830) | X | X | - |
 | Julgamento Colegiado em Primeiro Grau – organizações criminosas (Lei 12.694) | X | X | - |
 
@@ -107,7 +107,7 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Constituição Federal | X | X | - |
+| Constituição Federal | X | X | X (287 notas) |
 | ADI e ADC (Lei 9.868) | X | X | - |
 | ADCT | X | X | - |
 | ADPF (Lei 9.882) | X | X | X (14 notas) |
@@ -120,27 +120,27 @@
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Lei das Eleições (Lei 9.504) | X | X | - |
-| Código Eleitoral | X | X | - |
-| Lei de Inelegibilidades (LC 64) | X | X | - |
-| Lei dos Partidos Políticos (Lei 9.096) | X | X | - |
+| Lei das Eleições (Lei 9.504) | X | X | X (106 notas) |
+| Código Eleitoral | X | X | X (98 notas) |
+| Lei de Inelegibilidades (LC 64) | X | X | X (41 notas) |
+| Lei dos Partidos Políticos (Lei 9.096) | X | X | X (50 notas) |
 
 ### Direito Empresarial
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Recuperação e Falência (Lei 11.101) | X | X | - |
-| Sociedades por Ações (Lei 6.404) | X | X | - |
+| Recuperação e Falência (Lei 11.101) | X | X | X (152 notas) |
+| Sociedades por Ações (Lei 6.404) | X | X | X (132 notas) |
 | Lei do Cheque (Lei 7.357) | X | X | - |
 | Lei das Duplicatas (Lei 5.474) | X | X | - |
 | Lei Uniforme de Genebra – letra de câmbio e nota promissória (Decreto 57.663/1966) | X | X | - |
-| Protesto de Títulos (Lei 9.492) | X | X | - |
+| Protesto de Títulos (Lei 9.492) | X | X | X (35 notas) |
 
 ### Direito Financeiro e Tributário
 
 | Diploma | 1. Pura | 2. Incidência | 3. Comentado |
 |---|:---:|:---:|:---:|
-| Código Tributário Nacional | X | X | - |
+| Código Tributário Nacional | X | X | X (164 notas) |
 | Lei de Responsabilidade Fiscal (LC 101) | X | X | - |
 | Execução Fiscal (Lei 6.830) | X | X | - |
 | Estatuto da Microempresa e Simples Nacional (LC 123) | X | X | - |
