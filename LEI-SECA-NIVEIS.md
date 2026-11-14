@@ -5,7 +5,7 @@
 
 **Níveis:** 1. Pura (texto da lei) · 2. c/ Incidência (mapa de cobranças em provas; é o que faz o diploma aparecer na seção) · 3. Comentado (notas do sistema do 📝 Modo comentado).
 
-**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 50 (5557 notas).
+**Totais:** 164 diplomas · 1. Pura: 164 · 2. Incidência: 159 · 3. Comentado: 51 (5598 notas).
 
 ### Direito Civil
 
@@ -122,7 +122,7 @@
 |---|:---:|:---:|:---:|
 | Lei das Eleições (Lei 9.504) | X | X | X (106 notas) |
 | Código Eleitoral | X | X | X (98 notas) |
-| Lei de Inelegibilidades (LC 64) | X | X | - |
+| Lei de Inelegibilidades (LC 64) | X | X | X (41 notas) |
 | Lei dos Partidos Políticos (Lei 9.096) | X | X | - |
 
 ### Direito Empresarial
